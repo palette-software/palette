@@ -1,6 +1,7 @@
 import sys
 import socket
 import threading
+import time
 
 from httplib import HTTPConnection
 from SocketServer import TCPServer
@@ -14,7 +15,7 @@ class AgentConnection(object):
 
 class AgentManager(threading.Thread):
 
-    PORT = 8080
+    PORT = 8888
 
     def __init__(self, host='localhost', port=0):
         super(AgentManager, self).__init__()
@@ -36,6 +37,11 @@ class AgentManager(threading.Thread):
         while True:
             conn, addr = self.socket.accept()
             agent = AgentConnection(conn, addr)
+
+            # sleep for 100ms to prevent:
+            #  'An existing connection was forcibly closed by the remote host'
+            # on the Windows client when the agent tries to connect.
+            time.sleep(.1);
 
             httpconn = ReverseHTTPConnection(conn)
             httpconn.request('GET', '/auth')
