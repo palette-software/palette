@@ -8,17 +8,19 @@
 <h1>Palette Software</h1>
 <div class="tile">
   <h2>System Monitor</h2>
-  <div class="green-light"></div>
-  <p class="large">OK</p>
+  <div id="dot" class="green-light"></div>
+  <p id="status" class="large"></p>
   <p class="tile-advanced"><span class="arrow-down"></span> Advanced</p>
 </div>
 <div class="tile">
   <h2>Backup</h2>
   <h3>Last</h3>
-  <p>Thursday, November 7th at 12:00 AM</p>
+  <p id="last">Thursday, November 7th at 12:00 AM</p>
   <h3>Next</h3>
-  <p>Friday, November 8th at 12:00 AM</p>
-  <p class="padtop"><a class="button spacer">Backup</a> <a class="button">Restore</a></p>
+  <p id="next">Friday, November 8th at 12:00 AM</p>
+  <p class="padtop">
+    <a id="backupButton" class="button spacer">Backup</a>
+    <a id="restoreButton" class="button">Restore</a></p>
   <p class="tile-advanced"><span class="arrow-down"></span> Advanced</p>
 </div>
 <div class="tile">
@@ -32,3 +34,11 @@
   <p class="padtop large">105 Days of Disk Space</p>
   <p class="tile-advanced"><span class="arrow-down"></span> Advanced</p>
 </div>
+
+<script>
+require({
+  packages: [
+    { name: "palette", location: "/app/module/palette/js" }
+  ]
+}, [ "palette/monitor", "palette/backup" ]);
+</script>
