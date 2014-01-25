@@ -1,0 +1,13 @@
+To test:
+
+    - Start the controller:
+        python controller.py
+
+    - Then start the Palette Agent:
+        python agent.py
+
+    - Then telnet to the controller:
+        telnet localhost 9000
+
+      and give it a command:
+        status
