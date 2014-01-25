@@ -8,7 +8,9 @@
 <h1>Palette Software</h1>
 <div class="tile">
   <h2>System Monitor</h2>
-  <div id="dot" class="green-light"></div>
+  <div id="green" class="green-light" style="display:none"></div>
+  <div id="orange" class="orange-light" style="display:none"></div>
+  <div id="red" class="red-light" style="display:none"></div>
   <p id="status" class="large"></p>
   <p class="tile-advanced"><span class="arrow-down"></span> Advanced</p>
 </div>

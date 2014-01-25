@@ -16,7 +16,9 @@ setup(name='palette',
     include_package_data=True,
     package_data={
         'palette':
-	    ['templates/*', 'data/*', 'js/*.js', 'js/templates/*', 'css/*.css']
+	    ['templates/*', 'data/*',
+             'images/*', 'img/*',
+             'js/*.js', 'js/templates/*', 'css/*.css']
         },
     zip_safe=False,
     install_requires=[
