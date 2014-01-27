@@ -86,13 +86,17 @@ class AgentManager(threading.Thread):
 
             # Send the 'auth 'command.
             httpconn.request('POST', '/auth')
+            #
             res = httpconn.getresponse()
             print >> sys.stderr, 'command: auth: ' + str(res.status) + ' ' + str(res.reason)
             # Get the auth reply.
-            print "reading...."
+            print "reading....",
             body_json = res.read()
-            body = json.loads(body_json)
-            print "body = ", body
+            if body_json:
+                body = json.loads(body_json)
+                print "\nbody = ", body
+            else:
+                print "done."
 
             # todo: inspect the reply to see what kind of agent it is.
             # Fake it for now.
