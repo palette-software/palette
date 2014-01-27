@@ -99,8 +99,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         cli_command = ''.join(argv)
         req = Cli_Request("start", cli_command)
 
+        headers = {"Content-Type": "application/json"}
+
         print 'about to do the cli command, xid', req.xid
-        aconn.httpconn.request('POST', '/cli', req.send_body)
+        aconn.httpconn.request('POST', '/cli', req.send_body, headers)
         print 'did it'
         res = aconn.httpconn.getresponse()
         print 'command: cli: ' + str(res.status) + ' ' + str(res.reason)
