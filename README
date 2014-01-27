@@ -1,10 +1,1 @@
-git repository: palette
-
-# Run the controller
-#  - cli on port 9000
-#  - agent connections on port 8080
-cd controller
-python controller.py
-
-# Test the agent
-python agent.py
+See controller/README for running the controller and simulated agent.
