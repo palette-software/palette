@@ -6,8 +6,37 @@ To test:
     - Then start the Palette Agent:
         python agent.py
 
+        By default, it will identify itself as:
+            agent hostname: one
+            agent type: primary
+            agent_ip: 1.2.3.4
+
+        You can start a additional agents and the command-line
+        arguments to have the additional agent identify itself
+        differently:
+            usage: agent hostname {primary|worker|other} ip-address
+
+        For example:
+             python agent.py my-hostname worker 192.168.1.5
+
     - Then telnet to the controller:
         telnet localhost 9000
 
-      and give it a command:
+      and enter some commands:
         status
+
+        cli dir
+            Sends the 'dir' command to run and retrieves the results
+            and status.
+
+        copy source-hostname source-path target-hostname target-path
+            Sends the command to copy file 'source-path' from 'source-hostname'
+            to a file named 'target-path' on host 'target-hostname'.
+
+        backup
+
+        restore
+
+        restore [source-hostname]:pathname
+            If the specified file is not on the primary agent, then it
+            will be copied to the primary before doing the restore.

@@ -52,7 +52,7 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_copy(self, argv):
         """copy a file from the source to the target."""
         if len(argv) != 4:
-            print >> self.wfile, '[ERROR] Usage: copy source-hostname source-path dest target-hostname target-path'
+            print >> self.wfile, '[ERROR] Usage: copy source-hostname source-path target-hostname target-path'
             return
 
         body = server.copy_cmd(argv[0], argv[1], argv[2], argv[3])
