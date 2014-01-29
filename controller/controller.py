@@ -10,6 +10,10 @@ import time
 from request import *
 from inits import *
 
+from backup import BackupEntry, BackupManager
+import sqlalchemy
+import meta
+
 # How long to wait between getting cli status
 CLI_GET_STATUS_INTERVAL=1
 
@@ -106,6 +110,18 @@ class CliHandler(socketserver.StreamRequestHandler):
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
 
+    def dbinit(self):
+        # fixme: move ...
+
+        # fixme: move to .ini config file
+        url = "postgresql://palette:palpass@localhost/paldb"
+        echo = False
+
+        self.engine = sqlalchemy.create_engine(url, echo=False)
+
+        # fixme: Do only once...
+        meta.Base.metadata.create_all(bind=self.engine)
+
     def backup_cmd(self):
         """Does a backup."""
         # fixme: make sure another backup isn't already running?
@@ -114,8 +130,19 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         backup_name = time.strftime("%b%d_%H%M%S")
         # Example name: Jan27_162225
         body = self.cli_cmd("tabadmin backup %s" % backup_name )
-        return body
+        if body.has_key('error'):
+            return body
+
         # fixme: add backup information to database
+        primary_agent = manager.agent_handle(AGENT_TYPE_PRIMARY)
+        # Save name of backup and ip address of the primary agent to the db.
+        ip_address = primary_agent.auth['ip-address']
+
+        self.dbinit()    #fixme
+        self.backup = BackupManager(self.engine)
+        self.backup.add(backup_name, ip_address)
+
+        return body
 
     def cli_cmd(self, command, target=AGENT_TYPE_PRIMARY):
         """ 1) Sends the command (a string)
