@@ -18,12 +18,13 @@ class AgentConnection(object):
         self.socket = conn
         self.addr = addr
         self.httpconn = False
+        self.auth = {}
 
     def set_httpconn(self, httpconn):
         self.httpconn = httpconn
 
-    def get_httpconn(self):
-        return self.httpconn
+    def set_auth(self, auth):
+        self.auth = auth
 
 class AgentManager(threading.Thread):
 
@@ -41,7 +42,13 @@ class AgentManager(threading.Thread):
         self.agents = {}
 
     def register(self, agent, agent_type):
+        # fixme: What should we do if two primary agents connect?
+        print "Remembering new agent of type:", agent_type
         self.agents[agent_type] = agent
+
+    # Return the list of all agents
+    def all_agents(self):
+        return self.agents
 
     def agent_handle(self, agent_type):
         """Returns an instance of an Agent of the requested type."""
@@ -86,7 +93,7 @@ class AgentManager(threading.Thread):
 
             # Send the 'auth 'command.
             httpconn.request('POST', '/auth')
-            #
+
             res = httpconn.getresponse()
             print >> sys.stderr, 'command: auth: ' + str(res.status) + ' ' + str(res.reason)
             # Get the auth reply.
@@ -98,20 +105,29 @@ class AgentManager(threading.Thread):
             else:
                 print "done."
 
-            # todo: inspect the reply to see what kind of agent it is.
+            # todo: inspect the reply to see what kind of agent it is
+            # and make sure it has all the required values.
             # Fake it for now.
-            agent_type = AGENT_TYPE_PRIMARY
+            if not body.has_key("type"):
+                print "missing agent type from agent"
+                conn.close()
+                return
+
+            agent_type = body['type']
+            if agent_type not in [ AGENT_TYPE_PRIMARY,
+                        AGENT_TYPE_WORKER, AGENT_TYPE_OTHER ]:
+                print "Bad agent type sent:", agent_type
+                conn.close()
+                return
 
             agent.set_httpconn(httpconn)
+            agent.set_auth(body)
 
             self.register(agent, agent_type)
 
         except socket.error, e:
             print "Socket error"
             conn.close()
-        except KeyboardInterrupt, e:
-            print "Terminating..."
-            sys.exit(0)
         except Exception, e:
             print "Exception:"
             traceback.format_exc()
@@ -124,6 +140,7 @@ class ReverseHTTPConnection(HTTPConnection):
     
     def __init__(self, sock):
         HTTPConnection.__init__(self, 'agent')
+#        HTTPConnection.debuglevel = 1
         self.sock = sock
     
     def connect(self):

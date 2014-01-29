@@ -1,2 +1,3 @@
 AGENT_TYPE_PRIMARY="primary"
-AGENT_TYPE_STORAGE="storage"
+AGENT_TYPE_WORKER="worker"
+AGENT_TYPE_OTHER="other"

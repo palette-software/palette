@@ -7,6 +7,7 @@ from SimpleHTTPServer import SimpleHTTPRequestHandler
 import urlparse
 
 from agentmanager import AgentManager
+from inits import *
 
 version="0.1"
 
@@ -15,7 +16,13 @@ version="0.1"
 # Accepts commands from the Controller and sends replies.
 # The body of the request and response is JSON.
 class AgentHandler(SimpleHTTPRequestHandler):
-    
+
+    agent_hostname = "one"
+    agent_type = AGENT_TYPE_PRIMARY
+    agent_ip = "1.2.3.4"
+
+    get_status_count = 0
+
     # The "auth" immediate command reply.
     # Immediate commands methods begin with 'icommand_'.
     def icommand_auth(self):
@@ -23,11 +30,11 @@ class AgentHandler(SimpleHTTPRequestHandler):
                 "username": "palette-username",
                 "password": "secret",
                 "version": version,
-                "ip-address": "1.2.3.4",
-                "hostname": "myhostname",
+                "hostname": AgentHandler.agent_hostname,
+                "type": AgentHandler.agent_type,
+                "ip-address": AgentHandler.agent_ip,
                 "listen-port": 12345,
                 "uuid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                "type": "primary"
             }
 
         return body_dict
@@ -41,23 +48,43 @@ class AgentHandler(SimpleHTTPRequestHandler):
         action = in_body_dict['action']
 
         if action == 'cleanup':
-            return {}
+            return { "xid": in_body_dict["xid"], 
+                     "status": "success" }
+
         elif action != 'start':
             raise HttpException(405)    #fixme (not 405)
 
         # pretend we started...
         return { "xid": in_body_dict["xid"], 
-                "status": "0" }
+                 "status": "success" }
+
+    def command_copy(self, in_body_dict):
+        """[Pretend to] do the Copy commnand."""
+        return self.command_cli(in_body_dict)  # Pretends the same as cli commnand
 
     def get_status(self, xid):
         """Return the status of a request with the passed xid."""
         # For now, return the same status for every request.
-        outgoing_body_dict = {
+
+        AgentHandler.get_status_count += 1
+        print "count:", AgentHandler.get_status_count
+        if AgentHandler.get_status_count % 2 == 0:
+            # report still running
+            outgoing_body_dict = {
+                "status": "success",
+                "run-status": "running",
+                "xid": xid }
+
+        else:
+            # send finished
+            outgoing_body_dict = {
+                "status": "success",
                 "run-status": "finished",
                 "exit-status": 0,
                 "xid": xid,
                 "stdout": "this is stdout from the command",
                 "stderr": "" }
+
         return outgoing_body_dict
 
     # Parses the incoming commmand from the Controller.
@@ -80,12 +107,10 @@ class AgentHandler(SimpleHTTPRequestHandler):
             # Example: "GET /cli?xid=123"
             parts = urlparse.urlparse(self.path)
 
-            if not parts.path in ["/cli", "/backup",
-                    "/restore", "/copy", "sql", "/no-op"]:
+            if not parts.path in ["/cli", "/copy", "sql", "/no-op"]:
 
                 print "Unknown GET command:", parts.path
                 raise HttpException(404)
-
 
             print 'loc 2'
             print 'query = ', parts.query
@@ -106,7 +131,7 @@ class AgentHandler(SimpleHTTPRequestHandler):
         if icommand_function:
             return icommand_function()
 
-        # "standard" command.  We start the command, but
+        # It is a "Standard" command.  We start the command, but
         # we won't return the results until later, after the
         # command has finished.
         if not self.headers.has_key('Content-length'):
@@ -188,5 +213,14 @@ class HttpException(Exception):
         self.status_code = status_code
 
 if __name__ == '__main__':
+
+    if len(sys.argv) == 4:
+        AgentHandler.agent_hostname = sys.argv[1]
+        AgentHandler.agent_type = sys.argv[2]
+        AgentHandler.agent_ip = sys.argv[3]
+    elif len(sys.argv) != 1:
+        print "usage: agent hostname {primary|worker|other} ip-address"
+        sys.exit(1)
+
     httpd = Agent()
     httpd.serve_forever()
