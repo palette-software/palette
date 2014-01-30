@@ -9,10 +9,13 @@ import time
 
 from request import *
 from inits import *
+from exc import *
 
 from backup import BackupEntry, BackupManager
 import sqlalchemy
 import meta
+
+version="0.1"
 
 # How long to wait between getting cli status
 CLI_GET_STATUS_INTERVAL=1
@@ -151,8 +154,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             4) Returns body from the status.
         """
         manager.lock()
-        body = self._send_cli(command, target)
-        manager.unlock()
+        try:
+            body = self._send_cli(command, target)
+        except StandardError, e:
+            print "_send_cli failed:", e
+        finally:
+            manager.unlock()
 
         if body.has_key('error'):
             return body
@@ -164,11 +171,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         manager.lock()
         try:
             cleanup_dict = server._send_cleanup("cli", body['xid'])
-        except HttpException, e:
+        except StandardError, e:
+            return self.error("cleanup cli failed with: %s", e)
+        finally:
             manager.unlock()
-            return self.error("cleanup cli failed with status %d", e.status_code)
 
-        manager.unlock()
         return body
 
     def _send_cli(self, cli_command, target=AGENT_TYPE_PRIMARY):
@@ -200,11 +207,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         body_json = res.read()
         print "done reading..."
         #fixme: test bad json, bad status, etc.
-        try:
-            body = json.loads(body_json)
-        except:
-            print "Bad json:", body_json
-            raise HttpException(405)
+        body = json.loads(body_json)
 
         return body
 
@@ -230,7 +233,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         req.rec_status = res.status
 
         if res.status != 200:
-            raise HttpException(res.status)
+            raise HttpException(res.status, res.reason)
 
         # Fixme: throw exception on http error
         print "headers:", res.getheaders()
@@ -423,17 +426,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return_dict['status'] = 'failure'
         return return_dict
 
-class HttpException(Exception):
-    def __init__(self, status_code):
-        self.status_code = status_code
-
 if __name__ == '__main__':
     
     global manager  # fixme: get rid of this global.
 
+    print "Controller version:", version
+
+    print "Starting agent listener"
     manager = AgentManager()
     manager.start()
 
+    print "Starting telnet listener"
     HOST, PORT = 'localhost', 9000
     server = Controller((HOST, PORT), CliHandler)
     server.serve_forever()

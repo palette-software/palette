@@ -1,8 +1,12 @@
 Dependencies:
 =============
-    sudo apt-get install postgresql
-    sudo apt-get install python-sqlalchemy
-    sudo apt-get install python-psycopg2
+    Linux:
+        sudo apt-get install postgresql
+        sudo apt-get install python-sqlalchemy
+        sudo apt-get install python-psycopg2
+    Windows:
+        Install tableau (which includes postgres)
+        Install psycopg
 
 postgres configuration:
 =======================
