@@ -5,8 +5,7 @@ Dependencies:
         sudo apt-get install python-sqlalchemy
         sudo apt-get install python-psycopg2
     Windows:
-        Install tableau (which includes postgres)
-        Install psycopg
+        See DevBox wiki page.
 
 postgres configuration:
 =======================
@@ -17,7 +16,7 @@ postgres configuration:
     Set the password for palette:
         sudo -u postgres psql
         postgres=# \password palette
-        Enter new password: <palpass>
+        Enter new password: palpass
         Enter it again:
         postgres=# \quit
 

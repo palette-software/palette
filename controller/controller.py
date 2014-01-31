@@ -2,10 +2,12 @@
 
 import sys
 import SocketServer as socketserver
+import logging
 
 from agent import AgentManager
 import json
 import time
+import platform
 
 from request import *
 from inits import *
@@ -119,8 +121,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # fixme: move ...
 
         # fixme: move to .ini config file
-        url = "postgresql://palette:palpass@localhost/paldb"
-        echo = False
+        if platform.system() == 'Windows':
+            # Windows with Tableau uses port 8060
+            url = "postgresql://palette:palpass:8060@localhost/paldb"
+        else:
+            url = "postgresql://palette:palpass@localhost/paldb"
 
         self.engine = sqlalchemy.create_engine(url, echo=False)
 
@@ -159,7 +164,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         try:
             body = self._send_cli(command, target)
         except StandardError, e:
-            return self.error("_send_cli failed with: ", str(e))
+            return self.error("_send_cli failed with: " + str(e))
 
         if body.has_key('error'):
             return body
@@ -174,7 +179,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         try:
             cleanup_dict = server._send_cleanup("cli", body['xid'])
         except StandardError, e:
-            return self.error("cleanup cli failed with: %s", e)
+            return self.error("cleanup cli failed with: " +  str(e))
 
         if cleanup_dict.has_key('error'):
             return cleanup_dict
@@ -186,7 +191,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             Returns a body with the results.
             Called without the agent manager lock."""
 
-        print "_send_cli"
+        self.log.debug("_send_cli")
         manager.lock()
         aconn = manager.agent_handle(target)
         if not aconn:
@@ -197,32 +202,35 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         headers = {"Content-Type": "application/json"}
 
-        print 'about to do the cli command, xid', req.xid,'command:', cli_command
+        self.log.debug('about to do the cli command, xid %d, command %s', req.xid, cli_command)
         try:
             aconn.httpconn.request('POST', '/cli', req.send_body, headers)
         except HTTPException, e:
             manager.unlock()
             return self.error("POST /cli failed with: " + str(e))
             
-        print 'sent cli command.'
+        self.log.debug('sent cli command.')
         try:
             res = aconn.httpconn.getresponse()
         except HTTPException, e:
             manager.unlock()
             return self.error("POST /cli getresponse failed with: " + str(e))
 
-        print 'command: cli: ' + str(res.status) + ' ' + str(res.reason)
+        self.log.debug('command: cli: ' + str(res.status) + ' ' + str(res.reason))
 
         if res.status != 200:
             manager.unlock()
             raise HttpException(res.status)
 
 #        print "headers:", res.getheaders()
-        print "reading..."
+        self.log.debug("_send_cli reading...")
         body_json = res.read()
         manager.unlock()
-        print "done reading..."
+        self.log.debug("_send_cli done reading, body_json: " + body_json)
         body = json.loads(body_json)
+        if body == None:
+            return self.error("POST /cli response had a null body")
+        self.log.debug("_send_cli body:" + str(body))
         if not body.has_key('xid'):
             return self.error("POST /cli response was missing the xid", body)
         if req.xid != body['xid']:
@@ -231,7 +239,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not body.has_key('run-status'):
             return self.error("POST /cli response missing 'run-status'", body)
         if body['run-status'] != 'running':
-            return self.error("POST /cli response was not 'running'", body)
+            return self.error("POST /cli response for 'run-status' was not 'running'", body)
 
         return body
 
@@ -242,7 +250,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             Called without the agent manager lock."""
 
-        print "_send_cleanup"
+        self.log.debug("_send_cleanup")
         manager.lock()
         aconn = manager.agent_handle(target)
         if not aconn:
@@ -251,33 +259,35 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         req = Cleanup_Request(xid)
         headers = {"Content-Type": "application/json"}
-        print 'about to send the cleanup command, xid', xid
+        self.log.debug('about to send the cleanup command, xid %d',  xid)
         try:
             aconn.httpconn.request('POST', '/%s' % command, req.send_body, headers)
         except HTTPException, e:
             manager.unlock()
             return self.error("POST /%s failed with: %s" % (command, str(e)))
 
-        print 'sent cleanup command'
+        self.log.debug('sent cleanup command')
         try:
             res = aconn.httpconn.getresponse()
         except HTTPException, e:
             manager.unlock()
             return self.error("POST /%s getresponse failed with: %s" % (command, str(e)))
 
-        print 'command: cleanup: ' + str(res.status) + ' ' + str(res.reason)
+        self.log.debug('command: cleanup: ' + str(res.status) + ' ' + str(res.reason))
 
         if res.status != 200:
             manager.unlock()
             raise HttpException(res.status, res.reason)
 
         # Fixme: throw exception on http error
-        print "headers:", res.getheaders()
-        print "reading..."
+        self.log.debug("headers: " + str(res.getheaders()))
+        self.log.debug("_send_cleanup reading...")
         body_json = res.read()
         manager.unlock()
-        print "done reading..."
+        self.log.debug("done reading...")
         body = json.loads(body_json)
+        if body == None:
+            return self.error("Post /%s getresponse returned a null body" % command)
         return body
 
     def copy_cmd(self, source_hostname, source_path, target_hostname, target_path):
@@ -319,13 +329,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         req = Copy_Start_Request(body)
 
         headers = {"Content-Type": "application/json"}
-        print "sending copy command:", body
+        self.log.debug("sending copy command: " + str(body))
         try:
             target_conn.httpconn.request('POST', '/copy', req.send_body, headers)
         except HTTPException, e:
             return self.error("POST /copy failed with: " + str(e))
 
-        print "sent copy command."
+        self.log.debug("sent copy command.")
 
         try:
             res = target_conn.httpconn.getresponse()
@@ -349,6 +359,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             body = json.loads(body_json)
         except StandardError, e:
             return self.error("Copy request returned bad json: " + str(e))
+
+        if body == None:
+            return self.error("Copy request returned a null body")
 
         if not body.has_key('xid'):
             return self.error("Copy response was missing the xid", body)
@@ -445,7 +458,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         status = False
 
         while True:
-            print "-----about to get status of command", command, "xid", xid
+            self.log.debug("-----about to get status of command %s, xid %d", command, xid)
             aconn = manager.agent_handle(target)
             if not aconn:
                 return self.error("Agent of this type not connected currently: %s" % target)
@@ -454,14 +467,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             uri = "/%s?xid=%d" % (command, xid)
             headers = {"Content-Type": "application/json"}
 
-            print "Sending GET", uri
+            self.log.debug("Sending GET " + uri)
             try:
                 aconn.httpconn.request("GET", uri, None, headers)
             except HTTPException, e:
                 manager.unlock()
                 return self.error("GET %s failed with: " % (uri, str(e)))
 
-            print "Getting response from GET", uri
+            self.log.debug("Getting response from GET " +  uri)
 
             try:
                 res = aconn.httpconn.getresponse()
@@ -469,11 +482,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 manager.unlock()
                 return self.error("GET %s failed with: %s" % (uri, str(e)))
 
-            print "status:", str(res.status) + ' ' + str(res.reason)
+            self.log.debug("status: " + str(res.status) + ' ' + str(res.reason))
             if res.status != 200:
                 manager.unlock()
                 return self.error("GET %s command failed with: %s" % (uri, str(e)))
-            print "reading...."
+            self.log.debug("_get_status reading....")
             try:
                 body_json = res.read()
             except StandardError, e:
@@ -485,8 +498,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             except StandardError, e:
                 manager.unlock()
                 return self.error("Get %s json bad, failed with: %s" % (uri, str(e)))
+            if body == None:
+                return self.error("Get /%s getresponse returned a null body" % uri)
             manager.unlock()
-            print "body = ", body
+            self.log.debug("body = " + str(body))
             if not body.has_key('run-status'):
                 return self.error("GET %S command reply was missing 'run-status'!  Will not retry." % (uri), body)
                 break
@@ -508,16 +523,29 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return return_dict
 
 if __name__ == '__main__':
+    import argparse
+    import logger
     
+    parser = argparse.ArgumentParser(description='Palette Controller')
+    parser.add_argument('--debug', action='store_true', default=True)
+    args = parser.parse_args()
+
+    default_loglevel = logging.DEBUG    # fixme: change default to logging.INFO
+    if args.debug:
+        default_loglevel = logging.DEBUG
+
+    log = logger.config_logging(MAIN_LOGGER_NAME, default_loglevel)
+
+    log.info("Controller version: %s", version)
+
+    log.debug("Starting agent listener.")
+
     global manager  # fixme: get rid of this global.
-
-    print "Controller version:", version
-
-    print "Starting agent listener."
     manager = AgentManager()
+    manager.log = log   # fixme
     manager.start()
 
-    print "Starting telnet listener."
     HOST, PORT = 'localhost', 9000
     server = Controller((HOST, PORT), CliHandler)
+    server.log = log    # fixme
     server.serve_forever()

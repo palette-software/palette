@@ -45,7 +45,7 @@ class AgentManager(threading.Thread):
 
     def register(self, agent, agent_type):
         # fixme: What should we do if two primary agents connect?
-        print "Remembering new agent of type:", agent_type
+        self.log.debug("Remembering new agent of type: "+ agent_type)
         self.agents[agent_type] = agent
 
     # Return the list of all agents
@@ -71,8 +71,8 @@ class AgentManager(threading.Thread):
         self.socket.bind((self.host, self.port))
         self.socket.listen(8)
 
-        # Start socket hmonitor check thread
-        asocketmon = AgentSocketMonitor(self)
+        # Start socket monitor check thread
+        asocketmon = AgentSocketMonitor(self, self.log)
         asocketmon.start()
 
         while True:
@@ -87,14 +87,14 @@ class AgentManager(threading.Thread):
         """called with agentmanager lock"""
         for key in self.agents:
             agent = self.agents[key]
-            print "agent fileno to close:", agent.socket.fileno()
+            self.log.debug("agent fileno to close: %d", agent.socket.fileno())
             if agent.socket.fileno() == fd:
-                print "Agent closed connection for:", key
+                self.log.debug("Agent closed connection for: %s", key)
                 agent.socket.close()
                 del self.agents[key]
                 return
 
-        print "Couldn't find agent with fd:", fd
+        self.log.error("Couldn't find agent with fd: %d", fd)
 
     # thread function: spawned on a new connection from an agent.
     def new_agent_connection(self, conn, addr):
@@ -114,26 +114,26 @@ class AgentManager(threading.Thread):
             res = httpconn.getresponse()
             print >> sys.stderr, 'command: auth: ' + str(res.status) + ' ' + str(res.reason)
             # Get the auth reply.
-            print "reading....",
+            self.log.debug("new_agent_connection reading....")
             body_json = res.read()
             if body_json:
                 body = json.loads(body_json)
-                print "\nbody = ", body
+                self.log.debug("body = " + str(body))
             else:
-                print "done."
+                self.log.debug("done.")
 
             # todo: inspect the reply to see what kind of agent it is
             # and make sure it has all the required values.
             # Fake it for now.
             if not body.has_key("type"):
-                print "missing agent type from agent"
+                self.log.error("missing agent type from agent")
                 conn.close()
                 return
 
             agent_type = body['type']
             if agent_type not in [ AGENT_TYPE_PRIMARY,
                         AGENT_TYPE_WORKER, AGENT_TYPE_OTHER ]:
-                print "Bad agent type sent:", agent_type
+                self.log.error("Bad agent type sent: " + agent_type)
                 conn.close()
                 return
 
@@ -143,15 +143,13 @@ class AgentManager(threading.Thread):
             self.register(agent, agent_type)
 
         except socket.error, e:
-            print "Socket error"
+            self.log.debug("Socket error")
             conn.close()
         except Exception, e:
-            print "Exception:"
+            self.log.error("Exception:")
             traceback.format_exc()
-            print str(e)
-            print traceback.format_exc()
-#            self.log.error(str(e))
-#            self.log.error(traceback.format_exc())
+            self.log.error(str(e))
+            self.log.error(traceback.format_exc())
 
 class ReverseHTTPConnection(HTTPConnection):
     
@@ -168,13 +166,14 @@ class ReverseHTTPConnection(HTTPConnection):
 
 class AgentSocketMonitor(threading.Thread):
 
-    def __init__(self, manager):
+    def __init__(self, manager, log):
         super(AgentSocketMonitor, self).__init__()
         self.manager = manager
+        self.log = log
 
     def run(self):
 
-        print "Starting socket monitor."
+        self.log.debug("Starting socket monitor.")
         return # fixme - change after windows Agent works
 
         while True:
@@ -192,10 +191,10 @@ class AgentSocketMonitor(threading.Thread):
             self.manager.lock()
             agents = self.manager.agents
             for key in agents:
-                print "Socket monitor check for agent type:", key
+                self.log.debug("Socket monitor check for agent type: " + key)
                 input.append(agents[key].socket)
 
-            print "about to poll"
+            self.log.debug("about to poll")
             input_ready, output_ready, except_ready = select.select(input, [], [],0)
             for sock in input_ready:
                 fd = sock.fileno()
