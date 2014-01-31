@@ -49,14 +49,14 @@ class AgentHandler(SimpleHTTPRequestHandler):
 
         if action == 'cleanup':
             return { "xid": in_body_dict["xid"], 
-                     "status": "success" }
+                     "run-status": "running"}
 
         elif action != 'start':
             raise HttpException(405)    #fixme (not 405)
 
         # pretend we started...
         return { "xid": in_body_dict["xid"], 
-                 "status": "success" }
+                     "run-status": "running"}
 
     def command_copy(self, in_body_dict):
         """[Pretend to] do the Copy commnand."""
@@ -71,14 +71,12 @@ class AgentHandler(SimpleHTTPRequestHandler):
         if AgentHandler.get_status_count % 2 == 0:
             # report still running
             outgoing_body_dict = {
-                "status": "success",
                 "run-status": "running",
                 "xid": xid }
 
         else:
             # send finished
             outgoing_body_dict = {
-                "status": "success",
                 "run-status": "finished",
                 "exit-status": 0,
                 "xid": xid,

@@ -27,13 +27,13 @@ class Request(object):
         return "<action: %s, body_dict: %s, xid: %d>" % \
             (self.action, self.send_body, self.xid)
 
-class Start_Cli_Request(Request):
+class Cli_Start_Request(Request):
     def __init__(self, cli_command):
-            super(Start_Cli_Request, self).__init__("start", {"cli": cli_command})
+            super(Cli_Start_Request, self).__init__("start", {"cli": cli_command})
 
-class Start_Copy_Request(Request):
+class Copy_Start_Request(Request):
     def __init__(self, send_body_dict):
-            super(Start_Copy_Request, self).__init__("start", send_body_dict)
+            super(Copy_Start_Request, self).__init__("start", send_body_dict)
 
 class Cleanup_Request(Request):
 

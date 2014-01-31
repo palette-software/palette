@@ -10,6 +10,7 @@ import time
 from request import *
 from inits import *
 from exc import *
+from httplib import HTTPException
 
 from backup import BackupEntry, BackupManager
 import sqlalchemy
@@ -35,6 +36,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         body = server.cli_cmd("tabadmin status -v")
+        print "body = ", body
         self.report_status(body)
 
     def do_backup(self, argv):
@@ -77,24 +79,24 @@ class CliHandler(socketserver.StreamRequestHandler):
     def report_status(self, body):
         """Passed an HTTP body and prints info about it back to the user."""
 
-        if body.has_key("status"):
-            if body['status'] == 'success':
-                print >> self.wfile, 'Success.'
-                if body.has_key('stdout'):
-                    print >> self.wfile, body['stdout']
-                return
-            elif body['status'] == 'failure':
-                print >> self.wfile, 'failure.'
+        if body.has_key('error'):
+            print >> self.wfile, body['error']
+            print >> self.wfile, 'body:', body
+            return
 
-                if body.has_key('error'):
-                    print >> self.wfile, body['error']
-                if body.has_key('stdout'):
-                    print >> self.wfile, 'stdout:', body['stdout']
-                if body.has_key('stderr'):
-                    if len(body['stderr']):
-                        print >> self.wfile, 'stderr:', body['stderr']
-            else:
-                print >> self.wfile, "Error, invalid status.  body returned:", body
+        if body.has_key("run-status"):
+            print >> self.wfile, 'status:', body['run-status']
+
+        if body.has_key("exit-status"):
+            print >> self.wfile, 'exit-status:', body['exit-status']
+
+        if body.has_key('stdout'):
+            print >> self.wfile, body['stdout']
+
+        if body.has_key('stderr'):
+            if len(body['stderr']):
+                print >> self.wfile, 'stderr:', body['stderr']
+
     def handle(self):
         while True:
             data = self.rfile.readline().strip()
@@ -153,92 +155,127 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             3) Sends cleanup.
             4) Returns body from the status.
         """
-        manager.lock()
+
         try:
             body = self._send_cli(command, target)
         except StandardError, e:
-            print "_send_cli failed:", e
-        finally:
-            manager.unlock()
+            return self.error("_send_cli failed with: ", str(e))
 
         if body.has_key('error'):
             return body
 
         body = self._get_status("cli", body['xid'])
-        if not body.has_key("stdout"):
-            return self.error("check status of cli failed", body)  #fixme: more info
+        if body.has_key('error'):
+            return body
 
-        manager.lock()
+        if not body.has_key("stdout"):
+            return self.error("check status of cli failed - missing 'stdout' in reply", body)
+
         try:
             cleanup_dict = server._send_cleanup("cli", body['xid'])
         except StandardError, e:
             return self.error("cleanup cli failed with: %s", e)
-        finally:
-            manager.unlock()
+
+        if cleanup_dict.has_key('error'):
+            return cleanup_dict
 
         return body
 
     def _send_cli(self, cli_command, target=AGENT_TYPE_PRIMARY):
         """Send a "cli" command to an Agent.
-            Returns a body with the results."""
+            Returns a body with the results.
+            Called without the agent manager lock."""
 
         print "_send_cli"
+        manager.lock()
         aconn = manager.agent_handle(target)
         if not aconn:
+            manager.unlock()
             return self.error("Agent of this type not connected currently: %s" % target)
 
-        req = Start_Cli_Request(cli_command)
+        req = Cli_Start_Request(cli_command)
 
         headers = {"Content-Type": "application/json"}
 
         print 'about to do the cli command, xid', req.xid,'command:', cli_command
-        aconn.httpconn.request('POST', '/cli', req.send_body, headers)
-        print 'did it'
-        res = aconn.httpconn.getresponse()
+        try:
+            aconn.httpconn.request('POST', '/cli', req.send_body, headers)
+        except HTTPException, e:
+            manager.unlock()
+            return self.error("POST /cli failed with: " + str(e))
+            
+        print 'sent cli command.'
+        try:
+            res = aconn.httpconn.getresponse()
+        except HTTPException, e:
+            manager.unlock()
+            return self.error("POST /cli getresponse failed with: " + str(e))
+
         print 'command: cli: ' + str(res.status) + ' ' + str(res.reason)
-        # fixme: check the correct xid is returned correct
-        req.rec_status = res.status
 
         if res.status != 200:
+            manager.unlock()
             raise HttpException(res.status)
 
 #        print "headers:", res.getheaders()
         print "reading..."
         body_json = res.read()
+        manager.unlock()
         print "done reading..."
-        #fixme: test bad json, bad status, etc.
         body = json.loads(body_json)
+        if not body.has_key('xid'):
+            return self.error("POST /cli response was missing the xid", body)
+        if req.xid != body['xid']:
+            return self.error("POST /cli xid expected: %d but was %d" % (req.xid, body['xid']), body)
+
+        if not body.has_key('run-status'):
+            return self.error("POST /cli response missing 'run-status'", body)
+        if body['run-status'] != 'running':
+            return self.error("POST /cli response was not 'running'", body)
 
         return body
 
     def _send_cleanup(self, command, xid, target=AGENT_TYPE_PRIMARY):
         """Send a "cleanup" command to an Agent.
             On success, returns the body of the reply.
-            On failure, throws an exception."""
+            On failure, throws an exception.
+
+            Called without the agent manager lock."""
 
         print "_send_cleanup"
+        manager.lock()
         aconn = manager.agent_handle(target)
         if not aconn:
-            print "Agent of this type not connected currently:", target
-            return 0    #fixme
+            manager.unlock()
+            return self.error("Agent of this type not connected currently: " + target)
 
         req = Cleanup_Request(xid)
-        req.xid = xid
         headers = {"Content-Type": "application/json"}
         print 'about to send the cleanup command, xid', xid
-        aconn.httpconn.request('POST', '/%s' % command, req.send_body, headers)
+        try:
+            aconn.httpconn.request('POST', '/%s' % command, req.send_body, headers)
+        except HTTPException, e:
+            manager.unlock()
+            return self.error("POST /%s failed with: %s" % (command, str(e)))
+
         print 'sent cleanup command'
-        res = aconn.httpconn.getresponse()
+        try:
+            res = aconn.httpconn.getresponse()
+        except HTTPException, e:
+            manager.unlock()
+            return self.error("POST /%s getresponse failed with: %s" % (command, str(e)))
+
         print 'command: cleanup: ' + str(res.status) + ' ' + str(res.reason)
-        req.rec_status = res.status
 
         if res.status != 200:
+            manager.unlock()
             raise HttpException(res.status, res.reason)
 
         # Fixme: throw exception on http error
         print "headers:", res.getheaders()
         print "reading..."
         body_json = res.read()
+        manager.unlock()
         print "done reading..."
         body = json.loads(body_json)
         return body
@@ -279,11 +316,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                  "target-path": target_path
                 }
 
-        req = Start_Copy_Request(body)
+        req = Copy_Start_Request(body)
 
         headers = {"Content-Type": "application/json"}
         print "sending copy command:", body
-        target_conn.httpconn.request('POST', '/copy', req.send_body, headers)
+        try:
+            target_conn.httpconn.request('POST', '/copy', req.send_body, headers)
+        except HTTPException, e:
+            return self.error("POST /copy failed with: " + str(e))
+
+        print "sent copy command."
 
         try:
             res = target_conn.httpconn.getresponse()
@@ -292,28 +334,43 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             req.rec_status = e.status_code
 
         if req.rec_status != 200:
+            manager.unlock()
             return self.error("Copy request failed with return status: %d" % res.status)
 
-        # Fixme: throw exception on http error
-        body_json = res.read()
-        body = json.loads(body_json)
+        try:
+            body_json = res.read()
+        except StandardError, e:
+            manager.unlock()
+            return self.error("Copy request read failed: " + str(e))
 
         manager.unlock()
 
-        # fixme: check for xid...
+        try:
+            body = json.loads(body_json)
+        except StandardError, e:
+            return self.error("Copy request returned bad json: " + str(e))
+
+        if not body.has_key('xid'):
+            return self.error("Copy response was missing the xid", body)
+
+        if body['xid'] != req.xid:
+            return self.error("Copy response xid expected: %d but was %d" % (req.xid, body['xid']))
 
         body = server._get_status("copy", body['xid'])
-        if not body.has_key("stdout"):
-            return self.error("check status of copy failed")   #fixme: more info
+        if body.has_key('error'):
+            return body
 
-        manager.lock()
+        if not body.has_key("stdout"):
+            return self.error("get status of copy failed.", body)
+
         try:
-            status = server._send_cleanup("copy", body['xid'])
+            cleanup_body = server._send_cleanup("copy", body['xid'])
         except HttpException, e:
-            manager.unlock()
             return self.error("cleanup cli failed with status %d", e.status_code)
 
-        manager.unlock()
+        if cleanup_body.has_key('error'):
+            return cleanup_body
+
         return body
 
     def restore_cmd(self, arg):
@@ -332,6 +389,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             source_hostname = parts[0]
             source_pathname = parts[1]
+
+            # fixme: lock (though copy_cmd also locks).
 
             # Get the Primary Agent handle
             primary_agent = manager.agent_handle(AGENT_TYPE_PRIMARY)
@@ -358,6 +417,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # The file/path is on the Primary Agent.
         body = self.cli_cmd("tabadmin restore %s" % source_pathname)
+        if body.has_key('error'):
+            return body
+
         # fixme: Do we need to add restore information to database?  
 
         # fixme: check status before cleanup? Or cleanup anyway?
@@ -383,7 +445,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         status = False
 
         while True:
-            print "about to get status of command", command, "xid", xid
+            print "-----about to get status of command", command, "xid", xid
             aconn = manager.agent_handle(target)
             if not aconn:
                 return self.error("Agent of this type not connected currently: %s" % target)
@@ -392,21 +454,41 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             uri = "/%s?xid=%d" % (command, xid)
             headers = {"Content-Type": "application/json"}
 
-            aconn.httpconn.request("GET", uri, None, headers)
+            print "Sending GET", uri
+            try:
+                aconn.httpconn.request("GET", uri, None, headers)
+            except HTTPException, e:
+                manager.unlock()
+                return self.error("GET %s failed with: " % (uri, str(e)))
 
-            res = aconn.httpconn.getresponse()
+            print "Getting response from GET", uri
+
+            try:
+                res = aconn.httpconn.getresponse()
+            except (StandardError, HTTPException) as e:
+                manager.unlock()
+                return self.error("GET %s failed with: %s" % (uri, str(e)))
+
             print "status:", str(res.status) + ' ' + str(res.reason)
             if res.status != 200:
                 manager.unlock()
-                return self.error("Command failed!")
-
+                return self.error("GET %s command failed with: %s" % (uri, str(e)))
             print "reading...."
-            body_json = res.read()
-            body = json.loads(body_json)
+            try:
+                body_json = res.read()
+            except StandardError, e:
+                manager.unlock()
+                return self.error("Get %s read body failed with: %s" % (uri, str(e)))
+
+            try:
+                body = json.loads(body_json)
+            except StandardError, e:
+                manager.unlock()
+                return self.error("Get %s json bad, failed with: %s" % (uri, str(e)))
             manager.unlock()
             print "body = ", body
             if not body.has_key('run-status'):
-                print "Reply was missing 'run-status'!  Will not retry."
+                return self.error("GET %S command reply was missing 'run-status'!  Will not retry." % (uri), body)
                 break
 
             if body['run-status'] == 'finished':
@@ -415,7 +497,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 time.sleep(CLI_GET_STATUS_INTERVAL)
                 continue
             else:
-                return self.error("Unknown run-status: %s.  Will not retry." % body['run-status'])
+                return self.error("Unknown run-status: %s.  Will not retry." % body['run-status'], body)
 
     def error(self, msg, return_dict={}):
         """Returns error dictionary in standard format.  If passed
@@ -423,7 +505,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
            is created."""
 
         return_dict['error'] = msg
-        return_dict['status'] = 'failure'
         return return_dict
 
 if __name__ == '__main__':
@@ -432,11 +513,11 @@ if __name__ == '__main__':
 
     print "Controller version:", version
 
-    print "Starting agent listener"
+    print "Starting agent listener."
     manager = AgentManager()
     manager.start()
 
-    print "Starting telnet listener"
+    print "Starting telnet listener."
     HOST, PORT = 'localhost', 9000
     server = Controller((HOST, PORT), CliHandler)
     server.serve_forever()
