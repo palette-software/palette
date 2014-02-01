@@ -120,6 +120,7 @@ class AgentManager(threading.Thread):
                 body = json.loads(body_json)
                 self.log.debug("body = " + str(body))
             else:
+                body = {}
                 self.log.debug("done.")
 
             # todo: inspect the reply to see what kind of agent it is
