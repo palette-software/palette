@@ -124,6 +124,7 @@ class AgentManager(threading.Thread):
                 body = json.loads(body_json)
                 self.log.debug("body = " + str(body))
             else:
+                body = {}
                 self.log.debug("done.")
 
             # Inspect the reply to make sure it has all the required values.

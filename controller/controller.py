@@ -240,7 +240,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if not body.has_key('run-status'):
             return self.error("POST /cli response missing 'run-status'", body)
-        if body['run-status'] != 'running':
+        if body['run-status'] != 'running' and body['run-status'] != 'finished':
+            # FIXME: could possibly be finished.
             return self.error("POST /cli response for 'run-status' was not 'running'", body)
 
         return body
