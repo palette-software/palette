@@ -19,7 +19,7 @@ class AgentHandler(SimpleHTTPRequestHandler):
 
     agent_hostname = "one"
     agent_type = AGENT_TYPE_PRIMARY
-    agent_ip = "1.2.3.4"
+    agent_ip = "192.168.1.2"
 
     get_status_count = 0
 
@@ -58,8 +58,8 @@ class AgentHandler(SimpleHTTPRequestHandler):
         return { "xid": in_body_dict["xid"], 
                      "run-status": "running"}
 
-    def command_copy(self, in_body_dict):
-        """[Pretend to] do the Copy commnand."""
+    def command_get(self, in_body_dict):
+        """[Pretend to] do the 'get' command."""
         return self.command_cli(in_body_dict)  # Pretends the same as cli commnand
 
     def get_status(self, xid):
@@ -105,7 +105,7 @@ class AgentHandler(SimpleHTTPRequestHandler):
             # Example: "GET /cli?xid=123"
             parts = urlparse.urlparse(self.path)
 
-            if not parts.path in ["/cli", "/copy", "sql", "/no-op"]:
+            if not parts.path in ["/cli", "/get", "sql", "/no-op"]:
 
                 print "Unknown GET command:", parts.path
                 raise HttpException(404)

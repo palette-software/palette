@@ -50,7 +50,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def do_restore(self, argv):
         """Restore.  If the file/path we are restoring from is on a different
-        machine than the Primary Agent, then copy the file/path to the
+        machine than the Primary Agent, then get the file/path to the
         Primary Agent first."""
 
         if len(argv) != 1:
@@ -60,13 +60,13 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = server.restore_cmd(argv[0])
         self.report_status(body)
 
-    def do_copy(self, argv):
-        """copy a file from the source to the target."""
-        if len(argv) != 4:
-            print >> self.wfile, '[ERROR] Usage: copy source-hostname source-path target-hostname target-path'
+    def do_get(self, argv):
+        """GET a file from one agent to another."""
+        if len(argv) != 2:
+            print >> self.wfile, '[ERROR] Usage: GET source-agent-name/filename dest-agent-hostname'
             return
 
-        body = server.copy_cmd(argv[0], argv[1], argv[2], argv[3])
+        body = server.get_cmd(argv[0], argv[1])
         self.report_status(body)
 
     def do_cli(self, argv):
@@ -293,94 +293,106 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("Post /%s getresponse returned a null body" % command)
         return body
 
-    def copy_cmd(self, source_hostname, source_path, target_hostname, target_path):
-        """Sends a copy command and checks the status.
+    def get_cmd(self, source_url, dest_hostname):
+        """Send a get command and checks the status.
             Returns the body dictionary from the status."""
+
+        if not source_url.find('/'):
+            return self.error('[ERROR] Missing '/' in source url:' % source_url)
+
+        parts = source_url.split('/',1)
+
+        source_hostname = parts[0]
+        source_path = parts[1]
 
         manager.lock()
 
         agents = manager.all_agents()
         source_ip = None
-        target_conn = None
+        dest_conn = None
 
         for key in agents:
             if agents[key].auth['hostname'] == source_hostname:
                 source_ip = agents[key].auth['ip-address']
-            if agents[key].auth['hostname'] == target_hostname:
-                target_conn = agents[key]
+            if agents[key].auth['hostname'] == dest_hostname:
+                dest_conn = agents[key]
 
         msg = ""
-        # fixme: make sure the source isn't the same as the target
+        # fixme: make sure the source isn't the same as the dest
         if not source_ip:
             msg = "Unknown source-hostname: %s.  " % source_hostname 
-        if not target_conn:
-            msg += "Unknown target-hostname: %s." % target_hostname
+        if not dest_conn:
+            msg += "Unknown dest-hostname: %s." % dest_hostname
 
-        if not source_ip or not target_conn:
+        if not source_ip or not dest_conn:
             manager.unlock()
             return self.error(msg)
 
-        # Tell:
-        #   1) V1: The source that the target will be requesting a file.
-        #   2) The target to get the source path
-        body = { "source": source_ip,
-                 "source-filename": source_path,
-                 "target": target_conn.auth["ip-address"],
-                 "target-path": target_path
-                }
+        src_url = "http://%s:%d/%s" % (source_ip, dest_conn.auth['listen-port'], source_path)
+        GET_DIR="c:/Palette/Data/"
+        dest_url = GET_DIR + source_path
 
-        req = Copy_Start_Request(body)
+        # Tell:
+        #   1) V1: The source that the dest will be requesting a file.
+        #   2) The garget to get the source path
+        body = { 
+            'src': src_url,
+            'dest': dest_url
+                }
+        print "body: ", body
+
+        req = Get_Start_Request(body)
 
         headers = {"Content-Type": "application/json"}
-        self.log.debug("sending copy command: " + str(body))
+        self.log.debug("sending GET command: " + str(body))
         try:
-            target_conn.httpconn.request('POST', '/copy', req.send_body, headers)
+            dest_conn.httpconn.request('POST', '/get', req.send_body, headers)
         except HTTPException, e:
-            return self.error("POST /copy failed with: " + str(e))
+            return self.error("POST /get failed with: " + str(e))
 
-        self.log.debug("sent copy command.")
+        self.log.debug("sent get command.")
 
         try:
-            res = target_conn.httpconn.getresponse()
+            res = dest_conn.httpconn.getresponse()
             req.rec_status = res.status
         except HttpException, e:
             req.rec_status = e.status_code
 
         if req.rec_status != 200:
             manager.unlock()
-            return self.error("Copy request failed with return status: %d" % res.status)
+            return self.error("Get request failed with return status: %d" % res.status)
 
         try:
             body_json = res.read()
         except StandardError, e:
             manager.unlock()
-            return self.error("Copy request read failed: " + str(e))
+            return self.error("Get request read failed: " + str(e))
 
         manager.unlock()
 
         try:
             body = json.loads(body_json)
         except StandardError, e:
-            return self.error("Copy request returned bad json: " + str(e))
+            return self.error("Get request returned bad json: " + str(e))
 
         if body == None:
-            return self.error("Copy request returned a null body")
+            return self.error("Get request returned a null body")
 
         if not body.has_key('xid'):
-            return self.error("Copy response was missing the xid", body)
+            return self.error("Get response was missing the xid", body)
 
         if body['xid'] != req.xid:
-            return self.error("Copy response xid expected: %d but was %d" % (req.xid, body['xid']))
+            return self.error("Get response xid expected: %d but was %d" % (req.xid, body['xid']))
 
-        body = server._get_status("copy", body['xid'])
+        body = server._get_status("get", body['xid'])
         if body.has_key('error'):
             return body
 
         if not body.has_key("stdout"):
-            return self.error("get status of copy failed.", body)
+            return self.error("get status of get command failed.", body)
 
         try:
-            cleanup_body = server._send_cleanup("copy", body['xid'])
+            cleanup_body = server._send_cleanup("get", body['xid'])
         except HttpException, e:
             return self.error("cleanup cli failed with status %d", e.status_code)
 
@@ -393,7 +405,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """Do a tabadmin restore of the passed arg, except
            the arg is in the format:
                 source-hostname:pathname
-            If the pathname is not on the Primary Agent, then copy
+            If the pathname is not on the Primary Agent, then get
             it to the Primary Agent before doing the tabadmin restore
             Returns a body with the results/status."""
            
@@ -406,7 +418,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             source_hostname = parts[0]
             source_pathname = parts[1]
 
-            # fixme: lock (though copy_cmd also locks).
+            # fixme: lock (though get_cmd also locks).
 
             # Get the Primary Agent handle
             primary_agent = manager.agent_handle(AGENT_TYPE_PRIMARY)
@@ -417,13 +429,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # Check if the source_pathname is on the Primary Agent.
             if source_hostname != primary_agent.auth['hostname']:
                 # The source_pathname isn't on the Primary agent:
-                # We need to copy the file to the Primary.
+                # We need to get the file to the Primary.
 
                 # fixme: change target path to something we set on the primary
                 # like a tmp filename.
                 target_pathname = source_pathname
 
-                body = server.copy_cmd(source_hostname, source_pathname, \
+                body = server.get_cmd(source_hostname, source_pathname, \
                     primary_agent.auth['hostname'], target_pathname)
 
                 if body.has_key("error"):

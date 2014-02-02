@@ -21,6 +21,7 @@ class AgentConnection(object):
         self.httpconn = False
         self.auth = {}
         self.uuid = None
+        self.ip = None
 
     def set_httpconn(self, httpconn):
         self.httpconn = httpconn
@@ -30,6 +31,12 @@ class AgentConnection(object):
 
     def set_uuid(self, uuid):
         self.uuid = uuid
+
+    def set_ip(self, ip):
+        self.ip = ip
+
+    def set_listen_port(self, listen_port):
+        self.listen_port = listen_port
 
 class AgentManager(threading.Thread):
 
@@ -145,6 +152,8 @@ class AgentManager(threading.Thread):
             agent.set_httpconn(httpconn)
             agent.set_auth(body)
             agent.set_uuid(body['uuid'])
+            agent.set_ip(body['ip-address'])
+            agent.set_listen_port(body['listen-port'])
 
             self.register(agent, agent_type)
 
@@ -161,7 +170,7 @@ class ReverseHTTPConnection(HTTPConnection):
     
     def __init__(self, sock):
         HTTPConnection.__init__(self, 'agent')
-        HTTPConnection.debuglevel = 1
+#        HTTPConnection.debuglevel = 1
         self.sock = sock
     
     def connect(self):

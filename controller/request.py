@@ -31,9 +31,9 @@ class Cli_Start_Request(Request):
     def __init__(self, cli_command):
             super(Cli_Start_Request, self).__init__("start", {"cli": cli_command})
 
-class Copy_Start_Request(Request):
+class Get_Start_Request(Request):
     def __init__(self, send_body_dict):
-            super(Copy_Start_Request, self).__init__("start", send_body_dict)
+            super(Get_Start_Request, self).__init__("start", send_body_dict)
 
 class Cleanup_Request(Request):
 
