@@ -20,12 +20,16 @@ class AgentConnection(object):
         self.addr = addr
         self.httpconn = False
         self.auth = {}
+        self.uuid = None
 
     def set_httpconn(self, httpconn):
         self.httpconn = httpconn
 
     def set_auth(self, auth):
         self.auth = auth
+
+    def set_uuid(self, uuid):
+        self.uuid = uuid
 
 class AgentManager(threading.Thread):
 
@@ -122,13 +126,13 @@ class AgentManager(threading.Thread):
             else:
                 self.log.debug("done.")
 
-            # todo: inspect the reply to see what kind of agent it is
-            # and make sure it has all the required values.
-            # Fake it for now.
-            if not body.has_key("type"):
-                self.log.error("missing agent type from agent")
-                conn.close()
-                return
+            # Inspect the reply to make sure it has all the required values.
+            required = ['hostname', 'type', 'ip-address', 'listen-port', 'uuid']
+            for item in required:
+                if not body.has_key(item):
+                    self.log.error("Missing '%s' from agent" % item)
+                    conn.close()
+                    return
 
             agent_type = body['type']
             if agent_type not in [ AGENT_TYPE_PRIMARY,
@@ -139,6 +143,7 @@ class AgentManager(threading.Thread):
 
             agent.set_httpconn(httpconn)
             agent.set_auth(body)
+            agent.set_uuid(body['uuid'])
 
             self.register(agent, agent_type)
 

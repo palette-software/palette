@@ -34,7 +34,7 @@ class AgentHandler(SimpleHTTPRequestHandler):
                 "type": AgentHandler.agent_type,
                 "ip-address": AgentHandler.agent_ip,
                 "listen-port": 12345,
-                "uuid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                "uuid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1",
             }
 
         return body_dict

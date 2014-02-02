@@ -1,24 +1,23 @@
-Dependencies:
-=============
-    Linux:
-        sudo apt-get install postgresql
-        sudo apt-get install python-sqlalchemy
-        sudo apt-get install python-psycopg2
+Linux:
+    Dependencies:
+    =============
+        sudo apt-get install postgresql python-sqlalchemy python-psycopg2
+
+    postgres configuration
+    =======================
+        sudo -u postgres createuser --superuser $USER
+        sudo -u postgres createuser --superuser palette
+        sudo -u postgres createdb paldb
+
+        Set the password for palette:
+            sudo -u postgres psql
+            postgres=# \password palette
+            Enter new password: palpass
+            Enter it again:
+            postgres=# \quit
+
     Windows:
         See DevBox wiki page.
-
-postgres configuration:
-=======================
-    sudo -u postgres createuser --superuser $USER
-    sudo -u postgres createuser --superuser palette
-    sudo -u postgres createdb paldb
-
-    Set the password for palette:
-        sudo -u postgres psql
-        postgres=# \password palette
-        Enter new password: palpass
-        Enter it again:
-        postgres=# \quit
 
 To test:
 ========

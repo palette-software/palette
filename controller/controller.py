@@ -170,7 +170,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return body
 
         body = self._get_status("cli", body['xid'])
+
         if body.has_key('error'):
+            print "returning------------, body:", body
             return body
 
         if not body.has_key("stdout"):
@@ -409,7 +411,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             primary_agent = manager.agent_handle(AGENT_TYPE_PRIMARY)
 
             if not primary_agent:
-                return self.error("[ERROR] Not Primary Agent not connected.")
+                return self.error("[ERROR] No Primary Agent not connected.")
 
             # Check if the source_pathname is on the Primary Agent.
             if source_hostname != primary_agent.auth['hostname']:
@@ -429,9 +431,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             source_pathname = arg
 
         # The file/path is on the Primary Agent.
-        body = self.cli_cmd("tabadmin restore %s" % source_pathname)
-        if body.has_key('error'):
-            return body
+        try:
+            body = self.cli_cmd("tabadmin restore %s" % source_pathname)
+            if body.has_key('error'):
+                return body
+        except HTTPException, e:
+            print "Removing primary agent connection."
+            del agents[AGENT_TYPE_PRIMARY]  # bad agent
+            return self.error("HTTP Exception: " + str(e))
 
         # fixme: Do we need to add restore information to database?  
 
@@ -457,6 +464,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             
         status = False
 
+        # debug for testing agent disconnects
+#        print "sleeping"
+#        time.sleep(5)
+#        print "awake"
+
+        uri = "/%s?xid=%d" % (command, xid)
+        headers = {"Content-Type": "application/json"}
+
         while True:
             self.log.debug("-----about to get status of command %s, xid %d", command, xid)
             aconn = manager.agent_handle(target)
@@ -464,55 +479,51 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 return self.error("Agent of this type not connected currently: %s" % target)
 
             manager.lock()
-            uri = "/%s?xid=%d" % (command, xid)
-            headers = {"Content-Type": "application/json"}
 
             self.log.debug("Sending GET " + uri)
+
             try:
                 aconn.httpconn.request("GET", uri, None, headers)
-            except HTTPException, e:
-                manager.unlock()
-                return self.error("GET %s failed with: " % (uri, str(e)))
 
-            self.log.debug("Getting response from GET " +  uri)
-
-            try:
+                self.log.debug("Getting response from GET " +  uri)
                 res = aconn.httpconn.getresponse()
-            except (StandardError, HTTPException) as e:
-                manager.unlock()
-                return self.error("GET %s failed with: %s" % (uri, str(e)))
-
-            self.log.debug("status: " + str(res.status) + ' ' + str(res.reason))
-            if res.status != 200:
-                manager.unlock()
-                return self.error("GET %s command failed with: %s" % (uri, str(e)))
-            self.log.debug("_get_status reading....")
-            try:
+                self.log.debug("status: " + str(res.status) + ' ' + str(res.reason))
+                if res.status != 200:
+                    del agents[target]  # bad agent
+                    manager.unlock()
+                    return self.error("GET %s command failed with: %s" % (uri, str(e)))
+                self.log.debug("_get_status reading....")
                 body_json = res.read()
-            except StandardError, e:
                 manager.unlock()
-                return self.error("Get %s read body failed with: %s" % (uri, str(e)))
 
-            try:
                 body = json.loads(body_json)
-            except StandardError, e:
-                manager.unlock()
-                return self.error("Get %s json bad, failed with: %s" % (uri, str(e)))
-            if body == None:
-                return self.error("Get /%s getresponse returned a null body" % uri)
-            manager.unlock()
-            self.log.debug("body = " + str(body))
-            if not body.has_key('run-status'):
-                return self.error("GET %S command reply was missing 'run-status'!  Will not retry." % (uri), body)
-                break
+                if body == None:
+                    return self.error("Get /%s getresponse returned a null body" % uri)
 
-            if body['run-status'] == 'finished':
-                return body
-            elif body['run-status'] == 'running':
-                time.sleep(CLI_GET_STATUS_INTERVAL)
-                continue
-            else:
-                return self.error("Unknown run-status: %s.  Will not retry." % body['run-status'], body)
+
+                self.log.debug("body = " + str(body))
+                if not body.has_key('run-status'):
+                    del agents[target]
+                    return self.error("GET %S command reply was missing 'run-status'!  Will not retry." % (uri), body)
+    
+                if body['run-status'] == 'finished':
+                    return body
+                elif body['run-status'] == 'running':
+                    time.sleep(CLI_GET_STATUS_INTERVAL)
+                    continue
+                else:
+                    del agents[target]  # bad agent
+                    return self.error("Unknown run-status: %s.  Will not retry." % body['run-status'], body)
+            except HTTPException, e:
+                    del agents[target]
+                    manager.unlock()
+                    print "  - - - - well here - - - -"
+                    return self.error("GET %s failed with HTTPException: %s" % (uri, str(e)))
+            except StandardError, e:
+                    print "////////yes here///////////"
+                    del agents[target]
+                    return self.error("GET %s failed with: %s" % (uri, str(e)))
+    
 
     def error(self, msg, return_dict={}):
         """Returns error dictionary in standard format.  If passed
