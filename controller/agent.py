@@ -6,6 +6,12 @@ from SocketServer import TCPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 import urlparse
 
+# Override SimpleHTTPRequestHandler from calling socket.getfqdn
+def _bare_address_string(self):
+    host, port = self.client_address[:2]
+    return '%s' % host
+SimpleHTTPRequestHandler.address_string = _bare_address_string
+
 from agentmanager import AgentManager
 from inits import *
 
