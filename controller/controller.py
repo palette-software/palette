@@ -78,6 +78,22 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = server.cli_cmd(cli_command)
         self.report_status(body)
 
+    def do_start(self, argv):
+        if len(argv) != 0:
+            print >> self.wfile, '[ERROR] usage: start'
+            return
+        
+        body = server.start_cmd()
+        self.report_status(body)
+
+    def do_stop(self, argv):
+        if len(argv) != 0:
+            print >> self.wfile, '[ERROR] usage: stop'
+            return
+
+        body = server.stop_cmd()
+        self.report_status(body)
+
     def report_status(self, body):
         """Passed an HTTP body and prints info about it back to the user."""
 
@@ -154,6 +170,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return body
 
+    def start_cmd(self):
+        return self.cli_cmd('tabadmin start')
+
+    def stop_cmd(self):
+        return self.cli_cmd('tabadmin stop')
+
     def cli_cmd(self, command, target=AGENT_TYPE_PRIMARY):
         """ 1) Sends the command (a string)
             2) Waits for status/completion.  Saves the body from the status.
@@ -204,7 +226,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         headers = {"Content-Type": "application/json"}
 
-        self.log.debug('about to do the cli command, xid %d, command %s', req.xid, cli_command)
+        self.log.debug('about to do the cli command, xid: %d, command: %s', req.xid, cli_command)
         try:
             aconn.httpconn.request('POST', '/cli', req.send_body, headers)
         except HTTPException, e:
