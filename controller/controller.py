@@ -22,9 +22,6 @@ from status import StatusMonitor
 
 version="0.1"
 
-# How long to wait between getting cli status
-CLI_GET_STATUS_INTERVAL=1
-
 global manager # todo
 
 class CliHandler(socketserver.StreamRequestHandler):
