@@ -11,8 +11,11 @@
   <div id="green" class="green-light" style="display:none"></div>
   <div id="orange" class="orange-light" style="display:none"></div>
   <div id="red" class="red-light" style="display:none"></div>
-  <p id="status" class="large"></p>
-  <p class="tile-advanced"><span class="arrow-down"></span> Advanced</p>
+  <p id="status-message" class="large"></p>
+  <p class="tile-advanced">
+    <span class="arrow-down"></span>
+    <a id="advanced-status" href="#"> Advanced</a>
+  </p>
 </div>
 <div class="tile">
   <h2>Backup</h2>
@@ -44,3 +47,4 @@ require({
   ]
 }, [ "palette/monitor", "palette/backup" ]);
 </script>
+

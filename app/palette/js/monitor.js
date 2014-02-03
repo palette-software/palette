@@ -1,7 +1,9 @@
-define (["dojo/dom", "dojo/dom-style", "dojo/request", "dojo/domReady"],
-function(dom, domStyle, request)
+define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request",
+         "dojox/widget/DialogSimple",
+         "dojo/domReady"],
+        function(dom, domStyle, on, request, DialogSimple)
 {
-    var status = dom.byId("status");
+    var status = dom.byId("status-message");
     var green = dom.byId("green");
     var orange = dom.byId("green");
     var red = dom.byId("green");
@@ -41,6 +43,14 @@ function(dom, domStyle, request)
     var timer = setInterval(function() {
         update();
     }, 10000);
+
+    var dialog = DialogSimple({href: "/dialog/status"});
+    dialog.startup();
+
+    var advancedLink = dom.byId("advanced-status");
+    on(advancedLink, "click", function() {
+        dialog.show();        
+    });
 
     return {}
 });

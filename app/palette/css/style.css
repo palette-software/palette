@@ -39,6 +39,10 @@ h3 {
 	top: 10px;
 	right: 10px;
 }
+.tile-advanced a {
+	color: black;
+	text-decoration: none;
+}
 .arrow-down {
 	position: relative;
 	top: 1em;
@@ -92,3 +96,21 @@ h3 {
 	border-color: #e0e0e0;
 }
 */
+
+/* TESTING */
+.dijitDialog {
+     background: white;
+     padding: 2em;
+}
+
+.dijitDialogCloseIcon {
+    float: right;
+    outline-style: none;
+}
+
+.dijitDialogUnderlay {
+    position: fixed;
+    left: 0;
+    top: 0;
+    background-color: rgba(0,0,0,0.5);
+}
