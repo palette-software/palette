@@ -31,8 +31,8 @@ class StatusMonitor(threading.Thread):
     def __init__(self, server):
         super(StatusMonitor, self).__init__()
         self.server = server
-#        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.INFO)
-        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.DEBUG)
+        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.INFO)
+#        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.DEBUG)
 
         # fixme: move to .ini config file
         if platform.system() == 'Windows':
@@ -67,10 +67,8 @@ class StatusMonitor(threading.Thread):
         self.session.add(entry)
 
     def run(self):
-        time.sleep(DEFAULT_STATUS_SLEEP_INTERVAL)
         while True:
-            # Sleep first to give time for agents to connect.
-#            time.sleep(DEFAULT_STATUS_SLEEP_INTERVAL)
+            time.sleep(DEFAULT_STATUS_SLEEP_INTERVAL)
             self.check_status()
 
     def check_status(self):
