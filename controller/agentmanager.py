@@ -5,7 +5,6 @@ import threading
 import time
 import traceback
 from httplib import HTTPConnection
-import threading
 import json
 
 from inits import *

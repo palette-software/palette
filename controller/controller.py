@@ -18,6 +18,8 @@ from backup import BackupEntry, BackupManager
 import sqlalchemy
 import meta
 
+from status import StatusMonitor
+
 version="0.1"
 
 # How long to wait between getting cli status
@@ -175,6 +177,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def stop_cmd(self):
         return self.cli_cmd('tabadmin stop')
+
+    def status_cmd(self):
+        return self.cli_cmd('tabadmin status -v')
 
     def cli_cmd(self, command, target=AGENT_TYPE_PRIMARY):
         """ 1) Sends the command (a string)
@@ -591,7 +596,13 @@ if __name__ == '__main__':
     manager.log = log   # fixme
     manager.start()
 
+
     HOST, PORT = 'localhost', 9000
     server = Controller((HOST, PORT), CliHandler)
+
+    log.debug("Starting status monitor.")
+    statusmon = StatusMonitor(server)
+    statusmon.start()
+
     server.log = log    # fixme
     server.serve_forever()
