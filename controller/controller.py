@@ -24,7 +24,8 @@ from status import StatusMonitor
 
 version="0.1"
 
-global manager # todo
+global manager # fixme
+global server # fixme
 
 class CliHandler(socketserver.StreamRequestHandler):
 
@@ -595,6 +596,7 @@ def main():
     import argparse
     import logger
     
+    global server
     parser = argparse.ArgumentParser(description='Palette Controller')
     parser.add_argument('--debug', action='store_true', default=True)
     args = parser.parse_args()
