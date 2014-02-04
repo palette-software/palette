@@ -12,7 +12,6 @@ db_engine = sqlalchemy.create_engine(db_url, echo=False)
 meta.Base.metadata.create_all(bind=db_engine)
 #
 Session = sessionmaker(bind=db_engine)
-db_session = Session()
 
 import monitor
 import backup

@@ -6,7 +6,7 @@ import sys
 
 from akiri.framework.api import RESTApplication, DialogPage
 
-from . import db_session
+from . import Session
 
 __all__ = ["MonitorApplication"]
 
@@ -38,6 +38,7 @@ class StatusDialog(DialogPage):
     def __init__(self, global_conf):
         super(StatusDialog, self).__init__(global_conf)
 
+        db_session = Session()
         self.status_entries = db_session.query(StatusEntry).all()
 
         # Dig out the main status and time
