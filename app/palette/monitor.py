@@ -26,15 +26,12 @@ class StatusEntry(meta.Base):
     creation_time = Column(DateTime, default=func.now())
 
     def __init__(self, name, pid, status):
-        print 'we are here'
         self.name = name
         self.pid = pid
         self.status = status
 
 class StatusDialog(DialogPage):
 
-    NAME = "status"
-    FOO = "foo stuff"
     TEMPLATE = "status.mako"
 
     def __init__(self, global_conf):
