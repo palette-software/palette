@@ -136,13 +136,42 @@ a.button {
 }
 
 .dijitDialogCloseIcon {
-    float: right;
-    outline-style: none;
+     float: right;
+     outline-style: none;
 }
 
 .dijitDialogUnderlay {
-    position: fixed;
-    left: 0;
-    top: 0;
-    background-color: rgba(0,0,0,0.5);
+     position: fixed;
+     left: 0;
+     top: 0;
+     background-color: rgba(0,0,0,0.5);
+}
+
+/* DIALOG */
+#status table {
+     border: 0;
+}
+
+#status td {
+     padding: 0 5px 0 5px;
+}
+
+#status .running {
+     font-weight: bold;
+     color: green;
+}
+
+#status .orange {
+     font-weight: bold;
+     color: orange;
+}
+
+#status .stopped {
+     font-weight: bold;
+     color: red;
+}
+
+#status p {
+     padding: 2em 0 2em 0;
+     text-align: center;
 }

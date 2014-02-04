@@ -1,16 +1,18 @@
 <%inherit file="dialog.mako" />
+
+<p>
 Status:
 %if obj.main_status == 'RUNNING':
-    <font color='green'>
+    <span class="running">
 %else:
-    <font color='red'>
+    <span class="stopped">
 %endif
 ${obj.main_status}
-</font>
-at ${obj.status_time}</br>
-<br></br>
+</span>
+at ${obj.status_time}
+</p>
 
-<table border='1'>
+<table>
  <tr>
     <th>Component</th> <th>PID</th> <th>Status</th></tr>
 %for entry in obj.status_entries:
