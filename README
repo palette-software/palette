@@ -1,1 +1,12 @@
 See controller/README for running the controller and simulated agent.
+
+To install the package:
+    dpkg --install <packagename>.deb
+
+After you get the dependency errors, type:
+    apt-get -f install
+
+To start the controller:
+    /usr/sbin/controller
+
+Logging currently goes to stdout/stderr.

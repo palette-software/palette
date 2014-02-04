@@ -32,6 +32,7 @@ class StatusMonitor(threading.Thread):
         super(StatusMonitor, self).__init__()
         self.server = server
         self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.INFO)
+#        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.DEBUG)
 
         # fixme: move to .ini config file
         if platform.system() == 'Windows':
@@ -45,13 +46,7 @@ class StatusMonitor(threading.Thread):
         meta.Base.metadata.create_all(bind=self.engine)
         
         self.Session = sessionmaker(bind=self.engine)
-
-    def start_session(self):
         self.session = self.Session()
-
-    def commit_session(self):
-        self.session.commit()
-        self.session.close()
 
     # Remove all entries to get ready for new status info.
     def remove_all_status(self):
@@ -59,43 +54,20 @@ class StatusMonitor(threading.Thread):
             delete()
 
     def get_all_status(self):
-        session = self.Session()
         status_entries = self.session.query(StatusEntry).all()
-        session.close()
         return status_entries
 
     def get_main_status(self):
-        session = self.Session()
         main_status = self.session.query(StatusEntry).\
             filter(StatusEntry.name == 'Status').one()
-        session.close()
         return main_status
 
-    # Uses the session from self.start_session()
     def add(self, name, pid, status):
         entry = StatusEntry(name, pid, status)
         self.session.add(entry)
 
-    # The rest not used for now
-    def remove(self, name):
-        session = self.Session()
-        session.query(StatusEntry).\
-            filter(StatusEntry.name == name).delete()
-        session.commit()
-        session.close()
-
-    def query_by_name(self, name):
-        session = self.Session()
-        entry = session.query(StatusEntry).\
-            filter(StatusEntry.name == name).first()
-        if entry:
-            name = entry.name
-        session.close()
-        return name
-
     def run(self):
         while True:
-            # Sleep first to give time for agents to connect.
             time.sleep(DEFAULT_STATUS_SLEEP_INTERVAL)
             self.check_status()
 
@@ -103,7 +75,7 @@ class StatusMonitor(threading.Thread):
 
         body = self.server.status_cmd()
         if not body.has_key('stdout'):
-            self.log.error("No output received for status monitor")
+            self.log.error("No output received for status monitor. body:" + str(body))
             return
 
         # Various bodies to use for testing.
@@ -159,7 +131,6 @@ class StatusMonitor(threading.Thread):
 
         # Store the second part (like "RUNNING") into the database
 
-        self.start_session()
         self.remove_all_status()
 
         self.add("Status", 0, line1[1])
@@ -198,7 +169,7 @@ class StatusMonitor(threading.Thread):
             self.add(name, pid, status)
             self.log.debug("logged: %s, %d, %s", name, pid, status)
 
-        self.commit_session()
+        self.session.commit()
 
         # debug - try to get it back
         self.log.debug("--------current status---------------")

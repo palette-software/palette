@@ -1,0 +1,7 @@
+#!/usr/bin/python
+
+import sys
+import controller
+
+# FIXME: we should use entry_points.txt to generate this script.
+sys.exit(controller.main())

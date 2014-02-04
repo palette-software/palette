@@ -6,12 +6,6 @@ from SocketServer import TCPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 import urlparse
 
-# Override SimpleHTTPRequestHandler from calling socket.getfqdn
-def _bare_address_string(self):
-    host, port = self.client_address[:2]
-    return '%s' % host
-SimpleHTTPRequestHandler.address_string = _bare_address_string
-
 from agentmanager import AgentManager
 from inits import *
 
@@ -28,6 +22,23 @@ class AgentHandler(SimpleHTTPRequestHandler):
     agent_ip = "192.168.1.2"
 
     get_status_count = 0
+
+    # Override BaseHTTPRequestHandler call to socket.getfqdn
+    # AgentHandler inherits from SimpleHTTPRequestHandler, which
+    # inherits from BaseHTTPRequestHandler which calls socket.getfqdn
+    # when it composes a response. There is a bug that can cause a
+    # delay (we saw 10 second delays) when socket.getfqdn tries to
+    # get a FQDN for localhost. The bug is described here:
+    #
+    #   http://bugs.python.org/issue6085
+    #
+    # and here:
+    #
+    #   http://www.answermysearches.com/xmlrpc-server-slow-in-python-how-to-fix/2140
+    def _bare_address_string(self):
+        host, port = self.client_address[:2]
+        return '%s' % host
+    address_string = _bare_address_string
 
     # The "auth" immediate command reply.
     # Immediate commands methods begin with 'icommand_'.
