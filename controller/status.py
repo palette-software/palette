@@ -84,41 +84,6 @@ class StatusMonitor(threading.Thread):
             self.log.error("No output received for status monitor. body:" + str(body))
             return
 
-        # Various bodies to use for testing.
-        good_body = """Status: RUNNING
-'Tableau Server Repository Database' (1764) is running.
-'Tableau Server Search Service' (1808) is running.
-'Tableau Server Data Engine Extract Database 0' (1868) is running.
-'Tableau Server Vizqlserver 0' (1924) is running.
-'Tableau Server Vizqlserver 1' (1940) is running.
-'Tableau Server Backgrounder 0' (1948) is running.
-'Tableau Server Dataserver 0' (1960) is running.
-'Tableau Server Dataserver 1' (1992) is running.
-'Tableau Server Web Application 0' (2028) is running.
-'Tableau Server Web Application 1' (796) is running.
-'Tableau Server Gateway' (1568) is running.
-"""
-        stopped_body = """Status: STOPPED
-"""
-        bad_body =  "...todo...what does it look like?"
-
-        good_body = """Status: RUNNING
-'Tableau Server Repository Database' (1764) is running.
-'Tableau Server Search Service' (1808) is running.
-'Tableau Server Data Engine Extract Database 0' (1868) is running.
-'Tableau Server Vizqlserver 0' (1924) is running.
-'Tableau Server Vizqlserver 1' (1940) is running.
-'Tableau Server Backgrounder 0' (1948) is running.
-'Tableau Server Dataserver 0' (1960) is running.
-'Tableau Server Dataserver 1' (1992) is running.
-'Tableau Server Web Application 0' (2028) is running.
-'Tableau Server Web Application 1' (796) is running.
-'Tableau Server Gateway' (1568) is running.
-"""
-        body = stopped_body
-        body = good_body
-        # all faked now
-
         lines = string.split(body, '\n')
         if len(lines) < 1:
             self.log.error("Bad status returned.  Too few lines.")

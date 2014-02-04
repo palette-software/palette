@@ -32,6 +32,7 @@ class StatusEntry(meta.Base):
 
 class StatusDialog(DialogPage):
 
+    NAME = "status"
     TEMPLATE = "status.mako"
 
     def __init__(self, global_conf):

@@ -41,7 +41,7 @@ class AgentManager(threading.Thread):
 
     PORT = 8888
 
-    def __init__(self, host='localhost', port=0):
+    def __init__(self, host='0.0.0.0', port=0):
         super(AgentManager, self).__init__()
         self.daemon = True
         self.lockobj = threading.Lock()
