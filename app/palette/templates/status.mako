@@ -12,6 +12,7 @@ ${obj.main_status}
 at ${obj.status_time}
 </p>
 
+%if obj.main_status == 'RUNNING':
 <table>
  <tr>
     <th>Component</th> <th>PID</th> <th>Status</th></tr>
@@ -21,3 +22,4 @@ at ${obj.status_time}
     %endif
 %endfor
 </table>
+%endif
