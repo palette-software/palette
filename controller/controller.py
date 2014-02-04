@@ -83,33 +83,25 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, '[ERROR] usage: start'
             return
         
-        stateman = StateManager()
-        stateman.update(STATE_STARTING)
         # fixme: check to see if it's already started?
         # fixme: Reply with "OK" only after the agent received the command?
         print >> self.wfile, "OK"
+
         body = server.start_cmd()
         self.report_status(body)
         # fixme: check status to see if it really started?
-        stateman.update(STATE_STARTED)
 
     def do_stop(self, argv):
         if len(argv) != 0:
             print >> self.wfile, '[ERROR] usage: stop'
             return
 
-        stateman = StateManager()
-        stateman.update(STATE_STOPPING)
         # fixme: check to see if it's already stopped?
         # fixme: Reply with "OK" only after the agent received the command?
-
         print >> self.wfile, "OK"
 
         body = server.stop_cmd()
         self.report_status(body)
-
-        # fixme: check status to see if it really started?
-        stateman.update(STATE_STOPPED)
 
     def report_status(self, body):
         """Passed an HTTP body and prints info about it back to the user."""
@@ -188,10 +180,20 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return body
 
     def start_cmd(self):
-        return self.cli_cmd('tabadmin start')
+        stateman = StateManager()
+        stateman.update(STATE_STARTING)
+        body = self.cli_cmd('tabadmin start')
+        # fixme: check status to see if it really started?
+        stateman.update(STATE_STARTED)
+        return body
 
     def stop_cmd(self):
-        return self.cli_cmd('tabadmin stop')
+        stateman = StateManager()
+        stateman.update(STATE_STOPPING)
+        body = self.cli_cmd('tabadmin stop')
+        # fixme: check status to see if it really started?
+        stateman.update(STATE_STOPPED)
+        return body
 
     def status_cmd(self):
         return self.cli_cmd('tabadmin status -v')
