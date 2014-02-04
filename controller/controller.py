@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import os
 import SocketServer as socketserver
 import logging
 
@@ -625,4 +626,8 @@ def main():
     server.serve_forever()
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print "\nInterrupted.  Exiting."
+        os._exit(1)
