@@ -14,10 +14,11 @@ from inits import *
 from exc import *
 from httplib import HTTPException
 
-from backup import BackupEntry, BackupManager
 import sqlalchemy
 import meta
 
+from backup import BackupManager
+from state import StateManager
 from status import StatusMonitor
 
 version="0.1"
@@ -82,16 +83,33 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, '[ERROR] usage: start'
             return
         
+        stateman = StateManager()
+        stateman.update(STATE_STARTING)
+        # fixme: check to see if it's already started?
+        # fixme: Reply with "OK" only after the agent received the command?
+        print >> self.wfile, "OK"
         body = server.start_cmd()
         self.report_status(body)
+        # fixme: check status to see if it really started?
+        stateman.update(STATE_STARTED)
 
     def do_stop(self, argv):
         if len(argv) != 0:
             print >> self.wfile, '[ERROR] usage: stop'
             return
 
+        stateman = StateManager()
+        stateman.update(STATE_STOPPING)
+        # fixme: check to see if it's already stopped?
+        # fixme: Reply with "OK" only after the agent received the command?
+
+        print >> self.wfile, "OK"
+
         body = server.stop_cmd()
         self.report_status(body)
+
+        # fixme: check status to see if it really started?
+        stateman.update(STATE_STOPPED)
 
     def report_status(self, body):
         """Passed an HTTP body and prints info about it back to the user."""
