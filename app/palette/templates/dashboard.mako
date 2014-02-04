@@ -23,7 +23,7 @@
   <h3>Last</h3>
   <p id="last">Thursday, November 7th at 12:00 AM</p>
   <h3>Next</h3>
-  <p id="next">Friday, November 8th at 12:00 AM</p>
+  <p id="next">- - - -</p>
   <p class="padtop">
     <a id="backupButton" class="button spacer">Backup</a>
     <a id="restoreButton" class="button">Restore</a></p>

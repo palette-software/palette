@@ -2,7 +2,6 @@ define (["dojo/dom", "dojo/request", "dojo/on", "dojo/domReady"],
 function(dom, request, on)
 {
     var uri = "/rest/backup";
-    var nextBackup = dom.byId("next");
     var lastBackup = dom.byId("last");
 
     var backupButton = dom.byId("backupButton");
@@ -13,7 +12,6 @@ function(dom, request, on)
             data: {"action": "backup"}
         }).then (
             function(d) {
-                nextBackup.innerHTML = d["next"];
                 lastBackup.innerHTML = d["last"];
             },
             function(error) {
@@ -40,7 +38,6 @@ function(dom, request, on)
 
     request.get(uri, { handleAs: "json" }).then(
         function(d) {
-            nextBackup.innerHTML = d["next"];
             lastBackup.innerHTML = d["last"];
         },
         function(error) {
