@@ -28,9 +28,10 @@ class StatusEntry(meta.Base):
 
 class StatusMonitor(threading.Thread):
 
-    def __init__(self, server):
+    def __init__(self, server, manager):
         super(StatusMonitor, self).__init__()
         self.server = server
+        self.manager = manager
         self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.INFO)
 #        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.DEBUG)
 
@@ -73,8 +74,13 @@ class StatusMonitor(threading.Thread):
 
     def check_status(self):
 
+        if not self.manager.agent_handle(AGENT_TYPE_PRIMARY):
+            self.log.debug("status thread: No primary agent currently connected.")
+            return
+
         body = self.server.status_cmd()
         if not body.has_key('stdout'):
+            # fixme: Probably update the status table to say something's wrong.
             self.log.error("No output received for status monitor. body:" + str(body))
             return
 

@@ -223,7 +223,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("check status of cli failed - missing 'stdout' in reply", body)
 
         try:
-            cleanup_dict = server._send_cleanup("cli", body['xid'])
+            cleanup_dict = self._send_cleanup("cli", body['xid'])
         except StandardError, e:
             return self.error("cleanup cli failed with: " +  str(e))
 
@@ -618,7 +618,7 @@ def main():
     server = Controller((HOST, PORT), CliHandler)
 
     log.debug("Starting status monitor.")
-    statusmon = StatusMonitor(server)
+    statusmon = StatusMonitor(server, manager)
     statusmon.start()
 
     server.log = log    # fixme
