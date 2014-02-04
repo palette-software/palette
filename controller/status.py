@@ -75,7 +75,7 @@ class StatusMonitor(threading.Thread):
 
         body = self.server.status_cmd()
         if not body.has_key('stdout'):
-            self.log.error("No output received for status monitor")
+            self.log.error("No output received for status monitor. body:" + str(body))
             return
 
         # Various bodies to use for testing.

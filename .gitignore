@@ -1,4 +1,7 @@
 *.pyc
+*.deb
 *.pyo
 *.egg-info
 *.swp
+/build
+/debian

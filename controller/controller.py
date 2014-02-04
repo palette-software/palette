@@ -590,7 +590,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return_dict['error'] = msg
         return return_dict
 
-if __name__ == '__main__':
+def main():
     import argparse
     import logger
     
@@ -623,3 +623,6 @@ if __name__ == '__main__':
 
     server.log = log    # fixme
     server.serve_forever()
+
+if __name__ == '__main__':
+    main()
