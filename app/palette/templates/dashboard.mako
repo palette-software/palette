@@ -36,9 +36,15 @@
 </div>
 <div class="tile">
   <h2>Manage Tableau Server</h2>
-  <p class="pad doublepadtop"><a class="button spacer">Start</a> <a class="button">Stop</a></p>
-  <p class="padtop large">105 Days of Disk Space</p>
-  <p class="tile-advanced"><span class="arrow-down"></span> Advanced</p>
+  <p class="pad doublepadtop">
+    <a id="startButton" href="#" class="button spacer">Start</a>
+    <a id="stopButton" href="#" class="button">Stop</a>
+  </p>
+  <p id="diskspace" class="padtop large">105 Days of Disk Space</p>
+  <p class="tile-advanced">
+    <span class="arrow-down"></span>
+    <a id="advanced-manage" href="#"> Advanced</a>
+  </p>
 </div>
 
 <script>
@@ -46,6 +52,6 @@ require({
   packages: [
     { name: "palette", location: "/app/module/palette/js" }
   ]
-}, [ "palette/monitor", "palette/backup" ]);
+}, [ "palette/monitor", "palette/backup", "palette/manage" ]);
 </script>
 

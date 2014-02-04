@@ -15,6 +15,7 @@ Session = sessionmaker(bind=db_engine)
 
 import monitor
 import backup
+import manage
 
 class DashboardPage(MainPage):
     TEMPLATE = 'dashboard.mako'
