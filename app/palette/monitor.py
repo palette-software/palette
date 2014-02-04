@@ -15,7 +15,18 @@ class MonitorApplication(RESTApplication):
     NAME = 'monitor'
 
     def handle(self, req):
-        return {'status': 'OK'}
+        db_session = Session()
+        self.status_entries = db_session.query(StatusEntry).all()
+
+        # Dig out the main status and time
+        main_status = "Unknown"
+        for entry in self.status_entries:
+            if entry.name == 'Status':
+                self.main_status = entry.status
+        if main_status == 'Running':
+            return {'status': 'OK'}
+        else:
+            return {'status': 'Fault Status'}
 
 class StatusEntry(meta.Base):
     __tablename__ = 'status'
