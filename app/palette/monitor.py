@@ -26,6 +26,8 @@ class MonitorApplication(RESTApplication):
             if entry.name == 'Status':
                 main_status = entry.status
                 break
+
+        db_session.close()
         return {'status': main_status}
 
 class StatusEntry(meta.Base):
@@ -59,3 +61,4 @@ class StatusDialog(DialogPage):
             if entry.name == 'Status':
                 self.main_status = entry.status
                 self.status_time = str(entry.creation_time)[:19] # Cut off fraction
+        db_session.close()
