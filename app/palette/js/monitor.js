@@ -44,11 +44,10 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request",
         update();
     }, 10000);
 
-    var dialog = DialogSimple({href: "/dialog/status"});
-    dialog.startup();
-
     var advancedLink = dom.byId("advanced-status");
     on(advancedLink, "click", function() {
+        var dialog = DialogSimple({href: "/dialog/status"});
+        dialog.startup();
         dialog.show();        
     });
 
