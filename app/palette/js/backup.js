@@ -10,7 +10,7 @@ function(dom, request, on)
         request.post(uri, {
             sync: true,
             handleAs: "json",
-            data: {}
+            data: {"action": "backup"}
         }).then (
             function(d) {
                 nextBackup.innerHTML = d["next"];
@@ -25,7 +25,17 @@ function(dom, request, on)
 
     var restoreButton = dom.byId("restoreButton");
     on(restoreButton, "click", function() {
-        alert("restore");
+        request.post(uri, {
+            sync: true,
+            handleAs: "json",
+            data: {"action": "restore"}
+        }).then (
+            function(d) {
+            },
+            function(error) {
+                console.log('[BACKUP] Communication Failure.');
+            }
+        );
     });
 
     request.get(uri, { handleAs: "json" }).then(
