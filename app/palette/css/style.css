@@ -32,15 +32,24 @@ h3 {
 	min-height: 285px;
 	text-align: center;
 	border: 1px solid #ccc;
+	clear: left;
 	float: left;
+}
+.tile:nth-child(2n + 1) {
+	clear: right;
+	float: right;
+}
+.tile h2 {
+	padding: 1em 0 0.75em;
 }
 .tile-advanced {
 	position: absolute;
 	top: 10px;
 	right: 10px;
+	color: #666;
 }
 .tile-advanced a {
-	color: black;
+	color: #666;
 	text-decoration: none;
 }
 .arrow-down {
@@ -51,7 +60,7 @@ h3 {
 	height: 0;
 	border-left: 7px solid transparent;
 	border-right: 7px solid transparent;
-	border-top: 7px solid #000;
+	border-top: 7px solid #666;
 }
 
 .large {
@@ -71,17 +80,40 @@ h3 {
 	border-color: #51a7f9;
 	display: inline-block;
 }
+.big {
+	width: 150px;
+}
+a.button {
+	text-decoration: none;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
 .button:hover {
 	color: #51a7f9;
 	background: #fff;
 	border-color: #51a7f9;
 }
+.disabled {
+	top: 0 !important;
+	color: #aaa !important;
+	background: #ddd !important;
+	border-color: #ccc !important;
+	text-shadow: 1px 1px 0 #fff;
+	cursor: not-allowed;
+}
 
 .padtop {
-	padding-top: 2em;
+	padding: 1.5em 0 0;
+}
+.padbottom {
+	padding-bottom: 2em;
 }
 .doublepadtop {
-	padding-top: 4em;
+	padding-top: 5em;
 }
 
 /* LINES 510-517 */
