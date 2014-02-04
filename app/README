@@ -1,0 +1,6 @@
+If you are using httpserver to host the app, pass the ini file on the
+command line, for example:
+
+	httpserver ./development.ini
+
+Don't know about Apache or other servers.
