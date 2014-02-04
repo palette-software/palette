@@ -30,7 +30,11 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request",
         request.get("/rest/monitor", { handleAs: "json" }).then(
             function(data) {
                 status.innerHTML = data['status'];
-                greenLight();
+                if (data['status'] == 'RUNNING') {
+                    greenLight();
+                } else {
+                    redLight();
+                }
             },
             function(error) {                
                 status.innerHTML = 'Communication Failure.';

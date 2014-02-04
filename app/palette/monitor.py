@@ -16,17 +16,17 @@ class MonitorApplication(RESTApplication):
 
     def handle(self, req):
         db_session = Session()
+
+        # FIXME: do a SELECT/query that only return the one row.
         self.status_entries = db_session.query(StatusEntry).all()
 
         # Dig out the main status and time
         main_status = "Unknown"
         for entry in self.status_entries:
             if entry.name == 'Status':
-                self.main_status = entry.status
-        if main_status == 'Running':
-            return {'status': 'OK'}
-        else:
-            return {'status': 'Fault Status'}
+                main_status = entry.status
+                break
+        return {'status': main_status}
 
 class StatusEntry(meta.Base):
     __tablename__ = 'status'
