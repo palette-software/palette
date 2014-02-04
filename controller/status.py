@@ -84,6 +84,7 @@ class StatusMonitor(threading.Thread):
             self.log.error("No output received for status monitor. body:" + str(body))
             return
 
+        body = body['stdout']
         lines = string.split(body, '\n')
         if len(lines) < 1:
             self.log.error("Bad status returned.  Too few lines.")
