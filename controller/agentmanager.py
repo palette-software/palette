@@ -7,6 +7,8 @@ import traceback
 from httplib import HTTPConnection
 import json
 
+from agentstatus import AgentStatus
+
 from inits import *
 
 # The Controller's Agent Manager.
@@ -14,28 +16,35 @@ from inits import *
 
 class AgentConnection(object):
     
+    _CID = 1
+
     def __init__(self, conn, addr):
         self.socket = conn
         self.addr = addr
-        self.httpconn = False
-        self.auth = {}
-        self.uuid = None
-        self.ip = None
+        self.httpconn = False   # Used by the controller
+        self.auth = {}          # Used by the controller
+
+        # Each agent connection has its own lock
+        self.lockobj = threading.RLock()
+
+        # unique identifier
+        # can never be 0
+        self.conn_id = AgentConnection._CID
+        AgentConnection._CID += 1
+        if AgentConnection._CID == 0:
+            AgentConnection._CID += 1
+
+    def lock(self):
+        self.lockobj.acquire()
+
+    def unlock(self):
+        self.lockobj.release()
 
     def set_httpconn(self, httpconn):
-        self.httpconn = httpconn
+        self.httpconn = httpconn    # Used by the controller
 
     def set_auth(self, auth):
-        self.auth = auth
-
-    def set_uuid(self, uuid):
-        self.uuid = uuid
-
-    def set_ip(self, ip):
-        self.ip = ip
-
-    def set_listen_port(self, listen_port):
-        self.listen_port = listen_port
+        self.auth = auth            # Used by the controller
 
 class AgentManager(threading.Thread):
 
@@ -44,38 +53,95 @@ class AgentManager(threading.Thread):
     def __init__(self, host='0.0.0.0', port=0):
         super(AgentManager, self).__init__()
         self.daemon = True
-        self.lockobj = threading.Lock()
+        self.lockobj = threading.RLock()
         self.host = host
         self.port = port and port or self.PORT
         self.socket = None
+        self.auth = None
 
-        # A dictionary with all AgentConnections
-        # "primary" or "archive", etc.
+        # A dictionary with all AgentConnections with the key being
+        # the unique 'conn_id'.
         self.agents = {}
 
-    def register(self, agent, agent_type):
-        # fixme: What should we do if two primary agents connect?
-        self.log.debug("Remembering new agent of type: "+ agent_type)
-        self.agents[agent_type] = agent
+    def register(self, agent, body):
+        """Called with the agent object and body /auth dictionary that
+           was sent from the agent in json."""
+       
+        self.lock()
+        self.log.debug("new agent of type: %s, name %s, conn_id %d", body['type'], body['hostname'], agent.conn_id)
+
+        agent_type = body['type']
+        # Don't allow two primary agents to be connected and
+        # don't allow two agents with the same name to be connected
+        # Keep the newest one.
+        for key in self.agents:
+            if self.agents[key].auth['hostname'] == body['hostname']:
+                self.log.info("Agent already connected with name '%s': will remove it and use the new connection.", body['hostname'])
+                self.remove_agent(self.agents[key])
+                break
+            elif agent_type == AGENT_TYPE_PRIMARY:
+                if self.agents[key].auth['type'] == AGENT_TYPE_PRIMARY:
+                    self.log.info("Primary agent already connected: will remove it and keep the new primary agent connection.")
+                    self.remove_agent(self.agents[key])
+
+        # Remember the new agent
+        self.agentstatus.add(body['hostname'], body['type'], body['version'], body['ip-address'], body['listen-port'], body['uuid'])
+        self.agents[agent.conn_id] = agent
+        self.auth = body
+
+        self.unlock()
 
     # Return the list of all agents
     def all_agents(self):
         return self.agents
 
-    def agent_handle(self, agent_type):
+    def get_agent_by_type(self, target):
+        """Returns the requested agent if found or False if not found."""
+        for key in self.agents:
+            if self.agents[key].auth['type'] == target:
+                agent = self.agents[key]
+                return agent
+        self.log.warning("get_agent_by_type failed for target type %s", target)
+        return False
+
+    def lock_agent(self, agent):
+        agent.lock()
+
+    def unlock_agent(self, agent):
+        agent.unlock()
+
+    def agent_conn_by_type(self, agent_type):
         """Returns an instance of an Agent of the requested type."""
-        if self.agents.has_key(agent_type):
-            return self.agents[agent_type]
+        for key in self.agents:
+            if self.agents[key].auth['type'] == agent_type:
+                return self.agents[key]
 
         return False
 
+    def remove_agent(self, agent):
+        self.lock()
+        conn_id = agent.conn_id
+        if self.agents.has_key(conn_id):
+            self.log.debug("Removing agent with conn_id %d, name %s",\
+                conn_id, self.agents[conn_id].auth['hostname'])
+            self.agentstatus.remove(self.agents[conn_id].auth['hostname'])
+            del self.agents[conn_id]
+        else:
+            self.log.debug("remove_agent: No such agent with conn_id %d", conn_id)
+        self.unlock()
+
     def lock(self):
+        """Locks the agents list"""
         self.lockobj.acquire()
 
     def unlock(self):
+        """Unlocks the agents list"""
         self.lockobj.release()
 
     def run(self):
+        self.agentstatus = AgentStatus()
+        self.agentstatus.remove_all_agents()
+
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind((self.host, self.port))
@@ -134,7 +200,7 @@ class AgentManager(threading.Thread):
                 self.log.debug("done.")
 
             # Inspect the reply to make sure it has all the required values.
-            required = ['hostname', 'type', 'ip-address', 'listen-port', 'uuid']
+            required = ['hostname', 'type', 'ip-address', 'version', 'listen-port', 'uuid']
             for item in required:
                 if not body.has_key(item):
                     self.log.error("Missing '%s' from agent" % item)
@@ -150,11 +216,8 @@ class AgentManager(threading.Thread):
 
             agent.set_httpconn(httpconn)
             agent.set_auth(body)
-            agent.set_uuid(body['uuid'])
-            agent.set_ip(body['ip-address'])
-            agent.set_listen_port(body['listen-port'])
 
-            self.register(agent, agent_type)
+            self.register(agent, body)
 
         except socket.error, e:
             self.log.debug("Socket error")

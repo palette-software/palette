@@ -74,7 +74,7 @@ class StatusMonitor(threading.Thread):
 
     def check_status(self):
 
-        if not self.manager.agent_handle(AGENT_TYPE_PRIMARY):
+        if not self.manager.agent_conn_by_type(AGENT_TYPE_PRIMARY):
             self.log.debug("status thread: No primary agent currently connected.")
             return
 
