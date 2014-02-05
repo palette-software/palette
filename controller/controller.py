@@ -62,13 +62,13 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = server.restore_cmd(argv[0])
         self.report_status(body)
 
-    def do_get(self, argv):
-        """GET a file from one agent to another."""
+    def do_copy(self, argv):
+        """Copy a file from one agent to another."""
         if len(argv) != 2:
-            print >> self.wfile, '[ERROR] Usage: get source-agent-name/filename dest-agent-name'
+            print >> self.wfile, '[ERROR] Usage: copy source-agent-name:/filename dest-agent-name'
             return
 
-        body = server.get_cmd(argv[0], argv[1])
+        body = server.copy_cmd(argv[0], argv[1])
         self.report_status(body)
 
     def do_cli(self, argv):
@@ -331,19 +331,24 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("Post /%s getresponse returned a null body" % command)
         return body
 
-    def get_cmd(self, source_url, dest_hostname):
-        """Send a get command and checks the status.
-            Returns the body dictionary from the status."""
+    def copy_cmd(self, source_path, dest_name):
+        """Send a wget command and checks the status.
+           copy source-hostname:/path/to/file dest-hostname
+                       <source_path>          <dest-hostname>
+           generates:
+            c:/Palette/bin/wget.exe --output=file http://primary-ip:192.168.1.1/file
+           and sends it as a cli command to agent:
+                dest-name
+           Returns the body dictionary from the status."""
 
-        if not source_url.find('/'):
-            return self.error('[ERROR] Missing '/' in source url:' % source_url)
+        if not source_path.find(':'):
+            return self.error("[ERROR] Missing ':' in source path:" % source_path)
 
-        parts = source_url.split('/',1)
+        (source_hostname, source_path) = source_path.split(':',1)
 
-        source_hostname = parts[0]
-        source_path = parts[1]
-
-        manager.lock()
+        if len(source_hostname) == 0 or len(source_path) == 0 or \
+                                                    source_path[0] != '/':
+            return self.error("[ERROR] Invalid source specification.  Requires '/'")
 
         agents = manager.all_agents()
         source_ip = None
@@ -352,7 +357,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         for key in agents:
             if agents[key].auth['hostname'] == source_hostname:
                 source_ip = agents[key].auth['ip-address']
-            if agents[key].auth['hostname'] == dest_hostname:
+            if agents[key].auth['hostname'] == dest_name:
                 dest_conn = agents[key]
 
         msg = ""
@@ -360,92 +365,27 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not source_ip:
             msg = "Unknown source-hostname: %s. " % source_hostname 
         if not dest_conn:
-            msg += "Unknown dest-hostname: %s." % dest_hostname
+            msg += "Unknown dest-hostname: %s." % dest_name
 
         if not source_ip or not dest_conn:
-            manager.unlock()
             return self.error(msg)
 
-        src_url = "http://%s:%d/%s" % (source_ip, dest_conn.auth['listen-port'], source_path)
-        GET_DIR="c:/Palette/Data/"
-        dest_url = GET_DIR + source_path
+        WGET_BIN="c:/Palette/bin/wget.exe"
+        target_filename = os.path.basename(source_path) # filename without directory
 
-        # Tell:
-        #   1) V1: The source that the dest will be requesting a file.
-        #   2) The garget to get the source path
-        body = { 
-            'src': src_url,
-            'dest': dest_url
-                }
-        req = Get_Start_Request(body)
+        command = "%s --output-document=%s http://%s:%s%s" % \
+            (WGET_BIN, target_filename,
+                source_ip, dest_conn.auth['listen-port'], source_path)
 
-        headers = {"Content-Type": "application/json"}
-        self.log.debug("GET: Getting lock for dest")
+        #GET_DIR="c:/Palette/Data/" # Use this still?  Or is it implied?
 
-        dest_conn.lock()    # destination agent connection lock
-        manager.unlock()    # agents list lock
-
-        self.log.debug("sending GET command: " + str(body))
-
-        try:
-            dest_conn.httpconn.request('POST', '/get', req.send_body, headers)
-        except HTTPException, e:
-            manager.remove_agent(dest_conn)    # bad agent
-            return self.error("POST /get failed with: " + str(e))
-
-        self.log.debug("sent get command.")
-
-        try:
-            res = dest_conn.httpconn.getresponse()
-            req.rec_status = res.status
-
-            if req.rec_status != 200:
-                dest_conn.unlock()
-                return self.error("Get request failed with return status: %d" % res.status)
-            body_json = res.read()
-            body = json.loads(body_json)
-
-        except EnvironmentError, e:
-            manager.remove_agent(dest_conn)    # bad agent
-            return self.error("Get request read failed: " + str(e))
-        except HttpException, e:
-            manager.remove_agent(dest_conn)    # bad agent
-            return self.error("Get request getresponse failed with: " + str(e))
-        finally:
-            dest_conn.unlock()
-
-        if body == None:
-            return self.error("Get request returned a null body")
-
-        if not body.has_key('xid'):
-            return self.error("Get response was missing the xid", body)
-
-        if body['xid'] != req.xid:
-            return self.error("Get response xid expected: %d but was %d" % (req.xid, body['xid']))
-
-        body = server._get_status("get", body['xid'], dest_conn)
-        if body.has_key('error'):
-            return body
-
-        if not body.has_key("stdout"):
-            return self.error("get status of get command failed.", body)
-
-        try:
-            cleanup_body = server._send_cleanup("get", body['xid'], dest_conn)
-        except HttpException, e:
-            manager.remove_agent(dest_conn)    # bad agent
-            return self.error("cleanup cli failed with status %d", e.status_code)
-
-        if cleanup_body.has_key('error'):
-            return cleanup_body
-
-        return body
+        return self.cli_cmd(command)
 
     def restore_cmd(self, arg):
         """Do a tabadmin restore of the passed arg, except
            the arg is in the format:
                 source-hostname:pathname
-            If the pathname is not on the Primary Agent, then get
+            If the pathname is not on the Primary Agent, then copy
             it to the Primary Agent before doing the tabadmin restore
             Returns a body with the results/status."""
            
@@ -458,8 +398,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             source_hostname = parts[0]
             source_pathname = parts[1]
 
-            # fixme: lock (though get_cmd also locks).
-
             # Get the Primary Agent handle
             primary_conn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
 
@@ -469,14 +407,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # Check if the source_pathname is on the Primary Agent.
             if source_hostname != primary_conn.auth['hostname']:
                 # The source_pathname isn't on the Primary agent:
-                # We need to get the file to the Primary.
+                # We need to copy the file to the Primary.
 
-                # get_cmd arguments:
-                #   source-agent-name/filename
+                # copy_cmd arguments:
+                #   source-agent-name:/filename
                 #   dest-agent-hostname
-
-                body = server.get_cmd("%s/%s" % (source_hostname, source_pathname),
-                                primary_conn.auth['hostname'])
+                body = server.copy_cmd(arg, primary_conn.auth['hostname'])
 
                 if body.has_key("error"):
                     return body
