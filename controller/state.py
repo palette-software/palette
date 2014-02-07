@@ -33,33 +33,34 @@ class StateManager(object):
 
         meta.Base.metadata.create_all(bind=self.engine)
         self.Session = sessionmaker(bind=self.engine)
-        self.session = self.Session()
 
     def update(self, state_type, state):
-        entry = self.session.query(StateEntry).\
+        session = self.Session()
+        entry = session.query(StateEntry).\
             filter(StateEntry.state_type == state_type).first()
 
         if entry:
-            self.session.query(StateEntry).\
+            session.query(StateEntry).\
             filter(StateEntry.state_type == state_type).\
                 update({'state': state})
 
         else:
             entry = StateEntry(state_type, state)
-            self.session.add(entry)
+            session.add(entry)
 
-        self.session.commit()
+        session.commit()
 
     def get_states(self):
+        session = self.Session()
         try:
-            main_entry = self.session.query(StateEntry).\
+            main_entry = session.query(StateEntry).\
                 filter(StateEntry.state_type == STATE_TYPE_MAIN).one()
             main_status = main_entry.state
         except NoResultFound, e:
             main_status = STATE_MAIN_UNKNOWN
 
         try:
-            second_entry = self.session.query(StateEntry).\
+            second_entry = session.query(StateEntry).\
                 filter(StateEntry.state_type == STATE_TYPE_SECOND).one()
             second_status = second_entry.state
 

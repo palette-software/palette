@@ -84,17 +84,41 @@ class StatusMonitor(threading.Thread):
         entry = StatusEntry(name, pid, status)
         self.session.add(entry)
 
-    def update_state_table(self, status):
-        if status == "STOPPED":
-            main_state = STATE_MAIN_STOPPED
-        elif status == "RUNNING":
-            main_state = STATE_MAIN_STARTED
-        else:
-            self.log.error("Unknown status: %s", status)
-            main_state = STATE_MAIN_UNKNOWN
-            
+    def set_main_state(self, status):
+        """Set main_state if appropriate."""
+
         stateman = StateManager()
-        stateman.update(STATE_TYPE_MAIN, main_state)
+        states = stateman.get_states()
+        main_state = states[STATE_TYPE_MAIN]
+
+        if status == "RUNNING":
+            if main_state == STATE_MAIN_STARTING or \
+                                        main_state == STATE_MAIN_UNKNOWN:
+                stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STARTED)
+                self.log.debug("Updated state table with main status: %s", STATE_MAIN_STARTED)
+            elif main_state == 'STOPPED':
+                # This shouldn't happen.
+                self.log.error("Unexpected Status! Status is RUNNING but main_state was STOPPED!")
+            elif main_state == STATE_MAIN_STARTED or \
+                                        main_state == STATE_MAIN_STOPPING:
+                # Don't change the state.
+                pass
+            else:
+                self.log.error("Unknown status %s", status)
+
+        if status == 'STOPPED':
+            if main_state == STATE_MAIN_STOPPING or \
+                                    main_state == STATE_MAIN_UNKNOWN:
+                stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STOPPED)
+                self.log.debug("Updated state table with main status: %s", STATE_MAIN_STOPPED)
+            elif main_state == STATE_MAIN_STARTING or \
+                                        main_state == STATE_MAIN_STOPPED:
+                # don't change the state.
+                pass
+            elif main_state == STATE_MAIN_STARTED:
+                self.log.error("Unexpected Status! Status is STOPPED but main_state was STARTED!")
+            else:
+                self.log.error("Unknown status %s", status)
 
     def run(self):
         while True:
@@ -122,7 +146,6 @@ class StatusMonitor(threading.Thread):
             self.log.error("Bad status returned.  Too few lines.")
             return
 
-
         if len(lines) == 1:
             # "Status: STOPPED" is the only line
             line1 = body.split(" ")
@@ -135,15 +158,14 @@ class StatusMonitor(threading.Thread):
             return
 
         status = line1[1]
-        self.log.debug("Updating state table with status: %s", status)
-        self.update_state_table(status)
 
         # Store the second part (like "RUNNING") into the database
-
         self.remove_all_status()
-
         self.add("Status", 0, status)
         self.log.debug("Logging main status: %s", status)
+
+        # Set the "main status" state according to the current status.
+        self.set_main_state(status)
 
         for line in lines[1:]:   # Skip the first line we already did.
             line = line.strip()

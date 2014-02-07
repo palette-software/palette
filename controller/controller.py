@@ -103,6 +103,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             
         stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STARTING)
 
+        log.debug("-----------------Starting Tableau-------------------")
         # fixme: Reply with "OK" only after the agent received the command?
         print >> self.wfile, "OK"
 
@@ -131,6 +132,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         print >> self.wfile, "OK"
 
         stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STOPPING)
+        log.debug("-----------------Stopping Tableau-------------------")
         body = server.cli_cmd('tabadmin stop')
 
         # STOPPED is set by the status monitor since it really knows the status>
