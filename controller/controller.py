@@ -229,7 +229,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # fixme: move to .ini config file
         if platform.system() == 'Windows':
             # Windows with Tableau uses port 8060
-            url = "postgresql://palette:palpass:8060@localhost/paldb"
+            url = "postgresql://palette:palpass@localhost:8060/paldb"
         else:
             url = "postgresql://palette:palpass@localhost/paldb"
 

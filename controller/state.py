@@ -4,6 +4,7 @@ from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
+import platform
 
 import meta
 
@@ -28,7 +29,10 @@ class StateManager(object):
 
     def __init__(self):
     
-        url = "postgresql://palette:palpass@localhost/paldb"
+        if platform.system() == 'Windows':
+            url = "postgresql://palette:palpass@localhost:8060/paldb"
+        else:
+            url = "postgresql://palette:palpass@localhost/paldb"
         self.engine = sqlalchemy.create_engine(url, echo=False)
 
         meta.Base.metadata.create_all(bind=self.engine)

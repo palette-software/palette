@@ -1,5 +1,7 @@
-define (["dojo/dom", "dojo/request", "dojo/on", "dojo/domReady"],
-function(dom, request, on)
+define (["dojo/dom", "dojo/request", "dojo/on",
+         "dojox/widget/DialogSimple",
+         "dojo/domReady"],
+function(dom, request, on, DialogSimple)
 {
     var uri = "/rest/backup";
     var lastBackup = dom.byId("last");
@@ -34,6 +36,15 @@ function(dom, request, on)
                 console.log('[BACKUP] Communication Failure.');
             }
         );
+    });
+
+    var advancedLink = dom.byId("advanced-backup");
+    on(advancedLink, "click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var dialog = DialogSimple({href: "/dialog/backup"});
+        dialog.startup();
+        dialog.show();
     });
 
     request.get(uri, { handleAs: "json" }).then(
