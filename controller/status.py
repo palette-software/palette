@@ -155,6 +155,7 @@ class StatusMonitor(threading.Thread):
 
         if line1[0] != 'Status:':
             self.log.error("Bad status returned.  First line wasn't 'Status:' %s:", line1)
+            self.log.error("Status returned: " + str(lines))
             return
 
         status = line1[1]

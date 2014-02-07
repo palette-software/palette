@@ -48,7 +48,29 @@ class CliHandler(socketserver.StreamRequestHandler):
         if len(argv):
             print >> self.wfile, '[ERROR] backup does not have an argument.'
             return
+
+        # Check to see if we're in a state to backup
+        stateman = StateManager()
+        states = stateman.get_states()
+
+        if states[STATE_TYPE_MAIN] != STATE_MAIN_STARTED:
+            print >> self.wfile, "FAIL: Can't backup - main state is:", states[STATE_TYPE_MAIN]
+            log.debug("Can't backup - main state is: %s", states[STATE_TYPE_MAIN])
+            return
+        if states[STATE_TYPE_SECOND] != STATE_SECOND_NONE:
+            print >> self.wfile, "FAIL: Can't backup - second state is:", states[STATE_TYPE_SECOND]
+            log.debug("Can't backup - second state is: %s", states[STATE_TYPE_SECOND])
+            return
+
+        log.debug("-----------------Starting Backup-------------------")
+            
+        # fixme: lock to ensure against two simultaneous backups?
+        stateman.update(STATE_TYPE_SECOND, STATE_SECOND_BACKUP)
+
+        print >> self.wfile, "OK"
+            
         body = server.backup_cmd()
+        stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
         self.report_status(body)
 
     def do_restore(self, argv):
@@ -57,10 +79,33 @@ class CliHandler(socketserver.StreamRequestHandler):
         Primary Agent first."""
 
         if len(argv) != 1:
-            print >> self.wfile, '[ERROR] usage: restore [source-hostname]:pathname'
+            print >> self.wfile, '[ERROR] usage: restore source-hostname:pathname'
             return
-        
+
+        # Check to see if we're in a state to restore
+        stateman = StateManager()
+        states = stateman.get_states()
+        if states[STATE_TYPE_MAIN] != STATE_MAIN_STARTED and \
+            states[STATE_TYPE_MAIN] != STATE_MAIN_STOPPED:
+            print >> self.wfile, "FAIL: Can't backup - main state is:", states[STATE_TYPE_MAIN]
+            log.debug("Can't restore - main state is: %s", states[STATE_TYPE_MAIN])
+            return
+
+        if states[STATE_TYPE_SECOND] != STATE_SECOND_NONE:
+            print >> self.wfile, "FAIL: Can't restore - second state is:", states[STATE_TYPE_SECOND]
+            log.debug("Can't restore - second state is: %s", states[STATE_TYPE_SECOND])
+            return
+
+        log.debug("-----------------Starting Restore-------------------")
+            
+        # fixme: lock to ensure against two simultaneous restores?
+        stateman.update(STATE_TYPE_SECOND, STATE_SECOND_RESTORE)
+
+        print >> self.wfile, "OK"
+            
         body = server.restore_cmd(argv[0])
+
+        stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
         self.report_status(body)
 
     def do_copy(self, argv):
@@ -113,7 +158,6 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # fixme: check & report status to see if it really started?
         self.report_status(body)
-
     def do_stop(self, argv):
         if len(argv) != 0:
             print >> self.wfile, '[ERROR] usage: stop'
@@ -122,7 +166,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Check to see if we're in a state to stop
         stateman = StateManager()
         states = stateman.get_states()
-        if states[STATE_TYPE_MAIN] != 'started':
+        if states[STATE_TYPE_MAIN] != STATE_MAIN_STARTED:
             log.debug("FAIL: Can't stop - main state is: %s", states[STATE_TYPE_MAIN])
             print >> self.wfile, "FAIL: Can't stop - current state is:", states[STATE_TYPE_MAIN]
             return
@@ -135,7 +179,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         log.debug("-----------------Stopping Tableau-------------------")
         body = server.cli_cmd('tabadmin stop')
 
-        # STOPPED is set by the status monitor since it really knows the status>
+        # STOPPED is set by the status monitor since it really knows the status.
 
         # fixme: check & report status to see if it really stopped?
         self.report_status(body)
@@ -201,18 +245,48 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # If not, the backup is saved in the server bin directory.
         backup_name = time.strftime("%b%d_%H%M%S")
         # Example name: Jan27_162225
-        body = self.cli_cmd("tabadmin backup %s" % backup_name)
+        backup_path = DEFAULT_BACKUP_DIR + '\\' + backup_name
+        # Example path: C:\Palette\Data\Jan27_162225
+        body = self.cli_cmd("tabadmin backup %s" % backup_path)
         if body.has_key('error'):
             return body
 
-        # fixme: add backup information to database
-        primary_conn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
-        # Save name of backup and ip address of the primary agent to the db.
-        ip_address = primary_conn.auth['ip-address']
+        # If two agents are connected, copy the backup to the
+        # non-primary agent and delete the backup from the primary.
+        non_primary_conn = None
 
+        agents = manager.all_agents()
+        for key in agents:
+            if agents[key].auth['type'] != AGENT_TYPE_PRIMARY:
+                non_primary_conn = agents[key]
+                break
+
+        primary_conn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
+
+        if non_primary_conn:
+            # Copy the backup to a non-primary agent
+            copy_body = self.copy_cmd(\
+                "%s:%s" % (primary_conn.auth['hostname'], backup_name),
+                non_primary_conn.auth['hostname'])
+
+            if copy_body.has_key('error'):
+                return copy_body
+
+            # Remove the backup file from the primary
+            remove_body = self.cli_cmd(["DEL %s" % source_pathname])
+            if remove_body.has_key('error'):
+                return remove_body
+
+            backup_ip_address = non_primary_conn.auth['ip-address']
+
+        else:
+            # Backup file remains on the primary.
+            backup_ip_address = primary_conn.auth['ip-address']
+
+        # Save name of backup and ip address of the primary agent to the db.
         self.dbinit()    #fixme
         self.backup = BackupManager(self.engine)
-        self.backup.add(backup_name, ip_address)
+        self.backup.add(backup_name, backup_ip_address)
 
         return body
 
@@ -226,7 +300,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             4) Returns body from the status.
         """
 
-        aconn = manager.get_agent_by_type(target)
+        aconn = manager.agent_conn_by_type(target)
         if not aconn:
             return self.error("Agent of this type not connected currently: %s" % target)
         try:
@@ -406,56 +480,96 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 source-hostname:pathname
             If the pathname is not on the Primary Agent, then copy
             it to the Primary Agent before doing the tabadmin restore
-            Returns a body with the results/status."""
-           
-        if ':' in arg:
-            # The user specified a source-hostname.
-            parts = arg.split(':')
-            if len(parts) != 2:
-                return self.error('[ERROR] Too many colons in argument:' % arg)
+            Returns a body with the results/status.
+        """
 
-            source_hostname = parts[0]
-            source_pathname = parts[1]
+        stateman = StateManager()
+        orig_states = stateman.get_states()
+        if orig_states[STATE_TYPE_MAIN] == STATE_MAIN_STARTED:
+            # Restore can run only when tableau is stopped.
+            stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STOPPING)
+            log.debug("--------------Stopping Tableau for restore---------------")
+            stop_body = self.cli_cmd("tabadmin stop")
+            if stop_body.has_key('error'):
+                self.info.debug("Restore: tabadmin stop failed")
+                return stop_body
 
-            # Get the Primary Agent handle
-            primary_conn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
+            # Give the status thread a bit of time to update the state to
+            # STOPPED.
+            stopped = False
+            for i in range(3):
+                states = stateman.get_states()
+                if states[STATE_TYPE_MAIN] == STATE_MAIN_STOPPED:
+                    stopped = True
+                    self.log.debug("Restore: Tableau has stopped")
+                    break
+                self.log.debug("Restore: Tableau has not yet stopped")
+                time.sleep(8)
 
-            if not primary_conn:
-                return self.error("[ERROR] No Primary Agent not connected.")
+            if not stopped:
+                return self.error('[ERROR] Tableleau did not stop as requested.  Restore aborted.')
 
-            # Check if the source_pathname is on the Primary Agent.
-            if source_hostname != primary_conn.auth['hostname']:
-                # The source_pathname isn't on the Primary agent:
-                # We need to copy the file to the Primary.
+        # restore primary:c:\\stuff is possible (2 colons)
+        # restore c:\stuff where "c:" is a disk, not a host.
+        parts = arg.split(':', 1)
 
-                # copy_cmd arguments:
-                #   source-agent-name:/filename
-                #   dest-agent-hostname
-                body = server.copy_cmd(arg, primary_conn.auth['hostname'])
+        source_hostname = parts[0]
+        source_pathname = parts[1]
 
-                if body.has_key("error"):
-                    return body
-        else:
-            source_pathname = arg
+        if not os.path.isabs(source_pathname):
+            # If it's not an absolute pathname, make it absolute, prepending
+            # the default backup directory.
+            source_pathname = DEFAULT_BACKUP_DIR + os.sep + source_pathname
+
+        # Get the Primary Agent handle
+        primary_conn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
+
+        if not primary_conn:
+            return self.error("[ERROR] No Primary Agent not connected.")
+
+        # Check if the source_pathname is on the Primary Agent.
+        if source_hostname != primary_conn.auth['hostname']:
+            # The source_pathname isn't on the Primary agent:
+            # We need to copy the file to the Primary.
+
+            # copy_cmd arguments:
+            #   source-agent-name:/filename
+            #   dest-agent-hostname
+            self.log.debug("Sending copy command: %s, %s", arg, primary_conn.auth['hostname'])
+            body = server.copy_cmd(arg, primary_conn.auth['hostname'])
+
+            if body.has_key("error"):
+                return body
 
         # The file/path is on the Primary Agent.
         try:
-            body = self.cli_cmd("tabadmin restore %s" % source_pathname)
+            cmd = "tabadmin restore %s.tsbak" % source_pathname
+            self.log.debug("restore sending command: %s", cmd)
+            body = self.cli_cmd(cmd)
             if body.has_key('error'):
                 return body
         except HTTPException, e:
             return self.error("HTTP Exception: " + str(e))
 
         # fixme: Do we need to add restore information to database?  
-
         # fixme: check status before cleanup? Or cleanup anyway?
 
-        if ':' in arg and source_hostname != primary_conn.auth['hostname']:
+        if source_hostname != primary_conn.auth['hostname']:
             # If the file was copied to the Primary Agent, delete
             # the temporary backup file we copied to the Primary Agent.
+            self.log.debug("------------Restore: Removing file '%s' after restore------" % source_pathname)
             remove_body = self.cli_cmd(["DEL %s" % source_pathname])
             if remove_body.has_key('error'):
                 return remove_body
+
+        if orig_states[STATE_TYPE_MAIN] == STATE_MAIN_STARTED:
+            # If Tableau was running before the restore, start it back up.
+            self.log.debug("------------Restore: Starting tableau after restore------")
+            stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STARTING)
+            start_body = self.cli_cmd("tabadmin start")
+            if start_body.has_key('error'):
+                self.info.debug("Restore: tabadmin start failed")
+                return start_body
 
         return body
 

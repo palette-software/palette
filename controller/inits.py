@@ -25,3 +25,6 @@ STATE_MAIN_UNKNOWN="unknown"
 STATE_SECOND_BACKUP="backup"
 STATE_SECOND_RESTORE="restore"
 STATE_SECOND_NONE="none"
+
+# Dump/restore directorys
+DEFAULT_BACKUP_DIR="c:\Palette\Data"

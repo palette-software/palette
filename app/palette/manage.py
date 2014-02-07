@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 import meta
 from . import Session
 
-PORT=9000    # fixme: get from somewhere else
+from inits import *
 
 class ManageApplication(RESTApplication):
 
@@ -20,7 +20,7 @@ class ManageApplication(RESTApplication):
 
     def send_cmd(self, cmd):
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        conn.connect(("", PORT))
+        conn.connect(("", CONTROLLER_TELNET_PORT))
         conn.send(cmd + '\n')
         print "sent", cmd
         data = conn.recv(3).strip()

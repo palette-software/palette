@@ -103,21 +103,6 @@ class AgentManager(threading.Thread):
     def all_agents(self):
         return self.agents
 
-    def get_agent_by_type(self, target):
-        """Returns the requested agent if found or False if not found."""
-        for key in self.agents:
-            if self.agents[key].auth['type'] == target:
-                agent = self.agents[key]
-                return agent
-        self.log.warning("get_agent_by_type failed for target type %s", target)
-        return False
-
-    def lock_agent(self, agent):
-        agent.lock()
-
-    def unlock_agent(self, agent):
-        agent.unlock()
-
     def agent_conn_by_type(self, agent_type):
         """Returns an instance of an Agent of the requested type."""
         for key in self.agents:
@@ -125,6 +110,12 @@ class AgentManager(threading.Thread):
                 return self.agents[key]
 
         return False
+
+    def lock_agent(self, agent):
+        agent.lock()
+
+    def unlock_agent(self, agent):
+        agent.unlock()
 
     def remove_agent(self, agent):
         self.lock()
