@@ -4,6 +4,14 @@ from webob import exc
 
 from akiri.framework.api import RESTApplication, DialogPage
 
+import sqlalchemy
+from sqlalchemy import Column, Integer, String, DateTime, func
+from sqlalchemy.schema import ForeignKey
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import IntegrityError
+import meta
+from . import Session
+
 PORT=9000    # fixme: get from somewhere else
 
 class ManageApplication(RESTApplication):
@@ -40,6 +48,17 @@ class ManageApplication(RESTApplication):
         elif action == 'stop':
             return self.handle_stop(req)
         raise exc.HTTPBadRequest()
+
+class AgentStatusEntry(meta.Base):
+    __tablename__ = 'agentstatus'
+
+    hostname = Column(String, primary_key=True)
+    agent_type = Column(String)
+    version = Column(String)
+    ip_address = Column(String)
+    listen_port = Column(Integer)
+    uuid = Column(String)
+    creation_time = Column(DateTime, default=func.now())
         
 class ManageAdvancedDialog(DialogPage):
 
@@ -48,4 +67,7 @@ class ManageAdvancedDialog(DialogPage):
 
     def __init__(self, global_conf):
         super(ManageAdvancedDialog, self).__init__(global_conf)
-        self.agents = ["primary", "other"]
+
+        db_session = Session()
+        self.agents = db_session.query(AgentStatusEntry).all()
+        db_session.close()
