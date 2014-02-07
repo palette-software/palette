@@ -26,6 +26,7 @@ version="0.1"
 
 global manager # fixme
 global server # fixme
+global log # fixme
 
 class CliHandler(socketserver.StreamRequestHandler):
 
@@ -85,24 +86,56 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, '[ERROR] usage: start'
             return
         
-        # fixme: check to see if it's already started?
+        # Check to see if we're in a state to start
+        stateman = StateManager()
+        states = stateman.get_states()
+        if states[STATE_TYPE_MAIN] != 'stopped':
+            # Even "Unknown" is not an okay state for starting as it
+            # could mean the primary agent probably isn't connected.
+            print >> self.wfile, "FAIL: Can't start - main state is:", states[STATE_TYPE_MAIN]
+            log.debug("FAIL: Can't start - main state is: %s", states[STATE_TYPE_MAIN])
+            return
+        
+        if states[STATE_TYPE_SECOND] != STATE_SECOND_NONE:
+            print >> self.wfile, "FAIL: Can't start - second state is:", states[STATE_TYPE_SECOND]
+            log.debug("FAIL: Can't start - second state is: %s", states[STATE_TYPE_SECOND])
+            return
+            
+        stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STARTING)
+
         # fixme: Reply with "OK" only after the agent received the command?
         print >> self.wfile, "OK"
 
-        body = server.start_cmd()
+        body = server.cli_cmd('tabadmin start')
+
+        # STARTED is set by the status monitor since it really knows the status.
+
+        # fixme: check & report status to see if it really started?
         self.report_status(body)
-        # fixme: check status to see if it really started?
 
     def do_stop(self, argv):
         if len(argv) != 0:
             print >> self.wfile, '[ERROR] usage: stop'
             return
 
-        # fixme: check to see if it's already stopped?
+        # Check to see if we're in a state to stop
+        stateman = StateManager()
+        states = stateman.get_states()
+        if states[STATE_TYPE_MAIN] != 'started':
+            log.debug("FAIL: Can't stop - main state is: %s", states[STATE_TYPE_MAIN])
+            print >> self.wfile, "FAIL: Can't stop - current state is:", states[STATE_TYPE_MAIN]
+            return
+
+        # fixme: Prevent stopping if the use is doing a backup or restore?
         # fixme: Reply with "OK" only after the agent received the command?
         print >> self.wfile, "OK"
 
-        body = server.stop_cmd()
+        stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STOPPING)
+        body = server.cli_cmd('tabadmin stop')
+
+        # STOPPED is set by the status monitor since it really knows the status>
+
+        # fixme: check & report status to see if it really stopped?
         self.report_status(body)
 
     def report_status(self, body):
@@ -179,22 +212,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.backup = BackupManager(self.engine)
         self.backup.add(backup_name, ip_address)
 
-        return body
-
-    def start_cmd(self):
-        stateman = StateManager()
-        stateman.update(STATE_STARTING)
-        body = self.cli_cmd('tabadmin start')
-        # fixme: check status to see if it really started?
-        stateman.update(STATE_STARTED)
-        return body
-
-    def stop_cmd(self):
-        stateman = StateManager()
-        stateman.update(STATE_STOPPING)
-        body = self.cli_cmd('tabadmin stop')
-        # fixme: check status to see if it really started?
-        stateman.update(STATE_STOPPED)
         return body
 
     def status_cmd(self):
@@ -525,9 +542,11 @@ def main():
     import logger
     
     global server   # fixme
+    global log      # fixme
     
     parser = argparse.ArgumentParser(description='Palette Controller')
     parser.add_argument('--debug', action='store_true', default=True)
+    parser.add_argument('--nostatus', action='store_true', default=False)
     args = parser.parse_args()
 
     default_loglevel = logging.DEBUG    # fixme: change default to logging.INFO
@@ -548,9 +567,13 @@ def main():
     HOST, PORT = 'localhost', 9000
     server = Controller((HOST, PORT), CliHandler)
 
-    log.debug("Starting status monitor.")
+    # Need to instiate to initialize state and status tables,
+    # even if we don't run the status thread.
     statusmon = StatusMonitor(server, manager)
-    statusmon.start()
+
+    if not args.nostatus:
+        log.debug("Starting status monitor.")
+        statusmon.start()
 
     server.log = log    # fixme
     server.serve_forever()

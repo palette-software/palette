@@ -8,6 +8,7 @@ from httplib import HTTPConnection
 import json
 
 from agentstatus import AgentStatus
+from state import StateManager
 
 from inits import *
 
@@ -63,31 +64,38 @@ class AgentManager(threading.Thread):
         # the unique 'conn_id'.
         self.agents = {}
 
-    def register(self, agent, body):
+    def register(self, new_agent, body):
         """Called with the agent object and body /auth dictionary that
            was sent from the agent in json."""
        
         self.lock()
-        self.log.debug("new agent of type: %s, name %s, conn_id %d", body['type'], body['hostname'], agent.conn_id)
+        self.log.debug("new agent of type: %s, name %s, conn_id %d", body['type'], body['hostname'], new_agent.conn_id)
 
-        agent_type = body['type']
+        new_agent_type = body['type']
         # Don't allow two primary agents to be connected and
         # don't allow two agents with the same name to be connected
         # Keep the newest one.
-        for key in self.agents:
-            if self.agents[key].auth['hostname'] == body['hostname']:
+        for key in self.agents.keys():
+            agent = self.agents[key]
+            if agent.auth['hostname'] == body['hostname']:
                 self.log.info("Agent already connected with name '%s': will remove it and use the new connection.", body['hostname'])
-                self.remove_agent(self.agents[key])
+                self.remove_agent(agent)
                 break
-            elif agent_type == AGENT_TYPE_PRIMARY:
-                if self.agents[key].auth['type'] == AGENT_TYPE_PRIMARY:
+            elif new_agent_type == AGENT_TYPE_PRIMARY and \
+                                agent.auth['type'] == AGENT_TYPE_PRIMARY:
                     self.log.info("Primary agent already connected: will remove it and keep the new primary agent connection.")
-                    self.remove_agent(self.agents[key])
+                    self.remove_agent(agent)
 
         # Remember the new agent
         self.agentstatus.add(body['hostname'], body['type'], body['version'], body['ip-address'], body['listen-port'], body['uuid'])
-        self.agents[agent.conn_id] = agent
+        self.agents[new_agent.conn_id] = new_agent
         self.auth = body
+
+        if new_agent_type == AGENT_TYPE_PRIMARY:
+            self.log.debug("remove_agent: Initializing state entries on connect")
+            stateman = StateManager()
+            stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)
+            stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
 
         self.unlock()
 
@@ -128,6 +136,12 @@ class AgentManager(threading.Thread):
             del self.agents[conn_id]
         else:
             self.log.debug("remove_agent: No such agent with conn_id %d", conn_id)
+        if agent.auth['type'] == AGENT_TYPE_PRIMARY:
+            self.log.debug("remove_agent: Initializing state entries on removal")
+            stateman = StateManager()
+            stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)
+            stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
+
         self.unlock()
 
     def lock(self):
@@ -139,8 +153,8 @@ class AgentManager(threading.Thread):
         self.lockobj.release()
 
     def run(self):
-        self.agentstatus = AgentStatus()
-        self.agentstatus.remove_all_agents()
+        self.agentstatus = AgentStatus(self.log)
+        self.agentstatus.remove_all_agents()    # init agents table
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

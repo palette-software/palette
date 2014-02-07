@@ -1,16 +1,34 @@
+import socket
 
 from webob import exc
 
 from akiri.framework.api import RESTApplication, DialogPage
 
+PORT=9000    # fixme: get from somewhere else
+
 class ManageApplication(RESTApplication):
 
     NAME = 'manage'
 
+    def send_cmd(self, cmd):
+        conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        conn.connect(("", PORT))
+        conn.send(cmd + '\n')
+        print "sent", cmd
+        data = conn.recv(3).strip()
+        print "got", data
+        if data != 'OK':
+            # fix me: do something
+            print "Bad result back from the controller."
+        conn.close()
+
     def handle_start(self, req):
+
+        self.send_cmd("start")
         return {}
 
     def handle_stop(self, req):
+        self.send_cmd("stop")
         return {}
 
     def handle(self, req):

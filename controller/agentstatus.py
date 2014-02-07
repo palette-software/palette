@@ -1,5 +1,4 @@
 import logging
-import logger
 import string
 import time
 import threading
@@ -34,9 +33,8 @@ class AgentStatusEntry(meta.Base):
 
 class AgentStatus(object):
 
-    def __init__(self):
-#        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.INFO)
-        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.DEBUG)
+    def __init__(self, log):
+        self.log = log
 
         # fixme: move to .ini config file
         if platform.system() == 'Windows':

@@ -12,7 +12,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 import meta
 
+from state import StateManager
 from inits import *
+
 class StatusEntry(meta.Base):
     __tablename__ = 'status'
 
@@ -32,8 +34,8 @@ class StatusMonitor(threading.Thread):
         super(StatusMonitor, self).__init__()
         self.server = server
         self.manager = manager
-        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.INFO)
-#        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.DEBUG)
+#        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.INFO)
+        self.log = logger.config_logging("new try", logging.DEBUG)
 
         # fixme: move to .ini config file
         if platform.system() == 'Windows':
@@ -49,10 +51,25 @@ class StatusMonitor(threading.Thread):
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
 
+        # Start fresh: status table
+        self.remove_all_status()
+        self.session.commit()
+
+        # Start fresh: state table
+        stateman = StateManager()
+        stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)
+        # fixme: We could check to see if the user had started
+        # a backup or restore?
+        stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
+
     # Remove all entries to get ready for new status info.
     def remove_all_status(self):
         self.session.query(StatusEntry).\
             delete()
+
+        # Intentionally don't commit here.  We want the existing
+        # rows to be available until the new rows are inserted and
+        # committed.
 
     def get_all_status(self):
         status_entries = self.session.query(StatusEntry).all()
@@ -67,6 +84,18 @@ class StatusMonitor(threading.Thread):
         entry = StatusEntry(name, pid, status)
         self.session.add(entry)
 
+    def update_state_table(self, status):
+        if status == "STOPPED":
+            main_state = STATE_MAIN_STOPPED
+        elif status == "RUNNING":
+            main_state = STATE_MAIN_STARTED
+        else:
+            self.log.error("Unknown status: %s", status)
+            main_state = STATE_MAIN_UNKNOWN
+            
+        stateman = StateManager()
+        stateman.update(STATE_TYPE_MAIN, main_state)
+
     def run(self):
         while True:
             time.sleep(DEFAULT_STATUS_SLEEP_INTERVAL)
@@ -76,6 +105,8 @@ class StatusMonitor(threading.Thread):
 
         if not self.manager.agent_conn_by_type(AGENT_TYPE_PRIMARY):
             self.log.debug("status thread: No primary agent currently connected.")
+            self.remove_all_status()
+            self.session.commit()
             return
 
         body = self.server.status_cmd()
@@ -86,9 +117,11 @@ class StatusMonitor(threading.Thread):
 
         body = body['stdout']
         lines = string.split(body, '\n')
+
         if len(lines) < 1:
             self.log.error("Bad status returned.  Too few lines.")
             return
+
 
         if len(lines) == 1:
             # "Status: STOPPED" is the only line
@@ -101,12 +134,16 @@ class StatusMonitor(threading.Thread):
             self.log.error("Bad status returned.  First line wasn't 'Status:' %s:", line1)
             return
 
+        status = line1[1]
+        self.log.debug("Updating state table with status: %s", status)
+        self.update_state_table(status)
+
         # Store the second part (like "RUNNING") into the database
 
         self.remove_all_status()
 
-        self.add("Status", 0, line1[1])
-        self.log.debug("Logging main status: %s", line1[1])
+        self.add("Status", 0, status)
+        self.log.debug("Logging main status: %s", status)
 
         for line in lines[1:]:   # Skip the first line we already did.
             line = line.strip()
@@ -143,6 +180,7 @@ class StatusMonitor(threading.Thread):
 
         self.session.commit()
 
+        return    # no debugging for now
         # debug - try to get it back
         self.log.debug("--------current status---------------")
         all_status = self.get_all_status()
