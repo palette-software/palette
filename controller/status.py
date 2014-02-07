@@ -55,12 +55,13 @@ class StatusMonitor(threading.Thread):
         self.remove_all_status()
         self.session.commit()
 
+        self.stateman = StateManager()
+
         # Start fresh: state table
-        stateman = StateManager()
-        stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)
+        self.stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)
         # fixme: We could check to see if the user had started
         # a backup or restore?
-        stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
+        self.stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
 
     # Remove all entries to get ready for new status info.
     def remove_all_status(self):
@@ -87,14 +88,13 @@ class StatusMonitor(threading.Thread):
     def set_main_state(self, status):
         """Set main_state if appropriate."""
 
-        stateman = StateManager()
-        states = stateman.get_states()
+        states = self.stateman.get_states()
         main_state = states[STATE_TYPE_MAIN]
 
         if status == "RUNNING":
             if main_state == STATE_MAIN_STARTING or \
                                         main_state == STATE_MAIN_UNKNOWN:
-                stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STARTED)
+                self.stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STARTED)
                 self.log.debug("Updated state table with main status: %s", STATE_MAIN_STARTED)
             elif main_state == 'STOPPED':
                 # This shouldn't happen.
@@ -109,7 +109,7 @@ class StatusMonitor(threading.Thread):
         if status == 'STOPPED':
             if main_state == STATE_MAIN_STOPPING or \
                                     main_state == STATE_MAIN_UNKNOWN:
-                stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STOPPED)
+                self.stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STOPPED)
                 self.log.debug("Updated state table with main status: %s", STATE_MAIN_STOPPED)
             elif main_state == STATE_MAIN_STARTING or \
                                         main_state == STATE_MAIN_STOPPED:
