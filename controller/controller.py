@@ -201,7 +201,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # If not, the backup is saved in the server bin directory.
         backup_name = time.strftime("%b%d_%H%M%S")
         # Example name: Jan27_162225
-        body = self.cli_cmd("tabadmin backup %s" % backup_name )
+        body = self.cli_cmd("tabadmin backup %s" % backup_name)
         if body.has_key('error'):
             return body
 

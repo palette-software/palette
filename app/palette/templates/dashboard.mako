@@ -21,7 +21,7 @@
 <div class="tile">
   <h2>Backup</h2>
   <h3>Last</h3>
-  <p id="last">Thursday, November 7th at 12:00 AM</p>
+  <p id="last"></p>
   <h3>Next</h3>
   <p id="next">- - - -</p>
   <p class="padtop">

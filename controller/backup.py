@@ -1,5 +1,4 @@
 from sqlalchemy import Column, Integer, String, DateTime, func
-from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 
