@@ -49,6 +49,7 @@ class StateManager(object):
             session.add(entry)
 
         session.commit()
+        session.close()
 
     def get_states(self):
         session = self.Session()
@@ -67,4 +68,5 @@ class StateManager(object):
         except NoResultFound, e:
             second_status = STATE_SECOND_NONE
 
+        session.close()
         return { STATE_TYPE_MAIN: main_status, STATE_TYPE_SECOND: second_status }
