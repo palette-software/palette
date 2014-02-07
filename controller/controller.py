@@ -285,7 +285,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.debug("_send_cli reading...")
             body_json = res.read()
         except HTTPException, e:
-            manager.remove_agent(aconn)    # bad agent
+            self.remove_agent(aconn)    # bad agent
             return self.error("POST /cli failed with: " + str(e))
         finally:
             aconn.unlock()
@@ -336,7 +336,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.debug("_send_cleanup reading...")
             body_json = res.read()
         except HTTPException, e:
-            manager.remove_agent(aconn)    # bad agent
+            self.remove_agent(aconn)    # bad agent
             self.log.debug("POST %s failed with HTTPException: %s", command, str(e))
             return self.error("POST /%s failed with: %s" % (command, str(e)))
         finally:
@@ -489,7 +489,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 res = aconn.httpconn.getresponse()
                 self.log.debug("status: " + str(res.status) + ' ' + str(res.reason))
                 if res.status != 200:
-                    manager.remove_agent(aconn)    # bad agent
+                    self.remove_agent(aconn)    # bad agent
                     aconn.unlock()
                     return self.error("GET %s command failed with: %s" % (uri, str(e)))
 #                debug for testing agent disconnects
@@ -506,7 +506,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
                 self.log.debug("body = " + str(body))
                 if not body.has_key('run-status'):
-                    manager.remove_agent(aconn)    # bad agent
+                    self.remove_agent(aconn)    # bad agent
                     aconn.unlock()
                     return self.error("GET %S command reply was missing 'run-status'!  Will not retry." % (uri), body)
     
@@ -516,14 +516,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     time.sleep(CLI_GET_STATUS_INTERVAL)
                     continue
                 else:
-                    manager.remove_agent(aconn)    # bad agent
+                    self.remove_agent(aconn)    # bad agent
                     aconn.unlock()
                     return self.error("Unknown run-status: %s.  Will not retry." % body['run-status'], body)
             except HTTPException, e:
-                    manager.remove_agent(aconn)    # bad agent
+                    self.remove_agent(aconn)    # bad agent
                     return self.error("GET %s failed with HTTPException: %s" % (uri, str(e)))
             except EnvironmentError, e:
-                    manager.remove_agent(aconn)    # bad agent
+                    self.remove_agent(aconn)    # bad agent
                     return self.error("GET %s failed with: %s" % (uri, str(e)))
             finally:
                 aconn.unlock()
@@ -537,12 +537,20 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return_dict['error'] = msg
         return return_dict
 
+    def remove_agent(self, aconn):
+        manager.remove_agent(aconn)
+        if not manager.agent_conn_by_type(AGENT_TYPE_PRIMARY):
+            statusmon.remove_all_status()
+            statusmon.session.commit()
+
 def main():
     import argparse
     import logger
     
     global server   # fixme
     global log      # fixme
+    global manager   # fixme
+    global statusmon # fixme
     
     parser = argparse.ArgumentParser(description='Palette Controller')
     parser.add_argument('--debug', action='store_true', default=True)
@@ -567,7 +575,7 @@ def main():
     HOST, PORT = 'localhost', 9000
     server = Controller((HOST, PORT), CliHandler)
 
-    # Need to instiate to initialize state and status tables,
+    # Need to instantiate to initialize state and status tables,
     # even if we don't run the status thread.
     statusmon = StatusMonitor(server, manager)
 
