@@ -1,6 +1,8 @@
 import time
 import sys
 
+from akiri.framework.api import RESTApplication, DialogPage
+
 from webob import exc
 
 from sqlalchemy import Column, Integer, String, DateTime, func
@@ -23,6 +25,7 @@ class BackupEntry(meta.Base):
     def __init__(self, name, ip_address):
         self.name = name
         self.ip_address = ip_address
+        self.creation_time = creation_time
 
 class BackupApplication(RESTApplication):
 
@@ -62,3 +65,20 @@ class BackupApplication(RESTApplication):
                 return self.handle_restore()
             raise exc.HTTPBadRequest()
         raise exc.HTTPMethodNotAllowed()
+
+class BackupDialog(DialogPage):
+
+    NAME = "backup"
+    TEMPLATE = "backup.mako"
+
+    def __init__(self, global_conf):
+        super(BackupDialog, self).__init__(global_conf)
+
+    def __init__(self, global_conf):
+        super(BackupDialog, self).__init__(global_conf)
+
+        db_session = Session()
+        self.backup_entries = db_session.query(BackupEntry).all()
+        for entry in self.backup_entries:
+            self.backup_time = str(entry.creation_time)[:19] # Cut off fraction
+        db_session.close()

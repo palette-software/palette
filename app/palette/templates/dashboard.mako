@@ -27,7 +27,10 @@
   <p class="padtop">
     <a id="backupButton" class="button spacer">Backup</a>
     <a id="restoreButton" class="button">Restore</a></p>
-  <p class="tile-advanced"><span class="arrow-down"></span> Advanced</p>
+  <p class="tile-advanced">
+    <span class="arrow-down"></span>
+    <a id="advanced-backup" href="#"> Advanced</a>
+  </p>
 </div>
 <div class="tile">
   <h2>Tableau Support Case Builder</h2>
