@@ -80,5 +80,5 @@ class BackupDialog(DialogPage):
         db_session = Session()
         self.backup_entries = db_session.query(BackupEntry).all()
         for entry in self.backup_entries:
-            self.backup_time = str(entry.creation_time)[:19] # Cut off fraction
+            entry.creation_time = str(entry.creation_time)[:19] # Cut off fraction
         db_session.close()
