@@ -10,6 +10,8 @@ import json
 import time
 import platform
 
+import ConfigParser as configparser
+
 from request import *
 from inits import *
 from exc import *
@@ -231,7 +233,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("Agent of this type not connected currently: %s" % target)
         try:
             body = self._send_cli(command, aconn)
-        except EnvironmentError, e:
+        except EnvironmentError:
             return self.error("_send_cli failed with: " + str(e))
         except HttpException, e:
             return self.error("_send_cli HttPException: " + str(e))
@@ -545,6 +547,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             statusmon.remove_all_status()
             statusmon.session.commit()
 
+def parse_config(configfile):
+    config = configparser.ConfigParser()
+    if configfile != None:
+            config.read(configfile)
+
+    try:
+        config.add_section('controller')
+    except configparser.DuplicateSectionError, e:
+        pass
+
+    return config
+
 def main():
     import argparse
     import logger
@@ -553,11 +567,28 @@ def main():
     global log      # fixme
     global manager   # fixme
     global statusmon # fixme
-    
+ 
     parser = argparse.ArgumentParser(description='Palette Controller')
     parser.add_argument('--debug', action='store_true', default=True)
+    parser.add_argument('-c', '--config', action='store', dest='config', default=None)
     parser.add_argument('--nostatus', action='store_true', default=False)
     args = parser.parse_args()
+
+    # FIXME: Encapsulate working around the lame Python ConfigParser API
+    #        We should be able to say "xxx = get(section, option, default)"
+    #        or get() should return None for a missing option, but for
+    #        some reason ConfigParser only raises exceptions.
+    config = parse_config(args.config)
+    if config.has_option('controller', 'host'):
+        host = config.get('controller', 'host')
+    else:
+        host = 'localhost'
+    if config.has_option('controller', 'port'):
+        port = config.getint('controller', 'port')
+    else:
+        port = 9000
+    print "host: %s" % (host)
+    print "port: %d" % (port)
 
     default_loglevel = logging.DEBUG    # fixme: change default to logging.INFO
     if args.debug:
@@ -574,8 +605,7 @@ def main():
     manager.log = log   # fixme
     manager.start()
 
-    HOST, PORT = 'localhost', 9000
-    server = Controller((HOST, PORT), CliHandler)
+    server = Controller((host, port), CliHandler)
 
     # Need to instantiate to initialize state and status tables,
     # even if we don't run the status thread.
