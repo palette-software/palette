@@ -18,9 +18,8 @@ class BackupEntry(meta.Base):
 
 class BackupManager(object):
 
-    def __init__(self, engine):
-    
-        self.Session = sessionmaker(bind=engine)
+    def __init__(self):    
+        self.Session = sessionmaker(bind=meta.engine)
 
     def add(self, name, hostname, ip_address):
         session = self.Session()

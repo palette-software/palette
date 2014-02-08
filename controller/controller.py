@@ -8,7 +8,6 @@ import logging
 from agent import AgentManager
 import json
 import time
-import platform
 
 import ConfigParser as configparser
 
@@ -18,6 +17,7 @@ from exc import *
 from httplib import HTTPException
 
 import sqlalchemy
+from sqlalchemy.orm import sessionmaker
 import meta
 
 from backup import BackupManager
@@ -223,23 +223,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             f(argv)
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
+
     allow_reuse_address = True
-
-    def dbinit(self):
-        # fixme: move ...
-
-        # fixme: move to .ini config file
-        if platform.system() == 'Windows':
-            # Windows with Tableau uses port 8060
-            url = "postgresql://palette:palpass@localhost:8060/paldb"
-
-        else:
-            url = "postgresql://palette:palpass@localhost/paldb"
-
-        self.engine = sqlalchemy.create_engine(url, echo=False)
-
-        # fixme: Do only once...
-        meta.Base.metadata.create_all(bind=self.engine)
 
     def backup_cmd(self):
         """Does a backup."""
@@ -289,9 +274,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             backup_hostname = primary_conn.auth['hostname']
 
         # Save name of backup, hostname ip address of the primary agent to the db.
-        self.dbinit()    #fixme
-        self.backup = BackupManager(self.engine)
-        self.backup.add(backup_name, backup_hostname, backup_ip_address)
+        # fixme: create one of these per server.
+        self.backup = BackupManager()
+        self.backup.add(backup_name, ip_address)
 
         return body
 
@@ -678,8 +663,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def remove_agent(self, aconn):
         manager.remove_agent(aconn)
         if not manager.agent_conn_by_type(AGENT_TYPE_PRIMARY):
-            statusmon.remove_all_status()
-            statusmon.session.commit()
+            # fixme: why get Session() from here?
+            session = statusmon.Session()
+            statusmon.remove_all_status(session)
+            session.commit()
 
 def parse_config(configfile):
     config = configparser.ConfigParser()
@@ -731,6 +718,12 @@ def main():
     log = logger.config_logging(MAIN_LOGGER_NAME, default_loglevel)
 
     log.info("Controller version: %s", version)
+
+    # engine is once per single application process.
+    # see http://docs.sqlalchemy.org/en/rel_0_9/core/connections.html
+    meta.engine = sqlalchemy.create_engine(meta.url, echo=False)
+    # Create the table definition ONCE, before all the other threads start.
+    meta.Base.metadata.create_all(bind=meta.engine)
 
     log.debug("Starting agent listener.")
 

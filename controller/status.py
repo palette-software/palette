@@ -18,6 +18,7 @@ from inits import *
 class StatusEntry(meta.Base):
     __tablename__ = 'status'
 
+    #name = Column(String)
     name = Column(String, primary_key=True)
     pid = Column(Integer)
     status = Column(String)
@@ -37,35 +38,24 @@ class StatusMonitor(threading.Thread):
 #        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.INFO)
         self.log = logger.config_logging("new try", logging.DEBUG)
 
-        # fixme: move to .ini config file
-        if platform.system() == 'Windows':
-            # Windows with Tableau uses port 8060
-            url = "postgresql://palette:palpass@localhost:8060/paldb"
-        else:
-            url = "postgresql://palette:palpass@localhost/paldb"
-
-        self.engine = sqlalchemy.create_engine(url, echo=False)
-
-        meta.Base.metadata.create_all(bind=self.engine)
+        self.Session = sessionmaker(bind=meta.engine)
         
-        self.Session = sessionmaker(bind=self.engine)
-        self.session = self.Session()
-
         # Start fresh: status table
-        self.remove_all_status()
-        self.session.commit()
+        session = self.Session()
+        self.remove_all_status(session)
+        session.commit()
 
         self.stateman = StateManager()
 
         # Start fresh: state table
-        self.stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)
+        #self.stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)
         # fixme: We could check to see if the user had started
         # a backup or restore?
-        self.stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
+        #self.stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
 
     # Remove all entries to get ready for new status info.
-    def remove_all_status(self):
-        self.session.query(StatusEntry).\
+    def remove_all_status(self, session):
+        session.query(StatusEntry).\
             delete()
 
         # Intentionally don't commit here.  We want the existing
@@ -73,17 +63,20 @@ class StatusMonitor(threading.Thread):
         # committed.
 
     def get_all_status(self):
-        status_entries = self.session.query(StatusEntry).all()
+        session = self.Session()
+        status_entries = session.query(StatusEntry).all()
         return status_entries
 
     def get_main_status(self):
-        main_status = self.session.query(StatusEntry).\
+        session = self.Session()
+        main_status = session.query(StatusEntry).\
             filter(StatusEntry.name == 'Status').one()
         return main_status
 
     def add(self, name, pid, status):
+        session = self.Session()
         entry = StatusEntry(name, pid, status)
-        self.session.add(entry)
+        session.add(entry)
 
     def set_main_state(self, status):
         """Set main_state if appropriate."""
@@ -127,10 +120,11 @@ class StatusMonitor(threading.Thread):
 
     def check_status(self):
 
+        session = self.Session()
         if not self.manager.agent_conn_by_type(AGENT_TYPE_PRIMARY):
             self.log.debug("status thread: No primary agent currently connected.")
-            self.remove_all_status()
-            self.session.commit()
+            self.remove_all_status(session)
+            session.commit()
             return
 
         body = self.server.status_cmd()
@@ -161,7 +155,7 @@ class StatusMonitor(threading.Thread):
         status = line1[1]
 
         # Store the second part (like "RUNNING") into the database
-        self.remove_all_status()
+        self.remove_all_status(session)
         self.add("Status", 0, status)
         self.log.debug("Logging main status: %s", status)
 
@@ -201,7 +195,7 @@ class StatusMonitor(threading.Thread):
             self.add(name, pid, status)
             self.log.debug("logged: %s, %d, %s", name, pid, status)
 
-        self.session.commit()
+        session.commit()
 
         return    # no debugging for now
         # debug - try to get it back

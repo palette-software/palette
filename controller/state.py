@@ -28,15 +28,7 @@ class StateEntry(meta.Base):
 class StateManager(object):
 
     def __init__(self):
-    
-        if platform.system() == 'Windows':
-            url = "postgresql://palette:palpass@localhost:8060/paldb"
-        else:
-            url = "postgresql://palette:palpass@localhost/paldb"
-        self.engine = sqlalchemy.create_engine(url, echo=False)
-
-        meta.Base.metadata.create_all(bind=self.engine)
-        self.Session = sessionmaker(bind=self.engine)
+        self.Session = sessionmaker(bind=meta.engine)
 
     def update(self, state_type, state):
         session = self.Session()

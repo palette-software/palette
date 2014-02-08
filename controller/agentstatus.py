@@ -13,14 +13,14 @@ import meta
 
 from inits import *
 class AgentStatusEntry(meta.Base):
-    __tablename__ = 'agentstatus'
+    __tablename__ = 'agents'
 
-    hostname = Column(String, primary_key=True)
+    uuid = Column(String, primary_key=True)
+    hostname = Column(String)
     agent_type = Column(String)
     version = Column(String)
     ip_address = Column(String)
     listen_port = Column(Integer)
-    uuid = Column(String)
     creation_time = Column(DateTime, default=func.now())
 
     def __init__(self, hostname, agent_type, version, ip_address, listen_port, uuid):
@@ -35,19 +35,7 @@ class AgentStatus(object):
 
     def __init__(self, log):
         self.log = log
-
-        # fixme: move to .ini config file
-        if platform.system() == 'Windows':
-            # Windows with Tableau uses port 8060
-            url = "postgresql://palette:palpass@localhost:8060/paldb"
-        else:
-            url = "postgresql://palette:palpass@localhost/paldb"
-
-        self.engine = sqlalchemy.create_engine(url, echo=False)
-
-        meta.Base.metadata.create_all(bind=self.engine)
-        
-        self.Session = sessionmaker(bind=self.engine)
+        self.Session = sessionmaker(bind=meta.engine)
 
     # Remove all entries to get ready for new agents info.
     def remove_all_agents(self):
