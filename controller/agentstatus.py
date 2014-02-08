@@ -22,6 +22,8 @@ class AgentStatusEntry(meta.Base):
     ip_address = Column(String)
     listen_port = Column(Integer)
     creation_time = Column(DateTime, default=func.now())
+    last_connection_time = Column(DateTime, default=func.now())
+    last_disconnect_time = Column(DateTime)
 
     def __init__(self, hostname, agent_type, version, ip_address, listen_port, uuid):
         self.hostname = hostname
@@ -37,24 +39,11 @@ class AgentStatus(object):
         self.log = log
         self.Session = sessionmaker(bind=meta.engine)
 
-    # Remove all entries to get ready for new agents info.
-    def remove_all_agents(self):
-        session = self.Session()
-        session.query(AgentStatusEntry).\
-            delete()
-
-        session.commit()
-        session.close()
-
-    def get_all_agents(self):
-        session = self.Session()
-        session.query(AgentStatusEntry).all()
-        return agents
-
     def add(self, hostname, agent_type, version, ip_address, listen_port, uuid):
         session = self.Session()
         entry = AgentStatusEntry(hostname, agent_type, version, ip_address, listen_port, uuid)
-        session.add(entry)
+        obj =session.merge(entry)
+        session.save(obj)
         session.commit()
         session.close()
 

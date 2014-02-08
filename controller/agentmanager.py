@@ -7,14 +7,18 @@ import traceback
 from httplib import HTTPConnection
 import json
 
-from agentstatus import AgentStatus
+from agentstatus import AgentStatusEntry
 from state import StateManager
+
+import meta
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import func
 
 from inits import *
 
 # The Controller's Agent Manager.
 # Communicates with the Agent.
-
+# fixme: maybe merge with the AgentStatusEntry class.
 class AgentConnection(object):
     
     _CID = 1
@@ -24,6 +28,7 @@ class AgentConnection(object):
         self.addr = addr
         self.httpconn = False   # Used by the controller
         self.auth = {}          # Used by the controller
+        self.uuid = None
 
         # Each agent connection has its own lock
         self.lockobj = threading.RLock()
@@ -53,6 +58,7 @@ class AgentManager(threading.Thread):
 
     def __init__(self, host='0.0.0.0', port=0):
         super(AgentManager, self).__init__()
+        self.Session = sessionmaker(bind=meta.engine)
         self.daemon = True
         self.lockobj = threading.RLock()
         self.host = host
@@ -87,7 +93,8 @@ class AgentManager(threading.Thread):
                     self.remove_agent(agent)
 
         # Remember the new agent
-        self.agentstatus.add(body['hostname'], body['type'], body['version'], body['ip-address'], body['listen-port'], body['uuid'])
+        self.remember(body)
+        new_agent.uuid = body['uuid']
         self.agents[new_agent.conn_id] = new_agent
         self.auth = body
 
@@ -98,6 +105,31 @@ class AgentManager(threading.Thread):
             stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
 
         self.unlock()
+
+    # formerly agentstatus.add()
+    def remember(self, body):
+        session = self.Session()
+        # fixme: check for the presence of all these entries.
+        entry = AgentStatusEntry(body['hostname'],
+                                 body['type'], 
+                                 body['version'], 
+                                 body['ip-address'],
+                                 body['listen-port'],
+                                 body['uuid'])
+        entry.last_connection_time = func.now()
+        session.merge(entry)
+        session.commit()
+        session.close()
+
+    def forget(self, uuid):
+        session = self.Session()
+        #fixme: add try
+        entry = session.query(AgentStatusEntry).\
+            filter(AgentStatusEntry.uuid == uuid).\
+            one()
+        entry.last_disconnect_time = func.now()
+        session.commit()
+        session.close()
 
     # Return the list of all agents
     def all_agents(self):
@@ -117,13 +149,20 @@ class AgentManager(threading.Thread):
     def unlock_agent(self, agent):
         agent.unlock()
 
+    def agent_conn_by_type(self, agent_type):
+        """Returns an instance of an Agent of the requested type."""
+        for key in self.agents:
+            if self.agents[key].auth['type'] == agent_type:
+                return self.agents[key]
+        return False
+
     def remove_agent(self, agent):
         self.lock()
         conn_id = agent.conn_id
         if self.agents.has_key(conn_id):
             self.log.debug("Removing agent with conn_id %d, name %s",\
                 conn_id, self.agents[conn_id].auth['hostname'])
-            self.agentstatus.remove(self.agents[conn_id].auth['hostname'])
+            self.forget(agent.uuid)
             del self.agents[conn_id]
         else:
             self.log.debug("remove_agent: No such agent with conn_id %d", conn_id)
@@ -144,9 +183,6 @@ class AgentManager(threading.Thread):
         self.lockobj.release()
 
     def run(self):
-        self.agentstatus = AgentStatus(self.log)
-        self.agentstatus.remove_all_agents()    # init agents table
-
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind((self.host, self.port))
