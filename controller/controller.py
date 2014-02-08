@@ -79,7 +79,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         Primary Agent first."""
 
         if len(argv) != 1:
-            print >> self.wfile, '[ERROR] usage: restore source-hostname:pathname'
+            print >> self.wfile, '[ERROR] usage: restore source-ip-address:pathname'
             return
 
         # Check to see if we're in a state to restore
@@ -230,6 +230,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if platform.system() == 'Windows':
             # Windows with Tableau uses port 8060
             url = "postgresql://palette:palpass@localhost:8060/paldb"
+
         else:
             url = "postgresql://palette:palpass@localhost/paldb"
 
@@ -273,36 +274,39 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 return copy_body
 
             # Remove the backup file from the primary
-            remove_body = self.cli_cmd(["DEL %s" % source_pathname])
+            remove_body = self.cli_cmd(["DEL %s.tsbak" % backup_name])
             if remove_body.has_key('error'):
                 return remove_body
 
             backup_ip_address = non_primary_conn.auth['ip-address']
+            backup_hostname = non_primary_conn.auth['hostname']
 
         else:
             # Backup file remains on the primary.
             backup_ip_address = primary_conn.auth['ip-address']
+            backup_hostname = primary_conn.auth['hostname']
 
-        # Save name of backup and ip address of the primary agent to the db.
+        # Save name of backup, hostname ip address of the primary agent to the db.
         self.dbinit()    #fixme
         self.backup = BackupManager(self.engine)
-        self.backup.add(backup_name, backup_ip_address)
+        self.backup.add(backup_name, backup_hostname, backup_ip_address)
 
         return body
 
     def status_cmd(self):
         return self.cli_cmd('tabadmin status -v')
 
-    def cli_cmd(self, command, target=AGENT_TYPE_PRIMARY):
+    def cli_cmd(self, command, aconn=None):
         """ 1) Sends the command (a string)
             2) Waits for status/completion.  Saves the body from the status.
             3) Sends cleanup.
             4) Returns body from the status.
         """
 
-        aconn = manager.agent_conn_by_type(target)
         if not aconn:
-            return self.error("Agent of this type not connected currently: %s" % target)
+            aconn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
+            if not aconn:
+                return self.error("Agent of this type not connected currently: %s" % target)
         try:
             body = self._send_cli(command, aconn)
         except EnvironmentError, e:
@@ -311,6 +315,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("_send_cli HttPException: " + str(e))
 
         if body.has_key('error'):
+            return body
+
+        if not body.has_key('run-status'):
+            return self.error("_send+_cli body missing 'run-status: '" + str(e))
+
+        # It is possible for the command to finish immediately.
+        if body['run-status'] == 'finished':
+            if body.has_key('stderr') and len(body['stderr']) and \
+                                                        body['exit-status'] == 0:
+                self.log.info("exit-status was 0 but stderr wasn't empty.")
+                body['exit-status'] = 1 # Force error for exit-status.
             return body
 
         body = self._get_status("cli", body['xid'], aconn)
@@ -439,9 +454,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         (source_hostname, source_path) = source_path.split(':',1)
 
-        if len(source_hostname) == 0 or len(source_path) == 0 or \
-                                                    source_path[0] != '/':
-            return self.error("[ERROR] Invalid source specification.  Requires '/'")
+        if len(source_hostname) == 0 or len(source_path) == 0:
+            return self.error("[ERROR] Invalid source specification.")
 
         agents = manager.all_agents()
         source_ip = None
@@ -466,13 +480,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         WGET_BIN="c:/Palette/bin/wget.exe"
         target_filename = os.path.basename(source_path) # filename without directory
 
-        command = "%s --output-document=%s http://%s:%s%s" % \
+        command = "%s --output-document=%s http://%s:%s/%s" % \
             (WGET_BIN, target_filename,
                 source_ip, dest_conn.auth['listen-port'], source_path)
 
-        #GET_DIR="c:/Palette/Data/" # Use this still?  Or is it implied?
-
-        return self.cli_cmd(command)
+        return self.cli_cmd(command, dest_conn) # Send command to destination agent
 
     def restore_cmd(self, arg):
         """Do a tabadmin restore of the passed arg, except
@@ -509,17 +521,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             if not stopped:
                 return self.error('[ERROR] Tableleau did not stop as requested.  Restore aborted.')
 
-        # restore primary:c:\\stuff is possible (2 colons)
-        # restore c:\stuff where "c:" is a disk, not a host.
-        parts = arg.split(':', 1)
+        parts = arg.split(':')
+        if len(parts) != 2:
+            return self.error('[ERROR] Need exatly one colon in argument: ' + arg)
 
         source_hostname = parts[0]
-        source_pathname = parts[1]
+        source_filename = parts[1]
 
-        if not os.path.isabs(source_pathname):
-            # If it's not an absolute pathname, make it absolute, prepending
-            # the default backup directory.
-            source_pathname = DEFAULT_BACKUP_DIR + os.sep + source_pathname
+        if os.path.isabs(source_filename):
+            return self.error("[ERROR] May not specify an absolute pathname or disk: " + source_filename)
+
+        source_fullpathname = DEFAULT_BACKUP_DIR + '\\' + source_filename + ".tsbak"
 
         # Get the Primary Agent handle
         primary_conn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
@@ -527,29 +539,35 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not primary_conn:
             return self.error("[ERROR] No Primary Agent not connected.")
 
-        # Check if the source_pathname is on the Primary Agent.
+        # Check if the source_filename is on the Primary Agent.
         if source_hostname != primary_conn.auth['hostname']:
-            # The source_pathname isn't on the Primary agent:
+            # The source_filename isn't on the Primary agent:
             # We need to copy the file to the Primary.
 
             # copy_cmd arguments:
             #   source-agent-name:/filename
             #   dest-agent-hostname
-            self.log.debug("Sending copy command: %s, %s", arg, primary_conn.auth['hostname'])
-            body = server.copy_cmd(arg, primary_conn.auth['hostname'])
+            arg_tsbak = arg + ".tsbak"
+            self.log.debug("Sending copy command: %s, %s", arg_tsbak, primary_conn.auth['hostname'])
+            body = server.copy_cmd(arg_tsbak, primary_conn.auth['hostname'])
 
             if body.has_key("error"):
+                self.log.debug("Copy failed with: " + str(body))
                 return body
 
-        # The file/path is on the Primary Agent.
+        # The file is now on the Primary Agent.
+
+        # 'tabadmin restore ...' starts tableau as part of the restore procedure.
+        stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STARTING)
         try:
-            cmd = "tabadmin restore %s.tsbak" % source_pathname
+            cmd = "tabadmin restore %s" % source_fullpathname
             self.log.debug("restore sending command: %s", cmd)
             body = self.cli_cmd(cmd)
-            if body.has_key('error'):
-                return body
         except HTTPException, e:
             return self.error("HTTP Exception: " + str(e))
+
+        if body.has_key('error'):
+            return body
 
         # fixme: Do we need to add restore information to database?  
         # fixme: check status before cleanup? Or cleanup anyway?
@@ -557,19 +575,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if source_hostname != primary_conn.auth['hostname']:
             # If the file was copied to the Primary Agent, delete
             # the temporary backup file we copied to the Primary Agent.
-            self.log.debug("------------Restore: Removing file '%s' after restore------" % source_pathname)
-            remove_body = self.cli_cmd(["DEL %s" % source_pathname])
+            self.log.debug("------------Restore: Removing file '%s' after restore------" % source_fullpathname)
+            remove_body = self.cli_cmd("DEL %s" % source_fullpathname)
             if remove_body.has_key('error'):
                 return remove_body
 
-        if orig_states[STATE_TYPE_MAIN] == STATE_MAIN_STARTED:
-            # If Tableau was running before the restore, start it back up.
-            self.log.debug("------------Restore: Starting tableau after restore------")
-            stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STARTING)
-            start_body = self.cli_cmd("tabadmin start")
-            if start_body.has_key('error'):
-                self.info.debug("Restore: tabadmin start failed")
-                return start_body
+        # On a successful restore, tableau starts itself.
+        # fixme: The restore command usually still runs a while longer,
+        # even after restore completes successfully.  Maybe note this in the UI?
+        # So the "second" status stays at "restore" for a while after
+        # tableau has started and the UI say "RUNNING".
 
         return body
 
@@ -627,6 +642,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     return self.error("GET %S command reply was missing 'run-status'!  Will not retry." % (uri), body)
     
                 if body['run-status'] == 'finished':
+                    if body.has_key('stderr') and len(body['stderr']) and \
+                                                        body['exit-status'] == 0:
+                        self.log.info("exit-status was 0 but stderr wasn't empty.")
+                        body['exit-status'] = 1 # Force error for exit-status.
                     return body
                 elif body['run-status'] == 'running':
                     time.sleep(CLI_GET_STATUS_INTERVAL)
