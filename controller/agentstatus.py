@@ -47,7 +47,8 @@ class AgentStatus(object):
         session.close()
 
     def get_all_agents(self):
-        agents = self.session.query(AgentStatusEntry).all()
+        session = self.Session()
+        session.query(AgentStatusEntry).all()
         return agents
 
     def add(self, hostname, agent_type, version, ip_address, listen_port, uuid):
