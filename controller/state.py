@@ -30,7 +30,7 @@ class StateManager(object):
     def __init__(self):
     
         if platform.system() == 'Windows':
-            url = "postgresql://palette:palpass:8060@localhost/paldb"
+            url = "postgresql://palette:palpass@localhost:8060/paldb"
         else:
             url = "postgresql://palette:palpass@localhost/paldb"
         self.engine = sqlalchemy.create_engine(url, echo=False)
