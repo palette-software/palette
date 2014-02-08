@@ -296,7 +296,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 return self.error("Agent of this type not connected currently: %s" % target)
         try:
             body = self._send_cli(command, aconn)
-        except EnvironmentError:
+        except EnvironmentError, e:
             return self.error("_send_cli failed with: " + str(e))
         except HttpException, e:
             return self.error("_send_cli HttPException: " + str(e))
@@ -446,33 +446,39 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("[ERROR] Invalid source specification.")
 
         agents = manager.all_agents()
-        source_ip = None
-        dest_conn = None
+        src = dst = None
 
         for key in agents:
             if agents[key].auth['hostname'] == source_hostname:
-                source_ip = agents[key].auth['ip-address']
+                src = agents[key]
             if agents[key].auth['hostname'] == dest_name:
-                dest_conn = agents[key]
+                dst = agents[key]
 
         msg = ""
         # fixme: make sure the source isn't the same as the dest
-        if not source_ip:
+        if not src:
             msg = "Unknown source-hostname: %s. " % source_hostname 
-        if not dest_conn:
+        if not dst:
             msg += "Unknown dest-hostname: %s." % dest_name
 
-        if not source_ip or not dest_conn:
+        if not src or not dst:
             return self.error(msg)
 
         WGET_BIN="c:/Palette/bin/wget.exe"
         target_filename = os.path.basename(source_path) # filename without directory
 
+        source_ip = src.auth['ip-address']
+
+        if 'install-dir' in dst.auth:
+            target_filename = dst.auth['install-dir'] + "/Data/" + target_filename
+        else:
+            target_filename = 'c:/Palette/Data/' + target_filename
+
         command = "%s --output-document=%s http://%s:%s/%s" % \
             (WGET_BIN, target_filename,
-                source_ip, dest_conn.auth['listen-port'], source_path)
+                source_ip, src.auth['listen-port'], source_path)
 
-        return self.cli_cmd(command, dest_conn) # Send command to destination agent
+        return self.cli_cmd(command, dst) # Send command to destination agent
 
     def restore_cmd(self, arg):
         """Do a tabadmin restore of the passed arg, except

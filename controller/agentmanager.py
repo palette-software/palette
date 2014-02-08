@@ -96,7 +96,6 @@ class AgentManager(threading.Thread):
         self.remember(body)
         new_agent.uuid = body['uuid']
         self.agents[new_agent.conn_id] = new_agent
-        self.auth = body
 
         if new_agent_type == AGENT_TYPE_PRIMARY:
             self.log.debug("register: Initializing state entries on connect")
