@@ -269,7 +269,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if non_primary_conn:
             # Copy the backup to a non-primary agent
             copy_body = self.copy_cmd(\
-                "%s:%s" % (primary_conn.auth['hostname'], backup_name),
+                "%s:%s.tsbak" % (primary_conn.auth['hostname'], backup_name),
                 non_primary_conn.auth['hostname'])
 
             if copy_body.has_key('error'):
@@ -361,7 +361,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         headers = {"Content-Type": "application/json"}
 
-        self.log.debug('about to do the cli command, xid: %d, command: %s', req.xid, cli_command)
+        self.log.debug('about to do the cli command to %s, xid: %d, command: %s', \
+                        aconn.auth['hostname'], req.xid, cli_command)
         try:
             aconn.httpconn.request('POST', '/cli', req.send_body, headers)
             self.log.debug('sent cli command.')
