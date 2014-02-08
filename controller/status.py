@@ -115,8 +115,8 @@ class StatusMonitor(threading.Thread):
 
     def run(self):
         while True:
-            time.sleep(DEFAULT_STATUS_SLEEP_INTERVAL)
             self.check_status()
+            time.sleep(DEFAULT_STATUS_SLEEP_INTERVAL)
 
     def check_status(self):
 

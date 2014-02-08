@@ -75,7 +75,7 @@ class AgentManager(threading.Thread):
            was sent from the agent in json."""
        
         self.lock()
-        self.log.debug("new agent of type: %s, name %s, conn_id %d", body['type'], body['hostname'], new_agent.conn_id)
+        self.log.debug("new agent of type: %s, name %s, uuid %s, conn_id %d", body['type'], body['hostname'], body['uuid'], new_agent.conn_id)
 
         new_agent_type = body['type']
         # Don't allow two primary agents to be connected and
@@ -83,8 +83,8 @@ class AgentManager(threading.Thread):
         # Keep the newest one.
         for key in self.agents.keys():
             agent = self.agents[key]
-            if agent.auth['hostname'] == body['hostname']:
-                self.log.info("Agent already connected with name '%s': will remove it and use the new connection.", body['hostname'])
+            if agent.uuid == body['uuid']:
+                self.log.info("Agent already connected with name '%s': will remove it and use the new connection.", body['uuid'])
                 self.remove_agent(agent)
                 break
             elif new_agent_type == AGENT_TYPE_PRIMARY and \
@@ -99,7 +99,7 @@ class AgentManager(threading.Thread):
         self.auth = body
 
         if new_agent_type == AGENT_TYPE_PRIMARY:
-            self.log.debug("remove_agent: Initializing state entries on connect")
+            self.log.debug("register: Initializing state entries on connect")
             stateman = StateManager()
             stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)
             stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)

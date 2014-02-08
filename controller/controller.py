@@ -113,7 +113,7 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_copy(self, argv):
         """Copy a file from one agent to another."""
         if len(argv) != 2:
-            print >> self.wfile, '[ERROR] Usage: copy source-agent-name:/filename dest-agent-name'
+            print >> self.wfile, '[ERROR] Usage: copy source-agent-name:filename dest-agent-name'
             return
 
         body = server.copy_cmd(argv[0], argv[1])
@@ -276,7 +276,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # Save name of backup, hostname ip address of the primary agent to the db.
         # fixme: create one of these per server.
         self.backup = BackupManager()
-        self.backup.add(backup_name, ip_address)
+        self.backup.add(backup_name, primary_conn.uuid)
 
         return body
 
