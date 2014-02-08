@@ -606,6 +606,7 @@ def main():
     manager.start()
 
     server = Controller((host, port), CliHandler)
+    server.config = config
 
     # Need to instantiate to initialize state and status tables,
     # even if we don't run the status thread.
