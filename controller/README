@@ -13,8 +13,7 @@ Linux:
         Copy the main.cf file to /etc/postfix and then restart postfix
             service postfix restart
 
-    Configure email alert to/from/etc. in inits.py
-
+    Configure email alert enabled/to/from/etc. in inits.py
 
     postgres configuration
     =======================
