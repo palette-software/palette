@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*- 
-<%inherit file="layout.mako" />
+<%inherit file="_layout.mako" />
+
+<%block name="title">
+<title>Palette</title>
+</%block>
+
+<%block name="favicon">
+</%block>
 
 <%block name="style">
 <link href="http://fonts.googleapis.com/css?family=Roboto:300,400,700|Lato:100,300,400" rel="stylesheet" type="text/css">
@@ -23,7 +30,7 @@
   <h3>Last</h3>
   <p id="last"></p>
   <h3>Next</h3>
-  <p id="next">- - - -</p>
+  <p id="next">— — — —</p>
   <p class="padtop">
     <a id="backupButton" class="button spacer">Backup</a>
     <a id="restoreButton" class="button">Restore</a></p>
@@ -34,7 +41,7 @@
 </div>
 <div class="tile">
   <h2>Tableau Support Case Builder</h2>
-  <p class="doublepadtop"><a class="button spacer">Standard</a> <a class="button">Priority</a></p>
+  <p class="doublepadtop"><a class="button center">Submit</a></p>
   <p class="tile-advanced"><span class="arrow-down"></span> Advanced</p>
 </div>
 <div class="tile">
@@ -43,7 +50,7 @@
     <a id="startButton" href="#" class="button spacer">Start</a>
     <a id="stopButton" href="#" class="button">Stop</a>
   </p>
-  <p id="diskspace" class="padtop large">105 Days of Disk Space</p>
+  <p id="diskspace" class="padtop large"></p>
   <p class="tile-advanced">
     <span class="arrow-down"></span>
     <a id="advanced-manage" href="#"> Advanced</a>

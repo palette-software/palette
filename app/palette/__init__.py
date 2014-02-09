@@ -3,7 +3,7 @@ from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy.orm import sessionmaker
 import meta
 
-from akiri.framework.api import MainPage
+from akiri.framework.api import MainPage, LoginPage
 
 # Set up database connection
 db_url = "postgresql://palette:palpass@localhost/paldb"
@@ -19,3 +19,6 @@ import manage
 
 class DashboardPage(MainPage):
     TEMPLATE = 'dashboard.mako'
+
+class Login(LoginPage):
+    TEMPLATE = 'login.mako'

@@ -1,4 +1,4 @@
-<%inherit file="dialog.mako" />
+<%inherit file="_dialog.mako" />
 
 <table>
  <tr>
