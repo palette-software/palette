@@ -2,6 +2,19 @@ Linux:
     Dependencies:
     =============
         sudo apt-get install postgresql python-sqlalchemy python-psycopg2
+        
+
+    If you want to test alerts via email:
+        sudo apt-get install postfix
+
+    and when asked about postfix configuration, respond any way you want,
+    as you configure the Postfix mail server as super-user via:
+
+        Copy the main.cf file to /etc/postfix and then restart postfix
+            service postfix restart
+
+    Configure email alert to/from/etc. in inits.py
+
 
     postgres configuration
     =======================

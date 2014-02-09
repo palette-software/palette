@@ -29,3 +29,10 @@ STATE_SECOND_NONE="none"
 
 # Dump/restore directorys
 DEFAULT_BACKUP_DIR="c:\Palette\Data"
+
+# Alerts: fixme - move to .INI file
+alerts_enabled = True
+alert_from_email = "alerts@palette-software.com"  # mail server config
+alert_to_email = "tim.flagg@gmail.com"
+smtp_server = "localhost"
+smtp_port = 25

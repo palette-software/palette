@@ -35,8 +35,7 @@ class StatusMonitor(threading.Thread):
         super(StatusMonitor, self).__init__()
         self.server = server
         self.manager = manager
-#        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.INFO)
-        self.log = logger.config_logging("new try", logging.DEBUG)
+        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.INFO)
 
         self.Session = sessionmaker(bind=meta.engine)
         
@@ -45,7 +44,7 @@ class StatusMonitor(threading.Thread):
         self.remove_all_status(session)
         session.commit()
 
-        self.stateman = StateManager()
+        self.stateman = StateManager(self.log)
 
         # Start fresh: state table
         #self.stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)

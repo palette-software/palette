@@ -23,6 +23,7 @@ import meta
 from backup import BackupManager
 from state import StateManager
 from status import StatusMonitor
+from alert import Alert
 
 version="0.1"
 
@@ -52,7 +53,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # Check to see if we're in a state to backup
-        stateman = StateManager()
+        stateman = StateManager(log)
         states = stateman.get_states()
 
         if states[STATE_TYPE_MAIN] != STATE_MAIN_STARTED:
@@ -69,10 +70,18 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: lock to ensure against two simultaneous backups?
         stateman.update(STATE_TYPE_SECOND, STATE_SECOND_BACKUP)
 
+        alert = Alert(log)
+        alert.send("Backup Started")
+
         print >> self.wfile, "OK"
             
         body = server.backup_cmd()
         stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
+
+        if not body.has_key('error'):
+            alert.send("Backup Finished")
+        else:
+            alert.send("Backup failure: " + str(body['error']))
         self.report_status(body)
 
     def do_restore(self, argv):
@@ -85,7 +94,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # Check to see if we're in a state to restore
-        stateman = StateManager()
+        stateman = StateManager(log)
         states = stateman.get_states()
         if states[STATE_TYPE_MAIN] != STATE_MAIN_STARTED and \
             states[STATE_TYPE_MAIN] != STATE_MAIN_STOPPED:
@@ -108,6 +117,14 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = server.restore_cmd(argv[0])
 
         stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
+        # The "restore started" alert is done in restore_cmd(),
+        # only after some sanity checking is done.
+        alert = Alert(log)
+        if not body.has_key('error'):
+            alert.send("Restore Finished")
+        else:
+            alert.send("Restore failure: " + str(body['error']))
+
         self.report_status(body)
 
     def do_copy(self, argv):
@@ -134,7 +151,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
         
         # Check to see if we're in a state to start
-        stateman = StateManager()
+        stateman = StateManager(log)
         states = stateman.get_states()
         if states[STATE_TYPE_MAIN] != 'stopped':
             # Even "Unknown" is not an okay state for starting as it
@@ -166,7 +183,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # Check to see if we're in a state to stop
-        stateman = StateManager()
+        stateman = StateManager(log)
         states = stateman.get_states()
         if states[STATE_TYPE_MAIN] != STATE_MAIN_STARTED:
             log.debug("FAIL: Can't stop - main state is: %s", states[STATE_TYPE_MAIN])
@@ -489,7 +506,29 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             Returns a body with the results/status.
         """
 
-        stateman = StateManager()
+        # Before we do anything, first do sanity checks.
+        parts = arg.split(':')
+        if len(parts) != 2:
+            return self.error('[ERROR] Need exactly one colon in argument: ' + arg)
+
+        source_hostname = parts[0]
+        source_filename = parts[1]
+
+        if os.path.isabs(source_filename):
+            return self.error("[ERROR] May not specify an absolute pathname or disk: " + source_filename)
+
+        source_fullpathname = DEFAULT_BACKUP_DIR + '\\' + source_filename + ".tsbak"
+
+        # Get the Primary Agent handle
+        primary_conn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
+
+        if not primary_conn:
+            return self.error("[ERROR] No Primary Agent not connected.")
+
+        alert = Alert(log)
+        alert.send("Restore Started")
+
+        stateman = StateManager(log)
         orig_states = stateman.get_states()
         if orig_states[STATE_TYPE_MAIN] == STATE_MAIN_STARTED:
             # Restore can run only when tableau is stopped.
@@ -514,24 +553,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             if not stopped:
                 return self.error('[ERROR] Tableleau did not stop as requested.  Restore aborted.')
-
-        parts = arg.split(':')
-        if len(parts) != 2:
-            return self.error('[ERROR] Need exatly one colon in argument: ' + arg)
-
-        source_hostname = parts[0]
-        source_filename = parts[1]
-
-        if os.path.isabs(source_filename):
-            return self.error("[ERROR] May not specify an absolute pathname or disk: " + source_filename)
-
-        source_fullpathname = DEFAULT_BACKUP_DIR + '\\' + source_filename + ".tsbak"
-
-        # Get the Primary Agent handle
-        primary_conn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
-
-        if not primary_conn:
-            return self.error("[ERROR] No Primary Agent not connected.")
 
         # Check if the source_filename is on the Primary Agent.
         if source_hostname != primary_conn.auth['hostname']:
