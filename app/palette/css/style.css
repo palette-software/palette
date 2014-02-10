@@ -71,7 +71,6 @@ h3 {
 	width: 80px;
 	height: 80px;
 	margin: 2em auto 3em;
-/*	margin: 0.5em auto 1.5em; */
 	background: url(/app/module/palette/images/status-green-light.png) no-repeat 50% 50%;
 }
 .orange-light {
@@ -87,7 +86,6 @@ h3 {
 	margin: 0 2% 2% 0;
 	padding: 2% 3%;
 	min-height: 19em;
-/*	min-height: 285px; */
 	text-align: center;
 	border: 1px solid #ccc;
 	border-radius: 3px;
@@ -129,16 +127,23 @@ h3 {
 .spacer {
 	margin: 0 60px 0 0;
 }
-.button {
+.button, input[type="submit"].login {
+	position: relative;
 	width: 100px;
 	padding: 0.5em 1em;
 	color: #fff;
 	font-weight: bold;
 	font-size: 1.3em;
 	background: #02acf8;
-	border-color: #02acf8;
+	border: 1px solid #02acf8;
 	border-radius: 3px;
+	cursor: pointer;
+	outline: none;
 	display: inline-block;
+	-webkit-appearance: none;
+}
+input[type="submit"].login {
+	height: 35px;
 }
 .big {
 	width: 150px;
@@ -152,10 +157,13 @@ a.button {
 	-ms-user-select: none;
 	user-select: none;
 }
-.button:hover {
+.button:hover, input[type="submit"].login:hover {
 	color: #02acf8;
 	background: #fff;
 	border-color: #51a7f9;
+}
+input[type="submit"].login:active {
+	top: 1px;
 }
 .disabled {
 	top: 0 !important;
@@ -177,21 +185,11 @@ a.button {
 }
 
 .box {
+	width: 25%;
 	border-radius: 3px;
 }
 
 /* LINES 510-517 */
-
-/*
-.box .button, .tile .button {
-	background: #e0e0e0;
-	border-color: #e0e0e0;
-}
-.box .button:hover, .tile .button:hover {
-	background: #fff;
-	border-color: #e0e0e0;
-}
-*/
 
 /* TESTING */
 .dijitDialog {

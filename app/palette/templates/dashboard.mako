@@ -6,6 +6,7 @@
 </%block>
 
 <%block name="favicon">
+<%include file="favicon.mako" />
 </%block>
 
 <%block name="style">
