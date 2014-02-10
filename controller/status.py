@@ -36,6 +36,7 @@ class StatusMonitor(threading.Thread):
         self.server = server
         self.manager = manager
         self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.INFO)
+#        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.DEBUG)
 
         self.Session = sessionmaker(bind=meta.engine)
         
@@ -43,6 +44,7 @@ class StatusMonitor(threading.Thread):
         session = self.Session()
         self.remove_all_status(session)
         session.commit()
+        session.close()
 
         self.stateman = StateManager(self.log)
 
@@ -54,6 +56,8 @@ class StatusMonitor(threading.Thread):
 
     # Remove all entries to get ready for new status info.
     def remove_all_status(self, session):
+        """Note a session is passed.  When updating the status table, we don't
+        want everything to go away (commit) until we've added the new entries."""
         session.query(StatusEntry).\
             delete()
 
@@ -61,21 +65,25 @@ class StatusMonitor(threading.Thread):
         # rows to be available until the new rows are inserted and
         # committed.
 
+    def add(self, session, name, pid, status):
+        """Note a session is passed.  When updating the status table, we do
+        remove_all_status, then slowly add in the new status before doing the commit,
+        so the table is not every empty/building if somebody checks it."""
+        entry = StatusEntry(name, pid, status)
+        session.add(entry)
+
     def get_all_status(self):
         session = self.Session()
         status_entries = session.query(StatusEntry).all()
+        session.close()
         return status_entries
 
     def get_main_status(self):
         session = self.Session()
         main_status = session.query(StatusEntry).\
             filter(StatusEntry.name == 'Status').one()
+        session.close()
         return main_status
-
-    def add(self, name, pid, status):
-        session = self.Session()
-        entry = StatusEntry(name, pid, status)
-        session.add(entry)
 
     def set_main_state(self, status):
         """Set main_state if appropriate."""
@@ -113,13 +121,13 @@ class StatusMonitor(threading.Thread):
                 self.log.error("Unknown status %s", status)
 
     def run(self):
+        session = self.Session()
         while True:
-            self.check_status()
+            self.check_status(session)
             time.sleep(DEFAULT_STATUS_SLEEP_INTERVAL)
 
-    def check_status(self):
+    def check_status(self, session):
 
-        session = self.Session()
         if not self.manager.agent_conn_by_type(AGENT_TYPE_PRIMARY):
             self.log.debug("status thread: No primary agent currently connected.")
             self.remove_all_status(session)
@@ -155,8 +163,9 @@ class StatusMonitor(threading.Thread):
 
         # Store the second part (like "RUNNING") into the database
         self.remove_all_status(session)
-        self.add("Status", 0, status)
+        self.add(session, "Status", 0, status)
         self.log.debug("Logging main status: %s", status)
+        session.commit()
 
         # Set the "main status" state according to the current status.
         self.set_main_state(status)
@@ -191,7 +200,7 @@ class StatusMonitor(threading.Thread):
             if name[-1:] == "'":
                 name = name[:-1]    # Cut off trailing single quote (')
             
-            self.add(name, pid, status)
+            self.add(session, name, pid, status)
             self.log.debug("logged: %s, %d, %s", name, pid, status)
 
         session.commit()
