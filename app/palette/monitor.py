@@ -1,6 +1,7 @@
 import sqlalchemy
 from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
 import meta
 import sys
 
@@ -9,6 +10,10 @@ from akiri.framework.api import RESTApplication, DialogPage
 from . import Session
 
 __all__ = ["MonitorApplication"]
+
+# State types:
+STATE_TYPE_MAIN="main"
+STATE_TYPE_SECOND="second"
 
 class MonitorApplication(RESTApplication):
 
@@ -27,8 +32,39 @@ class MonitorApplication(RESTApplication):
                 main_status = entry.status
                 break
 
+        # Dig out the main STATE and second STATE
+        try:
+            main_entry = db_session.query(StateEntry).\
+                filter(StateEntry.state_type == STATE_TYPE_MAIN).one()
+            main_state = main_entry.state
+        except NoResultFound, e:
+            main_state = "unknown"
+
+        try:
+            second_entry = db_session.query(StateEntry).\
+                filter(StateEntry.state_type == STATE_TYPE_SECOND).one()
+            second_state = second_entry.state
+
+        except NoResultFound, e:
+            second_state = "Unknown"
+
         db_session.close()
-        return {'status': main_status}
+
+        return {'status': main_status,
+                'main_state': main_state,
+                'second_state': second_state,
+                }
+
+class StateEntry(meta.Base):
+    __tablename__ = 'state'
+
+    state_type = Column(String, primary_key=True)
+    state = Column(String)
+    creation_time = Column(DateTime, server_default=func.now(), onupdate=func.current_timestamp())
+
+    def __init__(self, state_type, state):
+        self.state_type = state_type
+        self.state = state
 
 class StatusEntry(meta.Base):
     __tablename__ = 'status'
