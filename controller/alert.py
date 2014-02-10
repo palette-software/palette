@@ -12,6 +12,7 @@ class Alert(object):
 
         if not alerts_enabled:
             self.log.info("Alerts disabled.  Not sending: " + text)
+            return
 
         msg = MIMEText(text)
 
