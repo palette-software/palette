@@ -15,24 +15,9 @@ from akiri.framework.api import RESTApplication
 from . import Session
 
 from inits import *
+from controller.backup import BackupEntry
 
 __all__ = ["BackupApplication"]
-
-class BackupEntry(meta.Base):
-    __tablename__ = 'backup'
-
-    name = Column(String, primary_key=True)
-    hostname = Column(String)   # fixme: change this to a foreign key
-    ip_address = Column(String) # to the agentstatus table that has any 
-                                # agent we talked to, even if it
-                                # isn't connected now and will also
-                                # have an 'active' or 'connected' column.
-    creation_time = Column(DateTime, default=func.now())
-
-    def __init__(self, name, hostname, ip_address):
-        self.name = name
-        self.hostname = hostname
-        self.ip_address = ip_address
 
 class BackupApplication(RESTApplication):
 
