@@ -21,7 +21,7 @@ class MonitorApplication(RESTApplication):
         self.status_entries = db_session.query(StatusEntry).all()
 
         # Dig out the main status and time
-        main_status = "Unknown"
+        main_status = "Not Connected"
         for entry in self.status_entries:
             if entry.name == 'Status':
                 main_status = entry.status

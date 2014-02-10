@@ -24,6 +24,7 @@ from backup import BackupManager
 from state import StateManager
 from status import StatusMonitor
 from alert import Alert
+from config import Config
 
 version="0.1"
 
@@ -445,11 +446,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return body
 
     def copy_cmd(self, source_path, dest_name):
-        """Send a wget command and checks the status.
+        """Send a gget command and checks the status.
            copy source-hostname:/path/to/file dest-hostname
                        <source_path>          <dest-hostname>
            generates:
-            c:/Palette/bin/wget.exe --output=file http://primary-ip:192.168.1.1/file
+            c:/Palette/bin/pget.exe http://primary-ip:192.168.1.1/file dir/
            and sends it as a cli command to agent:
                 dest-name
            Returns the body dictionary from the status."""
@@ -481,19 +482,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not src or not dst:
             return self.error(msg)
 
-        WGET_BIN="c:/Palette/bin/wget.exe"
-        target_filename = os.path.basename(source_path) # filename without directory
+        PGET_BIN="c:/Palette/bin/pget.exe"
 
         source_ip = src.auth['ip-address']
 
         if 'install-dir' in dst.auth:
-            target_filename = dst.auth['install-dir'] + "/Data/" + target_filename
+            target_dir = dst.auth['install-dir'] + "/Data/" 
         else:
-            target_filename = 'c:/Palette/Data/' + target_filename
+            target_dir = 'c:/Palette/Data/'
 
-        command = "%s --output-document=%s http://%s:%s/%s" % \
-            (WGET_BIN, target_filename,
-                source_ip, src.auth['listen-port'], source_path)
+        command = "%s http://%s:%s/%s %s" % \
+            (PGET_BIN, source_ip, src.auth['listen-port'],
+             source_path, target_dir)
 
         return self.cli_cmd(command, dst) # Send command to destination agent
 
@@ -695,18 +695,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             statusmon.remove_all_status(session)
             session.commit()
 
-def parse_config(configfile):
-    config = configparser.ConfigParser()
-    if configfile != None:
-            config.read(configfile)
-
-    try:
-        config.add_section('controller')
-    except configparser.DuplicateSectionError, e:
-        pass
-
-    return config
-
 def main():
     import argparse
     import logger
@@ -717,26 +705,14 @@ def main():
     global statusmon # fixme
  
     parser = argparse.ArgumentParser(description='Palette Controller')
+    parser.add_argument('config', nargs='?', default=None)
     parser.add_argument('--debug', action='store_true', default=True)
-    parser.add_argument('-c', '--config', action='store', dest='config', default=None)
     parser.add_argument('--nostatus', action='store_true', default=False)
     args = parser.parse_args()
 
-    # FIXME: Encapsulate working around the lame Python ConfigParser API
-    #        We should be able to say "xxx = get(section, option, default)"
-    #        or get() should return None for a missing option, but for
-    #        some reason ConfigParser only raises exceptions.
-    config = parse_config(args.config)
-    if config.has_option('controller', 'host'):
-        host = config.get('controller', 'host')
-    else:
-        host = 'localhost'
-    if config.has_option('controller', 'port'):
-        port = config.getint('controller', 'port')
-    else:
-        port = 9000
-    print "host: %s" % (host)
-    print "port: %d" % (port)
+    config = Config(args.config)
+    host = config.get('controller', 'host', 'localhost');
+    port = config.getint('controller', 'port', 9000);
 
     default_loglevel = logging.DEBUG    # fixme: change default to logging.INFO
     if args.debug:

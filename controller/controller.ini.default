@@ -1,10 +1,10 @@
 [default]
 
 [controller]
-host: localhost
-port: 9000
+# host=localhost
+# port=9000
 
 [logger]
 
-[sqlalchemy]
+[database]
 
