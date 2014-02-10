@@ -706,8 +706,8 @@ def main():
     global statusmon # fixme
  
     parser = argparse.ArgumentParser(description='Palette Controller')
+    parser.add_argument('config', nargs='?', default=None)
     parser.add_argument('--debug', action='store_true', default=True)
-    parser.add_argument('-c', '--config', action='store', dest='config', default=None)
     parser.add_argument('--nostatus', action='store_true', default=False)
     args = parser.parse_args()
 
