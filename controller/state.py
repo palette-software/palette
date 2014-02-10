@@ -9,6 +9,7 @@ import platform
 import meta
 
 from inits import *
+from alert import Alert
 
 # The tabadmin state table:
 #   main   state: starting, started, stopping, stopped, unknown
@@ -27,7 +28,8 @@ class StateEntry(meta.Base):
 
 class StateManager(object):
 
-    def __init__(self):
+    def __init__(self, log):
+        self.log = log
         self.Session = sessionmaker(bind=meta.engine)
 
     def update(self, state_type, state):
@@ -46,6 +48,12 @@ class StateManager(object):
 
         session.commit()
         session.close()
+
+        # Send out the main started stopped alert.
+        # Second alerts (backup/restore started/stopped done elsewhere).
+        if state_type == STATE_TYPE_MAIN and state in [STATE_MAIN_STARTED, STATE_MAIN_STOPPED]:
+            alert = Alert(self.log)
+            alert.send("Tableau server " + state)
 
     def get_states(self):
         session = self.Session()

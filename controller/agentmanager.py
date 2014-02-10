@@ -99,7 +99,7 @@ class AgentManager(threading.Thread):
 
         if new_agent_type == AGENT_TYPE_PRIMARY:
             self.log.debug("register: Initializing state entries on connect")
-            stateman = StateManager()
+            stateman = StateManager(self.log)
             stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)
             stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
 
@@ -167,7 +167,7 @@ class AgentManager(threading.Thread):
             self.log.debug("remove_agent: No such agent with conn_id %d", conn_id)
         if agent.auth['type'] == AGENT_TYPE_PRIMARY:
             self.log.debug("remove_agent: Initializing state entries on removal")
-            stateman = StateManager()
+            stateman = StateManager(self.log)
             stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)
             stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
 
