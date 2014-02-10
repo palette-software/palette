@@ -24,6 +24,7 @@ from backup import BackupManager
 from state import StateManager
 from status import StatusMonitor
 from alert import Alert
+from config import Config
 
 version="0.1"
 
@@ -695,18 +696,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             statusmon.remove_all_status(session)
             session.commit()
 
-def parse_config(configfile):
-    config = configparser.ConfigParser()
-    if configfile != None:
-            config.read(configfile)
-
-    try:
-        config.add_section('controller')
-    except configparser.DuplicateSectionError, e:
-        pass
-
-    return config
-
 def main():
     import argparse
     import logger
@@ -722,21 +711,9 @@ def main():
     parser.add_argument('--nostatus', action='store_true', default=False)
     args = parser.parse_args()
 
-    # FIXME: Encapsulate working around the lame Python ConfigParser API
-    #        We should be able to say "xxx = get(section, option, default)"
-    #        or get() should return None for a missing option, but for
-    #        some reason ConfigParser only raises exceptions.
-    config = parse_config(args.config)
-    if config.has_option('controller', 'host'):
-        host = config.get('controller', 'host')
-    else:
-        host = 'localhost'
-    if config.has_option('controller', 'port'):
-        port = config.getint('controller', 'port')
-    else:
-        port = 9000
-    print "host: %s" % (host)
-    print "port: %d" % (port)
+    config = Config(args.config)
+    host = config.get('controller', 'host', 'localhost');
+    port = config.getint('controller', 'port', 9000);
 
     default_loglevel = logging.DEBUG    # fixme: change default to logging.INFO
     if args.debug:
