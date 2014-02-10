@@ -10,10 +10,11 @@ Linux:
     and when asked about postfix configuration, respond any way you want,
     as you configure the Postfix mail server as super-user via:
 
-        Copy the main.cf file to /etc/postfix and then restart postfix
+        Copy the main.cf file to /etc/postfix and then restart postfix:
             service postfix restart
 
     Configure email alert enabled/to/from/etc. in inits.py
+    BY DEFAULT, ALERTS ARE OFF.
 
     postgres configuration
     =======================

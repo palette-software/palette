@@ -12,6 +12,7 @@ class Alert(object):
 
         if not alerts_enabled:
             self.log.info("Alerts disabled.  Not sending: " + text)
+            return
 
         msg = MIMEText(text)
 
@@ -24,9 +25,9 @@ class Alert(object):
             server = smtplib.SMTP(smtp_server, smtp_port)
             server.sendmail(alert_from_email, [alert_to_email], msg_str)
             server.quit()
-        except smtplib.SMTPException, e:
-            self.log.error("Email send failed, event: %s, text: %s, exception: %s",
-                event, text, msg_str)
+        except (smtplib.SMTPException, EnvironmentError) as e:
+            self.log.error("Email send failed, text: %s, exception: %s",
+                text, e)
             return
 
         self.log.info("Emailed event: " + text)
