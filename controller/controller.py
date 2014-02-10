@@ -172,12 +172,21 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: Reply with "OK" only after the agent received the command?
         print >> self.wfile, "OK"
 
+        # Stop the maintenance web server and relinquish the web
+        # server port before tabadmin start tries to listen on the web
+        # server port.
+        maint_body = server.maint("stop")
+        if maint_body.has_key("error"):
+            print >> self.wfile, "maint stop failed: " + str(maint_body)
+            # let it continue ?
+
         body = server.cli_cmd('tabadmin start')
 
         # STARTED is set by the status monitor since it really knows the status.
 
         # fixme: check & report status to see if it really started?
         self.report_status(body)
+
     def do_stop(self, argv):
         if len(argv) != 0:
             print >> self.wfile, '[ERROR] usage: stop'
@@ -198,6 +207,12 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STOPPING)
         log.debug("-----------------Stopping Tableau-------------------")
         body = server.cli_cmd('tabadmin stop')
+        if not body.has_key("error"):
+            # Start the maintenance server only after Tableau has stopped
+            # and reqlinquished the web server port.
+            maint_body = server.maint("start")
+            if maint_body.has_key("error"):
+                print >> self.wfile, "maint start failed: " + str(maint_body)
 
         # STOPPED is set by the status monitor since it really knows the status.
 
@@ -539,6 +554,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.info.debug("Restore: tabadmin stop failed")
                 return stop_body
 
+            # Start the maintenance web server only after Tableau
+            # has stopped and relinquished the web server port.
+            maint_body = server.maint("start")
+            if maint_body.has_key("error"):
+                self.info.debug("Restore: maint start failed")
+                # continue on..
+
             # Give the status thread a bit of time to update the state to
             # STOPPED.
             stopped = False
@@ -678,6 +700,36 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             finally:
                 aconn.unlock()
     
+
+    def maint(self, action):
+        # Get the Primary Agent handle
+        aconn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
+
+        if not aconn:
+            return self.error("[ERROR] maint: No Primary Agent not connected.")
+
+        send_body = json.dumps({"action": action})
+
+        headers = {"Content-Type": "application/json"}
+
+        try:
+            aconn.httpconn.request("POST", "/maint", send_body, headers)
+            res = aconn.httpconn.getresponse()
+
+            body_json = res.read()
+            if body_json:
+                body = json.loads(body_json)
+                self.log.debug("maint reply = " + str(body))
+            else:
+                body = {}
+                self.log.debug("maint reply empty.")
+
+        except EnvironmentError, e:
+            return self.error("maint failed with: " + str(e))
+        except HttpException, e:
+            return self.error("maint HttPException: " + str(e))
+
+        return body
 
     def error(self, msg, return_dict={}):
         """Returns error dictionary in standard format.  If passed

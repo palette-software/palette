@@ -104,7 +104,7 @@ class StatusMonitor(threading.Thread):
                 # Don't change the state.
                 pass
             else:
-                self.log.error("Unknown status %s:", status)
+                self.log.error("Unknown status: %s", status)
 
         if status == 'STOPPED':
             if main_state == STATE_MAIN_STOPPING or \
