@@ -28,7 +28,7 @@
 <div class="tile">
   <h2>Backup</h2>
   <h3>Last</h3>
-  <p id="last"></p>
+  <p id="last">— — — —</p>
   <h3>Next</h3>
   <p id="next">— — — —</p>
   <p class="padtop">

@@ -1,7 +1,7 @@
-define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request",
-         "dojox/widget/DialogSimple",
+define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
+         "dojox/widget/DialogSimple", "palette/backup",
          "dojo/domReady"],
-        function(dom, domStyle, on, request, DialogSimple)
+        function(dom, domStyle, on, request, topic, DialogSimple, backup)
 {
     var status = dom.byId("status-message");
     var green = dom.byId("green");
@@ -26,15 +26,22 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request",
         domStyle.set("red", "display", "block");
     }
 
+    function setStatus(val) {
+        status.innerHTML = val;
+        topic.publish("status-update-event", val);
+    }
+
     function update() {
         request.get("/rest/monitor", { handleAs: "json" }).then(
             function(data) {
-                status.innerHTML = data['status'];
-                if (data['status'] == 'RUNNING') {
+                var val = data['status']
+                status.innerHTML = val;
+                if (val == "Running") {
                     greenLight();
                 } else {
                     redLight();
                 }
+                setStatus(val);
             },
             function(error) {                
                 status.innerHTML = 'Communication Failure.';
@@ -43,10 +50,26 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request",
         );
     }
 
-    update();
-    var timer = setInterval(function() {
+    var timer;
+
+    function startUpdate() {
         update();
-    }, 10000);
+        timer = setInterval(update, 10000);
+    }
+
+    function stopUpdate() {
+        clearInterval(timer);
+    }
+
+    /* These topics control the status update timer. */
+    topic.subscribe("action-start-event", function(name) {
+        startUpdate();
+    });
+    topic.subscribe("action-finish-event", function(name) {
+        stopUpdate();
+    });
+
+    startUpdate();
 
     var advancedLink = dom.byId("advanced-status");
     on(advancedLink, "click", function() {
