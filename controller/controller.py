@@ -570,7 +570,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # Give the status thread a bit of time to update the state to
             # STOPPED.
             stopped = False
-            for i in range(3):
+            for i in range(8):
                 states = stateman.get_states()
                 if states[STATE_TYPE_MAIN] == STATE_MAIN_STOPPED:
                     stopped = True
