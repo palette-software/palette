@@ -45,7 +45,7 @@ class MonitorApplication(RESTApplication):
         if primary_agents:
             for agent in primary_agents:
                 if agent.last_disconnect_time:
-                    if agent.last_disconnect_time < agent.last_connection_time:
+                    if agent.last_disconnect_time > agent.last_connection_time:
                         # This agent has disconnected.
                         continue
                     else:
