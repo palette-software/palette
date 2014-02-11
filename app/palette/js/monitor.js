@@ -121,7 +121,9 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
     startUpdate();
 
     var advancedLink = dom.byId("advanced-status");
-    on(advancedLink, "click", function() {
+    on(advancedLink, "click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         var dialog = DialogSimple({href: "/dialog/status"});
         dialog.startup();
         dialog.show();        
