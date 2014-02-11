@@ -566,13 +566,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.info.debug("Restore: tabadmin stop failed")
                 return stop_body
 
-            # Start the maintenance web server only after Tableau
-            # has stopped and relinquished the web server port.
-            maint_body = server.maint("start")
-            if maint_body.has_key("error"):
-                self.info.debug("Restore: maint start failed")
-                # continue on..
-
             # Give the status thread a bit of time to update the state to
             # STOPPED.
             stopped = False
@@ -607,6 +600,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # The file is now on the Primary Agent.
 
         # 'tabadmin restore ...' starts tableau as part of the restore procedure.
+        # fixme: Maybe the maintenance web server wasn't running?
+        maint_body = server.maint("stop")
+        if maint_body.has_key("error"):
+            self.info.debug("Restore: maint stop failed")
+            # continue on..
+
         stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STARTING)
         try:
             cmd = "tabadmin restore %s" % source_fullpathname
