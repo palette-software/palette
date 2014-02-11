@@ -44,7 +44,6 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
             if (data["secondary-state"]) {
                 secondary = data["secondary-state"];
             }
-            console.log("monitor: "+main+","+secondary);
 
             switch (main) {
             case "started":
@@ -82,11 +81,10 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
             redLight();
         }
         topic.publish("status-update-event", data);
-        console.log("monitor: status-update-event");
+        console.log("monitor: status-update-event " + JSON.stringify(data));
     }
 
     function update() {
-        console.log("monitor: begin update");
         request.get("/rest/monitor", { handleAs: "json" }).then(
             function(data) {
                 setStatus(data);

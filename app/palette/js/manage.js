@@ -65,15 +65,19 @@ function(dom, domClass, request, on, topic, DialogSimple)
     });
 
     function disableStartButton() {
-        console.log("manage: disable 'Start' button");
+        if (startButton.enabled) {
+            console.log("manage: disable 'Start' button");
+            startButton.enabled = false;
+        }
         domClass.add(startButton, "disabled");
-        startButton.enabled = false;
     }
 
     function disableStopButton() {
-        console.log("manage: disable 'Stop' button");
+        if (stopButton.enabled) {
+            console.log("manage: disable 'Stop' button");
+            stopButton.enabled = false;
+        }
         domClass.add(stopButton, "disabled");
-        stopButton.enabled = false;
     }
 
     function disableButtons() {
@@ -82,15 +86,20 @@ function(dom, domClass, request, on, topic, DialogSimple)
     }
 
     function enableStartButton() {
-        console.log("manage: enable 'Start' button");
+        if (!startButton.enabled) {
+            console.log("manage: enable 'Start' button");
+            startButton.enabled = true;
+        }
         domClass.remove(startButton, "disabled");
         startButton.enabled = true;
     }
 
     function enableStopButton() {
-        console.log("manage: enable 'Stop' button");
+        if (!stopButton.enabled) {
+            console.log("manage: enable 'Stop' button");
+            stopButton.enabled = true;
+        }
         domClass.remove(stopButton, "disabled");
-        stopButton.enabled = true;
     }
 
     function enableButtons() {
