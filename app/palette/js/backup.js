@@ -8,6 +8,8 @@ function(dom, domClass, request, on, topic, DialogSimple)
     var secondary = "none";
 
     var backupButton = dom.byId("backupButton");
+    backupButton.enabled = true;
+
     on(backupButton, "click", function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -34,6 +36,8 @@ function(dom, domClass, request, on, topic, DialogSimple)
     
 
     var restoreButton = dom.byId("restoreButton");
+    restoreButton.enabled = true;
+
     on(restoreButton, "click", function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -57,16 +61,48 @@ function(dom, domClass, request, on, topic, DialogSimple)
         );
     });
 
-    function disableButtons() {
-        console.log("backup: disable buttons");
+    function disableBackupButton() {
+        if (backupButton.enabled) {
+            console.log("backup: disable 'Backup' button");
+            backupButton.enabled = false;
+        }
         domClass.add(backupButton, "disabled");
+    }
+
+    function disableRestoreButton() {
+        if (restoreButton.enabled) {
+            console.log("backup: disable 'Restore' button");
+            restoreButton.enabled = false;
+        }
         domClass.add(restoreButton, "disabled");
     }
 
-    function enableButtons() {
-        console.log("backup: enable buttons");
+
+    function disableButtons() {
+        disableBackupButton();
+        disableRestoreButton();
+    }
+
+    function enableBackupButton() {
+        if (!backupButton.enabled) {
+            console.log("backup: enable 'Backup' button");
+            backupButton.enabled = true;
+        }
         domClass.remove(backupButton, "disabled");
+    }
+
+    function enableRestoreButton() {
+        if (!restoreButton.enabled) {
+            console.log("backup: enable 'Restore' button");
+            restoreButton.enabled = true;
+        }
         domClass.remove(restoreButton, "disabled");
+    }
+
+
+    function enableButtons() {
+        enableBackupButton();
+        enableRestoreButton();
     }
 
     topic.subscribe("action-start-event", function(name) {
