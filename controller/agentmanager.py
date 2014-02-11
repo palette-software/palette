@@ -56,8 +56,9 @@ class AgentManager(threading.Thread):
 
     PORT = 8888
 
-    def __init__(self, host='0.0.0.0', port=0):
+    def __init__(self, config, host='0.0.0.0', port=0):
         super(AgentManager, self).__init__()
+        self.config = config
         self.Session = sessionmaker(bind=meta.engine)
         self.daemon = True
         self.lockobj = threading.RLock()
@@ -99,7 +100,7 @@ class AgentManager(threading.Thread):
 
         if new_agent_type == AGENT_TYPE_PRIMARY:
             self.log.debug("register: Initializing state entries on connect")
-            stateman = StateManager(self.log)
+            stateman = StateManager(self.config, self.log)
             stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)
             stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
 
@@ -167,7 +168,7 @@ class AgentManager(threading.Thread):
             self.log.debug("remove_agent: No such agent with conn_id %d", conn_id)
         if agent.auth['type'] == AGENT_TYPE_PRIMARY:
             self.log.debug("remove_agent: Initializing state entries on removal")
-            stateman = StateManager(self.log)
+            stateman = StateManager(self.config, self.log)
             stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)
             stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
 

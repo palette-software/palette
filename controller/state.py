@@ -28,7 +28,8 @@ class StateEntry(meta.Base):
 
 class StateManager(object):
 
-    def __init__(self, log):
+    def __init__(self, config, log):
+        self.config = config
         self.log = log
         self.Session = sessionmaker(bind=meta.engine)
 
@@ -52,7 +53,7 @@ class StateManager(object):
         # Send out the main started stopped alert.
         # Second alerts (backup/restore started/stopped done elsewhere).
         if state_type == STATE_TYPE_MAIN and state in [STATE_MAIN_STARTED, STATE_MAIN_STOPPED]:
-            alert = Alert(self.log)
+            alert = Alert(self.config, self.log)
             alert.send("Tableau server " + state)
 
     def get_states(self):

@@ -11,15 +11,27 @@ class Config(ConfigParser.ConfigParser):
         if configfile != None:
             self.read(configfile)
 
-    def get(self, section, option, default):
+    def getdef(self, section, option, default):
         try:
-            value = ConfigParser.ConfigParser.get(self, section, option)
+            value = self.get(section, option)
             return value
         except (NoSectionError,NoOptionError):
             return default
 
-    def getint(self, section, option, default):
-        return int(self.get(section, option, default))
+    def getintdef(self, section, option, default):
+        try:
+            value = self.getint(section, option)
+            return value
+        except (NoSectionError,NoOptionError):
+            return default
+
+    def getbooleandef(self, section, option, default):
+        try:
+            value = self.getboolean(section, option)
+            return value
+        except (NoSectionError,NoOptionError):
+            return default
+
 
 def main():
    

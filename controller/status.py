@@ -34,6 +34,7 @@ class StatusMonitor(threading.Thread):
     def __init__(self, server, manager):
         super(StatusMonitor, self).__init__()
         self.server = server
+        self.config = self.server.config
         self.manager = manager
         self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.INFO)
 #        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.DEBUG)
@@ -46,7 +47,7 @@ class StatusMonitor(threading.Thread):
         session.commit()
         session.close()
 
-        self.stateman = StateManager(self.log)
+        self.stateman = StateManager(self.config, self.log)
 
         # Start fresh: state table
         #self.stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)
