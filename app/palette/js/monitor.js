@@ -5,7 +5,7 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
 {
     var status = dom.byId("status-message");
     var green = dom.byId("green");
-    var orange = dom.byId("yellow");
+    var yellow = dom.byId("yellow");
     var orange = dom.byId("orange");
     var red = dom.byId("red");
 
@@ -46,7 +46,8 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
             }
             console.log("monitor: "+main+","+secondary);
 
-            if (main == "started") {
+            switch (main) {
+            case "started":
                 if (secondary == "backup") {
                     status.innerHTML = "OK, backup in progress";
                     orangeLight();
@@ -54,8 +55,23 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
                     status.innerHTML = "OK";
                     greenLight();
                 }
-            } else {
+                break;
+            case "stopped":
+                status.innerHTML = "Stopped";
                 redLight();
+                break;
+            case "starting":
+                status.innerHTML = "Starting ...";
+                yellowLight();
+                break;
+            case "stopping":
+                status.innerHTML = "Stopping ...";
+                yellowLight();
+                break;
+            default:
+                status.innerHTML = main;
+                redLight();
+                break;
             }
         } else {
             status.innerHTML = 'Communication Error: Bad Response';

@@ -42,12 +42,12 @@
   </p>
 </div>
 <div class="tile">
-  <h2>Tableau Support Case Builder</h2>
+  <h2 class="bottomRow">Tableau Support Case Builder</h2>
   <p class="doublepadtop"><a class="button center">Submit</a></p>
   <p class="tile-advanced"><span class="arrow-down"></span> Advanced</p>
 </div>
 <div class="tile">
-  <h2>Manage Tableau Server</h2>
+  <h2 class="bottomRow">Manage Tableau Server</h2>
   <p class="pad doublepadtop">
     <a id="startButton" href="#" class="button spacer disabled">Start</a>
     <a id="stopButton" href="#" class="button">Stop</a>

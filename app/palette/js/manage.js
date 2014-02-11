@@ -9,20 +9,28 @@ function(dom, domClass, request, on, topic, DialogSimple)
     var startButton = dom.byId("startButton");
     startButton.enabled = false;
 
-    on(startButton, "click", function() {
+    on(startButton, "click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         if (!startButton.enabled) {
+            console.log("manage: 'Start' button is disabled");
             return;
         }
+        disableButtons();
+
+        topic.publish("action-start-event", "start");
         request.post(uri, {
             sync: true,
             handleAs: "json",
             data: {"action": "start"}
         }).then (
             function(d) {
-                diskspace.innerHTML = "START";
+                console.log("manage: stopping");
+                topic.publish("action-finish-event", "manage");
             },
             function(error) {
                 console.log('[MANAGE] Communication Failure.');
+                topic.publish("action-finish-event", "manage");
             }
         );
     });
@@ -30,20 +38,28 @@ function(dom, domClass, request, on, topic, DialogSimple)
     var stopButton = dom.byId("stopButton");
     stopButton.enabled = true;
 
-    on(stopButton, "click", function() {
+    on(stopButton, "click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         if (!stopButton.enabled) {
+            console.log("manage: 'Stop' button is disabled");
             return;
         }
+        disableButtons();
+
+        topic.publish("action-start-event", "start");
         request.post(uri, {
             sync: true,
             handleAs: "json",
             data: {"action": "stop"}
         }).then (
             function(d) {
-                diskspace.innerHTML = "STOP";
+                console.log("manage: stopping");
+                topic.publish("action-finish-event", "manage");
             },
             function(error) {
                 console.log('[MANAGE] Communication Failure.');
+                topic.publish("action-finish-event", "manage");
             }
         );
     });
@@ -51,11 +67,13 @@ function(dom, domClass, request, on, topic, DialogSimple)
     function disableStartButton() {
         console.log("manage: disable 'Start' button");
         domClass.add(startButton, "disabled");
+        startButton.enabled = false;
     }
 
     function disableStopButton() {
         console.log("manage: disable 'Stop' button");
         domClass.add(stopButton, "disabled");
+        stopButton.enabled = false;
     }
 
     function disableButtons() {
@@ -66,13 +84,13 @@ function(dom, domClass, request, on, topic, DialogSimple)
     function enableStartButton() {
         console.log("manage: enable 'Start' button");
         domClass.remove(startButton, "disabled");
-        startButton.enabled = false;
+        startButton.enabled = true;
     }
 
     function enableStopButton() {
         console.log("manage: enable 'Stop' button");
         domClass.remove(stopButton, "disabled");
-        stopButton.enabled = false;
+        stopButton.enabled = true;
     }
 
     function enableButtons() {

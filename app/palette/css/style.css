@@ -60,7 +60,10 @@ h1.visible {
 	display: block;
 }
 h2 {
-	font: 200 2.3em 'Lato',sans-serif;
+	font: 300 2.3em 'Lato',sans-serif;
+}
+h2.bottomRow {
+	margin-top: 25px
 }
 h3 {
 	font-weight: 400;
@@ -71,6 +74,9 @@ h3 {
 	height: 80px;
 	margin: 2em auto 3em;
 	background: url(/app/module/palette/images/status-green-light.png) no-repeat 50% 50%;
+}
+.yellow-light {
+	background: url(/app/module/palette/images/status-yellow-light.png) no-repeat 50% 50%;
 }
 .orange-light {
 	background: url(/app/module/palette/images/status-orange-light.png) no-repeat 50% 50%;
