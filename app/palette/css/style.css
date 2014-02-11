@@ -215,8 +215,22 @@ input[type="submit"].login:active {
 }
 
 /* DIALOG */
-#status table {
+table.dialog {
      border: 0;
+     padding: .5em 0 2em 0;
+     text-align: center;
+}
+
+table.dialog td {
+    padding: 0 1em;
+}
+
+table.dialog td.creation-time {
+    width: 10em;
+}
+
+#status, #backup, #manage {
+    clear: both;
 }
 
 #status td {
@@ -239,12 +253,6 @@ input[type="submit"].login:active {
 }
 
 #status p {
-     padding: 2em 0 2em 0;
+     padding: 1em 0 2em 0;
      text-align: center;
-}
-
-#backup table {
-     padding: .5em 0 2em 0;
-     text-align: center;
-     min-width: 30em;
 }

@@ -33,6 +33,11 @@ class AgentStatusEntry(meta.Base):
         self.listen_port = listen_port
         self.uuid = uuid
 
+    def connected(self):
+        if not self.last_disconnect_time:
+            return False;
+        return self.last_disconnect_time > self.last_connection_time
+
 class AgentStatus(object):
 
     def __init__(self, log):

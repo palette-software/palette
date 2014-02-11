@@ -112,11 +112,16 @@ class BackupDialog(DialogPage):
     def __init__(self, global_conf):
         super(BackupDialog, self).__init__(global_conf)
 
-    def __init__(self, global_conf):
-        super(BackupDialog, self).__init__(global_conf)
+        session = Session()
 
-        db_session = Session()
-        self.backup_entries = db_session.query(BackupEntry).all()
-        for entry in self.backup_entries:
-            entry.creation_time = str(entry.creation_time)[:19] # Cut off fraction
-        db_session.close()
+        # FIXME: use a mapping here.
+        query = session.query(BackupEntry, AgentStatusEntry).join(AgentStatusEntry)
+
+        self.backup_entries = []
+        for backup, agent in query.all():
+            data = {}
+            data['name'] = backup.name
+            data['ip-address'] = agent.ip_address
+            data['creation-time'] = str(backup.creation_time)[:19] # Cut off fraction
+            self.backup_entries.append(data)
+        session.close()

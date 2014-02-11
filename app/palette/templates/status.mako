@@ -13,7 +13,7 @@ at ${obj.status_time}
 </p>
 
 %if obj.main_status == 'RUNNING':
-<table>
+<table class="dialog">
  <tr>
     <th>Component</th> <th>PID</th> <th>Status</th></tr>
 %for entry in obj.status_entries:
