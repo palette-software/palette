@@ -1,5 +1,6 @@
 import time
 import sys
+import os
 import socket
 
 from akiri.framework.api import RESTApplication, DialogPage
@@ -8,6 +9,7 @@ from webob import exc
 
 from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
 import meta
 
 from akiri.framework.api import RESTApplication
@@ -16,6 +18,7 @@ from . import Session
 
 from inits import *
 from controller.backup import BackupEntry
+from controller.agentstatus import AgentStatusEntry
 
 __all__ = ["BackupApplication"]
 
@@ -50,7 +53,27 @@ class BackupApplication(RESTApplication):
             return {'last': "none",
                     'next': self.scheduled }
 
-        self.send_cmd("restore %s:%s" % (last_entry.hostname, last_entry.name))
+        hostname = self.get_hostname_by_uuid(last_entry.uuid)
+
+        if hostname:
+            self.send_cmd("restore %s:%s" % (hostname, last_entry.name))
+        else:
+            print "Error: Not agent with uuid:", last_entry.uuid
+
+    def get_hostname_by_uuid(self, uuid):
+        db_session = Session()
+        try:
+            query = db_session.query(AgentStatusEntry, BackupEntry)
+            agent_entry = query.filter(\
+                AgentStatusEntry.uuid == BackupEntry.uuid).\
+                first()
+
+        except NoResultFound, e:
+            return None
+        finally:
+            db_session.close()
+
+        return agent_entry[0].hostname
 
     def get_last_backup(self):
         db_session = Session()
