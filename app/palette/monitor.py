@@ -1,6 +1,8 @@
 import sqlalchemy
 from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy.orm.exc import NoResultFound
 import meta
 import sys
@@ -22,38 +24,98 @@ class MonitorApplication(RESTApplication):
     def handle(self, req):
         db_session = Session()
 
-        # FIXME: do a SELECT/query that only return the one row.
-        self.status_entries = db_session.query(StatusEntry).all()
-
-        # Dig out the main status and time
-        main_status = "Not Connected"
-        for entry in self.status_entries:
-            if entry.name == 'Status':
-                main_status = entry.status
-                break
-
-        # Dig out the main STATE and second STATE
-        try:
-            main_entry = db_session.query(StateEntry).\
-                filter(StateEntry.state_type == STATE_TYPE_MAIN).one()
-            main_state = main_entry.state
-        except NoResultFound, e:
-            main_state = "unknown"
+        tableau_status = "Unknown"
+        main_state = "Not connected"
+        second_state = "none"
 
         try:
-            second_entry = db_session.query(StateEntry).\
-                filter(StateEntry.state_type == STATE_TYPE_SECOND).one()
-            second_state = second_entry.state
-
+            primary_agent_entry = db_session.query(AgentStatusEntryAlt).\
+                filter(AgentStatusEntryAlt.agent_type == "primary").one()
         except NoResultFound, e:
-            second_state = "Unknown"
+            primary_agent_entry = None
+
+        # Get tableau status, main, and secondary states.
+        if primary_agent_entry:
+            if not primary_agent_entry.last_disconnect_time or \
+                    (primary_agent_entry.last_disconnect_time and \
+                            primary_agent_entry.last_disconnect_time <
+                                primary_agent_entry.last_connection_time):
+
+                # The primary agent is connected.
+                # Dig out the tableau status.
+                try:
+                    tableau_entry = db_session.query(StatusEntry).\
+                        filter(StatusEntry.name == 'Status').one()
+                    tableau_status = tableau_entry.status
+                except NoResultFound, e:
+                    pass
+
+                # Dig out the states
+                state_entries = db_session.query(StateEntry).all()
+
+                for state_entry in state_entries:
+                    if state_entry.state_type == STATE_TYPE_MAIN:
+                        main_state = state_entry.state
+                    elif state_entry.state_type == STATE_TYPE_SECOND:
+                        secondary_state = state_entry.state
+                    else:
+                        print "monitor: Uknown state_type:", state_entry.state_type
+
+        # Dig out the last/most recent backup.
+        last_db = db_session.query(BackupEntry).\
+                order_by(BackupEntry.creation_time.desc()).\
+                first()
+
+        if last_db:
+            last_backup = str(last_db.creation_time)[:19]
+        else:
+            last_backup = "none"
 
         db_session.close()
 
-        return {'status': main_status,
-                'main_state': main_state,
-                'second_state': second_state,
+#        print 'tableau-status: %s, main-state: %s, secondary-test: %s, last-backup: %s' % (tableau_status, main_state, second_state, last_backup)
+
+        return {'tableau-status': tableau_status,
+                'main-state': main_state,
+                'secondary-state': second_state,
+                'last-backup': last_backup
                 }
+
+class AgentStatusEntryAlt(meta.Base):
+    __tablename__ = 'agents'
+
+    uuid = Column(String, primary_key=True)
+    hostname = Column(String)
+    agent_type = Column(String)
+    version = Column(String)
+    ip_address = Column(String)
+    listen_port = Column(Integer)
+    creation_time = Column(DateTime, default=func.now())
+    last_connection_time = Column(DateTime, default=func.now())
+    last_disconnect_time = Column(DateTime)
+
+    def __init__(self, hostname, agent_type, version, ip_address, listen_port, uuid):
+        self.hostname = hostname
+        self.agent_type = agent_type
+        self.version = version
+        self.ip_address = ip_address
+        self.listen_port = listen_port
+        self.uuid = uuid
+
+class BackupEntry(meta.Base):
+    __tablename__ = 'backup'
+
+    key = Column(Integer, primary_key=True)
+    uuid = Column(String, ForeignKey("agents.uuid"))
+    name = Column(String)
+    #hostname = Column(String)
+    #ip_address = Column(String)
+    creation_time = Column(DateTime, default=func.now())
+    UniqueConstraint('uuid', 'name')
+
+    def __init__(self, name, uuid):
+        self.name = name
+        self.uuid = uuid
 
 class StateEntry(meta.Base):
     __tablename__ = 'state'

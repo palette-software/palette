@@ -200,7 +200,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, "FAIL: Can't stop - current state is:", states[STATE_TYPE_MAIN]
             return
 
-        # fixme: Prevent stopping if the use is doing a backup or restore?
+        # fixme: Prevent stopping if the user is doing a backup or restore?
         # fixme: Reply with "OK" only after the agent received the command?
         print >> self.wfile, "OK"
 
