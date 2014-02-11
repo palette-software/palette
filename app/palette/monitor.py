@@ -26,7 +26,7 @@ class MonitorApplication(RESTApplication):
 
         tableau_status = "Unknown"
         main_state = "Not connected"
-        second_state = "none"
+        secondary_state = "none"
 
         try:
             primary_agent_entry = db_session.query(AgentStatusEntryAlt).\
@@ -73,11 +73,11 @@ class MonitorApplication(RESTApplication):
 
         db_session.close()
 
-#        print 'tableau-status: %s, main-state: %s, secondary-test: %s, last-backup: %s' % (tableau_status, main_state, second_state, last_backup)
+#        print 'tableau-status: %s, main-state: %s, secondary-state: %s, last-backup: %s' % (tableau_status, main_state, secondary_state, last_backup)
 
         return {'tableau-status': tableau_status,
                 'main-state': main_state,
-                'secondary-state': second_state,
+                'secondary-state': secondary_state,
                 'last-backup': last_backup
                 }
 
