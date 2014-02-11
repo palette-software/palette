@@ -32,7 +32,7 @@
   <h3>Last</h3>
   <p id="last">— — — —</p>
   <h3>Next</h3>
-  <p id="next">— — — —</p>
+  <p id="next">2014-02-17 12:00:00</p>
   <p class="padtop">
     <a id="backupButton" class="button spacer">Backup</a>
     <a id="restoreButton" class="button">Restore</a></p>
