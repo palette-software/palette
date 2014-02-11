@@ -57,7 +57,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman = self.server.stateman
         states = stateman.get_states()
 
-        if states[STATE_TYPE_MAIN] != STATE_MAIN_STARTED:
+        # Backups can be done when Tableau is either started or stopped.
+        if states[STATE_TYPE_MAIN] not in (STATE_MAIN_STARTED, STATE_MAIN_STOPPED):
             print >> self.wfile, "FAIL: Can't backup - main state is:", states[STATE_TYPE_MAIN]
             log.debug("Can't backup - main state is: %s", states[STATE_TYPE_MAIN])
             return
