@@ -5,10 +5,12 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
 {
     var status = dom.byId("status-message");
     var green = dom.byId("green");
-    var orange = dom.byId("green");
-    var red = dom.byId("green");
+    var orange = dom.byId("yellow");
+    var orange = dom.byId("orange");
+    var red = dom.byId("red");
 
     function greenLight() {
+        domStyle.set("yellow", "display", "none");
         domStyle.set("orange", "display", "none");
         domStyle.set("red", "display", "none");
         domStyle.set("green", "display", "block");
@@ -16,36 +18,62 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
 
     function orangeLight() {
         domStyle.set("green", "display", "none");
+        domStyle.set("yellow", "display", "none");
         domStyle.set("red", "display", "none");
         domStyle.set("orange", "display", "block");
     }
 
+    function yellowLight() {
+        domStyle.set("green", "display", "none");
+        domStyle.set("orange", "display", "none");
+        domStyle.set("red", "display", "none");
+        domStyle.set("yellow", "display", "block");
+    }
+
     function redLight() {
         domStyle.set("green", "display", "none");
+        domStyle.set("yellow", "display", "none");
         domStyle.set("orange", "display", "none");
         domStyle.set("red", "display", "block");
     }
 
-    function setStatus(val) {
-        status.innerHTML = val;
-        topic.publish("status-update-event", val);
+    function setStatus(data) {
+        if (data["main-state"]) {
+            var main = data["main-state"];
+            var secondary = "none";
+            if (data["secondary-state"]) {
+                secondary = data["secondary-state"];
+            }
+            console.log("monitor: "+main+","+secondary);
+
+            if (main == "started") {
+                if (secondary == "backup") {
+                    status.innerHTML = "OK, backup in progress";
+                    orangeLight();
+                } else {
+                    status.innerHTML = "OK";
+                    greenLight();
+                }
+            } else {
+                redLight();
+            }
+        } else {
+            status.innerHTML = 'Communication Error: Bad Response';
+            redLight();
+        }
+        topic.publish("status-update-event", data);
+        console.log("monitor: status-update-event");
     }
 
     function update() {
+        console.log("monitor: begin update");
         request.get("/rest/monitor", { handleAs: "json" }).then(
             function(data) {
-                var val = data['status']
-                status.innerHTML = val;
-                if (val == "Running") {
-                    greenLight();
-                } else {
-                    redLight();
-                }
-                setStatus(val);
+                setStatus(data);
             },
-            function(error) {                
-                status.innerHTML = 'Communication Failure.';
-                redLight();
+            function(error) {
+                data["main-state"] = "Communication Failure.";
+                setStatus(data);
             }
         );
     }
@@ -53,20 +81,23 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
     var timer;
 
     function startUpdate() {
+        console.log("monitor: starting update timer");
         update();
         timer = setInterval(update, 10000);
     }
 
     function stopUpdate() {
+        console.log("monitor: stopping update timer.");
         clearInterval(timer);
+        console.log("monitor: update timer stopped");
     }
 
     /* These topics control the status update timer. */
     topic.subscribe("action-start-event", function(name) {
-        startUpdate();
+        stopUpdate();
     });
     topic.subscribe("action-finish-event", function(name) {
-        stopUpdate();
+        startUpdate();
     });
 
     startUpdate();

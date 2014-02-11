@@ -18,6 +18,7 @@
 <div class="tile">
   <h2>System Monitor</h2>
   <div id="green" class="green-light" style="display:none"></div>
+  <div id="yellow" class="yellow-light" style="display:none"></div>
   <div id="orange" class="orange-light" style="display:none"></div>
   <div id="red" class="red-light" style="display:none"></div>
   <p id="status-message" class="large"></p>
@@ -48,7 +49,7 @@
 <div class="tile">
   <h2>Manage Tableau Server</h2>
   <p class="pad doublepadtop">
-    <a id="startButton" href="#" class="button spacer">Start</a>
+    <a id="startButton" href="#" class="button spacer disabled">Start</a>
     <a id="stopButton" href="#" class="button">Stop</a>
   </p>
   <p id="diskspace" class="padtop large"></p>
