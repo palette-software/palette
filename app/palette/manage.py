@@ -13,6 +13,7 @@ import meta
 from . import Session
 
 from inits import *
+from controller.agentstatus import AgentStatusEntry
 
 class ManageApplication(RESTApplication):
 
@@ -48,17 +49,6 @@ class ManageApplication(RESTApplication):
         elif action == 'stop':
             return self.handle_stop(req)
         raise exc.HTTPBadRequest()
-
-class AgentStatusEntry(meta.Base):
-    __tablename__ = 'agentstatus'
-
-    hostname = Column(String, primary_key=True)
-    agent_type = Column(String)
-    version = Column(String)
-    ip_address = Column(String)
-    listen_port = Column(Integer)
-    uuid = Column(String)
-    creation_time = Column(DateTime, default=func.now())
         
 class ManageAdvancedDialog(DialogPage):
 

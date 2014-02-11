@@ -65,7 +65,11 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
                 yellowLight();
                 break;
             case "stopping":
-                status.innerHTML = "Stopping ...";
+                if (secondary == "backup") {
+                    status.innerHTML = "Stopping for restore ...";
+                } else {
+                    status.innerHTML = "Stopping ...";
+                }
                 yellowLight();
                 break;
             default:
