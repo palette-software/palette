@@ -7,3 +7,4 @@
 *.swo
 /build
 /debian
+tags

@@ -54,7 +54,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # Check to see if we're in a state to backup
-        stateman = StateManager(log)
+        stateman = self.server.stateman
         states = stateman.get_states()
 
         if states[STATE_TYPE_MAIN] != STATE_MAIN_STARTED:
@@ -95,7 +95,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # Check to see if we're in a state to restore
-        stateman = StateManager(log)
+        stateman = self.server.stateman
         states = stateman.get_states()
         if states[STATE_TYPE_MAIN] != STATE_MAIN_STARTED and \
             states[STATE_TYPE_MAIN] != STATE_MAIN_STOPPED:
@@ -152,7 +152,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
         
         # Check to see if we're in a state to start
-        stateman = StateManager(log)
+        stateman = self.server.stateman
         states = stateman.get_states()
         if states[STATE_TYPE_MAIN] != 'stopped':
             # Even "Unknown" is not an okay state for starting as it
@@ -193,7 +193,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # Check to see if we're in a state to stop
-        stateman = StateManager(log)
+        stateman = self.server.stateman
         states = stateman.get_states()
         if states[STATE_TYPE_MAIN] != STATE_MAIN_STARTED:
             log.debug("FAIL: Can't stop - main state is: %s", states[STATE_TYPE_MAIN])
@@ -543,7 +543,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         alert = Alert(log)
         alert.send("Restore Started")
 
-        stateman = StateManager(log)
+        stateman = self.server.stateman
         orig_states = stateman.get_states()
         if orig_states[STATE_TYPE_MAIN] == STATE_MAIN_STARTED:
             # Restore can run only when tableau is stopped.
@@ -763,8 +763,8 @@ def main():
     args = parser.parse_args()
 
     config = Config(args.config)
-    host = config.get('controller', 'host', 'localhost');
-    port = config.getint('controller', 'port', 9000);
+    host = config.getdef('controller', 'host', 'localhost');
+    port = config.getintdef('controller', 'port', 9000);
 
     default_loglevel = logging.DEBUG    # fixme: change default to logging.INFO
     if args.debug:
@@ -783,7 +783,7 @@ def main():
     log.debug("Starting agent listener.")
 
     global manager  # fixme: get rid of this global.
-    manager = AgentManager()
+    manager = AgentManager(config)
     manager.log = log   # fixme
     manager.start()
 
@@ -793,10 +793,13 @@ def main():
     # Need to instantiate to initialize state and status tables,
     # even if we don't run the status thread.
     statusmon = StatusMonitor(server, manager)
+    server.statusmon = statusmon
 
     if not args.nostatus:
         log.debug("Starting status monitor.")
         statusmon.start()
+
+    server.stateman = StateManager(config, log)
 
     server.log = log    # fixme
     server.serve_forever()

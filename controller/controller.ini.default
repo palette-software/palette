@@ -4,6 +4,11 @@
 # host=localhost
 # port=9000
 
+[alert]
+# enabled=False
+# to_email = "nobody@nowhere.nohow"
+# from_email = "alerts@palette-software.com"
+
 [logger]
 
 [database]

@@ -31,8 +31,5 @@ STATE_SECOND_NONE="none"
 DEFAULT_BACKUP_DIR="c:\Palette\Data"
 
 # Alerts: fixme - move to .INI file
-alerts_enabled = False
-alert_to_email = "bademail" # Change this to a valid email address
-alert_from_email = "alerts@palette-software.com"  # mail server config
 smtp_server = "localhost"
 smtp_port = 25
