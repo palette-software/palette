@@ -685,7 +685,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                         body['exit-status'] = 1 # Force error for exit-status.
                     return body
                 elif body['run-status'] == 'running':
-                    time.sleep(CLI_GET_STATUS_INTERVAL)
+                    time.sleep(self.cli_get_status_interval)
                     continue
                 else:
                     self.remove_agent(aconn)    # bad agent
@@ -789,6 +789,7 @@ def main():
 
     server = Controller((host, port), CliHandler)
     server.config = config
+    server.cli_get_status_interval = config.getdef('controller', 'cli_get_status_interval', 10)
 
     # Need to instantiate to initialize state and status tables,
     # even if we don't run the status thread.

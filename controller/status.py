@@ -39,6 +39,8 @@ class StatusMonitor(threading.Thread):
         self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.INFO)
 #        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.DEBUG)
 
+        self.status_request_interval = self.config.getintdef('status', 'status_request_interval', 10)
+
         self.Session = sessionmaker(bind=meta.engine)
         
         # Start fresh: status table
@@ -131,7 +133,7 @@ class StatusMonitor(threading.Thread):
         session = self.Session()
         while True:
             self.check_status(session)
-            time.sleep(DEFAULT_STATUS_SLEEP_INTERVAL)
+            time.sleep(self.status_request_interval)
 
     def check_status(self, session):
 

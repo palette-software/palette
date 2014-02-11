@@ -3,11 +3,15 @@
 [controller]
 # host=localhost
 # port=9000
+# cli_get_status_interval=1
 
 [alert]
 # enabled=False
 # to_email = "nobody@nowhere.nohow"
 # from_email = "alerts@palette-software.com"
+
+[status]
+# status_request_interval=10
 
 [logger]
 
