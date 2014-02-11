@@ -240,6 +240,15 @@ class CliHandler(socketserver.StreamRequestHandler):
             if len(body['stderr']):
                 print >> self.wfile, 'stderr:', body['stderr']
 
+    def do_maint(self, argv):
+        if len(argv) != 1 or (argv[0] != "start" and argv[0] != "stop"):
+            print >> self.wfile, '[ERROR] usage: maint start|stop'
+            return
+
+        body = server.maint(argv[0])
+        if body:
+            self.report_status(body)
+
     def handle(self):
         while True:
             data = self.rfile.readline().strip()
