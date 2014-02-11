@@ -71,7 +71,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: lock to ensure against two simultaneous backups?
         stateman.update(STATE_TYPE_SECOND, STATE_SECOND_BACKUP)
 
-        alert = Alert(log)
+        alert = Alert(self.server.config, log)
         alert.send("Backup Started")
 
         print >> self.wfile, "OK"
@@ -120,7 +120,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
         # The "restore started" alert is done in restore_cmd(),
         # only after some sanity checking is done.
-        alert = Alert(log)
+        alert = Alert(self.server.config, log)
         if not body.has_key('error'):
             alert.send("Restore Finished")
         else:
@@ -540,7 +540,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not primary_conn:
             return self.error("[ERROR] No Primary Agent not connected.")
 
-        alert = Alert(log)
+        alert = Alert(self.config, log)
         alert.send("Restore Started")
 
         stateman = self.server.stateman
