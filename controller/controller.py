@@ -555,7 +555,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         alert = Alert(self.config, log)
         alert.send("Restore Started")
 
-        stateman = self.server.stateman
+        stateman = server.stateman
         orig_states = stateman.get_states()
         if orig_states[STATE_TYPE_MAIN] == STATE_MAIN_STARTED:
             # Restore can run only when tableau is stopped.
