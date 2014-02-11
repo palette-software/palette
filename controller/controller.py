@@ -248,6 +248,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = server.maint(argv[0])
         if body:
             self.report_status(body)
+        else:
+            print >> self.wfile, "Done"
 
     def handle(self):
         while True:
@@ -347,7 +349,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return body
 
         if not body.has_key('run-status'):
-            return self.error("_send+_cli body missing 'run-status: '" + str(e))
+            return self.error("_send_cli body missing 'run-status: '" + str(e))
 
         # It is possible for the command to finish immediately.
         if body['run-status'] == 'finished':
@@ -461,6 +463,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.debug("POST %s failed with HTTPException: %s", command, str(e))
             return self.error("POST /%s failed with: %s" % (command, str(e)))
         finally:
+            self.log.debug("_send_cleanup unlocked")
             aconn.unlock()
 
         self.log.debug("done reading...")
@@ -676,6 +679,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
                 self.log.debug("_get_status reading....")
                 body_json = res.read()
+                aconn.unlock()
 
                 body = json.loads(body_json)
                 if body == None:
@@ -684,7 +688,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.debug("body = " + str(body))
                 if not body.has_key('run-status'):
                     self.remove_agent(aconn)    # bad agent
-                    aconn.unlock()
                     return self.error("GET %S command reply was missing 'run-status'!  Will not retry." % (uri), body)
     
                 if body['run-status'] == 'finished':
@@ -698,7 +701,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     continue
                 else:
                     self.remove_agent(aconn)    # bad agent
-                    aconn.unlock()
                     return self.error("Unknown run-status: %s.  Will not retry." % body['run-status'], body)
             except HTTPException, e:
                     self.remove_agent(aconn)    # bad agent
@@ -706,8 +708,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             except EnvironmentError, e:
                     self.remove_agent(aconn)    # bad agent
                     return self.error("GET %s failed with: %s" % (uri, str(e)))
-            finally:
-                aconn.unlock()
     
 
     def maint(self, action):
@@ -715,12 +715,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         aconn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
 
         if not aconn:
-            return self.error("[ERROR] maint: No Primary Agent not connected.")
+            return self.error("[ERROR] maint: No Primary Agent is connected.")
 
         send_body = json.dumps({"action": action})
 
         headers = {"Content-Type": "application/json"}
 
+        aconn.lock()
         try:
             aconn.httpconn.request("POST", "/maint", send_body, headers)
             res = aconn.httpconn.getresponse()
@@ -737,6 +738,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("maint failed with: " + str(e))
         except HttpException, e:
             return self.error("maint HttPException: " + str(e))
+        finally:
+            aconn.unlock()
 
         return body
 
