@@ -58,22 +58,21 @@ class BackupApplication(RESTApplication):
         if hostname:
             self.send_cmd("restore %s:%s" % (hostname, last_entry.name))
         else:
-            print "Error: Not agent with uuid:", last_entry.uuid
+            print "Error: No agent exists with uuid:", last_entry.uuid
 
     def get_hostname_by_uuid(self, uuid):
         db_session = Session()
         try:
-            query = db_session.query(AgentStatusEntry, BackupEntry)
-            agent_entry = query.filter(\
-                AgentStatusEntry.uuid == BackupEntry.uuid).\
-                first()
+            agent_entry = db_session.query(AgentStatusEntry).\
+                filter(AgentStatusEntry.uuid == uuid).\
+                one()
 
         except NoResultFound, e:
             return None
         finally:
             db_session.close()
 
-        return agent_entry[0].hostname
+        return agent_entry.hostname
 
     def get_last_backup(self):
         db_session = Session()
