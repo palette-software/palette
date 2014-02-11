@@ -335,7 +335,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not aconn:
             aconn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
             if not aconn:
-                return self.error("Agent of this type not connected currently: %s" % target)
+                return self.error("Agent of this type not connected currently: %s" % AGENT_TYPE_PRIMARY)
         try:
             body = self._send_cli(command, aconn)
         except EnvironmentError, e:
