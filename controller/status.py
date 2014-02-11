@@ -104,9 +104,9 @@ class StatusMonitor(threading.Thread):
                 # Don't change the state.
                 pass
             else:
-                self.log.error("Unknown status: %s", status)
+                self.log.error("Unexpected main state: %s with status: %s", main_state, status)
 
-        if status == 'STOPPED':
+        elif status == 'STOPPED':
             if main_state == STATE_MAIN_STOPPING or \
                                     main_state == STATE_MAIN_UNKNOWN:
                 self.stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STOPPED)
@@ -118,7 +118,13 @@ class StatusMonitor(threading.Thread):
             elif main_state == STATE_MAIN_STARTED:
                 self.log.error("Unexpected Status! Status is STOPPED but main_state was STARTED!")
             else:
-                self.log.error("Unknown status %s", status)
+                self.log.error("Unexpected main state %s with status %s", main_state, status)
+
+        elif status == 'DEGRADED':
+                # fixme: do anything for this?
+                pass
+        else:
+            self.log.error("Unknown status: %s", status)
 
     def run(self):
         session = self.Session()
