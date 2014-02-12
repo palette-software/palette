@@ -297,6 +297,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         primary_conn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
 
         if non_primary_conn:
+            backup_loc = non_primary_conn
             # Copy the backup to a non-primary agent
             copy_body = self.copy_cmd(\
                 "%s:%s.tsbak" % (primary_conn.auth['hostname'], backup_name),
@@ -306,7 +307,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 return copy_body
 
             # Remove the backup file from the primary
-            remove_body = self.cli_cmd(["DEL %s.tsbak" % backup_name])
+            backup_fullpathname = DEFAULT_BACKUP_DIR + '\\' + backup_name + ".tsbak"
+            remove_body = self.cli_cmd("DEL %s" % backup_fullpathname)
             if remove_body.has_key('error'):
                 return remove_body
 
@@ -314,6 +316,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             backup_hostname = non_primary_conn.auth['hostname']
 
         else:
+            backup_loc = primary_conn
             # Backup file remains on the primary.
             backup_ip_address = primary_conn.auth['ip-address']
             backup_hostname = primary_conn.auth['hostname']
@@ -321,7 +324,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # Save name of backup, hostname ip address of the primary agent to the db.
         # fixme: create one of these per server.
         self.backup = BackupManager()
-        self.backup.add(backup_name, primary_conn.uuid)
+        self.backup.add(backup_name, backup_loc.uuid)
 
         return body
 
@@ -515,15 +518,22 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         source_ip = src.auth['ip-address']
 
         if 'install-dir' in dst.auth:
-            target_dir = dst.auth['install-dir'] + "/Data/" 
+            target_dir = dst.auth['install-dir'] + "\\Data\\" 
         else:
-            target_dir = 'c:/Palette/Data/'
+            target_dir = DEFAULT_BACKUP_DIR
 
         command = "%s http://%s:%s/%s %s" % \
             (PGET_BIN, source_ip, src.auth['listen-port'],
              source_path, target_dir)
 
-        return self.cli_cmd(command, dst) # Send command to destination agent
+        copy_body = self.cli_cmd(command, dst) # Send command to destination agent
+        # Fixme (fix pget so it sets exit status to non-zero on failure).
+        # Dig around to see if it failed.  It is important to know.
+        if not copy_body.has_key('error') and copy_body.has_key('stdout') and \
+                    copy_body['stdout'].find("Error in download") == 0:
+            copy_body['error'] = copy_body['stdout']
+
+        return copy_body
 
     def restore_cmd(self, arg):
         """Do a tabadmin restore of the passed arg, except

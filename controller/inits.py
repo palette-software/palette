@@ -22,7 +22,7 @@ STATE_SECOND_RESTORE="restore"
 STATE_SECOND_NONE="none"
 
 # Dump/restore directorys
-DEFAULT_BACKUP_DIR="c:\Palette\Data"
+DEFAULT_BACKUP_DIR="c:\\Palette\\Data"
 
 # Alerts: fixme - move to .INI file
 smtp_server = "localhost"
