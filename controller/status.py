@@ -118,8 +118,8 @@ class StatusMonitor(threading.Thread):
                 if main_state == STATE_MAIN_UNKNOWN:
                     # If we are transitioning from UNKNOWN to STOPPED, then
                     # send a "maint start" command to the agent.
-                    self.log.info("Sending 'maint start' command for transition from STATE_MAIN_UNKNOWN to STATE_MAIN_STOPPED")
                     return    # return here to skip 'maint start'
+                    self.log.info("Sending 'maint start' command for transition from STATE_MAIN_UNKNOWN to STATE_MAIN_STOPPED")
                     maint_body = self.server.maint("start")
                     if maint_body.has_key("error"):
                         self.log.error("set_main_state: 'maint start' failed after transition from STATE_MAIN_UNKNOWN to STATE_MAIN_STOPPED: " + maint_body['error'])
