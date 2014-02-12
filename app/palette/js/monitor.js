@@ -49,11 +49,10 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
             case "started":
                 if (secondary == "backup") {
                     status.innerHTML = "OK, backup in progress";
-                    orangeLight();
                 } else {
                     status.innerHTML = "OK";
-                    greenLight();
                 }
+                greenLight();
                 break;
             case "stopped":
                 status.innerHTML = "Stopped";
