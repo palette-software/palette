@@ -34,9 +34,11 @@ class AgentStatusEntry(meta.Base):
         self.uuid = uuid
 
     def connected(self):
-        if not self.last_disconnect_time:
-            return False;
-        return self.last_disconnect_time > self.last_connection_time
+        if not self.last_disconnect_time or \
+                        self.last_disconnect_time < self.last_connection_time:
+            return True # connected
+        else:
+            return False # not connected
 
 class AgentStatus(object):
 

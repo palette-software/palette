@@ -61,5 +61,5 @@ class ManageAdvancedDialog(DialogPage):
         db_session = Session()
         self.agents = db_session.query(AgentStatusEntry).all()
         for agent in self.agents:
-            agent.creation_time = str(agent.creation_time)[:19] # Cut off fraction
+            agent.last_connection_time_str = str(agent.last_connection_time)[:19] # Cut off fraction
         db_session.close()
