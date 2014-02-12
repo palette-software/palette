@@ -73,16 +73,20 @@ h3 {
 	width: 80px;
 	height: 80px;
 	margin: 2em auto 3em;
-	background: url(/app/module/palette/images/status-green-light.png) no-repeat 50% 50%;
+	background: url(/app/module/palette/images/status-green-light.png);
+	background-size: 100%;
 }
 .yellow-light {
-	background: url(/app/module/palette/images/status-yellow-light.png) no-repeat 50% 50%;
+	background: url(/app/module/palette/images/status-yellow-light.png);
+	background-size: 100%;
 }
 .orange-light {
-	background: url(/app/module/palette/images/status-orange-light.png) no-repeat 50% 50%;
+	background: url(/app/module/palette/images/status-orange-light.png);
+	background-size: 100%;
 }
 .red-light {
-	background: url(/app/module/palette/images/status-red-light.png) no-repeat 50% 50%;
+	background: url(/app/module/palette/images/status-red-light.png);
+	background-size: 100%;
 }
 
 .tile {
