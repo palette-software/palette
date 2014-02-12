@@ -149,13 +149,6 @@ class AgentManager(threading.Thread):
     def unlock_agent(self, agent):
         agent.unlock()
 
-    def agent_conn_by_type(self, agent_type):
-        """Returns an instance of an Agent of the requested type."""
-        for key in self.agents:
-            if self.agents[key].auth['type'] == agent_type:
-                return self.agents[key]
-        return False
-
     def remove_agent(self, agent):
         self.lock()
         conn_id = agent.conn_id
