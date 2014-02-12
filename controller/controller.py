@@ -758,6 +758,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("maint failed with: " + str(e))
         except HttpException, e:
             return self.error("maint HttPException: " + str(e))
+        except HTTPException, e:
+            return self.error("maint HTTPException: " + str(e))
         finally:
             aconn.unlock()
 
