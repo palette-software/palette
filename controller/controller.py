@@ -303,12 +303,20 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 "%s:%s.tsbak" % (primary_conn.auth['hostname'], backup_name),
                 non_primary_conn.auth['hostname'])
 
-            if copy_body.has_key('error'):
-                return copy_body
+            # Before we check the copy body for errors/failure, we
+            # try to delete the local file since the copy failed 
+            # and we shouldn't leave a "failed backup" (non-recorded) file
+            # on the primary agent.
 
             # Remove the backup file from the primary
             backup_fullpathname = DEFAULT_BACKUP_DIR + '\\' + backup_name + ".tsbak"
             remove_body = self.cli_cmd("DEL %s" % backup_fullpathname)
+
+            # Check how the copy command did, earlier.
+            if copy_body.has_key('error'):
+                return copy_body
+
+            # Check if the DEL worked.
             if remove_body.has_key('error'):
                 return remove_body
 
@@ -345,15 +353,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         try:
             body = self._send_cli(command, aconn)
         except EnvironmentError, e:
-            return self.error("_send_cli failed with: " + str(e))
+            return self.error("_send_cli (%s) failed with: %s" % (command, str(e)))
         except HttpException, e:
-            return self.error("_send_cli HttPException: " + str(e))
+            return self.error("_send_cli (%s) HttPException: %s" % (command, str(e)))
 
         if body.has_key('error'):
             return body
 
         if not body.has_key('run-status'):
-            return self.error("_send_cli body missing 'run-status: '" + str(e))
+            return self.error("_send_cli (%s) body response missing 'run-status: '" % \
+                (command, str(e)))
 
         # It is possible for the command to finish immediately.
         if body['run-status'] == 'finished':
@@ -506,9 +515,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         msg = ""
         # fixme: make sure the source isn't the same as the dest
         if not src:
-            msg = "Unknown source-hostname: %s. " % source_hostname 
+            msg = "Unknown or unconnected source-hostname: %s. " % source_hostname 
         if not dst:
-            msg += "Unknown dest-hostname: %s." % dest_name
+            msg += "Unknown or unconnected dest-hostname: %s." % dest_name
 
         if not src or not dst:
             return self.error(msg)
@@ -561,36 +570,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         primary_conn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
 
         if not primary_conn:
-            return self.error("[ERROR] No Primary Agent not connected.")
-
-        alert = Alert(self.config, log)
-        alert.send("Restore Started")
-
-        stateman = server.stateman
-        orig_states = stateman.get_states()
-        if orig_states[STATE_TYPE_MAIN] == STATE_MAIN_STARTED:
-            # Restore can run only when tableau is stopped.
-            stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STOPPING)
-            log.debug("--------------Stopping Tableau for restore---------------")
-            stop_body = self.cli_cmd("tabadmin stop")
-            if stop_body.has_key('error'):
-                self.info.debug("Restore: tabadmin stop failed")
-                return stop_body
-
-            # Give the status thread a bit of time to update the state to
-            # STOPPED.
-            stopped = False
-            for i in range(8):
-                states = stateman.get_states()
-                if states[STATE_TYPE_MAIN] == STATE_MAIN_STOPPED:
-                    stopped = True
-                    self.log.debug("Restore: Tableau has stopped")
-                    break
-                self.log.debug("Restore: Tableau has not yet stopped")
-                time.sleep(8)
-
-            if not stopped:
-                return self.error('[ERROR] Tableleau did not stop as requested.  Restore aborted.')
+            return self.error("[ERROR] No Primary Agent is connected.")
 
         # Check if the source_filename is on the Primary Agent.
         if source_hostname != primary_conn.auth['hostname']:
@@ -608,14 +588,43 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.debug("Copy failed with: " + str(body))
                 return body
 
-        # The file is now on the Primary Agent.
+        # The restore file is now on the Primary Agent.
+
+        alert = Alert(self.config, log)
+        alert.send("Restore Started")
+
+        stateman = server.stateman
+        orig_states = stateman.get_states()
+        if orig_states[STATE_TYPE_MAIN] == STATE_MAIN_STARTED:
+            # Restore can run only when tableau is stopped.
+            stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STOPPING)
+            log.debug("--------------Stopping Tableau for restore---------------")
+            stop_body = self.cli_cmd("tabadmin stop")
+            if stop_body.has_key('error'):
+                self.info.debug("Restore: tabadmin stop failed")
+                return stop_body
+
+            # Give Tableau and the status thread a bit of time to stop
+            # and update the state to STOPPED.
+            stopped = False
+            for i in range(15):
+                states = stateman.get_states()
+                if states[STATE_TYPE_MAIN] == STATE_MAIN_STOPPED:
+                    stopped = True
+                    self.log.debug("Restore: Tableau has stopped (on check %d)", i)
+                    break
+                self.log.debug("Restore: Check #%d: Tableau has not yet stopped", i)
+                time.sleep(8)
+
+            if not stopped:
+                return self.error('[ERROR] Tableleau did not stop as requested.  Restore aborted.')
 
         # 'tabadmin restore ...' starts tableau as part of the restore procedure.
         # fixme: Maybe the maintenance web server wasn't running?
         maint_body = server.maint("stop")
         if maint_body.has_key("error"):
             self.info.debug("Restore: maint stop failed")
-            # continue on..
+            # continue on, not a fatal error...
 
         stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STARTING)
         try:
@@ -626,9 +635,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("HTTP Exception: " + str(e))
 
         if body.has_key('error'):
+            # Fixme: what state are we in now?
             return body
 
-        # fixme: Do we need to add restore information to database?  
+        # fixme: Do we need to add restore information to the database?  
         # fixme: check status before cleanup? Or cleanup anyway?
 
         if source_hostname != primary_conn.auth['hostname']:
