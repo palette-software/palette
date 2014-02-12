@@ -121,7 +121,7 @@ class StatusMonitor(threading.Thread):
                     self.log.info("Sending 'maint start' command for transition from STATE_MAIN_UNKNOWN to STATE_MAIN_STOPPED")
                     maint_body = self.server.maint("start")
                     if maint_body.has_key("error"):
-                        self.log.error("set_main_state: 'maint start' failed after transition from STATE_MAIN_UNKNOWN to STATE_MAIN_STOPPED")
+                        self.log.error("set_main_state: 'maint start' failed after transition from STATE_MAIN_UNKNOWN to STATE_MAIN_STOPPED: " + maint_body['error'])
 
             elif main_state == STATE_MAIN_STARTING or \
                                         main_state == STATE_MAIN_STOPPED:
