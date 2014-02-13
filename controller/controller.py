@@ -45,7 +45,6 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         body = server.cli_cmd("tabadmin status -v")
-        print "body = ", body
         self.report_status(body)
 
     def do_backup(self, argv):
@@ -291,6 +290,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         agents = manager.all_agents()
         for key in agents:
             if agents[key].auth['type'] != AGENT_TYPE_PRIMARY:
+                # fixme: first make sure the non-primary-agent is still connected
                 non_primary_conn = agents[key]
                 break
 
@@ -308,20 +308,30 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # and we shouldn't leave a "failed backup" (non-recorded) file
             # on the primary agent.
 
-            # Remove the backup file from the primary
-            backup_fullpathname = DEFAULT_BACKUP_DIR + '\\' + backup_name + ".tsbak"
-            remove_body = self.cli_cmd("DEL %s" % backup_fullpathname)
-
-            # Check how the copy command did, earlier.
             if copy_body.has_key('error'):
-                return copy_body
+                self.log.info("Copy of backup file to agent '%s' failed.  Will leave the backup on the primary agent.", non_primary_conn.auth['hostname'])
+                # Something was wrong with the non-primary agent.  Leave
+                # the backup on the primary after all.
+                backup_loc = primary_conn
+                # Backup file remains on the primary.
+                backup_ip_address = primary_conn.auth['ip-address']
+                backup_hostname = primary_conn.auth['hostname']
 
-            # Check if the DEL worked.
-            if remove_body.has_key('error'):
-                return remove_body
+            else:
+                # Remove the backup file from the primary
+                backup_fullpathname = DEFAULT_BACKUP_DIR + '\\' + backup_name + ".tsbak"
+                remove_body = self.cli_cmd("DEL %s" % backup_fullpathname)
 
-            backup_ip_address = non_primary_conn.auth['ip-address']
-            backup_hostname = non_primary_conn.auth['hostname']
+                # Check how the copy command did, earlier.
+                if copy_body.has_key('error'):
+                    return copy_body
+
+                # Check if the DEL worked.
+                if remove_body.has_key('error'):
+                    return remove_body
+
+                backup_ip_address = non_primary_conn.auth['ip-address']
+                backup_hostname = non_primary_conn.auth['hostname']
 
         else:
             backup_loc = primary_conn
@@ -420,9 +430,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # print "headers:", res.getheaders()
             self.log.debug("_send_cli reading...")
             body_json = res.read()
-        except HTTPException, e:
+        except (HTTPException, EnvironmentError) as e:
             self.remove_agent(aconn)    # bad agent
             return self.error("POST /cli failed with: " + str(e))
+        except:
+            self.remove_agent(aconn)    # bad agent
+            return self.error("POST /cli failed with unexpected error: " + str(sys.exc_info()[0]))
         finally:
             aconn.unlock()
 
@@ -471,7 +484,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.debug("headers: " + str(res.getheaders()))
             self.log.debug("_send_cleanup reading...")
             body_json = res.read()
-        except HTTPException, e:
+        except (HTTPException, EnvironmentError) as e:
             self.remove_agent(aconn)    # bad agent
             self.log.debug("POST %s failed with HTTPException: %s", command, str(e))
             return self.error("POST /%s failed with: %s" % (command, str(e)))
@@ -754,12 +767,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 body = {}
                 self.log.debug("maint reply empty.")
 
-        except EnvironmentError, e:
-            return self.error("maint failed with: " + str(e))
-        except HttpException, e:
-            return self.error("maint HttPException: " + str(e))
-        except HTTPException, e:
-            return self.error("maint HTTPException: " + str(e))
+        except (HTTPException, HTTPException, EnvironmentError) as e:
+            return self.error("maint failed: " + str(e))
+            self.remove_agent(aconn)    # bad agent
         finally:
             aconn.unlock()
 
