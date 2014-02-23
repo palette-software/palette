@@ -8,9 +8,11 @@ class Alert(object):
     def __init__(self, config, log):
         self.config = config
         self.log = log
-        self.enabled = config.getbooleandef('alert', 'enabled', False)
-        self.to_email = config.getdef('alert', 'to_email', "nobody@nowhere.nohow")
-        self.from_email = config.getdef('alert', 'from_email', "alerts@palette-software.com")
+        self.enabled = config.getboolean('alert', 'enabled', default=False)
+        self.to_email = config.get('alert', 'to_email',
+                                   default="nobody@nowhere.nohow")
+        self.from_email = config.get('alert', 'from_email',
+                                     default="alerts@palette-software.com")
 
     def send(self, text):
 

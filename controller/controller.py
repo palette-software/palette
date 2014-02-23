@@ -9,8 +9,6 @@ from agent import AgentManager
 import json
 import time
 
-import ConfigParser as configparser
-
 from request import *
 from inits import *
 from exc import *
@@ -807,8 +805,8 @@ def main():
     args = parser.parse_args()
 
     config = Config(args.config)
-    host = config.getdef('controller', 'host', 'localhost');
-    port = config.getintdef('controller', 'port', 9000);
+    host = config.get('controller', 'host', default='localhost');
+    port = config.getint('controller', 'port', default=9000);
 
     default_loglevel = logging.DEBUG    # fixme: change default to logging.INFO
     if args.debug:
@@ -833,7 +831,9 @@ def main():
 
     server = Controller((host, port), CliHandler)
     server.config = config
-    server.cli_get_status_interval = config.getdef('controller', 'cli_get_status_interval', 10)
+    server.cli_get_status_interval = config.get('controller', 
+                                                'cli_get_status_interval',
+                                                default=10)
 
     # Need to instantiate to initialize state and status tables,
     # even if we don't run the status thread.

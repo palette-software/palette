@@ -1,42 +1,43 @@
-import ConfigParser
-from ConfigParser import NoSectionError
-from ConfigParser import NoOptionError
+import os
+import ConfigParser as configparser
 
-class Config(ConfigParser.ConfigParser):
+class Config(object):
 
-    def __init__(self, configfile):
- 
-        ConfigParser.ConfigParser.__init__(self)
+    def __init__(self, path):
+        self.parser = configparser.ConfigParser()
 
-        if configfile != None:
-            self.read(configfile)
+        if not path:
+            raise ValueError(path)
+        if not os.path.exists(path):
+            raise IOError("File not found : " + path)
 
-    def getdef(self, section, option, default):
+        self.path = path
+        self.parser.read(path)
+
+    def _get(self, name, section, option, **kwargs):
+        if 'default' in kwargs:
+            default = kwargs['default']
+            have_default = True
+            del kwargs['default']
+        else:
+            have_default = False
+
         try:
-            value = self.get(section, option)
-            return value
-        except (NoSectionError,NoOptionError):
-            return default
+            f = getattr(self.parser, name)
+            return f(section, option, **kwargs)
+        except (configparser.NoSectionError, configparser.NoOptionError) as e:
+            if have_default:
+                return default
+            raise e
 
-    def getintdef(self, section, option, default):
-        try:
-            value = self.getint(section, option)
-            return value
-        except (NoSectionError,NoOptionError):
-            return default
+    def get(self, section, option, **kwargs):
+        return self._get('get', section, option, **kwargs)
 
-    def getbooleandef(self, section, option, default):
-        try:
-            value = self.getboolean(section, option)
-            return value
-        except (NoSectionError,NoOptionError):
-            return default
+    def getint(self, section, option, **kwargs):
+        return self._get('getint', section, option, **kwargs)
 
+    def getfloat(self, section, option, **kwargs):
+        return self._get('getfloat', section, option, **kwargs)
 
-def main():
-   
-    config = Config(None)
-
-if __name__ == '__main__':
-
-    main()
+    def getboolean(self, section, option, **kwargs):
+        return self._get('getboolean', section, option, **kwargs)

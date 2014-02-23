@@ -39,7 +39,7 @@ class StatusMonitor(threading.Thread):
         self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.INFO)
 #        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.DEBUG)
 
-        self.status_request_interval = self.config.getintdef('status', 'status_request_interval', 10)
+        self.status_request_interval = self.config.getint('status', 'status_request_interval', default=10)
 
         self.Session = sessionmaker(bind=meta.engine)
         
