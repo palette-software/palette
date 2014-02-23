@@ -31,13 +31,14 @@ class StatusEntry(meta.Base):
 
 class StatusMonitor(threading.Thread):
 
+    LOGGER_NAME = "status"
+
     def __init__(self, server, manager):
         super(StatusMonitor, self).__init__()
         self.server = server
         self.config = self.server.config
         self.manager = manager
-        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.INFO)
-#        self.log = logger.config_logging(STATUS_LOGGER_NAME, logging.DEBUG)
+        self.log = logger.get(self.LOGGER_NAME)
 
         self.status_request_interval = self.config.getint('status', 'status_request_interval', default=10)
 

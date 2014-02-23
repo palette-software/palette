@@ -3,7 +3,6 @@
 import sys
 import os
 import SocketServer as socketserver
-import logging
 
 from agent import AgentManager
 import json
@@ -266,6 +265,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
+    LOGGER_NAME = "main"
     allow_reuse_address = True
 
     def backup_cmd(self):
@@ -800,7 +800,6 @@ def main():
  
     parser = argparse.ArgumentParser(description='Palette Controller')
     parser.add_argument('config', nargs='?', default=None)
-    parser.add_argument('--debug', action='store_true', default=True)
     parser.add_argument('--nostatus', action='store_true', default=False)
     args = parser.parse_args()
 
@@ -808,12 +807,9 @@ def main():
     host = config.get('controller', 'host', default='localhost');
     port = config.getint('controller', 'port', default=9000);
 
-    default_loglevel = logging.DEBUG    # fixme: change default to logging.INFO
-    if args.debug:
-        default_loglevel = logging.DEBUG
-
-    log = logger.config_logging(MAIN_LOGGER_NAME, default_loglevel)
-
+    # loglevel is entirely controlled by the INI file.
+    logger.make_loggers(config)
+    log = logger.get(Controller.LOGGER_NAME)
     log.info("Controller version: %s", version)
 
     # engine is once per single application process.

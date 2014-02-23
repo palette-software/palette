@@ -41,3 +41,9 @@ class Config(object):
 
     def getboolean(self, section, option, **kwargs):
         return self._get('getboolean', section, option, **kwargs)
+
+    def __getattr__(self, name):
+        if hasattr(self.parser, name):
+            return getattr(self.parser, name)
+        else:
+            raise AttributeError(name)
