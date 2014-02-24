@@ -153,6 +153,7 @@ h3 {
 }
 input[type="submit"].login {
 	height: 35px;
+	margin-top: 10px;
 }
 .big {
 	width: 150px;
@@ -196,6 +197,16 @@ input[type="submit"].login:active {
 .box {
 	width: 25%;
 	border-radius: 3px;
+	padding: 3% 4%;
+}
+input[type="text"], input[type="password"] {
+	width: 96%;
+}
+input[type="password"] {
+	margin: 3% 0 0 0;
+}
+label.error {
+    width: 96%;
 }
 
 /* LINES 510-517 */

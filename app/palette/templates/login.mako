@@ -23,7 +23,7 @@
     <div class="container">
       <%include file="_logo.mako" />
       <ul id="nav">
-	<li id="help"><a href="#">Help<span class="arrow-down"></span></a></li>
+        <li id="help"><a href="#">Help<span class="arrow-down"></span></a></li>
     </div>
   </nav>
 
@@ -32,24 +32,27 @@
   <div class="wrapper">
     <div class="container">
       <div class="box">
-	<form method="post" action="/login" id="form">
-	  <h1>Login</h1>
-	  <p class="hidden error" id="error">
-	    Login failed; <b>Invalid userID</b> or <b>password</b>
-	  </p>
-	  <p>
-	    <input type="text" name="username" id="username"
-		   placeholder="Username">
-	  </p>
-	  <p>
-	    <input type="password" name="password" id="password"
-		   placeholder="Password">
-	  </p>
-	  <p class="right nopad">
-	    <input type="submit" value="Login"
-		   name="login" id="login" class="login">
-	  </p>
-	</form>
+        <form method="post" action="/login" id="form">
+          <h1>Login</h1>
+          %if 'AUTH_ERROR' in req.environ:
+          <div class="hidden" id="auth-error"></div>
+          %endif
+          <p class="hidden error" id="error">
+            Login failed; <b>Invalid userID</b> or <b>password</b>
+          </p>
+          <p>
+            <input type="text" name="username" id="username"
+                   placeholder="Username">
+          </p>
+          <p>
+            <input type="password" name="password" id="password"
+                   placeholder="Password">
+          </p>
+          <p class="right nopad">
+            <input type="submit" value="Login"
+                   name="login" id="login" class="login">
+          </p>
+        </form>
       </div>
     </div>
     <script>
@@ -59,6 +62,6 @@
       ]
       }, [ "akiri/login" ]);
     </script>
-  </div>	
+  </div>        
 </body>
 </html>
