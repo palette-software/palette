@@ -16,7 +16,9 @@ from inits import *
 class AgentStatusEntry(meta.Base):
     __tablename__ = 'agents'
 
-    agentid =  Column(BigInteger, unique=True, nullable=False, autoincrement=True, primary_key=True)
+    agentid = Column(BigInteger, unique=True, nullable=False, \
+      autoincrement=True, primary_key=True)
+    domainid = Column(BigInteger, ForeignKey("domain.domainid"))
     uuid = Column(String, unique=True, index=True)
     hostname = Column(String)
     agent_type = Column(String)
@@ -47,6 +49,9 @@ class AgentStatusEntry(meta.Base):
         self.ip_address = ip_address
         self.listen_port = listen_port
         self.uuid = uuid
+
+        # FIXME: Pre-production hack -- domainid should be passed
+        self.domainid = 1
 
     def connected(self):
         if not self.last_disconnect_time or \

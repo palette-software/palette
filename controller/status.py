@@ -6,8 +6,8 @@ import threading
 import platform
 
 import sqlalchemy
-from sqlalchemy import Column, Integer, String, DateTime, func
-from sqlalchemy.schema import ForeignKey
+from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
+from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 import meta
@@ -18,12 +18,18 @@ from inits import *
 class StatusEntry(meta.Base):
     __tablename__ = 'status'
 
-    #name = Column(String)
+    # FIXME: Make combination of agentid and name a unique key
+
     name = Column(String, unique=True, nullable=False, primary_key=True)
+    agentid = Column(BigInteger, ForeignKey("agents.agentid"))
     pid = Column(Integer)
     status = Column(String)
-    creation_time = Column(DateTime, default=func.now())
+    creation_time = Column(DateTime, default=func.now(), \
+      onupdate=func.current_timestamp())
+    UniqueConstraint('agentid', 'name')
 
+    # FIXME: We need agentid here, but self.server.status_cmd() hides
+    #        that from us.
     def __init__(self, name, pid, status):
         self.name = name
         self.pid = pid

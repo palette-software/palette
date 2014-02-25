@@ -10,14 +10,12 @@ class BackupEntry(meta.Base):
     key = Column(Integer, unique=True, nullable=False, primary_key=True)
     agentid = Column(BigInteger, ForeignKey("agents.agentid"))
     name = Column(String)
-    #hostname = Column(String)
-    #ip_address = Column(String)
     creation_time = Column(DateTime, default=func.now())
     UniqueConstraint('agentid', 'name')
 
-    def __init__(self, name, agentid):
-        self.name = name
+    def __init__(self, agentid, name):
         self.agentid = agentid
+        self.name = name
 
 class BackupManager(object):
 
@@ -26,7 +24,7 @@ class BackupManager(object):
 
     def add(self, name, agentid):
         session = self.Session()
-        entry = BackupEntry(name, agentid)
+        entry = BackupEntry(agentid, name)
         session.add(entry)
         session.commit()
         session.close()

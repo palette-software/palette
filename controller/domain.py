@@ -11,13 +11,13 @@ class DomainEntry(meta.Base):
 
     domainid =  Column(BigInteger, unique=True, nullable=False, \
       autoincrement=True, primary_key=True)
-    domain = Column(String, unique=True, nullable=False, \
+    domainname = Column(String, unique=True, nullable=False, \
       index=True)
     creation_time = Column(DateTime, server_default=func.now(), \
       onupdate=func.current_timestamp())
 
-    def __init__(self, domain):
-        self.domain = domain
+    def __init__(self, domainname):
+        self.domainname = domainname
 
 class Domain(object):
 
@@ -30,7 +30,7 @@ class Domain(object):
         session = self.Session()
         try:
             entry = session.query(DomainEntry).\
-              filter(DomainEntry.domain == 'default').one()
+              filter(DomainEntry.domainname == 'default').one()
         except  NoResultFound, e:
             entry = DomainEntry('default')
             session.add(entry)

@@ -1,6 +1,6 @@
 import sqlalchemy
-from sqlalchemy import Column, Integer, String, DateTime, func
-from sqlalchemy.schema import ForeignKey
+from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
+from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
@@ -18,10 +18,18 @@ from alert import Alert
 class StateEntry(meta.Base):
     __tablename__ = 'state'
 
-    state_type = Column(String, unique=True, nullable=False, primary_key=True)
-    state = Column(String)
-    creation_time = Column(DateTime, server_default=func.now(), onupdate=func.current_timestamp())
+    # FIXME: Make combination of agentid and state_type a unique key
 
+    state_type = Column(String, unique=True, nullable=False, primary_key=True)
+    agentid = Column(BigInteger, ForeignKey("agents.agentid"))
+    state = Column(String)
+    creation_time = Column(DateTime, server_default=func.now(), \
+      onupdate=func.current_timestamp())
+    UniqueConstraint('agentid', 'state_type')
+
+    # FIXME: In theory we want agentid here, but many places that call this
+    #        method do not have agentid available. Consider using domainid
+    #        rather than agentid for state.
     def __init__(self, state_type, state):
         self.state_type = state_type
         self.state = state

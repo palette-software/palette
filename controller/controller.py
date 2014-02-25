@@ -832,6 +832,7 @@ def main():
                                                 'cli_get_status_interval',
                                                 default=10)
 
+    # FIXME: pull domainname from ini file and domainid from Domain.
     domain = Domain(server)
     server.domain = domain
 
