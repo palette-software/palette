@@ -122,7 +122,12 @@ class AgentManager(threading.Thread):
         entry.last_connection_time = func.now()
         session.merge(entry)
         session.commit()
-        session.close()
+        try:
+            # read back the entry in case the agentid was auto-assigned
+            entry = session.query(AgentStatusEntry).\
+              filter(AgentStatusEntry.uuid == body['uuid']).one()
+        finally:
+            session.close()
 
         return entry.agentid
 
