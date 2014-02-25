@@ -28,6 +28,7 @@ class AgentConnection(object):
         self.addr = addr
         self.httpconn = False   # Used by the controller
         self.auth = {}          # Used by the controller
+        self.agentid = None
         self.uuid = None
 
         # Each agent connection has its own lock
@@ -94,7 +95,7 @@ class AgentManager(threading.Thread):
                     self.remove_agent(agent)
 
         # Remember the new agent
-        self.remember(body)
+        new_agent.agentid = self.remember(body)
         new_agent.uuid = body['uuid']
         self.agents[new_agent.conn_id] = new_agent
 
@@ -121,11 +122,13 @@ class AgentManager(threading.Thread):
         session.commit()
         session.close()
 
-    def forget(self, uuid):
+        return entry.agentid
+
+    def forget(self, agentid):
         session = self.Session()
         #fixme: add try
         entry = session.query(AgentStatusEntry).\
-            filter(AgentStatusEntry.uuid == uuid).\
+            filter(AgentStatusEntry.agentid == agentid).\
             one()
         entry.last_disconnect_time = func.now()
         session.commit()
@@ -155,7 +158,7 @@ class AgentManager(threading.Thread):
         if self.agents.has_key(conn_id):
             self.log.debug("Removing agent with conn_id %d, name %s",\
                 conn_id, self.agents[conn_id].auth['hostname'])
-            self.forget(agent.uuid)
+            self.forget(agent.agentid)
             del self.agents[conn_id]
         else:
             self.log.debug("remove_agent: No such agent with conn_id %d", conn_id)

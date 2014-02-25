@@ -340,7 +340,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # Save name of backup, hostname ip address of the primary agent to the db.
         # fixme: create one of these per server.
         self.backup = BackupManager()
-        self.backup.add(backup_name, backup_loc.uuid)
+        self.backup.add(backup_name, backup_loc.agentid)
 
         return body
 

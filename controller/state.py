@@ -18,7 +18,7 @@ from alert import Alert
 class StateEntry(meta.Base):
     __tablename__ = 'state'
 
-    state_type = Column(String, primary_key=True)
+    state_type = Column(String, unique=True, nullable=False, primary_key=True)
     state = Column(String)
     creation_time = Column(DateTime, server_default=func.now(), onupdate=func.current_timestamp())
 

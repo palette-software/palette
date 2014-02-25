@@ -5,17 +5,19 @@ import threading
 import platform
 
 import sqlalchemy
-from sqlalchemy import Column, Integer, String, DateTime, func
+from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import NoResultFound
 import meta
 
 from inits import *
 class AgentStatusEntry(meta.Base):
     __tablename__ = 'agents'
 
-    uuid = Column(String, primary_key=True)
+    agentid =  Column(BigInteger, unique=True, nullable=False, autoincrement=True, primary_key=True)
+    uuid = Column(String, unique=True, index=True)
     hostname = Column(String)
     agent_type = Column(String)
     version = Column(String)
@@ -26,6 +28,19 @@ class AgentStatusEntry(meta.Base):
     last_disconnect_time = Column(DateTime)
 
     def __init__(self, hostname, agent_type, version, ip_address, listen_port, uuid):
+        self.Session = sessionmaker(bind=meta.engine)
+
+        session = self.Session()
+        try:
+            entry = session.query(AgentStatusEntry).\
+                filter(AgentStatusEntry.uuid == uuid).one()
+            agentid = entry.agentid
+        except NoResultFound, e:
+            agentid = None
+        finally:
+            session.close()
+
+        self.agentid = agentid
         self.hostname = hostname
         self.agent_type = agent_type
         self.version = version

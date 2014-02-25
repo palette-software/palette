@@ -19,7 +19,7 @@ class StatusEntry(meta.Base):
     __tablename__ = 'status'
 
     #name = Column(String)
-    name = Column(String, primary_key=True)
+    name = Column(String, unique=True, nullable=False, primary_key=True)
     pid = Column(Integer)
     status = Column(String)
     creation_time = Column(DateTime, default=func.now())

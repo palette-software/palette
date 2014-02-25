@@ -2,7 +2,7 @@ import sqlalchemy
 from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import ForeignKey, UniqueConstraint
-from sqlalchemy import Column, Integer, String, DateTime, func
+from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.orm.exc import NoResultFound
 import meta
 import sys
@@ -101,8 +101,8 @@ class MonitorApplication(RESTApplication):
 class BackupEntry(meta.Base):
     __tablename__ = 'backup'
 
-    key = Column(Integer, primary_key=True)
-    uuid = Column(String, ForeignKey("agents.uuid"))
+    key = Column(BigInteger, primary_key=True)
+    agentid = Column(BigInteger, ForeignKey("agents.agentid"))
     name = Column(String)
     #hostname = Column(String)
     #ip_address = Column(String)
