@@ -345,8 +345,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return body
 
-    def status_cmd(self):
-        return self.cli_cmd('tabadmin status -v')
+    def status_cmd(self, aconn=None):
+        return self.cli_cmd('tabadmin status -v', aconn)
 
     def cli_cmd(self, command, aconn=None):
         """ 1) Sends the command (a string)

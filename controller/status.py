@@ -21,16 +21,15 @@ class StatusEntry(meta.Base):
     # FIXME: Make combination of agentid and name a unique key
 
     name = Column(String, unique=True, nullable=False, primary_key=True)
-    agentid = Column(BigInteger, ForeignKey("agents.agentid"))
+    agentid = Column(BigInteger, ForeignKey("agents.agentid"), nullable=False)
     pid = Column(Integer)
     status = Column(String)
     creation_time = Column(DateTime, default=func.now(), \
       onupdate=func.current_timestamp())
     UniqueConstraint('agentid', 'name')
 
-    # FIXME: We need agentid here, but self.server.status_cmd() hides
-    #        that from us.
-    def __init__(self, name, pid, status):
+    def __init__(self, agentid, name, pid, status):
+        self.agentid = agentid
         self.name = name
         self.pid = pid
         self.status = status
@@ -75,11 +74,11 @@ class StatusMonitor(threading.Thread):
         # rows to be available until the new rows are inserted and
         # committed.
 
-    def add(self, session, name, pid, status):
+    def add(self, session, agentid, name, pid, status):
         """Note a session is passed.  When updating the status table, we do
         remove_all_status, then slowly add in the new status before doing the commit,
         so the table is not every empty/building if somebody checks it."""
-        entry = StatusEntry(name, pid, status)
+        entry = StatusEntry(agentid, name, pid, status)
         session.add(entry)
 
     def get_all_status(self):
@@ -154,13 +153,15 @@ class StatusMonitor(threading.Thread):
 
     def check_status(self, session):
 
-        if not self.manager.agent_conn_by_type(AGENT_TYPE_PRIMARY):
+        aconn = self.manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
+        if not aconn:
             self.log.debug("status thread: No primary agent currently connected.")
             self.remove_all_status(session)
             session.commit()
             return
+        agentid = aconn.agentid
 
-        body = self.server.status_cmd()
+        body = self.server.status_cmd(aconn)
         if not body.has_key('stdout'):
             # fixme: Probably update the status table to say something's wrong.
             self.log.error("No output received for status monitor. body:" + str(body))
@@ -189,7 +190,7 @@ class StatusMonitor(threading.Thread):
 
         # Store the second part (like "RUNNING") into the database
         self.remove_all_status(session)
-        self.add(session, "Status", 0, status)
+        self.add(session, agentid, "Status", 0, status)
         self.log.debug("Logging main status: %s", status)
         session.commit()
 
@@ -226,7 +227,7 @@ class StatusMonitor(threading.Thread):
             if name[-1:] == "'":
                 name = name[:-1]    # Cut off trailing single quote (')
             
-            self.add(session, name, pid, status)
+            self.add(session, agentid, name, pid, status)
             self.log.debug("logged: %s, %d, %s", name, pid, status)
 
         session.commit()
