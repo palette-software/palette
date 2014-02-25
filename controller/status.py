@@ -55,7 +55,7 @@ class StatusMonitor(threading.Thread):
         session.commit()
         session.close()
 
-        self.stateman = StateManager(self.config, self.log)
+        self.stateman = StateManager(self.server)
 
         # Start fresh: state table
         #self.stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)

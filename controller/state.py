@@ -18,28 +18,28 @@ from alert import Alert
 class StateEntry(meta.Base):
     __tablename__ = 'state'
 
-    # FIXME: Make combination of agentid and state_type a unique key
+    # FIXME: Make combination of domainid and state_type a unique key
 
     state_type = Column(String, unique=True, nullable=False, primary_key=True)
-    agentid = Column(BigInteger, ForeignKey("agents.agentid"))
+    domainid = Column(BigInteger, ForeignKey("domain.domainid"), nullable=False)
     state = Column(String)
     creation_time = Column(DateTime, server_default=func.now(), \
       onupdate=func.current_timestamp())
-    UniqueConstraint('agentid', 'state_type')
+    UniqueConstraint('domainid', 'state_type')
 
-    # FIXME: In theory we want agentid here, but many places that call this
-    #        method do not have agentid available. Consider using domainid
-    #        rather than agentid for state.
-    def __init__(self, state_type, state):
+    def __init__(self, domainid, state_type, state):
+        self.domainid = domainid
         self.state_type = state_type
         self.state = state
 
 class StateManager(object):
 
-    def __init__(self, config, log):
-        self.config = config
-        self.log = log
+    def __init__(self, server):
+        self.server = server
+        self.config = self.server.config
+        self.log = self.server.log
         self.Session = sessionmaker(bind=meta.engine)
+        self.domainid = self.server.domainid
 
     def update(self, state_type, state):
         session = self.Session()
@@ -52,7 +52,7 @@ class StateManager(object):
                 update({'state': state})
 
         else:
-            entry = StateEntry(state_type, state)
+            entry = StateEntry(self.domainid, state_type, state)
             session.add(entry)
 
         session.commit()

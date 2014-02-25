@@ -25,7 +25,7 @@ class Domain(object):
         self.server = server
         self.Session = sessionmaker(bind=meta.engine)
 
-        # FIXME: pre-production hack to ensure there is always
+        # FIXME: Pre-production hack to ensure there is always
         #        a default domain
         session = self.Session()
         try:
