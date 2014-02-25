@@ -24,8 +24,9 @@ class StatusEntry(meta.Base):
     agentid = Column(BigInteger, ForeignKey("agents.agentid"), nullable=False)
     pid = Column(Integer)
     status = Column(String)
-    creation_time = Column(DateTime, default=func.now(), \
-      onupdate=func.current_timestamp())
+    creation_time = Column(DateTime, server_default=func.now())
+    modification_time = Column(DateTime, server_default=func.now(), \
+      server_onupdate=func.current_timestamp())
     UniqueConstraint('agentid', 'name')
 
     def __init__(self, agentid, name, pid, status):

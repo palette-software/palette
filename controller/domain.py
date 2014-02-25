@@ -13,8 +13,9 @@ class DomainEntry(meta.Base):
       autoincrement=True, primary_key=True)
     domainname = Column(String, unique=True, nullable=False, \
       index=True)
-    creation_time = Column(DateTime, server_default=func.now(), \
-      onupdate=func.current_timestamp())
+    creation_time = Column(DateTime, server_default=func.now())
+    modification_time = Column(DateTime, server_default=func.now(), \
+      server_onupdate=func.current_timestamp())
 
     def __init__(self, domainname):
         self.domainname = domainname

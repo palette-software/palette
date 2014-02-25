@@ -10,7 +10,9 @@ class BackupEntry(meta.Base):
     key = Column(Integer, unique=True, nullable=False, primary_key=True)
     agentid = Column(BigInteger, ForeignKey("agents.agentid"))
     name = Column(String)
-    creation_time = Column(DateTime, default=func.now())
+    creation_time = Column(DateTime, server_default=func.now())
+    modification_time = Column(DateTime, server_default=func.now(), \
+      server_onupdate=func.current_timestamp())
     UniqueConstraint('agentid', 'name')
 
     def __init__(self, agentid, name):

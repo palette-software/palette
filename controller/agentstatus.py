@@ -25,8 +25,10 @@ class AgentStatusEntry(meta.Base):
     version = Column(String)
     ip_address = Column(String)
     listen_port = Column(Integer)
-    creation_time = Column(DateTime, default=func.now())
-    last_connection_time = Column(DateTime, default=func.now())
+    creation_time = Column(DateTime, server_default=func.now())
+    modification_time = Column(DateTime, server_default=func.now(), \
+      server_onupdate=func.current_timestamp())
+    last_connection_time = Column(DateTime, server_default=func.now())
     last_disconnect_time = Column(DateTime)
 
     def __init__(self, hostname, agent_type, version, ip_address, listen_port, uuid):
