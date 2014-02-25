@@ -22,6 +22,7 @@ from state import StateManager
 from status import StatusMonitor
 from alert import Alert
 from config import Config
+from domain import Domain
 
 version="0.1"
 
@@ -830,6 +831,9 @@ def main():
     server.cli_get_status_interval = config.get('controller', 
                                                 'cli_get_status_interval',
                                                 default=10)
+
+    domain = Domain(server)
+    server.domain = domain
 
     # Need to instantiate to initialize state and status tables,
     # even if we don't run the status thread.
