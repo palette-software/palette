@@ -1,0 +1,22 @@
+#!/bin/sh -e
+
+action="$1"
+oldversion="$2"
+
+if [ "$action" != configure ]
+then
+      exit 0
+fi
+
+set +x
+
+# The "| echo" is so it returns exit status of 0 even if they already exist.
+sudo -u postgres createuser --superuser $USER 2>&1 | echo
+
+echo CREATE ROLE palette WITH SUPERUSER LOGIN PASSWORD \'palpass\' | sudo -u postgres psql 2>&1 | echo
+
+sudo -u postgres createdb paldb 2>&1 | echo
+
+start controller
+
+exit 0
