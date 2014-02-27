@@ -1,12 +1,46 @@
-See controller/README for running the controller and simulated agent.
+Packaging:
+    To build the Debian packages:
+        make
 
-To install the package:
-    dpkg --install <packagename>.deb
+    This will create, among other files:
+        controller_0.1_all.deb
+        palette_0.1_all.deb (the "webapp")
 
-After you get the dependency errors, type:
-    apt-get -f install
+Configuration:
+    Contoller:
+        - Configuration file used: /etc/controller.ini
+        - Logging:
+            * /var/log/palette/controller.log
+        - Autostarted via /etc/init/controller.conf
 
-To start the controller:
-    /usr/sbin/controller
+    Palette (webapp):
+        - Configuration file used: /etc/palette.ini
+        - Logging:
+            * /var/log/palette/webapp.log
+            * /var/log/palette/access.log (http traffic)
+        - Autostarted via /etc/init/palette.conf
 
-Logging currently goes to stdout/stderr.
+To install the packages:
+    gdebi controller_0.1_all.deb
+    gdebi palette_0.1_all.deb
+
+To remove the packages:
+    dpkg --remove controller
+    dpkg --remove palette
+
+To stop or start the controller:
+    # stop controller
+    # start controller
+
+To stop or start the palette webapp:
+    # stop palette
+    # start palette
+
+To see if the controller or palette webapp is running:
+    The controller is stopped:
+        # initctl list | grep controller
+        controller stop/waiting
+
+    The palette/webapp process is running:
+        # initctl list | grep palette
+        palette start/running, process 4460
