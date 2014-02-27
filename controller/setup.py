@@ -10,6 +10,7 @@ setup(name='controller',
       url='http://www.palette-software.com',
       scripts = ["bin/controller"],
       data_files = [ "etc/controller.ini",
-                     "etc/init/controller.conf"
+                     "etc/init/controller.conf",
+                     "etc/postfix/main.cf"
                    ],
       packages=['controller'])

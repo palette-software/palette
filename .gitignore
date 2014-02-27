@@ -8,3 +8,8 @@
 /build
 /debian
 tags
+controller/build
+controller/debian/controller
+*.debian.tar.gz
+*.dsc
+*.orig.tar.gz
