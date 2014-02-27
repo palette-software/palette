@@ -35,8 +35,11 @@ Linux:
 To test:
 ========
 
+    - Get a usable INI file
+        cp DEBIAN/etc/controller.ini .
+
     - Start the controller:
-        python controller.py
+        python controller/controller.py controller.ini
 
     - Then start the Palette Agent:
         python agent.py

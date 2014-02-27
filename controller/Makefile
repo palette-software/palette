@@ -5,4 +5,5 @@ all:
 
 clean:
 	rm -rf *.egg-info dist build
+	find . -name \*.pyc -exec rm '{}' ';'
 	make -C DEBIAN clean
