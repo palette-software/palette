@@ -7,9 +7,7 @@ CONTROLLER_PROJECT=controller
 CONTROLLER_VERSION=0.1
 CONTROLLER_PACKAGE=$(CONTROLLER_PROJECT)-$(CONTROLLER_VERSION)
 
-all: palette
-
-#all: controller
+all: palette controller
 
 palette: 
 	# Add the required "project-version" directory via a symbolic link.
