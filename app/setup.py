@@ -20,7 +20,7 @@ setup(name='palette',
              'images/*', 'img/*',
              'js/*.js', 'js/templates/*', 'css/*.css']
         },
-    data_file = [ "etc/palette.ini",
+    data_files = [ "etc/palette.ini",
                   "etc/init/palette.conf"
                 ],
     zip_safe=False,
