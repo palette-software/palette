@@ -1,4 +1,7 @@
 include etc/*
 include etc/init/*
+include plugins/*
 recursive-include palette *
 include palette/app/plugins/*link
+exclude setup.cfg
+exclude Makefile
