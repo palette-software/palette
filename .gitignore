@@ -13,3 +13,4 @@ controller/debian/controller
 *.dsc
 *.orig.tar.gz
 controller*.changes
+palette*.changes
