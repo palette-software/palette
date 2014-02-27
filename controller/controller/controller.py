@@ -22,6 +22,7 @@ from state import StateManager
 from status import StatusMonitor
 from alert import Alert
 from config import Config
+from domain import Domain
 
 from version import VERSION
 
@@ -340,12 +341,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # Save name of backup, hostname ip address of the primary agent to the db.
         # fixme: create one of these per server.
         self.backup = BackupManager()
-        self.backup.add(backup_name, backup_loc.uuid)
+        self.backup.add(backup_name, backup_loc.agentid)
 
         return body
 
-    def status_cmd(self):
-        return self.cli_cmd('tabadmin status -v')
+    def status_cmd(self, aconn=None):
+        return self.cli_cmd('tabadmin status -v', aconn)
 
     def cli_cmd(self, command, aconn=None):
         """ 1) Sends the command (a string)
@@ -820,16 +821,21 @@ def main():
 
     log.debug("Starting agent listener.")
 
-    global manager  # fixme: get rid of this global.
-    manager = AgentManager(config)
-    manager.log = log   # fixme
-    manager.start()
-
     server = Controller((host, port), CliHandler)
     server.config = config
-    server.cli_get_status_interval = config.get('controller', 
-                                                'cli_get_status_interval',
-                                                default=10)
+    server.log = log
+    server.cli_get_status_interval = \
+      config.get('controller', 'cli_get_status_interval', default=10)
+
+    # FIXME: pull domainname from ini file and domainid from Domain.
+    domain = Domain(server)
+    server.domain = domain
+    server.domainname = 'default'
+    server.domainid = 1
+
+    global manager  # fixme: get rid of this global.
+    manager = AgentManager(server)
+    manager.start()
 
     # Need to instantiate to initialize state and status tables,
     # even if we don't run the status thread.
@@ -840,9 +846,8 @@ def main():
         log.debug("Starting status monitor.")
         statusmon.start()
 
-    server.stateman = StateManager(config, log)
+    server.stateman = StateManager(server)
 
-    server.log = log    # fixme
     server.serve_forever()
 
 if __name__ == '__main__':
