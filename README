@@ -53,3 +53,16 @@ To see if the controller or palette webapp is running:
     The palette/webapp process is running:
         # initctl list | grep palette
         palette start/running, process 4460
+
+
+To run the controller without installing the "controller" package:
+==================================================================
+    
+    sudo mkdir /var/log/palette
+    sudo chown-to-whoever-will-berunning-controller /var/log/palette
+    cd palette/controller/controller
+
+To run the webapp without installing the "palette" package:
+===========================================================
+    cd palette/app
+    httpserver etc/palette.ini
