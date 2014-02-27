@@ -1,0 +1,17 @@
+Source: palette
+Section: utils
+Priority: optional
+Maintainer: Palette Software
+Build-Depends: debhelper (>= 9), python (>= 2.7), python-setuptools
+Standards-Version: 3.9.3.1
+X-Python-Version: >= 2.7
+
+Package: palette
+Architecture: all
+Depends:
+ ${python:Depends}, ${misc:Depends},
+ python-docutils, python-sphinx, postgresql,
+ python-sqlalchemy, python-psycopg2, telnet
+Description: Palette Web App
+ This package contains the Palette Web Application.
+Homepage: http://www.palette-software.com

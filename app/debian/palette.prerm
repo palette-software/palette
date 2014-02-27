@@ -1,0 +1,8 @@
+#!/bin/sh
+cmd=palette
+
+if [ -f /etc/init/$cmd.conf ]; then
+    /sbin/stop $cmd | echo
+fi
+
+exit 0

@@ -3,4 +3,3 @@ include etc/*
 include etc/init/*
 include etc/postfix/*
 include controller/*
-exclude Makefile

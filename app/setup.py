@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '0.0'
+version = '0.1'
 
 setup(name='palette',
     version=version,
@@ -20,6 +20,9 @@ setup(name='palette',
              'images/*', 'img/*',
              'js/*.js', 'js/templates/*', 'css/*.css']
         },
+    data_file = [ "etc/palette.ini",
+                  "etc/init/palette.conf"
+                ],
     zip_safe=False,
     install_requires=[
       # Extra requirements go here #
