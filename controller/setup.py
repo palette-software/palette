@@ -1,7 +1,7 @@
 import os
 from setuptools import setup, find_packages
 
-execfile(os.path.join('controller', 'version.py'))
+VERSION='0.1'
 
 setup(name='controller',
       version=VERSION,
