@@ -4,4 +4,5 @@ include plugins/*
 recursive-include palette *
 include palette/app/plugins/*link
 exclude setup.cfg
-exclude Makefile
+include Makefile
+include setup.cfg
