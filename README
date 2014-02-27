@@ -1,10 +1,19 @@
 Packaging:
     To build the Debian packages:
-        make
 
-    This will create, among other files:
-        controller_0.1_all.deb
-        palette_0.1_all.deb (the "webapp")
+        INSTALL THE DEPENDENCY:
+            sudo apt-get install debhelper
+
+        Build the Debian packages:
+            make
+
+        This will create the packages:
+            controller_0.1_all.deb
+            palette_0.1_all.deb (the "webapp")
+
+        You will also see other files have been created, such as
+        controller_0.1.orig.tar.gz, controller_0.1.debian.tar.gz, etc.
+        which you can ignore.
 
 Configuration:
     Contoller:
@@ -25,8 +34,8 @@ To install the packages:
     gdebi palette_0.1_all.deb
 
 To remove the packages:
-    dpkg --remove controller
-    dpkg --remove palette
+    apt-get remove controller
+    apt-get rmeove palette
 
 To stop or start the controller:
     # stop controller
