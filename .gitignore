@@ -14,3 +14,4 @@ controller/debian/controller
 *.orig.tar.gz
 controller*.changes
 palette*.changes
+*.substvars

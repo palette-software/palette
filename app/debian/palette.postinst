@@ -10,6 +10,8 @@ fi
 
 set +x
 
+mkdir -p /var/log/palette
+
 start palette
 
 exit 0

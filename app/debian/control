@@ -11,7 +11,7 @@ Architecture: all
 Depends:
  ${python:Depends}, ${misc:Depends},
  python-docutils, python-sphinx, postgresql,
- python-sqlalchemy, python-psycopg2, telnet
+ python-sqlalchemy, python-psycopg2, telnet, controller
 Description: Palette Web App
  This package contains the Palette Web Application.
 Homepage: http://www.palette-software.com

@@ -17,6 +17,8 @@ echo CREATE ROLE palette WITH SUPERUSER LOGIN PASSWORD \'palpass\' | sudo -u pos
 
 sudo -u postgres createdb paldb 2>&1 | echo
 
+mkdir -p /var/log/palette
+
 start controller
 
 exit 0
