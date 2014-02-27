@@ -9,6 +9,7 @@ import sys
 
 from akiri.framework.api import RESTApplication, DialogPage
 
+from controller.backup import BackupEntry
 from controller.agentstatus import AgentStatusEntry
 
 from . import Session
@@ -97,21 +98,6 @@ class MonitorApplication(RESTApplication):
                 'secondary-state': secondary_state,
                 'last-backup': last_backup
                 }
-
-class BackupEntry(meta.Base):
-    __tablename__ = 'backup'
-
-    key = Column(BigInteger, primary_key=True)
-    agentid = Column(BigInteger, ForeignKey("agents.agentid"))
-    name = Column(String)
-    #hostname = Column(String)
-    #ip_address = Column(String)
-    creation_time = Column(DateTime, default=func.now())
-    UniqueConstraint('uuid', 'name')
-
-    def __init__(self, name, uuid):
-        self.name = name
-        self.uuid = uuid
 
 class StateEntry(meta.Base):
     __tablename__ = 'state'
