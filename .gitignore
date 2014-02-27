@@ -14,5 +14,6 @@ controller/debian/controller
 *.orig.tar.gz
 controller*.changes
 palette*.changes
-*substvars
+*substvars*
 *debhelper*
+/app/debian/palette
