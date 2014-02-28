@@ -8,9 +8,6 @@ setup(name='controller',
       author='Palette Software',
       author_email='info@akirisolutions.com',
       url='http://www.palette-software.com',
-      scripts = ["bin/controller"],
-      data_files = [ "etc/controller.ini",
-                     "etc/init/controller.conf",
-                     "etc/postfix/main.cf"
-                   ],
+      scripts = [],
+      data_files = [],
       packages=['controller'])

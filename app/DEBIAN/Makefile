@@ -4,6 +4,7 @@ VERSION := $(shell awk 'match($$0, /[0-9]+\.[0-9]+/) { print substr($$0, RSTART,
 all:
 	rm -rf $(PACKAGE)-*; mkdir -p $(PACKAGE)-$(VERSION)
 	cp -a ../$(PACKAGE) ../setup.py $(PACKAGE)-$(VERSION)/
+	rm -f $(PACKAGE)-$(VERSION)/$(PACKAGE)/controller
 	cp -a MANIFEST.in etc debian $(PACKAGE)-$(VERSION)/
 	cd $(PACKAGE)-$(VERSION) && python setup.py sdist --dist-dir=../
 	mv $(PACKAGE)-$(VERSION).tar.gz $(PACKAGE)_$(VERSION).orig.tar.gz

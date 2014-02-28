@@ -5,4 +5,6 @@ if [ -f /etc/init/$cmd.conf ]; then
     /sbin/stop $cmd | echo
 fi
 
+pyclean -p controller
+
 exit 0

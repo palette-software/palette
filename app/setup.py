@@ -20,9 +20,7 @@ setup(name='palette',
              'images/*', 'img/*',
              'js/*.js', 'js/templates/*', 'css/*.css']
         },
-    data_files = [ "etc/palette.ini",
-                  "etc/init/palette.conf"
-                ],
+    data_files = [],
     zip_safe=False,
     install_requires=[
       # Extra requirements go here #

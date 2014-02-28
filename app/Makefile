@@ -1,5 +1,6 @@
 
 all:
+	python setup.py bdist
 	make -C DEBIAN all
 .PHONY: all
 

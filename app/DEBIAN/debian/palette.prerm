@@ -1,8 +1,4 @@
 #!/bin/sh
-cmd=palette
 
-if [ -f /etc/init/$cmd.conf ]; then
-    /sbin/stop $cmd | echo
-fi
-
+rm -rf /opt/palette/plugins
 exit 0

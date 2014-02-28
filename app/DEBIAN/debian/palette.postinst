@@ -11,7 +11,14 @@ fi
 set +x
 
 mkdir -p /var/log/palette
+mkdir -p /opt/palette/plugins
 
-start palette
+cd /opt/palette/plugins
+for x in `ls -d /usr/share/pyshared/palette*`; do
+    ln -s $x
+done
+
+chown -R www-data:adm /var/log/palette
+chown -R www-data:adm /opt/palette
 
 exit 0
