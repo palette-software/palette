@@ -26,16 +26,26 @@ class Domain(object):
         self.server = server
         self.Session = sessionmaker(bind=meta.engine)
 
-        # FIXME: Pre-production hack to ensure there is always
-        #        a default domain
+    def add(self, name):
         session = self.Session()
+        # FIXME: Can we do a merge rather than a query followed by an add?
         try:
             entry = session.query(DomainEntry).\
-              filter(DomainEntry.domainname == 'default').one()
+              filter(DomainEntry.domainname == name).one()
         except  NoResultFound, e:
-            entry = DomainEntry('default')
+            entry = DomainEntry(name)
             session.add(entry)
             session.commit()
             session.close()
         finally:
             session.close()
+
+    def id_by_name(self, name):
+        session = self.Session()
+
+        # We expect the entry to exist, so allow a NoResultFound
+        # exception to percolate up if the entry is not found.
+        entry = session.query(DomainEntry).\
+          filter(DomainEntry.domainname == name).one()
+
+        return entry.domainid

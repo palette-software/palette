@@ -827,11 +827,11 @@ def main():
     server.cli_get_status_interval = \
       config.get('controller', 'cli_get_status_interval', default=10)
 
-    # FIXME: pull domainname from ini file and domainid from Domain.
-    domain = Domain(server)
-    server.domain = domain
-    server.domainname = 'default'
-    server.domainid = 1
+    server.domainname = config.get('controller', 'domainname')
+    server.domain = Domain(server)
+    # FIXME: Pre-production hack: add domain if necessary
+    server.domain.add(server.domainname)
+    server.domainid = server.domain.id_by_name(server.domainname)
 
     global manager  # fixme: get rid of this global.
     manager = AgentManager(server)
