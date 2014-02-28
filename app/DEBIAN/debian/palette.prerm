@@ -1,4 +1,5 @@
 #!/bin/sh
 
+service apache2 stop || true
 rm -rf /opt/palette/plugins
 exit 0

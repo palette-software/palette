@@ -1,6 +1,4 @@
 include etc/*
-include etc/init/*
-include plugins/*
+include etc/apache2/conf.d/*
 recursive-include palette *
-include palette/app/plugins/*link
 exclude setup.cfg

@@ -1,2 +1,3 @@
-../etc/palette.ini	/etc
-../opt/palette.wsgi	/opt/palette
+../etc/palette.ini		/etc
+../etc/apache2/conf.d/palette	/etc/apache2/conf.d
+../opt/palette.wsgi		/opt/palette

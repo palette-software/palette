@@ -21,4 +21,7 @@ done
 chown -R www-data:adm /var/log/palette
 chown -R www-data:adm /opt/palette
 
+service apache2 stop || true
+service apache2 start
+
 exit 0
