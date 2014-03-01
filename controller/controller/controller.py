@@ -827,7 +827,7 @@ def main():
     server.cli_get_status_interval = \
       config.get('controller', 'cli_get_status_interval', default=10)
 
-    server.domainname = config.get('controller', 'domainname')
+    server.domainname = config.get('palette', 'domainname')
     server.domain = Domain(server)
     # FIXME: Pre-production hack: add domain if necessary
     server.domain.add(server.domainname)

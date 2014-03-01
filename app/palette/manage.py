@@ -3,6 +3,7 @@ import socket
 from webob import exc
 
 from akiri.framework.api import RESTApplication, DialogPage
+from akiri.framework.config import store
 
 import sqlalchemy
 from sqlalchemy import Column, Integer, String, DateTime, func
@@ -57,6 +58,9 @@ class ManageAdvancedDialog(DialogPage):
 
     def __init__(self, global_conf):
         super(ManageAdvancedDialog, self).__init__(global_conf)
+
+        self.domainname = store.get('palette', 'domainname')
+        print "domainname=" + self.domainname
 
         db_session = Session()
         self.agents = db_session.query(AgentStatusEntry).all()

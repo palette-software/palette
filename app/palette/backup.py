@@ -4,6 +4,7 @@ import os
 import socket
 
 from akiri.framework.api import RESTApplication, DialogPage
+from akiri.framework.config import store
 
 from webob import exc
 
@@ -27,6 +28,11 @@ class BackupApplication(RESTApplication):
     NAME = 'backup'
 
     scheduled = 'Thursday, November 7 at 12:00 AM'
+
+    def __init__(self, global_conf):
+        super(BackupApplication, self).__init__(global_conf)
+
+        self.domainname = store.get('palette', 'domainname')
 
     def send_cmd(self, cmd):
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -110,6 +116,8 @@ class BackupDialog(DialogPage):
 
     def __init__(self, global_conf):
         super(BackupDialog, self).__init__(global_conf)
+
+        self.domainname = store.get('palette', 'domainname')
 
         session = Session()
 

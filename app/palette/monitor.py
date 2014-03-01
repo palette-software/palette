@@ -8,6 +8,7 @@ import meta
 import sys
 
 from akiri.framework.api import RESTApplication, DialogPage
+from akiri.framework.config import store
 
 from controller.backup import BackupEntry
 from controller.agentstatus import AgentStatusEntry
@@ -23,6 +24,11 @@ STATE_TYPE_SECOND="second"
 class MonitorApplication(RESTApplication):
 
     NAME = 'monitor'
+
+    def __init__(self, global_conf):
+        super(MonitorApplication, self).__init__(global_conf)
+
+        self.domainname = store.get('palette', 'domainname')
 
     def handle(self, req):
         db_session = Session()
@@ -130,6 +136,8 @@ class StatusDialog(DialogPage):
 
     def __init__(self, global_conf):
         super(StatusDialog, self).__init__(global_conf)
+
+        self.domainname = store.get('palette', 'domainname')
 
         db_session = Session()
         self.status_entries = db_session.query(StatusEntry).all()
