@@ -23,7 +23,7 @@ class StatusEntry(meta.Base):
     # FIXME: Make combination of agentid and name a unique key
 
     name = Column(String, unique=True, nullable=False, primary_key=True)
-    agentid = Column(BigInteger, ForeignKey("agents.agentid"), nullable=False)
+    agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False)
     pid = Column(Integer)
     status = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
@@ -72,9 +72,9 @@ class StatusMonitor(threading.Thread):
         """Note a session is passed.  When updating the status table, we don't
         want everything to go away (commit) until we've added the new entries."""
         # FIXME: Need to figure out how to do this in session.query:
-        #        DELETE FROM status USING agents
-        #          WHERE status.agentid = agents.agentid
-        #            AND agents.domainid = self.domainid;
+        #        DELETE FROM status USING agent
+        #          WHERE status.agentid = agent.agentid
+        #            AND agent.domainid = self.domainid;
         session.query(StatusEntry).\
             delete()
 

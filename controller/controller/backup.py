@@ -10,7 +10,7 @@ class BackupEntry(meta.Base):
     __tablename__ = 'backup'
 
     key = Column(Integer, unique=True, nullable=False, primary_key=True)
-    agentid = Column(BigInteger, ForeignKey("agents.agentid"))
+    agentid = Column(BigInteger, ForeignKey("agent.agentid"))
     name = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
@@ -38,9 +38,9 @@ class BackupManager(object):
     def remove(self, name, agentid):
         session = self.Session()
         # FIXME: Need to figure out how to do this in session.query:
-        #        DELETE FROM backup USING agents
-        #          WHERE backup.agentid = agents.agentid
-        #            AND agents.domainid = self.domainid;
+        #        DELETE FROM backup USING agent
+        #          WHERE backup.agentid = agent.agentid
+        #            AND agent.domainid = self.domainid;
         session.query(BackupEntry).\
             filter(Backup.name == name).\
             filter(Backup.agentid == agentid).delete()

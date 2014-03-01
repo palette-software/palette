@@ -14,7 +14,7 @@ import meta
 
 from inits import *
 class AgentStatusEntry(meta.Base):
-    __tablename__ = 'agents'
+    __tablename__ = 'agent'
 
     agentid = Column(BigInteger, unique=True, nullable=False, \
       autoincrement=True, primary_key=True)
