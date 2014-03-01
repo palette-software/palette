@@ -22,7 +22,7 @@ from . import db_engine
 from inits import *
 from controller.backup import BackupEntry
 from controller.agentstatus import AgentStatusEntry
-from controller.domain import Domain, DomainEntry
+from controller.domain import Domain
 
 __all__ = ["BackupApplication"]
 
@@ -76,8 +76,7 @@ class BackupApplication(RESTApplication):
         db_session = Session()
         try:
             agent_entry = db_session.query(AgentStatusEntry).\
-                join(DomainEntry).\
-                filter(DomainEntry.domainid == self.domainid).\
+                filter(AgentStatusEntry.domainid == self.domainid).\
                 filter(AgentStatusEntry.uuid == uuid).\
                 one()
 
@@ -92,8 +91,7 @@ class BackupApplication(RESTApplication):
         db_session = Session()
         last_db = db_session.query(BackupEntry).\
             join(AgentStatusEntry).\
-            join(DomainEntry).\
-            filter(DomainEntry.domainid == self.domainid).\
+            filter(AgentStatusEntry.domainid == self.domainid).\
             order_by(BackupEntry.creation_time.desc()).\
             first()
         db_session.close()
@@ -138,8 +136,7 @@ class BackupDialog(DialogPage):
         # FIXME: use a mapping here.
         query = session.query(BackupEntry, AgentStatusEntry).\
             join(AgentStatusEntry).\
-            join(DomainEntry).\
-            filter(DomainEntry.domainid == self.domainid)
+            filter(AgentStatusEntry.domainid == self.domainid)
 
         self.backup_entries = []
         for backup, agent in query.all():

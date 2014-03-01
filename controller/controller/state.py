@@ -45,11 +45,13 @@ class StateManager(object):
     def update(self, state_type, state):
         session = self.Session()
         entry = session.query(StateEntry).\
+            filter(StateEntry.domainid == self.domainid).\
             filter(StateEntry.state_type == state_type).first()
 
         if entry:
             session.query(StateEntry).\
-            filter(StateEntry.state_type == state_type).\
+                filter(StateEntry.domainid == self.domainid).\
+                filter(StateEntry.state_type == state_type).\
                 update({'state': state})
 
         else:
@@ -69,14 +71,18 @@ class StateManager(object):
         session = self.Session()
         try:
             main_entry = session.query(StateEntry).\
-                filter(StateEntry.state_type == STATE_TYPE_MAIN).one()
+                filter(StateEntry.domainid == self.domainid).\
+                filter(StateEntry.state_type == STATE_TYPE_MAIN).\
+                one()
             main_status = main_entry.state
         except NoResultFound, e:
             main_status = STATE_MAIN_UNKNOWN
 
         try:
             second_entry = session.query(StateEntry).\
-                filter(StateEntry.state_type == STATE_TYPE_SECOND).one()
+                filter(StateEntry.domainid == self.domainid).\
+                filter(StateEntry.state_type == STATE_TYPE_SECOND).\
+                one()
             second_status = second_entry.state
 
         except NoResultFound, e:

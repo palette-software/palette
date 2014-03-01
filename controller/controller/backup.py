@@ -3,6 +3,8 @@ from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 
+from agentstatus import AgentStatusEntry
+
 import meta
 class BackupEntry(meta.Base):
     __tablename__ = 'backup'
@@ -21,8 +23,10 @@ class BackupEntry(meta.Base):
 
 class BackupManager(object):
 
-    def __init__(self):    
+    def __init__(self, domainid):    
         self.Session = sessionmaker(bind=meta.engine)
+
+        self.domainid = domainid
 
     def add(self, name, agentid):
         session = self.Session()
@@ -33,6 +37,10 @@ class BackupManager(object):
 
     def remove(self, name, agentid):
         session = self.Session()
+        # FIXME: Need to figure out how to do this in session.query:
+        #        DELETE FROM backup USING agents
+        #          WHERE backup.agentid = agents.agentid
+        #            AND agents.domainid = self.domainid;
         session.query(BackupEntry).\
             filter(Backup.name == name).\
             filter(Backup.agentid == agentid).delete()
@@ -42,7 +50,10 @@ class BackupManager(object):
     def query_by_name(self, name):
         session = self.Session()
         entry = session.query(BackupEntry).\
-            filter(BackupEntry.name == name).first()
+            join(AgentStatusEntry).\
+            filter(AgentStatusEntry.domainid == self.domainid).\
+            filter(BackupEntry.name == name).\
+            first()
         if entry:
             name = entry.name
         session.close()

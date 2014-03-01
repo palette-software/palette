@@ -62,6 +62,7 @@ class AgentStatusEntry(meta.Base):
         else:
             return False # not connected
 
+# FIXME: This class is not used -- should we delete it?
 class AgentStatus(object):
 
     def __init__(self, log):
@@ -76,10 +77,13 @@ class AgentStatus(object):
         session.commit()
         session.close()
 
+    # FIXME: We should not be removing by hostname which may not be unique.
     def remove(self, hostname):
 
         session = self.Session()
         #fixme: add try
+        # FIXME: If we keep this class and this method, restrict query by
+        #        domain unless it has some other unique field such as UUID.
         session.query(AgentStatusEntry).\
             filter(AgentStatusEntry.hostname == hostname).\
             delete()

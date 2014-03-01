@@ -14,7 +14,7 @@ from controller.status import StatusEntry
 from controller.state import StateEntry
 from controller.backup import BackupEntry
 from controller.agentstatus import AgentStatusEntry
-from controller.domain import Domain, DomainEntry
+from controller.domain import Domain
 
 from . import Session
 # FIXME: Need Matt's database engine fix (ticket #101).
@@ -47,8 +47,7 @@ class MonitorApplication(RESTApplication):
 
         try:
             primary_agents = db_session.query(AgentStatusEntry).\
-                join(DomainEntry).\
-                filter(DomainEntry.domainid == self.domainid).\
+                filter(AgentStatusEntry.domainid == self.domainid).\
                 filter(AgentStatusEntry.agent_type == "primary").\
                 all()
         except NoResultFound, e:
@@ -81,8 +80,7 @@ class MonitorApplication(RESTApplication):
             try:
                 tableau_entry = db_session.query(StatusEntry).\
                     join(AgentStatusEntry).\
-                    join(DomainEntry).\
-                    filter(DomainEntry.domainid == self.domainid).\
+                    filter(AgentStatusEntry.domainid == self.domainid).\
                     filter(StatusEntry.name == 'Status').\
                     one()
                 tableau_status = tableau_entry.status
@@ -91,8 +89,7 @@ class MonitorApplication(RESTApplication):
 
             # Dig out the states
             state_entries = db_session.query(StateEntry).\
-                join(DomainEntry).\
-                filter(DomainEntry.domainid == self.domainid).\
+                filter(AgentStatusEntry.domainid == self.domainid).\
                 all()
 
             for state_entry in state_entries:
@@ -106,8 +103,7 @@ class MonitorApplication(RESTApplication):
         # Dig out the last/most recent backup.
         last_db = db_session.query(BackupEntry).\
             join(AgentStatusEntry).\
-            join(DomainEntry).\
-            filter(DomainEntry.domainid == self.domainid).\
+            filter(AgentStatusEntry.domainid == self.domainid).\
             filter(StatusEntry.name == 'Status').\
             order_by(BackupEntry.creation_time.desc()).\
             first()
@@ -143,8 +139,7 @@ class StatusDialog(DialogPage):
         db_session = Session()
         self.status_entries = db_session.query(StatusEntry).\
             join(AgentStatusEntry).\
-            join(DomainEntry).\
-            filter(DomainEntry.domainid == self.domainid).\
+            filter(AgentStatusEntry.domainid == self.domainid).\
             all()
 
         # Dig out the main status and time

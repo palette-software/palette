@@ -124,6 +124,7 @@ class AgentManager(threading.Thread):
         session.commit()
         try:
             # read back the entry in case the agentid was auto-assigned
+            # FIXME: can we use post fetch?
             entry = session.query(AgentStatusEntry).\
               filter(AgentStatusEntry.uuid == body['uuid']).one()
         finally:

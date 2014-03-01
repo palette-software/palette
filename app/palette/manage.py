@@ -17,7 +17,7 @@ from . import db_engine
 
 from inits import *
 from controller.agentstatus import AgentStatusEntry
-from controller.domain import Domain, DomainEntry
+from controller.domain import Domain
 
 class ManageApplication(RESTApplication):
 
@@ -69,8 +69,7 @@ class ManageAdvancedDialog(DialogPage):
 
         db_session = Session()
         self.agents = db_session.query(AgentStatusEntry).\
-          join(DomainEntry).\
-          filter(DomainEntry.domainid == self.domainid).\
+          filter(AgentStatusEntry.domainid == self.domainid).\
           all()
         for agent in self.agents:
             if agent.connected():

@@ -15,6 +15,8 @@ import meta
 from state import StateManager
 from inits import *
 
+from agentstatus import AgentStatusEntry
+
 class StatusEntry(meta.Base):
     __tablename__ = 'status'
 
@@ -45,6 +47,7 @@ class StatusMonitor(threading.Thread):
         self.config = self.server.config
         self.manager = manager
         self.log = logger.get(self.LOGGER_NAME)
+        self.domainid = self.server.domainid
 
         self.status_request_interval = self.config.getint('status', 'status_request_interval', default=10)
 
@@ -68,6 +71,10 @@ class StatusMonitor(threading.Thread):
     def remove_all_status(self, session):
         """Note a session is passed.  When updating the status table, we don't
         want everything to go away (commit) until we've added the new entries."""
+        # FIXME: Need to figure out how to do this in session.query:
+        #        DELETE FROM status USING agents
+        #          WHERE status.agentid = agents.agentid
+        #            AND agents.domainid = self.domainid;
         session.query(StatusEntry).\
             delete()
 
@@ -84,14 +91,20 @@ class StatusMonitor(threading.Thread):
 
     def get_all_status(self):
         session = self.Session()
-        status_entries = session.query(StatusEntry).all()
+        status_entries = session.query(StatusEntry).\
+            join(AgentStatusEntry).\
+            filter(AgentStatusEntry.domainid == self.domainid).\
+            all()
         session.close()
         return status_entries
 
     def get_main_status(self):
         session = self.Session()
         main_status = session.query(StatusEntry).\
-            filter(StatusEntry.name == 'Status').one()
+            join(AgentStatusEntry).\
+            filter(AgentStatusEntry.domainid == self.domainid).\
+            filter(StatusEntry.name == 'Status').\
+            one()
         session.close()
         return main_status
 
