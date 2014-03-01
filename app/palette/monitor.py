@@ -10,10 +10,15 @@ import sys
 from akiri.framework.api import RESTApplication, DialogPage
 from akiri.framework.config import store
 
+from controller.status import StatusEntry
+from controller.state import StateEntry
 from controller.backup import BackupEntry
 from controller.agentstatus import AgentStatusEntry
+from controller.domain import Domain, DomainEntry
 
 from . import Session
+# FIXME: Need Matt's database engine fix (ticket #101).
+from . import db_engine
 
 __all__ = ["MonitorApplication"]
 
@@ -29,6 +34,9 @@ class MonitorApplication(RESTApplication):
         super(MonitorApplication, self).__init__(global_conf)
 
         self.domainname = store.get('palette', 'domainname')
+        # FIXME: Need Matt's database engine fix (ticket #101).
+        self.domain = Domain(db_engine)
+        self.domainid = self.domain.id_by_name(self.domainname)
 
     def handle(self, req):
         db_session = Session()
@@ -39,7 +47,10 @@ class MonitorApplication(RESTApplication):
 
         try:
             primary_agents = db_session.query(AgentStatusEntry).\
-                filter(AgentStatusEntry.agent_type == "primary").all()
+                join(DomainEntry).\
+                filter(DomainEntry.domainid == self.domainid).\
+                filter(AgentStatusEntry.agent_type == "primary").\
+                all()
         except NoResultFound, e:
             primary_agents = None
 
@@ -69,13 +80,20 @@ class MonitorApplication(RESTApplication):
             # Dig out the tableau status.
             try:
                 tableau_entry = db_session.query(StatusEntry).\
-                    filter(StatusEntry.name == 'Status').one()
+                    join(AgentStatusEntry).\
+                    join(DomainEntry).\
+                    filter(DomainEntry.domainid == self.domainid).\
+                    filter(StatusEntry.name == 'Status').\
+                    one()
                 tableau_status = tableau_entry.status
             except NoResultFound, e:
                 pass
 
             # Dig out the states
-            state_entries = db_session.query(StateEntry).all()
+            state_entries = db_session.query(StateEntry).\
+                join(DomainEntry).\
+                filter(DomainEntry.domainid == self.domainid).\
+                all()
 
             for state_entry in state_entries:
                 if state_entry.state_type == STATE_TYPE_MAIN:
@@ -87,8 +105,12 @@ class MonitorApplication(RESTApplication):
 
         # Dig out the last/most recent backup.
         last_db = db_session.query(BackupEntry).\
-                order_by(BackupEntry.creation_time.desc()).\
-                first()
+            join(AgentStatusEntry).\
+            join(DomainEntry).\
+            filter(DomainEntry.domainid == self.domainid).\
+            filter(StatusEntry.name == 'Status').\
+            order_by(BackupEntry.creation_time.desc()).\
+            first()
 
         if last_db:
             last_backup = str(last_db.creation_time)[:19]
@@ -105,30 +127,6 @@ class MonitorApplication(RESTApplication):
                 'last-backup': last_backup
                 }
 
-class StateEntry(meta.Base):
-    __tablename__ = 'state'
-
-    state_type = Column(String, primary_key=True)
-    state = Column(String)
-    creation_time = Column(DateTime, server_default=func.now(), onupdate=func.current_timestamp())
-
-    def __init__(self, state_type, state):
-        self.state_type = state_type
-        self.state = state
-
-class StatusEntry(meta.Base):
-    __tablename__ = 'status'
-
-    name = Column(String, primary_key=True)
-    pid = Column(Integer)
-    status = Column(String)
-    creation_time = Column(DateTime, default=func.now())
-
-    def __init__(self, name, pid, status):
-        self.name = name
-        self.pid = pid
-        self.status = status
-
 class StatusDialog(DialogPage):
 
     NAME = "status"
@@ -138,9 +136,16 @@ class StatusDialog(DialogPage):
         super(StatusDialog, self).__init__(global_conf)
 
         self.domainname = store.get('palette', 'domainname')
+        # FIXME: Need Matt's database engine fix (ticket #101).
+        self.domain = Domain(db_engine)
+        self.domainid = self.domain.id_by_name(self.domainname)
 
         db_session = Session()
-        self.status_entries = db_session.query(StatusEntry).all()
+        self.status_entries = db_session.query(StatusEntry).\
+            join(AgentStatusEntry).\
+            join(DomainEntry).\
+            filter(DomainEntry.domainid == self.domainid).\
+            all()
 
         # Dig out the main status and time
         self.main_status = "Unknown"

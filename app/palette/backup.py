@@ -16,10 +16,13 @@ import meta
 from akiri.framework.api import RESTApplication
 
 from . import Session
+# FIXME: Need Matt's database engine fix (ticket #101).
+from . import db_engine
 
 from inits import *
 from controller.backup import BackupEntry
 from controller.agentstatus import AgentStatusEntry
+from controller.domain import Domain, DomainEntry
 
 __all__ = ["BackupApplication"]
 
@@ -33,6 +36,9 @@ class BackupApplication(RESTApplication):
         super(BackupApplication, self).__init__(global_conf)
 
         self.domainname = store.get('palette', 'domainname')
+        # FIXME: Need Matt's database engine fix (ticket #101).
+        self.domain = Domain(db_engine)
+        self.domainid = self.domain.id_by_name(self.domainname)
 
     def send_cmd(self, cmd):
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -70,6 +76,8 @@ class BackupApplication(RESTApplication):
         db_session = Session()
         try:
             agent_entry = db_session.query(AgentStatusEntry).\
+                join(DomainEntry).\
+                filter(DomainEntry.domainid == self.domainid).\
                 filter(AgentStatusEntry.uuid == uuid).\
                 one()
 
@@ -83,6 +91,9 @@ class BackupApplication(RESTApplication):
     def get_last_backup(self):
         db_session = Session()
         last_db = db_session.query(BackupEntry).\
+            join(AgentStatusEntry).\
+            join(DomainEntry).\
+            filter(DomainEntry.domainid == self.domainid).\
             order_by(BackupEntry.creation_time.desc()).\
             first()
         db_session.close()
@@ -118,11 +129,17 @@ class BackupDialog(DialogPage):
         super(BackupDialog, self).__init__(global_conf)
 
         self.domainname = store.get('palette', 'domainname')
+        # FIXME: Need Matt's database engine fix (ticket #101).
+        self.domain = Domain(db_engine)
+        self.domainid = self.domain.id_by_name(self.domainname)
 
         session = Session()
 
         # FIXME: use a mapping here.
-        query = session.query(BackupEntry, AgentStatusEntry).join(AgentStatusEntry)
+        query = session.query(BackupEntry, AgentStatusEntry).\
+            join(AgentStatusEntry).\
+            join(DomainEntry).\
+            filter(DomainEntry.domainid == self.domainid)
 
         self.backup_entries = []
         for backup, agent in query.all():

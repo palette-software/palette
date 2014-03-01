@@ -22,9 +22,9 @@ class DomainEntry(meta.Base):
 
 class Domain(object):
 
-    def __init__(self, server):
-        self.server = server
-        self.Session = sessionmaker(bind=meta.engine)
+    def __init__(self, engine):
+        # FIXME: Need Matt's database engine fix (ticket #101).
+        self.Session = sessionmaker(bind=engine)
 
     def add(self, name):
         session = self.Session()

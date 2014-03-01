@@ -828,7 +828,8 @@ def main():
       config.get('controller', 'cli_get_status_interval', default=10)
 
     server.domainname = config.get('palette', 'domainname')
-    server.domain = Domain(server)
+    # FIXME: Need Matt's database engine fix (ticket #101).
+    server.domain = Domain(meta.engine)
     # FIXME: Pre-production hack: add domain if necessary
     server.domain.add(server.domainname)
     server.domainid = server.domain.id_by_name(server.domainname)

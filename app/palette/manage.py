@@ -12,9 +12,12 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 import meta
 from . import Session
+# FIXME: Need Matt's database engine fix (ticket #101).
+from . import db_engine
 
 from inits import *
 from controller.agentstatus import AgentStatusEntry
+from controller.domain import Domain, DomainEntry
 
 class ManageApplication(RESTApplication):
 
@@ -60,10 +63,15 @@ class ManageAdvancedDialog(DialogPage):
         super(ManageAdvancedDialog, self).__init__(global_conf)
 
         self.domainname = store.get('palette', 'domainname')
-        print "domainname=" + self.domainname
+        # FIXME: Need Matt's database engine fix (ticket #101).
+        self.domain = Domain(db_engine)
+        self.domainid = self.domain.id_by_name(self.domainname)
 
         db_session = Session()
-        self.agents = db_session.query(AgentStatusEntry).all()
+        self.agents = db_session.query(AgentStatusEntry).\
+          join(DomainEntry).\
+          filter(DomainEntry.domainid == self.domainid).\
+          all()
         for agent in self.agents:
             if agent.connected():
                 agent.last_connection_time_str = str(agent.last_connection_time)[:19] # Cut off fraction
