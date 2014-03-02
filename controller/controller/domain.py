@@ -1,7 +1,6 @@
 import sqlalchemy
 from sqlalchemy import Column, String, BigInteger, DateTime, func
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 
 import meta

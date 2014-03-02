@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import IntegrityError
 
 from agentstatus import AgentStatusEntry
 
