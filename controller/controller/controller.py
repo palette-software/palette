@@ -813,9 +813,13 @@ def main():
     log = logger.get(Controller.LOGGER_NAME)
     log.info("Controller version: %s", VERSION)
 
+    # database configuration
+    url = config.get("database", "url")
+    echo = config.getboolean("database", "echo", default=False)
+
     # engine is once per single application process.
     # see http://docs.sqlalchemy.org/en/rel_0_9/core/connections.html
-    meta.engine = sqlalchemy.create_engine(meta.url, echo=False)
+    meta.engine = sqlalchemy.create_engine(url, echo=echo)
     # Create the table definition ONCE, before all the other threads start.
     meta.Base.metadata.create_all(bind=meta.engine)
 
@@ -828,8 +832,7 @@ def main():
       config.get('controller', 'cli_get_status_interval', default=10)
 
     server.domainname = config.get('palette', 'domainname')
-    # FIXME: Need Matt's database engine fix (ticket #101).
-    server.domain = Domain(meta.engine)
+    server.domain = Domain()
     # FIXME: Pre-production hack: add domain if necessary
     server.domain.add(server.domainname)
     server.domainid = server.domain.id_by_name(server.domainname)

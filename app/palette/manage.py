@@ -10,12 +10,9 @@ from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
-import meta
-from . import Session
-# FIXME: Need Matt's database engine fix (ticket #101).
-from . import db_engine
 
 from inits import *
+from controller import meta
 from controller.agentstatus import AgentStatusEntry
 from controller.domain import Domain
 
@@ -61,15 +58,14 @@ class ManageAdvancedDialog(DialogPage):
 
     def __init__(self, global_conf):
         super(ManageAdvancedDialog, self).__init__(global_conf)
+        self.Session = sessionmaker(bind=meta.engine)
 
-        self.domainname = store.get('palette', 'domainname')
-        # FIXME: Need Matt's database engine fix (ticket #101).
-        self.domain = Domain(db_engine)
-        self.domainid = self.domain.id_by_name(self.domainname)
+        domainname = store.get('palette', 'domainname')
+        self.domain = Domain.get_by_name(domainname, Session=self.Session)
 
-        db_session = Session()
-        self.agents = db_session.query(AgentStatusEntry).\
-          filter(AgentStatusEntry.domainid == self.domainid).\
+        session = self.Session()
+        self.agents = session.query(AgentStatusEntry).\
+          filter(AgentStatusEntry.domainid == self.domain.domainid).\
           all()
         for agent in self.agents:
             if agent.connected():
@@ -78,4 +74,4 @@ class ManageAdvancedDialog(DialogPage):
             else:
                 agent.last_connection_time_str = str(agent.last_connection_time)[:19] # Cut off fraction
                 agent.last_disconnect_time_str = str(agent.last_disconnect_time)[:19] # Cut off fraction
-        db_session.close()
+        session.close()

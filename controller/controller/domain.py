@@ -22,9 +22,11 @@ class DomainEntry(meta.Base):
 
 class Domain(object):
 
-    def __init__(self, engine):
-        # FIXME: Need Matt's database engine fix (ticket #101).
-        self.Session = sessionmaker(bind=engine)
+    def __init__(self, Session=None):
+        if Session is None:
+            self.Session = sessionmaker(bind=meta.engine)
+        else:
+            self.Session = Session
 
     def add(self, name):
         session = self.Session()
@@ -41,12 +43,16 @@ class Domain(object):
 
     def id_by_name(self, name):
         session = self.Session()
+        entry = Domain.get_by_name(name, Session=self.Session)
+        return entry.domainid
+
+    @classmethod
+    def get_by_name(cls, name, Session=None):
+        if Session is None:
+            Session = sessionmaker(bind=meta.engine)
+        session = Session()
 
         # We expect the entry to exist, so allow a NoResultFound
         # exception to percolate up if the entry is not found.
-        entry = session.query(DomainEntry).\
-          filter(DomainEntry.domainname == name).one()
-
-        session.close()
-
-        return entry.domainid
+        return session.query(DomainEntry).\
+            filter(DomainEntry.domainname == name).one()
