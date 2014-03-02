@@ -57,14 +57,14 @@ class Request(object):
         return "<action: %s, body_dict: %s, xid: %d>" % \
             (self.action, self.send_body, self.xid)
 
-class Cli_Start_Request(Request):
+class CliStartRequest(Request):
     def __init__(self, cli_command):
-        super(Cli_Start_Request, self).__init__("start", {"cli": cli_command})
+        super(CliStartRequest, self).__init__("start", {"cli": cli_command})
 
-class Get_Start_Request(Request):
+class GetStartRequest(Request):
     def __init__(self, send_body_dict):
-        super(Get_Start_Request, self).__init__("start", send_body_dict)
+        super(GetStartRequest, self).__init__("start", send_body_dict)
 
-class Cleanup_Request(Request):
+class CleanupRequest(Request):
     def __init__(self, xid):
-        super(Cleanup_Request, self).__init__("cleanup", xid=xid)
+        super(CleanupRequest, self).__init__("cleanup", xid=xid)

@@ -408,7 +408,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn.lock()
 
-        req = Cli_Start_Request(cli_command)
+        req = CliStartRequest(cli_command)
 
         headers = {"Content-Type": "application/json"}
 
@@ -467,7 +467,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         aconn.lock()
         self.log.debug("_send_cleanup got lock")
 
-        req = Cleanup_Request(xid)
+        req = CleanupRequest(xid)
         headers = {"Content-Type": "application/json"}
         self.log.debug('about to send the cleanup command, xid %d',  xid)
         try:
