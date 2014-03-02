@@ -75,6 +75,18 @@ class StatusMonitor(threading.Thread):
         #        DELETE FROM status USING agent
         #          WHERE status.agentid = agent.agentid
         #            AND agent.domainid = self.domainid;
+        #
+        # This may do it:
+        #
+        # subq = session.query(StatusEntry).\
+        #   join(AgentStatusEntry).\
+        #   filter(AgentStatusEntry.domainid == self.domainid).\
+        #   subquery()
+        #
+        # session.query(StatusEntry).\
+        #   filter(StatusEntry.agentid,in_(subq)).\
+        #   delete()
+        
         session.query(StatusEntry).\
             delete()
 
