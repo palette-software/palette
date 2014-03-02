@@ -37,10 +37,6 @@ class BackupManager(object):
 
     def remove(self, name, agentid):
         session = self.Session()
-        # FIXME: Need to figure out how to do this in session.query:
-        #        DELETE FROM backup USING agent
-        #          WHERE backup.agentid = agent.agentid
-        #            AND agent.domainid = self.domainid;
         session.query(BackupEntry).\
             filter(Backup.name == name).\
             filter(Backup.agentid == agentid).delete()
