@@ -36,7 +36,6 @@ class Domain(object):
             entry = DomainEntry(name)
             session.add(entry)
             session.commit()
-            session.close()
         finally:
             session.close()
 
@@ -47,5 +46,7 @@ class Domain(object):
         # exception to percolate up if the entry is not found.
         entry = session.query(DomainEntry).\
           filter(DomainEntry.domainname == name).one()
+
+        session.close()
 
         return entry.domainid
