@@ -11,13 +11,10 @@ from webob import exc
 from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
-import meta
 
 from akiri.framework.api import RESTApplication
 
-from . import Session
-# FIXME: Need Matt's database engine fix (ticket #101).
-from . import db_engine
+from controller import meta
 
 from inits import *
 from controller.backup import BackupEntry
@@ -34,11 +31,10 @@ class BackupApplication(RESTApplication):
 
     def __init__(self, global_conf):
         super(BackupApplication, self).__init__(global_conf)
+        self.Session = sessionmaker(bind=meta.engine)
 
-        self.domainname = store.get('palette', 'domainname')
-        # FIXME: Need Matt's database engine fix (ticket #101).
-        self.domain = Domain(db_engine)
-        self.domainid = self.domain.id_by_name(self.domainname)
+        domainname = store.get('palette', 'domainname')
+        self.domain = Domain.get_by_name(domainname, self.Session)
 
     def send_cmd(self, cmd):
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -73,28 +69,28 @@ class BackupApplication(RESTApplication):
             print "Error: No agent exists with uuid:", last_entry.uuid
 
     def get_hostname_by_uuid(self, uuid):
-        db_session = Session()
+        session = self.Session()
         try:
-            agent_entry = db_session.query(AgentStatusEntry).\
-                filter(AgentStatusEntry.domainid == self.domainid).\
+            agent_entry = ession.query(AgentStatusEntry).\
+                filter(AgentStatusEntry.domainid == self.domain.domainid).\
                 filter(AgentStatusEntry.uuid == uuid).\
                 one()
 
         except NoResultFound, e:
             return None
         finally:
-            db_session.close()
+            session.close()
 
         return agent_entry.hostname
 
     def get_last_backup(self):
-        db_session = Session()
-        last_db = db_session.query(BackupEntry).\
+        session = self.Session()
+        last_db = session.query(BackupEntry).\
             join(AgentStatusEntry).\
-            filter(AgentStatusEntry.domainid == self.domainid).\
+            filter(AgentStatusEntry.domainid == self.domain.domainid).\
             order_by(BackupEntry.creation_time.desc()).\
             first()
-        db_session.close()
+        session.close()
         return last_db
 
     def handle(self, req):
@@ -125,18 +121,17 @@ class BackupDialog(DialogPage):
 
     def __init__(self, global_conf):
         super(BackupDialog, self).__init__(global_conf)
+        self.Session = sessionmaker(bind=meta.engine)
 
-        self.domainname = store.get('palette', 'domainname')
-        # FIXME: Need Matt's database engine fix (ticket #101).
-        self.domain = Domain(db_engine)
-        self.domainid = self.domain.id_by_name(self.domainname)
+        domainname = store.get('palette', 'domainname')
+        self.domain = Domain.get_by_name(domainname, self.Session)
 
-        session = Session()
+        session = self.Session()
 
         # FIXME: use a mapping here.
         query = session.query(BackupEntry, AgentStatusEntry).\
             join(AgentStatusEntry).\
-            filter(AgentStatusEntry.domainid == self.domainid)
+            filter(AgentStatusEntry.domainid == self.domain.domainid)
 
         self.backup_entries = []
         for backup, agent in query.all():

@@ -52,9 +52,6 @@ class AgentStatusEntry(meta.Base):
         self.listen_port = listen_port
         self.uuid = uuid
 
-        # FIXME: Pre-production hack -- domainid should be passed
-        self.domainid = 1
-
     def connected(self):
         if not self.last_disconnect_time or \
                         self.last_disconnect_time < self.last_connection_time:
