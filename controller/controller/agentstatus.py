@@ -30,7 +30,7 @@ class AgentStatusEntry(meta.Base):
     last_connection_time = Column(DateTime, server_default=func.now())
     last_disconnect_time = Column(DateTime)
 
-    def __init__(self, hostname, agent_type, version, ip_address, listen_port, uuid):
+    def __init__(self, hostname, agent_type, version, ip_address, listen_port, uuid, domainid):
         self.Session = sessionmaker(bind=meta.engine)
 
         session = self.Session()
@@ -50,6 +50,7 @@ class AgentStatusEntry(meta.Base):
         self.ip_address = ip_address
         self.listen_port = listen_port
         self.uuid = uuid
+        self.domainid = domainid
 
     def connected(self):
         if not self.last_disconnect_time or \
