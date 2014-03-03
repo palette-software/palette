@@ -62,6 +62,7 @@ class AgentManager(threading.Thread):
         self.server = server
         self.config = self.server.config
         self.log = self.server.log
+        self.domainid = self.server.domainid
         self.Session = sessionmaker(bind=meta.engine)
         self.daemon = True
         self.lockobj = threading.RLock()
@@ -118,7 +119,8 @@ class AgentManager(threading.Thread):
                                  body['version'], 
                                  body['ip-address'],
                                  body['listen-port'],
-                                 body['uuid'])
+                                 body['uuid'],
+                                 self.domainid)
         entry.last_connection_time = func.now()
         session.merge(entry)
         session.commit()

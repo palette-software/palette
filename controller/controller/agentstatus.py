@@ -65,13 +65,13 @@ class AgentStatus(object):
         self.log = log
         self.Session = sessionmaker(bind=meta.engine)
 
-    def add(self, hostname, agent_type, version, ip_address, listen_port, uuid):
-        session = self.Session()
-        entry = AgentStatusEntry(hostname, agent_type, version, ip_address, listen_port, uuid)
-        obj =session.merge(entry)
-        session.save(obj)
-        session.commit()
-        session.close()
+#    def add(self, hostname, agent_type, version, ip_address, listen_port, uuid):
+#        session = self.Session()
+#        entry = AgentStatusEntry(hostname, agent_type, version, ip_address, listen_port, uuid)
+#        obj =session.merge(entry)
+#        session.save(obj)
+#        session.commit()
+#        session.close()
 
     # FIXME: We should not be removing by hostname which may not be unique.
     def remove(self, hostname):
