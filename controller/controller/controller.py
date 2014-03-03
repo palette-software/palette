@@ -319,7 +319,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             else:
                 # Remove the backup file from the primary
                 backup_fullpathname = DEFAULT_BACKUP_DIR + '\\' + backup_name + ".tsbak"
-                remove_body = self.cli_cmd("DEL %s" % backup_fullpathname)
+                remove_body = \
+                    self.cli_cmd("CMD /C DEL %s" % backup_fullpathname)
 
                 # Check how the copy command did, earlier.
                 if copy_body.has_key('error'):
