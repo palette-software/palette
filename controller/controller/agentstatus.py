@@ -29,7 +29,7 @@ class AgentStatusEntry(meta.Base):
     last_connection_time = Column(DateTime, server_default=func.now())
     last_disconnect_time = Column(DateTime)
 
-    def __init__(self, hostname, agent_type, version, ip_address, listen_port, uuid):
+    def __init__(self, hostname, agent_type, version, ip_address, listen_port, uuid, domainid):
         self.Session = sessionmaker(bind=meta.engine)
 
         session = self.Session()
@@ -49,6 +49,7 @@ class AgentStatusEntry(meta.Base):
         self.ip_address = ip_address
         self.listen_port = listen_port
         self.uuid = uuid
+        self.domainid = domainid
 
     def connected(self):
         if not self.last_disconnect_time or \
@@ -64,13 +65,13 @@ class AgentStatus(object):
         self.log = log
         self.Session = sessionmaker(bind=meta.engine)
 
-    def add(self, hostname, agent_type, version, ip_address, listen_port, uuid):
-        session = self.Session()
-        entry = AgentStatusEntry(hostname, agent_type, version, ip_address, listen_port, uuid)
-        obj =session.merge(entry)
-        session.save(obj)
-        session.commit()
-        session.close()
+#    def add(self, hostname, agent_type, version, ip_address, listen_port, uuid):
+#        session = self.Session()
+#        entry = AgentStatusEntry(hostname, agent_type, version, ip_address, listen_port, uuid)
+#        obj =session.merge(entry)
+#        session.save(obj)
+#        session.commit()
+#        session.close()
 
     # FIXME: We should not be removing by hostname which may not be unique.
     def remove(self, hostname):

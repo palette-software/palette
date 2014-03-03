@@ -1,6 +1,13 @@
-If you are using httpserver to host the app, pass the ini file on the
-command line, for example:
+If you have not installed the "palette" Debian package, and you want
+to run httpserver with the development code:
 
-	httpserver ./development.ini
+    Make sure you are in the palette/app directory.
 
-Don't know about Apache or other servers.
+    cp DEBIAN/etc/palette.ini .
+
+    Change the "plugins" line:
+        #plugins = /opt/palette/plugins
+        plugins = %(here)s/plugins
+
+    Pass the ini file on the command line:
+        httpserver palette.ini

@@ -278,7 +278,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # If not, the backup is saved in the server bin directory.
         backup_name = time.strftime("%b%d_%H%M%S")
         # Example name: Jan27_162225
-        backup_path = DEFAULT_BACKUP_DIR + '\\' + backup_name
+        backup_path = self.DEFAULT_BACKUP_DIR + '\\' + backup_name
         # Example path: C:\Palette\Data\Jan27_162225
         body = self.cli_cmd("tabadmin backup %s" % backup_path)
         if body.has_key('error'):
@@ -320,8 +320,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             else:
                 # Remove the backup file from the primary
-                backup_fullpathname = DEFAULT_BACKUP_DIR + '\\' + backup_name + ".tsbak"
-                remove_body = self.cli_cmd("DEL %s" % backup_fullpathname)
+                backup_fullpathname = self.DEFAULT_BACKUP_DIR + '\\' + backup_name + ".tsbak"
+                remove_body = \
+                    self.cli_cmd("CMD /C DEL %s" % backup_fullpathname)
 
                 # Check how the copy command did, earlier.
                 if copy_body.has_key('error'):
@@ -543,7 +544,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if 'install-dir' in dst.auth:
             target_dir = dst.auth['install-dir'] + "\\Data\\" 
         else:
-            target_dir = DEFAULT_BACKUP_DIR
+            target_dir = self.DEFAULT_BACKUP_DIR
 
         command = "%s http://%s:%s/%s %s" % \
             (PGET_BIN, source_ip, src.auth['listen-port'],
@@ -578,7 +579,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if os.path.isabs(source_filename):
             return self.error("[ERROR] May not specify an absolute pathname or disk: " + source_filename)
 
-        source_fullpathname = DEFAULT_BACKUP_DIR + '\\' + source_filename + ".tsbak"
+        source_fullpathname = self.DEFAULT_BACKUP_DIR + '\\' + source_filename + ".tsbak"
 
         # Get the Primary Agent handle
         primary_conn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
