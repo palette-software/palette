@@ -130,7 +130,7 @@ class StatusMonitor(threading.Thread):
                                         main_state == STATE_MAIN_UNKNOWN:
                 self.stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STARTED)
                 self.log.debug("Updated state table with main status: %s", STATE_MAIN_STARTED)
-            elif main_state == 'STOPPED':
+            elif main_state == STATE_MAIN_STOPPED:
                 # This shouldn't happen.
                 self.log.error("Unexpected Status! Status is RUNNING but main_state was STOPPED!")
             elif main_state == STATE_MAIN_STARTED or \
@@ -211,7 +211,7 @@ class StatusMonitor(threading.Thread):
             self.log.error("Status returned: " + str(lines))
             return
 
-        status = line1[1]
+        status = line1[1].strip()
 
         # Store the second part (like "RUNNING") into the database
         self.remove_all_status(session)
