@@ -61,10 +61,6 @@ class CliStartRequest(Request):
     def __init__(self, cli_command):
         super(CliStartRequest, self).__init__("start", {"cli": cli_command})
 
-class GetStartRequest(Request):
-    def __init__(self, send_body_dict):
-        super(GetStartRequest, self).__init__("start", send_body_dict)
-
 class CleanupRequest(Request):
     def __init__(self, xid):
         super(CleanupRequest, self).__init__("cleanup", xid=xid)

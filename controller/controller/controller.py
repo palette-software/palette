@@ -4,12 +4,11 @@ import sys
 import os
 import SocketServer as socketserver
 
-from agent import AgentManager
+from agentmanager import AgentManager
 import json
 import time
 
 from request import *
-from inits import *
 from exc import *
 from httplib import HTTPException
 
@@ -18,7 +17,7 @@ from sqlalchemy.orm import sessionmaker
 import meta
 
 from backup import BackupManager
-from state import StateManager
+from state import StateManager, StateEntry
 from status import StatusMonitor
 from alert import Alert
 from config import Config
@@ -55,19 +54,19 @@ class CliHandler(socketserver.StreamRequestHandler):
         states = stateman.get_states()
 
         # Backups can be done when Tableau is either started or stopped.
-        if states[STATE_TYPE_MAIN] not in (STATE_MAIN_STARTED, STATE_MAIN_STOPPED):
-            print >> self.wfile, "FAIL: Can't backup - main state is:", states[STATE_TYPE_MAIN]
-            log.debug("Can't backup - main state is: %s", states[STATE_TYPE_MAIN])
+        if states[StateEntry.STATE_TYPE_MAIN] not in (StateEntry.STATE_MAIN_STARTED, StateEntry.STATE_MAIN_STOPPED):
+            print >> self.wfile, "FAIL: Can't backup - main state is:", states[StateEntry.STATE_TYPE_MAIN]
+            log.debug("Can't backup - main state is: %s", states[StateEntry.STATE_TYPE_MAIN])
             return
-        if states[STATE_TYPE_SECOND] != STATE_SECOND_NONE:
-            print >> self.wfile, "FAIL: Can't backup - second state is:", states[STATE_TYPE_SECOND]
-            log.debug("Can't backup - second state is: %s", states[STATE_TYPE_SECOND])
+        if states[StateEntry.STATE_TYPE_SECOND] != StateEntry.STATE_SECOND_NONE:
+            print >> self.wfile, "FAIL: Can't backup - second state is:", states[StateEntry.STATE_TYPE_SECOND]
+            log.debug("Can't backup - second state is: %s", states[StateEntry.STATE_TYPE_SECOND])
             return
 
         log.debug("-----------------Starting Backup-------------------")
             
         # fixme: lock to ensure against two simultaneous backups?
-        stateman.update(STATE_TYPE_SECOND, STATE_SECOND_BACKUP)
+        stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_BACKUP)
 
         alert = Alert(self.server.config, log)
         alert.send("Backup Started")
@@ -75,7 +74,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         print >> self.wfile, "OK"
             
         body = server.backup_cmd()
-        stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
+        stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_NONE)
 
         if not body.has_key('error'):
             alert.send("Backup Finished")
@@ -95,27 +94,27 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Check to see if we're in a state to restore
         stateman = self.server.stateman
         states = stateman.get_states()
-        if states[STATE_TYPE_MAIN] != STATE_MAIN_STARTED and \
-            states[STATE_TYPE_MAIN] != STATE_MAIN_STOPPED:
-            print >> self.wfile, "FAIL: Can't backup - main state is:", states[STATE_TYPE_MAIN]
-            log.debug("Can't restore - main state is: %s", states[STATE_TYPE_MAIN])
+        if states[StateEntry.STATE_TYPE_MAIN] != StateEntry.STATE_MAIN_STARTED and \
+            states[StateEntry.STATE_TYPE_MAIN] != StateEntry.STATE_MAIN_STOPPED:
+            print >> self.wfile, "FAIL: Can't backup - main state is:", states[StateEntry.STATE_TYPE_MAIN]
+            log.debug("Can't restore - main state is: %s", states[StateEntry.STATE_TYPE_MAIN])
             return
 
-        if states[STATE_TYPE_SECOND] != STATE_SECOND_NONE:
-            print >> self.wfile, "FAIL: Can't restore - second state is:", states[STATE_TYPE_SECOND]
-            log.debug("Can't restore - second state is: %s", states[STATE_TYPE_SECOND])
+        if states[StateEntry.STATE_TYPE_SECOND] != StateEntry.STATE_SECOND_NONE:
+            print >> self.wfile, "FAIL: Can't restore - second state is:", states[StateEntry.STATE_TYPE_SECOND]
+            log.debug("Can't restore - second state is: %s", states[StateEntry.STATE_TYPE_SECOND])
             return
 
         log.debug("-----------------Starting Restore-------------------")
             
         # fixme: lock to ensure against two simultaneous restores?
-        stateman.update(STATE_TYPE_SECOND, STATE_SECOND_RESTORE)
+        stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_RESTORE)
 
         print >> self.wfile, "OK"
             
         body = server.restore_cmd(argv[0])
 
-        stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
+        stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_NONE)
         # The "restore started" alert is done in restore_cmd(),
         # only after some sanity checking is done.
         alert = Alert(self.server.config, log)
@@ -152,19 +151,19 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Check to see if we're in a state to start
         stateman = self.server.stateman
         states = stateman.get_states()
-        if states[STATE_TYPE_MAIN] != 'stopped':
+        if states[StateEntry.STATE_TYPE_MAIN] != 'stopped':
             # Even "Unknown" is not an okay state for starting as it
             # could mean the primary agent probably isn't connected.
-            print >> self.wfile, "FAIL: Can't start - main state is:", states[STATE_TYPE_MAIN]
-            log.debug("FAIL: Can't start - main state is: %s", states[STATE_TYPE_MAIN])
+            print >> self.wfile, "FAIL: Can't start - main state is:", states[StateEntry.STATE_TYPE_MAIN]
+            log.debug("FAIL: Can't start - main state is: %s", states[StateEntry.STATE_TYPE_MAIN])
             return
         
-        if states[STATE_TYPE_SECOND] != STATE_SECOND_NONE:
-            print >> self.wfile, "FAIL: Can't start - second state is:", states[STATE_TYPE_SECOND]
-            log.debug("FAIL: Can't start - second state is: %s", states[STATE_TYPE_SECOND])
+        if states[StateEntry.STATE_TYPE_SECOND] != StateEntry.STATE_SECOND_NONE:
+            print >> self.wfile, "FAIL: Can't start - second state is:", states[StateEntry.STATE_TYPE_SECOND]
+            log.debug("FAIL: Can't start - second state is: %s", states[StateEntry.STATE_TYPE_SECOND])
             return
             
-        stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STARTING)
+        stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STARTING)
 
         log.debug("-----------------Starting Tableau-------------------")
         # fixme: Reply with "OK" only after the agent received the command?
@@ -193,16 +192,16 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Check to see if we're in a state to stop
         stateman = self.server.stateman
         states = stateman.get_states()
-        if states[STATE_TYPE_MAIN] != STATE_MAIN_STARTED:
-            log.debug("FAIL: Can't stop - main state is: %s", states[STATE_TYPE_MAIN])
-            print >> self.wfile, "FAIL: Can't stop - current state is:", states[STATE_TYPE_MAIN]
+        if states[StateEntry.STATE_TYPE_MAIN] != StateEntry.STATE_MAIN_STARTED:
+            log.debug("FAIL: Can't stop - main state is: %s", states[StateEntry.STATE_TYPE_MAIN])
+            print >> self.wfile, "FAIL: Can't stop - current state is:", states[StateEntry.STATE_TYPE_MAIN]
             return
 
         # fixme: Prevent stopping if the user is doing a backup or restore?
         # fixme: Reply with "OK" only after the agent received the command?
         print >> self.wfile, "OK"
 
-        stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STOPPING)
+        stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STOPPING)
         log.debug("-----------------Stopping Tableau-------------------")
         body = server.cli_cmd('tabadmin stop')
         if not body.has_key("error"):
@@ -269,6 +268,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     LOGGER_NAME = "main"
     allow_reuse_address = True
 
+    # Dump/restore directorys
+    DEFAULT_BACKUP_DIR="c:\\Palette\\Data"
+
     def backup_cmd(self):
         """Does a backup."""
         # fixme: make sure another backup isn't already running?
@@ -288,12 +290,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         agents = manager.all_agents()
         for key in agents:
-            if agents[key].auth['type'] != AGENT_TYPE_PRIMARY:
+            if agents[key].auth['type'] != AgentManager.AGENT_TYPE_PRIMARY:
                 # fixme: first make sure the non-primary-agent is still connected
                 non_primary_conn = agents[key]
                 break
 
-        primary_conn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
+        primary_conn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
 
         if non_primary_conn:
             backup_loc = non_primary_conn
@@ -356,9 +358,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """
 
         if not aconn:
-            aconn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
+            aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
             if not aconn:
-                return self.error("Agent of this type not connected currently: %s" % AGENT_TYPE_PRIMARY)
+                return self.error("Agent of this type not connected currently: %s" % AgentManager.AGENT_TYPE_PRIMARY)
         try:
             body = self._send_cli(command, aconn)
         except EnvironmentError, e:
@@ -579,7 +581,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         source_fullpathname = DEFAULT_BACKUP_DIR + '\\' + source_filename + ".tsbak"
 
         # Get the Primary Agent handle
-        primary_conn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
+        primary_conn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
 
         if not primary_conn:
             return self.error("[ERROR] No Primary Agent is connected.")
@@ -607,9 +609,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         stateman = server.stateman
         orig_states = stateman.get_states()
-        if orig_states[STATE_TYPE_MAIN] == STATE_MAIN_STARTED:
+        if orig_states[StateEntry.STATE_TYPE_MAIN] == StateEntry.STATE_MAIN_STARTED:
             # Restore can run only when tableau is stopped.
-            stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STOPPING)
+            stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STOPPING)
             log.debug("--------------Stopping Tableau for restore---------------")
             stop_body = self.cli_cmd("tabadmin stop")
             if stop_body.has_key('error'):
@@ -621,7 +623,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             stopped = False
             for i in range(15):
                 states = stateman.get_states()
-                if states[STATE_TYPE_MAIN] == STATE_MAIN_STOPPED:
+                if states[StateEntry.STATE_TYPE_MAIN] == StateEntry.STATE_MAIN_STOPPED:
                     stopped = True
                     self.log.debug("Restore: Tableau has stopped (on check %d)", i)
                     break
@@ -638,7 +640,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.info.debug("Restore: maint stop failed")
             # continue on, not a fatal error...
 
-        stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STARTING)
+        stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STARTING)
         try:
             cmd = "tabadmin restore %s" % source_fullpathname
             self.log.debug("restore sending command: %s", cmd)
@@ -744,7 +746,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def maint(self, action):
         # Get the Primary Agent handle
-        aconn = manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
+        aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
 
         if not aconn:
             return self.error("[ERROR] maint: No Primary Agent is connected.")
@@ -784,7 +786,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def remove_agent(self, aconn):
         manager.remove_agent(aconn)
-        if not manager.agent_conn_by_type(AGENT_TYPE_PRIMARY):
+        if not manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY):
             # fixme: why get Session() from here?
             session = statusmon.Session()
             statusmon.remove_all_status(session)

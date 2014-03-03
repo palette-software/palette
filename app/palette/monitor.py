@@ -56,17 +56,13 @@ class MonitorApplication(RESTApplication):
 
         if primary_agents:
             for agent in primary_agents:
-                if agent.last_disconnect_time:
-                    if agent.last_disconnect_time > agent.last_connection_time:
-                        # This agent has disconnected.
-                        continue
-                    else:
-                        # This primary agent is connected.  We will use it.
-                        primary = agent
-                        break
-                else:
+                if agent.connected():
+                    # This primary agent is connected.  We will use it.
                     primary = agent
                     break
+                else:
+                    # This agent has disconnected.
+                    continue
 
         # If there is a primary agent connected, get tableau status,
         # main, and secondary states.

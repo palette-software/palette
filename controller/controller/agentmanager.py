@@ -8,13 +8,11 @@ from httplib import HTTPConnection
 import json
 
 from agentstatus import AgentStatusEntry
-from state import StateManager
+from state import StateManager, StateEntry
 
 import meta
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func
-
-from inits import *
 
 # The Controller's Agent Manager.
 # Communicates with the Agent.
@@ -57,6 +55,11 @@ class AgentManager(threading.Thread):
 
     PORT = 8888
 
+    # Agent types
+    AGENT_TYPE_PRIMARY="primary"
+    AGENT_TYPE_WORKER="worker"
+    AGENT_TYPE_OTHER="other"
+
     def __init__(self, server, host='0.0.0.0', port=0):
         super(AgentManager, self).__init__()
         self.server = server
@@ -91,8 +94,8 @@ class AgentManager(threading.Thread):
                 self.log.info("Agent already connected with name '%s': will remove it and use the new connection.", body['uuid'])
                 self.remove_agent(agent)
                 break
-            elif new_agent_type == AGENT_TYPE_PRIMARY and \
-                                agent.auth['type'] == AGENT_TYPE_PRIMARY:
+            elif new_agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
+                                agent.auth['type'] == AgentManager.AGENT_TYPE_PRIMARY:
                     self.log.info("Primary agent already connected: will remove it and keep the new primary agent connection.")
                     self.remove_agent(agent)
 
@@ -101,11 +104,11 @@ class AgentManager(threading.Thread):
         new_agent.uuid = body['uuid']
         self.agents[new_agent.conn_id] = new_agent
 
-        if new_agent_type == AGENT_TYPE_PRIMARY:
+        if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("register: Initializing state entries on connect")
             stateman = StateManager(self.server)
-            stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)
-            stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
+            stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_UNKNOWN)
+            stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_NONE)
 
         self.unlock()
 
@@ -170,11 +173,11 @@ class AgentManager(threading.Thread):
             del self.agents[conn_id]
         else:
             self.log.debug("remove_agent: No such agent with conn_id %d", conn_id)
-        if agent.auth['type'] == AGENT_TYPE_PRIMARY:
+        if agent.auth['type'] == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("remove_agent: Initializing state entries on removal")
             stateman = StateManager(self.server)
-            stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)
-            stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
+            stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_UNKNOWN)
+            stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_NONE)
 
         self.unlock()
 
@@ -253,8 +256,8 @@ class AgentManager(threading.Thread):
                     return
 
             agent_type = body['type']
-            if agent_type not in [ AGENT_TYPE_PRIMARY,
-                        AGENT_TYPE_WORKER, AGENT_TYPE_OTHER ]:
+            if agent_type not in [ AgentManager.AGENT_TYPE_PRIMARY,
+              AgentManager.AGENT_TYPE_WORKER, AgentManager.AGENT_TYPE_OTHER ]:
                 self.log.error("Bad agent type sent: " + agent_type)
                 conn.close()
                 return

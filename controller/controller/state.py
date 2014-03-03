@@ -7,7 +7,6 @@ import platform
 
 import meta
 
-from inits import *
 from alert import Alert
 
 # The tabadmin state table:
@@ -16,6 +15,22 @@ from alert import Alert
 
 class StateEntry(meta.Base):
     __tablename__ = 'state'
+
+    # State types
+    STATE_TYPE_MAIN="main"
+    STATE_TYPE_SECOND="second"
+
+    # main states
+    STATE_MAIN_STARTING="starting"
+    STATE_MAIN_STARTED="started"
+    STATE_MAIN_STOPPING="stopping"
+    STATE_MAIN_STOPPED="stopped"
+    STATE_MAIN_UNKNOWN="unknown"
+
+    # secondary states
+    STATE_SECOND_BACKUP="backup"
+    STATE_SECOND_RESTORE="restore"
+    STATE_SECOND_NONE="none"
 
     # FIXME: Make combination of domainid and state_type a unique key
 
@@ -60,9 +75,9 @@ class StateManager(object):
         session.commit()
         session.close()
 
-        # Send out the main started stopped alert.
+        # Send out the main started/stopped alert.
         # Second alerts (backup/restore started/stopped done elsewhere).
-        if state_type == STATE_TYPE_MAIN and state in [STATE_MAIN_STARTED, STATE_MAIN_STOPPED]:
+        if state_type == StateEntry.STATE_TYPE_MAIN and state in [StateEntry.STATE_MAIN_STARTED, StateEntry.STATE_MAIN_STOPPED]:
             alert = Alert(self.config, self.log)
             alert.send("Tableau server " + state)
 
@@ -71,21 +86,21 @@ class StateManager(object):
         try:
             main_entry = session.query(StateEntry).\
                 filter(StateEntry.domainid == self.domainid).\
-                filter(StateEntry.state_type == STATE_TYPE_MAIN).\
+                filter(StateEntry.state_type == StateEntry.STATE_TYPE_MAIN).\
                 one()
             main_status = main_entry.state
         except NoResultFound, e:
-            main_status = STATE_MAIN_UNKNOWN
+            main_status = StateEntry.STATE_MAIN_UNKNOWN
 
         try:
             second_entry = session.query(StateEntry).\
                 filter(StateEntry.domainid == self.domainid).\
-                filter(StateEntry.state_type == STATE_TYPE_SECOND).\
+                filter(StateEntry.state_type == StateEntry.STATE_TYPE_SECOND).\
                 one()
             second_status = second_entry.state
 
         except NoResultFound, e:
-            second_status = STATE_SECOND_NONE
+            second_status = StateEntry.STATE_SECOND_NONE
 
         session.close()
-        return { STATE_TYPE_MAIN: main_status, STATE_TYPE_SECOND: second_status }
+        return { StateEntry.STATE_TYPE_MAIN: main_status, StateEntry.STATE_TYPE_SECOND: second_status }

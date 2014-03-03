@@ -1,8 +1,6 @@
 import smtplib
 from email.mime.text import MIMEText
 
-from inits import *
-
 class Alert(object):
 
     def __init__(self, config, log):
@@ -13,6 +11,9 @@ class Alert(object):
                                    default="nobody@nowhere.nohow")
         self.from_email = config.get('alert', 'from_email',
                                      default="alerts@palette-software.com")
+        self.smtp_server = config.get('alert', 'smtp_server',
+                                    default="localhost")
+        self.smtp_port = config.get("alert", "smtp_port", default=25)
 
     def send(self, text):
 
@@ -28,7 +29,7 @@ class Alert(object):
         msg_str = msg.as_string()
 
         try:
-            server = smtplib.SMTP(smtp_server, smtp_port)
+            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
             server.sendmail(self.from_email, [self.to_email], msg_str)
             server.quit()
         except (smtplib.SMTPException, EnvironmentError) as e:

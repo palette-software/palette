@@ -11,9 +11,8 @@ from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import sessionmaker
 import meta
 
-from state import StateManager
-from inits import *
-
+from state import StateManager, StateEntry
+from agentmanager import AgentManager
 from agentstatus import AgentStatusEntry
 
 class StatusEntry(meta.Base):
@@ -61,10 +60,10 @@ class StatusMonitor(threading.Thread):
         self.stateman = StateManager(self.server)
 
         # Start fresh: state table
-        #self.stateman.update(STATE_TYPE_MAIN, STATE_MAIN_UNKNOWN)
+        #self.stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_UNKNOWN)
         # fixme: We could check to see if the user had started
         # a backup or restore?
-        #self.stateman.update(STATE_TYPE_SECOND, STATE_SECOND_NONE)
+        #self.stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_NONE)
 
     # Remove all entries to get ready for new status info.
     def remove_all_status(self, session):
@@ -123,30 +122,30 @@ class StatusMonitor(threading.Thread):
         """Set main_state if appropriate."""
 
         states = self.stateman.get_states()
-        main_state = states[STATE_TYPE_MAIN]
+        main_state = states[StateEntry.STATE_TYPE_MAIN]
 
         if status == "RUNNING":
-            if main_state == STATE_MAIN_STARTING or \
-                                        main_state == STATE_MAIN_UNKNOWN:
-                self.stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STARTED)
-                self.log.debug("Updated state table with main status: %s", STATE_MAIN_STARTED)
-            elif main_state == STATE_MAIN_STOPPED:
+            if main_state == StateEntry.STATE_MAIN_STARTING or \
+                                        main_state == StateEntry.STATE_MAIN_UNKNOWN:
+                self.stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STARTED)
+                self.log.debug("Updated state table with main status: %s", StateEntry.STATE_MAIN_STARTED)
+            elif main_state == StateEntry.STATE_MAIN_STOPPED:
                 # This shouldn't happen.
                 self.log.error("Unexpected Status! Status is RUNNING but main_state was STOPPED!")
-            elif main_state == STATE_MAIN_STARTED or \
-                                        main_state == STATE_MAIN_STOPPING:
+            elif main_state == StateEntry.STATE_MAIN_STARTED or \
+                                    main_state == StateEntry.STATE_MAIN_STOPPING:
                 # Don't change the state.
                 pass
             else:
                 self.log.error("Unexpected main state: %s with status: %s", main_state, status)
 
         elif status == 'STOPPED':
-            if main_state == STATE_MAIN_STOPPING or \
-                                    main_state == STATE_MAIN_UNKNOWN:
-                self.stateman.update(STATE_TYPE_MAIN, STATE_MAIN_STOPPED)
-                self.log.debug("Updated state table with main status: %s", STATE_MAIN_STOPPED)
+            if main_state == StateEntry.STATE_MAIN_STOPPING or \
+                                    main_state == StateEntry.STATE_MAIN_UNKNOWN:
+                self.stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STOPPED)
+                self.log.debug("Updated state table with main status: %s", StateEntry.STATE_MAIN_STOPPED)
 
-                if main_state == STATE_MAIN_UNKNOWN:
+                if main_state == StateEntry.STATE_MAIN_UNKNOWN:
                     # If we are transitioning from UNKNOWN to STOPPED, then
                     # send a "maint start" command to the agent.
                     return    # return here to skip 'maint start'
@@ -155,11 +154,11 @@ class StatusMonitor(threading.Thread):
                     if maint_body.has_key("error"):
                         self.log.error("set_main_state: 'maint start' failed after transition from STATE_MAIN_UNKNOWN to STATE_MAIN_STOPPED: " + maint_body['error'])
 
-            elif main_state == STATE_MAIN_STARTING or \
-                                        main_state == STATE_MAIN_STOPPED:
+            elif main_state == StateEntry.STATE_MAIN_STARTING or \
+                                        main_state == StateEntry.STATE_MAIN_STOPPED:
                 # don't change the state.
                 pass
-            elif main_state == STATE_MAIN_STARTED:
+            elif main_state == StateEntry.STATE_MAIN_STARTED:
                 self.log.error("Unexpected Status! Status is STOPPED but main_state was STARTED!")
             else:
                 self.log.error("Unexpected main state %s with status %s", main_state, status)
@@ -178,7 +177,7 @@ class StatusMonitor(threading.Thread):
 
     def check_status(self, session):
 
-        aconn = self.manager.agent_conn_by_type(AGENT_TYPE_PRIMARY)
+        aconn = self.manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
         if not aconn:
             self.log.debug("status thread: No primary agent currently connected.")
             self.remove_all_status(session)

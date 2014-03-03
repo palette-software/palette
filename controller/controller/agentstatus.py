@@ -11,7 +11,6 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 import meta
 
-from inits import *
 class AgentStatusEntry(meta.Base):
     __tablename__ = 'agent'
 

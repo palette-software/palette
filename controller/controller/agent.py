@@ -8,8 +8,6 @@ from SimpleHTTPServer import SimpleHTTPRequestHandler
 import urlparse
 
 from agentmanager import AgentManager
-from inits import *
-
 version="0.1"
 
 # A Palette Windows Agent.
