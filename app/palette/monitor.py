@@ -106,7 +106,7 @@ class MonitorApplication(RESTApplication):
 
         session.close()
 
-        print 'tableau-status: %s, main-state: %s, secondary-state: %s, last-backup: %s' % (tableau_status, main_state, secondary_state, last_backup)
+#        print 'tableau-status: %s, main-state: %s, secondary-state: %s, last-backup: %s' % (tableau_status, main_state, secondary_state, last_backup)
 
         return {'tableau-status': tableau_status,
                 'main-state': main_state,

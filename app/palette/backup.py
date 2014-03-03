@@ -13,10 +13,10 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
 from akiri.framework.api import RESTApplication
+from akiri.framework.config import store
 
 from controller import meta
 
-from inits import *
 from controller.backup import BackupEntry
 from controller.agentstatus import AgentStatusEntry
 from controller.domain import Domain
@@ -35,10 +35,11 @@ class BackupApplication(RESTApplication):
 
         domainname = store.get('palette', 'domainname')
         self.domain = Domain.get_by_name(domainname, self.Session)
+        self.telnet_port = store.getint("palette", "telnet_port", default=9000)
 
     def send_cmd(self, cmd):
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        conn.connect(("", CONTROLLER_TELNET_PORT))
+        conn.connect(("", self.telnet_port))
         conn.send(cmd + '\n')
         print "sent", cmd
         data = conn.recv(3).strip()

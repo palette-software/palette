@@ -10,7 +10,6 @@ from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm import sessionmaker
 
-from inits import *
 from controller import meta
 from controller.agentstatus import AgentStatusEntry
 from controller.domain import Domain
@@ -21,7 +20,8 @@ class ManageApplication(RESTApplication):
 
     def send_cmd(self, cmd):
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        conn.connect(("", CONTROLLER_TELNET_PORT))
+        telnet_port = store.getint("palette", "telnet_port", default=9000)
+        conn.connect(("", telnet_port))
         conn.send(cmd + '\n')
         print "sent", cmd
         data = conn.recv(3).strip()
