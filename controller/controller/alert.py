@@ -13,7 +13,7 @@ class Alert(object):
                                      default="alerts@palette-software.com")
         self.smtp_server = config.get('alert', 'smtp_server',
                                     default="localhost")
-        self.smtp_port = config.get("alert", "smtp_port", default=25)
+        self.smtp_port = config.getint("alert", "smtp_port", default=25)
 
     def send(self, text):
 
@@ -33,10 +33,33 @@ class Alert(object):
             server.sendmail(self.from_email, [self.to_email], msg_str)
             server.quit()
         except (smtplib.SMTPException, EnvironmentError) as e:
-            self.log.error("Email send failed, text: %s, exception: %s",
-                text, e)
+            self.log.error("Email send failed, text: %s, exception: %s, server: %s, port: %d",
+                text, e, self.smtp_server, self.smtp_port)
             return
 
         self.log.info("Emailed event: " + text)
 
         return
+
+if __name__ == "__main__":
+    import logging
+    from config import Config
+
+    config = Config("../DEBIAN/etc/controller.ini")
+
+    handler = logging.StreamHandler()
+
+    DEFAULT_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+    DEFAULT_FORMAT = '[%(asctime)s] %(levelname)s %(message)s'
+    formatter = logging.Formatter(fmt=DEFAULT_FORMAT, datefmt=DEFAULT_DATE_FORMAT)
+
+    log = logging.getLogger("main")
+
+    handler.setFormatter(formatter)
+    log.addHandler(handler)
+    log.setLevel(logging.DEBUG)
+
+    log.info("alert test starting")
+
+    alert = Alert(config, log)
+    alert.send("Test Alert")
