@@ -62,19 +62,18 @@ class BackupApplication(RESTApplication):
             return {'last': "none",
                     'next': self.scheduled }
 
-        hostname = self.get_hostname_by_uuid(last_entry.uuid)
+        hostname = self.get_hostname_by_agentid(last_entry.agentid)
 
         if hostname:
             self.send_cmd("restore %s:%s" % (hostname, last_entry.name))
         else:
-            print "Error: No agent exists with uuid:", last_entry.uuid
+            print "Error: No agent exists with agentid:", last_entry.agentid
 
-    def get_hostname_by_uuid(self, uuid):
+    def get_hostname_by_agentid(self, agentid):
         session = self.Session()
         try:
-            agent_entry = ession.query(AgentStatusEntry).\
-                filter(AgentStatusEntry.domainid == self.domain.domainid).\
-                filter(AgentStatusEntry.uuid == uuid).\
+            agent_entry = session.query(AgentStatusEntry).\
+                filter(AgentStatusEntry.agentid == agentid).\
                 one()
 
         except NoResultFound, e:
