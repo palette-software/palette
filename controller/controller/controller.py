@@ -793,6 +793,24 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             statusmon.remove_all_status(session)
             session.commit()
 
+
+import logging
+
+class StreamLogger(object):
+    """
+    File-like stream class that writes to a logger.
+    Used for redirecting stdout & stderr to the log file.
+    """
+
+    def __init__(self, logger):
+        self.logger = logger
+
+    def write(self, buf):
+        for line in buf.rstrip().splitlines():
+            self.logger.log(logging.ERROR, "STD:" + line.rstrip())
+
+    def flush(self):
+        pass
 def main():
     import argparse
     import logger
@@ -815,6 +833,11 @@ def main():
     logger.make_loggers(config)
     log = logger.get(Controller.LOGGER_NAME)
     log.info("Controller version: %s", VERSION)
+
+    # Log stdout and stderr to the log file too.
+    slogger = StreamLogger(log)
+    sys.stdout = slogger
+    sys.stderr = slogger
 
     # database configuration
     url = config.get("database", "url")
