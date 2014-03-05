@@ -292,8 +292,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         for key in agents:
             if agents[key].auth['type'] != AgentManager.AGENT_TYPE_PRIMARY:
                 # fixme: first make sure the non-primary-agent is still connected
-                non_primary_conn = agents[key]
-                break
+                if non_primary_conn == None:
+                    non_primary_conn = agents[key]
+                else:
+                    if agents[key].auth['hostname'] < \
+                      non_primary_conn.auth['hostname']:
+                        non_primary_conn = agents[key]
 
         primary_conn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
 
