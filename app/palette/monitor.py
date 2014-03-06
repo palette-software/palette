@@ -34,7 +34,7 @@ class MonitorApplication(RESTApplication):
 
         tableau_status = "Unknown"
         main_state = "Not connected"
-        secondary_state = "none"
+        secondary_state = StateEntry.STATE_SECOND_NONE
 
         try:
             primary_agents = session.query(AgentStatusEntry).\
