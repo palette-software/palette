@@ -18,10 +18,6 @@ from controller.domain import Domain
 
 __all__ = ["MonitorApplication"]
 
-# State types:
-STATE_TYPE_MAIN="main"
-STATE_TYPE_SECOND="second"
-
 class MonitorApplication(RESTApplication):
 
     NAME = 'monitor'
@@ -84,9 +80,9 @@ class MonitorApplication(RESTApplication):
                 all()
 
             for state_entry in state_entries:
-                if state_entry.state_type == STATE_TYPE_MAIN:
+                if state_entry.state_type == StateEntry.STATE_TYPE_MAIN:
                     main_state = state_entry.state
-                elif state_entry.state_type == STATE_TYPE_SECOND:
+                elif state_entry.state_type == StateEntry.STATE_TYPE_SECOND:
                     secondary_state = state_entry.state
                 else:
                     print "monitor: Uknown state_type:", state_entry.state_type
