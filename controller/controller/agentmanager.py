@@ -13,6 +13,7 @@ from state import StateManager, StateEntry
 import meta
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func
+from sqlalchemy.orm.exc import NoResultFound
 
 # The Controller's Agent Manager.
 # Communicates with the Agent.
@@ -150,6 +151,23 @@ class AgentManager(threading.Thread):
             session.close()
 
         return entry
+
+    def set_displayname(self, hostname, displayname):
+        error = ""
+
+        session = self.Session()
+        try:
+            entry = session.query(AgentStatusEntry).\
+                filter(AgentStatusEntry.hostname == hostname).one()
+            entry.displayname = displayname
+            session.merge(entry)
+            session.commit()
+        except NoResultFound, e:
+            error = "No agent found with hostame=%s" % (hostname)
+        finally:
+            session.close()
+
+        return error
 
     def forget(self, agentid):
         session = self.Session()

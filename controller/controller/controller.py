@@ -267,6 +267,18 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             print >> self.wfile, "Done"
 
+    def do_displayname(self, argv):
+        """Set the display name for an agent"""
+        if len(argv) != 2:
+            print >> self.wfile, '[ERROR] Usage: displayname agent-hostname agent-displayname'
+            return
+
+        error = server.displayname_cmd(argv[0], argv[1])
+        if error:
+            self.error(error)
+        else:
+            print >> self.wfile, "OK"
+
     def handle(self):
         while True:
             data = self.rfile.readline().strip()
@@ -797,6 +809,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             aconn.unlock()
 
         return body
+
+    def displayname_cmd(self, hostname, displayname):
+        """Sets displayname for the agent with the given hostname. At
+           this point assumes hostname is unique in the database."""
+
+        return manager.set_displayname(hostname, displayname)
 
     def error(self, msg, return_dict={}):
         """Returns error dictionary in standard format.  If passed
