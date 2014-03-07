@@ -127,17 +127,15 @@ class AgentManager(threading.Thread):
                                  body['uuid'],
                                  self.domainid)
         entry.last_connection_time = func.now()
-        session.merge(entry)
+        entry = session.merge(entry)
+        if entry.displayname == None or entry.displayname == "":
+            entry.displayname = entry.hostname
+            entry = session.merge(entry)
         session.commit()
-        try:
-            # read back the entry in case the agentid was auto-assigned
-            # FIXME: can we use post fetch?
-            entry = session.query(AgentStatusEntry).\
-              filter(AgentStatusEntry.uuid == body['uuid']).one()
-        finally:
-            session.close()
+        agentid = entry.agentid
+        session.close()
 
-        return entry.agentid
+        return agentid
 
     def forget(self, agentid):
         session = self.Session()
