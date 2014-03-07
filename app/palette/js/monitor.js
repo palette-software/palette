@@ -40,14 +40,14 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
     function setStatus(data) {
         if (data["main-state"]) {
             var main = data["main-state"];
-            var secondary = "none";
-            if (data["secondary-state"]) {
-                secondary = data["secondary-state"];
+            var backup = "none";
+            if (data["backup-state"]) {
+                backup = data["backup-state"];
             }
 
             switch (main) {
             case "started":
-                if (secondary == "backup") {
+                if (backup == "backup") {
                     status.innerHTML = "OK, backup in progress";
                 } else {
                     status.innerHTML = "OK";
@@ -63,7 +63,7 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
                 yellowLight();
                 break;
             case "stopping":
-                if (secondary == "backup") {
+                if (backup == "backup") {
                     status.innerHTML = "Stopping for restore ...";
                 } else {
                     status.innerHTML = "Stopping ...";

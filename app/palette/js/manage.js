@@ -114,11 +114,11 @@ function(dom, domClass, request, on, topic, DialogSimple)
 
     topic.subscribe("status-update-event", function(data) {
         var main = data["main-state"];
-        var secondary = data["secondary-state"];
+        var backup = data["backup-state"];
 
         switch(main) {
         case "started":
-            if (secondary != "none") {
+            if (backup != "none") {
                 disableButtons();
             } else {
                 disableStartButton();

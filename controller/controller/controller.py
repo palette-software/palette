@@ -54,19 +54,25 @@ class CliHandler(socketserver.StreamRequestHandler):
         states = stateman.get_states()
 
         # Backups can be done when Tableau is either started or stopped.
-        if states[StateEntry.STATE_TYPE_MAIN] not in (StateEntry.STATE_MAIN_STARTED, StateEntry.STATE_MAIN_STOPPED):
-            print >> self.wfile, "FAIL: Can't backup - main state is:", states[StateEntry.STATE_TYPE_MAIN]
-            log.debug("Can't backup - main state is: %s", states[StateEntry.STATE_TYPE_MAIN])
+        if states[StateEntry.STATE_TYPE_MAIN] not in \
+          (StateEntry.STATE_MAIN_STARTED, StateEntry.STATE_MAIN_STOPPED):
+            print >> self.wfile, "FAIL: Can't backup - main state is:", \
+              states[StateEntry.STATE_TYPE_MAIN]
+            log.debug("Can't backup - main state is: %s", \
+              states[StateEntry.STATE_TYPE_MAIN])
             return
-        if states[StateEntry.STATE_TYPE_SECOND] != StateEntry.STATE_SECOND_NONE:
-            print >> self.wfile, "FAIL: Can't backup - second state is:", states[StateEntry.STATE_TYPE_SECOND]
-            log.debug("Can't backup - second state is: %s", states[StateEntry.STATE_TYPE_SECOND])
+        if states[StateEntry.STATE_TYPE_BACKUP] != StateEntry.STATE_BACKUP_NONE:
+            print >> self.wfile, "FAIL: Can't backup - backup state is:", \
+              states[StateEntry.STATE_TYPE_BACKUP]
+            log.debug("Can't backup - backup state is: %s", \
+              states[StateEntry.STATE_TYPE_BACKUP])
             return
 
         log.debug("-----------------Starting Backup-------------------")
             
         # fixme: lock to ensure against two simultaneous backups?
-        stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_BACKUP)
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
+          StateEntry.STATE_BACKUP_BACKUP)
 
         alert = Alert(self.server.config, log)
         alert.send("Backup Started")
@@ -74,7 +80,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         print >> self.wfile, "OK"
             
         body = server.backup_cmd()
-        stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_NONE)
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
+          StateEntry.STATE_BACKUP_NONE)
 
         if not body.has_key('error'):
             alert.send("Backup Finished")
@@ -88,7 +95,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         Primary Agent first."""
 
         if len(argv) != 1:
-            print >> self.wfile, '[ERROR] usage: restore source-ip-address:pathname'
+            print >> self.wfile, \
+              '[ERROR] usage: restore source-ip-address:pathname'
             return
 
         # Check to see if we're in a state to restore
@@ -96,25 +104,30 @@ class CliHandler(socketserver.StreamRequestHandler):
         states = stateman.get_states()
         if states[StateEntry.STATE_TYPE_MAIN] != StateEntry.STATE_MAIN_STARTED and \
             states[StateEntry.STATE_TYPE_MAIN] != StateEntry.STATE_MAIN_STOPPED:
-            print >> self.wfile, "FAIL: Can't backup - main state is:", states[StateEntry.STATE_TYPE_MAIN]
-            log.debug("Can't restore - main state is: %s", states[StateEntry.STATE_TYPE_MAIN])
+            print >> self.wfile, "FAIL: Can't backup - main state is:", \
+              states[StateEntry.STATE_TYPE_MAIN]
+            log.debug("Can't restore - main state is: %s", \
+              states[StateEntry.STATE_TYPE_MAIN])
             return
 
-        if states[StateEntry.STATE_TYPE_SECOND] != StateEntry.STATE_SECOND_NONE:
-            print >> self.wfile, "FAIL: Can't restore - second state is:", states[StateEntry.STATE_TYPE_SECOND]
-            log.debug("Can't restore - second state is: %s", states[StateEntry.STATE_TYPE_SECOND])
+        if states[StateEntry.STATE_TYPE_BACKUP] != \
+              StateEntry.STATE_BACKUP_NONE:
+            print >> self.wfile, "FAIL: Can't restore - backup state is:", \
+              states[StateEntry.STATE_TYPE_BACKUP]
+            log.debug("Can't restore - backup state is: %s", \
+              states[StateEntry.STATE_TYPE_BACKUP])
             return
 
         log.debug("-----------------Starting Restore-------------------")
             
         # fixme: lock to ensure against two simultaneous restores?
-        stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_RESTORE)
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_RESTORE)
 
         print >> self.wfile, "OK"
             
         body = server.restore_cmd(argv[0])
 
-        stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_NONE)
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_NONE)
         # The "restore started" alert is done in restore_cmd(),
         # only after some sanity checking is done.
         alert = Alert(self.server.config, log)
@@ -154,16 +167,22 @@ class CliHandler(socketserver.StreamRequestHandler):
         if states[StateEntry.STATE_TYPE_MAIN] != 'stopped':
             # Even "Unknown" is not an okay state for starting as it
             # could mean the primary agent probably isn't connected.
-            print >> self.wfile, "FAIL: Can't start - main state is:", states[StateEntry.STATE_TYPE_MAIN]
-            log.debug("FAIL: Can't start - main state is: %s", states[StateEntry.STATE_TYPE_MAIN])
+            print >> self.wfile, "FAIL: Can't start - main state is:", \
+              states[StateEntry.STATE_TYPE_MAIN]
+            log.debug("FAIL: Can't start - main state is: %s", \
+              states[StateEntry.STATE_TYPE_MAIN])
             return
         
-        if states[StateEntry.STATE_TYPE_SECOND] != StateEntry.STATE_SECOND_NONE:
-            print >> self.wfile, "FAIL: Can't start - second state is:", states[StateEntry.STATE_TYPE_SECOND]
-            log.debug("FAIL: Can't start - second state is: %s", states[StateEntry.STATE_TYPE_SECOND])
+        if states[StateEntry.STATE_TYPE_BACKUP] != \
+              StateEntry.STATE_BACKUP_NONE:
+            print >> self.wfile, "FAIL: Can't start - backup state is:", \
+              states[StateEntry.STATE_TYPE_BACKUP]
+            log.debug("FAIL: Can't start - backup state is: %s", \
+              states[StateEntry.STATE_TYPE_BACKUP])
             return
             
-        stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STARTING)
+        stateman.update(StateEntry.STATE_TYPE_MAIN, \
+              StateEntry.STATE_MAIN_STARTING)
 
         log.debug("-----------------Starting Tableau-------------------")
         # fixme: Reply with "OK" only after the agent received the command?
@@ -671,7 +690,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # On a successful restore, tableau starts itself.
         # fixme: The restore command usually still runs a while longer,
         # even after restore completes successfully.  Maybe note this in the UI?
-        # So the "second" status stays at "restore" for a while after
+        # So the "backup" status stays at "restore" for a while after
         # tableau has started and the UI say "RUNNING".
 
         return body

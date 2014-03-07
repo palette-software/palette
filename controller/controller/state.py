@@ -11,14 +11,14 @@ from alert import Alert
 
 # The tabadmin state table:
 #   main   state: starting, started, stopping, stopped, unknown
-#   second state: backup, restore or none
+#   backup state: backup, restore or none
 
 class StateEntry(meta.Base):
     __tablename__ = 'state'
 
     # State types
     STATE_TYPE_MAIN="main"
-    STATE_TYPE_SECOND="second"
+    STATE_TYPE_BACKUP="backup"
 
     # main states
     STATE_MAIN_STARTING="starting"
@@ -27,10 +27,10 @@ class StateEntry(meta.Base):
     STATE_MAIN_STOPPED="stopped"
     STATE_MAIN_UNKNOWN="unknown"
 
-    # secondary states
-    STATE_SECOND_BACKUP="backup"
-    STATE_SECOND_RESTORE="restore"
-    STATE_SECOND_NONE="none"
+    # backup states
+    STATE_BACKUP_BACKUP="backup"
+    STATE_BACKUP_RESTORE="restore"
+    STATE_BACKUP_NONE="none"
 
     # FIXME: Make combination of domainid and state_type a unique key
 
@@ -76,8 +76,9 @@ class StateManager(object):
         session.close()
 
         # Send out the main started/stopped alert.
-        # Second alerts (backup/restore started/stopped done elsewhere).
-        if state_type == StateEntry.STATE_TYPE_MAIN and state in [StateEntry.STATE_MAIN_STARTED, StateEntry.STATE_MAIN_STOPPED]:
+        # Backup alerts (backup/restore started/stopped done elsewhere).
+        if state_type == StateEntry.STATE_TYPE_MAIN and state in \
+          [StateEntry.STATE_MAIN_STARTED, StateEntry.STATE_MAIN_STOPPED]:
             alert = Alert(self.config, self.log)
             alert.send("Tableau server " + state)
 
@@ -93,14 +94,15 @@ class StateManager(object):
             main_status = StateEntry.STATE_MAIN_UNKNOWN
 
         try:
-            second_entry = session.query(StateEntry).\
+            backup_entry = session.query(StateEntry).\
                 filter(StateEntry.domainid == self.domainid).\
-                filter(StateEntry.state_type == StateEntry.STATE_TYPE_SECOND).\
+                filter(StateEntry.state_type == StateEntry.STATE_TYPE_BACKUP).\
                 one()
-            second_status = second_entry.state
+            backup_status = backup_entry.state
 
         except NoResultFound, e:
-            second_status = StateEntry.STATE_SECOND_NONE
+            backup_status = StateEntry.STATE_BACKUP_NONE
 
         session.close()
-        return { StateEntry.STATE_TYPE_MAIN: main_status, StateEntry.STATE_TYPE_SECOND: second_status }
+        return { StateEntry.STATE_TYPE_MAIN: main_status, \
+          StateEntry.STATE_TYPE_BACKUP: backup_status }

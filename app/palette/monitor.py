@@ -34,7 +34,7 @@ class MonitorApplication(RESTApplication):
 
         tableau_status = "Unknown"
         main_state = "Not connected"
-        secondary_state = StateEntry.STATE_SECOND_NONE
+        backup_state = StateEntry.STATE_BACKUP_NONE
 
         try:
             primary_agents = session.query(AgentStatusEntry).\
@@ -61,7 +61,7 @@ class MonitorApplication(RESTApplication):
                     continue
 
         # If there is a primary agent connected, get tableau status,
-        # main, and secondary states.
+        # main, and backup states.
         if primary:
             # Dig out the tableau status.
             try:
@@ -82,8 +82,8 @@ class MonitorApplication(RESTApplication):
             for state_entry in state_entries:
                 if state_entry.state_type == StateEntry.STATE_TYPE_MAIN:
                     main_state = state_entry.state
-                elif state_entry.state_type == StateEntry.STATE_TYPE_SECOND:
-                    secondary_state = state_entry.state
+                elif state_entry.state_type == StateEntry.STATE_TYPE_BACKUP:
+                    backup_state = state_entry.state
                 else:
                     print "monitor: Uknown state_type:", state_entry.state_type
 
@@ -102,11 +102,11 @@ class MonitorApplication(RESTApplication):
 
         session.close()
 
-#        print 'tableau-status: %s, main-state: %s, secondary-state: %s, last-backup: %s' % (tableau_status, main_state, secondary_state, last_backup)
+#        print 'tableau-status: %s, main-state: %s, backup-state: %s, last-backup: %s' % (tableau_status, main_state, backup_state, last_backup)
 
         return {'tableau-status': tableau_status,
                 'main-state': main_state,
-                'secondary-state': secondary_state,
+                'backup-state': backup_state,
                 'last-backup': last_backup
                 }
 

@@ -63,7 +63,7 @@ class StatusMonitor(threading.Thread):
         #self.stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_UNKNOWN)
         # fixme: We could check to see if the user had started
         # a backup or restore?
-        #self.stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_NONE)
+        #self.stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_NONE))
 
     # Remove all entries to get ready for new status info.
     def remove_all_status(self, session):

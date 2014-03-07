@@ -108,8 +108,10 @@ class AgentManager(threading.Thread):
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("register: Initializing state entries on connect")
             stateman = StateManager(self.server)
-            stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_UNKNOWN)
-            stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_NONE)
+            stateman.update(StateEntry.STATE_TYPE_MAIN, \
+              StateEntry.STATE_MAIN_UNKNOWN)
+            stateman.update(StateEntry.STATE_TYPE_BACKUP, \
+              StateEntry.STATE_BACKUP_NONE)
 
         self.unlock()
 
@@ -178,8 +180,10 @@ class AgentManager(threading.Thread):
         if agent.auth['type'] == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("remove_agent: Initializing state entries on removal")
             stateman = StateManager(self.server)
-            stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_UNKNOWN)
-            stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_NONE)
+            stateman.update(StateEntry.STATE_TYPE_MAIN, \
+              StateEntry.STATE_MAIN_UNKNOWN)
+            stateman.update(StateEntry.STATE_TYPE_BACKUP, \
+              StateEntry.STATE_BACKUP_NONE)
 
         self.unlock()
 
