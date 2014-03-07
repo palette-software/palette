@@ -314,8 +314,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 if non_primary_conn == None:
                     non_primary_conn = agents[key]
                 else:
-                    if agents[key].auth['hostname'] < \
-                      non_primary_conn.auth['hostname']:
+                    if agents[key].displayname < non_primary_conn.displayname:
                         non_primary_conn = agents[key]
 
         primary_conn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
@@ -324,8 +323,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             backup_loc = non_primary_conn
             # Copy the backup to a non-primary agent
             copy_body = self.copy_cmd(\
-                "%s:%s.tsbak" % (primary_conn.auth['hostname'], backup_name),
-                non_primary_conn.auth['hostname'])
+                "%s:%s.tsbak" % (primary_conn.displayname, backup_name),
+                non_primary_conn.displayname)
 
             # Before we check the copy body for errors/failure, we
             # try to delete the local file since the copy failed 
@@ -333,13 +332,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # on the primary agent.
 
             if copy_body.has_key('error'):
-                self.log.info("Copy of backup file to agent '%s' failed.  Will leave the backup on the primary agent.", non_primary_conn.auth['hostname'])
+                self.log.info("Copy of backup file to agent '%s' failed.  Will leave the backup on the primary agent.", non_primary_conn.displayname)
                 # Something was wrong with the non-primary agent.  Leave
                 # the backup on the primary after all.
                 backup_loc = primary_conn
                 # Backup file remains on the primary.
                 backup_ip_address = primary_conn.auth['ip-address']
-                backup_hostname = primary_conn.auth['hostname']
 
             else:
                 # Remove the backup file from the primary
@@ -356,15 +354,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     return remove_body
 
                 backup_ip_address = non_primary_conn.auth['ip-address']
-                backup_hostname = non_primary_conn.auth['hostname']
 
         else:
             backup_loc = primary_conn
             # Backup file remains on the primary.
             backup_ip_address = primary_conn.auth['ip-address']
-            backup_hostname = primary_conn.auth['hostname']
 
-        # Save name of backup, hostname ip address of the primary agent to the db.
+        # Save name of backup, agentid to the db.
         # fixme: create one of these per server.
         self.backup = BackupManager(self.domainid)
         self.backup.add(backup_name, backup_loc.agentid)
@@ -439,7 +435,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         headers = {"Content-Type": "application/json"}
 
         self.log.debug('about to do the cli command to %s, xid: %d, command: %s', \
-                        aconn.auth['hostname'], req.xid, cli_command)
+                        aconn.displayname, req.xid, cli_command)
         try:
             aconn.httpconn.request('POST', '/cli', req.send_body, headers)
             self.log.debug('sent cli command.')
@@ -525,8 +521,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def copy_cmd(self, source_path, dest_name):
         """Send a gget command and checks the status.
-           copy source-hostname:/path/to/file dest-hostname
-                       <source_path>          <dest-hostname>
+           copy source-displayname:/path/to/file dest-displayname
+                       <source_path>          <dest-displayname>
            generates:
             c:/Palette/bin/pget.exe http://primary-ip:192.168.1.1/file dir/
            and sends it as a cli command to agent:
@@ -536,26 +532,28 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not source_path.find(':'):
             return self.error("[ERROR] Missing ':' in source path:" % source_path)
 
-        (source_hostname, source_path) = source_path.split(':',1)
+        (source_displayname, source_path) = source_path.split(':',1)
 
-        if len(source_hostname) == 0 or len(source_path) == 0:
+        if len(source_displayname) == 0 or len(source_path) == 0:
             return self.error("[ERROR] Invalid source specification.")
 
         agents = manager.all_agents()
         src = dst = None
 
         for key in agents:
-            if agents[key].auth['hostname'] == source_hostname:
+            if agents[key].displayname == source_displayname:
                 src = agents[key]
-            if agents[key].auth['hostname'] == dest_name:
+            if agents[key].displayname == dest_name:
                 dst = agents[key]
 
         msg = ""
         # fixme: make sure the source isn't the same as the dest
         if not src:
-            msg = "Unknown or unconnected source-hostname: %s. " % source_hostname 
+            msg = "Unknown or unconnected source-displayname: %s. " % \
+              source_displayname 
         if not dst:
-            msg += "Unknown or unconnected dest-hostname: %s." % dest_name
+            msg += "Unknown or unconnected dest-displayname: %s." % \
+              dest_name
 
         if not src or not dst:
             return self.error(msg)
@@ -585,7 +583,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def restore_cmd(self, arg):
         """Do a tabadmin restore of the passed arg, except
            the arg is in the format:
-                source-hostname:pathname
+                source-displayname:pathname
             If the pathname is not on the Primary Agent, then copy
             it to the Primary Agent before doing the tabadmin restore
             Returns a body with the results/status.
@@ -596,7 +594,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if len(parts) != 2:
             return self.error('[ERROR] Need exactly one colon in argument: ' + arg)
 
-        source_hostname = parts[0]
+        source_displayname = parts[0]
         source_filename = parts[1]
 
         if os.path.isabs(source_filename):
@@ -611,16 +609,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("[ERROR] No Primary Agent is connected.")
 
         # Check if the source_filename is on the Primary Agent.
-        if source_hostname != primary_conn.auth['hostname']:
+        if source_displayname != primary_conn.displayname:
             # The source_filename isn't on the Primary agent:
             # We need to copy the file to the Primary.
 
             # copy_cmd arguments:
             #   source-agent-name:/filename
-            #   dest-agent-hostname
+            #   dest-agent-displayname
             arg_tsbak = arg + ".tsbak"
-            self.log.debug("Sending copy command: %s, %s", arg_tsbak, primary_conn.auth['hostname'])
-            body = server.copy_cmd(arg_tsbak, primary_conn.auth['hostname'])
+            self.log.debug("Sending copy command: %s, %s", arg_tsbak, primary_conn.displayname)
+            body = server.copy_cmd(arg_tsbak, primary_conn.displayname)
 
             if body.has_key("error"):
                 self.log.debug("Copy failed with: " + str(body))
@@ -679,7 +677,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # fixme: Do we need to add restore information to the database?  
         # fixme: check status before cleanup? Or cleanup anyway?
 
-        if source_hostname != primary_conn.auth['hostname']:
+        if source_displayname != primary_conn.displayname:
             # If the file was copied to the Primary Agent, delete
             # the temporary backup file we copied to the Primary Agent.
             self.log.debug("------------Restore: Removing file '%s' after restore------" % source_fullpathname)
