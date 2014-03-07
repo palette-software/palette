@@ -683,7 +683,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # If the file was copied to the Primary Agent, delete
             # the temporary backup file we copied to the Primary Agent.
             self.log.debug("------------Restore: Removing file '%s' after restore------" % source_fullpathname)
-            remove_body = self.cli_cmd("DEL %s" % source_fullpathname)
+            remove_body = self.cli_cmd("CMD /C DEL %s" % source_fullpathname)
             if remove_body.has_key('error'):
                 return remove_body
 
