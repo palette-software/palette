@@ -101,8 +101,14 @@ class AgentManager(threading.Thread):
                     self.remove_agent(agent)
 
         # Remember the new agent
-        new_agent.agentid = self.remember(body)
-        new_agent.uuid = body['uuid']
+        entry = self.remember(body)
+        if entry:
+            new_agent.agentid = entry.agentid
+            new_agent.uuid = entry.uuid
+            new_agent.displayname = entry.displayname
+        else:
+            # FIXME: handle this as an error
+            pass
         self.agents[new_agent.conn_id] = new_agent
 
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
@@ -118,6 +124,7 @@ class AgentManager(threading.Thread):
     # formerly agentstatus.add()
     def remember(self, body):
         session = self.Session()
+
         # fixme: check for the presence of all these entries.
         entry = AgentStatusEntry(body['hostname'],
                                  body['type'], 
@@ -132,10 +139,17 @@ class AgentManager(threading.Thread):
             entry.displayname = entry.hostname
             entry = session.merge(entry)
         session.commit()
-        agentid = entry.agentid
-        session.close()
 
-        return agentid
+        # Since we merged, we cannot return entry after session.close()
+        # because we will get an "unbound" error, so get a fresh entry
+        # that we can return.
+        try:
+            entry = session.query(AgentStatusEntry).\
+                filter(AgentStatusEntry.uuid == body['uuid']).one()
+        finally:
+            session.close()
+
+        return entry
 
     def forget(self, agentid):
         session = self.Session()
