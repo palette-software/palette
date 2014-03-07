@@ -137,7 +137,7 @@ class BackupDialog(DialogPage):
         for backup, agent in query.all():
             data = {}
             data['name'] = backup.name
-            data['ip-address'] = agent.ip_address
+            data['displayname'] = agent.displayname
             data['creation-time'] = str(backup.creation_time)[:19] # Cut off fraction
             self.backup_entries.append(data)
         session.close()
