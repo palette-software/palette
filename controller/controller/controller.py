@@ -831,6 +831,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             session = statusmon.Session()
             statusmon.remove_all_status(session)
             session.commit()
+            session.close()
 
 
 import logging

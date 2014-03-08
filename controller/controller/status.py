@@ -170,18 +170,19 @@ class StatusMonitor(threading.Thread):
             self.log.error("Unknown status: %s", status)
 
     def run(self):
-        session = self.Session()
         while True:
-            self.check_status(session)
+            self.check_status()
             time.sleep(self.status_request_interval)
 
-    def check_status(self, session):
+    def check_status(self):
 
         aconn = self.manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
         if not aconn:
+            session = self.Session()
             self.log.debug("status thread: No primary agent currently connected.")
             self.remove_all_status(session)
             session.commit()
+            session.close()
             return
         agentid = aconn.agentid
 
@@ -211,6 +212,8 @@ class StatusMonitor(threading.Thread):
             return
 
         status = line1[1].strip()
+
+        session = self.Session()
 
         # Store the second part (like "RUNNING") into the database
         self.remove_all_status(session)
@@ -255,6 +258,7 @@ class StatusMonitor(threading.Thread):
             self.log.debug("logged: %s, %d, %s", name, pid, status)
 
         session.commit()
+        session.close()
 
         return    # no debugging for now
         # debug - try to get it back

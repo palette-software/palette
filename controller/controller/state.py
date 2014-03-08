@@ -92,6 +92,9 @@ class StateManager(object):
             main_status = main_entry.state
         except NoResultFound, e:
             main_status = StateEntry.STATE_MAIN_UNKNOWN
+        except Exception, e:
+            session.close()
+            raise e
 
         try:
             backup_entry = session.query(StateEntry).\
@@ -99,9 +102,11 @@ class StateManager(object):
                 filter(StateEntry.state_type == StateEntry.STATE_TYPE_BACKUP).\
                 one()
             backup_status = backup_entry.state
-
         except NoResultFound, e:
             backup_status = StateEntry.STATE_BACKUP_NONE
+        except Exception, e:
+            session.close()
+            raise e
 
         session.close()
         return { StateEntry.STATE_TYPE_MAIN: main_status, \

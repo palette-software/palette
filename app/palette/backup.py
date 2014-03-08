@@ -76,7 +76,6 @@ class BackupApplication(RESTApplication):
             agent_entry = session.query(AgentStatusEntry).\
                 filter(AgentStatusEntry.agentid == agentid).\
                 one()
-
         except NoResultFound, e:
             return None
         finally:

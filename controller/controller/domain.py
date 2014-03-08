@@ -44,6 +44,7 @@ class Domain(object):
         session = self.Session()
         entry = Domain.get_by_name(name, Session=self.Session)
         return entry.domainid
+        session.close()
 
     @classmethod
     def get_by_name(cls, name, Session=None):
@@ -55,3 +56,5 @@ class Domain(object):
         # exception to percolate up if the entry is not found.
         return session.query(DomainEntry).\
             filter(DomainEntry.domainname == name).one()
+
+        session.close()

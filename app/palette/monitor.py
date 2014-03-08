@@ -43,6 +43,9 @@ class MonitorApplication(RESTApplication):
                 all()
         except NoResultFound, e:
             primary_agents = None
+        except Exception, e:
+            session.close()
+            raise e
 
         # If there is more than one primary agent in the table, look for
         # the primary agent that is connected and use that.
@@ -73,6 +76,9 @@ class MonitorApplication(RESTApplication):
                 tableau_status = tableau_entry.status
             except NoResultFound, e:
                 pass
+            except Exception, e:
+                session.close()
+                raise e
 
             # Dig out the states
             state_entries = session.query(StateEntry).\
