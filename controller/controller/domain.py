@@ -41,10 +41,8 @@ class Domain(object):
             session.close()
 
     def id_by_name(self, name):
-        session = self.Session()
         entry = Domain.get_by_name(name, Session=self.Session)
         return entry.domainid
-        session.close()
 
     @classmethod
     def get_by_name(cls, name, Session=None):
