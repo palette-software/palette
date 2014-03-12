@@ -905,6 +905,7 @@ def main():
 
     global manager  # fixme: get rid of this global.
     manager = AgentManager(server)
+    manager.update_last_disconnect_time()
     manager.start()
 
     # Need to instantiate to initialize state and status tables,

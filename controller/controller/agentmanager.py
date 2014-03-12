@@ -79,6 +79,22 @@ class AgentManager(threading.Thread):
         # the unique 'conn_id'.
         self.agents = {}
 
+    def update_last_disconnect_time(self):
+        """Called during startup to set a disconnection time for agents that
+           were still connected when we stopped."""
+
+        session = self.Session()
+
+        try:
+            session.query(AgentStatusEntry).\
+                filter(AgentStatusEntry.last_connection_time > \
+                  AgentStatusEntry.last_disconnect_time).\
+                update({"last_disconnect_time" : func.now()},
+                  synchronize_session=False)
+            session.commit()
+        finally:
+            session.close()
+
     def register(self, new_agent, body):
         """Called with the agent object and body /auth dictionary that
            was sent from the agent in json."""
