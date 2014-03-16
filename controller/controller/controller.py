@@ -806,15 +806,36 @@ class StreamLogger(object):
     Used for redirecting stdout & stderr to the log file.
     """
 
-    def __init__(self, logger):
+    def __init__(self, logger, tag=None):
         self.logger = logger
+        self.tag = tag
+        # writes are buffered to ensure full lines are printed together.
+        self.buf = ''
+
+    def writeln(self, line):
+        line = line.rstrip()
+        if not line:
+            return
+        if self.tag:
+            line = '[' + self.tag + '] ' + line
+        self.logger.log(logging.ERROR, line)
 
     def write(self, buf):
-        for line in buf.rstrip().splitlines():
-            self.logger.log(logging.ERROR, "STD:" + line.rstrip())
+        buf = self.buf + buf
+        self.buf = ''
+        for line in buf.splitlines(True):
+            if not line.endswith('\r') and not line.endswith('\n'):
+                self.buf = self.buf + line
+                continue
+            self.writeln(line)
+
+    def close(self):
+        flush(self)
 
     def flush(self):
-        pass
+        self.writeln(self.buf)
+        self.buf = ''
+
 def main():
     import argparse
     import logger
@@ -838,10 +859,9 @@ def main():
     log = logger.get(Controller.LOGGER_NAME)
     log.info("Controller version: %s", VERSION)
 
-    # Log stdout and stderr to the log file too.
-    slogger = StreamLogger(log)
-    sys.stdout = slogger
-    sys.stderr = slogger
+    # Log stderr to the log file too.
+    # NOTE: stdout is not logged so that PDB will work.
+    sys.stderr = StreamLogger(log, tag='STD')
 
     # database configuration
     url = config.get("database", "url")
