@@ -7,7 +7,7 @@
 %for data in obj.backup_entries:
     <tr>
       <td>${data['name']}</td>
-      <td>${data['ip-address']}</td>
+      <td>${data['displayname']}</td>
       <td class="creation-time">${data['creation-time']}</td>
     </tr>
 %endfor

@@ -18,10 +18,6 @@ from controller.domain import Domain
 
 __all__ = ["MonitorApplication"]
 
-# State types:
-STATE_TYPE_MAIN="main"
-STATE_TYPE_SECOND="second"
-
 class MonitorApplication(RESTApplication):
 
     NAME = 'monitor'
@@ -38,7 +34,7 @@ class MonitorApplication(RESTApplication):
 
         tableau_status = "Unknown"
         main_state = "Not connected"
-        secondary_state = "none"
+        backup_state = StateEntry.STATE_BACKUP_NONE
 
         try:
             primary_agents = session.query(AgentStatusEntry).\
@@ -47,6 +43,9 @@ class MonitorApplication(RESTApplication):
                 all()
         except NoResultFound, e:
             primary_agents = None
+        except Exception, e:
+            session.close()
+            raise e
 
         # If there is more than one primary agent in the table, look for
         # the primary agent that is connected and use that.
@@ -65,7 +64,7 @@ class MonitorApplication(RESTApplication):
                     continue
 
         # If there is a primary agent connected, get tableau status,
-        # main, and secondary states.
+        # main, and backup states.
         if primary:
             # Dig out the tableau status.
             try:
@@ -77,6 +76,9 @@ class MonitorApplication(RESTApplication):
                 tableau_status = tableau_entry.status
             except NoResultFound, e:
                 pass
+            except Exception, e:
+                session.close()
+                raise e
 
             # Dig out the states
             state_entries = session.query(StateEntry).\
@@ -84,10 +86,10 @@ class MonitorApplication(RESTApplication):
                 all()
 
             for state_entry in state_entries:
-                if state_entry.state_type == STATE_TYPE_MAIN:
+                if state_entry.state_type == StateEntry.STATE_TYPE_MAIN:
                     main_state = state_entry.state
-                elif state_entry.state_type == STATE_TYPE_SECOND:
-                    secondary_state = state_entry.state
+                elif state_entry.state_type == StateEntry.STATE_TYPE_BACKUP:
+                    backup_state = state_entry.state
                 else:
                     print "monitor: Uknown state_type:", state_entry.state_type
 
@@ -106,11 +108,11 @@ class MonitorApplication(RESTApplication):
 
         session.close()
 
-#        print 'tableau-status: %s, main-state: %s, secondary-state: %s, last-backup: %s' % (tableau_status, main_state, secondary_state, last_backup)
+#        print 'tableau-status: %s, main-state: %s, backup-state: %s, last-backup: %s' % (tableau_status, main_state, backup_state, last_backup)
 
         return {'tableau-status': tableau_status,
                 'main-state': main_state,
-                'secondary-state': secondary_state,
+                'backup-state': backup_state,
                 'last-backup': last_backup
                 }
 

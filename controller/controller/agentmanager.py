@@ -13,6 +13,7 @@ from state import StateManager, StateEntry
 import meta
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func
+from sqlalchemy.orm.exc import NoResultFound
 
 # The Controller's Agent Manager.
 # Communicates with the Agent.
@@ -78,6 +79,22 @@ class AgentManager(threading.Thread):
         # the unique 'conn_id'.
         self.agents = {}
 
+    def update_last_disconnect_time(self):
+        """Called during startup to set a disconnection time for agents that
+           were still connected when we stopped."""
+
+        session = self.Session()
+
+        try:
+            session.query(AgentStatusEntry).\
+                filter(AgentStatusEntry.last_connection_time > \
+                  AgentStatusEntry.last_disconnect_time).\
+                update({"last_disconnect_time" : func.now()},
+                  synchronize_session=False)
+            session.commit()
+        finally:
+            session.close()
+
     def register(self, new_agent, body):
         """Called with the agent object and body /auth dictionary that
            was sent from the agent in json."""
@@ -101,21 +118,30 @@ class AgentManager(threading.Thread):
                     self.remove_agent(agent)
 
         # Remember the new agent
-        new_agent.agentid = self.remember(body)
-        new_agent.uuid = body['uuid']
+        entry = self.remember(body)
+        if entry:
+            new_agent.agentid = entry.agentid
+            new_agent.uuid = entry.uuid
+            new_agent.displayname = entry.displayname
+        else:
+            # FIXME: handle this as an error
+            pass
         self.agents[new_agent.conn_id] = new_agent
 
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("register: Initializing state entries on connect")
             stateman = StateManager(self.server)
-            stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_UNKNOWN)
-            stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_NONE)
+            stateman.update(StateEntry.STATE_TYPE_MAIN, \
+              StateEntry.STATE_MAIN_UNKNOWN)
+            stateman.update(StateEntry.STATE_TYPE_BACKUP, \
+              StateEntry.STATE_BACKUP_NONE)
 
         self.unlock()
 
     # formerly agentstatus.add()
     def remember(self, body):
         session = self.Session()
+
         # fixme: check for the presence of all these entries.
         entry = AgentStatusEntry(body['hostname'],
                                  body['type'], 
@@ -125,17 +151,39 @@ class AgentManager(threading.Thread):
                                  body['uuid'],
                                  self.domainid)
         entry.last_connection_time = func.now()
-        session.merge(entry)
+        entry = session.merge(entry)
+        if entry.displayname == None or entry.displayname == "":
+            entry.displayname = entry.hostname
+            entry = session.merge(entry)
         session.commit()
+
+        # Since we merged, we cannot return entry after session.close()
+        # because we will get an "unbound" error, so get a fresh entry
+        # that we can return.
         try:
-            # read back the entry in case the agentid was auto-assigned
-            # FIXME: can we use post fetch?
             entry = session.query(AgentStatusEntry).\
-              filter(AgentStatusEntry.uuid == body['uuid']).one()
+                filter(AgentStatusEntry.uuid == body['uuid']).one()
         finally:
             session.close()
 
-        return entry.agentid
+        return entry
+
+    def set_displayname(self, hostname, displayname):
+        error = ""
+
+        session = self.Session()
+        try:
+            entry = session.query(AgentStatusEntry).\
+                filter(AgentStatusEntry.hostname == hostname).one()
+            entry.displayname = displayname
+            session.merge(entry)
+            session.commit()
+        except NoResultFound, e:
+            error = "No agent found with hostame=%s" % (hostname)
+        finally:
+            session.close()
+
+        return error
 
     def forget(self, agentid):
         session = self.Session()
@@ -178,8 +226,10 @@ class AgentManager(threading.Thread):
         if agent.auth['type'] == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("remove_agent: Initializing state entries on removal")
             stateman = StateManager(self.server)
-            stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_UNKNOWN)
-            stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_NONE)
+            stateman.update(StateEntry.STATE_TYPE_MAIN, \
+              StateEntry.STATE_MAIN_UNKNOWN)
+            stateman.update(StateEntry.STATE_TYPE_BACKUP, \
+              StateEntry.STATE_BACKUP_NONE)
 
         self.unlock()
 

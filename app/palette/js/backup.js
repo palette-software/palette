@@ -5,7 +5,7 @@ function(dom, domClass, request, on, topic, DialogSimple)
 {
     var uri = "/rest/backup";
     var lastBackup = dom.byId("last");
-    var secondary = "none";
+    var backup = "none";
 
     var backupButton = dom.byId("backupButton");
     backupButton.enabled = true;
@@ -14,7 +14,7 @@ function(dom, domClass, request, on, topic, DialogSimple)
         e.preventDefault();
         e.stopPropagation();
         disableButtons();
-        if (secondary != "none") {
+        if (backup != "none") {
             return;
         }
         topic.publish("action-start-event", "backup");
@@ -42,7 +42,7 @@ function(dom, domClass, request, on, topic, DialogSimple)
         e.preventDefault();
         e.stopPropagation();
         disableButtons();
-        if (secondary != "none") {
+        if (backup != "none") {
             return;
         }
         topic.publish("action-start-event", "restore");
@@ -112,7 +112,7 @@ function(dom, domClass, request, on, topic, DialogSimple)
 
     topic.subscribe("status-update-event", function(data) {
         var main = data["main-state"];
-        var secondary = data["secondary-state"];
+        var backup = data["backup-state"];
 
         if (data["last-backup"]) {
             lastBackup.innerHTML = data['last-backup'];
@@ -120,7 +120,7 @@ function(dom, domClass, request, on, topic, DialogSimple)
 
         switch (main) {
         case "started":
-            if (secondary == "backup" || secondary == "restore") {
+            if (backup == "backup" || backup == "restore") {
                 disableButtons();
             } else {
                 enableButtons();

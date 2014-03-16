@@ -41,7 +41,6 @@ class Domain(object):
             session.close()
 
     def id_by_name(self, name):
-        session = self.Session()
         entry = Domain.get_by_name(name, Session=self.Session)
         return entry.domainid
 
@@ -53,5 +52,9 @@ class Domain(object):
 
         # We expect the entry to exist, so allow a NoResultFound
         # exception to percolate up if the entry is not found.
-        return session.query(DomainEntry).\
+        entry = session.query(DomainEntry).\
             filter(DomainEntry.domainname == name).one()
+
+        session.close()
+
+        return entry

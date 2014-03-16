@@ -62,26 +62,26 @@ class BackupApplication(RESTApplication):
             return {'last': "none",
                     'next': self.scheduled }
 
-        hostname = self.get_hostname_by_agentid(last_entry.agentid)
+        displayname = self.get_displayname_by_agentid(last_entry.agentid)
 
-        if hostname:
-            self.send_cmd("restore %s:%s" % (hostname, last_entry.name))
+        if displayname:
+            self.send_cmd("restore %s:%s" % (displayname, last_entry.name))
         else:
-            print "Error: No agent exists with agentid:", last_entry.agentid
+            print "Error: No displayname for agentid=%d uuid=%s" % \
+              (last_entry.agentid, last_entry.uuid)
 
-    def get_hostname_by_agentid(self, agentid):
+    def get_displayname_by_agentid(self, agentid):
         session = self.Session()
         try:
             agent_entry = session.query(AgentStatusEntry).\
                 filter(AgentStatusEntry.agentid == agentid).\
                 one()
-
         except NoResultFound, e:
             return None
         finally:
             session.close()
 
-        return agent_entry.hostname
+        return agent_entry.displayname
 
     def get_last_backup(self):
         session = self.Session()
@@ -137,7 +137,7 @@ class BackupDialog(DialogPage):
         for backup, agent in query.all():
             data = {}
             data['name'] = backup.name
-            data['ip-address'] = agent.ip_address
+            data['displayname'] = agent.displayname
             data['creation-time'] = str(backup.creation_time)[:19] # Cut off fraction
             self.backup_entries.append(data)
         session.close()

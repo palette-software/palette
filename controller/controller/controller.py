@@ -54,19 +54,25 @@ class CliHandler(socketserver.StreamRequestHandler):
         states = stateman.get_states()
 
         # Backups can be done when Tableau is either started or stopped.
-        if states[StateEntry.STATE_TYPE_MAIN] not in (StateEntry.STATE_MAIN_STARTED, StateEntry.STATE_MAIN_STOPPED):
-            print >> self.wfile, "FAIL: Can't backup - main state is:", states[StateEntry.STATE_TYPE_MAIN]
-            log.debug("Can't backup - main state is: %s", states[StateEntry.STATE_TYPE_MAIN])
+        if states[StateEntry.STATE_TYPE_MAIN] not in \
+          (StateEntry.STATE_MAIN_STARTED, StateEntry.STATE_MAIN_STOPPED):
+            print >> self.wfile, "FAIL: Can't backup - main state is:", \
+              states[StateEntry.STATE_TYPE_MAIN]
+            log.debug("Can't backup - main state is: %s", \
+              states[StateEntry.STATE_TYPE_MAIN])
             return
-        if states[StateEntry.STATE_TYPE_SECOND] != StateEntry.STATE_SECOND_NONE:
-            print >> self.wfile, "FAIL: Can't backup - second state is:", states[StateEntry.STATE_TYPE_SECOND]
-            log.debug("Can't backup - second state is: %s", states[StateEntry.STATE_TYPE_SECOND])
+        if states[StateEntry.STATE_TYPE_BACKUP] != StateEntry.STATE_BACKUP_NONE:
+            print >> self.wfile, "FAIL: Can't backup - backup state is:", \
+              states[StateEntry.STATE_TYPE_BACKUP]
+            log.debug("Can't backup - backup state is: %s", \
+              states[StateEntry.STATE_TYPE_BACKUP])
             return
 
         log.debug("-----------------Starting Backup-------------------")
             
         # fixme: lock to ensure against two simultaneous backups?
-        stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_BACKUP)
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
+          StateEntry.STATE_BACKUP_BACKUP)
 
         alert = Alert(self.server.config, log)
         alert.send("Backup Started")
@@ -74,7 +80,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         print >> self.wfile, "OK"
             
         body = server.backup_cmd()
-        stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_NONE)
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
+          StateEntry.STATE_BACKUP_NONE)
 
         if not body.has_key('error'):
             alert.send("Backup Finished")
@@ -88,7 +95,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         Primary Agent first."""
 
         if len(argv) != 1:
-            print >> self.wfile, '[ERROR] usage: restore source-ip-address:pathname'
+            print >> self.wfile, \
+              '[ERROR] usage: restore source-ip-address:pathname'
             return
 
         # Check to see if we're in a state to restore
@@ -96,25 +104,30 @@ class CliHandler(socketserver.StreamRequestHandler):
         states = stateman.get_states()
         if states[StateEntry.STATE_TYPE_MAIN] != StateEntry.STATE_MAIN_STARTED and \
             states[StateEntry.STATE_TYPE_MAIN] != StateEntry.STATE_MAIN_STOPPED:
-            print >> self.wfile, "FAIL: Can't backup - main state is:", states[StateEntry.STATE_TYPE_MAIN]
-            log.debug("Can't restore - main state is: %s", states[StateEntry.STATE_TYPE_MAIN])
+            print >> self.wfile, "FAIL: Can't backup - main state is:", \
+              states[StateEntry.STATE_TYPE_MAIN]
+            log.debug("Can't restore - main state is: %s", \
+              states[StateEntry.STATE_TYPE_MAIN])
             return
 
-        if states[StateEntry.STATE_TYPE_SECOND] != StateEntry.STATE_SECOND_NONE:
-            print >> self.wfile, "FAIL: Can't restore - second state is:", states[StateEntry.STATE_TYPE_SECOND]
-            log.debug("Can't restore - second state is: %s", states[StateEntry.STATE_TYPE_SECOND])
+        if states[StateEntry.STATE_TYPE_BACKUP] != \
+              StateEntry.STATE_BACKUP_NONE:
+            print >> self.wfile, "FAIL: Can't restore - backup state is:", \
+              states[StateEntry.STATE_TYPE_BACKUP]
+            log.debug("Can't restore - backup state is: %s", \
+              states[StateEntry.STATE_TYPE_BACKUP])
             return
 
         log.debug("-----------------Starting Restore-------------------")
             
         # fixme: lock to ensure against two simultaneous restores?
-        stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_RESTORE)
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_RESTORE)
 
         print >> self.wfile, "OK"
             
         body = server.restore_cmd(argv[0])
 
-        stateman.update(StateEntry.STATE_TYPE_SECOND, StateEntry.STATE_SECOND_NONE)
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_NONE)
         # The "restore started" alert is done in restore_cmd(),
         # only after some sanity checking is done.
         alert = Alert(self.server.config, log)
@@ -154,16 +167,22 @@ class CliHandler(socketserver.StreamRequestHandler):
         if states[StateEntry.STATE_TYPE_MAIN] != 'stopped':
             # Even "Unknown" is not an okay state for starting as it
             # could mean the primary agent probably isn't connected.
-            print >> self.wfile, "FAIL: Can't start - main state is:", states[StateEntry.STATE_TYPE_MAIN]
-            log.debug("FAIL: Can't start - main state is: %s", states[StateEntry.STATE_TYPE_MAIN])
+            print >> self.wfile, "FAIL: Can't start - main state is:", \
+              states[StateEntry.STATE_TYPE_MAIN]
+            log.debug("FAIL: Can't start - main state is: %s", \
+              states[StateEntry.STATE_TYPE_MAIN])
             return
         
-        if states[StateEntry.STATE_TYPE_SECOND] != StateEntry.STATE_SECOND_NONE:
-            print >> self.wfile, "FAIL: Can't start - second state is:", states[StateEntry.STATE_TYPE_SECOND]
-            log.debug("FAIL: Can't start - second state is: %s", states[StateEntry.STATE_TYPE_SECOND])
+        if states[StateEntry.STATE_TYPE_BACKUP] != \
+              StateEntry.STATE_BACKUP_NONE:
+            print >> self.wfile, "FAIL: Can't start - backup state is:", \
+              states[StateEntry.STATE_TYPE_BACKUP]
+            log.debug("FAIL: Can't start - backup state is: %s", \
+              states[StateEntry.STATE_TYPE_BACKUP])
             return
             
-        stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STARTING)
+        stateman.update(StateEntry.STATE_TYPE_MAIN, \
+              StateEntry.STATE_MAIN_STARTING)
 
         log.debug("-----------------Starting Tableau-------------------")
         # fixme: Reply with "OK" only after the agent received the command?
@@ -248,6 +267,18 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             print >> self.wfile, "Done"
 
+    def do_displayname(self, argv):
+        """Set the display name for an agent"""
+        if len(argv) != 2:
+            print >> self.wfile, '[ERROR] Usage: displayname agent-hostname agent-displayname'
+            return
+
+        error = server.displayname_cmd(argv[0], argv[1])
+        if error:
+            self.error(error)
+        else:
+            print >> self.wfile, "OK"
+
     def handle(self):
         while True:
             data = self.rfile.readline().strip()
@@ -295,8 +326,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 if non_primary_conn == None:
                     non_primary_conn = agents[key]
                 else:
-                    if agents[key].auth['hostname'] < \
-                      non_primary_conn.auth['hostname']:
+                    if agents[key].displayname < non_primary_conn.displayname:
                         non_primary_conn = agents[key]
 
         primary_conn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
@@ -305,8 +335,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             backup_loc = non_primary_conn
             # Copy the backup to a non-primary agent
             copy_body = self.copy_cmd(\
-                "%s:%s.tsbak" % (primary_conn.auth['hostname'], backup_name),
-                non_primary_conn.auth['hostname'])
+                "%s:%s.tsbak" % (primary_conn.displayname, backup_name),
+                non_primary_conn.displayname)
 
             # Before we check the copy body for errors/failure, we
             # try to delete the local file since the copy failed 
@@ -314,13 +344,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # on the primary agent.
 
             if copy_body.has_key('error'):
-                self.log.info("Copy of backup file to agent '%s' failed.  Will leave the backup on the primary agent.", non_primary_conn.auth['hostname'])
+                self.log.info("Copy of backup file to agent '%s' failed.  Will leave the backup on the primary agent.", non_primary_conn.displayname)
                 # Something was wrong with the non-primary agent.  Leave
                 # the backup on the primary after all.
                 backup_loc = primary_conn
                 # Backup file remains on the primary.
                 backup_ip_address = primary_conn.auth['ip-address']
-                backup_hostname = primary_conn.auth['hostname']
 
             else:
                 # Remove the backup file from the primary
@@ -337,15 +366,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     return remove_body
 
                 backup_ip_address = non_primary_conn.auth['ip-address']
-                backup_hostname = non_primary_conn.auth['hostname']
 
         else:
             backup_loc = primary_conn
             # Backup file remains on the primary.
             backup_ip_address = primary_conn.auth['ip-address']
-            backup_hostname = primary_conn.auth['hostname']
 
-        # Save name of backup, hostname ip address of the primary agent to the db.
+        # Save name of backup, agentid to the db.
         # fixme: create one of these per server.
         self.backup = BackupManager(self.domainid)
         self.backup.add(backup_name, backup_loc.agentid)
@@ -420,7 +447,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         headers = {"Content-Type": "application/json"}
 
         self.log.debug('about to do the cli command to %s, xid: %d, command: %s', \
-                        aconn.auth['hostname'], req.xid, cli_command)
+                        aconn.displayname, req.xid, cli_command)
         try:
             aconn.httpconn.request('POST', '/cli', req.send_body, headers)
             self.log.debug('sent cli command.')
@@ -506,8 +533,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def copy_cmd(self, source_path, dest_name):
         """Send a gget command and checks the status.
-           copy source-hostname:/path/to/file dest-hostname
-                       <source_path>          <dest-hostname>
+           copy source-displayname:/path/to/file dest-displayname
+                       <source_path>          <dest-displayname>
            generates:
             c:/Palette/bin/pget.exe http://primary-ip:192.168.1.1/file dir/
            and sends it as a cli command to agent:
@@ -517,26 +544,28 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not source_path.find(':'):
             return self.error("[ERROR] Missing ':' in source path:" % source_path)
 
-        (source_hostname, source_path) = source_path.split(':',1)
+        (source_displayname, source_path) = source_path.split(':',1)
 
-        if len(source_hostname) == 0 or len(source_path) == 0:
+        if len(source_displayname) == 0 or len(source_path) == 0:
             return self.error("[ERROR] Invalid source specification.")
 
         agents = manager.all_agents()
         src = dst = None
 
         for key in agents:
-            if agents[key].auth['hostname'] == source_hostname:
+            if agents[key].displayname == source_displayname:
                 src = agents[key]
-            if agents[key].auth['hostname'] == dest_name:
+            if agents[key].displayname == dest_name:
                 dst = agents[key]
 
         msg = ""
         # fixme: make sure the source isn't the same as the dest
         if not src:
-            msg = "Unknown or unconnected source-hostname: %s. " % source_hostname 
+            msg = "Unknown or unconnected source-displayname: %s. " % \
+              source_displayname 
         if not dst:
-            msg += "Unknown or unconnected dest-hostname: %s." % dest_name
+            msg += "Unknown or unconnected dest-displayname: %s." % \
+              dest_name
 
         if not src or not dst:
             return self.error(msg)
@@ -566,7 +595,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def restore_cmd(self, arg):
         """Do a tabadmin restore of the passed arg, except
            the arg is in the format:
-                source-hostname:pathname
+                source-displayname:pathname
             If the pathname is not on the Primary Agent, then copy
             it to the Primary Agent before doing the tabadmin restore
             Returns a body with the results/status.
@@ -577,7 +606,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if len(parts) != 2:
             return self.error('[ERROR] Need exactly one colon in argument: ' + arg)
 
-        source_hostname = parts[0]
+        source_displayname = parts[0]
         source_filename = parts[1]
 
         if os.path.isabs(source_filename):
@@ -592,16 +621,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("[ERROR] No Primary Agent is connected.")
 
         # Check if the source_filename is on the Primary Agent.
-        if source_hostname != primary_conn.auth['hostname']:
+        if source_displayname != primary_conn.displayname:
             # The source_filename isn't on the Primary agent:
             # We need to copy the file to the Primary.
 
             # copy_cmd arguments:
             #   source-agent-name:/filename
-            #   dest-agent-hostname
+            #   dest-agent-displayname
             arg_tsbak = arg + ".tsbak"
-            self.log.debug("Sending copy command: %s, %s", arg_tsbak, primary_conn.auth['hostname'])
-            body = server.copy_cmd(arg_tsbak, primary_conn.auth['hostname'])
+            self.log.debug("Sending copy command: %s, %s", arg_tsbak, primary_conn.displayname)
+            body = server.copy_cmd(arg_tsbak, primary_conn.displayname)
 
             if body.has_key("error"):
                 self.log.debug("Copy failed with: " + str(body))
@@ -660,18 +689,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # fixme: Do we need to add restore information to the database?  
         # fixme: check status before cleanup? Or cleanup anyway?
 
-        if source_hostname != primary_conn.auth['hostname']:
+        if source_displayname != primary_conn.displayname:
             # If the file was copied to the Primary Agent, delete
             # the temporary backup file we copied to the Primary Agent.
             self.log.debug("------------Restore: Removing file '%s' after restore------" % source_fullpathname)
-            remove_body = self.cli_cmd("DEL %s" % source_fullpathname)
+            remove_body = self.cli_cmd("CMD /C DEL %s" % source_fullpathname)
             if remove_body.has_key('error'):
                 return remove_body
 
         # On a successful restore, tableau starts itself.
         # fixme: The restore command usually still runs a while longer,
         # even after restore completes successfully.  Maybe note this in the UI?
-        # So the "second" status stays at "restore" for a while after
+        # So the "backup" status stays at "restore" for a while after
         # tableau has started and the UI say "RUNNING".
 
         return body
@@ -781,6 +810,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return body
 
+    def displayname_cmd(self, hostname, displayname):
+        """Sets displayname for the agent with the given hostname. At
+           this point assumes hostname is unique in the database."""
+
+        return manager.set_displayname(hostname, displayname)
+
     def error(self, msg, return_dict={}):
         """Returns error dictionary in standard format.  If passed
            a return_dict, then adds to it, otherwise a new return_dict
@@ -796,6 +831,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             session = statusmon.Session()
             statusmon.remove_all_status(session)
             session.commit()
+            session.close()
 
 
 import logging
@@ -889,6 +925,7 @@ def main():
 
     global manager  # fixme: get rid of this global.
     manager = AgentManager(server)
+    manager.update_last_disconnect_time()
     manager.start()
 
     # Need to instantiate to initialize state and status tables,
