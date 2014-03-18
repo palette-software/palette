@@ -20,5 +20,10 @@ import manage
 class DashboardPage(MainPage):
     TEMPLATE = 'dashboard.mako'
 
+    def __init__(self, global_conf):
+        super(DashboardPage, self).__init__(global_conf)
+        self.next = store.get('backup', 'next',
+                              default='No backup is scheduled.')
+
 class Login(LoginPage):
     TEMPLATE = 'login.mako'
