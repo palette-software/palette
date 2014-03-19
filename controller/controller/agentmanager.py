@@ -87,12 +87,9 @@ class AgentManager(threading.Thread):
                 self.cert_file = self.config.get('controller', 'ssl_cert_file')
             else:
                 self.cert_file = self.CERT_FILE_DEFAULT
-            print "cert_file:", self.cert_file
             if not os.path.exists(self.cert_file):
                 self.log.critical("ssl enabled, but ssl certificate file does not exist: %s", self.cert_file)
                 raise IOError("Certificate file not found: " + self.cert_file)
-
-        print "ssl:", self.ssl
 
     def update_last_disconnect_time(self):
         """Called during startup to set a disconnection time for agents that
