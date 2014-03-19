@@ -44,18 +44,26 @@ To test:
     - Then start the Palette Agent:
         python agent.py
 
-        By default, it will identify itself as:
-            agent hostname: one
-            agent type: primary
-            agent_ip: 1.2.3.4
+        By default, it will use this configuration:
+            Hostname: one
+            type: primary
+            ip: 192.168.1.100
+            ssl: False
+            controller: localhost
+            controller port: 8888
 
         You can start a additional agents and the command-line
         arguments to have the additional agent identify itself
         differently:
-            usage: agent hostname {primary|worker|other} ip-address
+            python agent.py [-h] [--hostname HOSTNAME] 
+                    [--type {primary,worker,other}]
+                    [--ip IP] [--ssl] [--controller CONTROLLER] [--port PORT]
 
         For example:
-             python agent.py my-hostname worker 192.168.1.5
+             python agent.py --hostname mini --ip 192.168.1.5 --type other
+
+        or to use ssl:
+             python agent.py --ssl
 
     - Then telnet to the controller:
         telnet localhost 9000
