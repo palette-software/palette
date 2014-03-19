@@ -1,3 +1,4 @@
 etc/controller.ini		/etc
+etc/ssl/certs/palette_cert.pem	/etc/ssl/certs
 etc/init/controller.conf	/etc/init
 bin/controller			/usr/bin

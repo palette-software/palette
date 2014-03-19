@@ -78,3 +78,30 @@ To test:
         restore [source-hostname]:pathname
             If the specified file is not on the primary agent, then it
             will be copied to the primary before doing the restore.
+-----
+The SSL certificate was created with this command:
+
+    $ cd controller/DEBIAN/etc
+    $ openssl req -new -x509 -days 730 -nodes -out palette_cert.pem -keyout palette_cert.pem
+    Generating a 1024 bit RSA private key
+    ..............++++++
+    ..++++++
+    writing new private key to 'palette_cert.pem'
+    -----
+    You are about to be asked to enter information that will be incorporated
+    into your certificate request.
+    What you are about to enter is what is called a Distinguished Name or a DN.
+    There are quite a few fields but you can leave some blank
+    For some fields there will be a default value,
+    If you enter '.', the field will be left blank.
+    -----
+    Country Name (2 letter code) [AU]:US
+    State or Province Name (full name) [Some-State]:CA
+    Locality Name (eg, city) []:San Francisco
+    Organization Name (eg, company) [Internet Widgits Pty Ltd]:Palette Software
+    Organizational Unit Name (eg, section) []:
+    Common Name (e.g. server FQDN or YOUR name) []:palette-software.com
+    Email Address []:hostmaster@palette-software.com
+
+The above created the file:
+    palette_cert.pem

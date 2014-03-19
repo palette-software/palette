@@ -1,7 +1,9 @@
 import sys
 import socket
+import ssl
 import json
 import time
+import argparse
 
 from SocketServer import TCPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
@@ -16,9 +18,11 @@ version="0.1"
 # The body of the request and response is JSON.
 class AgentHandler(SimpleHTTPRequestHandler):
 
+    # Over-written in main()
     agent_hostname = "one"
-    agent_type = AGENT_TYPE_PRIMARY
+    agent_type = AgentManager.AGENT_TYPE_PRIMARY
     agent_ip = "192.168.1.2"
+    agent_ssl = False
 
     get_status_count = 0
 
@@ -219,6 +223,9 @@ class Agent(TCPServer):
         # Connect to the Controller.
         self.socket.connect((self.host, self.port))
 
+        if AgentHandler.agent_ssl:
+            self.socket = ssl.wrap_socket(self.socket)
+
     def get_request(self):
         return (self.socket, 'localhost')
 
@@ -226,15 +233,45 @@ class HttpException(Exception):
     def __init__(self, status_code):
         self.status_code = status_code
 
+    (AgentManager.AGENT_TYPE_PRIMARY, AgentManager.AGENT_TYPE_WORKER,
+                                            AgentManager.AGENT_TYPE_OTHER)
+
 if __name__ == '__main__':
 
-    if len(sys.argv) == 4:
-        AgentHandler.agent_hostname = sys.argv[1]
-        AgentHandler.agent_type = sys.argv[2]
-        AgentHandler.agent_ip = sys.argv[3]
-    elif len(sys.argv) != 1:
-        print "usage: agent hostname {primary|worker|other} ip-address"
-        sys.exit(1)
+    DEFAULT_CONTROLLER = "localhost"
+    DEFAULT_HOSTNAME = "one"
+    DEFAULT_AGENT_TYPE = AgentManager.AGENT_TYPE_PRIMARY
+    DEFAULT_AGENT_IP = "192.168.1.100"
+    DEFAULT_SSL = False
 
-    httpd = Agent()
+    parser = argparse.ArgumentParser(description="Palette simulated agent.")
+    parser.add_argument("--hostname", help="agent hostname",
+                                                default=DEFAULT_HOSTNAME)
+    parser.add_argument("--type", help="announce agent as type primary, worker or other", default=DEFAULT_AGENT_TYPE,
+        choices=(AgentManager.AGENT_TYPE_PRIMARY,
+                    AgentManager.AGENT_TYPE_WORKER,
+                    AgentManager.AGENT_TYPE_OTHER))
+    parser.add_argument("--ip", help="announce my local ip address as this", default=DEFAULT_AGENT_IP)
+    parser.add_argument("--ssl", help="connect to the controller with ssl", action="store_true", default=False)
+    parser.add_argument("--controller", help="controller to connect to", default=DEFAULT_CONTROLLER)
+    parser.add_argument("--port", help="controller port to connect to", \
+        type=int,
+        default=AgentManager.PORT)
+
+    args = parser.parse_args()
+
+    AgentHandler.agent_hostname = args.hostname
+    AgentHandler.agent_type = args.type
+    AgentHandler.agent_ip = args.ip
+    AgentHandler.agent_ssl = args.ssl
+
+    print "Agent Configuration:"
+    print "\tHostname:", args.hostname
+    print "\ttype:", args.type
+    print "\tip:", args.ip
+    print "\tssl:", args.ssl
+    print "\tcontroller:", args.controller
+    print "\tcontroller port:", args.port
+
+    httpd = Agent(host=args.controller, port=args.port)
     httpd.serve_forever()
