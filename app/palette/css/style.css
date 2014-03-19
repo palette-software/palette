@@ -6,7 +6,7 @@
 
 #mainNav {
 	background: #000;
-	box-shadow: 0 0 4px #000;
+	/*box-shadow: 0 0 4px #000;*/
 }
 #mainNav .container {
 	width: 990px;
