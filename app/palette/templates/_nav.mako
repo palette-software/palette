@@ -1,4 +1,4 @@
-<nav id="mainNav">
+<nav id="mainNav" class="top-bar" data-topbar>
 <div class="container">
 <%include file="_logo.mako" />
 <ul id="nav">
