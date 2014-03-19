@@ -22,7 +22,7 @@ nav img {
 	margin-top: 3em;
 }
 .dashboard section {
-	box-shadow: inset 0 22.5em 0 -20em #8d96a3, 0 0.6em rgba(0, 0, 0, 0.04), 0 0.2em rgba(0, 0, 0, 0.04);
+	box-shadow: inset 0 22.5em 0 -20em #8d96a3;
 	background: #fff;
 	border-radius: 0.6em;
 	padding: 1.2em;

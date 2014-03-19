@@ -18,7 +18,7 @@ setup(name='palette',
         'palette':
 	    ['templates/*', 'data/*',
              'images/*', 'img/*',
-             'js/*.js', 'js/templates/*', 'css/*.css']
+             'js/*.js', 'js/templates/*', 'css/*.css', 'js/vendor/*.js']
         },
     data_files = [],
     zip_safe=False,
