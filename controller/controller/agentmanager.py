@@ -1,5 +1,7 @@
 import sys
+import os
 import socket
+import ssl
 import select
 import threading
 import time
@@ -55,6 +57,7 @@ class AgentConnection(object):
 class AgentManager(threading.Thread):
 
     PORT = 8888
+    CERT_FILE_DEFAULT = "/etc/palette_cert.pem"
 
     # Agent types
     AGENT_TYPE_PRIMARY="primary"
@@ -74,10 +77,22 @@ class AgentManager(threading.Thread):
         self.port = port and port or self.PORT
         self.socket = None
         self.auth = None
-
         # A dictionary with all AgentConnections with the key being
         # the unique 'conn_id'.
         self.agents = {}
+
+        self.ssl = self.config.getboolean('controller','ssl', default=False)
+        if self.ssl:
+            if self.config.has_option('controller', 'ssl_cert_file'):
+                self.cert_file = self.config.get('controller', 'ssl_cert_file')
+            else:
+                self.cert_file = self.CERT_FILE_DEFAULT
+            print "cert_file:", self.cert_file
+            if not os.path.exists(self.cert_file):
+                self.log.critical("ssl enabled, but ssl certificate file does not exist: %s", self.cert_file)
+                raise IOError("Certificate file not found: " + self.cert_file)
+
+        print "ssl:", self.ssl
 
     def update_last_disconnect_time(self):
         """Called during startup to set a disconnection time for agents that
@@ -242,22 +257,40 @@ class AgentManager(threading.Thread):
         self.lockobj.release()
 
     def run(self):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.socket.bind((self.host, self.port))
-        self.socket.listen(8)
+        self.raw_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
+        self.raw_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.raw_socket.bind((self.host, self.port))
+        self.raw_socket.listen(8)
+
+        if self.ssl:
+            self.socket = ssl.wrap_socket(self.raw_socket, server_side=True,
+                                                       certfile=self.cert_file)
+        else:
+            self.socket = self.raw_socket
 
         # Start socket monitor check thread
         asocketmon = AgentSocketMonitor(self, self.log)
         asocketmon.start()
 
         while True:
-            conn, addr = self.socket.accept()
+            try:
+                conn, addr = self.socket.accept()
+            except (ssl.SSLError, socket.error), e:
+                # http://bugs.python.org/issue9211, though takes
+                # a while to garbage collect and close the fd.
+                self.log.debug("Client ssl negotiation failed. Closing socket.")
+                continue
 
             tobj = threading.Thread(target=self.new_agent_connection,
                                  args=(conn, addr))
             # Spawn a thread to handle the new agent connection
             tobj.start()
+
+    def _shutdown(self, sock):
+        try:
+            sock.shutdown(socket.SHUT_RDWR)
+        except EnvironmentError:
+            pass
 
     def socket_fd_closed(self, fd):
         """called with agentmanager lock"""
@@ -320,7 +353,7 @@ class AgentManager(threading.Thread):
             self.register(agent, body)
 
         except socket.error, e:
-            self.log.debug("Socket error")
+            self.log.debug("Socket error: " + str(e))
             conn.close()
         except Exception, e:
             self.log.error("Exception:")
