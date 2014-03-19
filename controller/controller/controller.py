@@ -532,13 +532,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return body
 
     def copy_cmd(self, source_path, dest_name):
-        """Send a gget command and checks the status.
+        """Sends a pget command and checks the status.
            copy source-displayname:/path/to/file dest-displayname
                        <source_path>          <dest-displayname>
            generates:
             c:/Palette/bin/pget.exe http://primary-ip:192.168.1.1/file dir/
            and sends it as a cli command to agent:
-                dest-name
+                dest-displayname
            Returns the body dictionary from the status."""
 
         if not source_path.find(':'):
