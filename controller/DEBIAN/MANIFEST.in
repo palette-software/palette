@@ -1,5 +1,6 @@
 include bin/*
 include etc/*
+include etc/ssl/certs/*
 include etc/init/*
 include etc/postfix/*
 include controller/*
