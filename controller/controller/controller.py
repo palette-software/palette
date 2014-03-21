@@ -45,8 +45,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
     def do_backup(self, argv):
-        if len(argv):
-            print >> self.wfile, '[ERROR] backup does not have an argument.'
+        target = None
+        if len(argv) == 1:
+            target = argv[0]
+        elif len(argv):
+            print >> self.wfile, '[ERROR] usage: backup [<target_displayname>]'
             return
 
         # Check to see if we're in a state to backup
@@ -79,7 +82,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         print >> self.wfile, "OK"
             
-        body = server.backup_cmd()
+        body = server.backup_cmd(target)
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
           StateEntry.STATE_BACKUP_NONE)
 
@@ -302,7 +305,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     # Dump/restore directorys
     DEFAULT_BACKUP_DIR="c:\\Palette\\Data"
 
-    def backup_cmd(self):
+    def backup_cmd(self, target=None):
         """Does a backup."""
         # fixme: make sure another backup isn't already running?
         # fixme: Do we want to specify the directory for the backup?
@@ -315,21 +318,39 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if body.has_key('error'):
             return body
 
-        # If two agents are connected, copy the backup to the
-        # non-primary agent and delete the backup from the primary.
-        non_primary_conn = None
-
         agents = manager.all_agents()
-        for key in agents:
-            if agents[key].auth['type'] != AgentManager.AGENT_TYPE_PRIMARY:
-                # fixme: first make sure the non-primary-agent is still connected
-                if non_primary_conn == None:
-                    non_primary_conn = agents[key]
-                else:
-                    if agents[key].displayname < non_primary_conn.displayname:
-                        non_primary_conn = agents[key]
 
-        primary_conn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
+        non_primary_conn = None
+        if target != None:
+            for key in agents:
+                if agents[key].displayname == target:
+                    # FIXME: make sure agent is connected
+                    if agents[key].auth['type'] != \
+                      AgentManager.AGENT_TYPE_PRIMARY:
+                        non_primary_conn = agents[key]
+                    target = None # so we know we found the target
+                    break
+        else:
+            for key in agents:
+                if agents[key].auth['type'] != \
+                  AgentManager.AGENT_TYPE_PRIMARY:
+                    # FIXME: make sure agent is connected
+                    # FIXME: ticket #218: When the UI supports selecting
+                    #        a target, remove the code that automatically
+                    #        selects a remote.
+                    if non_primary_conn == None:
+                        non_primary_conn = agents[key]
+                    else:
+                        if agents[key].displayname < \
+                          non_primary_conn.displayname:
+                            non_primary_conn = agents[key]
+        if (target):
+            return { 
+                'error' : 'agent %s does not exist or is offline' % target
+            }
+
+        primary_conn = \
+          manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
 
         if non_primary_conn:
             backup_loc = non_primary_conn
