@@ -64,6 +64,8 @@ class AgentManager(threading.Thread):
     AGENT_TYPE_WORKER="worker"
     AGENT_TYPE_OTHER="other"
 
+    DEFAULT_INSTALL_DIR = "c:\\Program Files (x86)\\Palette\\"
+
     def __init__(self, server, host='0.0.0.0', port=0):
         super(AgentManager, self).__init__()
         self.server = server

@@ -302,19 +302,25 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     LOGGER_NAME = "main"
     allow_reuse_address = True
 
-    # Dump/restore directorys
-    DEFAULT_BACKUP_DIR="c:\\Palette\\Data"
+    DEFAULT_BACKUP_DIR = AgentManager.DEFAULT_INSTALL_DIR + "Data\\"
 
     def backup_cmd(self, target=None):
         """Does a backup."""
         # fixme: make sure another backup isn't already running?
-        # fixme: Do we want to specify the directory for the backup?
-        # If not, the backup is saved in the server bin directory.
-        backup_name = time.strftime("%b%d_%H%M%S")
-        # Example name: Jan27_162225
-        backup_path = self.DEFAULT_BACKUP_DIR + '\\' + backup_name
-        # Example path: C:\Palette\Data\Jan27_162225
-        body = self.cli_cmd("tabadmin backup %s" % backup_path)
+
+        # Example name: Jan27_162225.tsbak
+        backup_name = time.strftime("%b%d_%H%M%S") + ".tsbak"
+
+        primary_conn = \
+          manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
+
+        if 'install-dir' in primary_conn.auth:
+            backup_path = primary_conn.auth['install-dir'] + "Data\\" + backup_name
+        else:
+            backup_path = self.DEFAULT_BACKUP_DIR + backup_name
+
+        # Example path: c:\\Program\ Files\ (x86)\\Palette\\Data\\Jan27_162225.tsbak
+        body = self.cli_cmd('tabadmin backup \\\"%s\\\"' % backup_path)
         if body.has_key('error'):
             return body
 
@@ -349,14 +355,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 'error' : 'agent %s does not exist or is offline' % target
             }
 
-        primary_conn = \
-          manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
 
         if non_primary_conn:
             backup_loc = non_primary_conn
             # Copy the backup to a non-primary agent
             copy_body = self.copy_cmd(\
-                "%s:%s.tsbak" % (primary_conn.displayname, backup_name),
+                "%s:%s" % (primary_conn.displayname, backup_name),
                 non_primary_conn.displayname)
 
             # Before we check the copy body for errors/failure, we
@@ -374,9 +378,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             else:
                 # Remove the backup file from the primary
-                backup_fullpathname = self.DEFAULT_BACKUP_DIR + '\\' + backup_name + ".tsbak"
                 remove_body = \
-                    self.cli_cmd("CMD /C DEL %s" % backup_fullpathname)
+                    self.cli_cmd('CMD /C DEL \\\"%s\\\"' % backup_path)
 
                 # Check how the copy command did, earlier.
                 if copy_body.has_key('error'):
@@ -557,7 +560,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
            copy source-displayname:/path/to/file dest-displayname
                        <source_path>          <dest-displayname>
            generates:
-            c:/Palette/bin/pget.exe http://primary-ip:192.168.1.1/file dir/
+            c:/Program Files (x86)/bin/pget.exe http://primary-ip:192.168.1.1/file dir/
            and sends it as a cli command to agent:
                 dest-displayname
            Returns the body dictionary from the status."""
@@ -591,17 +594,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not src or not dst:
             return self.error(msg)
 
-        PGET_BIN="c:/Palette/bin/pget.exe"
 
         source_ip = src.auth['ip-address']
 
         if 'install-dir' in dst.auth:
-            target_dir = dst.auth['install-dir'] + "\\Data\\" 
+            pget_bin = dst.auth['install-dir'] + "bin\\pget.exe"
+            target_dir = dst.auth['install-dir'] + "Data"
         else:
+            pget_bin= AgentManager.DEFAULT_INSTALL_DIR + "bin\\pget.exe"
             target_dir = self.DEFAULT_BACKUP_DIR
 
-        command = "%s http://%s:%s/%s %s" % \
-            (PGET_BIN, source_ip, src.auth['listen-port'],
+        command = '%s http://%s:%s/%s "%s"' % \
+            (pget_bin, source_ip, src.auth['listen-port'],
              source_path, target_dir)
 
         copy_body = self.cli_cmd(command, dst) # Send command to destination agent
@@ -633,7 +637,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if os.path.isabs(source_filename):
             return self.error("[ERROR] May not specify an absolute pathname or disk: " + source_filename)
 
-        source_fullpathname = self.DEFAULT_BACKUP_DIR + '\\' + source_filename + ".tsbak"
+        source_fullpathname = self.DEFAULT_BACKUP_DIR + source_filename
 
         # Get the Primary Agent handle
         primary_conn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
@@ -649,9 +653,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # copy_cmd arguments:
             #   source-agent-name:/filename
             #   dest-agent-displayname
-            arg_tsbak = arg + ".tsbak"
-            self.log.debug("Sending copy command: %s, %s", arg_tsbak, primary_conn.displayname)
-            body = server.copy_cmd(arg_tsbak, primary_conn.displayname)
+            self.log.debug("Sending copy command: %s, %s", arg, primary_conn.displayname)
+            body = server.copy_cmd(arg, primary_conn.displayname)
 
             if body.has_key("error"):
                 self.log.debug("Copy failed with: " + str(body))
@@ -697,7 +700,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STARTING)
         try:
-            cmd = "tabadmin restore %s" % source_fullpathname
+            cmd = 'tabadmin restore \\\"%s\\\"' % source_fullpathname
             self.log.debug("restore sending command: %s", cmd)
             body = self.cli_cmd(cmd)
         except HTTPException, e:
@@ -714,7 +717,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # If the file was copied to the Primary Agent, delete
             # the temporary backup file we copied to the Primary Agent.
             self.log.debug("------------Restore: Removing file '%s' after restore------" % source_fullpathname)
-            remove_body = self.cli_cmd("CMD /C DEL %s" % source_fullpathname)
+            remove_body = self.cli_cmd('CMD /C DEL \\\"%\\\"s' % source_fullpathname)
             if remove_body.has_key('error'):
                 return remove_body
 
