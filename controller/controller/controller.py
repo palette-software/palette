@@ -185,7 +185,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def do_pget(self, argv):
         if len(argv) < 2:
-            print >> self.wfile, '[ERROR] Usage: pget http://...... local-name'
+            print >> self.wfile, '[ERROR] Usage: pget {displayname | type} http://...... local-name'
             return
 
         target = argv[0]
