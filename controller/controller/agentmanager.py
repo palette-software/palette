@@ -221,6 +221,20 @@ class AgentManager(threading.Thread):
 
         return False
 
+    def agent_conn_by_name_or_type(self, target):
+        """Search if a target is a displayname or agent type and
+        return an instance of it, or False if none match."""
+
+        for key in self.agents:
+            if self.agents[key].displayname == target:
+                return self.agents[key]
+
+            if self.agents[key].auth['type'] == target:
+                return self.agents[key]
+
+        return False
+
+
     def lock_agent(self, agent):
         agent.lock()
 

@@ -150,13 +150,36 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = server.copy_cmd(argv[0], argv[1])
         self.report_status(body)
 
-    def do_cli(self, argv):
-        if not len(argv):
-            self.error("'cli' requries an argument.")
+    def do_list(self, argv):
+        agents = manager.all_agents()
+
+        if len(agents) == 0:
+            print >> self.wfile, "No agents connected."
             return
 
-        cli_command = ' '.join(argv)
-        body = server.cli_cmd(cli_command)
+        for key in agents:
+            print >> self.wfile, "\t", agents[key].displayname, "(displayname)"
+            print >> self.wfile, "\t\ttype:", agents[key].auth['type']
+            print >> self.wfile, "\t\tip-address:", agents[key].auth['ip-address']
+            print >> self.wfile, "\t\thostname:", agents[key].auth['hostname']
+            print >> self.wfile, "\t\tuuid:", agents[key].auth['uuid']
+
+    def do_cli(self, argv):
+        if len(argv) < 2:
+            print >> self.wfile, "[ERROR] usage: cli {displayname | type} command"
+            return
+
+        target = argv[0]
+
+        aconn = manager.agent_conn_by_name_or_type(target)
+        if not aconn:
+            print >> self.wfile, "[ERROR] Unknown displayname or type:", target
+            return
+
+        cli_command = ' '.join(argv[1:])
+        print >> self.wfile, "Sending to displayname '%s': %s" % \
+                                        (aconn.displayname, cli_command)
+        body = server.cli_cmd(cli_command, aconn)
         self.report_status(body)
 
     def do_start(self, argv):
@@ -303,6 +326,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
 
     DEFAULT_BACKUP_DIR = AgentManager.DEFAULT_INSTALL_DIR + "Data\\"
+    PGET_BIN_LOC = "bin\\pget.exe"
 
     def backup_cmd(self, target=None):
         """Does a backup."""
@@ -598,10 +622,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         source_ip = src.auth['ip-address']
 
         if 'install-dir' in dst.auth:
-            pget_bin = dst.auth['install-dir'] + "bin\\pget.exe"
+            pget_bin = dst.auth['install-dir'] + Controller.PGET_BIN_LOC
             target_dir = dst.auth['install-dir'] + "Data"
         else:
-            pget_bin= AgentManager.DEFAULT_INSTALL_DIR + "bin\\pget.exe"
+            pget_bin= AgentManager.DEFAULT_INSTALL_DIR + Controller.PGET_BIN_LOC
             target_dir = self.DEFAULT_BACKUP_DIR
 
         command = '%s http://%s:%s/%s "%s"' % \
