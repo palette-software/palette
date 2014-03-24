@@ -352,7 +352,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             # Parse the '/option' portion, set 'aconn' to an agent
             # matching the '/option=...." portion, and if there are
             # options, remove them from argv.
-            aconn = False
+            aconn = None
             for i in range(len(argv)):
                 arg = argv[i]
                 if arg[:1] != '/':
