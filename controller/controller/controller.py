@@ -36,7 +36,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             msg = msg % args
         print >> self.wfile, '[ERROR] '+msg
 
-    def do_status(self, argv):
+    def do_status(self, argv, aconn=False):
         if len(argv):
             print >> self.wfile, '[ERROR] status does not have an argument.'
             return
@@ -44,11 +44,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = server.cli_cmd("tabadmin status -v")
         self.report_status(body)
 
-    def do_backup(self, argv):
+    def do_backup(self, argv, aconn=False):
         target = None
         if len(argv) == 1:
             target = argv[0]
-        elif len(argv):
+        elif len(argv) or aconn:
             print >> self.wfile, '[ERROR] usage: backup [<target_displayname>]'
             return
 
@@ -92,12 +92,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             alert.send("Backup failure: " + str(body['error']))
         self.report_status(body)
 
-    def do_restore(self, argv):
+    def do_restore(self, argv, aconn=None):
         """Restore.  If the file/path we are restoring from is on a different
         machine than the Primary Agent, then get the file/path to the
         Primary Agent first."""
 
-        if len(argv) != 1:
+        if len(argv) != 1 or aconn:
             print >> self.wfile, \
               '[ERROR] usage: restore source-ip-address:pathname'
             return
@@ -141,16 +141,20 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status(body)
 
-    def do_copy(self, argv):
+    def do_copy(self, argv, aconn=None):
         """Copy a file from one agent to another."""
-        if len(argv) != 2:
+        if len(argv) != 2 or aconn:
             print >> self.wfile, '[ERROR] Usage: copy source-agent-name:filename dest-agent-name'
             return
 
         body = server.copy_cmd(argv[0], argv[1])
         self.report_status(body)
 
-    def do_list(self, argv):
+    def do_list(self, argv, aconn=None):
+        if len(argv) or aconn:
+            self.error("Usage: list")
+            return
+
         agents = manager.all_agents()
 
         if len(agents) == 0:
@@ -165,49 +169,50 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, "\t\thostname:", agents[key].auth['hostname']
             print >> self.wfile, "\t\tuuid:", agents[key].auth['uuid']
 
-    def do_cli(self, argv):
-        if len(argv) < 2:
-            print >> self.wfile, "[ERROR] usage: cli {displayname | type} command"
+    def do_cli(self, argv, aconn=None):
+        if len(argv) < 1:
+            print >> self.wfile, "[ERROR] usage: cli [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ] command"
             return
 
-        target = argv[0]
-
-        aconn = manager.agent_conn_by_name_or_type(target)
-        if not aconn:
-            print >> self.wfile, "[ERROR] displayname or type not connected:", target
+        if aconn and type(aconn) == type([]):
+            self.error("Invalid request: More than one agent selected: %d",
+                                                                    len(aconn))
             return
 
-        cli_command = ' '.join(argv[1:])
-        print >> self.wfile, "Sending to displayname '%s' (type: %s):\r\n%s" % \
-                            (aconn.displayname, aconn.auth['type'], cli_command)
+        cli_command = ' '.join(argv)
+        if aconn:
+            print >> self.wfile, "Sending to displayname '%s' (type: %s):" % \
+                            (aconn.displayname, aconn.auth['type'])
+        else:
+            print >> self.wfile, "Sending:"
+
+        print >> self.wfile, cli_command
         body = server.cli_cmd(cli_command, aconn)
         self.report_status(body)
 
-    def do_pget(self, argv):
+    def do_pget(self, argv, aconn=None):
         if len(argv) < 2:
-            print >> self.wfile, '[ERROR] Usage: pget {displayname | type} http://...... local-name'
+            print >> self.wfile, '[ERROR] Usage: pget [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ] http://...... local-name'
             return
 
-        target = argv[0]
-
-        aconn = manager.agent_conn_by_name_or_type(target)
-        if not aconn:
-            print >> self.wfile, "[ERROR] displayname or type not connected:", target
+        if aconn and type(aconn) == type([]):
+            self.error("Invalid request: More than one agent was selected: %d",
+                                                                    len(aconn))
             return
 
-        if 'install-dir' in aconn.auth:
-            pget_bin = aconn.auth['install-dir'] + Controller.PGET_BIN_LOC
+        pget_command = Controller.PGET_BIN + " " + ' '.join(argv)
+        if aconn:
+            print >> self.wfile, "Sending to displayname '%s' (type: %s):" % \
+                        (aconn.displayname, aconn.auth['type'])
         else:
-            pget_bin= AgentManager.DEFAULT_INSTALL_DIR + Controller.PGET_BIN_LOC
+            print >> self.wfile, "Sending:",
 
-        pget_command = pget_bin + " " + ' '.join(argv[1:])
-        print >> self.wfile, "Sending to displayname '%s' (type: %s):\r\n%s" % \
-                        (aconn.displayname, aconn.auth['type'], pget_command)
+        print >> self.wfile, pget_command
         body = server.cli_cmd(pget_command, aconn)
         self.report_status(body)
 
-    def do_start(self, argv):
-        if len(argv) != 0:
+    def do_start(self, argv, aconn=None):
+        if len(argv) != 0 or aconn:
             print >> self.wfile, '[ERROR] usage: start'
             return
         
@@ -253,8 +258,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: check & report status to see if it really started?
         self.report_status(body)
 
-    def do_stop(self, argv):
-        if len(argv) != 0:
+    def do_stop(self, argv, aconn=None):
+        if len(argv) != 0 or aconn:
             print >> self.wfile, '[ERROR] usage: stop'
             return
 
@@ -306,8 +311,9 @@ class CliHandler(socketserver.StreamRequestHandler):
             if len(body['stderr']):
                 print >> self.wfile, 'stderr:', body['stderr']
 
-    def do_maint(self, argv):
-        if len(argv) != 1 or (argv[0] != "start" and argv[0] != "stop"):
+    def do_maint(self, argv, aconn=None):
+        if len(argv) != 1 or aconn or \
+                                    (argv[0] != "start" and argv[0] != "stop"):
             print >> self.wfile, '[ERROR] usage: maint start|stop'
             return
 
@@ -317,9 +323,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             print >> self.wfile, "Done"
 
-    def do_displayname(self, argv):
+    def do_displayname(self, argv, aconn=None):
         """Set the display name for an agent"""
-        if len(argv) != 2:
+        if len(argv) != 2 or aconn:
             print >> self.wfile, '[ERROR] Usage: displayname agent-hostname agent-displayname'
             return
 
@@ -341,8 +347,65 @@ class CliHandler(socketserver.StreamRequestHandler):
                 self.error('invalid command: %s', cmd)
                 continue
 
+            errcnt = 0
+
+            # Parse the '/option' portion, set 'aconn' to an agent
+            # matching the '/option=...." portion, and if there are
+            # options, remove them from argv.
+            aconn = False
+            for i in range(len(argv)):
+                arg = argv[i]
+                if arg[:1] != '/':
+                    argv = argv[i:] # Removes the leading '/xxx=yyy' options
+                    break
+
+                parts = arg.split('=')
+                if len(parts) != 2:
+                    self.error("Invalid option format: Missing '=': %s", arg)
+                    errcnt += 1
+                    continue
+
+                opt, val = parts
+
+                if aconn:
+                    self.error("Cannnot specify more than one option at this time.")
+                    errcnt += 1
+                    break
+
+                if opt == "/displayname":
+                    aconn = manager.agent_conn_by_displayname(val)
+                    if not aconn:
+                        self.error("No connected agent with displayname=%s", val)
+                        errcnt += 1
+                        continue
+                elif opt == "/hostname":
+                    aconn = manager.agent_conn_by_hostname(val)
+                    if not aconn:
+                        self.error("No connected agent with hostname=%s", val)
+                        errcnt += 1
+                        continue
+                elif opt == "/uuid":
+                    aconn = manager.agent_conn_by_uuid(val)
+                    if not aconn:
+                        self.error("No connected agent with uuid=%s", val)
+                        errcnt += 1
+                        continue
+                elif opt == "/type":
+                    aconn = manager.agent_conn_by_type(val)
+                    if not aconn:
+                        self.error("No connected agent with type=%s", val)
+                        errcnt += 1
+                        continue
+                else:
+                    self.error("Unknown option: %s", opt)
+                    errcnt += 1
+
+            if errcnt:
+                continue
+
+            # <command> /displayname=X /type=primary, /uuid=Y, /hostname=Z [args]
             f = getattr(self, 'do_'+cmd)
-            f(argv)
+            f(argv, aconn=aconn)
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
@@ -350,7 +413,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
 
     DEFAULT_BACKUP_DIR = AgentManager.DEFAULT_INSTALL_DIR + "Data\\"
-    PGET_BIN_LOC = "bin\\pget.exe"
+    PGET_BIN = "pget.exe"
 
     def backup_cmd(self, target=None):
         """Does a backup."""
@@ -608,7 +671,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
            copy source-displayname:/path/to/file dest-displayname
                        <source_path>          <dest-displayname>
            generates:
-            c:/Program Files (x86)/bin/pget.exe http://primary-ip:192.168.1.1/file dir/
+               pget.exe http://primary-ip:192.168.1.1/file dir/
            and sends it as a cli command to agent:
                 dest-displayname
            Returns the body dictionary from the status."""
@@ -645,14 +708,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         source_ip = src.auth['ip-address']
 
         if 'install-dir' in dst.auth:
-            pget_bin = dst.auth['install-dir'] + Controller.PGET_BIN_LOC
             target_dir = dst.auth['install-dir'] + "Data"
         else:
-            pget_bin= AgentManager.DEFAULT_INSTALL_DIR + Controller.PGET_BIN_LOC
             target_dir = self.DEFAULT_BACKUP_DIR
 
         command = '%s http://%s:%s/%s "%s"' % \
-            (pget_bin, source_ip, src.auth['listen-port'],
+            (Controller.PGET_BIN, source_ip, src.auth['listen-port'],
              source_path, target_dir)
 
         copy_body = self.cli_cmd(command, dst) # Send command to destination agent

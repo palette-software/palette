@@ -214,26 +214,52 @@ class AgentManager(threading.Thread):
         return self.agents
 
     def agent_conn_by_type(self, agent_type):
-        """Returns an instance of an Agent of the requested type."""
+        """Returns an instance of a connected agent of the requested type,
+        or a list of instances if more than one agent of that type
+        is connected.
+
+        Returns None if no agents of that type are connected."""
+
         for key in self.agents:
             if self.agents[key].auth['type'] == agent_type:
                 return self.agents[key]
 
-        return False
+        return None
 
-    def agent_conn_by_name_or_type(self, target):
-        """Search if a target is a displayname or agent type and
-        return an instance of it, or False if none match."""
+    def agent_conn_by_displayname(self, target):
+        """Search for a connected agent with a displayname of the
+        passed target.
+
+        Return an instance of it, or None if none match."""
 
         for key in self.agents:
             if self.agents[key].displayname == target:
                 return self.agents[key]
 
-            if self.agents[key].auth['type'] == target:
+        return None
+
+    def agent_conn_by_hostname(self, target):
+        """Search for a connected agent with a hostname of the
+        passed target.
+
+        Return an instance of it, or None if none match."""
+
+        for key in self.agents:
+            if self.agents[key].auth['hostname'] == target:
                 return self.agents[key]
 
-        return False
+        return None
 
+    def agent_conn_by_uuid(self, target):
+        """Search for agents with the given uuid.
+            Return an instance of it, or None if none match.
+        """
+
+        for key in self.agents:
+            if self.agents[key].auth['uuid'] == target:
+                return self.agents[key]
+
+        return None
 
     def lock_agent(self, agent):
         agent.lock()
