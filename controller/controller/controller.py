@@ -161,6 +161,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, "\t", agents[key].displayname, "(displayname)"
             print >> self.wfile, "\t\ttype:", agents[key].auth['type']
             print >> self.wfile, "\t\tip-address:", agents[key].auth['ip-address']
+            print >> self.wfile, "\t\tlisten-port:", agents[key].auth['listen-port']
             print >> self.wfile, "\t\thostname:", agents[key].auth['hostname']
             print >> self.wfile, "\t\tuuid:", agents[key].auth['uuid']
 
@@ -173,13 +174,36 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         aconn = manager.agent_conn_by_name_or_type(target)
         if not aconn:
-            print >> self.wfile, "[ERROR] Unknown displayname or type:", target
+            print >> self.wfile, "[ERROR] displayname or type not connected:", target
             return
 
         cli_command = ' '.join(argv[1:])
-        print >> self.wfile, "Sending to displayname '%s': %s" % \
-                                        (aconn.displayname, cli_command)
+        print >> self.wfile, "Sending to displayname '%s' (type: %s):\r\n%s" % \
+                            (aconn.displayname, aconn.auth['type'], cli_command)
         body = server.cli_cmd(cli_command, aconn)
+        self.report_status(body)
+
+    def do_pget(self, argv):
+        if len(argv) < 2:
+            print >> self.wfile, '[ERROR] Usage: pget http://...... local-name'
+            return
+
+        target = argv[0]
+
+        aconn = manager.agent_conn_by_name_or_type(target)
+        if not aconn:
+            print >> self.wfile, "[ERROR] displayname or type not connected:", target
+            return
+
+        if 'install-dir' in aconn.auth:
+            pget_bin = aconn.auth['install-dir'] + Controller.PGET_BIN_LOC
+        else:
+            pget_bin= AgentManager.DEFAULT_INSTALL_DIR + Controller.PGET_BIN_LOC
+
+        pget_command = pget_bin + " " + ' '.join(argv[1:])
+        print >> self.wfile, "Sending to displayname '%s' (type: %s):\r\n%s" % \
+                        (aconn.displayname, aconn.auth['type'], pget_command)
+        body = server.cli_cmd(pget_command, aconn)
         self.report_status(body)
 
     def do_start(self, argv):
@@ -617,7 +641,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if not src or not dst:
             return self.error(msg)
-
 
         source_ip = src.auth['ip-address']
 
