@@ -998,7 +998,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             aconn.unlock()
 
         self.logger.log(logging.ERROR, "This line should not be reached!")
-        return self.error("Should not have eached this line.")
+        return self.error("Should not have reached this line.")
 
     def displayname_cmd(self, hostname, displayname):
         """Sets displayname for the agent with the given hostname. At
