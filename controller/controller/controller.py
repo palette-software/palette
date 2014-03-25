@@ -211,6 +211,25 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = server.cli_cmd(pget_command, aconn)
         self.report_status(body)
 
+    def do_ping(self, argv, aconn=None):
+        if len(argv):
+            print >> self.wfile, '[ERROR] Usage: ping [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ]'
+            return
+
+        if aconn and type(aconn) == type([]):
+            self.error("Invalid request: More than one agent was selected: %d",
+                                                                    len(aconn))
+            return
+
+        if aconn:
+            print >> self.wfile, "Sending ping to displayname '%s' (type: %s)." % \
+                        (aconn.displayname, aconn.auth['type'])
+        else:
+            print >> self.wfile, "Sending ping."
+
+        body = server.ping_immediate(aconn)
+        self.report_status(body)
+
     def do_start(self, argv, aconn=None):
         if len(argv) != 0 or aconn:
             print >> self.wfile, '[ERROR] usage: start'
@@ -353,12 +372,16 @@ class CliHandler(socketserver.StreamRequestHandler):
             # matching the '/option=...." portion, and if there are
             # options, remove them from argv.
             aconn = None
+
+            # "new_argv": The list of arguments without the "/.." options.
+            new_argv = argv
+
             for i in range(len(argv)):
                 arg = argv[i]
                 if arg[:1] != '/':
-                    argv = argv[i:] # Removes the leading '/xxx=yyy' options
                     break
 
+                new_argv = argv[i+1:] # Removes this option and options before it
                 parts = arg.split('=')
                 if len(parts) != 2:
                     self.error("Invalid option format: Missing '=': %s", arg)
@@ -371,6 +394,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                     self.error("Cannnot specify more than one option at this time.")
                     errcnt += 1
                     break
+
 
                 if opt == "/displayname":
                     aconn = manager.agent_conn_by_displayname(val)
@@ -405,7 +429,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
             # <command> /displayname=X /type=primary, /uuid=Y, /hostname=Z [args]
             f = getattr(self, 'do_'+cmd)
-            f(argv, aconn=aconn)
+            f(new_argv, aconn=aconn)
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
@@ -825,7 +849,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # If the file was copied to the Primary Agent, delete
             # the temporary backup file we copied to the Primary Agent.
             self.log.debug("------------Restore: Removing file '%s' after restore------" % source_fullpathname)
-            remove_body = self.cli_cmd('CMD /C DEL \\\"%\\\"s' % source_fullpathname)
+            remove_body = self.cli_cmd('CMD /C DEL \\\"%s\\\"' % source_fullpathname)
             if remove_body.has_key('error'):
                 return remove_body
 
@@ -934,13 +958,47 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 body = {}
                 self.log.debug("maint reply empty.")
 
-        except (HTTPException, HTTPException, EnvironmentError) as e:
+        except (HTTPException, EnvironmentError) as e:
             return self.error("maint failed: " + str(e))
             self.remove_agent(aconn)    # bad agent
         finally:
             aconn.unlock()
 
         return body
+
+    def ping_immediate(self, aconn):
+        if not aconn:
+            # Get the Primary Agent handle
+            aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
+
+        if not aconn:
+            return self.error("[ERROR] ping: Agent not connected.")
+
+        aconn.lock()
+        self.log.debug("about to send a 'ping' to %s" % aconn.displayname)
+
+        try:
+            aconn.httpconn.request("POST", "/ping")
+            res = aconn.httpconn.getresponse()
+
+            self.log.debug("ping reply status = %d", res.status)
+            ignore = res.read()
+            if res.status == 200:
+                return {'stdout': "Ping to %s (type %s) succeeded with status %d." % \
+                    (aconn.displayname, aconn.auth['type'], res.status) }
+
+            self.remove_agent(aconn)    # bad agent
+            return self.error("ping command to %s failed with status %d" % \
+                                    (aconn.displayname, str(e)))
+
+        except (HTTPException, EnvironmentError) as e:
+            return self.error("ping failed: " + str(e))
+            self.remove_agent(aconn)    # bad agent
+        finally:
+            aconn.unlock()
+
+        self.logger.log(logging.ERROR, "This line should not be reached!")
+        return self.error("Should not have eached this line.")
 
     def displayname_cmd(self, hostname, displayname):
         """Sets displayname for the agent with the given hostname. At

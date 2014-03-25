@@ -308,7 +308,7 @@ class AgentManager(threading.Thread):
             self.socket = self.raw_socket
 
         # Start socket monitor check thread
-        asocketmon = AgentSocketMonitor(self, self.log)
+        asocketmon = AgentHealthMonitor(self, self.log)
         asocketmon.start()
 
         while True:
@@ -413,41 +413,51 @@ class ReverseHTTPConnection(HTTPConnection):
     def close(self):
         pass
 
-class AgentSocketMonitor(threading.Thread):
+class AgentHealthMonitor(threading.Thread):
 
     def __init__(self, manager, log):
-        super(AgentSocketMonitor, self).__init__()
+        super(AgentHealthMonitor, self).__init__()
         self.manager = manager
+        self.server = manager.server
         self.log = log
+        self.config = self.manager.config
+        self.ping_interval = self.config.getint('status', 'ping_request_interval', default=10)
 
     def run(self):
 
-        self.log.debug("Starting socket monitor.")
-        return # fixme - change after windows Agent works
+        self.log.debug("Starting agent health monitor.")
 
         while True:
             if len(self.manager.agents) == 0:
                 # no agents to check on
-                time.sleep(3)   # fixme
+                self.log.debug("no agents to ping")
+                time.sleep(self.ping_interval)
                 continue
 
-            # Agents are allowed to send us data only as a response
-            # to a controller command.  So if if there is an EPOLLIN
-            # event, after we have the manager lock, it means the
-            # Agent has disconnected.
-            input = []
-
-            self.manager.lock()
             agents = self.manager.agents
-            for key in agents:
-                self.log.debug("Socket monitor check for agent type: " + key)
-                input.append(agents[key].socket)
+            self.log.debug("about to ping %d agents", len(agents))
+            for key in agents.keys():
+                self.manager.lock()
 
-            self.log.debug("about to poll")
-            input_ready, output_ready, except_ready = select.select(input, [], [],0)
-            for sock in input_ready:
-                fd = sock.fileno()
-                self.manager.socket_fd_closed(fd)
+                if not agents.has_key(key):
+                    self.log.debug("agent with conn_id '%d' is now gone and won't be checked." % 
+                        key)
+                    self.manager.unlock()
+                    continue
+                agent = agents[key]
+                self.manager.unlock()
 
-            self.manager.unlock()
-            time.sleep(3) # fixme: shorten for production
+                self.log.debug("Ping: check for agent '%s', type '%s', conn_id %d." % \
+                        (agent.displayname, agent.auth['type'], key))
+
+                # fixme: add a timeout ?
+                body = self.server.ping_immediate(agent)
+                if body.has_key('error'):
+                    self.log.info("Ping: Agent '%s', type '%s', conn_id %d did not respond to ping.  Removing." %
+                        (agent.displayname, agent.auth['type'], key))
+                    self.manager.remove_agent(agent)
+                else:
+                    self.log.debug("Ping: Replied for agent '%s', type '%s', conn_id %d." %
+                        (agent.displayname, agent.auth['type'], key))
+                    
+            time.sleep(self.ping_interval)
