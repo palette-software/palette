@@ -485,11 +485,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                         if agents[key].displayname < \
                           non_primary_conn.displayname:
                             non_primary_conn = agents[key]
-        if (target):
+        if target:
             return { 
                 'error' : 'agent %s does not exist or is offline' % target
             }
-
 
         if non_primary_conn:
             backup_loc = non_primary_conn
@@ -498,19 +497,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 "%s:%s" % (primary_conn.displayname, backup_name),
                 non_primary_conn.displayname)
 
-            # Before we check the copy body for errors/failure, we
-            # try to delete the local file since the copy failed 
-            # and we shouldn't leave a "failed backup" (non-recorded) file
-            # on the primary agent.
-
             if copy_body.has_key('error'):
                 self.log.info("Copy of backup file to agent '%s' failed.  Will leave the backup on the primary agent.", non_primary_conn.displayname)
                 # Something was wrong with the non-primary agent.  Leave
                 # the backup on the primary after all.
                 backup_loc = primary_conn
-                # Backup file remains on the primary.
-                backup_ip_address = primary_conn.auth['ip-address']
             else:
+                # The copy succeeded.
                 # Remove the backup file from the primary
                 remove_body = \
                     self.cli_cmd('CMD /C DEL \\\"%s\\\"' % backup_path)
@@ -522,12 +515,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 # Check if the DEL worked.
                 if remove_body.has_key('error'):
                     return remove_body
-
-                backup_ip_address = non_primary_conn.auth['ip-address']
         else:
             backup_loc = primary_conn
             # Backup file remains on the primary.
-            backup_ip_address = primary_conn.auth['ip-address']
 
         # Save name of backup, agentid to the db.
         # fixme: create one of these per server.
