@@ -14,7 +14,7 @@ from state import StateManager, StateEntry
 
 import meta
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
 
 # The Controller's Agent Manager.
@@ -102,8 +102,9 @@ class AgentManager(threading.Thread):
 
         try:
             session.query(AgentStatusEntry).\
-                filter(AgentStatusEntry.last_connection_time > \
-                  AgentStatusEntry.last_disconnect_time).\
+                filter(or_(AgentStatusEntry.last_connection_time > \
+                                      AgentStatusEntry.last_disconnect_time,
+                          AgentStatusEntry.last_disconnect_time == None)).\
                 update({"last_disconnect_time" : func.now()},
                   synchronize_session=False)
             session.commit()
