@@ -75,6 +75,7 @@ class AgentManager(threading.Thread):
         self.Session = sessionmaker(bind=meta.engine)
         self.daemon = True
         self.lockobj = threading.RLock()
+        self.new_primary_event = threading.Event() # a primary connected
         self.host = host
         self.port = port and port or self.PORT
         self.socket = None
@@ -149,6 +150,10 @@ class AgentManager(threading.Thread):
               StateEntry.STATE_MAIN_UNKNOWN)
             stateman.update(StateEntry.STATE_TYPE_BACKUP, \
               StateEntry.STATE_BACKUP_NONE)
+
+            # Tell the status thread to start getting status on
+            # the new primary.
+            self.new_primary_event.set()
 
         self.unlock()
 
