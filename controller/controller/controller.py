@@ -510,7 +510,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 backup_loc = primary_conn
                 # Backup file remains on the primary.
                 backup_ip_address = primary_conn.auth['ip-address']
-
             else:
                 # Remove the backup file from the primary
                 remove_body = \
@@ -525,7 +524,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     return remove_body
 
                 backup_ip_address = non_primary_conn.auth['ip-address']
-
         else:
             backup_loc = primary_conn
             # Backup file remains on the primary.
@@ -605,8 +603,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         headers = {"Content-Type": "application/json"}
 
-        self.log.debug('about to do the cli command to %s, xid: %d, command: %s', \
-                        aconn.displayname, req.xid, cli_command)
+        self.log.debug("about to send the cli command to '%s', type '%s' xid: %d, command: %s", \
+                aconn.displayname, aconn.auth['type'], req.xid, cli_command)
         try:
             aconn.httpconn.request('POST', '/cli', req.send_body, headers)
             self.log.debug('sent cli command.')
@@ -700,8 +698,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 dest-displayname
            Returns the body dictionary from the status."""
 
-        if not source_path.find(':'):
-            return self.error("[ERROR] Missing ':' in source path:" % source_path)
+        if source_path.find(':') == -1:
+            return self.error("[ERROR] Missing ':' in source path: %s" % source_path)
 
         (source_displayname, source_path) = source_path.split(':',1)
 
@@ -711,11 +709,19 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         agents = manager.all_agents()
         src = dst = None
 
-        for key in agents:
-            if agents[key].displayname == source_displayname:
-                src = agents[key]
-            if agents[key].displayname == dest_name:
-                dst = agents[key]
+        for key in agents.keys():
+            manager.lock()
+            if not agents.has_key(key):
+                self.log.info("copy_cmd: agent with conn_id '%d' is now gone and won't be checked." % key)
+                manager.unlock()
+                continue
+            agent = agents[key]
+            manager.unlock()
+
+            if agent.displayname == source_displayname:
+                src = agent
+            if agent.displayname == dest_name:
+                dst = agent
 
         msg = ""
         # fixme: make sure the source isn't the same as the dest
@@ -741,12 +747,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
              source_path, target_dir)
 
         copy_body = self.cli_cmd(command, dst) # Send command to destination agent
-        # Fixme (fix pget so it sets exit status to non-zero on failure).
-        # Dig around to see if it failed.  It is important to know.
-        if not copy_body.has_key('error') and copy_body.has_key('stdout') and \
-                    copy_body['stdout'].find("Error in download") == 0:
-            copy_body['error'] = copy_body['stdout']
-
         return copy_body
 
     def restore_cmd(self, arg):
@@ -916,9 +916,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     
                 if body['run-status'] == 'finished':
                     if body.has_key('stderr') and len(body['stderr']) and \
-                                                        body['exit-status'] == 0:
+                                                    body['exit-status'] == 0:
                         self.log.info("exit-status was 0 but stderr wasn't empty.")
                         body['exit-status'] = 1 # Force error for exit-status.
+                    if body['exit-status']:
+                        body['error'] = "Failed.  See exit status."
                     return body
                 elif body['run-status'] == 'running':
                     time.sleep(self.cli_get_status_interval)

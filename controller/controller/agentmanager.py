@@ -434,8 +434,8 @@ class AgentHealthMonitor(threading.Thread):
                 time.sleep(self.ping_interval)
                 continue
 
-            agents = self.manager.agents
-            self.log.debug("about to ping %d agents", len(agents))
+            agents = self.manager.all_agents()
+            self.log.debug("about to ping %d agent(s)", len(agents))
             for key in agents.keys():
                 self.manager.lock()
 
