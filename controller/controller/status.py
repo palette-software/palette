@@ -171,8 +171,12 @@ class StatusMonitor(threading.Thread):
 
     def run(self):
         while True:
+            self.log.debug("status-check: About to wait for a primary to connect or timeout")
+            new_primary = self.manager.new_primary_event.wait(self.status_request_interval)
+            self.log.debug("status-check: new_primary: %s", new_primary)
+            if new_primary:
+                self.manager.new_primary_event.clear()
             self.check_status()
-            time.sleep(self.status_request_interval)
 
     def check_status(self):
 
