@@ -131,7 +131,8 @@ class BackupDialog(DialogPage):
         # FIXME: use a mapping here.
         query = session.query(BackupEntry, AgentStatusEntry).\
             join(AgentStatusEntry).\
-            filter(AgentStatusEntry.domainid == self.domain.domainid)
+            filter(AgentStatusEntry.domainid == self.domain.domainid).\
+            order_by(BackupEntry.creation_time.desc())
 
         self.backup_entries = []
         for backup, agent in query.all():
