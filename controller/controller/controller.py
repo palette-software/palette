@@ -873,6 +873,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         while True:
             self.log.debug("-----about to get status of command %s, xid %d", command, xid)
 
+            if not manager.agent_connected(aconn):
+                self.log.info("Agent '%s' (type: '%s', conn_id %d) disconnected before finishing: %s" %
+                    (aconn.displayname, aconn.auth['type'], aconn.conn_id, uri))
+                return self.error("Agent '%s' (type: '%s', conn_id %d) disconnected before finishing: %s" %
+                    (aconn.displayname, aconn.auth['type'], aconn.conn_id, uri))
+
             aconn.lock()
             self.log.debug("Sending GET " + uri)
 

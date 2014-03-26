@@ -200,6 +200,7 @@ class StatusMonitor(threading.Thread):
         lines = string.split(body, '\n')
 
         if len(lines) < 1:
+            # fixme: Probably update the status table to say something's wrong.
             self.log.error("Bad status returned.  Too few lines.")
             return
 

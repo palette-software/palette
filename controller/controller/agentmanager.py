@@ -218,6 +218,14 @@ class AgentManager(threading.Thread):
     def all_agents(self):
         return self.agents
 
+    def agent_connected(self, aconn):
+        """Check to see if the passed agent is still connected.
+        Returns:
+            True if still conencted.
+            False if not connected.
+        """
+        return aconn in self.agents.values()
+
     def agent_conn_by_type(self, agent_type):
         """Returns an instance of a connected agent of the requested type,
         or a list of instances if more than one agent of that type
