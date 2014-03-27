@@ -290,12 +290,16 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, "FAIL: Can't stop - current state is:", states[StateEntry.STATE_TYPE_MAIN]
             return
 
+        # Note: Make sure to set the state in the database before
+        # we report "OK" back to the client since "OK" to the UI client
+        # results in an immediate check of the state.
+        stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STOPPING)
+
+        log.debug("-----------------Stopping Tableau-------------------")
         # fixme: Prevent stopping if the user is doing a backup or restore?
         # fixme: Reply with "OK" only after the agent received the command?
         print >> self.wfile, "OK"
 
-        stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STOPPING)
-        log.debug("-----------------Stopping Tableau-------------------")
         body = server.cli_cmd('tabadmin stop')
         if not body.has_key("error"):
             # Start the maintenance server only after Tableau has stopped

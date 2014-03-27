@@ -25,7 +25,7 @@ function(dom, domClass, request, on, topic, DialogSimple)
             data: {"action": "start"}
         }).then (
             function(d) {
-                console.log("manage: stopping");
+                console.log("manage: starting");
                 topic.publish("action-finish-event", "manage");
             },
             function(error) {
