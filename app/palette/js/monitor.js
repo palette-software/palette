@@ -62,7 +62,7 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
                 break;
             case "stopped":
                 if (backup.search("restore") != -1) {
-                    status.innerHTML = "Restore Rollback Backup in Progress...";
+                    status.innerHTML = "Restore in Progress...";
                     yellowLight();
                 } else {
                     status.innerHTML = "Stopped";
@@ -71,7 +71,7 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
                 break;
             case "starting":
                 if (backup.search("restore") != -1) {
-                    status.innerHTML = "Restore in Progress...";
+                    status.innerHTML = "Restore Rollback Backup in Progress...";
                     yellowLight();
                 } else {
                     status.innerHTML = "Starting ...";
