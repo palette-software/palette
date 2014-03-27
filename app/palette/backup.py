@@ -65,7 +65,7 @@ class BackupApplication(RESTApplication):
         displayname = self.get_displayname_by_agentid(last_entry.agentid)
 
         if displayname:
-            self.send_cmd("restore %s:%s" % (displayname, last_entry.name))
+            self.send_cmd('restore "%s:%s"' % (displayname, last_entry.name))
         else:
             print "Error: No displayname for agentid=%d uuid=%s" % \
               (last_entry.agentid, last_entry.uuid)

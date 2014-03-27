@@ -360,7 +360,6 @@ class CliHandler(socketserver.StreamRequestHandler):
             if not data: break
 
             argv = shlex.split(data)
-            print "argv = ", argv
             cmd = argv.pop(0)
 
             if not hasattr(self, 'do_'+cmd):
