@@ -29,7 +29,8 @@ class StateEntry(meta.Base):
 
     # backup states
     STATE_BACKUP_BACKUP="backup"
-    STATE_BACKUP_RESTORE="restore"
+    STATE_BACKUP_RESTORE1="restore1"
+    STATE_BACKUP_RESTORE2="restore2"
     STATE_BACKUP_NONE="none"
 
     # FIXME: Make combination of domainid and state_type a unique key

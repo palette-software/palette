@@ -124,8 +124,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         log.debug("-----------------Starting Restore-------------------")
             
         # fixme: lock to ensure against two simultaneous restores?
-        stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_RESTORE)
-
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_RESTORE1)
         print >> self.wfile, "OK"
             
         body = server.restore_cmd(argv[0])
@@ -817,10 +816,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # fixme: Maybe the maintenance web server wasn't running?
         maint_body = server.maint("stop")
         if maint_body.has_key("error"):
-            self.info.debug("Restore: maint stop failed")
+            self.log.info("Restore: maint stop failed")
             # continue on, not a fatal error...
 
         stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STARTING)
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_RESTORE2)
         try:
             cmd = 'tabadmin restore \\\"%s\\\"' % source_fullpathname
             self.log.debug("restore sending command: %s", cmd)
@@ -829,7 +829,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("HTTP Exception: " + str(e))
 
         if body.has_key('error'):
-            # Fixme: what state are we in now?
+            # fixme: eventually control when tableau is started and
+            # stopped, rather than have tableau automatically start
+            # during the restore.
+            self.log.info("Restore: starting tableau after failed restore.")
+            start_body = self.cli_cmd("tabadmin start")
+            # fixme: report somewhere if the start failed.
             return body
 
         # fixme: Do we need to add restore information to the database?  

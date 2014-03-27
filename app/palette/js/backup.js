@@ -120,7 +120,7 @@ function(dom, domClass, request, on, topic, DialogSimple)
 
         switch (main) {
         case "started":
-            if (backup == "backup" || backup == "restore") {
+            if (backup == "backup" || backup.search("restore") != -1) {
                 disableButtons();
             } else {
                 enableButtons();
