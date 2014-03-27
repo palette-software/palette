@@ -127,7 +127,7 @@ function(dom, domClass, request, on, topic, DialogSimple)
             break;
         case "stopped":
             if (backup.search("restore") == -1) {
-                // don't enable the Start button if we're stopped for a restore.
+                // Don't enable the Start button if we're stopped during restore
                 enableStartButton();
                 disableStopButton();
             }
