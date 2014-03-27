@@ -795,6 +795,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             stop_body = self.cli_cmd("tabadmin stop")
             if stop_body.has_key('error'):
                 self.info.debug("Restore: tabadmin stop failed")
+                if source_displayname != primary_conn.displayname:
+                    # If the file was copied to the Primary, delete
+                    # the temporary backup file we copied to the Primary.
+                    self.delete_file(source_fullpathname)
                 return stop_body
 
             # Give Tableau and the status thread a bit of time to stop
@@ -810,6 +814,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 time.sleep(8)
 
             if not stopped:
+                if source_displayname != primary_conn.displayname:
+                    # If the file was copied to the Primary, delete
+                    # the temporary backup file we copied to the Primary.
+                    self.delete_file(source_fullpathname)
                 return self.error('[ERROR] Tableleau did not stop as requested.  Restore aborted.')
 
         # 'tabadmin restore ...' starts tableau as part of the restore procedure.
@@ -824,37 +832,44 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         try:
             cmd = 'tabadmin restore \\\"%s\\\"' % source_fullpathname
             self.log.debug("restore sending command: %s", cmd)
-            body = self.cli_cmd(cmd)
+            restore_body = self.cli_cmd(cmd)
         except HTTPException, e:
-            return self.error("HTTP Exception: " + str(e))
+            restore_body = { "error": "HTTP Exception: " + str(e) }
 
-        if body.has_key('error'):
-            # fixme: eventually control when tableau is started and
-            # stopped, rather than have tableau automatically start
-            # during the restore.
-            self.log.info("Restore: starting tableau after failed restore.")
-            start_body = self.cli_cmd("tabadmin start")
-            # fixme: report somewhere if the start failed.
-            return body
+        if restore_body.has_key('error'):
+            restore_success = False
+        else:
+            restore_success = True
 
         # fixme: Do we need to add restore information to the database?  
         # fixme: check status before cleanup? Or cleanup anyway?
 
         if source_displayname != primary_conn.displayname:
-            # If the file was copied to the Primary Agent, delete
-            # the temporary backup file we copied to the Primary Agent.
-            self.log.debug("------------Restore: Removing file '%s' after restore------" % source_fullpathname)
-            remove_body = self.cli_cmd('CMD /C DEL \\\"%s\\\"' % source_fullpathname)
-            if remove_body.has_key('error'):
-                return remove_body
+            # If the file was copied to the Primary, delete
+            # the temporary backup file we copied to the Primary.
+            self.delete_file(source_fullpathname)
+            
+        if not restore_success:
+            # On a successful restore, tableau starts itself.
+            # fixme: eventually control when tableau is started and
+            # stopped, rather than have tableau automatically start
+            # during the restore.
+            self.log.info("Restore: starting tableau after failed restore.")
+            start_body = self.cli_cmd("tabadmin start")
+            if start_body.has_key('error'):
+                self.log.info("Restore: 'tabadmin start' failed after failed restore.")
+                # fixme: report somewhere the 'tabadmin start' failed.
 
-        # On a successful restore, tableau starts itself.
-        # fixme: The restore command usually still runs a while longer,
-        # even after restore completes successfully.  Maybe note this in the UI?
-        # So the "backup" status stays at "restore" for a while after
-        # tableau has started and the UI say "RUNNING".
+        return restore_body
 
-        return body
+    def delete_file(self, source_fullpathname):
+        """Delete a file, check the error, and return the body result."""
+        self.log.debug("Removing file '%s'" % source_fullpathname)
+        remove_body = self.cli_cmd('CMD /C DEL \\\"%s\\\"' % source_fullpathname)
+        if remove_body.has_key('error'):
+            self.log.info('DEL of "%s" failed.' % source_fullpathname)
+            # fixme: report somewhere the DEL failed.
+        return remove_body
 
     def _get_status(self, command, xid, aconn):
         """Gets status on the command and xid.  Returns:
