@@ -49,26 +49,43 @@ define (["dojo/dom", "dojo/dom-style", "dojo/on", "dojo/request", "dojo/topic",
             case "started":
                 if (backup == "backup") {
                     status.innerHTML = "OK, backup in progress";
+                } else if (backup == "restore1") {
+                    status.innerHTML = "Begin Restore Process...";
+                    yellowLight();
+                } else if (backup == "restore2") {
+                    status.innerHTML = "Restore Completing...";
+                    yellowLight();
                 } else {
                     status.innerHTML = "OK";
+                    greenLight();
                 }
-                greenLight();
                 break;
             case "stopped":
-                status.innerHTML = "Stopped";
-                redLight();
+                if (backup.search("restore") != -1) {
+                    status.innerHTML = "Restore Rollback Backup in Progress...";
+                    yellowLight();
+                } else {
+                    status.innerHTML = "Stopped";
+                    redLight();
+                }
                 break;
             case "starting":
-                status.innerHTML = "Starting ...";
-                yellowLight();
+                if (backup.search("restore") != -1) {
+                    status.innerHTML = "Restore in Progress...";
+                    yellowLight();
+                } else {
+                    status.innerHTML = "Starting ...";
+                    yellowLight();
+                }
                 break;
             case "stopping":
-                if (backup == "backup") {
-                    status.innerHTML = "Stopping for restore ...";
+                if (backup.search("restore") != -1 ) {
+                    status.innerHTML = "Begin Restore Process....";
+                    yellowLight();
                 } else {
                     status.innerHTML = "Stopping ...";
+                    yellowLight();
                 }
-                yellowLight();
                 break;
             default:
                 status.innerHTML = main;
