@@ -2,6 +2,7 @@
 
 import sys
 import os
+import shlex
 import SocketServer as socketserver
 
 from agentmanager import AgentManager
@@ -358,7 +359,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             data = self.rfile.readline().strip()
             if not data: break
 
-            argv = data.split()
+            argv = shlex.split(data)
+            print "argv = ", argv
             cmd = argv.pop(0)
 
             if not hasattr(self, 'do_'+cmd):
