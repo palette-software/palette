@@ -36,10 +36,11 @@ class BackupApplication(RESTApplication):
         domainname = store.get('palette', 'domainname')
         self.domain = Domain.get_by_name(domainname, self.Session)
         self.telnet_port = store.getint("palette", "telnet_port", default=9000)
+        self.telnet_hostname = store.get("palette", "telnet_hostname", default="localhost")
 
     def send_cmd(self, cmd):
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        conn.connect(("", self.telnet_port))
+        conn.connect((self.telnet_hostname, self.telnet_port))
         conn.send(cmd + '\n')
         print "sent", cmd
         data = conn.recv(3).strip()
