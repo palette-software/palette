@@ -763,13 +763,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if os.path.isabs(source_filename):
             return self.error("[ERROR] May not specify an absolute pathname or disk: " + source_filename)
 
-        source_fullpathname = self.DEFAULT_BACKUP_DIR + source_filename
-
         # Get the Primary Agent handle
         primary_conn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
 
         if not primary_conn:
             return self.error("[ERROR] No Primary Agent is connected.")
+
+        if 'install-dir' in primary_conn.auth:
+            source_fullpathname = primary_conn.auth['install-dir'] + "Data\\" + source_filename
+        else:
+            source_fullpathname = self.DEFAULT_BACKUP_DIR + source_filename
 
         # Check if the source_filename is on the Primary Agent.
         if source_displayname != primary_conn.displayname:
