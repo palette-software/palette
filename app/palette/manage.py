@@ -21,7 +21,8 @@ class ManageApplication(RESTApplication):
     def send_cmd(self, cmd):
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         telnet_port = store.getint("palette", "telnet_port", default=9000)
-        conn.connect(("", telnet_port))
+        telnet_hostname = store.get("palette", "telnet_hostname", default="localhost")
+        conn.connect((telnet_hostname, telnet_port))
         conn.send(cmd + '\n')
         print "sent", cmd
         data = conn.recv(3).strip()
