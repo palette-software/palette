@@ -3,7 +3,7 @@
 <head>
 
 <%block name="title">
-<title>Palette</title>
+<title>Palette | Welcome</title>
 </%block>
 
 <%block name="favicon">
@@ -11,50 +11,49 @@
 </%block>
 
 <%block name="fullstyle">
-<link rel="stylesheet" type="text/css" href="/app/module/akiri.framework/css/style.css" media="screen">
-<link href="http://fonts.googleapis.com/css?family=Roboto:300,400,700|Lato:100,300,400" rel="stylesheet" type="text/css">
+<meta charset="utf-8">
+<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+<link href='http://fonts.googleapis.com/css?family=Roboto:300,500' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" type="text/css" href="/app/module/palette/css/foundation.css">
+<link rel="stylesheet" type="text/css" href="/app/module/palette/css/foundation-icons.css">
+<link rel="stylesheet" type="text/css" href="/app/module/palette/css/normalize.css" media="screen">
 <link rel="stylesheet" type="text/css" href="/app/module/palette/css/style.css" media="screen">
-<%block name="style"></%block>
+
+<script src="/app/module/palette/js/vendor/modernizr.js"></script>
 </%block>
 
 </head>
 <body>
-  <nav id="mainNav">
-    <div class="container">
-      <%include file="_logo.mako" />
-      <ul id="nav">
-        <li id="help"><a href="#">Help<span class="arrow-down"></span></a></li>
-    </div>
-  </nav>
 
   <script src="//ajax.googleapis.com/ajax/libs/dojo/1.9.0/dojo/dojo.js"></script>
 
-  <div class="wrapper">
-    <div class="container">
-      <div class="box">
+    <section class="full-size-box">
+      <section class="login-box">
+        <a href="/"><img src="/app/module/palette/images/palette_logo_600dpi-3.png"></a>
         <form method="post" action="/login" id="form">
-          <h1>Login</h1>
+          <p>
+            <label>Username</label>
+            <input type="text" name="username" id="username">
+          </p>
+          <p>
+            <label>Password</label>
+            <input type="password" name="password" id="password">
+          </p>
+          <ul class=" small-block-grid-2">
+              <li><button type="submit" name="login" id="login" class="p-btn p-btn-grey">Login</button></li>
+              <li><button href="#" class="p-btn p-btn-blue">Sign Up</li>
+            </ul>
+          <p class="text-center text-small">
+            <a href="/forgot">I forgot my password</a>
+          </p>
           %if 'AUTH_ERROR' in req.environ:
-          <div class="hidden" id="auth-error"></div>
+          <section class="hidden" id="auth-error"></section>
           %endif
           <p class="hidden error" id="error">
-            Login failed; <b>Invalid userID</b> or <b>password</b>
-          </p>
-          <p>
-            <input type="text" name="username" id="username"
-                   placeholder="Username">
-          </p>
-          <p>
-            <input type="password" name="password" id="password"
-                   placeholder="Password">
-          </p>
-          <p class="right nopad">
-            <input type="submit" value="Login"
-                   name="login" id="login" class="login">
+            Login Failed <b>Invalid userID</b> or <b>password</b>
           </p>
         </form>
-      </div>
-    </div>
+      </section>
     <script>
       require({
       packages: [
@@ -62,6 +61,6 @@
       ]
       }, [ "akiri/login" ]);
     </script>
-  </div>        
+  </section>        
 </body>
 </html>
