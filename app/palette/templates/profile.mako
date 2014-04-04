@@ -18,6 +18,16 @@
 <link rel="stylesheet" type="text/css" href="/app/module/palette/css/style.css" media="screen">
 
 <script src="/app/module/palette/js/vendor/modernizr.js"></script>
+
+<style type="text/css">
+	#mainNav ul#nav li.active-profile a {
+		color: #fff;
+	}
+	#mainNav ul#nav li.active-profile a span {
+		color: #8D96A3;
+	}
+</style>
+
 </%block>
 
 <section class="row">
@@ -30,22 +40,31 @@
     </dl>
       <div class="tabs-content profile-settings-content collumns small-12 large-10">
         <div class="content active" id="panel1">
-          <label>Profile Info</label>
-		  <input type="text" name="firstname" placeholder="First Name">
-		  <input type="text" name="lastname" placeholder="Last Name">
-		  <input type="email" name="email" placeholder="Email Name">
-		  <input type="email" name="username" placeholder="Tableau Username">
-		  <label>Admin Type</label>
-		  <label class="select">
-			  <select class="styled-select">
-			  	<option>Non-Adminstrator</option>
-			  	<option>Adminstrator</option>
-			  </select>
-		  </label>
-          <ul class="small-block-grid-2 margin-top">
-            <li><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></li>
-            <li><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></li>--></li>
-           </ul>
+          <section class="row">
+          	<section class="columns small-12 large-6">
+          		  <label>Profile Info</label>
+				  <input type="text" name="firstname" placeholder="First Name">
+				  <input type="text" name="lastname" placeholder="Last Name">
+				  <input type="email" name="email" placeholder="Email Name">
+				  <input type="email" name="username" placeholder="Tableau Username">
+				  <label>Admin Type</label>
+				  <label class="select">
+					  <select class="styled-select">
+					  	<option>Non-Adminstrator</option>
+					  	<option>Adminstrator</option>
+					  </select>
+				  </label>
+		          <ul class="small-block-grid-2 margin-top">
+		            <li><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></li>
+		            <li><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></li>--></li>
+		           </ul>
+          	</section>
+          	<section class="columns small-12 large-6">
+          		<label class="text-center">Profile Pic</label>
+          		<a href="#"><img class="profile-pic" src="/app/module/palette/images/blankuser.png"></a><br>
+          		<button type="submit" name="save" class="p-btn p-btn-dark-grey">Add Image</button>
+          	</section>
+          </section>         
         </div>
         <div class="content" id="panel2">
           <label>Organization Name</label>
@@ -63,9 +82,48 @@
         </div>
         <div class="content" id="panel3">
           <label>Recurring backup</label>
-          <label>Time of Day</label>
-          <label>Frequency</label>
-          <ul class="small-block-grid-2 margin-top">
+	      <input type="radio" name="backup" value="Yes" id="backupYes"><label for="backupYes" class="radio-label"><span></span> Yes</label>
+	      <input type="radio" name="backup" value="No" id="backupNo"><label for="backupNo" class="radio-label"><span></span> No</label>
+          <label>Scheduled Time</label>
+          <ul class="small-block-grid-4">
+            <li>
+	            <label class="select">
+				  <select class="styled-select">
+				  	<option>1</option>
+				  	<option>2</option>
+				  	<option>3</option>
+				  	<option>4</option>
+				  	<option>5</option>
+				  	<option>6</option>
+				  	<option>7</option>
+				  	<option>8</option>
+				  	<option>9</option>
+				  	<option>10</option>
+				  	<option>11</option>
+				  	<option>12</option>
+				  </select>
+			    </label>	
+            </li>
+            <li>
+            	<label class="select">
+				  <select class="styled-select">
+				  	<option>00</option>
+				  	<option>15</option>
+				  	<option>30</option>
+				  	<option>45</option>
+				  </select>
+			    </label>	
+            </li>
+            <li>
+            	<label class="select">
+				  <select class="styled-select">
+				  	<option>AM</option>
+				  	<option>PM</option>
+				  </select>
+			    </label>	
+            </li>
+           </ul>
+          <ul class="small-block-grid-2">
             <li><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></li>
             <li><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></li>--></li>
            </ul>
