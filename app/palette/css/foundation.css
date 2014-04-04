@@ -2409,45 +2409,10 @@ div.switch {
     display: table; }
   .tabs:after {
     clear: both; }
-  .tabs dd {
-    position: relative;
-    margin-bottom: 0 !important;
-    float: left; }
-    .tabs dd > a {
-      display: block;
-      background: #efefef;
-      color: #222222;
-      padding: 1rem 2rem;
-      font-family: "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif;
-      font-size: 1rem; }
-      .tabs dd > a:hover {
-        background: #e1e1e1; }
-    .tabs dd.active a {
-      background: white; }
-  .tabs.radius dd:first-child a {
-    -moz-border-radius-bottomleft: 3px;
-    -moz-border-radius-topleft: 3px;
-    -webkit-border-bottom-left-radius: 3px;
-    -webkit-border-top-left-radius: 3px;
-    border-bottom-left-radius: 3px;
-    border-top-left-radius: 3px; }
-  .tabs.radius dd:last-child a {
-    -moz-border-radius-bottomright: 3px;
-    -moz-border-radius-topright: 3px;
-    -webkit-border-bottom-right-radius: 3px;
-    -webkit-border-top-right-radius: 3px;
-    border-bottom-right-radius: 3px;
-    border-top-right-radius: 3px; }
-  .tabs.vertical dd {
-    position: inherit;
-    float: none;
-    display: block;
-    top: auto; }
 
 .tabs-content {
   *zoom: 1;
-  margin-bottom: 1.5rem;
-  width: 100%; }
+  float: left; }
   .tabs-content:before, .tabs-content:after {
     content: " ";
     display: table; }
@@ -2456,7 +2421,6 @@ div.switch {
   .tabs-content > .content {
     display: none;
     float: left;
-    padding: 0.9375rem 0;
     width: 100%; }
     .tabs-content > .content.active {
       display: block; }
