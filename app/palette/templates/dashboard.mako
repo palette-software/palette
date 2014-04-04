@@ -18,6 +18,16 @@
 <link rel="stylesheet" type="text/css" href="/app/module/palette/css/style.css" media="screen">
 
 <script src="/app/module/palette/js/vendor/modernizr.js"></script>
+
+<style type="text/css">
+  #mainNav ul#nav li.active-home a {
+    color: #fff;
+  }
+  #mainNav ul#nav li.active-home a span {
+    color: #8D96A3;
+  }
+</style>
+
 </%block>
 
 <section class="row dashboard">
