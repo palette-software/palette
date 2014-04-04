@@ -39,12 +39,11 @@
             <label>Password</label>
             <input type="password" name="password" id="password">
           </p>
-          <ul class=" small-block-grid-2">
+          <ul class=" small-block-grid-1">
               <li><button type="submit" name="login" id="login" class="p-btn p-btn-grey">Login</button></li>
-              <li><button href="#" class="p-btn p-btn-blue">Sign Up</li>
             </ul>
           <p class="text-center text-small">
-            <a href="/forgot">I forgot my password</a>
+            <a href="/forgot">I forgot my username and/or password</a>
           </p>
           %if 'AUTH_ERROR' in req.environ:
           <section class="hidden" id="auth-error"></section>
