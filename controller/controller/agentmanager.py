@@ -14,7 +14,7 @@ from state import StateManager, StateEntry
 
 import meta
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
 
 # The Controller's Agent Manager.
@@ -64,6 +64,8 @@ class AgentManager(threading.Thread):
     AGENT_TYPE_WORKER="worker"
     AGENT_TYPE_OTHER="other"
 
+    DEFAULT_INSTALL_DIR = "c:\\Program Files (x86)\\Palette\\"
+
     def __init__(self, server, host='0.0.0.0', port=0):
         super(AgentManager, self).__init__()
         self.server = server
@@ -73,6 +75,7 @@ class AgentManager(threading.Thread):
         self.Session = sessionmaker(bind=meta.engine)
         self.daemon = True
         self.lockobj = threading.RLock()
+        self.new_primary_event = threading.Event() # a primary connected
         self.host = host
         self.port = port and port or self.PORT
         self.socket = None
@@ -99,8 +102,9 @@ class AgentManager(threading.Thread):
 
         try:
             session.query(AgentStatusEntry).\
-                filter(AgentStatusEntry.last_connection_time > \
-                  AgentStatusEntry.last_disconnect_time).\
+                filter(or_(AgentStatusEntry.last_connection_time > \
+                                      AgentStatusEntry.last_disconnect_time,
+                          AgentStatusEntry.last_disconnect_time == None)).\
                 update({"last_disconnect_time" : func.now()},
                   synchronize_session=False)
             session.commit()
@@ -147,6 +151,10 @@ class AgentManager(threading.Thread):
               StateEntry.STATE_MAIN_UNKNOWN)
             stateman.update(StateEntry.STATE_TYPE_BACKUP, \
               StateEntry.STATE_BACKUP_NONE)
+
+            # Tell the status thread to start getting status on
+            # the new primary.
+            self.new_primary_event.set()
 
         self.unlock()
 
@@ -211,13 +219,61 @@ class AgentManager(threading.Thread):
     def all_agents(self):
         return self.agents
 
+    def agent_connected(self, aconn):
+        """Check to see if the passed agent is still connected.
+        Returns:
+            True if still conencted.
+            False if not connected.
+        """
+        return aconn in self.agents.values()
+
     def agent_conn_by_type(self, agent_type):
-        """Returns an instance of an Agent of the requested type."""
+        """Returns an instance of a connected agent of the requested type,
+        or a list of instances if more than one agent of that type
+        is connected.
+
+        Returns None if no agents of that type are connected."""
+
         for key in self.agents:
             if self.agents[key].auth['type'] == agent_type:
                 return self.agents[key]
 
-        return False
+        return None
+
+    def agent_conn_by_displayname(self, target):
+        """Search for a connected agent with a displayname of the
+        passed target.
+
+        Return an instance of it, or None if none match."""
+
+        for key in self.agents:
+            if self.agents[key].displayname == target:
+                return self.agents[key]
+
+        return None
+
+    def agent_conn_by_hostname(self, target):
+        """Search for a connected agent with a hostname of the
+        passed target.
+
+        Return an instance of it, or None if none match."""
+
+        for key in self.agents:
+            if self.agents[key].auth['hostname'] == target:
+                return self.agents[key]
+
+        return None
+
+    def agent_conn_by_uuid(self, target):
+        """Search for agents with the given uuid.
+            Return an instance of it, or None if none match.
+        """
+
+        for key in self.agents:
+            if self.agents[key].auth['uuid'] == target:
+                return self.agents[key]
+
+        return None
 
     def lock_agent(self, agent):
         agent.lock()
@@ -266,7 +322,7 @@ class AgentManager(threading.Thread):
             self.socket = self.raw_socket
 
         # Start socket monitor check thread
-        asocketmon = AgentSocketMonitor(self, self.log)
+        asocketmon = AgentHealthMonitor(self, self.log)
         asocketmon.start()
 
         while True:
@@ -371,41 +427,51 @@ class ReverseHTTPConnection(HTTPConnection):
     def close(self):
         pass
 
-class AgentSocketMonitor(threading.Thread):
+class AgentHealthMonitor(threading.Thread):
 
     def __init__(self, manager, log):
-        super(AgentSocketMonitor, self).__init__()
+        super(AgentHealthMonitor, self).__init__()
         self.manager = manager
+        self.server = manager.server
         self.log = log
+        self.config = self.manager.config
+        self.ping_interval = self.config.getint('status', 'ping_request_interval', default=10)
 
     def run(self):
 
-        self.log.debug("Starting socket monitor.")
-        return # fixme - change after windows Agent works
+        self.log.debug("Starting agent health monitor.")
 
         while True:
             if len(self.manager.agents) == 0:
                 # no agents to check on
-                time.sleep(3)   # fixme
+                self.log.debug("no agents to ping")
+                time.sleep(self.ping_interval)
                 continue
 
-            # Agents are allowed to send us data only as a response
-            # to a controller command.  So if if there is an EPOLLIN
-            # event, after we have the manager lock, it means the
-            # Agent has disconnected.
-            input = []
+            agents = self.manager.all_agents()
+            self.log.debug("about to ping %d agent(s)", len(agents))
+            for key in agents.keys():
+                self.manager.lock()
 
-            self.manager.lock()
-            agents = self.manager.agents
-            for key in agents:
-                self.log.debug("Socket monitor check for agent type: " + key)
-                input.append(agents[key].socket)
+                if not agents.has_key(key):
+                    self.log.debug("agent with conn_id '%d' is now gone and won't be checked." % 
+                        key)
+                    self.manager.unlock()
+                    continue
+                agent = agents[key]
+                self.manager.unlock()
 
-            self.log.debug("about to poll")
-            input_ready, output_ready, except_ready = select.select(input, [], [],0)
-            for sock in input_ready:
-                fd = sock.fileno()
-                self.manager.socket_fd_closed(fd)
+                self.log.debug("Ping: check for agent '%s', type '%s', conn_id %d." % \
+                        (agent.displayname, agent.auth['type'], key))
 
-            self.manager.unlock()
-            time.sleep(3) # fixme: shorten for production
+                # fixme: add a timeout ?
+                body = self.server.ping_immediate(agent)
+                if body.has_key('error'):
+                    self.log.info("Ping: Agent '%s', type '%s', conn_id %d did not respond to ping.  Removing." %
+                        (agent.displayname, agent.auth['type'], key))
+                    self.manager.remove_agent(agent)
+                else:
+                    self.log.debug("Ping: Replied for agent '%s', type '%s', conn_id %d." %
+                        (agent.displayname, agent.auth['type'], key))
+                    
+            time.sleep(self.ping_interval)

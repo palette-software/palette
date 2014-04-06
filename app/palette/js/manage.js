@@ -25,7 +25,7 @@ function(dom, domClass, request, on, topic, DialogSimple)
             data: {"action": "start"}
         }).then (
             function(d) {
-                console.log("manage: stopping");
+                console.log("manage: starting");
                 topic.publish("action-finish-event", "manage");
             },
             function(error) {
@@ -126,8 +126,11 @@ function(dom, domClass, request, on, topic, DialogSimple)
             }
             break;
         case "stopped":
-            enableStartButton();
-            disableStopButton();
+            if (backup.search("restore") == -1) {
+                // Don't enable the Start button if we're stopped during restore
+                enableStartButton();
+                disableStopButton();
+            }
             break;
         default:
             disableButtons();

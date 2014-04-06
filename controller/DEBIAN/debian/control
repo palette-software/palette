@@ -11,7 +11,8 @@ Architecture: all
 Depends:
  ${python:Depends}, ${misc:Depends},
  python-docutils, python-sphinx, postgresql,
- python-sqlalchemy, python-psycopg2, telnet
+ python-sqlalchemy, python-psycopg2, telnet,
+ akiri.framework (>= 0.3)
 Description: Palette Controller and Web App
  This package contains the Palette Controller and Web Application
  for controlling, monitoring and managing Tableau databases.

@@ -65,7 +65,7 @@ class BackupApplication(RESTApplication):
         displayname = self.get_displayname_by_agentid(last_entry.agentid)
 
         if displayname:
-            self.send_cmd("restore %s:%s" % (displayname, last_entry.name))
+            self.send_cmd('restore "%s:%s"' % (displayname, last_entry.name))
         else:
             print "Error: No displayname for agentid=%d uuid=%s" % \
               (last_entry.agentid, last_entry.uuid)
@@ -131,7 +131,8 @@ class BackupDialog(DialogPage):
         # FIXME: use a mapping here.
         query = session.query(BackupEntry, AgentStatusEntry).\
             join(AgentStatusEntry).\
-            filter(AgentStatusEntry.domainid == self.domain.domainid)
+            filter(AgentStatusEntry.domainid == self.domain.domainid).\
+            order_by(BackupEntry.creation_time.desc())
 
         self.backup_entries = []
         for backup, agent in query.all():

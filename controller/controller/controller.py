@@ -2,6 +2,7 @@
 
 import sys
 import os
+import shlex
 import SocketServer as socketserver
 
 from agentmanager import AgentManager
@@ -36,7 +37,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             msg = msg % args
         print >> self.wfile, '[ERROR] '+msg
 
-    def do_status(self, argv):
+    def do_status(self, argv, aconn=False):
         if len(argv):
             print >> self.wfile, '[ERROR] status does not have an argument.'
             return
@@ -44,9 +45,12 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = server.cli_cmd("tabadmin status -v")
         self.report_status(body)
 
-    def do_backup(self, argv):
-        if len(argv):
-            print >> self.wfile, '[ERROR] backup does not have an argument.'
+    def do_backup(self, argv, aconn=False):
+        target = None
+        if len(argv) == 1:
+            target = argv[0]
+        elif len(argv) or aconn:
+            print >> self.wfile, '[ERROR] usage: backup [<target_displayname>]'
             return
 
         # Check to see if we're in a state to backup
@@ -79,7 +83,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         print >> self.wfile, "OK"
             
-        body = server.backup_cmd()
+        body = server.backup_cmd(target)
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
           StateEntry.STATE_BACKUP_NONE)
 
@@ -89,12 +93,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             alert.send("Backup failure: " + str(body['error']))
         self.report_status(body)
 
-    def do_restore(self, argv):
+    def do_restore(self, argv, aconn=None):
         """Restore.  If the file/path we are restoring from is on a different
         machine than the Primary Agent, then get the file/path to the
         Primary Agent first."""
 
-        if len(argv) != 1:
+        if len(argv) != 1 or aconn:
             print >> self.wfile, \
               '[ERROR] usage: restore source-ip-address:pathname'
             return
@@ -121,8 +125,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         log.debug("-----------------Starting Restore-------------------")
             
         # fixme: lock to ensure against two simultaneous restores?
-        stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_RESTORE)
-
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_RESTORE1)
         print >> self.wfile, "OK"
             
         body = server.restore_cmd(argv[0])
@@ -138,26 +141,97 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status(body)
 
-    def do_copy(self, argv):
+    def do_copy(self, argv, aconn=None):
         """Copy a file from one agent to another."""
-        if len(argv) != 2:
+        if len(argv) != 2 or aconn:
             print >> self.wfile, '[ERROR] Usage: copy source-agent-name:filename dest-agent-name'
             return
 
         body = server.copy_cmd(argv[0], argv[1])
         self.report_status(body)
 
-    def do_cli(self, argv):
-        if not len(argv):
-            self.error("'cli' requries an argument.")
+    def do_list(self, argv, aconn=None):
+        if len(argv) or aconn:
+            self.error("Usage: list")
+            return
+
+        agents = manager.all_agents()
+
+        if len(agents) == 0:
+            print >> self.wfile, "No agents connected."
+            return
+
+        for key in agents:
+            print >> self.wfile, "\t", agents[key].displayname, "(displayname)"
+            print >> self.wfile, "\t\ttype:", agents[key].auth['type']
+            print >> self.wfile, "\t\tip-address:", agents[key].auth['ip-address']
+            print >> self.wfile, "\t\tlisten-port:", agents[key].auth['listen-port']
+            print >> self.wfile, "\t\thostname:", agents[key].auth['hostname']
+            print >> self.wfile, "\t\tuuid:", agents[key].auth['uuid']
+
+    def do_cli(self, argv, aconn=None):
+        if len(argv) < 1:
+            print >> self.wfile, "[ERROR] usage: cli [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ] command"
+            return
+
+        if aconn and type(aconn) == type([]):
+            self.error("Invalid request: More than one agent selected: %d",
+                                                                    len(aconn))
             return
 
         cli_command = ' '.join(argv)
-        body = server.cli_cmd(cli_command)
+        if aconn:
+            print >> self.wfile, "Sending to displayname '%s' (type: %s):" % \
+                            (aconn.displayname, aconn.auth['type'])
+        else:
+            print >> self.wfile, "Sending:"
+
+        print >> self.wfile, cli_command
+        body = server.cli_cmd(cli_command, aconn)
         self.report_status(body)
 
-    def do_start(self, argv):
-        if len(argv) != 0:
+    def do_pget(self, argv, aconn=None):
+        if len(argv) < 2:
+            print >> self.wfile, '[ERROR] Usage: pget [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ] http://...... local-name'
+            return
+
+        if aconn and type(aconn) == type([]):
+            self.error("Invalid request: More than one agent was selected: %d",
+                                                                    len(aconn))
+            return
+
+        pget_command = Controller.PGET_BIN + " " + ' '.join(argv)
+        if aconn:
+            print >> self.wfile, "Sending to displayname '%s' (type: %s):" % \
+                        (aconn.displayname, aconn.auth['type'])
+        else:
+            print >> self.wfile, "Sending:",
+
+        print >> self.wfile, pget_command
+        body = server.cli_cmd(pget_command, aconn)
+        self.report_status(body)
+
+    def do_ping(self, argv, aconn=None):
+        if len(argv):
+            print >> self.wfile, '[ERROR] Usage: ping [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ]'
+            return
+
+        if aconn and type(aconn) == type([]):
+            self.error("Invalid request: More than one agent was selected: %d",
+                                                                    len(aconn))
+            return
+
+        if aconn:
+            print >> self.wfile, "Sending ping to displayname '%s' (type: %s)." % \
+                        (aconn.displayname, aconn.auth['type'])
+        else:
+            print >> self.wfile, "Sending ping."
+
+        body = server.ping_immediate(aconn)
+        self.report_status(body)
+
+    def do_start(self, argv, aconn=None):
+        if len(argv) != 0 or aconn:
             print >> self.wfile, '[ERROR] usage: start'
             return
         
@@ -203,8 +277,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: check & report status to see if it really started?
         self.report_status(body)
 
-    def do_stop(self, argv):
-        if len(argv) != 0:
+    def do_stop(self, argv, aconn=None):
+        if len(argv) != 0 or aconn:
             print >> self.wfile, '[ERROR] usage: stop'
             return
 
@@ -216,12 +290,16 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, "FAIL: Can't stop - current state is:", states[StateEntry.STATE_TYPE_MAIN]
             return
 
+        # Note: Make sure to set the state in the database before
+        # we report "OK" back to the client since "OK" to the UI client
+        # results in an immediate check of the state.
+        stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STOPPING)
+
+        log.debug("-----------------Stopping Tableau-------------------")
         # fixme: Prevent stopping if the user is doing a backup or restore?
         # fixme: Reply with "OK" only after the agent received the command?
         print >> self.wfile, "OK"
 
-        stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STOPPING)
-        log.debug("-----------------Stopping Tableau-------------------")
         body = server.cli_cmd('tabadmin stop')
         if not body.has_key("error"):
             # Start the maintenance server only after Tableau has stopped
@@ -256,8 +334,9 @@ class CliHandler(socketserver.StreamRequestHandler):
             if len(body['stderr']):
                 print >> self.wfile, 'stderr:', body['stderr']
 
-    def do_maint(self, argv):
-        if len(argv) != 1 or (argv[0] != "start" and argv[0] != "stop"):
+    def do_maint(self, argv, aconn=None):
+        if len(argv) != 1 or aconn or \
+                                    (argv[0] != "start" and argv[0] != "stop"):
             print >> self.wfile, '[ERROR] usage: maint start|stop'
             return
 
@@ -267,9 +346,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             print >> self.wfile, "Done"
 
-    def do_displayname(self, argv):
+    def do_displayname(self, argv, aconn=None):
         """Set the display name for an agent"""
-        if len(argv) != 2:
+        if len(argv) != 2 or aconn:
             print >> self.wfile, '[ERROR] Usage: displayname agent-hostname agent-displayname'
             return
 
@@ -284,78 +363,154 @@ class CliHandler(socketserver.StreamRequestHandler):
             data = self.rfile.readline().strip()
             if not data: break
 
-            argv = data.split()
+            argv = shlex.split(data)
             cmd = argv.pop(0)
 
             if not hasattr(self, 'do_'+cmd):
                 self.error('invalid command: %s', cmd)
                 continue
 
+            errcnt = 0
+
+            # Parse the '/option' portion, set 'aconn' to an agent
+            # matching the '/option=...." portion, and if there are
+            # options, remove them from argv.
+            aconn = None
+
+            # "new_argv": The list of arguments without the "/.." options.
+            new_argv = argv
+
+            for i in range(len(argv)):
+                arg = argv[i]
+                if arg[:1] != '/':
+                    break
+
+                new_argv = argv[i+1:] # Removes this option and options before it
+                parts = arg.split('=')
+                if len(parts) != 2:
+                    self.error("Invalid option format: Missing '=': %s", arg)
+                    errcnt += 1
+                    continue
+
+                opt, val = parts
+
+                if aconn:
+                    self.error("Cannnot specify more than one option at this time.")
+                    errcnt += 1
+                    break
+
+
+                if opt == "/displayname":
+                    aconn = manager.agent_conn_by_displayname(val)
+                    if not aconn:
+                        self.error("No connected agent with displayname=%s", val)
+                        errcnt += 1
+                        continue
+                elif opt == "/hostname":
+                    aconn = manager.agent_conn_by_hostname(val)
+                    if not aconn:
+                        self.error("No connected agent with hostname=%s", val)
+                        errcnt += 1
+                        continue
+                elif opt == "/uuid":
+                    aconn = manager.agent_conn_by_uuid(val)
+                    if not aconn:
+                        self.error("No connected agent with uuid=%s", val)
+                        errcnt += 1
+                        continue
+                elif opt == "/type":
+                    aconn = manager.agent_conn_by_type(val)
+                    if not aconn:
+                        self.error("No connected agent with type=%s", val)
+                        errcnt += 1
+                        continue
+                else:
+                    self.error("Unknown option: %s", opt)
+                    errcnt += 1
+
+            if errcnt:
+                continue
+
+            # <command> /displayname=X /type=primary, /uuid=Y, /hostname=Z [args]
             f = getattr(self, 'do_'+cmd)
-            f(argv)
+            f(new_argv, aconn=aconn)
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     LOGGER_NAME = "main"
     allow_reuse_address = True
 
-    # Dump/restore directorys
-    DEFAULT_BACKUP_DIR="c:\\Palette\\Data"
+    DEFAULT_BACKUP_DIR = AgentManager.DEFAULT_INSTALL_DIR + "Data\\"
+    PGET_BIN = "pget.exe"
 
-    def backup_cmd(self):
+    def backup_cmd(self, target=None):
         """Does a backup."""
         # fixme: make sure another backup isn't already running?
-        # fixme: Do we want to specify the directory for the backup?
-        # If not, the backup is saved in the server bin directory.
-        backup_name = time.strftime("%b%d_%H%M%S")
-        # Example name: Jan27_162225
-        backup_path = self.DEFAULT_BACKUP_DIR + '\\' + backup_name
-        # Example path: C:\Palette\Data\Jan27_162225
-        body = self.cli_cmd("tabadmin backup %s" % backup_path)
+
+        # Example name: Jan27_162225.tsbak
+        backup_name = time.strftime("%b%d_%H%M%S") + ".tsbak"
+
+        primary_conn = \
+          manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
+
+        if 'install-dir' in primary_conn.auth:
+            backup_path = primary_conn.auth['install-dir'] + "Data\\" + backup_name
+        else:
+            backup_path = self.DEFAULT_BACKUP_DIR + backup_name
+
+        # Example path: c:\\Program\ Files\ (x86)\\Palette\\Data\\Jan27_162225.tsbak
+        body = self.cli_cmd('tabadmin backup \\\"%s\\\"' % backup_path)
         if body.has_key('error'):
             return body
 
-        # If two agents are connected, copy the backup to the
-        # non-primary agent and delete the backup from the primary.
-        non_primary_conn = None
-
         agents = manager.all_agents()
-        for key in agents:
-            if agents[key].auth['type'] != AgentManager.AGENT_TYPE_PRIMARY:
-                # fixme: first make sure the non-primary-agent is still connected
-                if non_primary_conn == None:
-                    non_primary_conn = agents[key]
-                else:
-                    if agents[key].displayname < non_primary_conn.displayname:
-                        non_primary_conn = agents[key]
 
-        primary_conn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
+        non_primary_conn = None
+        if target != None:
+            for key in agents:
+                if agents[key].displayname == target:
+                    # FIXME: make sure agent is connected
+                    if agents[key].auth['type'] != \
+                      AgentManager.AGENT_TYPE_PRIMARY:
+                        non_primary_conn = agents[key]
+                    target = None # so we know we found the target
+                    break
+        else:
+            for key in agents:
+                if agents[key].auth['type'] != \
+                  AgentManager.AGENT_TYPE_PRIMARY:
+                    # FIXME: make sure agent is connected
+                    # FIXME: ticket #218: When the UI supports selecting
+                    #        a target, remove the code that automatically
+                    #        selects a remote.
+                    if non_primary_conn == None:
+                        non_primary_conn = agents[key]
+                    else:
+                        if agents[key].displayname < \
+                          non_primary_conn.displayname:
+                            non_primary_conn = agents[key]
+        if target:
+            return { 
+                'error' : 'agent %s does not exist or is offline' % target
+            }
 
         if non_primary_conn:
             backup_loc = non_primary_conn
             # Copy the backup to a non-primary agent
             copy_body = self.copy_cmd(\
-                "%s:%s.tsbak" % (primary_conn.displayname, backup_name),
+                "%s:%s" % (primary_conn.displayname, backup_name),
                 non_primary_conn.displayname)
-
-            # Before we check the copy body for errors/failure, we
-            # try to delete the local file since the copy failed 
-            # and we shouldn't leave a "failed backup" (non-recorded) file
-            # on the primary agent.
 
             if copy_body.has_key('error'):
                 self.log.info("Copy of backup file to agent '%s' failed.  Will leave the backup on the primary agent.", non_primary_conn.displayname)
                 # Something was wrong with the non-primary agent.  Leave
                 # the backup on the primary after all.
                 backup_loc = primary_conn
-                # Backup file remains on the primary.
-                backup_ip_address = primary_conn.auth['ip-address']
-
             else:
+                # The copy succeeded.
                 # Remove the backup file from the primary
-                backup_fullpathname = self.DEFAULT_BACKUP_DIR + '\\' + backup_name + ".tsbak"
                 remove_body = \
-                    self.cli_cmd("CMD /C DEL %s" % backup_fullpathname)
+                    self.cli_cmd('CMD /C DEL \\\"%s\\\"' % backup_path)
 
                 # Check how the copy command did, earlier.
                 if copy_body.has_key('error'):
@@ -364,13 +519,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 # Check if the DEL worked.
                 if remove_body.has_key('error'):
                     return remove_body
-
-                backup_ip_address = non_primary_conn.auth['ip-address']
-
         else:
             backup_loc = primary_conn
             # Backup file remains on the primary.
-            backup_ip_address = primary_conn.auth['ip-address']
 
         # Save name of backup, agentid to the db.
         # fixme: create one of these per server.
@@ -446,8 +597,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         headers = {"Content-Type": "application/json"}
 
-        self.log.debug('about to do the cli command to %s, xid: %d, command: %s', \
-                        aconn.displayname, req.xid, cli_command)
+        self.log.debug("about to send the cli command to '%s', type '%s' xid: %d, command: %s", \
+                aconn.displayname, aconn.auth['type'], req.xid, cli_command)
         try:
             aconn.httpconn.request('POST', '/cli', req.send_body, headers)
             self.log.debug('sent cli command.')
@@ -536,13 +687,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
            copy source-displayname:/path/to/file dest-displayname
                        <source_path>          <dest-displayname>
            generates:
-            c:/Palette/bin/pget.exe http://primary-ip:192.168.1.1/file dir/
+               pget.exe http://primary-ip:192.168.1.1/file dir/
            and sends it as a cli command to agent:
                 dest-displayname
            Returns the body dictionary from the status."""
 
-        if not source_path.find(':'):
-            return self.error("[ERROR] Missing ':' in source path:" % source_path)
+        if source_path.find(':') == -1:
+            return self.error("[ERROR] Missing ':' in source path: %s" % source_path)
 
         (source_displayname, source_path) = source_path.split(':',1)
 
@@ -552,11 +703,19 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         agents = manager.all_agents()
         src = dst = None
 
-        for key in agents:
-            if agents[key].displayname == source_displayname:
-                src = agents[key]
-            if agents[key].displayname == dest_name:
-                dst = agents[key]
+        for key in agents.keys():
+            manager.lock()
+            if not agents.has_key(key):
+                self.log.info("copy_cmd: agent with conn_id '%d' is now gone and won't be checked." % key)
+                manager.unlock()
+                continue
+            agent = agents[key]
+            manager.unlock()
+
+            if agent.displayname == source_displayname:
+                src = agent
+            if agent.displayname == dest_name:
+                dst = agent
 
         msg = ""
         # fixme: make sure the source isn't the same as the dest
@@ -570,26 +729,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not src or not dst:
             return self.error(msg)
 
-        PGET_BIN="c:/Palette/bin/pget.exe"
-
         source_ip = src.auth['ip-address']
 
         if 'install-dir' in dst.auth:
-            target_dir = dst.auth['install-dir'] + "\\Data\\" 
+            target_dir = dst.auth['install-dir'] + "Data"
         else:
             target_dir = self.DEFAULT_BACKUP_DIR
 
-        command = "%s http://%s:%s/%s %s" % \
-            (PGET_BIN, source_ip, src.auth['listen-port'],
+        command = '%s http://%s:%s/%s "%s"' % \
+            (Controller.PGET_BIN, source_ip, src.auth['listen-port'],
              source_path, target_dir)
 
         copy_body = self.cli_cmd(command, dst) # Send command to destination agent
-        # Fixme (fix pget so it sets exit status to non-zero on failure).
-        # Dig around to see if it failed.  It is important to know.
-        if not copy_body.has_key('error') and copy_body.has_key('stdout') and \
-                    copy_body['stdout'].find("Error in download") == 0:
-            copy_body['error'] = copy_body['stdout']
-
         return copy_body
 
     def restore_cmd(self, arg):
@@ -612,7 +763,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if os.path.isabs(source_filename):
             return self.error("[ERROR] May not specify an absolute pathname or disk: " + source_filename)
 
-        source_fullpathname = self.DEFAULT_BACKUP_DIR + '\\' + source_filename + ".tsbak"
+        source_fullpathname = self.DEFAULT_BACKUP_DIR + source_filename
 
         # Get the Primary Agent handle
         primary_conn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
@@ -628,9 +779,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # copy_cmd arguments:
             #   source-agent-name:/filename
             #   dest-agent-displayname
-            arg_tsbak = arg + ".tsbak"
-            self.log.debug("Sending copy command: %s, %s", arg_tsbak, primary_conn.displayname)
-            body = server.copy_cmd(arg_tsbak, primary_conn.displayname)
+            self.log.debug("Sending copy command: %s, %s", arg, primary_conn.displayname)
+            body = server.copy_cmd(arg, primary_conn.displayname)
 
             if body.has_key("error"):
                 self.log.debug("Copy failed with: " + str(body))
@@ -650,6 +800,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             stop_body = self.cli_cmd("tabadmin stop")
             if stop_body.has_key('error'):
                 self.info.debug("Restore: tabadmin stop failed")
+                if source_displayname != primary_conn.displayname:
+                    # If the file was copied to the Primary, delete
+                    # the temporary backup file we copied to the Primary.
+                    self.delete_file(source_fullpathname)
                 return stop_body
 
             # Give Tableau and the status thread a bit of time to stop
@@ -665,45 +819,62 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 time.sleep(8)
 
             if not stopped:
+                if source_displayname != primary_conn.displayname:
+                    # If the file was copied to the Primary, delete
+                    # the temporary backup file we copied to the Primary.
+                    self.delete_file(source_fullpathname)
                 return self.error('[ERROR] Tableleau did not stop as requested.  Restore aborted.')
 
         # 'tabadmin restore ...' starts tableau as part of the restore procedure.
         # fixme: Maybe the maintenance web server wasn't running?
         maint_body = server.maint("stop")
         if maint_body.has_key("error"):
-            self.info.debug("Restore: maint stop failed")
+            self.log.info("Restore: maint stop failed")
             # continue on, not a fatal error...
 
         stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STARTING)
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_RESTORE2)
         try:
-            cmd = "tabadmin restore %s" % source_fullpathname
+            cmd = 'tabadmin restore \\\"%s\\\"' % source_fullpathname
             self.log.debug("restore sending command: %s", cmd)
-            body = self.cli_cmd(cmd)
+            restore_body = self.cli_cmd(cmd)
         except HTTPException, e:
-            return self.error("HTTP Exception: " + str(e))
+            restore_body = { "error": "HTTP Exception: " + str(e) }
 
-        if body.has_key('error'):
-            # Fixme: what state are we in now?
-            return body
+        if restore_body.has_key('error'):
+            restore_success = False
+        else:
+            restore_success = True
 
         # fixme: Do we need to add restore information to the database?  
         # fixme: check status before cleanup? Or cleanup anyway?
 
         if source_displayname != primary_conn.displayname:
-            # If the file was copied to the Primary Agent, delete
-            # the temporary backup file we copied to the Primary Agent.
-            self.log.debug("------------Restore: Removing file '%s' after restore------" % source_fullpathname)
-            remove_body = self.cli_cmd("CMD /C DEL %s" % source_fullpathname)
-            if remove_body.has_key('error'):
-                return remove_body
+            # If the file was copied to the Primary, delete
+            # the temporary backup file we copied to the Primary.
+            self.delete_file(source_fullpathname)
+            
+        if not restore_success:
+            # On a successful restore, tableau starts itself.
+            # fixme: eventually control when tableau is started and
+            # stopped, rather than have tableau automatically start
+            # during the restore.
+            self.log.info("Restore: starting tableau after failed restore.")
+            start_body = self.cli_cmd("tabadmin start")
+            if start_body.has_key('error'):
+                self.log.info("Restore: 'tabadmin start' failed after failed restore.")
+                # fixme: report somewhere the 'tabadmin start' failed.
 
-        # On a successful restore, tableau starts itself.
-        # fixme: The restore command usually still runs a while longer,
-        # even after restore completes successfully.  Maybe note this in the UI?
-        # So the "backup" status stays at "restore" for a while after
-        # tableau has started and the UI say "RUNNING".
+        return restore_body
 
-        return body
+    def delete_file(self, source_fullpathname):
+        """Delete a file, check the error, and return the body result."""
+        self.log.debug("Removing file '%s'" % source_fullpathname)
+        remove_body = self.cli_cmd('CMD /C DEL \\\"%s\\\"' % source_fullpathname)
+        if remove_body.has_key('error'):
+            self.log.info('DEL of "%s" failed.' % source_fullpathname)
+            # fixme: report somewhere the DEL failed.
+        return remove_body
 
     def _get_status(self, command, xid, aconn):
         """Gets status on the command and xid.  Returns:
@@ -726,6 +897,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         while True:
             self.log.debug("-----about to get status of command %s, xid %d", command, xid)
+
+            if not manager.agent_connected(aconn):
+                self.log.info("Agent '%s' (type: '%s', conn_id %d) disconnected before finishing: %s" %
+                    (aconn.displayname, aconn.auth['type'], aconn.conn_id, uri))
+                return self.error("Agent '%s' (type: '%s', conn_id %d) disconnected before finishing: %s" %
+                    (aconn.displayname, aconn.auth['type'], aconn.conn_id, uri))
 
             aconn.lock()
             self.log.debug("Sending GET " + uri)
@@ -760,9 +937,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     
                 if body['run-status'] == 'finished':
                     if body.has_key('stderr') and len(body['stderr']) and \
-                                                        body['exit-status'] == 0:
+                                                    body['exit-status'] == 0:
                         self.log.info("exit-status was 0 but stderr wasn't empty.")
                         body['exit-status'] = 1 # Force error for exit-status.
+                    if body['exit-status']:
+                        body['error'] = "Failed.  See exit status."
                     return body
                 elif body['run-status'] == 'running':
                     time.sleep(self.cli_get_status_interval)
@@ -802,13 +981,47 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 body = {}
                 self.log.debug("maint reply empty.")
 
-        except (HTTPException, HTTPException, EnvironmentError) as e:
+        except (HTTPException, EnvironmentError) as e:
             return self.error("maint failed: " + str(e))
             self.remove_agent(aconn)    # bad agent
         finally:
             aconn.unlock()
 
         return body
+
+    def ping_immediate(self, aconn):
+        if not aconn:
+            # Get the Primary Agent handle
+            aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
+
+        if not aconn:
+            return self.error("[ERROR] ping: Agent not connected.")
+
+        aconn.lock()
+        self.log.debug("about to send a 'ping' to %s" % aconn.displayname)
+
+        try:
+            aconn.httpconn.request("POST", "/ping")
+            res = aconn.httpconn.getresponse()
+
+            self.log.debug("ping reply status = %d", res.status)
+            ignore = res.read()
+            if res.status == 200:
+                return {'stdout': "Ping to %s (type %s) succeeded with status %d." % \
+                    (aconn.displayname, aconn.auth['type'], res.status) }
+
+            self.remove_agent(aconn)    # bad agent
+            return self.error("ping command to %s failed with status %d" % \
+                                    (aconn.displayname, str(e)))
+
+        except (HTTPException, EnvironmentError) as e:
+            return self.error("ping failed: " + str(e))
+            self.remove_agent(aconn)    # bad agent
+        finally:
+            aconn.unlock()
+
+        self.logger.log(logging.ERROR, "This line should not be reached!")
+        return self.error("Should not have reached this line.")
 
     def displayname_cmd(self, hostname, displayname):
         """Sets displayname for the agent with the given hostname. At

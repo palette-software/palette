@@ -65,6 +65,7 @@ class ManageAdvancedDialog(DialogPage):
         session = self.Session()
         self.agents = session.query(AgentStatusEntry).\
           filter(AgentStatusEntry.domainid == self.domain.domainid).\
+          order_by(AgentStatusEntry.last_connection_time.desc()).\
           all()
         for agent in self.agents:
             if agent.connected():
