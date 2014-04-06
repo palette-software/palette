@@ -88,9 +88,9 @@ class CliHandler(socketserver.StreamRequestHandler):
           StateEntry.STATE_BACKUP_NONE)
 
         if not body.has_key('error'):
-            alert.send("Backup Finished")
+            alert.send("Backup Finished", body)
         else:
-            alert.send("Backup failure: " + str(body['error']))
+            alert.send("Backup Failed", body)
         self.report_status(body)
 
     def do_restore(self, argv, aconn=None):
@@ -135,9 +135,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         # only after some sanity checking is done.
         alert = Alert(self.server.config, log)
         if not body.has_key('error'):
-            alert.send("Restore Finished")
+            alert.send("Restore Finished", body)
         else:
-            alert.send("Restore failure: " + str(body['error']))
+            alert.send("Restore Failed" , body)
 
         self.report_status(body)
 
@@ -490,9 +490,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                           non_primary_conn.displayname:
                             non_primary_conn = agents[key]
         if target:
-            return { 
-                'error' : 'agent %s does not exist or is offline' % target
-            }
+            self.error("agent %s does not exist or is offline" % target)
 
         if non_primary_conn:
             backup_loc = non_primary_conn
@@ -502,23 +500,23 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 non_primary_conn.displayname)
 
             if copy_body.has_key('error'):
-                self.log.info("Copy of backup file to agent '%s' failed.  Will leave the backup on the primary agent.", non_primary_conn.displayname)
-                # Something was wrong with the non-primary agent.  Leave
-                # the backup on the primary after all.
+                msg = "Copy of backup file '%s' to agent '%s' failed.  Will leave the backup file on the primary agent. Error was: %s" % \
+                    (backup_name, non_primary_conn.displayname, \
+                                                        copy_body['error'])
+                self.log.info(msg)
+                body['info'] = msg
+                # Something was wrong with the copy to the non-primary agent.
+                #  Leave the backup on the primary after all.
                 backup_loc = primary_conn
             else:
                 # The copy succeeded.
                 # Remove the backup file from the primary
-                remove_body = \
-                    self.cli_cmd('CMD /C DEL \\\"%s\\\"' % backup_path)
-
-                # Check how the copy command did, earlier.
-                if copy_body.has_key('error'):
-                    return copy_body
+                remove_cli = 'CMD /C DEL \\\"%s\\\"' % backup_path
+                remove_body = self.cli_cmd(remove_cli)
 
                 # Check if the DEL worked.
                 if remove_body.has_key('error'):
-                    return remove_body
+                    body['info'] = "DEL of backup file failed after copy.  Command: '%s'. Error was: %s" % (remove_cli, remove_body['error'])
         else:
             backup_loc = primary_conn
             # Backup file remains on the primary.
@@ -566,23 +564,23 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 body['exit-status'] = 1 # Force error for exit-status.
             return body
 
-        body = self._get_status("cli", body['xid'], aconn)
+        cli_body = self._get_status("cli", body['xid'], aconn)
 
-        if body.has_key('error'):
-            return body
-
-        if not body.has_key("stdout"):
-            return self.error("check status of cli failed - missing 'stdout' in reply", body)
+        if not cli_body.has_key("stdout"):
+            self.log.error("check status of cli failed - missing 'stdout' in reply", cli_body)
 
         try:
-            cleanup_dict = self._send_cleanup("cli", body['xid'], aconn)
+            cleanup_body = self._send_cleanup("cli", body['xid'], aconn)
         except EnvironmentError, e:
-            return self.error("cleanup cli failed with: " +  str(e))
+            cleanup_body = { "error": "cleanup cli failed with: " +  str(e) }
 
-        if cleanup_dict.has_key('error'):
+        if cli_body.has_key("error"):
+            return cli_body
+
+        if cleanup_body.has_key('error'):
             return cleanup_dict
 
-        return body
+        return cli_body
 
     def _send_cli(self, cli_command, aconn):
         """Send a "cli" command to an Agent.
@@ -720,10 +718,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         msg = ""
         # fixme: make sure the source isn't the same as the dest
         if not src:
-            msg = "Unknown or unconnected source-displayname: %s. " % \
+            msg = "No connected source agent with displayname: %s. " % \
               source_displayname 
         if not dst:
-            msg += "Unknown or unconnected dest-displayname: %s." % \
+            msg += "No connected destination agent with displayname: %s." % \
               dest_name
 
         if not src or not dst:
@@ -763,13 +761,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if os.path.isabs(source_filename):
             return self.error("[ERROR] May not specify an absolute pathname or disk: " + source_filename)
 
-        source_fullpathname = self.DEFAULT_BACKUP_DIR + source_filename
-
         # Get the Primary Agent handle
         primary_conn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
 
         if not primary_conn:
             return self.error("[ERROR] No Primary Agent is connected.")
+
+        if 'install-dir' in primary_conn.auth:
+            source_fullpathname = primary_conn.auth['install-dir'] + "Data\\" + source_filename
+        else:
+            source_fullpathname = self.DEFAULT_BACKUP_DIR + source_filename
 
         # Check if the source_filename is on the Primary Agent.
         if source_displayname != primary_conn.displayname:
@@ -779,11 +780,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # copy_cmd arguments:
             #   source-agent-name:/filename
             #   dest-agent-displayname
-            self.log.debug("Sending copy command: %s, %s", arg, primary_conn.displayname)
+            self.log.debug("Restore: Sending copy command: %s, %s", arg, primary_conn.displayname)
             body = server.copy_cmd(arg, primary_conn.displayname)
 
             if body.has_key("error"):
-                self.log.debug("Copy failed with: " + str(body))
+                self.log.debug("Restore: Copy of backup file '%s' from '%s' failed.  Error was: %s " % \
+                        (source_fullpathname, source_displayname, body['error']))
                 return body
 
         # The restore file is now on the Primary Agent.
@@ -799,7 +801,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             log.debug("--------------Stopping Tableau for restore---------------")
             stop_body = self.cli_cmd("tabadmin stop")
             if stop_body.has_key('error'):
-                self.info.debug("Restore: tabadmin stop failed")
+                self.log.info("Restore: tabadmin stop failed")
                 if source_displayname != primary_conn.displayname:
                     # If the file was copied to the Primary, delete
                     # the temporary backup file we copied to the Primary.
@@ -831,6 +833,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if maint_body.has_key("error"):
             self.log.info("Restore: maint stop failed")
             # continue on, not a fatal error...
+            restore_body['info'] = "Restore: maint stop failed.  Error was: %s" \
+                % maint_body['error']
 
         stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STARTING)
         stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_RESTORE2)
@@ -863,7 +867,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             start_body = self.cli_cmd("tabadmin start")
             if start_body.has_key('error'):
                 self.log.info("Restore: 'tabadmin start' failed after failed restore.")
-                # fixme: report somewhere the 'tabadmin start' failed.
+                msg = "Restore: 'tabadmin start' failed after failed restore.  Error was: %s" % start_body['error']
+                if restore_body.has_key('info'):
+                    restore_body['info'] += "\n" + msg
+                else:
+                    restore_body['info'] = msg
 
         return restore_body
 
@@ -940,8 +948,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                                     body['exit-status'] == 0:
                         self.log.info("exit-status was 0 but stderr wasn't empty.")
                         body['exit-status'] = 1 # Force error for exit-status.
-                    if body['exit-status']:
-                        body['error'] = "Failed.  See exit status."
+                    # Make sure if the command failed, that the 'error'
+                    # key is set.
+                    if body['exit-status'] != 0:
+                        if body.has_key('stderr'):
+                            body['error'] = body['stderr']
+                        else:
+                            body['error'] = "Failed with exit status: %d" % body['exit-status']
                     return body
                 elif body['run-status'] == 'running':
                     time.sleep(self.cli_get_status_interval)
