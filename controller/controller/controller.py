@@ -487,6 +487,15 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             print >> self.wfile, "OK"
 
+    def do_nop(self, cmd):
+        """usage: nop"""
+
+        if len(cmd.args) > 0:
+            print >> self.wfile, "OK"
+            for arg in cmd.args:
+                print >> self.wfile, arg
+        print >> self.wfile, "OK"
+
     def handle(self):
         while True:
             data = self.rfile.readline().strip()
@@ -568,7 +577,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
             # FIXME: convert to passing cmd to all functions
             #   plus the found aconn object.
-            if cmd.name == 'maint':
+            if cmd.name == 'maint' or cmd.name == 'nop':
                 f(cmd)
             else:
                 f(new_argv, aconn=aconn)
