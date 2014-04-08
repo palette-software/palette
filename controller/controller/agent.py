@@ -201,6 +201,7 @@ class AgentHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         print 'GET: '+self.path
+        #time.sleep(10)     # for testing timeout handling in the controller
         self.handle_controller_command("GET")
         return None
 

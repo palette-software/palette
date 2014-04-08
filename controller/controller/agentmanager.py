@@ -85,8 +85,11 @@ class AgentManager(threading.Thread):
         # the unique 'conn_id'.
         self.agents = {}
 
+        self.socket_timeout = self.config.getint('controller','socket_timeout', default=60)
+
         self.ssl = self.config.getboolean('controller','ssl', default=False)
         if self.ssl:
+            self.ssl_handshake_timeout = self.config.getint('controller','ssl_handshake_timeout', default=5)
             if self.config.has_option('controller', 'ssl_cert_file'):
                 self.cert_file = self.config.get('controller', 'ssl_cert_file')
             else:
@@ -326,16 +329,10 @@ class AgentManager(threading.Thread):
         self.lockobj.release()
 
     def run(self):
-        self.raw_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
-        self.raw_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.raw_socket.bind((self.host, self.port))
-        self.raw_socket.listen(8)
-
-        if self.ssl:
-            self.socket = ssl.wrap_socket(self.raw_socket, server_side=True,
-                                                       certfile=self.cert_file)
-        else:
-            self.socket = self.raw_socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind((self.host, self.port))
+        sock.listen(8)
 
         # Start socket monitor check thread
         asocketmon = AgentHealthMonitor(self, self.log)
@@ -343,11 +340,9 @@ class AgentManager(threading.Thread):
 
         while True:
             try:
-                conn, addr = self.socket.accept()
-            except (ssl.SSLError, socket.error), e:
-                # http://bugs.python.org/issue9211, though takes
-                # a while to garbage collect and close the fd.
-                self.log.debug("Client ssl negotiation failed. Closing socket.")
+                conn, addr = sock.accept()
+            except socket.error as e:
+                self.log.debug("Accept failed.")
                 continue
 
             tobj = threading.Thread(target=self.new_agent_connection,
@@ -376,6 +371,22 @@ class AgentManager(threading.Thread):
 
     # thread function: spawned on a new connection from an agent.
     def new_agent_connection(self, conn, addr):
+        if self.ssl:
+            conn.settimeout(self.ssl_handshake_timeout)
+            try:
+                ssl_sock = ssl.wrap_socket(conn, server_side=True,
+                                                       certfile=self.cert_file)
+                conn = ssl_sock
+            except (ssl.SSLError, socket.error), e:
+                self.log.info("Exception with ssl wrap: %s", str(e))
+                # http://bugs.python.org/issue9211, though takes
+                # a while to garbage collect and close the fd.
+                self._shutdown(conn)
+                return
+
+        self.log.debug("New socket accepted.")
+        conn.settimeout(self.socket_timeout)
+
         try:
             agent = AgentConnection(conn, addr)
 

@@ -88,7 +88,7 @@ class Alert(object):
                          from the agent.
         """
 
-        if type(body) == str:
+        if isinstance(body, str) or isinstance(body, unicode):
             return body
 
         if type(body) != dict:
