@@ -674,11 +674,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # print "headers:", res.getheaders()
             self.log.debug("_send_cli reading...")
             body_json = res.read()
-        except (httplib.HTTPException, EnvironmentError) as e:
-            self.remove_agent(aconn)    # bad agent
+
+        except (HTTPException, EnvironmentError) as e:
+            self.remove_agent(aconn, "Communication lost with agent.")    # bad agent
             return self.error("POST /cli failed with: " + str(e))
         except:
-            self.remove_agent(aconn)    # bad agent
+            self.remove_agent(aconn, "Communication error with agent.")    # bad agent
             return self.error("POST /cli failed with unexpected error: " + str(sys.exc_info()[0]))
         finally:
             aconn.unlock()
@@ -728,8 +729,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.debug("headers: " + str(res.getheaders()))
             self.log.debug("_send_cleanup reading...")
             body_json = res.read()
-        except (httplib.HTTPException, EnvironmentError) as e:
-            self.remove_agent(aconn)    # bad agent
+        except (HTTPException, EnvironmentError) as e:
+            self.remove_agent(aconn, "Command to agent failed.")    # bad agent
             self.log.debug("POST %s failed with HTTPException: %s", command, str(e))
             return self.error("POST /%s failed with: %s" % (command, str(e)))
         finally:
@@ -984,7 +985,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 res = aconn.httpconn.getresponse()
                 self.log.debug("status: " + str(res.status) + ' ' + str(res.reason))
                 if res.status != 200: # FIXME
-                    self.remove_agent(aconn)    # bad agent
+                    self.remove_agent(aconn, "Failed status from agent.")
                     aconn.unlock()
                     return self.error("GET %s command failed with: %s" % (uri, str(e)))
 #                debug for testing agent disconnects
@@ -1002,7 +1003,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
                 self.log.debug("body = " + str(body))
                 if not body.has_key('run-status'):
-                    self.remove_agent(aconn)    # bad agent
+                    self.remove_agent(aconn, "Agent returned invalid status.")
                     return self.error("GET %S command reply was missing 'run-status'!  Will not retry." % (uri), body)
     
                 if body['run-status'] == 'finished':
@@ -1022,13 +1023,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     time.sleep(self.cli_get_status_interval)
                     continue
                 else:
-                    self.remove_agent(aconn)    # bad agent
+                    self.remove_agent(aconn, "Communication failure with agent:  Unknown run-status returned from agent: %s" % body['run-status'])    # bad agent
                     return self.error("Unknown run-status: %s.  Will not retry." % body['run-status'], body)
-            except httplib.HTTPException, e:
-                    self.remove_agent(aconn)    # bad agent
+            except HTTPException, e:
+                    self.remove_agent(aconn, "HTTP communication failure with agent: " + str(e))    # bad agent
                     return self.error("GET %s failed with HTTPException: %s" % (uri, str(e)))
             except EnvironmentError, e:
-                    self.remove_agent(aconn)    # bad agent
+                    self.remove_agent(aconn, "Communication failure with agent. Unexpected error: " + \
+                                                    str(e))    # bad agent
                     return self.error("GET %s failed with: %s" % (uri, str(e)))
     
 
@@ -1061,7 +1063,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         except (httplib.HTTPException, EnvironmentError) as e:
             return self.error("maint failed: " + str(e))
-            self.remove_agent(aconn)    # bad agent
+            self.remove_agent(aconn, "Agent 'maint' command failed: " + str(e))    # bad agent
         finally:
             aconn.unlock()
 
@@ -1088,13 +1090,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 return {'stdout': "Ping to %s (type %s) succeeded with status %d." % \
                     (aconn.displayname, aconn.auth['type'], res.status) }
 
-            self.remove_agent(aconn)    # bad agent
+            self.remove_agent(aconn, "Communication failure with agent.  Status returned: %d" % res.status)    # bad agent
             return self.error("ping command to %s failed with status %d" % \
                                     (aconn.displayname, str(e)))
 
         except (httplib.HTTPException, EnvironmentError) as e:
             return self.error("ping failed: " + str(e))
-            self.remove_agent(aconn)    # bad agent
+            self.remove_agent(aconn, "Communication failure with agent.  Error: " + str(e))    # bad agent
         finally:
             aconn.unlock()
 
@@ -1119,10 +1121,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """Returns a dict representing a non-OK HTTP response."""
         if body is None:
             body = res.read()
-        return {'status': res.status, 'reason': res.reason, 'body': body}
+        return {
+            'status-code': res.status,
+            'reason-phrase': res.reason,
+            'body': body
+            }
 
-    def remove_agent(self, aconn):
-        manager.remove_agent(aconn)
+    def remove_agent(self, aconn, reason="", send_alert=True):
+        manager.remove_agent(aconn, reason=reason, send_alert=send_alert)
         if not manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY):
             # fixme: why get Session() from here?
             session = statusmon.Session()

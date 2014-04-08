@@ -11,6 +11,7 @@ import json
 
 from agentstatus import AgentStatusEntry
 from state import StateManager, StateEntry
+from alert import Alert
 
 import meta
 from sqlalchemy.orm import sessionmaker
@@ -120,18 +121,18 @@ class AgentManager(threading.Thread):
 
         new_agent_type = body['type']
         # Don't allow two primary agents to be connected and
-        # don't allow two agents with the same name to be connected
+        # don't allow two agents with the same name to be connected.
         # Keep the newest one.
         for key in self.agents.keys():
             agent = self.agents[key]
             if agent.uuid == body['uuid']:
                 self.log.info("Agent already connected with name '%s': will remove it and use the new connection.", body['uuid'])
-                self.remove_agent(agent)
+                self.remove_agent(agent, "An agent is already connected named '%s': will remove it and use the new connection." % body['uuid'], send_alert=False)
                 break
             elif new_agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
                                 agent.auth['type'] == AgentManager.AGENT_TYPE_PRIMARY:
-                    self.log.info("Primary agent already connected: will remove it and keep the new primary agent connection.")
-                    self.remove_agent(agent)
+                    self.log.info("A primary agent is already connected: will remove it and keep the new primary agent connection.")
+                    self.remove_agent(agent, "A primary agent is already connected: will remove it and keep the new primary agent connection.", send_alert=False)
 
         # Remember the new agent
         entry = self.remember(body)
@@ -281,12 +282,27 @@ class AgentManager(threading.Thread):
     def unlock_agent(self, agent):
         agent.unlock()
 
-    def remove_agent(self, agent):
+    def remove_agent(self, agent, reason="", send_alert=True):
+        """Remove an agent.
+            Args:
+                agent:       The agent to remove.
+                reason:      An optional message, describing why.
+                send_alert:  True or False.  If True, sends an alert.
+                             If False does not send an alert.
+        """
         self.lock()
         conn_id = agent.conn_id
         if self.agents.has_key(conn_id):
             self.log.debug("Removing agent with conn_id %d, name %s",\
                 conn_id, self.agents[conn_id].auth['hostname'])
+
+            if send_alert:
+                alert = Alert(self.config, self.log)
+                if reason == "":
+                    reason = "Agent communication failure"
+                alert.send(reason, "\nAgent: %s\nAgent type: %s\nAgent connection-id %d" % 
+                            (agent.displayname, agent.auth['type'], conn_id))
+
             self.forget(agent.agentid)
             del self.agents[conn_id]
         else:
@@ -469,7 +485,8 @@ class AgentHealthMonitor(threading.Thread):
                 if body.has_key('error'):
                     self.log.info("Ping: Agent '%s', type '%s', conn_id %d did not respond to ping.  Removing." %
                         (agent.displayname, agent.auth['type'], key))
-                    self.manager.remove_agent(agent)
+
+                    self.manager.remove_agent(agent, "Lost contact with an agent")
                 else:
                     self.log.debug("Ping: Replied for agent '%s', type '%s', conn_id %d." %
                         (agent.displayname, agent.auth['type'], key))
