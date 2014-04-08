@@ -57,7 +57,7 @@ p {
 
 .green-light, .yellow-light, .orange-light, .red-light {
 	width: 130px;
-	height: 130px;
+	height: 128px;
 	margin: 24px auto 10px;
 	background: url(/app/module/palette/images/status-green-light.png);
 	background-size: 100%;
@@ -826,6 +826,7 @@ font-weight: 500;
 /*SMALL SCREENS */
 @media screen and (max-width: 960px) {
 
+
 	.dashboard .title {
 		font-size: 18px;
 	}
@@ -958,7 +959,20 @@ font-weight: 500;
 }
 /*NOT LARGE SCREENS */
 @media screen and (max-width: 1200px) { 
-
+	a.tile-button {
+		width: 80px;
+		height: 80px;
+	}
+	.dashboard section.tile-module {
+		min-height: 250px;
+	}
+	.green-light, .yellow-light, .orange-light, .red-light {
+		width: 100px;
+		height: 98px;
+	}
+	#status-message {
+		font-size: 20px;
+	}
 }
 /*BIGGER THAN SMALL SCREEN */
 @media screen and (min-width: 960px) {
