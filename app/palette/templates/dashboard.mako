@@ -23,8 +23,11 @@
   #mainNav ul#nav li.active-home a {
     color: #fff;
   }
-  #mainNav ul#nav li.active-home a span {
+  @media screen and (max-width: 960px) {
+    #mainNav ul#nav li.active-home a {
     color: #8D96A3;
+    padding-left:35px;
+    }
   }
 </style>
 
@@ -36,7 +39,7 @@
       <section class="large-6 medium-6 small-12 xsmall-12 columns">
         <section class="tile-module">
           <section class="panel-body">
-            <section class="title"><span>System Monitor</span></section>
+            <section class="title"><span>Status</span></section>
             <section id="green" class="green-light" style="display:none"></section>
             <section id="yellow" class="yellow-light" style="display:none"></section>
             <section id="orange" class="orange-light" style="display:none"></section>
