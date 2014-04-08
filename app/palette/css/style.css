@@ -209,7 +209,7 @@ input[type="submit"].login:active {
 	margin-bottom: 6px;
 	text-align: center;
 	font-size: 16px;
-	color: #8D96A3;
+	color: #8d96a3;
     text-transform: uppercase;
 }
 .p-btn {
@@ -439,14 +439,14 @@ nav img {
 	background-color: #8D96A3;
 	display: block;
 	line-height: 45px;
-	font-size: 19px;
+	font-size: 24px;
 	text-align: left;
 	padding-left: 15px;
 }
 .dashboard .title > span {
 	overflow: hidden;
 	text-overflow: ellipsis;
-	width: 85%;
+	width: 75%;
 	white-space: nowrap;
 	position: relative;
 	display: block;
@@ -546,9 +546,6 @@ a.tile-button p {
 	color: #8D96A3;
 }
 a.tile-button.disabled span {
-	color: #bbb;
-}
-a.tile-button.disabled p {
 	color: #bbb;
 }
 
@@ -656,15 +653,17 @@ font-weight: 500;
 	}
 	.backup-status h3 {
 		font-weight: 500;
-		vertical-align: middle;
-		margin-left:15px;
-		line-height: 16px;
+		margin:0 0 0 10px;
+		line-height: 1.6;
 		color: #333;
+		font-size: 1rem;
+		display: inline-block;
 	}
 	.backup-status p {
-		margin: 0 0 0 5px;
+		margin: 0;
+		display: inline-block;
 	}
-	.backup-status div {
+	.backup-status section {
 		display: inline-block;
 	}
 
@@ -827,8 +826,31 @@ font-weight: 500;
 /*SMALL SCREENS */
 @media screen and (max-width: 960px) {
 
+	.dashboard .title {
+		font-size: 18px;
+	}
+
+		.container {
+		width: 100%;
+	}
+
 	.profile-settings-content {
 		max-width: none;
+		padding: 15px;
+		margin-top: 24px;
+	}
+	.profile-settings-nav {
+		padding: 15px;
+		margin-top: 0;
+		border-bottom: 1px solid #ddd;
+	}
+	.tabs.profile-settings-nav dd {
+		padding: 10px 0;
+		background-color: #fff;
+	}
+
+	.margin-top {
+		margin-top: 24px;
 	}
 
 	section.tile-module ul {
@@ -936,9 +958,7 @@ font-weight: 500;
 }
 /*NOT LARGE SCREENS */
 @media screen and (max-width: 1200px) { 
-	.container {
-		width: 100%;
-	}
+
 }
 /*BIGGER THAN SMALL SCREEN */
 @media screen and (min-width: 960px) {
