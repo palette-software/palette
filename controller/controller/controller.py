@@ -5,18 +5,20 @@ import os
 import shlex
 import SocketServer as socketserver
 
-from agentmanager import AgentManager
 import json
 import time
 
 from request import *
 from exc import *
-from httplib import HTTPException
+
+import httplib
+import inspect
 
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 import meta
 
+from agentmanager import AgentManager
 from backup import BackupManager
 from state import StateManager, StateEntry
 from status import StatusMonitor
@@ -30,12 +32,45 @@ global manager # fixme
 global server # fixme
 global log # fixme
 
+class Command(object):
+
+    def __init__(self, line):
+        self.dict = {}
+        self.name = None
+        self.args = []
+
+        for token in shlex.split(line):
+            if token.startswith("/"):
+                token = token[1:]
+                L = token.split("=", 1)
+                if len(L) > 1:
+                    key = L[0].strip()
+                    value = L[1].strip()
+                else:
+                    key = token.strip()
+                    value = None
+                self.dict[key] = value
+            elif self.name == None:
+                self.name = token
+            else:
+                self.args.append(token.strip())
+            
+
 class CliHandler(socketserver.StreamRequestHandler):
 
     def error(self, msg, *args):
         if args:
             msg = msg % args
         print >> self.wfile, '[ERROR] '+msg
+
+    def do_help(self, argv, aconn=False):
+        for name, m in inspect.getmembers(self, predicate=inspect.ismethod):
+            if name.startswith("do_"):
+                print >> self.wfile, '  ' + name[3:]
+                if m.__doc__:
+                    print >> self.wfile, '    ' + m.__doc__
+                if hasattr(m, '__usage__'):
+                    print >> self.wfile, '    usage: ' + m.__usage__
 
     def do_status(self, argv, aconn=False):
         if len(argv):
@@ -44,6 +79,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         body = server.cli_cmd("tabadmin status -v")
         self.report_status(body)
+    do_status.__usage__ = 'status'
 
     def do_backup(self, argv, aconn=False):
         target = None
@@ -143,14 +179,18 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def do_copy(self, argv, aconn=None):
         """Copy a file from one agent to another."""
+
         if len(argv) != 2 or aconn:
-            print >> self.wfile, '[ERROR] Usage: copy source-agent-name:filename dest-agent-name'
+            self.error(self.do_copy.__doc__)
             return
 
         body = server.copy_cmd(argv[0], argv[1])
         self.report_status(body)
+    do_copy.__usage__ = 'copy source-agent-name:filename dest-agent-name'
 
     def do_list(self, argv, aconn=None):
+        """List information about all connected agents."""
+
         if len(argv) or aconn:
             self.error("Usage: list")
             return
@@ -168,6 +208,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, "\t\tlisten-port:", agents[key].auth['listen-port']
             print >> self.wfile, "\t\thostname:", agents[key].auth['hostname']
             print >> self.wfile, "\t\tuuid:", agents[key].auth['uuid']
+    do_list.__usage__ = 'list'
 
     def do_cli(self, argv, aconn=None):
         if len(argv) < 1:
@@ -192,7 +233,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def do_pget(self, argv, aconn=None):
         if len(argv) < 2:
-            print >> self.wfile, '[ERROR] Usage: pget [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ] http://...... local-name'
+            self.error(self.do_pget.__usage__)
             return
 
         if aconn and type(aconn) == type([]):
@@ -200,16 +241,22 @@ class CliHandler(socketserver.StreamRequestHandler):
                                                                     len(aconn))
             return
 
-        pget_command = Controller.PGET_BIN + " " + ' '.join(argv)
+        cmd = Controller.PGET_BIN
+        for arg in argv:
+            if ' ' in arg:
+                cmd += ' "' + arg + '"'
+            else:
+                cmd += ' ' + arg
         if aconn:
             print >> self.wfile, "Sending to displayname '%s' (type: %s):" % \
                         (aconn.displayname, aconn.auth['type'])
         else:
             print >> self.wfile, "Sending:",
 
-        print >> self.wfile, pget_command
-        body = server.cli_cmd(pget_command, aconn)
+        print >> self.wfile, cmd
+        body = server.cli_cmd(cmd, aconn)
         self.report_status(body)
+    do_pget.__usage__ = 'pget [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ] https://...... local-name'
 
     def do_ping(self, argv, aconn=None):
         if len(argv):
@@ -334,17 +381,23 @@ class CliHandler(socketserver.StreamRequestHandler):
             if len(body['stderr']):
                 print >> self.wfile, 'stderr:', body['stderr']
 
-    def do_maint(self, argv, aconn=None):
-        if len(argv) != 1 or aconn or \
-                                    (argv[0] != "start" and argv[0] != "stop"):
-            print >> self.wfile, '[ERROR] usage: maint start|stop'
+    def do_maint(self, cmd, aconn=None):
+        """usage: maint [start|stop]"""
+
+        if len(cmd.args) != 1 or aconn:
+            self.error(self.do_maint.__doc__)
             return
 
-        body = server.maint(argv[0])
+        action = cmd.args[0]
+        if action != "start" and action != "stop":
+            self.error(self.do_maint.__doc__)
+            return
+
+        body = server.maint(action)
         if body:
-            self.report_status(body)
+            print >> self.wfile, 'body: ' + str(body)
         else:
-            print >> self.wfile, "Done"
+            print >> self.wfile, "{}"
 
     def do_displayname(self, argv, aconn=None):
         """Set the display name for an agent"""
@@ -364,10 +417,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             if not data: break
 
             argv = shlex.split(data)
-            cmd = argv.pop(0)
 
-            if not hasattr(self, 'do_'+cmd):
-                self.error('invalid command: %s', cmd)
+            cmd = Command(data)
+            argv = argv[1:]
+
+            if not hasattr(self, 'do_'+cmd.name):
+                self.error('invalid command: %s', cmd.name)
                 continue
 
             errcnt = 0
@@ -432,8 +487,15 @@ class CliHandler(socketserver.StreamRequestHandler):
                 continue
 
             # <command> /displayname=X /type=primary, /uuid=Y, /hostname=Z [args]
-            f = getattr(self, 'do_'+cmd)
-            f(new_argv, aconn=aconn)
+            # FIXME: find aconn by the values in cmd.dict
+            f = getattr(self, 'do_'+cmd.name)
+
+            # FIXME: convert to passing cmd to all functions
+            #   plus the found aconn object.
+            if cmd.name == 'maint':
+                f(cmd)
+            else:
+                f(new_argv, aconn=aconn)
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
@@ -605,14 +667,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             self.log.debug('command: cli: ' + str(res.status) + ' ' + str(res.reason))
 
-            if res.status != 200:
+            if res.status != 200: # FIXME: use a define
                 aconn.unlock()
                 raise HttpException(res.status, res.reason)
 
             # print "headers:", res.getheaders()
             self.log.debug("_send_cli reading...")
             body_json = res.read()
-        except (HTTPException, EnvironmentError) as e:
+        except (httplib.HTTPException, EnvironmentError) as e:
             self.remove_agent(aconn)    # bad agent
             return self.error("POST /cli failed with: " + str(e))
         except:
@@ -658,7 +720,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.debug('sent cleanup command')
             res = aconn.httpconn.getresponse()
             self.log.debug('command: cleanup: ' + str(res.status) + ' ' + str(res.reason))
-            if res.status != 200:
+            if res.status != 200: # FIXME
                 aconn.unlock()
                 self.log.debug("POST %s failed with res.status != 200: %d, reason: %s", command, res.status, res.reason)
                 raise HttpException(res.status, res.reason)
@@ -666,7 +728,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.debug("headers: " + str(res.getheaders()))
             self.log.debug("_send_cleanup reading...")
             body_json = res.read()
-        except (HTTPException, EnvironmentError) as e:
+        except (httplib.HTTPException, EnvironmentError) as e:
             self.remove_agent(aconn)    # bad agent
             self.log.debug("POST %s failed with HTTPException: %s", command, str(e))
             return self.error("POST /%s failed with: %s" % (command, str(e)))
@@ -685,7 +747,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
            copy source-displayname:/path/to/file dest-displayname
                        <source_path>          <dest-displayname>
            generates:
-               pget.exe http://primary-ip:192.168.1.1/file dir/
+               pget.exe https://primary-ip:192.168.1.1/file dir/
            and sends it as a cli command to agent:
                 dest-displayname
            Returns the body dictionary from the status."""
@@ -734,7 +796,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         else:
             target_dir = self.DEFAULT_BACKUP_DIR
 
-        command = '%s http://%s:%s/%s "%s"' % \
+        command = '%s https://%s:%s/%s "%s"' % \
             (Controller.PGET_BIN, source_ip, src.auth['listen-port'],
              source_path, target_dir)
 
@@ -842,7 +904,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             cmd = 'tabadmin restore \\\"%s\\\"' % source_fullpathname
             self.log.debug("restore sending command: %s", cmd)
             restore_body = self.cli_cmd(cmd)
-        except HTTPException, e:
+        except httplib.HTTPException, e:
             restore_body = { "error": "HTTP Exception: " + str(e) }
 
         if restore_body.has_key('error'):
@@ -921,7 +983,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.debug("Getting response from GET " +  uri)
                 res = aconn.httpconn.getresponse()
                 self.log.debug("status: " + str(res.status) + ' ' + str(res.reason))
-                if res.status != 200:
+                if res.status != 200: # FIXME
                     self.remove_agent(aconn)    # bad agent
                     aconn.unlock()
                     return self.error("GET %s command failed with: %s" % (uri, str(e)))
@@ -962,7 +1024,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 else:
                     self.remove_agent(aconn)    # bad agent
                     return self.error("Unknown run-status: %s.  Will not retry." % body['run-status'], body)
-            except HTTPException, e:
+            except httplib.HTTPException, e:
                     self.remove_agent(aconn)    # bad agent
                     return self.error("GET %s failed with HTTPException: %s" % (uri, str(e)))
             except EnvironmentError, e:
@@ -982,19 +1044,22 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         headers = {"Content-Type": "application/json"}
 
         aconn.lock()
+        body = {}
         try:
             aconn.httpconn.request("POST", "/maint", send_body, headers)
             res = aconn.httpconn.getresponse()
 
-            body_json = res.read()
-            if body_json:
-                body = json.loads(body_json)
+            rawbody = res.read()
+            if res.status != httplib.OK:
+                body = self.httperror(res, rawbody)
+            elif rawbody:
+                body = json.loads(rawbody)
                 self.log.debug("maint reply = " + str(body))
             else:
                 body = {}
                 self.log.debug("maint reply empty.")
 
-        except (HTTPException, EnvironmentError) as e:
+        except (httplib.HTTPException, EnvironmentError) as e:
             return self.error("maint failed: " + str(e))
             self.remove_agent(aconn)    # bad agent
         finally:
@@ -1019,7 +1084,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             self.log.debug("ping reply status = %d", res.status)
             ignore = res.read()
-            if res.status == 200:
+            if res.status == 200: #FIXME
                 return {'stdout': "Ping to %s (type %s) succeeded with status %d." % \
                     (aconn.displayname, aconn.auth['type'], res.status) }
 
@@ -1027,7 +1092,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("ping command to %s failed with status %d" % \
                                     (aconn.displayname, str(e)))
 
-        except (HTTPException, EnvironmentError) as e:
+        except (httplib.HTTPException, EnvironmentError) as e:
             return self.error("ping failed: " + str(e))
             self.remove_agent(aconn)    # bad agent
         finally:
@@ -1049,6 +1114,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return_dict['error'] = msg
         return return_dict
+
+    def httperror(self, res, body=None):
+        """Returns a dict representing a non-OK HTTP response."""
+        if body is None:
+            body = res.read()
+        return {'status': res.status, 'reason': res.reason, 'body': body}
 
     def remove_agent(self, aconn):
         manager.remove_agent(aconn)
