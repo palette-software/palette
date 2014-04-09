@@ -31,12 +31,18 @@ p {
 	position: relative;
 	max-width: 1200px;
 }
-#mainNav img {
+#mainNav img.site-id {
 	position: absolute;
 	left: 15px;
 	top: 0;
 	max-height: 60px;
 	padding: 17px 0 10px 0;
+}
+
+nav img.site-id {
+	color: #111111;
+	margin-top: -5px;
+	margin-right: 5px;
 }
 
 #mainNav .arrow-down {
@@ -421,11 +427,6 @@ ul.title-area > li > h1 > a {
 	color: #fff;
 	font-weight: 100;
 }
-nav img {
-	color: #111111;
-	margin-top: -5px;
-	margin-right: 5px;
-}
 .dashboard {
 	margin-top: 15px;
 }
@@ -562,13 +563,68 @@ section.tile-module ul.small-block-grid-1 {
 		vertical-align: middle;
 	}
 
-	#mainNav ul#nav {
+
+
+	#mainNav ul.nav img {
+		max-height: 32px;
+		position: absolute;
+		top: 14px;
+		right: 5px;
+		margin: 0 5px 0 0;
+		height: 32px;
+		border-radius: 5px;
+		border: 3px solid #bbb;
+	}
+
+
+	#mainNav ul.nav #profile-link a {
+		height: 60px;
+		position: relative;
+		width: 165px;
+	}
+
+	#mainNav ul.nav h4 {
+		font-size: 12px;
+		color: #fff;
+		line-height: 12px;
+		text-align: right;
+		position: absolute;
+		top: 12px;
+		right:50px;
+		box-sizing: content-box;
+		text-transform: none;
+		overflow:hidden;
+		text-overflow:ellipsis;
+		white-space: nowrap;
+		width: 100px;
+	}
+
+	#mainNav ul.nav h5 {
+		font-size: 11px;
+		color: #ccc;
+		line-height: 11px;
+		text-align: right;
+		position: absolute;
+		bottom: 9px;
+		right: 50px;
+		box-sizing: content-box;
+		overflow:hidden;
+		text-overflow:ellipsis;
+		white-space: nowrap;
+		width: 100px;
+	}
+
+	#mainNav ul.nav {
 		top: 0;
 		right: 0;
 		position: absolute;
 	}
 
-	#mainNav ul#nav li {
+	#mainNav ul.nav.menu {
+		right: 180px;
+	}
+
+	#mainNav ul.nav li {
 	font-size: 1em;
 	font-weight: 400;
 	text-indent: 0;
@@ -576,7 +632,9 @@ section.tile-module ul.small-block-grid-1 {
 	line-height: 60px;
 	position: relative;
 	}
-	#mainNav ul#nav li a {
+
+
+	#mainNav ul.nav li a {
 		color: #8D96A3;
 		text-decoration: none;
 		display: block;
@@ -585,20 +643,20 @@ section.tile-module ul.small-block-grid-1 {
 		font-size: 14px;
 		font-weight: 500;
 	}
-	#mainNav ul#nav li a:hover {
+	#mainNav ul.nav li a:hover {
 		background-color: rgba(250,250,250,0.1) !important;
 	}
 	
 	
-	#mainNav ul#nav.visible {
+	#mainNav ul.nav.menu.visible {
 		display: block;
 	}
-	#mainNav ul#nav li.more ul > li {
+	#mainNav ul.nav li.more ul > li {
 		background-color: #ddd;
 		box-shadow: 0 -1px rgba(0,0,0,0.1) inset;
 	}
 
-	#mainNav ul#nav li.more ul {
+	#mainNav ul.nav li.more ul {
 		display: none;
 		position: absolute;
 		top: 60px;
@@ -610,7 +668,7 @@ section.tile-module ul.small-block-grid-1 {
 		border-width: 0 1px 1px 1px;
 		margin: 0;
 	}
-	#mainNav ul#nav li.more ul.visible li {
+	#mainNav ul.nav li.more ul.visible li {
 	  	display: block;
 	  	background-color: #fff;
 	  	box-shadow: 0 -1px rgba(0,0,0,0.1) inset;
@@ -623,28 +681,28 @@ section.tile-module ul.small-block-grid-1 {
 transition: all 0.2s ease-out;
 font-weight: 500;
 	  }
-	  #mainNav ul#nav li.more ul li:last-of-type {
+	  #mainNav ul.nav li.more ul li:last-of-type {
 	    box-shadow: 0 1px #ccc;
 	  }
-	  #mainNav ul#nav li.more ul li.active {
+	  #mainNav ul.nav li.more ul li.active {
 	  	background-color: #8D96A3;
 	  }
-	  #mainNav ul#nav li.more ul li.active .arrow-down {
+	  #mainNav ul.nav li.more ul li.active .arrow-down {
 	  	border-top: 5px solid #fff;
 	  }
-	  #mainNav ul#nav li.more ul li.active a {
+	  #mainNav ul.nav li.more ul li.active a {
 		color: #fff;
 	}
-	#mainNav ul#nav li.more ul li.active a span {
+	#mainNav ul.nav li.more ul li.active a span {
 		color: #fff;
 	}
 	#toggle-main-menu {
 		display: none;
 	}
-	#mainNav ul#nav li.more ul li {
+	#mainNav ul.nav li.more ul li {
 		display: block;
 	}
-	#mainNav ul#nav li.more ul.visible {
+	#mainNav ul.nav li.more ul.visible {
 		display: block;
 	}
 
@@ -865,7 +923,7 @@ font-weight: 500;
 	padding: 50px 5px 5px 5px;
 	}
 
-  #mainNav ul#nav {
+  #mainNav ul.nav.menu {
   	z-index: 2;
   	top: 60px;
   	right: 0;
@@ -873,29 +931,36 @@ font-weight: 500;
   	display: none;
   }
 
-  #mainNav ul#nav li {
+ 	#mainNav ul.nav.nav-profile {
+		top: 0;
+		left: auto;
+		right: 48px;
+		width: auto
+	}
+
+  #mainNav ul.nav.menu li {
   	display: block;
   	background-color: #fff;
   	box-shadow: 0 -1px rgba(0,0,0,0.1) inset;
   	width: 100%;
   	position: relative;
   }
-  #mainNav ul#nav li:last-of-type {
+  #mainNav ul.nav.menu li:last-of-type {
     	box-shadow: 0 1px #ccc;
   }
-  #mainNav ul#nav li.active {
+  #mainNav ul.nav.menu li.active {
   	background-color: #8D96A3;
   }
-  #mainNav ul#nav li.active .arrow-down {
+  #mainNav ul.nav.menu li.active .arrow-down {
   	border-top: 5px solid #fff;
   }
-  #mainNav ul#nav li.active a {
+  #mainNav ul.nav.menu li.active a {
 	color: #fff;
 	}
-	#mainNav ul#nav li.active a span {
+	#mainNav ul.nav.menu li.active a span {
 		color: #fff;
 	}
-	#mainNav ul#nav li a span:first-of-type {
+	#mainNav ul.nav.menu li a span:first-of-type {
 		font-size: 24px;
 		vertical-align: middle;
 		margin-right: 10px;
@@ -913,7 +978,7 @@ font-weight: 500;
 		border-top: 5px solid #8D96A3;
 		right: 16px;
 	}
-	#mainNav ul#nav li a:active {
+	#mainNav ul.nav.menu li a:active {
 		padding-left: 25px;
 	}
 
@@ -935,7 +1000,7 @@ font-weight: 500;
 	    box-shadow: 0 5px rgba(0,0,0,0.2) inset;
 	    color: #fff;
 	}
-	#mainNav ul#nav li.more ul.visible {
+	#mainNav ul.nav.menu li.more ul.visible {
 		width: 100%;
 		position: relative;
 		top: auto;
@@ -943,11 +1008,11 @@ font-weight: 500;
 		box-shadow: 0 0;
 		border-width:0;
 	}
-	#mainNav ul#nav li.more ul.visible > li {
+	#mainNav ul.nav.menu li.more ul.visible > li {
 		padding-left: 15px;
 		background-color: #eee;
 	}
-	#mainNav ul#nav li.more ul.visible > li:nth-child(1) {
+	#mainNav ul.nav.menu li.more ul.visible > li:nth-child(1) {
 		box-shadow:0 -1px rgba(0,0,0,0.1) inset, 0 3px rgba(0,0,0,0.1) inset;
 	}
 	.dashboard .title > span {
@@ -980,7 +1045,7 @@ font-weight: 500;
   	text-align: center;
   	margin:0;
   }
-  	  #mainNav ul#nav li.more ul.visible li:hover {
+  	  #mainNav ul.nav li.more ul.visible li:hover {
 	  	background-color: #f5f5f5;
 	  	padding-left: 10px;
 	  }

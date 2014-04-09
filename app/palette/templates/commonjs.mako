@@ -8,10 +8,10 @@
     var viewport = $(window).width();
 
     if (viewport >= 1200) {
-        $('#mainNav ul#nav li.more').bind('mouseenter', function() {
+        $('#mainNav ul.nav li.more').bind('mouseenter', function() {
         $(this).find('ul').addClass('visible');
         });
-        $('#mainNav ul#nav li.more').bind('mouseleave', function() {
+        $('#mainNav ul.nav li.more').bind('mouseleave', function() {
             $(this).find('ul').removeClass('visible');
         });     
     } 
@@ -22,12 +22,12 @@
             event.preventDefault();
         });
 
-        $('#mainNav ul#nav > li.more').bind('click', function() {
+        $('#mainNav ul.nav > li.more').bind('click', function() {
           $(this).find('ul').toggleClass('visible');
         });
 
         $('#toggle-main-menu').bind('click', function() {
-            $('#mainNav ul#nav').toggleClass('visible');
+            $('#mainNav ul.nav').toggleClass('visible');
             $(this).toggleClass('visible');
         });
     }

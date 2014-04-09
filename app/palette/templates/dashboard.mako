@@ -20,11 +20,11 @@
 <script src="/app/module/palette/js/vendor/modernizr.js"></script>
 
 <style type="text/css">
-  #mainNav ul#nav li.active-home a {
+  #mainNav ul.nav li.active-home a {
     color: #fff;
   }
   @media screen and (max-width: 960px) {
-    #mainNav ul#nav li.active-home a {
+    #mainNav ul.nav li.active-home a {
     color: #8D96A3;
     padding-left:35px;
     }
