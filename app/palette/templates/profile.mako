@@ -20,11 +20,11 @@
 <script src="/app/module/palette/js/vendor/modernizr.js"></script>
 
 <style type="text/css">
-	#mainNav ul#nav li.active-profile a {
+	#mainNav ul.nav li.active-profile a {
 		color: #fff;
 	}
 	@media screen and (max-width: 960px) {
-		#mainNav ul#nav li.active-profile a {
+		#mainNav ul.nav li.active-profile a {
 		color: #8D96A3;
 		padding-left:35px;
 		}
@@ -53,8 +53,9 @@
 				  <label>Admin Type</label>
 				  <label class="select">
 					  <select class="styled-select">
-					  	<option>Non-Adminstrator</option>
-					  	<option>Adminstrator</option>
+					  	<option>No Administrator Access</option>
+					  	<option>No Change Administrator Access</option>
+					  	<option>Full Change Administrator Access</option>
 					  </select>
 				  </label>
 				  <label>Location Info</label>
@@ -163,6 +164,35 @@
 			    </label>	
             </li>
            </ul>
+           <label>Frequency (Hours)</label>
+           <label class="select">
+				  <select class="styled-select">
+				  	<option>1</option>
+				  	<option>2</option>
+				  	<option>3</option>
+				  	<option>4</option>
+				  	<option>5</option>
+				  	<option>6</option>
+				  	<option>7</option>
+				  	<option>8</option>
+				  	<option>9</option>
+				  	<option>10</option>
+				  	<option>11</option>
+				  	<option>12</option>
+				  	<option>13</option>
+				  	<option>14</option>
+				  	<option>15</option>
+				  	<option>16</option>
+				  	<option>17</option>
+				  	<option>18</option>
+				  	<option>19</option>
+				  	<option>20</option>
+				  	<option>21</option>
+				  	<option>22</option>
+				  	<option>23</option>
+				  	<option>24</option>
+				  </select>
+			    </label>
           <ul class="small-block-grid-2">
             <li><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></li>
             <li><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></li>--></li>
