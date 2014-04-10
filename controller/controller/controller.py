@@ -274,51 +274,48 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, "\t\tuuid:", agents[key].auth['uuid']
     do_list.__usage__ = 'list'
 
-    def do_cli(self, argv, aconn=None):
-        if len(argv) < 1:
+    def do_cli(self, cmd):
+        if len(cmd.args) < 1:
             print >> self.wfile, "[ERROR] usage: cli [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ] command"
             return
 
-        if aconn and type(aconn) == type([]):
-            self.error("Invalid request: More than one agent selected: %d",
-                                                                    len(aconn))
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
             return
 
-        cli_command = ' '.join(argv)
-        if aconn:
-            print >> self.wfile, "Sending to displayname '%s' (type: %s):" % \
-                            (aconn.displayname, aconn.auth['type'])
-        else:
-            print >> self.wfile, "Sending:"
-
+        cli_command = ' '.join(cmd.args)
+        print >> self.wfile, "Sending to displayname '%s' (type: %s):" % \
+          (aconn.displayname, aconn.auth['type'])
         print >> self.wfile, cli_command
+
         body = server.cli_cmd(cli_command, aconn)
         self.report_status(body)
 
-    def do_pget(self, argv, aconn=None):
-        if len(argv) < 2:
+    def do_pget(self, cmd):
+        if len(cms.args) < 2:
             self.error(self.do_pget.__usage__)
             return
 
-        if aconn and type(aconn) == type([]):
-            self.error("Invalid request: More than one agent was selected: %d",
-                                                                    len(aconn))
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
             return
 
-        cmd = Controller.PGET_BIN
-        for arg in argv:
+        pget_cmd = Controller.PGET_BIN
+        for arg in cms.args:
             if ' ' in arg:
-                cmd += ' "' + arg + '"'
+                pget_cmd += ' "' + arg + '"'
             else:
-                cmd += ' ' + arg
+                pget_cmd += ' ' + arg
         if aconn:
             print >> self.wfile, "Sending to displayname '%s' (type: %s):" % \
                         (aconn.displayname, aconn.auth['type'])
         else:
             print >> self.wfile, "Sending:",
 
-        print >> self.wfile, cmd
-        body = server.cli_cmd(cmd, aconn)
+        print >> self.wfile, pget_cmd
+        body = server.cli_cmd(pget_cmd, aconn)
         self.report_status(body)
     do_pget.__usage__ = 'pget [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ] https://...... local-name'
 
@@ -521,6 +518,11 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn = manager.agent_conn_by_hostname(val)
             if not aconn:
                 self.error("No connected agent with hostname=%s", val)
+        else:
+            aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
+            if not aconn:
+                self.error("No connected agent with type=%s", \
+                  AgentManager.AGENT_TYPE_PRIMARY)
 
         return aconn
 
@@ -536,17 +538,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                 continue
 
             # <command> /displayname=X /type=primary, /uuid=Y, /hostname=Z [args]
-            # FIXME: find aconn by the values in cmd.dict
             f = getattr(self, 'do_'+cmd.name)
-
-            aconn = self.get_aconn(cmd.dict)
-
-            # FIXME: convert to passing cmd to all functions
-            #   plus the found aconn object.
-            if cmd.name == 'cli' or cmd.name == 'pget':
-                f(cmd.args, aconn=aconn)
-            else:
-                f(cmd)
+            f(cmd)
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
