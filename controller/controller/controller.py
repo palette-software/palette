@@ -490,86 +490,53 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_nop(self, cmd):
         """usage: nop"""
 
-        if len(cmd.args) > 0:
-            print >> self.wfile, "args:"
-            for arg in cmd.args:
-                print >> self.wfile, arg
         print >> self.wfile, "OK"
+
+    def get_aconn(self, opts):
+        # FIXME: This method is a temporary hack while we
+        #        clean up the telnet commands
+
+        aconn = None
+
+        if opts.has_key('uuid'):
+            val = opts['uuid']
+            aconn = manager.agent_conn_by_uuid(val)
+            if not aconn:
+                self.error("No connected agent with uuid=%s", val)
+        elif opts.has_key('type'):
+            val = opts['type']
+            aconn = manager.agent_conn_by_type(val)
+            if not aconn:
+                self.error("No connected agent with type=%s", val)
+        elif opts.has_key('displayname'):
+            val = opts['displayname']
+            aconn = manager.agent_conn_by_displayname(val)
+            if not aconn:
+                self.error("No connected agent with displayname=%s", val)
+        elif opts.has_key('hostname'):
+            val = opts['hostname']
+            aconn = manager.agent_conn_by_hostname(val)
+            if not aconn:
+                self.error("No connected agent with hostname=%s", val)
+
+        return aconn
 
     def handle(self):
         while True:
             data = self.rfile.readline().strip()
             if not data: break
 
-            argv = shlex.split(data)
-
             cmd = Command(data)
-            argv = argv[1:]
 
             if not hasattr(self, 'do_'+cmd.name):
                 self.error('invalid command: %s', cmd.name)
                 continue
 
-            errcnt = 0
-
-            # Parse the '/option' portion, set 'aconn' to an agent
-            # matching the '/option=...." portion, and if there are
-            # options, remove them from argv.
-            aconn = None
-
-            for i in range(len(argv)):
-                arg = argv[i]
-                if arg[:1] != '/':
-                    break
-
-                parts = arg.split('=')
-                if len(parts) != 2:
-                    self.error("Invalid option format: Missing '=': %s", arg)
-                    errcnt += 1
-                    continue
-
-                opt, val = parts
-
-                if aconn:
-                    self.error("Cannnot specify more than one option at this time.")
-                    errcnt += 1
-                    break
-
-
-                if opt == "/displayname":
-                    aconn = manager.agent_conn_by_displayname(val)
-                    if not aconn:
-                        self.error("No connected agent with displayname=%s", val)
-                        errcnt += 1
-                        continue
-                elif opt == "/hostname":
-                    aconn = manager.agent_conn_by_hostname(val)
-                    if not aconn:
-                        self.error("No connected agent with hostname=%s", val)
-                        errcnt += 1
-                        continue
-                elif opt == "/uuid":
-                    aconn = manager.agent_conn_by_uuid(val)
-                    if not aconn:
-                        self.error("No connected agent with uuid=%s", val)
-                        errcnt += 1
-                        continue
-                elif opt == "/type":
-                    aconn = manager.agent_conn_by_type(val)
-                    if not aconn:
-                        self.error("No connected agent with type=%s", val)
-                        errcnt += 1
-                        continue
-                else:
-                    self.error("Unknown option: %s", opt)
-                    errcnt += 1
-
-            if errcnt:
-                continue
-
             # <command> /displayname=X /type=primary, /uuid=Y, /hostname=Z [args]
             # FIXME: find aconn by the values in cmd.dict
             f = getattr(self, 'do_'+cmd.name)
+
+            aconn = self.get_aconn(cmd.dict)
 
             # FIXME: convert to passing cmd to all functions
             #   plus the found aconn object.
