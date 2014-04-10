@@ -491,7 +491,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         """usage: nop"""
 
         if len(cmd.args) > 0:
-            print >> self.wfile, "OK"
+            print >> self.wfile, "args:"
             for arg in cmd.args:
                 print >> self.wfile, arg
         print >> self.wfile, "OK"
@@ -517,15 +517,11 @@ class CliHandler(socketserver.StreamRequestHandler):
             # options, remove them from argv.
             aconn = None
 
-            # "new_argv": The list of arguments without the "/.." options.
-            new_argv = argv
-
             for i in range(len(argv)):
                 arg = argv[i]
                 if arg[:1] != '/':
                     break
 
-                new_argv = argv[i+1:] # Removes this option and options before it
                 parts = arg.split('=')
                 if len(parts) != 2:
                     self.error("Invalid option format: Missing '=': %s", arg)
@@ -580,7 +576,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             if cmd.name == 'maint' or cmd.name == 'nop':
                 f(cmd)
             else:
-                f(new_argv, aconn=aconn)
+                f(cmd.args, aconn=aconn)
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
