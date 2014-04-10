@@ -112,7 +112,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             line += '[TELNET] ' + line
             sys.stdout.write(line)
 
-    def do_help(self, argv, aconn=False):
+    def do_help(self, cmd):
         for name, m in inspect.getmembers(self, predicate=inspect.ismethod):
             if name.startswith("do_"):
                 print >> self.wfile, '  ' + name[3:]
@@ -121,8 +121,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                 if hasattr(m, '__usage__'):
                     print >> self.wfile, '    usage: ' + m.__usage__
 
-    def do_status(self, argv, aconn=False):
-        if len(argv):
+    def do_status(self, cmd):
+        if len(cmd.args):
             print >> self.wfile, '[ERROR] status does not have an argument.'
             return
 
@@ -130,16 +130,16 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
     do_status.__usage__ = 'status'
 
-    def do_backup(self, argv, aconn=False):
+    def do_backup(self, cmd):
         """
             Returns:
                 CliHandler.SUCCESS on success and
                 CliHandler.FAIL on failure.
         """
         target = None
-        if len(argv) == 1:
-            target = argv[0]
-        elif len(argv) or aconn:
+        if len(cmd.args) == 1:
+            target = cmd.args[0]
+        elif len(cmd.args):
             print >> self.wfile, '[ERROR] usage: backup [<target_displayname>]'
             return CliHandler.SUCCESS
 
@@ -185,15 +185,16 @@ class CliHandler(socketserver.StreamRequestHandler):
             alert.send("Backup Failed", body)
             return CliHandler.FAIL
 
-    def do_restore(self, argv, aconn=None):
+    def do_restore(self, cmd):
         """Restore.  If the file/path we are restoring from is on a different
         machine than the Primary Agent, then get the file/path to the
         Primary Agent first."""
 
-        if len(argv) != 1 or aconn:
+        if len(cmd.args) != 1:
             print >> self.wfile, \
               '[ERROR] usage: restore source-ip-address:pathname'
             return
+        target = cmd.args[0]
 
         # Check to see if we're in a state to restore
         stateman = self.server.stateman
@@ -215,7 +216,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # Do a backup before we try to do a restore.
-        backup_success = self.do_backup([], aconn)
+        #FIXME: refactor do_backup() into do_backup() and backup()
+        backup_success = self.do_backup(Command(""))
 
         if not backup_success:
             self.print_client("Backup failed.  Will still try to restore.")
@@ -226,7 +228,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_RESTORE1)
         self.print_client("OK")
             
-        body = server.restore_cmd(argv[0])
+        body = server.restore_cmd(target)
 
         stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_NONE)
         # The "restore started" alert is done in restore_cmd(),
@@ -239,21 +241,21 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status(body)
 
-    def do_copy(self, argv, aconn=None):
+    def do_copy(self, cmd):
         """Copy a file from one agent to another."""
 
-        if len(argv) != 2 or aconn:
+        if len(cmd.args) != 2:
             self.error(self.do_copy.__doc__)
             return
 
-        body = server.copy_cmd(argv[0], argv[1])
+        body = server.copy_cmd(cmd.args[0], cmd.args[1])
         self.report_status(body)
     do_copy.__usage__ = 'copy source-agent-name:filename dest-agent-name'
 
-    def do_list(self, argv, aconn=None):
+    def do_list(self, cmd):
         """List information about all connected agents."""
 
-        if len(argv) or aconn:
+        if len(cmd.args):
             self.error("Usage: list")
             return
 
@@ -339,8 +341,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = server.ping_immediate(aconn)
         self.report_status(body)
 
-    def do_start(self, argv, aconn=None):
-        if len(argv) != 0 or aconn:
+    def do_start(self, cmd):
+        if len(cmd.args) != 0:
             print >> self.wfile, '[ERROR] usage: start'
             return
         
@@ -394,8 +396,8 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status(body)
 
-    def do_stop(self, argv, aconn=None):
-        if len(argv) != 0 or aconn:
+    def do_stop(self, cmd):
+        if len(cmd.args) != 0:
             print >> self.wfile, '[ERROR] usage: stop'
             return
 
@@ -407,7 +409,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, "FAIL: Can't stop - current state is:", states[StateEntry.STATE_TYPE_MAIN]
             return
 
-        backup_success = self.do_backup([], aconn)
+        #FIXME: refactor do_backup() into do_backup() and backup()
+        backup_success = self.do_backup(Command(""))
 
         if not backup_success:
             self.print_client("Backup failed.  Will not attempt stop.")
@@ -457,10 +460,10 @@ class CliHandler(socketserver.StreamRequestHandler):
             if len(body['stderr']):
                 self.print_client('stderr: %s', body['stderr'])
 
-    def do_maint(self, cmd, aconn=None):
+    def do_maint(self, cmd):
         """usage: maint [start|stop]"""
 
-        if len(cmd.args) != 1 or aconn:
+        if len(cmd.args) != 1:
             self.error(self.do_maint.__doc__)
             return
 
@@ -475,13 +478,13 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             print >> self.wfile, "{}"
 
-    def do_displayname(self, argv, aconn=None):
+    def do_displayname(self, cmd):
         """Set the display name for an agent"""
-        if len(argv) != 2 or aconn:
+        if len(cmd.args) != 2:
             print >> self.wfile, '[ERROR] Usage: displayname agent-hostname agent-displayname'
             return
 
-        error = server.displayname_cmd(argv[0], argv[1])
+        error = server.displayname_cmd(cmd.args[0], cmd.args[1])
         if error:
             self.error(error)
         else:
@@ -540,10 +543,10 @@ class CliHandler(socketserver.StreamRequestHandler):
 
             # FIXME: convert to passing cmd to all functions
             #   plus the found aconn object.
-            if cmd.name == 'maint' or cmd.name == 'nop':
-                f(cmd)
-            else:
+            if cmd.name == 'cli' or cmd.name == 'pget':
                 f(cmd.args, aconn=aconn)
+            else:
+                f(cmd)
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
