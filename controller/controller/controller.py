@@ -4,6 +4,7 @@ import sys
 import os
 import shlex
 import SocketServer as socketserver
+import socket
 
 import json
 import time
@@ -58,10 +59,58 @@ class Command(object):
 
 class CliHandler(socketserver.StreamRequestHandler):
 
+    SUCCESS = True
+    FAIL = False
+
+    def finish(self):
+        """Overrides the StreamRequestHandler's finish().
+           Handles exceptions more gracefully and
+           makes sure telnet clients are closed.
+        """
+
+        if not self.wfile.closed:
+            try:
+                self.wfile.flush()
+            except socket.error:
+                # An final socket error may have occurred here, such as
+                # the local error ECONNABORTED.
+                pass
+
+        try:
+            self.wfile.close()
+        except socket.error:
+            pass
+
+        self.rfile.close()
+
     def error(self, msg, *args):
         if args:
             msg = msg % args
         print >> self.wfile, '[ERROR] '+msg
+
+    def print_client(self, format, *args):
+        """
+            Try to write format % args to self.wfile, which is
+            the telnet client.
+            If this fails, due to a telnet client already disconnected,
+            send it to stdout.
+
+            Why we need this method:
+                If a print to ">> self.wfile" fails, and we didn't catch
+                the exception, the do_*() method terminates, which is
+                not good.  This method handles it by sending a failed
+                print to ">> self.wfile" to sys.stdout.  Instead, we
+                might want to just drop the bytes since the client has
+                disconnected and doesn't really care.
+        """
+
+        line = format % args
+        line += '\n'
+        try:
+            print  >> self.wfile, line
+        except EnvironmentError:
+            line += '[TELNET] ' + line
+            sys.stdout.write(line)
 
     def do_help(self, argv, aconn=False):
         for name, m in inspect.getmembers(self, predicate=inspect.ismethod):
@@ -82,12 +131,17 @@ class CliHandler(socketserver.StreamRequestHandler):
     do_status.__usage__ = 'status'
 
     def do_backup(self, argv, aconn=False):
+        """
+            Returns:
+                CliHandler.SUCCESS on success and
+                CliHandler.FAIL on failure.
+        """
         target = None
         if len(argv) == 1:
             target = argv[0]
         elif len(argv) or aconn:
             print >> self.wfile, '[ERROR] usage: backup [<target_displayname>]'
-            return
+            return CliHandler.SUCCESS
 
         # Check to see if we're in a state to backup
         stateman = self.server.stateman
@@ -100,13 +154,13 @@ class CliHandler(socketserver.StreamRequestHandler):
               states[StateEntry.STATE_TYPE_MAIN]
             log.debug("Can't backup - main state is: %s", \
               states[StateEntry.STATE_TYPE_MAIN])
-            return
+            return CliHandler.FAIL
         if states[StateEntry.STATE_TYPE_BACKUP] != StateEntry.STATE_BACKUP_NONE:
             print >> self.wfile, "FAIL: Can't backup - backup state is:", \
               states[StateEntry.STATE_TYPE_BACKUP]
             log.debug("Can't backup - backup state is: %s", \
               states[StateEntry.STATE_TYPE_BACKUP])
-            return
+            return CliHandler.FAIL
 
         log.debug("-----------------Starting Backup-------------------")
             
@@ -118,16 +172,18 @@ class CliHandler(socketserver.StreamRequestHandler):
         alert.send("Backup Started")
 
         print >> self.wfile, "OK"
-            
+
         body = server.backup_cmd(target)
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
           StateEntry.STATE_BACKUP_NONE)
 
+        self.report_status(body)
         if not body.has_key('error'):
             alert.send("Backup Finished", body)
+            return CliHandler.SUCCESS
         else:
             alert.send("Backup Failed", body)
-        self.report_status(body)
+            return CliHandler.FAIL
 
     def do_restore(self, argv, aconn=None):
         """Restore.  If the file/path we are restoring from is on a different
@@ -158,11 +214,17 @@ class CliHandler(socketserver.StreamRequestHandler):
               states[StateEntry.STATE_TYPE_BACKUP])
             return
 
+        # Do a backup before we try to do a restore.
+        backup_success = self.do_backup([], aconn)
+
+        if not backup_success:
+            self.print_client("Backup failed.  Will still try to restore.")
+
         log.debug("-----------------Starting Restore-------------------")
             
         # fixme: lock to ensure against two simultaneous restores?
         stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_RESTORE1)
-        print >> self.wfile, "OK"
+        self.print_client("OK")
             
         body = server.restore_cmd(argv[0])
 
@@ -314,14 +376,22 @@ class CliHandler(socketserver.StreamRequestHandler):
         # server port.
         maint_body = server.maint("stop")
         if maint_body.has_key("error"):
-            print >> self.wfile, "maint stop failed: " + str(maint_body)
+            self.print_client("maint stop failed: " + str(maint_body))
             # let it continue ?
 
         body = server.cli_cmd('tabadmin start')
+        if body.has_key("exit-status"):
+            exit_status = body['exit-status']
+        else:
+            exit_status = 1 # if no 'exit-status' then consider it failed.
 
+        if exit_status:
+            # The "tableau start" failed.  Go back to "STOPPED" state.
+            alert = Alert(server.config, log)
+            alert.send("Could not start tableau", body)
+            stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STOPPED)
         # STARTED is set by the status monitor since it really knows the status.
 
-        # fixme: check & report status to see if it really started?
         self.report_status(body)
 
     def do_stop(self, argv, aconn=None):
@@ -337,6 +407,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, "FAIL: Can't stop - current state is:", states[StateEntry.STATE_TYPE_MAIN]
             return
 
+        backup_success = self.do_backup([], aconn)
+
+        if not backup_success:
+            self.print_client("Backup failed.  Will not attempt stop.")
+            return
+
         # Note: Make sure to set the state in the database before
         # we report "OK" back to the client since "OK" to the UI client
         # results in an immediate check of the state.
@@ -345,7 +421,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         log.debug("-----------------Stopping Tableau-------------------")
         # fixme: Prevent stopping if the user is doing a backup or restore?
         # fixme: Reply with "OK" only after the agent received the command?
-        print >> self.wfile, "OK"
+        self.print_client("OK")
 
         body = server.cli_cmd('tabadmin stop')
         if not body.has_key("error"):
@@ -353,7 +429,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             # and reqlinquished the web server port.
             maint_body = server.maint("start")
             if maint_body.has_key("error"):
-                print >> self.wfile, "maint start failed: " + str(maint_body)
+                self.print_client("maint start failed: " + str(maint_body))
 
         # STOPPED is set by the status monitor since it really knows the status.
 
@@ -364,22 +440,22 @@ class CliHandler(socketserver.StreamRequestHandler):
         """Passed an HTTP body and prints info about it back to the user."""
 
         if body.has_key('error'):
-            print >> self.wfile, body['error']
-            print >> self.wfile, 'body:', body
+            self.print_client(body['error'])
+            self.print_client('body: %s', body)
             return
 
         if body.has_key("run-status"):
-            print >> self.wfile, 'status:', body['run-status']
+            self.print_client('run-status: %s', body['run-status'])
 
         if body.has_key("exit-status"):
-            print >> self.wfile, 'exit-status:', body['exit-status']
+            self.print_client('exit-status: %d', body['exit-status'])
 
         if body.has_key('stdout'):
-            print >> self.wfile, body['stdout']
+            self.print_client(body['stdout'])
 
         if body.has_key('stderr'):
             if len(body['stderr']):
-                print >> self.wfile, 'stderr:', body['stderr']
+                self.print_client('stderr: %s', body['stderr'])
 
     def do_maint(self, cmd, aconn=None):
         """usage: maint [start|stop]"""
@@ -620,10 +696,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # It is possible for the command to finish immediately.
         if body['run-status'] == 'finished':
-            if body.has_key('stderr') and len(body['stderr']) and \
-                                                        body['exit-status'] == 0:
-                self.log.info("exit-status was 0 but stderr wasn't empty.")
-                body['exit-status'] = 1 # Force error for exit-status.
             return body
 
         cli_body = self._get_status("cli", body['xid'], aconn)
@@ -640,7 +712,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return cli_body
 
         if cleanup_body.has_key('error'):
-            return cleanup_dict
+            return cleanup_body
 
         return cli_body
 
@@ -1007,10 +1079,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     return self.error("GET %S command reply was missing 'run-status'!  Will not retry." % (uri), body)
     
                 if body['run-status'] == 'finished':
-                    if body.has_key('stderr') and len(body['stderr']) and \
-                                                    body['exit-status'] == 0:
-                        self.log.info("exit-status was 0 but stderr wasn't empty.")
-                        body['exit-status'] = 1 # Force error for exit-status.
                     # Make sure if the command failed, that the 'error'
                     # key is set.
                     if body['exit-status'] != 0:
@@ -1135,7 +1203,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             statusmon.remove_all_status(session)
             session.commit()
             session.close()
-
 
 import logging
 

@@ -64,6 +64,7 @@ class StateManager(object):
             filter(StateEntry.state_type == state_type).first()
 
         if entry:
+            old_state = entry.state
             session.query(StateEntry).\
                 filter(StateEntry.domainid == self.domainid).\
                 filter(StateEntry.state_type == state_type).\
@@ -81,7 +82,10 @@ class StateManager(object):
         if state_type == StateEntry.STATE_TYPE_MAIN and state in \
           [StateEntry.STATE_MAIN_STARTED, StateEntry.STATE_MAIN_STOPPED]:
             alert = Alert(self.config, self.log)
-            alert.send("Tableau server " + state)
+            if old_state == StateEntry.STATE_MAIN_UNKNOWN:
+                alert.send("Controller started.  Initial tableau state: " + state)
+            else:
+                alert.send("Tableau server " + state)
 
     def get_states(self):
         session = self.Session()
