@@ -126,7 +126,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, '[ERROR] status does not have an argument.'
             return
 
-        body = server.cli_cmd("tabadmin status -v")
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
+            return
+
+        body = server.cli_cmd("tabadmin status -v", aconn)
         self.report_status(body)
     do_status.__usage__ = 'status'
 
@@ -136,12 +141,18 @@ class CliHandler(socketserver.StreamRequestHandler):
                 CliHandler.SUCCESS on success and
                 CliHandler.FAIL on failure.
         """
+
         target = None
-        if len(cmd.args) == 1:
-            target = cmd.args[0]
-        elif len(cmd.args):
+        if len(cmd.args) > 1:
             print >> self.wfile, '[ERROR] usage: backup [<target_displayname>]'
-            return CliHandler.SUCCESS
+            return CliHandler.FAIL
+        elif len(cmd.args) == 1:
+            target = cmd.args[0]
+
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
+            return CliHandler.FAIL
 
         # Check to see if we're in a state to backup
         stateman = self.server.stateman
@@ -173,7 +184,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         print >> self.wfile, "OK"
 
-        body = server.backup_cmd(target)
+        body = server.backup_cmd(aconn, target)
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
           StateEntry.STATE_BACKUP_NONE)
 
@@ -195,6 +206,11 @@ class CliHandler(socketserver.StreamRequestHandler):
               '[ERROR] usage: restore source-ip-address:pathname'
             return
         target = cmd.args[0]
+
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
+            return
 
         # Check to see if we're in a state to restore
         stateman = self.server.stateman
@@ -228,7 +244,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_RESTORE1)
         self.print_client("OK")
             
-        body = server.restore_cmd(target)
+        body = server.restore_cmd(aconn, target)
 
         stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_NONE)
         # The "restore started" alert is done in restore_cmd(),
@@ -342,6 +358,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         if len(cmd.args) != 0:
             print >> self.wfile, '[ERROR] usage: start'
             return
+
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
+            return
         
         # Check to see if we're in a state to start
         stateman = self.server.stateman
@@ -378,7 +399,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_client("maint stop failed: " + str(maint_body))
             # let it continue ?
 
-        body = server.cli_cmd('tabadmin start')
+        body = server.cli_cmd('tabadmin start', aconn)
         if body.has_key("exit-status"):
             exit_status = body['exit-status']
         else:
@@ -396,6 +417,11 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_stop(self, cmd):
         if len(cmd.args) != 0:
             print >> self.wfile, '[ERROR] usage: stop'
+            return
+
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
             return
 
         # Check to see if we're in a state to stop
@@ -423,7 +449,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: Reply with "OK" only after the agent received the command?
         self.print_client("OK")
 
-        body = server.cli_cmd('tabadmin stop')
+        body = server.cli_cmd('tabadmin stop', aconn)
         if not body.has_key("error"):
             # Start the maintenance server only after Tableau has stopped
             # and reqlinquished the web server port.
@@ -549,9 +575,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     DEFAULT_BACKUP_DIR = AgentManager.DEFAULT_INSTALL_DIR + "Data\\"
     PGET_BIN = "pget.exe"
 
-    def backup_cmd(self, target=None):
+    def backup_cmd(self, aconn, target=None):
         """Does a backup."""
         # fixme: make sure another backup isn't already running?
+
+        # Note: In a backup context 'target' is the destination for the backup,
+        #       while in a restore context, 'target' is the source.
 
         # Example name: Jan27_162225.tsbak
         backup_name = time.strftime("%b%d_%H%M%S") + ".tsbak"
@@ -565,7 +594,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             backup_path = self.DEFAULT_BACKUP_DIR + backup_name
 
         # Example path: c:\\Program\ Files\ (x86)\\Palette\\Data\\Jan27_162225.tsbak
-        body = self.cli_cmd('tabadmin backup \\\"%s\\\"' % backup_path)
+        cmd = 'tabadmin backup \\\"%s\\\"' % backup_path
+        body = self.cli_cmd(cmd, aconn)
         if body.has_key('error'):
             return body
 
@@ -618,7 +648,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 # The copy succeeded.
                 # Remove the backup file from the primary
                 remove_cli = 'CMD /C DEL \\\"%s\\\"' % backup_path
-                remove_body = self.cli_cmd(remove_cli)
+                remove_body = self.cli_cmd(remove_cli, aconn)
 
                 # Check if the DEL worked.
                 if remove_body.has_key('error'):
@@ -634,20 +664,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return body
 
-    def status_cmd(self, aconn=None):
+    def status_cmd(self, aconn):
         return self.cli_cmd('tabadmin status -v', aconn)
 
-    def cli_cmd(self, command, aconn=None):
+    def cli_cmd(self, command, aconn):
         """ 1) Sends the command (a string)
             2) Waits for status/completion.  Saves the body from the status.
             3) Sends cleanup.
             4) Returns body from the status.
         """
 
-        if not aconn:
-            aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
-            if not aconn:
-                return self.error("Agent of this type not connected currently: %s" % AgentManager.AGENT_TYPE_PRIMARY)
         try:
             body = self._send_cli(command, aconn)
         except EnvironmentError, e:
@@ -775,6 +801,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("POST /%s failed with: %s" % (command, str(e)))
         finally:
             self.log.debug("_send_cleanup unlocked")
+            # FIXME: cannot call aconn.unlock() after self.remove_agent()
             aconn.unlock()
 
         self.log.debug("done reading...")
@@ -844,19 +871,22 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         copy_body = self.cli_cmd(command, dst) # Send command to destination agent
         return copy_body
 
-    def restore_cmd(self, arg):
-        """Do a tabadmin restore of the passed arg, except
-           the arg is in the format:
+    def restore_cmd(self, aconn, target):
+        """Do a tabadmin restore of the passed target, except
+           the target is in the format:
                 source-displayname:pathname
             If the pathname is not on the Primary Agent, then copy
             it to the Primary Agent before doing the tabadmin restore
             Returns a body with the results/status.
         """
 
+        # Note: In a restore context, 'target' is the source of the backup,
+        #       while in a backup context 'target' is the destination.
+
         # Before we do anything, first do sanity checks.
-        parts = arg.split(':')
+        parts = target.split(':')
         if len(parts) != 2:
-            return self.error('[ERROR] Need exactly one colon in argument: ' + arg)
+            return self.error('[ERROR] Need exactly one colon in argument: ' + target)
 
         source_displayname = parts[0]
         source_filename = parts[1]
@@ -883,8 +913,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # copy_cmd arguments:
             #   source-agent-name:/filename
             #   dest-agent-displayname
-            self.log.debug("Restore: Sending copy command: %s, %s", arg, primary_conn.displayname)
-            body = server.copy_cmd(arg, primary_conn.displayname)
+            self.log.debug("Restore: Sending copy command: %s, %s", target, primary_conn.displayname)
+            body = server.copy_cmd(target, primary_conn.displayname)
 
             if body.has_key("error"):
                 self.log.debug("Restore: Copy of backup file '%s' from '%s' failed.  Error was: %s " % \
@@ -902,13 +932,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # Restore can run only when tableau is stopped.
             stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STOPPING)
             log.debug("--------------Stopping Tableau for restore---------------")
-            stop_body = self.cli_cmd("tabadmin stop")
+            stop_body = self.cli_cmd("tabadmin stop", aconn)
             if stop_body.has_key('error'):
                 self.log.info("Restore: tabadmin stop failed")
                 if source_displayname != primary_conn.displayname:
                     # If the file was copied to the Primary, delete
                     # the temporary backup file we copied to the Primary.
-                    self.delete_file(source_fullpathname)
+                    self.delete_file(aconn, source_fullpathname)
                 return stop_body
 
             # Give Tableau and the status thread a bit of time to stop
@@ -927,7 +957,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 if source_displayname != primary_conn.displayname:
                     # If the file was copied to the Primary, delete
                     # the temporary backup file we copied to the Primary.
-                    self.delete_file(source_fullpathname)
+                    self.delete_file(aconn, source_fullpathname)
                 return self.error('[ERROR] Tableleau did not stop as requested.  Restore aborted.')
 
         # 'tabadmin restore ...' starts tableau as part of the restore procedure.
@@ -944,7 +974,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         try:
             cmd = 'tabadmin restore \\\"%s\\\"' % source_fullpathname
             self.log.debug("restore sending command: %s", cmd)
-            restore_body = self.cli_cmd(cmd)
+            restore_body = self.cli_cmd(cmd, aconn)
         except httplib.HTTPException, e:
             restore_body = { "error": "HTTP Exception: " + str(e) }
 
@@ -959,7 +989,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if source_displayname != primary_conn.displayname:
             # If the file was copied to the Primary, delete
             # the temporary backup file we copied to the Primary.
-            self.delete_file(source_fullpathname)
+            self.delete_file(aconn, source_fullpathname)
             
         if not restore_success:
             # On a successful restore, tableau starts itself.
@@ -967,7 +997,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # stopped, rather than have tableau automatically start
             # during the restore.
             self.log.info("Restore: starting tableau after failed restore.")
-            start_body = self.cli_cmd("tabadmin start")
+            start_body = self.cli_cmd("tabadmin start", aconn)
             if start_body.has_key('error'):
                 self.log.info("Restore: 'tabadmin start' failed after failed restore.")
                 msg = "Restore: 'tabadmin start' failed after failed restore.  Error was: %s" % start_body['error']
@@ -978,10 +1008,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return restore_body
 
-    def delete_file(self, source_fullpathname):
+    def delete_file(self, aconn, source_fullpathname):
         """Delete a file, check the error, and return the body result."""
         self.log.debug("Removing file '%s'" % source_fullpathname)
-        remove_body = self.cli_cmd('CMD /C DEL \\\"%s\\\"' % source_fullpathname)
+        cmd = 'CMD /C DEL \\\"%s\\\"' % source_fullpathname
+        remove_body = self.cli_cmd(cmd, aconn)
         if remove_body.has_key('error'):
             self.log.info('DEL of "%s" failed.' % source_fullpathname)
             # fixme: report somewhere the DEL failed.
