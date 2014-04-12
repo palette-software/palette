@@ -18,7 +18,7 @@
     else {
         
 
-        $('li.more > a').bind('click', function() {
+        $('#mainNav ul.nav.nav-menu > li.more > a').bind('click', function() {
             event.preventDefault();
         });
 
