@@ -787,12 +787,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             res = aconn.httpconn.getresponse()
             self.log.debug('command: cleanup: ' + str(res.status) + ' ' + str(res.reason))
             if res.status != 200: # FIXME
-                self.log.debug("POST %s failed with res.status != 200: %d, reason: %s", command, res.status, res.reason)
+                self.log.debug("POST %s failed with res.status != 200: %d, reason: %s, body: %s", \
+                  command, res.status, res.reason, res.read())
                 raise HttpException(res.status, res.reason)
 
             self.log.debug("headers: " + str(res.getheaders()))
             self.log.debug("_send_cleanup reading...")
             body_json = res.read()
+        except HttpException, e:
+            return self.error("_send_cleanup (%s) HttPException: %s" % (command, str(e)))
         except (httplib.HTTPException, EnvironmentError) as e:
             self.remove_agent(aconn, "Command to agent failed.")    # bad agent
             self.log.debug("POST %s failed with HTTPException: %s", command, str(e))
