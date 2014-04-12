@@ -734,7 +734,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.debug('command: cli: ' + str(res.status) + ' ' + str(res.reason))
 
             if res.status != 200: # FIXME: use a define
-                aconn.unlock()
                 raise HttpException(res.status, res.reason)
 
             # print "headers:", res.getheaders()
@@ -788,7 +787,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             res = aconn.httpconn.getresponse()
             self.log.debug('command: cleanup: ' + str(res.status) + ' ' + str(res.reason))
             if res.status != 200: # FIXME
-                aconn.unlock()
                 self.log.debug("POST %s failed with res.status != 200: %d, reason: %s", command, res.status, res.reason)
                 raise HttpException(res.status, res.reason)
 
