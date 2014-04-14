@@ -205,6 +205,9 @@ class AgentManager(threading.Thread):
             entry.displayname = displayname
             session.merge(entry)
             session.commit()
+            aconn = self.agent_conn_by_hostname(hostname)
+            if aconn:
+                aconn.auth['displayname'] == displayname
         except NoResultFound, e:
             error = "No agent found with hostame=%s" % (hostname)
         finally:
