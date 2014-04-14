@@ -234,9 +234,6 @@ class HttpException(Exception):
     def __init__(self, status_code):
         self.status_code = status_code
 
-    (AgentManager.AGENT_TYPE_PRIMARY, AgentManager.AGENT_TYPE_WORKER,
-                                            AgentManager.AGENT_TYPE_OTHER)
-
 if __name__ == '__main__':
 
     DEFAULT_CONTROLLER = "localhost"
