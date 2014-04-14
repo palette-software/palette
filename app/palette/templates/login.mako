@@ -39,7 +39,7 @@
             <label>Password</label>
             <input type="password" name="password" id="password">
           </p>
-          <ul class=" small-block-grid-1">
+          <ul class=" col-sm-block-grid-1">
               <li><button type="submit" name="login" id="login" class="p-btn p-btn-grey">Login</button></li>
             </ul>
           <p class="text-center text-small">

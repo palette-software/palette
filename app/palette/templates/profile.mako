@@ -2,7 +2,7 @@
 <%inherit file="_layout.mako" />
 
 <%block name="title">
-<title>Palette</title>
+<title>Palette - Configure</title>
 </%block>
 
 <%block name="favicon">
@@ -12,39 +12,41 @@
 <meta charset="utf-8">
 <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
 <link href='http://fonts.googleapis.com/css?family=Roboto:300,500' rel='stylesheet' type='text/css'>
-<link rel="stylesheet" type="text/css" href="/app/module/palette/css/foundation.css">
-<link rel="stylesheet" type="text/css" href="/app/module/palette/css/foundation-icons.css">
 <link rel="stylesheet" type="text/css" href="/app/module/palette/css/normalize.css" media="screen">
+<link rel="stylesheet" type="text/css" href="/app/module/palette/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="/app/module/palette/css/font-awesome.min.css">
 <link rel="stylesheet" type="text/css" href="/app/module/palette/css/style.css" media="screen">
 
 <script src="/app/module/palette/js/vendor/modernizr.js"></script>
 
 <style type="text/css">
-	#mainNav ul.nav li.active-profile a {
-		color: #fff;
-	}
-	@media screen and (max-width: 960px) {
-		#mainNav ul.nav li.active-profile a {
-		color: #8D96A3;
-		padding-left:35px;
-		}
-	}
+	.main-side-bar ul.actions li.active-profile i {
+    color: #53c3f1;
+  }
+  .main-side-bar ul.actions li.active-profile a {
+    text-indent: 8px;
+  }
 </style>
 
 </%block>
-
-<section class="row">
-	<dl class="tabs profile-settings-nav collumns small-12 large-2" data-tab>
+<%include file="side-bar.mako" />
+<section class="dynamic-content">
+  <section class="top-zone">
+      <h1 class="page-title">Configure</h1>
+  </section>
+  <section class="row bottom-zone">
+    <section class="col-lg-12">
+        <dl class="tabs profile-settings-nav collumns col-sm-12 col-lg-2" data-tab>
         <dd class="active"><a href="#panel1">My Profile</a></dd>
         <dd><a href="#panel2">Organization</a></dd>
         <dd><a href="#panel3">Backup</a></dd>
         <dd><a href="#panel4">System Monitor</a></dd>
         <dd><a href="#panel5">Billing</a></dd>
     </dl>
-      <div class="tabs-content profile-settings-content collumns small-12 large-10">
+      <div class="tabs-content profile-settings-content collumns col-sm-12 col-lg-10">
         <div class="content active" id="panel1">
           <section class="row">
-          	<section class="columns small-12 large-8">
+          	<section class="columns col-sm-12 col-lg-8">
           		  <label>Profile Info</label>
 				  <input type="text" name="firstname" placeholder="First Name">
 				  <input type="text" name="lastname" placeholder="Last Name">
@@ -95,12 +97,12 @@
 					      <option value="12.0">(GMT +12:00) Auckland, Wellington, Fiji, Kamchatka</option>
 					  </select>
 				  </label>
-		          <ul class="small-block-grid-2 margin-top">
-		            <li><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></li>
-		            <li><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></li>--></li>
-		           </ul>
+		          <section class="row margin-top">
+		            <section class="col-xs-12 col-sm-6"><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></section>
+		            <section class="col-xs-12 col-sm-6"><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></section>-->
+		           </section>
           	</section>
-          	<section class="columns small-12 large-4">
+          	<section class="columns col-sm-12 col-lg-4">
           		<label class="text-center">Profile Pic</label>
           		<a href="#"><img class="profile-pic" src="/app/module/palette/images/blankuser.png"></a><br>
           		<button type="submit" name="save" class="p-btn p-btn-dark-grey">Add Image</button>
@@ -116,17 +118,17 @@
 		  	<li><img src="/app/module/palette/images/blankuser.png"><h4>Jeremy Venegas</h4><h5>jeremy@xepler.com</h5><span class="fi-x"></span></li>
 		  	<li><div class="add-user"><span class="fi-plus"></span></div><h5>Add new via email</h5></li>
 		  </ul>
-		  <ul class="small-block-grid-2 margin-top">
-            <li><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></li>
-            <li><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></li>--></li>
-           </ul>
+		  <section class="row margin-top">
+            <section class="col-xs-12 col-sm-6"><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></section>
+            <section class="col-xs-12 col-sm-6"><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></section>-->
+           </section>
         </div>
         <div class="content" id="panel3">
           <label>Recurring backup</label>
 	      <input type="radio" name="backup" value="Yes" id="backupYes"><label for="backupYes" class="radio-label"><span></span> Yes</label>
 	      <input type="radio" name="backup" value="No" id="backupNo"><label for="backupNo" class="radio-label"><span></span> No</label>
           <label>Scheduled Time</label>
-          <ul class="small-block-grid-3">
+          <ul class="col-sm-block-grid-3">
             <li>
 	            <label class="select">
 				  <select class="styled-select">
@@ -193,10 +195,10 @@
 				  	<option>24</option>
 				  </select>
 			    </label>
-          <ul class="small-block-grid-2">
-            <li><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></li>
-            <li><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></li>--></li>
-           </ul>
+          <section class="row margin-top">
+            <section class="col-xs-12 col-sm-6"><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></section>
+            <section class="col-xs-12 col-sm-6"><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></section>-->
+           </section>
         </div>
         <div class="content" id="panel4">
           <label>Email Notifications</label>
@@ -205,10 +207,10 @@
 		  	<li><img src="/app/module/palette/images/blankuser.png"><h4>David Olsen</h4><h5>david@xepler.com</h5><span class="fi-x"></span></li>
 		  	<li><div class="add-user"><span class="fi-plus"></span></div><h5>Add new via email</h5></li>
 		  </ul>
-          <ul class="small-block-grid-2 margin-top">
-            <li><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></li>
-            <li><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></li>--></li>
-           </ul>
+          <section class="row margin-top">
+            <section class="col-xs-12 col-sm-6"><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></section>
+            <section class="col-xs-12 col-sm-6"><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></section>-->
+           </section>
         </div>
         <div class="content" id="panel5">
           <label>Card Info</label>
@@ -219,7 +221,7 @@
 			  	<option>Card Type</option>
 			  </select>
 		  </label>
-		  <ul class="small-block-grid-2 margin-top">
+		  <ul class="col-sm-block-grid-2 margin-top">
 			<li>
 			  <input type="text" name="expdate" placeholder="Exp. Date (mm/dd/yyyy)">				
             </li>
@@ -229,7 +231,7 @@
            </ul>
            <label>Billing Address</label>
            <input type="text" name="address" placeholder="Address">
-           <ul class="small-block-grid-2 margin-top">
+           <ul class="col-sm-block-grid-2 margin-top">
 			<li>
 			  <input type="text" name="state" placeholder="State">
 			  <input type="text" name="zip" placeholder="Zip Code">				
@@ -496,12 +498,15 @@
            <input type="text" name="fullname" placeholder="Full Name">
 		   <input type="text" name="phonenumber" placeholder="Phone Number (123-123-1234)">	
 		   <input type="email" name="email" placeholder="Email">
-          <ul class="small-block-grid-2 margin-top">
-            <li><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></li>
-            <li><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></li>--></li>
-           </ul>
+          <section class="row margin-top">
+            <section class="col-xs-12 col-sm-6"><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></section>
+            <section class="col-xs-12 col-sm-6"><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></section>-->
+           </section>
         </div>
-      </div>	
+      </div>
+    </section>
+  </section>
 </section>
+		
 
 <%include file="commonjs.mako" />
