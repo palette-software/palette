@@ -1,17 +1,21 @@
-import sqlalchemy
-from sqlalchemy import Column, Integer, String, DateTime, func
-from sqlalchemy.orm import sessionmaker
-from controller import meta
-
 from akiri.framework.config import store
 from akiri.framework.api import MainPage, LoginPage
 
-# Set up database connection (see rfc1738)
-url = store.get("database", "url")
-echo = store.getboolean("database", "echo", default=False)
+import akiri.framework.ext.sqlalchemy
+from controller import meta
 
-meta.engine = sqlalchemy.create_engine(url, echo=echo)
-meta.Base.metadata.create_all(bind=meta.engine)
+meta.Base = akiri.framework.ext.sqlalchemy.Base
+
+class MetaSession(object):
+    """ Wrapper class to always return the factory from the framework. """
+    def __call__(self):
+        return akiri.framework.ext.sqlalchemy.Session()
+
+    def query(self, *args, **kwargs):
+        session = self()
+        return session.query(*args, **kwargs)
+
+meta.Session = MetaSession()
 
 import monitor
 import backup
