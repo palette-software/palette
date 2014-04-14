@@ -56,7 +56,7 @@ class StateManager(object):
         self.domainid = self.server.domainid
 
     def update(self, state_type, state):
-        session = self.Session()
+        session = meta.Session()
         entry = session.query(StateEntry).\
             filter(StateEntry.domainid == self.domainid).\
             filter(StateEntry.state_type == state_type).first()
