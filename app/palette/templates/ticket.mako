@@ -21,10 +21,10 @@
 </%block>
 
 <section class="row">
-	<section class="collumns small-12 large-6">
+	<section class="collumns col-sm-12 col-lg-6">
 
 	</section>
-	<section class="collumns small-12 large-6">
+	<section class="collumns col-sm-12 col-lg-6">
 
 	</section>
 </section>
