@@ -16,7 +16,7 @@ import httplib
 import inspect
 
 import sqlalchemy
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 import meta
 
 from agentmanager import AgentManager
@@ -1198,11 +1198,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def remove_agent(self, aconn, reason="", send_alert=True):
         manager.remove_agent(aconn, reason=reason, send_alert=send_alert)
         if not manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY):
-            # fixme: why get Session() from here?
-            session = statusmon.Session()
+            session = meta.Session()
             statusmon.remove_all_status(session)
             session.commit()
-            session.close()
 
 import logging
 
@@ -1278,6 +1276,7 @@ def main():
     meta.engine = sqlalchemy.create_engine(url, echo=echo)
     # Create the table definition ONCE, before all the other threads start.
     meta.Base.metadata.create_all(bind=meta.engine)
+    meta.Session = scoped_session(sessionmaker(bind=meta.engine))
 
     log.debug("Starting agent listener.")
 

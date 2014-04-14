@@ -1,6 +1,5 @@
 import sqlalchemy
 from sqlalchemy import Column, Integer, String, DateTime, func
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.orm.exc import NoResultFound
@@ -9,7 +8,7 @@ import sys
 from akiri.framework.api import RESTApplication, DialogPage
 from akiri.framework.config import store
 
-from controller import meta
+from controller.meta import Session
 from controller.status import StatusEntry
 from controller.state import StateEntry
 from controller.backup import BackupEntry
@@ -24,28 +23,22 @@ class MonitorApplication(RESTApplication):
 
     def __init__(self, global_conf):
         super(MonitorApplication, self).__init__(global_conf)
-        self.Session = sessionmaker(meta.engine)
 
         domainname = store.get('palette', 'domainname')
-        self.domain = Domain.get_by_name(domainname, Session=self.Session)
+        self.domain = Domain.get_by_name(domainname)
 
     def handle(self, req):
-        session = self.Session()
-
         tableau_status = "Unknown"
         main_state = "Not connected"
         backup_state = StateEntry.STATE_BACKUP_NONE
 
         try:
-            primary_agents = session.query(AgentStatusEntry).\
+            primary_agents = Session.query(AgentStatusEntry).\
                 filter(AgentStatusEntry.domainid == self.domain.domainid).\
                 filter(AgentStatusEntry.agent_type == "primary").\
                 all()
         except NoResultFound, e:
             primary_agents = None
-        except Exception, e:
-            session.close()
-            raise e
 
         # If there is more than one primary agent in the table, look for
         # the primary agent that is connected and use that.
@@ -68,7 +61,7 @@ class MonitorApplication(RESTApplication):
         if primary:
             # Dig out the tableau status.
             try:
-                tableau_entry = session.query(StatusEntry).\
+                tableau_entry = Session.query(StatusEntry).\
                     join(AgentStatusEntry).\
                     filter(AgentStatusEntry.domainid == self.domain.domainid).\
                     filter(StatusEntry.name == 'Status').\
@@ -76,12 +69,9 @@ class MonitorApplication(RESTApplication):
                 tableau_status = tableau_entry.status
             except NoResultFound, e:
                 pass
-            except Exception, e:
-                session.close()
-                raise e
 
             # Dig out the states
-            state_entries = session.query(StateEntry).\
+            state_entries = Session.query(StateEntry).\
                 filter(AgentStatusEntry.domainid == self.domain.domainid).\
                 all()
 
@@ -94,7 +84,7 @@ class MonitorApplication(RESTApplication):
                     print "monitor: Uknown state_type:", state_entry.state_type
 
         # Dig out the last/most recent backup.
-        last_db = session.query(BackupEntry).\
+        last_db = Session.query(BackupEntry).\
             join(AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domain.domainid).\
             filter(StatusEntry.name == 'Status').\
@@ -105,8 +95,6 @@ class MonitorApplication(RESTApplication):
             last_backup = str(last_db.creation_time)[:19]
         else:
             last_backup = "none"
-
-        session.close()
 
 #        print 'tableau-status: %s, main-state: %s, backup-state: %s, last-backup: %s' % (tableau_status, main_state, backup_state, last_backup)
 
@@ -123,13 +111,11 @@ class StatusDialog(DialogPage):
 
     def __init__(self, global_conf):
         super(StatusDialog, self).__init__(global_conf)
-        self.Session = sessionmaker(bind=meta.engine)
 
         domainname = store.get('palette', 'domainname')
-        self.domain = Domain.get_by_name(domainname, Session=self.Session)
+        self.domain = Domain.get_by_name(domainname)
 
-        session = self.Session()
-        self.status_entries = session.query(StatusEntry).\
+        self.status_entries = Session.query(StatusEntry).\
             join(AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domain.domainid).\
             all()
@@ -141,4 +127,3 @@ class StatusDialog(DialogPage):
             if entry.name == 'Status':
                 self.main_status = entry.status
                 self.status_time = str(entry.creation_time)[:19] # Cut off fraction
-        session.close()

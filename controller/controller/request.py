@@ -2,7 +2,6 @@ import json
 
 import sqlalchemy
 from sqlalchemy import Column, String, BigInteger, DateTime, func
-from sqlalchemy.orm import sessionmaker
 
 import meta
 
@@ -26,10 +25,7 @@ class Request(object):
     """
 
     def __init__(self, action, send_body_dict = {}, xid = False):
-
-        self.Session = sessionmaker(bind=meta.engine)
-
-        session = self.Session()
+        session = meta.Session()
 
         entry = None
         if xid:
@@ -50,8 +46,6 @@ class Request(object):
             entry.state = "finished"
             session.merge(entry)
             session.commit()
-
-        session.close()
 
     def __repr__(self):
         return "<action: %s, body_dict: %s, xid: %d>" % \

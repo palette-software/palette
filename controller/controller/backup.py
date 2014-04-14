@@ -1,10 +1,9 @@
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy import ForeignKey, UniqueConstraint
-from sqlalchemy.orm import sessionmaker
 
 from agentstatus import AgentStatusEntry
-
 import meta
+
 class BackupEntry(meta.Base):
     __tablename__ = 'backup'
 
@@ -23,33 +22,28 @@ class BackupEntry(meta.Base):
 class BackupManager(object):
 
     def __init__(self, domainid):    
-        self.Session = sessionmaker(bind=meta.engine)
-
         self.domainid = domainid
 
     def add(self, name, agentid):
-        session = self.Session()
+        session = meta.Session()
         entry = BackupEntry(agentid, name)
         session.add(entry)
         session.commit()
-        session.close()
 
     def remove(self, name, agentid):
-        session = self.Session()
+        session = meta.Session()
         session.query(BackupEntry).\
             filter(Backup.name == name).\
             filter(Backup.agentid == agentid).delete()
         session.commit()
-        session.close()
 
+    # FIXME: why do we return the passed name?
     def query_by_name(self, name):
-        session = self.Session()
-        entry = session.query(BackupEntry).\
+        entry = meta.Session.query(BackupEntry).\
             join(AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domainid).\
             filter(BackupEntry.name == name).\
             first()
         if entry:
             name = entry.name
-        session.close()
         return name
