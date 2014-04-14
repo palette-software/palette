@@ -58,7 +58,8 @@ class AgentConnection(object):
 class AgentManager(threading.Thread):
 
     PORT = 8888
-    CERT_FILE_DEFAULT = "/etc/palette_cert.pem"
+
+    SSL_HANDSHAKE_TIMEOUT_DEFAULT = 5
 
     # Agent types
     AGENT_TYPE_PRIMARY="primary"
@@ -87,13 +88,15 @@ class AgentManager(threading.Thread):
 
         self.socket_timeout = self.config.getint('controller','socket_timeout', default=60)
 
-        self.ssl = self.config.getboolean('controller','ssl', default=False)
+        self.ssl = self.config.getboolean('controller','ssl', default=True)
         if self.ssl:
-            self.ssl_handshake_timeout = self.config.getint('controller','ssl_handshake_timeout', default=5)
-            if self.config.has_option('controller', 'ssl_cert_file'):
-                self.cert_file = self.config.get('controller', 'ssl_cert_file')
-            else:
-                self.cert_file = self.CERT_FILE_DEFAULT
+            self.ssl_handshake_timeout = self.config.getint('controller',
+                'ssl_handshake_timeout',
+                            default=AgentManager.SSL_HANDSHAKE_TIMEOUT_DEFAULT)
+            if not self.config.has_option('controller', 'ssl_cert_file'):
+                self.log.critical("Missing 'ssl_cert_file' certificate file specification")
+                raise IOError("Missing 'ssl_cert_file' certificate file specification")
+            self.cert_file = self.config.get('controller', 'ssl_cert_file')
             if not os.path.exists(self.cert_file):
                 self.log.critical("ssl enabled, but ssl certificate file does not exist: %s", self.cert_file)
                 raise IOError("Certificate file not found: " + self.cert_file)
