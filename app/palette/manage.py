@@ -8,7 +8,6 @@ from akiri.framework.config import store
 import sqlalchemy
 from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy.schema import ForeignKey
-from sqlalchemy.orm import sessionmaker
 
 from controller import meta
 from controller.agentstatus import AgentStatusEntry
@@ -58,13 +57,11 @@ class ManageAdvancedDialog(DialogPage):
 
     def __init__(self, global_conf):
         super(ManageAdvancedDialog, self).__init__(global_conf)
-        self.Session = sessionmaker(bind=meta.engine)
 
         domainname = store.get('palette', 'domainname')
-        self.domain = Domain.get_by_name(domainname, Session=self.Session)
+        self.domain = Domain.get_by_name(domainname)
 
-        session = self.Session()
-        self.agents = session.query(AgentStatusEntry).\
+        self.agents = Session.query(AgentStatusEntry).\
           filter(AgentStatusEntry.domainid == self.domain.domainid).\
           order_by(AgentStatusEntry.last_connection_time.desc()).\
           all()
@@ -75,4 +72,3 @@ class ManageAdvancedDialog(DialogPage):
             else:
                 agent.last_connection_time_str = str(agent.last_connection_time)[:19] # Cut off fraction
                 agent.last_disconnect_time_str = str(agent.last_disconnect_time)[:19] # Cut off fraction
-        session.close()

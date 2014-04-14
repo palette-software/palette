@@ -14,7 +14,6 @@ from state import StateManager, StateEntry
 from alert import Alert
 
 import meta
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -74,7 +73,6 @@ class AgentManager(threading.Thread):
         self.config = self.server.config
         self.log = self.server.log
         self.domainid = self.server.domainid
-        self.Session = sessionmaker(bind=meta.engine)
         self.daemon = True
         self.lockobj = threading.RLock()
         self.new_primary_event = threading.Event() # a primary connected
@@ -105,18 +103,15 @@ class AgentManager(threading.Thread):
         """Called during startup to set a disconnection time for agents that
            were still connected when we stopped."""
 
-        session = self.Session()
+        session = meta.Session()
 
-        try:
-            session.query(AgentStatusEntry).\
-                filter(or_(AgentStatusEntry.last_connection_time > \
-                                      AgentStatusEntry.last_disconnect_time,
-                          AgentStatusEntry.last_disconnect_time == None)).\
-                update({"last_disconnect_time" : func.now()},
-                  synchronize_session=False)
-            session.commit()
-        finally:
-            session.close()
+        session.query(AgentStatusEntry).\
+            filter(or_(AgentStatusEntry.last_connection_time > \
+                           AgentStatusEntry.last_disconnect_time, \
+                           AgentStatusEntry.last_disconnect_time == None)).\
+                           update({"last_disconnect_time" : func.now()}, \
+                                      synchronize_session=False)
+        session.commit()
 
     def register(self, new_agent, body):
         """Called with the agent object and body /auth dictionary that
@@ -167,7 +162,7 @@ class AgentManager(threading.Thread):
 
     # formerly agentstatus.add()
     def remember(self, body):
-        session = self.Session()
+        session = meta.Session()
 
         # fixme: check for the presence of all these entries.
         entry = AgentStatusEntry(body['hostname'],
@@ -183,22 +178,12 @@ class AgentManager(threading.Thread):
             entry.displayname = entry.hostname
             entry = session.merge(entry)
         session.commit()
-
-        # Since we merged, we cannot return entry after session.close()
-        # because we will get an "unbound" error, so get a fresh entry
-        # that we can return.
-        try:
-            entry = session.query(AgentStatusEntry).\
-                filter(AgentStatusEntry.uuid == body['uuid']).one()
-        finally:
-            session.close()
-
         return entry
 
     def set_displayname(self, hostname, displayname):
         error = ""
 
-        session = self.Session()
+        session = meta.Session()
         try:
             entry = session.query(AgentStatusEntry).\
                 filter(AgentStatusEntry.hostname == hostname).one()
@@ -210,20 +195,16 @@ class AgentManager(threading.Thread):
                 aconn.auth['displayname'] == displayname
         except NoResultFound, e:
             error = "No agent found with hostame=%s" % (hostname)
-        finally:
-            session.close()
-
         return error
 
     def forget(self, agentid):
-        session = self.Session()
+        session = meta.Session()
         #fixme: add try
         entry = session.query(AgentStatusEntry).\
             filter(AgentStatusEntry.agentid == agentid).\
             one()
         entry.last_disconnect_time = func.now()
         session.commit()
-        session.close()
 
     # Return the list of all agents
     def all_agents(self):

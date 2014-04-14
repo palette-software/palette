@@ -7,7 +7,6 @@ import platform
 import sqlalchemy
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 import meta
 
@@ -32,11 +31,9 @@ class AgentStatusEntry(meta.Base):
     last_disconnect_time = Column(DateTime)
 
     def __init__(self, hostname, agent_type, version, ip_address, listen_port, uuid, domainid):
-        self.Session = sessionmaker(bind=meta.engine)
-
-        session = self.Session()
         try:
-            entry = session.query(AgentStatusEntry).\
+            # FIXME: shouldn't this be a merge?
+            entry = meta.Session.query(AgentStatusEntry).\
                 filter(AgentStatusEntry.uuid == uuid).one()
             agentid = entry.agentid
         except NoResultFound, e:

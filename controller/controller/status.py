@@ -8,7 +8,6 @@ import platform
 import sqlalchemy
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
-from sqlalchemy.orm import sessionmaker
 import meta
 
 from state import StateManager, StateEntry
@@ -49,13 +48,10 @@ class StatusMonitor(threading.Thread):
 
         self.status_request_interval = self.config.getint('status', 'status_request_interval', default=10)
 
-        self.Session = sessionmaker(bind=meta.engine)
-        
         # Start fresh: status table
-        session = self.Session()
-        self.remove_all_status(session)
+        session = meta.Session()
+        self.remove_all_status()
         session.commit()
-        session.close()
 
         self.stateman = StateManager(self.server)
 
@@ -66,7 +62,7 @@ class StatusMonitor(threading.Thread):
         #self.stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_NONE))
 
     # Remove all entries to get ready for new status info.
-    def remove_all_status(self, session):
+    def remove_all_status(self):
         """Note a session is passed.  When updating the status table, we don't
         want everything to go away (commit) until we've added the new entries."""
         # FIXME: Need to figure out how to do this in session.query:
@@ -85,37 +81,32 @@ class StatusMonitor(threading.Thread):
         #   filter(StatusEntry.agentid,in_(subq)).\
         #   delete()
         
-        session.query(StatusEntry).\
-            delete()
+        meta.Session.query(StatusEntry).delete()
 
         # Intentionally don't commit here.  We want the existing
         # rows to be available until the new rows are inserted and
         # committed.
 
-    def add(self, session, agentid, name, pid, status):
+    def add(self, agentid, name, pid, status):
         """Note a session is passed.  When updating the status table, we do
         remove_all_status, then slowly add in the new status before doing the commit,
         so the table is not every empty/building if somebody checks it."""
+        session = meta.Session()
         entry = StatusEntry(agentid, name, pid, status)
         session.add(entry)
 
     def get_all_status(self):
-        session = self.Session()
-        status_entries = session.query(StatusEntry).\
+        return meta.Session().query(StatusEntry).\
             join(AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domainid).\
             all()
-        session.close()
-        return status_entries
 
     def get_main_status(self):
-        session = self.Session()
-        main_status = session.query(StatusEntry).\
+        return meta.Session().query(StatusEntry).\
             join(AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domainid).\
             filter(StatusEntry.name == 'Status').\
             one()
-        session.close()
         return main_status
 
     def set_main_state(self, status):
@@ -183,11 +174,10 @@ class StatusMonitor(threading.Thread):
         # FIXME: Tie aconn to domain
         aconn = self.manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
         if not aconn:
-            session = self.Session()
+            session = meta.Session()
             self.log.debug("status thread: No primary agent currently connected.")
-            self.remove_all_status(session)
+            self.remove_all_status()
             session.commit()
-            session.close()
             return
         agentid = aconn.agentid
 
@@ -219,11 +209,11 @@ class StatusMonitor(threading.Thread):
 
         status = line1[1].strip()
 
-        session = self.Session()
+        session = meta.Session()
 
         # Store the second part (like "RUNNING") into the database
-        self.remove_all_status(session)
-        self.add(session, agentid, "Status", 0, status)
+        self.remove_all_status()
+        self.add(agentid, "Status", 0, status)
         self.log.debug("Logging main status: %s", status)
         session.commit()
 
@@ -260,11 +250,10 @@ class StatusMonitor(threading.Thread):
             if name[-1:] == "'":
                 name = name[:-1]    # Cut off trailing single quote (')
             
-            self.add(session, agentid, name, pid, status)
+            self.add(agentid, name, pid, status)
             self.log.debug("logged: %s, %d, %s", name, pid, status)
 
         session.commit()
-        session.close()
 
         return    # no debugging for now
         # debug - try to get it back
