@@ -38,8 +38,6 @@ class AgentStatusEntry(meta.Base):
             agentid = entry.agentid
         except NoResultFound, e:
             agentid = None
-        finally:
-            session.close()
 
         self.agentid = agentid
         self.hostname = hostname
