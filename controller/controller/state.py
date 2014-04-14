@@ -1,7 +1,6 @@
 import sqlalchemy
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 import platform
 
@@ -54,7 +53,6 @@ class StateManager(object):
         self.server = server
         self.config = self.server.config
         self.log = self.server.log
-        self.Session = sessionmaker(bind=meta.engine)
         self.domainid = self.server.domainid
 
     def update(self, state_type, state):
@@ -75,7 +73,6 @@ class StateManager(object):
             session.add(entry)
 
         session.commit()
-        session.close()
 
         # Send out the main started/stopped alert.
         # Backup alerts (backup/restore started/stopped done elsewhere).
@@ -88,31 +85,23 @@ class StateManager(object):
                 alert.send("Tableau server " + state)
 
     def get_states(self):
-        session = self.Session()
         try:
-            main_entry = session.query(StateEntry).\
+            main_entry = meta.Session.query(StateEntry).\
                 filter(StateEntry.domainid == self.domainid).\
                 filter(StateEntry.state_type == StateEntry.STATE_TYPE_MAIN).\
                 one()
             main_status = main_entry.state
         except NoResultFound, e:
             main_status = StateEntry.STATE_MAIN_UNKNOWN
-        except Exception, e:
-            session.close()
-            raise e
 
         try:
-            backup_entry = session.query(StateEntry).\
+            backup_entry = meta.Session.query(StateEntry).\
                 filter(StateEntry.domainid == self.domainid).\
                 filter(StateEntry.state_type == StateEntry.STATE_TYPE_BACKUP).\
                 one()
             backup_status = backup_entry.state
         except NoResultFound, e:
             backup_status = StateEntry.STATE_BACKUP_NONE
-        except Exception, e:
-            session.close()
-            raise e
 
-        session.close()
         return { StateEntry.STATE_TYPE_MAIN: main_status, \
           StateEntry.STATE_TYPE_BACKUP: backup_status }

@@ -9,14 +9,12 @@ from akiri.framework.config import store
 from webob import exc
 
 from sqlalchemy import Column, Integer, String, DateTime, func
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
 from akiri.framework.api import RESTApplication
 from akiri.framework.config import store
 
-from controller import meta
-
+from controller.meta import Session
 from controller.backup import BackupEntry
 from controller.agentstatus import AgentStatusEntry
 from controller.domain import Domain
@@ -31,10 +29,9 @@ class BackupApplication(RESTApplication):
 
     def __init__(self, global_conf):
         super(BackupApplication, self).__init__(global_conf)
-        self.Session = sessionmaker(bind=meta.engine)
 
         domainname = store.get('palette', 'domainname')
-        self.domain = Domain.get_by_name(domainname, self.Session)
+        self.domain = Domain.get_by_name(domainname)
         self.telnet_port = store.getint("palette", "telnet_port", default=9000)
         self.telnet_hostname = store.get("palette", "telnet_hostname", default="localhost")
 
@@ -72,26 +69,21 @@ class BackupApplication(RESTApplication):
               (last_entry.agentid, last_entry.uuid)
 
     def get_displayname_by_agentid(self, agentid):
-        session = self.Session()
         try:
-            agent_entry = session.query(AgentStatusEntry).\
+            agent_entry = Session.query(AgentStatusEntry).\
                 filter(AgentStatusEntry.agentid == agentid).\
                 one()
         except NoResultFound, e:
             return None
-        finally:
-            session.close()
 
         return agent_entry.displayname
 
     def get_last_backup(self):
-        session = self.Session()
-        last_db = session.query(BackupEntry).\
+        last_db = Session.query(BackupEntry).\
             join(AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domain.domainid).\
             order_by(BackupEntry.creation_time.desc()).\
             first()
-        session.close()
         return last_db
 
     def handle(self, req):
@@ -122,15 +114,12 @@ class BackupDialog(DialogPage):
 
     def __init__(self, global_conf):
         super(BackupDialog, self).__init__(global_conf)
-        self.Session = sessionmaker(bind=meta.engine)
 
         domainname = store.get('palette', 'domainname')
-        self.domain = Domain.get_by_name(domainname, self.Session)
-
-        session = self.Session()
+        self.domain = Domain.get_by_name(domainname)
 
         # FIXME: use a mapping here.
-        query = session.query(BackupEntry, AgentStatusEntry).\
+        query = Session.query(BackupEntry, AgentStatusEntry).\
             join(AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domain.domainid).\
             order_by(BackupEntry.creation_time.desc())
@@ -142,4 +131,4 @@ class BackupDialog(DialogPage):
             data['displayname'] = agent.displayname
             data['creation-time'] = str(backup.creation_time)[:19] # Cut off fraction
             self.backup_entries.append(data)
-        session.close()
+
