@@ -20,12 +20,26 @@
 <script src="/app/module/palette/js/vendor/modernizr.js"></script>
 
 <style type="text/css">
-  .main-side-bar ul.actions li.active-activity i {
-    color: #53c3f1;
-  }
-  .main-side-bar ul.actions li.active-activity a {
-    text-indent: 8px;
-  }
+.main-side-bar ul.actions li.active-home a {
+  background-color:rgba(0,0,0,0.1);
+  box-shadow:0 -2px rgba(0,0,0,0.1);
+}
+.main-side-bar ul.actions li.active-home a:after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  margin-top: -12px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 12px 12px 12px 0;
+  border-color: transparent #ececec transparent transparent;
+  display: block;
+}
+.main-side-bar.collapsed .actions li.active-home a {
+  background-color: #ececec;
+}
 </style>
 
 </%block>
@@ -57,7 +71,7 @@
           <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
         </article>
         <article class="activity">
-          <i class="fa fa-fw fa-download green"></i>
+          <i class="fa fa-fw fa-download blue"></i>
           <h3>Backup Started</h3>
           <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
         </article>
@@ -77,8 +91,8 @@
           <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
         </article>
         <article class="activity">
-          <i class="fa fa-fw fa-hdd-o"></i>
-          <h3>Served Accessed</h3>
+          <i class="fa fa-fw fa-cog"></i>
+          <h3>Served Settings Modified</h3>
           <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
         </article>
         <article class="activity">
@@ -92,7 +106,7 @@
           <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
         </article>
         <article class="activity">
-          <i class="fa fa-fw fa-download green"></i>
+          <i class="fa fa-fw fa-download blue"></i>
           <h3>Backup Started</h3>
           <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
         </article>
