@@ -9,7 +9,7 @@ import sqlalchemy
 from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy.schema import ForeignKey
 
-from controller import meta
+from controller.meta import Session
 from controller.agentstatus import AgentStatusEntry
 from controller.domain import Domain
 
