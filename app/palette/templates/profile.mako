@@ -20,12 +20,26 @@
 <script src="/app/module/palette/js/vendor/modernizr.js"></script>
 
 <style type="text/css">
-	.main-side-bar ul.actions li.active-profile i {
-    color: #53c3f1;
-  }
-  .main-side-bar ul.actions li.active-profile a {
-    text-indent: 8px;
-  }
+.main-side-bar ul.actions li.active-profile a {
+	background-color:rgba(0,0,0,0.1);
+	box-shadow:0 -2px rgba(0,0,0,0.1);
+}
+.main-side-bar ul.actions li.active-profile a:after {
+	content: "";
+	position: absolute;
+	right: 0;
+	top: 50%;
+	margin-top: -12px;
+	width: 0;
+	height: 0;
+	border-style: solid;
+	border-width: 12px 12px 12px 0;
+	border-color: transparent #ececec transparent transparent;
+	display: block;
+}
+.main-side-bar.collapsed .actions li.active-profile a {
+  background-color: #ececec;
+}
 </style>
 
 </%block>
@@ -36,14 +50,14 @@
   </section>
   <section class="row bottom-zone">
     <section class="col-lg-12">
-        <dl class="tabs profile-settings-nav collumns col-sm-12 col-lg-2" data-tab>
+    <dl class="profile-settings-nav collumns col-sm-12 col-lg-2" data-tab>
         <dd class="active"><a href="#panel1">My Profile</a></dd>
         <dd><a href="#panel2">Organization</a></dd>
         <dd><a href="#panel3">Backup</a></dd>
         <dd><a href="#panel4">System Monitor</a></dd>
         <dd><a href="#panel5">Billing</a></dd>
     </dl>
-      <div class="tabs-content profile-settings-content collumns col-sm-12 col-lg-10">
+      <div class="profile-settings-content collumns col-sm-12 col-lg-10">
         <div class="content active" id="panel1">
           <section class="row">
           	<section class="columns col-sm-12 col-lg-8">

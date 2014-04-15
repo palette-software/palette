@@ -1,1 +1,3 @@
-<!-- ADD COMMON JS -->
+<script>
+	
+</sctipt>
