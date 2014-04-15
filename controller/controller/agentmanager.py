@@ -479,7 +479,7 @@ class AgentHealthMonitor(threading.Thread):
                         (agent.displayname, agent.auth['type'], key))
 
                 # fixme: add a timeout ?
-                body = self.server.ping_immediate(agent)
+                body = self.server.ping(agent)
                 if body.has_key('error'):
                     self.log.info("Ping: Agent '%s', type '%s', conn_id %d did not respond to ping.  Removing." %
                         (agent.displayname, agent.auth['type'], key))
