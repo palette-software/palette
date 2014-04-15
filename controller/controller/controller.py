@@ -109,8 +109,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         try:
             print  >> self.wfile, line
         except EnvironmentError:
-            line += '[TELNET] ' + line
-            sys.stdout.write(line)
+            pass
+#            line += '[TELNET] ' + line
+#            sys.stdout.write(line)
 
     def do_help(self, cmd):
         for name, m in inspect.getmembers(self, predicate=inspect.ismethod):
@@ -309,7 +310,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
     def do_pget(self, cmd):
-        if len(cms.args) < 2:
+        if len(cmd.args) < 2:
             self.error(self.do_pget.__usage__)
             return
 
@@ -319,7 +320,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         pget_cmd = Controller.PGET_BIN
-        for arg in cms.args:
+        for arg in cmd.args:
             if ' ' in arg:
                 pget_cmd += ' "' + arg + '"'
             else:
@@ -334,6 +335,51 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = server.cli_cmd(pget_cmd, aconn)
         self.report_status(body)
     do_pget.__usage__ = 'pget [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ] https://...... local-name'
+
+    def do_firewall(self, cmd):
+        if len(cmd.args) == 1 or len(cmd.args) > 2:
+            self.error(self.do_firewall.__usage__)
+            return
+
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
+            return
+
+        if len(cmd.args) == 0:
+            print >> self.wfile, "OK"
+            body = server.firewall(aconn, "GET")
+            print >> self.wfile, body
+            return
+
+        try:
+            fw_port = int(cmd.args[0])
+        except ValueError, e:
+            self.error("firewall: Invalid port: " + cmd.args[0])
+            return
+
+        if cmd.args[1] == 'enable':
+            action = 'enable'
+        elif cmd.args[1] == 'disable':
+            action = 'disable'
+        else:
+            self.error(self.do_firewall.__usage__)
+            return
+
+        # Signal the command was valid.
+        print >> self.wfile, "OK"
+
+        send_body_dict = {
+            "num": fw_port,
+            "action": action
+        }
+
+        body = server.firewall(aconn, "POST", send_body_dict)
+        print >> self.wfile, body
+        return
+
+    do_firewall.__usage__ = 'firewall [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ] port# { enable | disable }\n   or\n\tfirewall'
+
 
     def do_ping(self, argv, aconn=None):
         if len(argv):
@@ -351,7 +397,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             print >> self.wfile, "Sending ping."
 
-        body = server.ping_immediate(aconn)
+        body = server.ping(aconn)
         self.report_status(body)
 
     def do_start(self, cmd):
@@ -733,7 +779,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             self.log.debug('command: cli: ' + str(res.status) + ' ' + str(res.reason))
 
-            if res.status != 200: # FIXME: use a define
+            if res.status != httplib.OK:
                 raise HttpException(res.status, res.reason)
 
             # print "headers:", res.getheaders()
@@ -786,7 +832,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.debug('sent cleanup command')
             res = aconn.httpconn.getresponse()
             self.log.debug('command: cleanup: ' + str(res.status) + ' ' + str(res.reason))
-            if res.status != 200: # FIXME
+            if res.status != httplib.OK:
                 self.log.debug("POST %s failed with res.status != 200: %d, reason: %s, body: %s", \
                   command, res.status, res.reason, res.read())
                 raise HttpException(res.status, res.reason)
@@ -963,11 +1009,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # 'tabadmin restore ...' starts tableau as part of the restore procedure.
         # fixme: Maybe the maintenance web server wasn't running?
+        maint_msg = ""
         maint_body = server.maint("stop")
         if maint_body.has_key("error"):
-            self.log.info("Restore: maint stop failed")
+            self.log.info("Restore: maint stop failed: " + maint_body['error'])
             # continue on, not a fatal error...
-            restore_body['info'] = "Restore: maint stop failed.  Error was: %s" \
+            maint_msg = "Restore: maint stop failed.  Error was: %s" \
                 % maint_body['error']
 
         stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STARTING)
@@ -983,6 +1030,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             restore_success = False
         else:
             restore_success = True
+
+        if maint_msg != "":
+            restore_body['info'] = maint_msg
 
         # fixme: Do we need to add restore information to the database?  
         # fixme: check status before cleanup? Or cleanup anyway?
@@ -1056,7 +1106,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.debug("Getting response from GET " +  uri)
                 res = aconn.httpconn.getresponse()
                 self.log.debug("status: " + str(res.status) + ' ' + str(res.reason))
-                if res.status != 200: # FIXME
+                if res.status != httplib.OK:
                     self.remove_agent(aconn, "Failed status from agent.")
                     aconn.unlock()
                     return self.error("GET %s command failed with: %s" % (uri, str(e)))
@@ -1102,6 +1152,25 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     return self.error("GET %s failed with: %s" % (uri, str(e)))
     
 
+    def firewall(self, aconn, method, send_body_dict={}):
+        """Sends a firewall GET or POST command.
+           Returns the body result.
+        """
+
+        if not aconn:
+            # Get the Primary Agent handle
+            aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
+
+            if not aconn:
+                return self.error("[ERROR] firewall: No Primary Agent is connected.")
+
+        if method == "GET":
+            send_body = ""
+        else:
+            send_body = json.dumps(send_body_dict)
+
+        return self.send_immediate(aconn, method, "/firewall", send_body)
+
     def maint(self, action):
         # Get the Primary Agent handle
         aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
@@ -1109,67 +1178,77 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not aconn:
             return self.error("[ERROR] maint: No Primary Agent is connected.")
 
-        send_body = json.dumps({"action": action})
+        send_body = {"action": action}
+        return self.send_immediate(aconn, "POST", "/maint", send_body)
 
-        headers = {"Content-Type": "application/json"}
-
-        aconn.lock()
-        body = {}
-        try:
-            aconn.httpconn.request("POST", "/maint", send_body, headers)
-            res = aconn.httpconn.getresponse()
-
-            rawbody = res.read()
-            if res.status != httplib.OK:
-                body = self.httperror(res, rawbody)
-            elif rawbody:
-                body = json.loads(rawbody)
-                self.log.debug("maint reply = " + str(body))
-            else:
-                body = {}
-                self.log.debug("maint reply empty.")
-
-        except (httplib.HTTPException, EnvironmentError) as e:
-            return self.error("maint failed: " + str(e))
-            self.remove_agent(aconn, "Agent 'maint' command failed: " + str(e))    # bad agent
-        finally:
-            aconn.unlock()
-
-        return body
-
-    def ping_immediate(self, aconn):
+    def ping(self, aconn):
         if not aconn:
             # Get the Primary Agent handle
             aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
 
-        if not aconn:
-            return self.error("[ERROR] ping: Agent not connected.")
+            if not aconn:
+                return self.error("[ERROR] ping: Agent not connected.")
+
+        return self.send_immediate(aconn, "POST", "/ping")
+
+
+    def send_immediate(self, aconn, method, uri, send_body=""):
+        """Sends the request specified by:
+                aconn:      agent connection to send to.
+                method:     POST, PUT, GET, etc.
+                uri:        '/maint', 'firewall', etc.
+                send_body:  Body to send in the request.
+                            Can be a dictionary or a string.
+                            If it is a dictionary, it will be converted
+                            to a string (json).
+            Returns the body result.
+        """
+
+        if type(send_body) == dict:
+            send_body = json.dumps(send_body)
+
+        headers = {"Content-Type": "application/json"}
+
+        self.log.debug("about to send an immediate command to '%s', type '%s', method '%s', uri '%s', body '%s'",
+                aconn.displayname, aconn.auth['type'], method, uri, send_body)
 
         aconn.lock()
-        self.log.debug("about to send a 'ping' to %s" % aconn.displayname)
-
+        body = {}
         try:
-            aconn.httpconn.request("POST", "/ping")
+            aconn.httpconn.request(method, uri, send_body, headers)
             res = aconn.httpconn.getresponse()
 
-            self.log.debug("ping reply status = %d", res.status)
-            ignore = res.read()
-            if res.status == 200: #FIXME
-                return {'stdout': "Ping to %s (type %s) succeeded with status %d." % \
-                    (aconn.displayname, aconn.auth['type'], res.status) }
-
-            self.remove_agent(aconn, "Communication failure with agent.  Status returned: %d" % res.status)    # bad agent
-            return self.error("ping command to %s failed with status %d" % \
-                                    (aconn.displayname, res.status))
-
+            rawbody = res.read()
+            if res.status != httplib.OK:
+                self.remove_agent(aconn, "Communication failure with agent.  Immediate command to %s, status returned: %d: %s %s" % \
+                        (aconn.displayname, res.status, method, uri)) # bad agent
+                self.log.info("immediate command to %s failed with status %d: %s %s" % \
+                            (aconn.displayname, res.status, method, uri))
+                return self.error("immediate command to %s failed with status %d: %s %s" % \
+                            (aconn.displayname, res.status, method, uri))
+            elif rawbody:
+                body = json.loads(rawbody)
+                self.log.debug("send_immediate for %s %s reply: %s" % \
+                                            (method, uri, str(body)))
+            else:
+                body = {}
+                self.log.debug("send_immediate for %s %s reply empty." % \
+                                                        (method, uri))
         except (httplib.HTTPException, EnvironmentError) as e:
-            return self.error("ping failed: " + str(e))
-            self.remove_agent(aconn, "Communication failure with agent.  Error: " + str(e))    # bad agent
+            self.log.error(aconn, \
+                    "Agent send_immediate command %s %s failed: " % \
+                                        (method, uri, str(e)))    # bad agent
+            self.remove_agent(aconn, \
+                    "Agent send_immediate command %s %s failed: " % \
+                                        (method, uri, str(e)))    # bad agent
+            return self.error("send_immediate for method %s, uri %s failed: " % \
+                                                    (method, uri, str(e)))
         finally:
             aconn.unlock()
 
-        self.logger.log(logging.ERROR, "This line should not be reached!")
-        return self.error("Should not have reached this line.")
+        self.log.debug("send immediate %s %s success, response: %s", \
+                                                method, uri, str(body))
+        return body
 
     def displayname_cmd(self, hostname, displayname):
         """Sets displayname for the agent with the given hostname. At
@@ -1199,7 +1278,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         manager.remove_agent(aconn, reason=reason, send_alert=send_alert)
         if not manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY):
             session = meta.Session()
-            statusmon.remove_all_status(session)
+            statusmon.remove_all_status()
             session.commit()
 
 import logging
