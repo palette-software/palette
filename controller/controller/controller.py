@@ -26,6 +26,7 @@ from status import StatusMonitor
 from alert import Alert
 from config import Config
 from domain import Domain
+from profile import UserProfile
 
 from version import VERSION
 
@@ -55,7 +56,6 @@ class Command(object):
                 self.name = token
             else:
                 self.args.append(token.strip())
-            
 
 class CliHandler(socketserver.StreamRequestHandler):
 
@@ -1236,10 +1236,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                                         (method, uri))
         except (httplib.HTTPException, EnvironmentError) as e:
             self.log.error(aconn, \
-                    "Agent send_immediate command %s %s failed: " % \
+                    "Agent send_immediate command %s %s failed: %s" % \
                                         (method, uri, str(e)))    # bad agent
             self.remove_agent(aconn, \
-                    "Agent send_immediate command %s %s failed: " % \
+                    "Agent send_immediate command %s %s failed: %s" % \
                                         (method, uri, str(e)))    # bad agent
             return self.error("send_immediate for method %s, uri %s failed: " % \
                                                     (method, uri, str(e)))
