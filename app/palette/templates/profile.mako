@@ -49,18 +49,17 @@
       <h1 class="page-title">Configure</h1>
   </section>
   <section class="row bottom-zone">
-    <section class="col-lg-12">
-    <dl class="profile-settings-nav collumns col-sm-12 col-lg-2" data-tab>
+    <dl class="profile-settings-nav col-sm-12 col-lg-2" data-tab>
         <dd class="active"><a href="#panel1">My Profile</a></dd>
         <dd><a href="#panel2">Organization</a></dd>
         <dd><a href="#panel3">Backup</a></dd>
         <dd><a href="#panel4">System Monitor</a></dd>
         <dd><a href="#panel5">Billing</a></dd>
     </dl>
-      <div class="profile-settings-content collumns col-sm-12 col-lg-10">
+      <div class="profile-settings-content col-sm-12 col-lg-10">
         <div class="content active" id="panel1">
           <section class="row">
-          	<section class="columns col-sm-12 col-lg-8">
+          	<section class="col-sm-12 col-lg-8">
           		  <label>Profile Info</label>
 				  <input type="text" name="firstname" placeholder="First Name">
 				  <input type="text" name="lastname" placeholder="Last Name">
@@ -112,16 +111,20 @@
 					  </select>
 				  </label>
 		          <section class="row margin-top">
-		            <section class="col-xs-12 col-sm-6"><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></section>
-		            <section class="col-xs-12 col-sm-6"><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></section>-->
-		           </section>
+		            <section class="col-xs-12 col-sm-6">
+		            	<button type="submit" name="save" class="p-btn p-btn-blue">Save</button>
+		            </section>
+		            <section class="col-xs-12 col-sm-6">
+		            	<!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button>
+		            </section>-->
+		          </section>
           	</section>
-          	<section class="columns col-sm-12 col-lg-4">
-          		<label class="text-center">Profile Pic</label>
-          		<a href="#"><img class="profile-pic" src="/app/module/palette/images/blankuser.png"></a><br>
-          		<button type="submit" name="save" class="p-btn p-btn-dark-grey">Add Image</button>
-          	</section>
-          </section>         
+          </section>
+          <section class="col-sm-12 col-lg-4">
+      		<label class="text-center">Profile Pic</label>
+      		<a href="#"><img class="profile-pic" src="/app/module/palette/images/blankuser.png"></a><br>
+      		<button type="submit" name="save" class="p-btn p-btn-dark-grey">Add Image</button>
+      	</section>         
         </div>
         <div class="content" id="panel2">
           <label>Organization Name</label>
@@ -518,7 +521,6 @@
            </section>
         </div>
       </div>
-    </section>
   </section>
 </section>
 		

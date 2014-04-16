@@ -367,13 +367,14 @@ input[type="submit"].login:active {
 	max-width: 320px;
 	margin: 0 auto 25px auto;
 }
-	label {
+label {
 	font-weight: 500;
-	margin: 10px 0 4px 0;
+	margin: 25px 0 8px 0;
 	text-align: center;
 	font-size: 16px;
 	color: #8d96a3;
     text-transform: uppercase;
+    display: block;
 }
 label:first-of-type {
 	margin: 0 0 4px 0;
@@ -661,12 +662,22 @@ ul.title-area > li > h1 > a {
 		float:left;
 	}
 
-	.profile-settings-content {
+/*	.profile-settings-content {
 		max-width: 550px;
-	}
+	}*/
 	.profile-settings-content label {
 		text-align: left;
 	}
+
+	.profile-settings-content .content {
+		max-width: 520px;
+		margin-bottom: 75px;
+	}
+
+	.profile-settings-content .content:nth-of-type(1) {
+		max-width: none;
+	}
+
 
 	.profile-pic {
 		border-radius: 50%;
