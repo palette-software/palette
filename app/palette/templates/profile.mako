@@ -49,17 +49,19 @@
       <h1 class="page-title">Configure</h1>
   </section>
   <section class="row bottom-zone">
-    <dl class="profile-settings-nav col-sm-12 col-lg-2" data-tab>
-        <dd class="active"><a href="#panel1">My Profile</a></dd>
-        <dd><a href="#panel2">Organization</a></dd>
-        <dd><a href="#panel3">Backup</a></dd>
-        <dd><a href="#panel4">System Monitor</a></dd>
-        <dd><a href="#panel5">Billing</a></dd>
+    <dl class="profile-settings-nav col-sm-12 col-lg-2">
+    	<div>
+    		<dd class="active"><a href="#panel1">My Profile</a></dd>
+	        <dd><a href="#panel2">Organization</a></dd>
+	        <dd><a href="#panel3">Backup</a></dd>
+	        <dd><a href="#panel4">System Monitor</a></dd>
+	        <dd><a href="#panel5">Billing</a></dd>
+    	</div>
     </dl>
       <div class="profile-settings-content col-sm-12 col-lg-10">
         <div class="content active" id="panel1">
           <section class="row">
-          	<section class="col-sm-12 col-lg-8">
+          	<section class="col-sm-12 col-md-8 col-lg-6">
           		  <label>Profile Info</label>
 				  <input type="text" name="firstname" placeholder="First Name">
 				  <input type="text" name="lastname" placeholder="Last Name">
@@ -120,8 +122,8 @@
 		          </section>
           	</section>
           </section>
-          <section class="col-sm-12 col-lg-4">
-      		<label class="text-center">Profile Pic</label>
+          <section class="col-sm-12 col-md-4 col-lg-3">
+      		<label class="text-center margin-top">Profile Pic</label>
       		<a href="#"><img class="profile-pic" src="/app/module/palette/images/blankuser.png"></a><br>
       		<button type="submit" name="save" class="p-btn p-btn-dark-grey">Add Image</button>
       	</section>         
@@ -133,7 +135,7 @@
 		  <ul class="user-list">
 		  	<li><img src="/app/module/palette/images/blankuser.png"><h4>David Olsen</h4><h5>david@xepler.com</h5><span class="fi-x"></span></li>
 		  	<li><img src="/app/module/palette/images/blankuser.png"><h4>Jeremy Venegas</h4><h5>jeremy@xepler.com</h5><span class="fi-x"></span></li>
-		  	<li><div class="add-user"><span class="fi-plus"></span></div><h5>Add new via email</h5></li>
+		  	<li><div class="add-user"><span class="fa fa-fw fa-plus"></span></div><h5>Add new via email</h5></li>
 		  </ul>
 		  <section class="row margin-top">
             <section class="col-xs-12 col-sm-6"><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></section>
@@ -145,8 +147,8 @@
 	      <input type="radio" name="backup" value="Yes" id="backupYes"><label for="backupYes" class="radio-label"><span></span> Yes</label>
 	      <input type="radio" name="backup" value="No" id="backupNo"><label for="backupNo" class="radio-label"><span></span> No</label>
           <label>Scheduled Time</label>
-          <ul class="col-sm-block-grid-3">
-            <li>
+          <section class="row">
+            <section class="col-sn-12 col-md-4">
 	            <label class="select">
 				  <select class="styled-select">
 				  	<option>1</option>
@@ -163,8 +165,8 @@
 				  	<option>12</option>
 				  </select>
 			    </label>	
-            </li>
-            <li>
+            </section>
+            <section class="col-sn-12 col-md-4">
             	<label class="select">
 				  <select class="styled-select">
 				  	<option>00</option>
@@ -173,16 +175,16 @@
 				  	<option>45</option>
 				  </select>
 			    </label>	
-            </li>
-            <li>
+            </section>
+            <section class="col-sn-12 col-md-4">
             	<label class="select">
 				  <select class="styled-select">
 				  	<option>AM</option>
 				  	<option>PM</option>
 				  </select>
 			    </label>	
-            </li>
-           </ul>
+            </section>
+           </section>
            <label>Frequency (Hours)</label>
            <label class="select">
 				  <select class="styled-select">
@@ -222,7 +224,7 @@
           <p class="italic-label">Add people to be notified</p>
           <ul class="user-list">
 		  	<li><img src="/app/module/palette/images/blankuser.png"><h4>David Olsen</h4><h5>david@xepler.com</h5><span class="fi-x"></span></li>
-		  	<li><div class="add-user"><span class="fi-plus"></span></div><h5>Add new via email</h5></li>
+		  	<li><div class="add-user"><span class="fa fa-fw fa-plus"></span></div><h5>Add new via email</h5></li>
 		  </ul>
           <section class="row margin-top">
             <section class="col-xs-12 col-sm-6"><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></section>
@@ -238,22 +240,22 @@
 			  	<option>Card Type</option>
 			  </select>
 		  </label>
-		  <ul class="col-sm-block-grid-2 margin-top">
-			<li>
+		  <section class="row">
+			<section class="col-xs-6">
 			  <input type="text" name="expdate" placeholder="Exp. Date (mm/dd/yyyy)">				
-            </li>
-            <li>
+            </section>
+            <section class="col-xs-6">
               <input type="text" name="cvc" placeholder="CVC">	
-            </li>
-           </ul>
+            </section>
+          </section>
            <label>Billing Address</label>
            <input type="text" name="address" placeholder="Address">
-           <ul class="col-sm-block-grid-2 margin-top">
-			<li>
+           <section class="row">
+			<section class="col-xs-12 col-md-6">
 			  <input type="text" name="state" placeholder="State">
 			  <input type="text" name="zip" placeholder="Zip Code">				
-            </li>
-            <li>
+            </section>
+            <secton class="col-xs-12 col-md-6">
               <input type="text" name="city" placeholder="City">
               <label class="select">
 				  <select class="styled-select">
@@ -312,7 +314,7 @@
 					<option value="CD">Congo, the Democratic Republic of the</option>
 					<option value="CK">Cook Islands</option>
 					<option value="CR">Costa Rica</option>
-					<option value="CI">Côte d'Ivoire</option>
+					<option value="CI">Côte dIvoire</option>
 					<option value="HR">Croatia</option>
 					<option value="CU">Cuba</option>
 					<option value="CW">Curaçao</option>
@@ -375,11 +377,11 @@
 					<option value="KZ">Kazakhstan</option>
 					<option value="KE">Kenya</option>
 					<option value="KI">Kiribati</option>
-					<option value="KP">Korea, Democratic People's Republic of</option>
+					<option value="KP">Korea, Democratic Peoples Republic of</option>
 					<option value="KR">Korea, Republic of</option>
 					<option value="KW">Kuwait</option>
 					<option value="KG">Kyrgyzstan</option>
-					<option value="LA">Lao People's Democratic Republic</option>
+					<option value="LA">Lao Peoples Democratic Republic</option>
 					<option value="LV">Latvia</option>
 					<option value="LB">Lebanon</option>
 					<option value="LS">Lesotho</option>
@@ -509,16 +511,16 @@
 					<option value="ZW">Zimbabwe</option>
 				  </select>
 		  	  </label>
-            </li>
-           </ul>
-           <label>Contact Info</label>
-           <input type="text" name="fullname" placeholder="Full Name">
-		   <input type="text" name="phonenumber" placeholder="Phone Number (123-123-1234)">	
-		   <input type="email" name="email" placeholder="Email">
-          <section class="row margin-top">
-            <section class="col-xs-12 col-sm-6"><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></section>
-            <section class="col-xs-12 col-sm-6"><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></section>-->
-           </section>
+            </section>
+            <label>Contact Info</label>
+	           <input type="text" name="fullname" placeholder="Full Name">
+			   <input type="text" name="phonenumber" placeholder="Phone Number (123-123-1234)">	
+			   <input type="email" name="email" placeholder="Email">
+	          <section class="row margin-top">
+	            <section class="col-xs-12 col-sm-6"><button type="submit" name="save" class="p-btn p-btn-blue">Save</button></section>
+	            <section class="col-xs-12 col-sm-6"><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></section>-->
+	          </section>
+	        </section>
         </div>
       </div>
   </section>
