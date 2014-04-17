@@ -10,7 +10,7 @@ import json
 import time
 
 from request import *
-from exc import *
+import exc
 
 import httplib
 import inspect
@@ -86,7 +86,7 @@ class CliHandler(socketserver.StreamRequestHandler):
     def error(self, msg, *args):
         if args:
             msg = msg % args
-        print >> self.wfile, '[ERROR] '+msg
+        print_client(self, '[ERROR] ' + msg)
 
     def print_client(self, format, *args):
         """
@@ -720,12 +720,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             4) Returns body from the status.
         """
 
-        try:
-            body = self._send_cli(command, aconn)
-        except EnvironmentError, e:
-            return self.error("_send_cli (%s) failed with: %s" % (command, str(e)))
-        except HttpException, e:
-            return self.error("_send_cli (%s) HttPException: %s" % (command, str(e)))
+        body = self._send_cli(command, aconn)
 
         if body.has_key('error'):
             return body
@@ -738,15 +733,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if body['run-status'] == 'finished':
             return body
 
-        cli_body = self._get_status("cli", body['xid'], aconn)
+        cli_body = self._get_status("cli", body['xid'], aconn, command)
 
         if not cli_body.has_key("stdout"):
             self.log.error("check status of cli failed - missing 'stdout' in reply", cli_body)
 
-        try:
-            cleanup_body = self._send_cleanup("cli", body['xid'], aconn)
-        except EnvironmentError, e:
-            cleanup_body = { "error": "cleanup cli failed with: " +  str(e) }
+        cleanup_body = self._send_cleanup("cli", body['xid'], aconn, command)
 
         if cli_body.has_key("error"):
             return cli_body
@@ -769,7 +761,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         headers = {"Content-Type": "application/json"}
 
-        self.log.debug("about to send the cli command to '%s', type '%s' xid: %d, command: %s", \
+        self.log.debug("about to send the cli command to '%s', type '%s' xid: %d, command: %s",
                 aconn.displayname, aconn.auth['type'], req.xid, cli_command)
         try:
             aconn.httpconn.request('POST', '/cli', req.send_body, headers)
@@ -777,21 +769,30 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             res = aconn.httpconn.getresponse()
 
-            self.log.debug('command: cli: ' + str(res.status) + ' ' + str(res.reason))
-
-            if res.status != httplib.OK:
-                raise HttpException(res.status, res.reason)
-
+            self.log.debug('_send_cli: command: cli: ' + str(res.status) + ' ' + str(res.reason))
             # print "headers:", res.getheaders()
             self.log.debug("_send_cli reading...")
             body_json = res.read()
 
+            if res.status != httplib.OK:
+                self.log.error("_send_cli: command: '%s', res.status != 200: %d, reason: %s, body: %s",
+                        cli_command, res.status, res.reason, body_json)
+                raise exc.HTTPException("res.status != 200: %d, reason: %s" % \
+                                        (res.status, res.reason), body_json)
+        except exc.HTTPException as e:
+            self.log.error(\
+                "_send_cli: command '%s' failed with exc.HTTPException: %s",
+                                                        cli_command, str(e))
+            return self.error("_send_cli: '%s' command failed.  Error: %s, body: %s" %
+                                (cli_command, str(e), e.body), e.body)
         except (httplib.HTTPException, EnvironmentError) as e:
-            self.remove_agent(aconn, "Communication lost with agent.")    # bad agent
-            return self.error("POST /cli failed with: " + str(e))
-        except:
-            self.remove_agent(aconn, "Communication error with agent.")    # bad agent
-            return self.error("POST /cli failed with unexpected error: " + str(sys.exc_info()[0]))
+            self.log.error(\
+                "_send_cli: command '%s' failed with httplib.HTTPException: %s",
+                                                        cli_command, str(e))
+
+            self.remove_agent(aconn, "Communication lost with agent.") # bad agent
+            return self.error("_send_cli: '%s' command failed with: %s" %
+                            (cli_command, str(e)))
         finally:
             aconn.unlock()
 
@@ -813,10 +814,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return body
 
-    def _send_cleanup(self, command, xid, aconn):
+    def _send_cleanup(self, command, xid, aconn, orig_cli_command):
         """Send a "cleanup" command to an Agent.
             On success, returns the body of the reply.
             On failure, throws an exception.
+
+            orig_cli_command is used only for debugging/printing.
 
             Called without the connection lock."""
 
@@ -832,29 +835,37 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.debug('sent cleanup command')
             res = aconn.httpconn.getresponse()
             self.log.debug('command: cleanup: ' + str(res.status) + ' ' + str(res.reason))
+            body_json = res.read()
             if res.status != httplib.OK:
-                self.log.debug("POST %s failed with res.status != 200: %d, reason: %s, body: %s", \
-                  command, res.status, res.reason, res.read())
-                raise HttpException(res.status, res.reason)
+                self.log.error("_send_cleanup: POST %s for original command '%s' failed with res.status != 200: %d, reason: %s, body: %s",
+                     command, orig_cli_command, res.status, res.reason, body_json)
+                raise exc.HTTPException("res.status != 200: %d, reason: %s" % \
+                                        (res.status, res.reason), body_json)
 
             self.log.debug("headers: " + str(res.getheaders()))
             self.log.debug("_send_cleanup reading...")
-            body_json = res.read()
-        except HttpException, e:
-            return self.error("_send_cleanup (%s) HttPException: %s" % (command, str(e)))
+        except exc.HTTPException, e:
+            self.log.error(\
+                "_send_cleanup: exc.HTTPExcpetion %s for original command '%s' failed with: %s, body: %s",
+                            command, orig_cli_command, str(e), e.body)
+            return self.error("_send_cleanup '%s' for original command '%s' failed.  Error: %s, body: %s" % \
+                    (command, orig_cli_command, str(e), e.body))
         except (httplib.HTTPException, EnvironmentError) as e:
             self.remove_agent(aconn, "Command to agent failed.")    # bad agent
-            self.log.debug("POST %s failed with HTTPException: %s", command, str(e))
-            return self.error("POST /%s failed with: %s" % (command, str(e)))
+            self.log.error("_send_cleanup: POST /%s for original command '%s' failed with: %s",
+                                            command, orig_cli_command, str(e))
+            return self.error("'%s' failed for original command '%s' with: %s" %
+                                    (command, orig_cli_command, str(e)))
         finally:
-            self.log.debug("_send_cleanup unlocked")
-            # FIXME: cannot call aconn.unlock() after self.remove_agent()
+            # Must call aconn.unlock() even after self.remove_agent(),
+            # since another thread may waiting on the lock.
             aconn.unlock()
+            self.log.debug("_send_cleanup unlocked")
 
-        self.log.debug("done reading...")
+        self.log.debug("done reading.")
         body = json.loads(body_json)
         if body == None:
-            return self.error("Post /%s getresponse returned a null body" % command)
+            return self.error("POST /%s getresponse returned a null body" % command)
         return body
 
     def copy_cmd(self, source_path, dest_name):
@@ -881,7 +892,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         for key in agents.keys():
             manager.lock()
             if not agents.has_key(key):
-                self.log.info("copy_cmd: agent with conn_id '%d' is now gone and won't be checked." % key)
+                self.log.info("copy_cmd: agent with conn_id '%d' is now gone and won't be checked.", key)
                 manager.unlock()
                 continue
             agent = agents[key]
@@ -964,8 +975,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             body = server.copy_cmd(target, primary_conn.displayname)
 
             if body.has_key("error"):
-                self.log.debug("Restore: Copy of backup file '%s' from '%s' failed.  Error was: %s " % \
-                        (source_fullpathname, source_displayname, body['error']))
+                self.log.debug("Restore: Copy of backup file '%s' from '%s' failed.  Error was: %s ",
+                        source_fullpathname, source_displayname, body['error'])
                 return body
 
         # The restore file is now on the Primary Agent.
@@ -1061,17 +1072,19 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def delete_file(self, aconn, source_fullpathname):
         """Delete a file, check the error, and return the body result."""
-        self.log.debug("Removing file '%s'" % source_fullpathname)
+        self.log.debug("Removing file '%s'", source_fullpathname)
         cmd = 'CMD /C DEL \\\"%s\\\"' % source_fullpathname
         remove_body = self.cli_cmd(cmd, aconn)
         if remove_body.has_key('error'):
-            self.log.info('DEL of "%s" failed.' % source_fullpathname)
+            self.log.info('DEL of "%s" failed.', source_fullpathname)
             # fixme: report somewhere the DEL failed.
         return remove_body
 
-    def _get_status(self, command, xid, aconn):
+    def _get_status(self, command, xid, aconn, orig_cli_command):
         """Gets status on the command and xid.  Returns:
             Body in json with status/results.
+
+            orig_cli_command is used only for debugging/printing.
 
             Note: Do not call this with the agent lock since
             we keep requesting status until the command is
@@ -1089,11 +1102,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         headers = {"Content-Type": "application/json"}
 
         while True:
-            self.log.debug("about to get status of command %s, xid %d", command, xid)
+            self.log.debug("about to get status of command %s, '%s', xid %d", 
+                    command, orig_cli_command, xid)
 
             if not manager.agent_connected(aconn):
-                self.log.info("Agent '%s' (type: '%s', conn_id %d) disconnected before finishing: %s" %
-                    (aconn.displayname, aconn.auth['type'], aconn.conn_id, uri))
+                self.log.info("Agent '%s' (type: '%s', conn_id %d) disconnected before finishing: %s",
+                    aconn.displayname, aconn.auth['type'], aconn.conn_id, uri)
                 return self.error("Agent '%s' (type: '%s', conn_id %d) disconnected before finishing: %s" %
                     (aconn.displayname, aconn.auth['type'], aconn.conn_id, uri))
 
@@ -1108,14 +1122,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.debug("status: " + str(res.status) + ' ' + str(res.reason))
                 if res.status != httplib.OK:
                     self.remove_agent(aconn, "Failed status from agent.")
-                    aconn.unlock()
                     return self.error("GET %s command failed with: %s" % (uri, str(e)))
 #                debug for testing agent disconnects
 #                print "sleeping"
 #                time.sleep(5)
 #                print "awake"
 
-                self.log.debug("_get_status reading....")
+                self.log.debug("_get_status reading.")
                 body_json = res.read()
                 aconn.unlock()
 
@@ -1126,7 +1139,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.debug("body = " + str(body))
                 if not body.has_key('run-status'):
                     self.remove_agent(aconn, "Agent returned invalid status.")
-                    return self.error("GET %S command reply was missing 'run-status'!  Will not retry." % (uri), body)
+                    return self.error("GET %s command reply was missing 'run-status'!  Will not retry." % (uri), body)
     
                 if body['run-status'] == 'finished':
                     # Make sure if the command failed, that the 'error'
@@ -1151,7 +1164,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                                     str(e))    # bad agent
                     return self.error("GET %s failed with: %s" % (uri, str(e)))
     
-
     def firewall(self, aconn, method, send_body_dict={}):
         """Sends a firewall GET or POST command.
            Returns the body result.
@@ -1220,28 +1232,28 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             rawbody = res.read()
             if res.status != httplib.OK:
-                self.remove_agent(aconn, "Communication failure with agent.  Immediate command to %s, status returned: %d: %s %s" % \
-                        (aconn.displayname, res.status, method, uri)) # bad agent
-                self.log.info("immediate command to %s failed with status %d: %s %s" % \
-                            (aconn.displayname, res.status, method, uri))
-                return self.error("immediate command to %s failed with status %d: %s %s" % \
-                            (aconn.displayname, res.status, method, uri))
+                # bad agent
+                self.remove_agent(aconn, "Communication failure with agent.  Immediate command to %s, status returned: %d: %s %s, body: %s" % \
+                        (aconn.displayname, res.status, method, uri, rawbody))
+                self.log.error("immediate command to %s failed with status %d: %s %s, body:",
+                            aconn.displayname, res.status, method, rawbody)
+                return self.error("immediate command to %s failed with status %d: %s %s, body: %s" % \
+                            (aconn.displayname, res.status, method, uri, rawbody))
             elif rawbody:
                 body = json.loads(rawbody)
-                self.log.debug("send_immediate for %s %s reply: %s" % \
-                                            (method, uri, str(body)))
+                self.log.debug("send_immediate for %s %s reply: %s",
+                                                    method, uri, str(body))
             else:
                 body = {}
-                self.log.debug("send_immediate for %s %s reply empty." % \
-                                                        (method, uri))
+                self.log.debug("send_immediate for %s %s reply empty.",
+                                                                method, uri)
         except (httplib.HTTPException, EnvironmentError) as e:
-            self.log.error(aconn, \
-                    "Agent send_immediate command %s %s failed: %s" % \
-                                        (method, uri, str(e)))    # bad agent
+            self.log.error("Agent send_immediate command %s %s failed: %s",
+                                        method, uri, str(e))    # bad agent
             self.remove_agent(aconn, \
                     "Agent send_immediate command %s %s failed: %s" % \
                                         (method, uri, str(e)))    # bad agent
-            return self.error("send_immediate for method %s, uri %s failed: " % \
+            return self.error("send_immediate for method %s, uri %s failed: %s" % \
                                                     (method, uri, str(e)))
         finally:
             aconn.unlock()
