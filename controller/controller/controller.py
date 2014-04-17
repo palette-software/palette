@@ -14,6 +14,7 @@ from exc import *
 
 import httplib
 import inspect
+import ntpath
 
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -145,14 +146,14 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         target = None
         if len(cmd.args) > 1:
-            print >> self.wfile, '[ERROR] usage: backup [<target_displayname>]'
+            self.error(self.do_backup.__usage__)
             return CliHandler.FAIL
         elif len(cmd.args) == 1:
             target = cmd.args[0]
 
         aconn = self.get_aconn(cmd.dict)
         if not aconn:
-            self.error('agent not found')
+            self.error('agent not found.')
             return CliHandler.FAIL
 
         # Check to see if we're in a state to backup
@@ -196,6 +197,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             alert.send("Backup Failed", body)
             return CliHandler.FAIL
+    do_backup.__usage__ = 'backup [target-displayname]'
 
     def do_restore(self, cmd):
         """Restore.  If the file/path we are restoring from is on a different
@@ -242,7 +244,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         log.debug("-----------------Starting Restore-------------------")
             
         # fixme: lock to ensure against two simultaneous restores?
-        stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_RESTORE1)
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
+                            StateEntry.STATE_BACKUP_RESTORE1)
         self.print_client("OK")
             
         body = server.restore_cmd(aconn, target)
@@ -618,11 +621,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     LOGGER_NAME = "main"
     allow_reuse_address = True
 
-    DEFAULT_BACKUP_DIR = AgentManager.DEFAULT_INSTALL_DIR + "Data\\"
     PGET_BIN = "pget.exe"
 
     def backup_cmd(self, aconn, target=None):
-        """Does a backup."""
+        """Perform a backup - not including any necessary migration."""
         # fixme: make sure another backup isn't already running?
 
         # Note: In a backup context 'target' is the destination for the backup,
@@ -634,12 +636,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         primary_conn = \
           manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
 
-        if 'install-dir' in primary_conn.auth:
-            backup_path = primary_conn.auth['install-dir'] + "Data\\" + backup_name
-        else:
-            backup_path = self.DEFAULT_BACKUP_DIR + backup_name
+        install_dir = primary_conn.auth['install-dir']
+        backup_path = ntpath.join(install_dir, "Data", backup_name)
 
-        # Example path: c:\\Program\ Files\ (x86)\\Palette\\Data\\Jan27_162225.tsbak
+        # e.g.: c:\\Program\ Files\ (x86)\\Palette\\Data\\Jan27_162225.tsbak
         cmd = 'tabadmin backup \\\"%s\\\"' % backup_path
         body = self.cli_cmd(cmd, aconn)
         if body.has_key('error'):
@@ -682,8 +682,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 non_primary_conn.displayname)
 
             if copy_body.has_key('error'):
-                msg = "Copy of backup file '%s' to agent '%s' failed.  Will leave the backup file on the primary agent. Error was: %s" % \
-                    (backup_name, non_primary_conn.displayname, \
+                msg = "Copy of backup file '%s' to agent '%s' failed. "+\
+                    "Will leave the backup file on the primary agent. "+\
+                    "Error was: %s" \
+                    % (backup_name, non_primary_conn.displayname, \
                                                         copy_body['error'])
                 self.log.info(msg)
                 body['info'] = msg
@@ -698,7 +700,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
                 # Check if the DEL worked.
                 if remove_body.has_key('error'):
-                    body['info'] = "DEL of backup file failed after copy.  Command: '%s'. Error was: %s" % (remove_cli, remove_body['error'])
+                    body['info'] = "DEL of backup file failed after copy. "+\
+                        "Command: '%s'. Error was: %s" \
+                        % (remove_cli, remove_body['error'])
         else:
             backup_loc = primary_conn
             # Backup file remains on the primary.
@@ -906,16 +910,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         source_ip = src.auth['ip-address']
 
-        if 'install-dir' in dst.auth:
-            target_dir = dst.auth['install-dir'] + "Data"
-        else:
-            target_dir = self.DEFAULT_BACKUP_DIR
+        target_dir = ntpath.join(dst.auth['install-dir'], 'Data')
 
         command = '%s https://%s:%s/%s "%s"' % \
             (Controller.PGET_BIN, source_ip, src.auth['listen-port'],
              source_path, target_dir)
 
-        copy_body = self.cli_cmd(command, dst) # Send command to destination agent
+        # Send command to destination agent
+        copy_body = self.cli_cmd(command, dst)
         return copy_body
 
     def restore_cmd(self, aconn, target):
@@ -947,10 +949,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not primary_conn:
             return self.error("[ERROR] No Primary Agent is connected.")
 
-        if 'install-dir' in primary_conn.auth:
-            source_fullpathname = primary_conn.auth['install-dir'] + "Data\\" + source_filename
-        else:
-            source_fullpathname = self.DEFAULT_BACKUP_DIR + source_filename
+        install_dir = primary_conn.auth['install-dir']
+        source_fullpathname = ntpath.join("Data", source_filename)
 
         # Check if the source_filename is on the Primary Agent.
         if source_displayname != primary_conn.displayname:
@@ -960,11 +960,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # copy_cmd arguments:
             #   source-agent-name:/filename
             #   dest-agent-displayname
-            self.log.debug("Restore: Sending copy command: %s, %s", target, primary_conn.displayname)
+            self.log.debug("restore: Sending copy command: %s, %s", \
+                               target, primary_conn.displayname)
             body = server.copy_cmd(target, primary_conn.displayname)
 
             if body.has_key("error"):
-                self.log.debug("Restore: Copy of backup file '%s' from '%s' failed.  Error was: %s " % \
+                self.log.debug("restore: Copy of backup file '%s' from '%s' failed.  Error was: %s " % \
                         (source_fullpathname, source_displayname, body['error']))
                 return body
 
@@ -977,8 +978,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         orig_states = stateman.get_states()
         if orig_states[StateEntry.STATE_TYPE_MAIN] == StateEntry.STATE_MAIN_STARTED:
             # Restore can run only when tableau is stopped.
-            stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STOPPING)
-            log.debug("--------------Stopping Tableau for restore---------------")
+            stateman.update(StateEntry.STATE_TYPE_MAIN, \
+                                StateEntry.STATE_MAIN_STOPPING)
+            log.debug("------------Stopping Tableau for restore-------------")
             stop_body = self.cli_cmd("tabadmin stop", aconn)
             if stop_body.has_key('error'):
                 self.log.info("Restore: tabadmin stop failed")
