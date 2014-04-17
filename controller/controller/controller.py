@@ -34,6 +34,10 @@ global manager # fixme
 global server # fixme
 global log # fixme
 
+class CommandException(Exception):
+    def __init__(self, status_code):
+        self.status_code = status_code
+
 class Command(object):
 
     def __init__(self, line):
@@ -56,6 +60,12 @@ class Command(object):
                 self.name = token
             else:
                 self.args.append(token.strip())
+
+        self.sanity()
+
+    def sanity(self):
+        # FIXME: implement me: raise CommandException as necessary
+        pass
 
 class CliHandler(socketserver.StreamRequestHandler):
 
@@ -603,7 +613,11 @@ class CliHandler(socketserver.StreamRequestHandler):
             data = self.rfile.readline().strip()
             if not data: break
 
-            cmd = Command(data)
+            try:
+                cmd = Command(data)
+            except CommandException, e:
+                self.error('invalid command string: %s', data)
+                continue
 
             if not hasattr(self, 'do_'+cmd.name):
                 self.error('invalid command: %s', cmd.name)
