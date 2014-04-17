@@ -8,6 +8,7 @@ import time
 import traceback
 from httplib import HTTPConnection
 import json
+import ntpath
 
 from agentstatus import AgentStatusEntry
 from state import StateManager, StateEntry
@@ -64,8 +65,6 @@ class AgentManager(threading.Thread):
     AGENT_TYPE_PRIMARY="primary"
     AGENT_TYPE_WORKER="worker"
     AGENT_TYPE_OTHER="other"
-
-    DEFAULT_INSTALL_DIR = "c:\\Program Files (x86)\\Palette\\"
 
     def __init__(self, server, host='0.0.0.0', port=0):
         super(AgentManager, self).__init__()
@@ -400,7 +399,8 @@ class AgentManager(threading.Thread):
                 self.log.debug("done.")
 
             # Inspect the reply to make sure it has all the required values.
-            required = ['hostname', 'type', 'ip-address', 'version', 'listen-port', 'uuid']
+            required = ['hostname', 'type', 'ip-address', \
+                            'version', 'listen-port', 'uuid', 'install-dir']
             for item in required:
                 if not body.has_key(item):
                     self.log.error("Missing '%s' from agent" % item)
