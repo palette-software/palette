@@ -280,16 +280,17 @@ class AgentManager(threading.Thread):
                 send_alert:  True or False.  If True, sends an alert.
                              If False does not send an alert.
         """
+        if reason == "":
+            reason = "Agent communication failure"
+
         self.lock()
         conn_id = agent.conn_id
         if self.agents.has_key(conn_id):
-            self.log.debug("Removing agent with conn_id %d, name %s",\
-                conn_id, self.agents[conn_id].auth['hostname'])
+            self.log.debug("Removing agent with conn_id %d, name %s, reason: %s",\
+                conn_id, self.agents[conn_id].auth['hostname'], reason)
 
             if send_alert:
                 alert = Alert(self.config, self.log)
-                if reason == "":
-                    reason = "Agent communication failure"
                 alert.send(reason, "\nAgent: %s\nAgent type: %s\nAgent connection-id %d" % 
                             (agent.displayname, agent.auth['type'], conn_id))
 
@@ -486,7 +487,7 @@ class AgentHealthMonitor(threading.Thread):
 
                     self.manager.remove_agent(agent, "Lost contact with an agent")
                 else:
-                    self.log.debug("Ping: Replied for agent '%s', type '%s', conn_id %d." %
+                    self.log.debug("Ping: Reply from agent '%s', type '%s', conn_id %d." %
                         (agent.displayname, agent.auth['type'], key))
                     
             time.sleep(self.ping_interval)
