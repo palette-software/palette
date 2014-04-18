@@ -295,6 +295,16 @@ class AgentManager(threading.Thread):
                             (agent.displayname, agent.auth['type'], conn_id))
 
             self.forget(agent.agentid)
+            self.log.debug("remove_agent: closing agent socket.")
+            try:
+                agent.socket.close()
+            except socket.error as e:
+                self.log.debug("remove_agent: close agent socket failure:" + \
+                                            str(e))
+                pass
+            else:
+                self.log.debug("remove_agent: close agnet socket succeeded.")
+
             del self.agents[conn_id]
         else:
             self.log.debug("remove_agent: No such agent with conn_id %d", conn_id)
