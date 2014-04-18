@@ -10,6 +10,10 @@ fi
 
 set +x
 
+chmod 610 /etc/ssl/private/ssl-cert-palette-software.key
+/usr/sbin/a2ensite palette-software-ssl
+/usr/sbin/a2enmod ssl
+
 mkdir -p /var/log/palette
 mkdir -p /opt/palette/plugins
 

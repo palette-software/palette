@@ -1,3 +1,7 @@
 ../etc/palette.ini		/etc
 ../etc/apache2/conf.d/palette	/etc/apache2/conf.d
+../etc/apache2/sites-available/palette-software-ssl	/etc/apache2/sites-available
+../etc/ssl/certs/star_palette-software_com.crt	/etc/ssl/certs
+../etc/ssl/certs/DigiCertCA.crt	/etc/ssl/certs
+../etc/ssl/private/ssl-cert-palette-software.key	/etc/ssl/private
 ../opt/palette.wsgi		/opt/palette
