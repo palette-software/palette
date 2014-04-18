@@ -25,7 +25,7 @@ from state import StateManager, StateEntry
 from status import StatusMonitor
 from alert import Alert
 from config import Config
-from domain import Domain
+from domain import Domain, DomainEntry
 from profile import UserProfile
 
 from version import VERSION
@@ -35,8 +35,8 @@ global server # fixme
 global log # fixme
 
 class CommandException(Exception):
-    def __init__(self, status_code):
-        self.status_code = status_code
+    def __init__(self, errmsg):
+        Exception.__init__(self, errmsg)
 
 class Command(object):
 
@@ -64,8 +64,36 @@ class Command(object):
         self.sanity()
 
     def sanity(self):
-        # FIXME: implement me: raise CommandException as necessary
-        pass
+        opts = self.dict
+
+        # A domainid is required. Validate passed domain information
+        # in the database for existence and uniqueness.
+        #
+        # As an optimization, if only a domainid id is passed, with
+        # no other domain information, accept it and use it.
+        #
+        # As a hack to aid development, if no domain information is
+        # passed, and there is only one domain in the database, then
+        # use it.
+        #
+        # FIXME: TBD: should this be farmed out to the Domain class?
+        if 'domainid' in opts and not 'domainname' in opts:
+            pass
+        else:
+            query = meta.Session.query(DomainEntry)
+            if 'domainname' in opts:
+                query = \
+                  query.filter(DomainEntry.domainname == opts['domainname'])
+            if 'domainid' in opts:
+                query = \
+                  query.filter(DomainEntry.domainid == opts['domainid'])
+            try:
+                entry = query.one()
+                opts['domainid'] = entry.domainid
+            except sqlalchemy.orm.exc.NoResultFound:
+                 raise CommandException("no matching domain found")
+            except sqlalchemy.orm.exc.MultipleResultsFound:
+                 raise CommandException("domain must be unique")
 
 class CliHandler(socketserver.StreamRequestHandler):
 
@@ -616,7 +644,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             try:
                 cmd = Command(data)
             except CommandException, e:
-                self.error('invalid command string: %s', data)
+                self.error(str(e))
                 continue
 
             if not hasattr(self, 'do_'+cmd.name):
