@@ -8,12 +8,14 @@ import socket
 
 import json
 import time
+import copy
 
 from request import *
 import exc
 
 import httplib
 import inspect
+import ntpath
 
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -97,9 +99,6 @@ class Command(object):
 
 class CliHandler(socketserver.StreamRequestHandler):
 
-    SUCCESS = True
-    FAIL = False
-
     def finish(self):
         """Overrides the StreamRequestHandler's finish().
            Handles exceptions more gracefully and
@@ -121,14 +120,21 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.rfile.close()
 
+    def ack(self):
+        """ Acknowledge a submitted command before performing it. """
+        print >> self.wfile, "OK"
+
     def error(self, msg, *args):
         if args:
             msg = msg % args
         print_client(self, '[ERROR] ' + msg)
 
-    def print_client(self, format, *args):
+    def usage(self, msg):
+        self.error('usage: '+msg)
+
+    def print_client(self, fmt, *args):
         """
-            Try to write format % args to self.wfile, which is
+            Try to write fmt % args to self.wfile, which is
             the telnet client.
             If this fails, due to a telnet client already disconnected,
             send it to stdout.
@@ -142,8 +148,9 @@ class CliHandler(socketserver.StreamRequestHandler):
                 disconnected and doesn't really care.
         """
 
-        line = format % args
-        line += '\n'
+        line = fmt % args
+        if not line.endswith('\n'):
+            line += '\n'
         try:
             print  >> self.wfile, line
         except EnvironmentError:
@@ -154,15 +161,18 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_help(self, cmd):
         for name, m in inspect.getmembers(self, predicate=inspect.ismethod):
             if name.startswith("do_"):
-                print >> self.wfile, '  ' + name[3:]
+                name = name[3:].replace('_', '-')
+                print >> self.wfile, '  ' + name
                 if m.__doc__:
                     print >> self.wfile, '    ' + m.__doc__
                 if hasattr(m, '__usage__'):
                     print >> self.wfile, '    usage: ' + m.__usage__
+        print >> self.wfile
 
     def do_status(self, cmd):
         if len(cmd.args):
-            print >> self.wfile, '[ERROR] status does not have an argument.'
+            self.error("'status' does not have an argument.")
+            self.usage(self.do_status.__usage__)
             return
 
         aconn = self.get_aconn(cmd.dict)
@@ -174,24 +184,21 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
     do_status.__usage__ = 'status'
 
+
     def do_backup(self, cmd):
-        """
-            Returns:
-                CliHandler.SUCCESS on success and
-                CliHandler.FAIL on failure.
-        """
+        """ Perform a Tableau backup and potentially migrate. """
 
         target = None
         if len(cmd.args) > 1:
-            print >> self.wfile, '[ERROR] usage: backup [<target_displayname>]'
-            return CliHandler.FAIL
+            self.usage(self.do_backup.__usage__)
+            return
         elif len(cmd.args) == 1:
             target = cmd.args[0]
 
         aconn = self.get_aconn(cmd.dict)
         if not aconn:
-            self.error('agent not found')
-            return CliHandler.FAIL
+            self.error('agent not found.')
+            return
 
         # Check to see if we're in a state to backup
         stateman = self.server.stateman
@@ -204,36 +211,38 @@ class CliHandler(socketserver.StreamRequestHandler):
               states[StateEntry.STATE_TYPE_MAIN]
             log.debug("Can't backup - main state is: %s", \
               states[StateEntry.STATE_TYPE_MAIN])
-            return CliHandler.FAIL
+            return
         if states[StateEntry.STATE_TYPE_BACKUP] != StateEntry.STATE_BACKUP_NONE:
             print >> self.wfile, "FAIL: Can't backup - backup state is:", \
               states[StateEntry.STATE_TYPE_BACKUP]
             log.debug("Can't backup - backup state is: %s", \
               states[StateEntry.STATE_TYPE_BACKUP])
-            return CliHandler.FAIL
+            return
 
         log.debug("-----------------Starting Backup-------------------")
-            
+
         # fixme: lock to ensure against two simultaneous backups?
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
-          StateEntry.STATE_BACKUP_BACKUP)
+                            StateEntry.STATE_BACKUP_BACKUP)
 
         alert = Alert(self.server.config, log)
         alert.send("Backup Started")
 
-        print >> self.wfile, "OK"
+        self.ack()
 
         body = server.backup_cmd(aconn, target)
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
           StateEntry.STATE_BACKUP_NONE)
 
-        self.report_status(body)
+        print >> self.wfile, str(body)
         if not body.has_key('error'):
             alert.send("Backup Finished", body)
-            return CliHandler.SUCCESS
+            return
         else:
             alert.send("Backup Failed", body)
-            return CliHandler.FAIL
+            return
+    do_backup.__usage__ = 'backup [target-displayname]'
+
 
     def do_restore(self, cmd):
         """Restore.  If the file/path we are restoring from is on a different
@@ -241,9 +250,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         Primary Agent first."""
 
         if len(cmd.args) != 1:
-            print >> self.wfile, \
-              '[ERROR] usage: restore source-ip-address:pathname'
+            self.usage(self.do_restore.__usage__)
             return
+
         target = cmd.args[0]
 
         aconn = self.get_aconn(cmd.dict)
@@ -254,25 +263,43 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Check to see if we're in a state to restore
         stateman = self.server.stateman
         states = stateman.get_states()
-        if states[StateEntry.STATE_TYPE_MAIN] != StateEntry.STATE_MAIN_STARTED and \
-            states[StateEntry.STATE_TYPE_MAIN] != StateEntry.STATE_MAIN_STOPPED:
-            print >> self.wfile, "FAIL: Can't backup - main state is:", \
-              states[StateEntry.STATE_TYPE_MAIN]
-            log.debug("Can't restore - main state is: %s", \
-              states[StateEntry.STATE_TYPE_MAIN])
+        
+        main_state = states[StateEntry.STATE_TYPE_MAIN]
+        if main_state != StateEntry.STATE_MAIN_STARTED and \
+                main_state != StateEntry.STATE_MAIN_STOPPED:
+            self.error("can't backup - main state is: " + main_state)
+            log.debug("can't restore - main state is: " + main_state)
             return
 
-        if states[StateEntry.STATE_TYPE_BACKUP] != \
-              StateEntry.STATE_BACKUP_NONE:
-            print >> self.wfile, "FAIL: Can't restore - backup state is:", \
-              states[StateEntry.STATE_TYPE_BACKUP]
-            log.debug("Can't restore - backup state is: %s", \
-              states[StateEntry.STATE_TYPE_BACKUP])
+        backup_state = states[StateEntry.STATE_TYPE_BACKUP]
+        if backup_state != StateEntry.STATE_BACKUP_NONE:
+            self.error("can't restore - backup state is: " + backup_state)
+            log.debug("can't restore - backup state is: " + backup_state)
             return
 
         # Do a backup before we try to do a restore.
         #FIXME: refactor do_backup() into do_backup() and backup()
-        backup_success = self.do_backup(Command(""))
+        log.debug("------------Starting Backup for Restore--------------")
+            
+        # fixme: lock to ensure against two simultaneous backups?
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
+                            StateEntry.STATE_BACKUP_BACKUP)
+
+        alert = Alert(self.server.config, log)
+        alert.send("Backup Started")
+
+        self.ack()
+
+        body = server.backup_cmd(aconn, target)
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
+                            StateEntry.STATE_BACKUP_NONE)
+
+        if not body.has_key('error'):
+            alert.send("Backup Finished", body)
+            backup_success = True
+        else:
+            alert.send("Backup Failed", body)
+            backup_success = False
 
         if not backup_success:
             self.print_client("Backup failed.  Will still try to restore.")
@@ -282,10 +309,10 @@ class CliHandler(socketserver.StreamRequestHandler):
             # ask the user what they want to do.
 
         log.debug("-----------------Starting Restore-------------------")
-            
+
         # fixme: lock to ensure against two simultaneous restores?
-        stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_RESTORE1)
-        self.print_client("OK")
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
+                            StateEntry.STATE_BACKUP_RESTORE1)
             
         body = server.restore_cmd(aconn, target)
 
@@ -297,8 +324,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             alert.send("Restore Finished", body)
         else:
             alert.send("Restore Failed" , body)
-
-        self.report_status(body)
+        self.print_client(str(body))
+    do_restore.__usage__ = 'restore [source:pathname]'
 
     def do_copy(self, cmd):
         """Copy a file from one agent to another."""
@@ -311,27 +338,46 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
     do_copy.__usage__ = 'copy source-agent-name:filename dest-agent-name'
 
-    def do_list(self, cmd):
-        """List information about all connected agents."""
 
-        if len(cmd.args):
-            self.error("Usage: list")
-            return
-
+    def list_agents(self):
         agents = manager.all_agents()
 
         if len(agents) == 0:
-            print >> self.wfile, "No agents connected."
+            self.print_client('{}')
             return
 
+        # FIXME: print the agent state too.
+        s = ''
         for key in agents:
-            print >> self.wfile, "\t", agents[key].displayname, "(displayname)"
-            print >> self.wfile, "\t\ttype:", agents[key].auth['type']
-            print >> self.wfile, "\t\tip-address:", agents[key].auth['ip-address']
-            print >> self.wfile, "\t\tlisten-port:", agents[key].auth['listen-port']
-            print >> self.wfile, "\t\thostname:", agents[key].auth['hostname']
-            print >> self.wfile, "\t\tuuid:", agents[key].auth['uuid']
-    do_list.__usage__ = 'list'
+            d = copy.copy(agents[key].auth)
+            d['displayname'] = agents[key].displayname
+            s += str(d) + '\n'
+        self.print_client(s)
+
+    def list_backups(self):
+        s = ''
+        for backup in BackupManager.all():
+            s += str(backup.todict()) + '\n'
+        self.print_client(s)
+
+    def do_list(self, cmd):
+        """List information about all connected agents."""
+
+        f = None
+        if len(cmd.args) == 0:
+            f = self.list_agents
+        elif len(cmd.args) == 1:
+            if cmd.args[0].lower() == 'agents':
+                f = self.list_agents
+            elif cmd.args[0].lower() == 'backups':
+                f = self.list_backups
+        if f is None:
+            self.usage(self.do_list.__usage__)
+            return
+        
+        self.ack()
+        f()
+    do_list.__usage__ = 'list [agents|backups]'
 
     def do_cli(self, cmd):
         if len(cmd.args) < 1:
@@ -350,6 +396,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         body = server.cli_cmd(cli_command, aconn)
         self.report_status(body)
+
 
     def do_pget(self, cmd):
         if len(cmd.args) < 2:
@@ -378,6 +425,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
     do_pget.__usage__ = 'pget [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ] https://...... local-name'
 
+
     def do_firewall(self, cmd):
         if len(cmd.args) == 1 or len(cmd.args) > 2:
             self.error(self.do_firewall.__usage__)
@@ -389,7 +437,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         if len(cmd.args) == 0:
-            print >> self.wfile, "OK"
+            self.ack()
             body = server.firewall(aconn, "GET")
             print >> self.wfile, body
             return
@@ -408,8 +456,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error(self.do_firewall.__usage__)
             return
 
-        # Signal the command was valid.
-        print >> self.wfile, "OK"
+        self.ack()
 
         send_body_dict = {
             "num": fw_port,
@@ -463,7 +510,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             log.debug("FAIL: Can't start - main state is: %s", \
               states[StateEntry.STATE_TYPE_MAIN])
             return
-        
+
         if states[StateEntry.STATE_TYPE_BACKUP] != \
               StateEntry.STATE_BACKUP_NONE:
             print >> self.wfile, "FAIL: Can't start - backup state is:", \
@@ -477,7 +524,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         log.debug("-----------------Starting Tableau-------------------")
         # fixme: Reply with "OK" only after the agent received the command?
-        print >> self.wfile, "OK"
+        self.ack()
 
         # Stop the maintenance web server and relinquish the web
         # server port before tabadmin start tries to listen on the web
@@ -497,14 +544,15 @@ class CliHandler(socketserver.StreamRequestHandler):
             # The "tableau start" failed.  Go back to "STOPPED" state.
             alert = Alert(server.config, log)
             alert.send("Could not start tableau", body)
-            stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STOPPED)
-        # STARTED is set by the status monitor since it really knows the status.
+            stateman.update(StateEntry.STATE_TYPE_MAIN,
+                            StateEntry.STATE_MAIN_STOPPED)
 
-        self.report_status(body)
+        # STARTED is set by the status monitor since it really knows the status.
+        self.print_client(str(body))
 
     def do_stop(self, cmd):
         if len(cmd.args) != 0:
-            print >> self.wfile, '[ERROR] usage: stop'
+            self.error(self.do_stop.__usage__)
             return
 
         aconn = self.get_aconn(cmd.dict)
@@ -516,26 +564,43 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman = self.server.stateman
         states = stateman.get_states()
         if states[StateEntry.STATE_TYPE_MAIN] != StateEntry.STATE_MAIN_STARTED:
-            log.debug("FAIL: Can't stop - main state is: %s", states[StateEntry.STATE_TYPE_MAIN])
-            print >> self.wfile, "FAIL: Can't stop - current state is:", states[StateEntry.STATE_TYPE_MAIN]
+            self.error("can't stop - main state is: " +\
+                           states[StateEntry.STATE_TYPE_MAIN])
+            self.error("can't stop - current state is: " +\
+                           states[StateEntry.STATE_TYPE_MAIN])
             return
 
-        #FIXME: refactor do_backup() into do_backup() and backup()
-        backup_success = self.do_backup(Command(""))
+        log.debug("------------Starting Backup for Stop---------------")
+        # fixme: lock to ensure against two simultaneous backups?
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
+          StateEntry.STATE_BACKUP_BACKUP)
 
-        if not backup_success:
+        alert = Alert(self.server.config, log)
+        alert.send("Backup Started")
+
+        self.ack()
+
+        body = server.backup_cmd(aconn)
+        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
+                            StateEntry.STATE_BACKUP_NONE)
+
+        if not body.has_key('error'):
+            alert.send("Backup Finished", body)
+        else:
+            alert.send("Backup Failed", body)
+            # FIXME: return JSON
             self.print_client("Backup failed.  Will not attempt stop.")
             return
 
         # Note: Make sure to set the state in the database before
         # we report "OK" back to the client since "OK" to the UI client
         # results in an immediate check of the state.
-        stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STOPPING)
+        stateman.update(StateEntry.STATE_TYPE_MAIN,
+                        StateEntry.STATE_MAIN_STOPPING)
 
         log.debug("-----------------Stopping Tableau-------------------")
         # fixme: Prevent stopping if the user is doing a backup or restore?
         # fixme: Reply with "OK" only after the agent received the command?
-        self.print_client("OK")
 
         body = server.cli_cmd('tabadmin stop', aconn)
         if not body.has_key("error"):
@@ -548,7 +613,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         # STOPPED is set by the status monitor since it really knows the status.
 
         # fixme: check & report status to see if it really stopped?
-        self.report_status(body)
+        self.print_client(str(body))
+    do_stop.__usage__ = 'stop'
 
     def report_status(self, body):
         """Passed an HTTP body and prints info about it back to the user."""
@@ -599,12 +665,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         if error:
             self.error(error)
         else:
-            print >> self.wfile, "OK"
+            self.ack()
 
     def do_nop(self, cmd):
         """usage: nop"""
-
-        print >> self.wfile, "OK"
+        self.ack()
 
     def get_aconn(self, opts):
         # FIXME: This method is a temporary hack while we
@@ -659,16 +724,16 @@ class CliHandler(socketserver.StreamRequestHandler):
             f = getattr(self, 'do_'+cmd.name)
             f(cmd)
 
+
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     LOGGER_NAME = "main"
     allow_reuse_address = True
 
-    DEFAULT_BACKUP_DIR = AgentManager.DEFAULT_INSTALL_DIR + "Data\\"
     PGET_BIN = "pget.exe"
 
     def backup_cmd(self, aconn, target=None):
-        """Does a backup."""
+        """Perform a backup - not including any necessary migration."""
         # fixme: make sure another backup isn't already running?
 
         # Note: In a backup context 'target' is the destination for the backup,
@@ -677,15 +742,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # Example name: Jan27_162225.tsbak
         backup_name = time.strftime("%b%d_%H%M%S") + ".tsbak"
 
-        primary_conn = \
-          manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
+        # aconn is the primary
+        install_dir = aconn.auth['install-dir']
+        backup_path = ntpath.join(install_dir, "Data", backup_name)
 
-        if 'install-dir' in primary_conn.auth:
-            backup_path = primary_conn.auth['install-dir'] + "Data\\" + backup_name
-        else:
-            backup_path = self.DEFAULT_BACKUP_DIR + backup_name
-
-        # Example path: c:\\Program\ Files\ (x86)\\Palette\\Data\\Jan27_162225.tsbak
+        # e.g.: c:\\Program\ Files\ (x86)\\Palette\\Data\\Jan27_162225.tsbak
         cmd = 'tabadmin backup \\\"%s\\\"' % backup_path
         body = self.cli_cmd(cmd, aconn)
         if body.has_key('error'):
@@ -693,14 +754,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         agents = manager.all_agents()
 
-        non_primary_conn = None
+        # target_conn is the destination agent - if applicable.
+        target_conn = None
         if target != None:
             for key in agents:
                 if agents[key].displayname == target:
                     # FIXME: make sure agent is connected
                     if agents[key].auth['type'] != \
                       AgentManager.AGENT_TYPE_PRIMARY:
-                        non_primary_conn = agents[key]
+                        target_conn = agents[key]
                     target = None # so we know we found the target
                     break
         else:
@@ -711,31 +773,31 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     # FIXME: ticket #218: When the UI supports selecting
                     #        a target, remove the code that automatically
                     #        selects a remote.
-                    if non_primary_conn == None:
-                        non_primary_conn = agents[key]
+                    if target_conn == None:
+                        target_conn = agents[key]
                     else:
                         if agents[key].displayname < \
-                          non_primary_conn.displayname:
-                            non_primary_conn = agents[key]
+                          target_conn.displayname:
+                            target_conn = agents[key]
         if target:
             self.error("agent %s does not exist or is offline" % target)
 
-        if non_primary_conn:
-            backup_loc = non_primary_conn
+        if target_conn:
+            backup_loc = target_conn
             # Copy the backup to a non-primary agent
-            copy_body = self.copy_cmd(\
-                "%s:%s" % (primary_conn.displayname, backup_name),
-                non_primary_conn.displayname)
+            source_path = "%s:%s" % (aconn.displayname, backup_name)
+            copy_body = self.copy_cmd(source_path, target_conn.displayname)
 
             if copy_body.has_key('error'):
-                msg = "Copy of backup file '%s' to agent '%s' failed.  Will leave the backup file on the primary agent. Error was: %s" % \
-                    (backup_name, non_primary_conn.displayname, \
-                                                        copy_body['error'])
+                msg = "Copy of backup file '%s' to agent '%s' failed. "+\
+                    "Will leave the backup file on the primary agent. "+\
+                    "Error was: %s" \
+                    % (backup_name, target_conn.displayname, copy_body['error'])
                 self.log.info(msg)
                 body['info'] = msg
                 # Something was wrong with the copy to the non-primary agent.
                 #  Leave the backup on the primary after all.
-                backup_loc = primary_conn
+                backup_loc = aconn
             else:
                 # The copy succeeded.
                 # Remove the backup file from the primary
@@ -744,9 +806,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
                 # Check if the DEL worked.
                 if remove_body.has_key('error'):
-                    body['info'] = "DEL of backup file failed after copy.  Command: '%s'. Error was: %s" % (remove_cli, remove_body['error'])
+                    body['info'] = "DEL of backup file failed after copy. "+\
+                        "Command: '%s'. Error was: %s" \
+                        % (remove_cli, remove_body['error'])
         else:
-            backup_loc = primary_conn
+            backup_loc = aconn
             # Backup file remains on the primary.
 
         # Save name of backup, agentid to the db.
@@ -971,16 +1035,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         source_ip = src.auth['ip-address']
 
-        if 'install-dir' in dst.auth:
-            target_dir = dst.auth['install-dir'] + "Data"
-        else:
-            target_dir = self.DEFAULT_BACKUP_DIR
+        target_dir = ntpath.join(dst.auth['install-dir'], 'Data')
 
         command = '%s https://%s:%s/%s "%s"' % \
             (Controller.PGET_BIN, source_ip, src.auth['listen-port'],
              source_path, target_dir)
 
-        copy_body = self.cli_cmd(command, dst) # Send command to destination agent
+        # Send command to destination agent
+        copy_body = self.cli_cmd(command, dst)
         return copy_body
 
     def restore_cmd(self, aconn, target):
@@ -996,41 +1058,42 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         #       while in a backup context 'target' is the destination.
 
         # Before we do anything, first do sanity checks.
+        # Without a ':', assume the backup is still on the primary.
         parts = target.split(':')
-        if len(parts) != 2:
-            return self.error('[ERROR] Need exactly one colon in argument: ' + target)
-
-        source_displayname = parts[0]
-        source_filename = parts[1]
+        if len(parts) == 1:
+            source_displayname = aconn.displayname
+            source_filename = parts[0]
+        elif len(parts) == 2:
+            source_displayname = parts[0]
+            source_filename = parts[1]
+        else:
+            return self.error('Invalid target: ' + target)
 
         if os.path.isabs(source_filename):
             return self.error("[ERROR] May not specify an absolute pathname or disk: " + source_filename)
 
-        # Get the Primary Agent handle
-        primary_conn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
-
-        if not primary_conn:
-            return self.error("[ERROR] No Primary Agent is connected.")
-
-        if 'install-dir' in primary_conn.auth:
-            source_fullpathname = primary_conn.auth['install-dir'] + "Data\\" + source_filename
-        else:
-            source_fullpathname = self.DEFAULT_BACKUP_DIR + source_filename
+        install_dir = aconn.auth['install-dir']
+        source_fullpathname = ntpath.join(install_dir, "Data", source_filename)
 
         # Check if the source_filename is on the Primary Agent.
-        if source_displayname != primary_conn.displayname:
+        if source_displayname != aconn.displayname:
             # The source_filename isn't on the Primary agent:
             # We need to copy the file to the Primary.
 
             # copy_cmd arguments:
             #   source-agent-name:/filename
             #   dest-agent-displayname
-            self.log.debug("Restore: Sending copy command: %s, %s", target, primary_conn.displayname)
-            body = server.copy_cmd(target, primary_conn.displayname)
+            self.log.debug("restore: Sending copy command: %s, %s", \
+                               target, aconn.displayname)
+            body = server.copy_cmd(target, aconn.displayname)
 
             if body.has_key("error"):
-                self.log.debug("Restore: Copy of backup file '%s' from '%s' failed.  Error was: %s ",
-                        source_fullpathname, source_displayname, body['error'])
+                fmt = "restore: copy backup file '%s' from '%s' failed. " +\
+                    "Error was: %s"
+                self.log.debug(fmt,
+                               source_fullpathname,
+                               source_displayname,
+                               body['error'])
                 return body
 
         # The restore file is now on the Primary Agent.
@@ -1040,14 +1103,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         stateman = server.stateman
         orig_states = stateman.get_states()
-        if orig_states[StateEntry.STATE_TYPE_MAIN] == StateEntry.STATE_MAIN_STARTED:
+        main_state = orig_states[StateEntry.STATE_TYPE_MAIN]
+        if main_state == StateEntry.STATE_MAIN_STARTED:
             # Restore can run only when tableau is stopped.
-            stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STOPPING)
-            log.debug("--------------Stopping Tableau for restore---------------")
+            stateman.update(StateEntry.STATE_TYPE_MAIN, \
+                                StateEntry.STATE_MAIN_STOPPING)
+            log.debug("------------Stopping Tableau for restore-------------")
             stop_body = self.cli_cmd("tabadmin stop", aconn)
             if stop_body.has_key('error'):
                 self.log.info("Restore: tabadmin stop failed")
-                if source_displayname != primary_conn.displayname:
+                if source_displayname != aconn.displayname:
                     # If the file was copied to the Primary, delete
                     # the temporary backup file we copied to the Primary.
                     self.delete_file(aconn, source_fullpathname)
@@ -1066,11 +1131,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 time.sleep(8)
 
             if not stopped:
-                if source_displayname != primary_conn.displayname:
+                if source_displayname != aconn.displayname:
                     # If the file was copied to the Primary, delete
                     # the temporary backup file we copied to the Primary.
                     self.delete_file(aconn, source_fullpathname)
-                return self.error('[ERROR] Tableleau did not stop as requested.  Restore aborted.')
+                return self.error('Tableau did not stop as requested.  ' +
+                                  'Restore aborted.')
 
         # 'tabadmin restore ...' starts tableau as part of the restore procedure.
         # fixme: Maybe the maintenance web server wasn't running?
@@ -1102,7 +1168,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # fixme: Do we need to add restore information to the database?  
         # fixme: check status before cleanup? Or cleanup anyway?
 
-        if source_displayname != primary_conn.displayname:
+        if source_displayname != aconn.displayname:
             # If the file was copied to the Primary, delete
             # the temporary backup file we copied to the Primary.
             self.delete_file(aconn, source_fullpathname)
