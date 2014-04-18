@@ -46,7 +46,9 @@ class Alert(object):
             message = self.make_message(subject, body)
 
         if not self.enabled:
-            self.log.info("Alerts disabled.  Not sending: " + message)
+            self.log.info(\
+                "Alerts disabled.  Not sending: Subject: %s, Message: %s",
+                                                            subject, message)
             return
 
         msg = MIMEText(message)
@@ -106,6 +108,9 @@ class Alert(object):
             return message
 
         # Reasonable alerts levels here: 1 and 2.
+        if body.has_key('error'):
+            message += self.indented("Unexpected Error", body['error']) + '\n'
+
         if body.has_key('info'):
             message += self.indented("Note", body['info']) + '\n'
 
