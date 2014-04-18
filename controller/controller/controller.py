@@ -238,6 +238,10 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         if not backup_success:
             self.print_client("Backup failed.  Will still try to restore.")
+            # fixme: Is this the right behavior?  In some cases
+            # backup will fail, but restore will succeed.
+            # The correct behavior is probably to have the UI
+            # ask the user what they want to do.
 
         log.debug("-----------------Starting Restore-------------------")
             
@@ -737,6 +741,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if not cli_body.has_key("stdout"):
             self.log.error("check status of cli failed - missing 'stdout' in reply", cli_body)
+            return self.error(\
+                "Missing 'stdout' in agent reply for command '%s'" % command,
+                                                                    cli_body)
 
         cleanup_body = self._send_cleanup("cli", body['xid'], aconn, command)
 
@@ -783,6 +790,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.error(\
                 "_send_cli: command '%s' failed with exc.HTTPException: %s",
                                                         cli_command, str(e))
+            # bad agent
+            self.remove_agent(aconn, "Command sent to agent failed. Error: " + str(e))
             return self.error("_send_cli: '%s' command failed.  Error: %s, body: %s" %
                                 (cli_command, str(e), e.body), e.body)
         except (httplib.HTTPException, EnvironmentError) as e:
@@ -848,12 +857,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.error(\
                 "_send_cleanup: exc.HTTPExcpetion %s for original command '%s' failed with: %s, body: %s",
                             command, orig_cli_command, str(e), e.body)
+            # bad agent
+            self.remove_agent(aconn, "Command to agent failed with error: " + str(e))
             return self.error("_send_cleanup '%s' for original command '%s' failed.  Error: %s, body: %s" % \
                     (command, orig_cli_command, str(e), e.body))
         except (httplib.HTTPException, EnvironmentError) as e:
-            self.remove_agent(aconn, "Command to agent failed.")    # bad agent
+            # bad agent
             self.log.error("_send_cleanup: POST /%s for original command '%s' failed with: %s",
                                             command, orig_cli_command, str(e))
+            self.remove_agent(aconn, "Command to agent failed. Error: " + str(e))
             return self.error("'%s' failed for original command '%s' with: %s" %
                                     (command, orig_cli_command, str(e)))
         finally:
