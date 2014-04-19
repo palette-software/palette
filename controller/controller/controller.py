@@ -1355,6 +1355,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def maint(self, action):
         # Get the Primary Agent handle
+        # FIXME: Tie agent to domain; better, pass aconn to this method.
         aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
 
         if not aconn:
@@ -1452,6 +1453,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def remove_agent(self, aconn, reason="", send_alert=True):
         manager.remove_agent(aconn, reason=reason, send_alert=send_alert)
+        # FIXME: At the least, we need to add the domain to the check
+        #        for a primary; better, however, would be to store the
+        #        uuid of the status with the status and riff off uuid.
         if not manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY):
             session = meta.Session()
             statusmon.remove_all_status()
