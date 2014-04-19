@@ -1,5 +1,19 @@
 #!/bin/sh
 
-service apache2 stop || true
-rm -rf /opt/palette/plugins
+case "$1" in
+    remove|deconfigure)
+        /usr/sbin/a2dissite palette-software-ssl
+        service apache2 stop || true
+        rm -rf /opt/palette/plugins
+    ;;
+    upgrade)
+        ;;
+    failed-upgrade)
+        ;;
+    *)
+        echo "prerm called with unknown argument \`$1'" >&2
+        exit 0
+    ;;
+esac
+
 exit 0
