@@ -69,6 +69,10 @@ class Command(object):
     def sanity(self):
         opts = self.dict
 
+        # FIXME: If we are passed no domain info but are passed a uuid,
+        #        then get the domain from the agent table rather than
+        #        exercise the 'only one domain in the database' hack.
+
         # A domainid is required. Validate passed domain information
         # against the database for existence and uniqueness.
         #
