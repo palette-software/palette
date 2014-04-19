@@ -720,19 +720,27 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             print >> self.wfile, "{}"
 
-    do_maint.__usage__ = 'usage: maint [start|stop]'
+    do_maint.__usage__ = 'maint [start|stop]'
 
     def do_displayname(self, cmd):
         """Set the display name for an agent"""
-        if len(cmd.args) != 2:
-            print >> self.wfile, '[ERROR] Usage: displayname agent-hostname agent-displayname'
+        if len(cmd.args) != 1:
+            self.error(self.do_displayname.__usage__)
             return
 
-        error = server.displayname_cmd(cmd.args[0], cmd.args[1])
-        if error:
-            self.error(error)
-        else:
+        new_displayname = cmd.args[0]
+        uuid = cmd.dict['uuid']
+
+        # Note: aconn will be None if agent is not connected, which is OK
+        aconn = manager.agent_conn_by_uuid(uuid)
+
+        try:
+            server.displayname_cmd(aconn, uuid, new_displayname)
             self.ack()
+        except ValueError, e:
+            self.error(str(e))
+
+    do_displayname.__usage__ = 'displayname new-displayname'
 
     def do_nop(self, cmd):
         """usage: nop"""
@@ -1427,11 +1435,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                                 method, uri, str(body))
         return body
 
-    def displayname_cmd(self, hostname, displayname):
+    def displayname_cmd(self, aconn, uuid, displayname):
         """Sets displayname for the agent with the given hostname. At
            this point assumes hostname is unique in the database."""
 
-        return manager.set_displayname(hostname, displayname)
+        manager.set_displayname(aconn, uuid, displayname)
 
     def error(self, msg, return_dict={}):
         """Returns error dictionary in standard format.  If passed
