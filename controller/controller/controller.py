@@ -22,6 +22,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 import meta
 
 from agentmanager import AgentManager
+from agentstatus import AgentStatusEntry
 from backup import BackupManager
 from state import StateManager, StateEntry
 from status import StatusMonitor
@@ -69,7 +70,7 @@ class Command(object):
         opts = self.dict
 
         # A domainid is required. Validate passed domain information
-        # in the database for existence and uniqueness.
+        # against the database for existence and uniqueness.
         #
         # As an optimization, if only a domainid id is passed, with
         # no other domain information, accept it and use it.
@@ -83,12 +84,12 @@ class Command(object):
             pass
         else:
             query = meta.Session.query(DomainEntry)
-            if 'domainname' in opts:
-                query = \
-                  query.filter(DomainEntry.domainname == opts['domainname'])
             if 'domainid' in opts:
                 query = \
                   query.filter(DomainEntry.domainid == opts['domainid'])
+            if 'domainname' in opts:
+                query = \
+                  query.filter(DomainEntry.domainname == opts['domainname'])
             try:
                 entry = query.one()
                 opts['domainid'] = entry.domainid
@@ -96,6 +97,62 @@ class Command(object):
                  raise CommandException("no matching domain found")
             except sqlalchemy.orm.exc.MultipleResultsFound:
                  raise CommandException("domain must be unique")
+
+        # Not all commands require an agent, but most do. For simplicity,
+        # we require a uuid entry in the command dict, even if the
+        # value of that entry is None. Validate passed agent
+        # information, if any, against the database for existence
+        # and uniqueness within the domain.
+        # 
+        # As an optimization, if only a uuid is passed, with
+        # no other agent information, accept it and use it.
+        #
+        # As a hack to aid development, if no agent information is
+        # passed, and there is a (unique) primary in the database
+        # for this domain, then use it.
+        #
+        # FIXME: TBD: should this be farmed out to the AgentStatusEntry class
+        #             or AgentConnection class?
+        if 'uuid' in opts and not 'displayname' in opts \
+          and not 'hostname' in opts and not 'type' in opts:
+            pass
+        elif not 'uuid' in opts and not 'displayname' in opts \
+          and not 'hostname' in opts and not 'type' in opts:
+            query = meta.Session.query(AgentStatusEntry)
+            query = query.filter(AgentStatusEntry.domainid == \
+              opts['domainid'])
+            query = query.filter(AgentStatusEntry.agent_type == \
+                'primary')
+            try:
+                entry = query.one()
+                opts['uuid'] = entry.uuid
+            except sqlalchemy.orm.exc.NoResultFound:
+                 opts['uuid'] = None
+            except sqlalchemy.orm.exc.MultipleResultsFound:
+                 opts['uuid'] = None
+        else:
+            query = meta.Session.query(AgentStatusEntry)
+            query = query.filter(AgentStatusEntry.domainid == \
+              opts['domainid'])
+            if 'uuid' in opts:
+                query = query.filter(AgentStatusEntry.uuid == \
+                  opts['uuid'])
+            if 'displayname' in opts:
+                query = query.filter(AgentStatusEntry.displayname == \
+                  opts['displayname'])
+            if 'hostname' in opts:
+                query = query.filter(AgentStatusEntry.hostname == \
+                  opts['hostname'])
+            if 'type' in opts:
+                query = query.filter(AgentStatusEntry.agent_type == \
+                  opts['type'])
+            try:
+                entry = query.one()
+                opts['uuid'] = entry.uuid
+            except sqlalchemy.orm.exc.NoResultFound:
+                 raise CommandException("no matching agent found")
+            except sqlalchemy.orm.exc.MultipleResultsFound:
+                 raise CommandException("agent must be unique")
 
 class CliHandler(socketserver.StreamRequestHandler):
 
@@ -669,6 +726,10 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def do_nop(self, cmd):
         """usage: nop"""
+
+        for key in cmd.dict:
+            print ("%s = %s") % (key, cmd.dict[key])
+
         self.ack()
 
     def get_aconn(self, opts):
