@@ -302,7 +302,7 @@ class AgentManager(threading.Thread):
                                             str(e))
                 pass
             else:
-                self.log.debug("remove_agent: close agnet socket succeeded.")
+                self.log.debug("remove_agent: close agent socket succeeded.")
 
             del self.agents[conn_id]
         else:
