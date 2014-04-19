@@ -1,4 +1,7 @@
 include etc/*
+include etc/ssl/certs/*
+include etc/ssl/private/*
+include etc/apache2/sites-available/*
 include etc/apache2/conf.d/*
 recursive-include palette *
 exclude setup.cfg
