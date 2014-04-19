@@ -392,7 +392,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         """Copy a file from one agent to another."""
 
         if len(cmd.args) != 2:
-            self.error(self.do_copy.__doc__)
+            self.error(self.do_copy.__usage__)
             return
 
         body = server.copy_cmd(cmd.args[0], cmd.args[1])
@@ -699,15 +699,15 @@ class CliHandler(socketserver.StreamRequestHandler):
                 self.print_client('stderr: %s', body['stderr'])
 
     def do_maint(self, cmd):
-        """usage: maint [start|stop]"""
+        """Start or stop the maintenance web page on the Tableau server"""
 
         if len(cmd.args) != 1:
-            self.error(self.do_maint.__doc__)
+            self.error(self.do_maint.__usage__)
             return
 
         action = cmd.args[0]
         if action != "start" and action != "stop":
-            self.error(self.do_maint.__doc__)
+            self.error(self.do_maint.__usage__)
             return
 
         body = server.maint(action)
@@ -715,6 +715,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, 'body: ' + str(body)
         else:
             print >> self.wfile, "{}"
+
+    do_maint.__usage__ = 'usage: maint [start|stop]'
 
     def do_displayname(self, cmd):
         """Set the display name for an agent"""
