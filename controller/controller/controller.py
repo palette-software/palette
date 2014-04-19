@@ -127,7 +127,7 @@ class CliHandler(socketserver.StreamRequestHandler):
     def error(self, msg, *args):
         if args:
             msg = msg % args
-        print_client(self, '[ERROR] ' + msg)
+        self.print_client('[ERROR] ' + msg)
 
     def usage(self, msg):
         self.error('usage: '+msg)
