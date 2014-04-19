@@ -48,19 +48,22 @@ class Command(object):
         self.name = None
         self.args = []
 
+        doing_dict = True
         for token in shlex.split(line):
-            if token.startswith("/"):
-                token = token[1:]
-                L = token.split("=", 1)
-                if len(L) > 1:
-                    key = L[0].strip()
-                    value = L[1].strip()
+            if doing_dict:
+                if token.startswith("/"):
+                    token = token[1:]
+                    L = token.split("=", 1)
+                    if len(L) > 1:
+                        key = L[0].strip()
+                        value = L[1].strip()
+                    else:
+                        key = token.strip()
+                        value = None
+                    self.dict[key] = value
                 else:
-                    key = token.strip()
-                    value = None
-                self.dict[key] = value
-            elif self.name == None:
-                self.name = token
+                    self.name = token
+                    doing_dict = False
             else:
                 self.args.append(token.strip())
 
@@ -745,8 +748,16 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_nop(self, cmd):
         """usage: nop"""
 
+        print >> self.wfile, "dict:"
         for key in cmd.dict:
-            print ("%s = %s") % (key, cmd.dict[key])
+            print >> self.wfile, "\t%s = %s" % (key, cmd.dict[key])
+
+        print >> self.wfile, "command:"
+        print >> self.wfile, "\t%s" % (cmd.name)
+
+        print >> self.wfile, "args:"
+        for arg in cmd.args:
+            print >> self.wfile, "\t%s" % (arg)
 
         self.ack()
 
