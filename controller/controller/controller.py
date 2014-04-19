@@ -735,34 +735,20 @@ class CliHandler(socketserver.StreamRequestHandler):
     def get_aconn(self, opts):
         # FIXME: This method is a temporary hack while we
         #        clean up the telnet commands
+        # FIXME: TBD: Should this be farmed out to another class?
 
         aconn = None
 
-        if opts.has_key('uuid'):
-            val = opts['uuid']
-            aconn = manager.agent_conn_by_uuid(val)
-            if not aconn:
-                self.error("No connected agent with uuid=%s", val)
-        elif opts.has_key('type'):
-            val = opts['type']
-            aconn = manager.agent_conn_by_type(val)
-            if not aconn:
-                self.error("No connected agent with type=%s", val)
-        elif opts.has_key('displayname'):
-            val = opts['displayname']
-            aconn = manager.agent_conn_by_displayname(val)
-            if not aconn:
-                self.error("No connected agent with displayname=%s", val)
-        elif opts.has_key('hostname'):
-            val = opts['hostname']
-            aconn = manager.agent_conn_by_hostname(val)
-            if not aconn:
-                self.error("No connected agent with hostname=%s", val)
-        else:
-            aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
-            if not aconn:
-                self.error("No connected agent with type=%s", \
-                  AgentManager.AGENT_TYPE_PRIMARY)
+        if opts.has_key('uuid'): # should never fail
+            uuid = opts['uuid'] # may be None
+            if uuid:
+                aconn = manager.agent_conn_by_uuid(uuid)
+                if not aconn:
+                    self.error("No connected agent with uuid=%s", uuid)
+            else:
+                self.error("No agent specified")
+        else: # should never happen
+            self.error("No agent specified")
 
         return aconn
 
