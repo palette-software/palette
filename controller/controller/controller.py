@@ -220,6 +220,10 @@ class CliHandler(socketserver.StreamRequestHandler):
 #            sys.stdout.write(line)
 
     def do_help(self, cmd):
+        print >> self.wfile, 'Optional prepended domain args:'
+        print >> self.wfile, '    /domainid=id /domainname=name'
+        print >> self.wfile, 'Optional prepended agent args:'
+        print >> self.wfile, '    /displayname=name /hostname=name /uuid=uuid /type=type'
         for name, m in inspect.getmembers(self, predicate=inspect.ismethod):
             if name.startswith("do_"):
                 name = name[3:].replace('_', '-')
@@ -484,7 +488,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         print >> self.wfile, pget_cmd
         body = server.cli_cmd(pget_cmd, aconn)
         self.report_status(body)
-    do_pget.__usage__ = 'pget [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ] https://...... local-name'
+    do_pget.__usage__ = 'pget https://...... local-name'
 
 
     def do_firewall(self, cmd):
@@ -528,27 +532,27 @@ class CliHandler(socketserver.StreamRequestHandler):
         print >> self.wfile, body
         return
 
-    do_firewall.__usage__ = 'firewall [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ] port# { enable | disable }\n   or\n\tfirewall'
+    do_firewall.__usage__ = 'firewall port# { enable | disable }\n   or\n           firewall'
 
 
-    def do_ping(self, argv, aconn=None):
-        if len(argv):
-            print >> self.wfile, '[ERROR] Usage: ping [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ]'
+    def do_ping(self, cmd):
+        """Ping an agent"""
+        if len(cmd.args):
+            self.error(self.do_ping.__usage__)
             return
 
-        if aconn and type(aconn) == type([]):
-            self.error("Invalid request: More than one agent was selected: %d",
-                                                                    len(aconn))
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
             return
 
-        if aconn:
-            print >> self.wfile, "Sending ping to displayname '%s' (type: %s)." % \
-                        (aconn.displayname, aconn.auth['type'])
-        else:
-            print >> self.wfile, "Sending ping."
+        print >> self.wfile, "Sending ping to displayname '%s' (type: %s)." % \
+          (aconn.displayname, aconn.auth['type'])
 
         body = server.ping(aconn)
         self.report_status(body)
+
+    do_ping.__usage__ = 'ping'
 
     def do_start(self, cmd):
         if len(cmd.args) != 0:
@@ -1360,12 +1364,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return self.send_immediate(aconn, "POST", "/maint", send_body)
 
     def ping(self, aconn):
-        if not aconn:
-            # Get the Primary Agent handle
-            aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
-
-            if not aconn:
-                return self.error("[ERROR] ping: Agent not connected.")
 
         return self.send_immediate(aconn, "POST", "/ping")
 
