@@ -1342,13 +1342,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
            Returns the body result.
         """
 
-        if not aconn:
-            # Get the Primary Agent handle
-            aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
-
-            if not aconn:
-                return self.error("[ERROR] firewall: No Primary Agent is connected.")
-
         if method == "GET":
             send_body = ""
         else:
