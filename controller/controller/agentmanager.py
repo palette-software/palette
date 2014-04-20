@@ -296,6 +296,7 @@ class AgentManager(threading.Thread):
             self.forget(agent.agentid)
             self.log.debug("remove_agent: closing agent socket.")
             try:
+                agent.socket.shutdown(socket.SHUT_RDWR)
                 agent.socket.close()
             except socket.error as e:
                 self.log.debug("remove_agent: close agent socket failure:" + \
@@ -415,6 +416,7 @@ class AgentManager(threading.Thread):
             for item in required:
                 if not body.has_key(item):
                     self.log.error("Missing '%s' from agent" % item)
+                    # FIXME: this overridden method doesn't do anything
                     conn.close()
                     return
 
@@ -422,6 +424,7 @@ class AgentManager(threading.Thread):
             if agent_type not in [ AgentManager.AGENT_TYPE_PRIMARY,
               AgentManager.AGENT_TYPE_WORKER, AgentManager.AGENT_TYPE_OTHER ]:
                 self.log.error("Bad agent type sent: " + agent_type)
+                # FIXME: this overridden method doesn't do anything
                 conn.close()
                 return
 
@@ -432,6 +435,7 @@ class AgentManager(threading.Thread):
 
         except socket.error, e:
             self.log.debug("Socket error: " + str(e))
+            # FIXME: this overridden method doesn't do anything
             conn.close()
         except Exception, e:
             self.log.error("Exception:")

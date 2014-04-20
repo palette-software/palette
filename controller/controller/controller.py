@@ -396,6 +396,7 @@ class CliHandler(socketserver.StreamRequestHandler):
     do_copy.__usage__ = 'copy source-agent-name:filename dest-agent-name'
 
 
+    # FIXME: print status too
     def list_agents(self):
         agents = manager.all_agents()
 
@@ -695,22 +696,56 @@ class CliHandler(socketserver.StreamRequestHandler):
                 self.print_client('stderr: %s', body['stderr'])
 
     def do_maint(self, cmd):
-        """usage: maint [start|stop]"""
+        """Start or Stop the maintenance webserver on the agent."""
 
-        if len(cmd.args) != 1:
-            self.error(self.do_maint.__doc__)
+        if len(cmd.args) < 1 or len(cmd.args) > 2:
+            self.usage(self.do_maint.__usage__)
             return
 
-        action = cmd.args[0]
+        action = cmd.args[0].lower()
         if action != "start" and action != "stop":
-            self.error(self.do_maint.__doc__)
+            self.usage(self.do_maint.__usage__)
             return
 
-        body = server.maint(action)
-        if body:
-            print >> self.wfile, 'body: ' + str(body)
-        else:
-            print >> self.wfile, "{}"
+        port = -1
+        if len(cmd.args) == 2:
+            try:
+                port = int(cmd.args[1])
+            except ValueError, e:
+                self.error("invalid port '%s', number required.", cmd.args[1])
+                return;
+
+        self.ack()
+
+        body = server.maint(action, port)
+        self.print_client(str(body))
+    do_maint.__usage__ = 'maint [start|stop]'
+
+    def do_archive(self, cmd):
+        """Start or Stop the archive HTTPS server on the agent."""
+
+        if len(cmd.args) < 1 or len(cmd.args) > 2:
+            self.usage(self.do_archive.__usage__)
+            return
+
+        action = cmd.args[0].lower()
+        if action != "start" and action != "stop":
+            self.usage(self.do_archive.__usage__)
+            return
+
+        port = -1
+        if len(cmd.args) == 2:
+            try:
+                port = int(cmd.args[1])
+            except ValueError, e:
+                self.error("invalid port '%s', number required.", cmd.args[1])
+                return;
+
+        self.ack()
+
+        body = server.archive(action, port)
+        self.print_client(str(body))
+    do_archive.__usage__ = 'archive [start|stop] [port]'
 
     def do_displayname(self, cmd):
         """Set the display name for an agent"""
@@ -1350,15 +1385,31 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return self.send_immediate(aconn, method, "/firewall", send_body)
 
-    def maint(self, action):
+    def maint(self, action, port=-1):
         # Get the Primary Agent handle
         aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
 
         if not aconn:
-            return self.error("[ERROR] maint: No Primary Agent is connected.")
+            return self.error("maint: no primary agent is connected.")
 
         send_body = {"action": action}
+        if port > 0:
+            send_body["port"] = port
+
         return self.send_immediate(aconn, "POST", "/maint", send_body)
+
+    def archive(self, action, port=-1):
+        # Get the Primary Agent handle
+        aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
+
+        if not aconn:
+            return self.error("archive: no primary agent is connected.")
+
+        send_body = {"action": action}
+        if port > 0:
+            send_body["port"] = port
+
+        return self.send_immediate(aconn, "POST", "/archive", send_body)
 
     def ping(self, aconn):
         if not aconn:
@@ -1404,8 +1455,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                         (aconn.displayname, res.status, method, uri, rawbody))
                 self.log.error("immediate command to %s failed with status %d: %s %s, body:",
                             aconn.displayname, res.status, method, rawbody)
-                return self.error("immediate command to %s failed with status %d: %s %s, body: %s" % \
-                            (aconn.displayname, res.status, method, uri, rawbody))
+                return self.httperror(res, agent=aconn.displayname,
+                                      method=method, uri=uri, body=rawbody);
             elif rawbody:
                 body = json.loads(rawbody)
                 self.log.debug("send_immediate for %s %s reply: %s",
@@ -1443,15 +1494,23 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return_dict['error'] = msg
         return return_dict
 
-    def httperror(self, res, body=None):
+    def httperror(self, res, error='HTTP failure',
+                  agent=None, method=None, uri=None, body=None):
         """Returns a dict representing a non-OK HTTP response."""
         if body is None:
             body = res.read()
-        return {
+        d = {
+            'error': error,
             'status-code': res.status,
             'reason-phrase': res.reason,
-            'body': body
             }
+        if method:
+            d['method'] = method
+        if uri:
+            d['uri'] = uri
+        if body:
+            d['body'] = body
+        return d;
 
     def remove_agent(self, aconn, reason="", send_alert=True):
         manager.remove_agent(aconn, reason=reason, send_alert=send_alert)
