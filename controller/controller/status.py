@@ -171,7 +171,7 @@ class StatusMonitor(threading.Thread):
 
     def check_status(self):
 
-        # FIXME: Tie aconn to domain
+        # FIXME: Tie agent to domain.
         aconn = self.manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
         if not aconn:
             session = meta.Session()

@@ -48,19 +48,22 @@ class Command(object):
         self.name = None
         self.args = []
 
+        doing_dict = True
         for token in shlex.split(line):
-            if token.startswith("/"):
-                token = token[1:]
-                L = token.split("=", 1)
-                if len(L) > 1:
-                    key = L[0].strip()
-                    value = L[1].strip()
+            if doing_dict:
+                if token.startswith("/"):
+                    token = token[1:]
+                    L = token.split("=", 1)
+                    if len(L) > 1:
+                        key = L[0].strip()
+                        value = L[1].strip()
+                    else:
+                        key = token.strip()
+                        value = None
+                    self.dict[key] = value
                 else:
-                    key = token.strip()
-                    value = None
-                self.dict[key] = value
-            elif self.name == None:
-                self.name = token
+                    self.name = token
+                    doing_dict = False
             else:
                 self.args.append(token.strip())
 
@@ -68,6 +71,10 @@ class Command(object):
 
     def sanity(self):
         opts = self.dict
+
+        # FIXME: If we are passed no domain info but are passed a uuid,
+        #        then get the domain from the agent table rather than
+        #        exercise the 'only one domain in the database' hack.
 
         # A domainid is required. Validate passed domain information
         # against the database for existence and uniqueness.
@@ -216,6 +223,10 @@ class CliHandler(socketserver.StreamRequestHandler):
 #            sys.stdout.write(line)
 
     def do_help(self, cmd):
+        print >> self.wfile, 'Optional prepended domain args:'
+        print >> self.wfile, '    /domainid=id /domainname=name'
+        print >> self.wfile, 'Optional prepended agent args:'
+        print >> self.wfile, '    /displayname=name /hostname=name /uuid=uuid /type=type'
         for name, m in inspect.getmembers(self, predicate=inspect.ismethod):
             if name.startswith("do_"):
                 name = name[3:].replace('_', '-')
@@ -388,7 +399,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         """Copy a file from one agent to another."""
 
         if len(cmd.args) != 2:
-            self.error(self.do_copy.__doc__)
+            self.error(self.do_copy.__usage__)
             return
 
         body = server.copy_cmd(cmd.args[0], cmd.args[1])
@@ -481,7 +492,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         print >> self.wfile, pget_cmd
         body = server.cli_cmd(pget_cmd, aconn)
         self.report_status(body)
-    do_pget.__usage__ = 'pget [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ] https://...... local-name'
+    do_pget.__usage__ = 'pget https://...... local-name'
 
 
     def do_firewall(self, cmd):
@@ -525,27 +536,27 @@ class CliHandler(socketserver.StreamRequestHandler):
         print >> self.wfile, body
         return
 
-    do_firewall.__usage__ = 'firewall [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ] port# { enable | disable }\n   or\n\tfirewall'
+    do_firewall.__usage__ = 'firewall port# { enable | disable }\n   or\n           firewall'
 
 
-    def do_ping(self, argv, aconn=None):
-        if len(argv):
-            print >> self.wfile, '[ERROR] Usage: ping [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ]'
+    def do_ping(self, cmd):
+        """Ping an agent"""
+        if len(cmd.args):
+            self.error(self.do_ping.__usage__)
             return
 
-        if aconn and type(aconn) == type([]):
-            self.error("Invalid request: More than one agent was selected: %d",
-                                                                    len(aconn))
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
             return
 
-        if aconn:
-            print >> self.wfile, "Sending ping to displayname '%s' (type: %s)." % \
-                        (aconn.displayname, aconn.auth['type'])
-        else:
-            print >> self.wfile, "Sending ping."
+        print >> self.wfile, "Sending ping to displayname '%s' (type: %s)." % \
+          (aconn.displayname, aconn.auth['type'])
 
         body = server.ping(aconn)
         self.report_status(body)
+
+    do_ping.__usage__ = 'ping'
 
     def do_start(self, cmd):
         if len(cmd.args) != 0:
@@ -747,23 +758,41 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.print_client(str(body))
     do_archive.__usage__ = 'archive [start|stop] [port]'
 
+    do_maint.__usage__ = 'maint [start|stop]'
+
     def do_displayname(self, cmd):
         """Set the display name for an agent"""
-        if len(cmd.args) != 2:
-            print >> self.wfile, '[ERROR] Usage: displayname agent-hostname agent-displayname'
+        if len(cmd.args) != 1:
+            self.error(self.do_displayname.__usage__)
             return
 
-        error = server.displayname_cmd(cmd.args[0], cmd.args[1])
-        if error:
-            self.error(error)
-        else:
+        new_displayname = cmd.args[0]
+        uuid = cmd.dict['uuid']
+
+        # Note: aconn will be None if agent is not connected, which is OK
+        aconn = manager.agent_conn_by_uuid(uuid)
+
+        try:
+            server.displayname_cmd(aconn, uuid, new_displayname)
             self.ack()
+        except ValueError, e:
+            self.error(str(e))
+
+    do_displayname.__usage__ = 'displayname new-displayname'
 
     def do_nop(self, cmd):
         """usage: nop"""
 
+        print >> self.wfile, "dict:"
         for key in cmd.dict:
-            print ("%s = %s") % (key, cmd.dict[key])
+            print >> self.wfile, "\t%s = %s" % (key, cmd.dict[key])
+
+        print >> self.wfile, "command:"
+        print >> self.wfile, "\t%s" % (cmd.name)
+
+        print >> self.wfile, "args:"
+        for arg in cmd.args:
+            print >> self.wfile, "\t%s" % (arg)
 
         self.ack()
 
@@ -1371,13 +1400,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
            Returns the body result.
         """
 
-        if not aconn:
-            # Get the Primary Agent handle
-            aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
-
-            if not aconn:
-                return self.error("[ERROR] firewall: No Primary Agent is connected.")
-
         if method == "GET":
             send_body = ""
         else:
@@ -1387,6 +1409,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def maint(self, action, port=-1):
         # Get the Primary Agent handle
+        # FIXME: Tie agent to domain; better, pass aconn to this method.
         aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
 
         if not aconn:
@@ -1412,12 +1435,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return self.send_immediate(aconn, "POST", "/archive", send_body)
 
     def ping(self, aconn):
-        if not aconn:
-            # Get the Primary Agent handle
-            aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
-
-            if not aconn:
-                return self.error("[ERROR] ping: Agent not connected.")
 
         return self.send_immediate(aconn, "POST", "/ping")
 
@@ -1480,11 +1497,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                                 method, uri, str(body))
         return body
 
-    def displayname_cmd(self, hostname, displayname):
+    def displayname_cmd(self, aconn, uuid, displayname):
         """Sets displayname for the agent with the given hostname. At
            this point assumes hostname is unique in the database."""
 
-        return manager.set_displayname(hostname, displayname)
+        manager.set_displayname(aconn, uuid, displayname)
 
     def error(self, msg, return_dict={}):
         """Returns error dictionary in standard format.  If passed
@@ -1514,6 +1531,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def remove_agent(self, aconn, reason="", send_alert=True):
         manager.remove_agent(aconn, reason=reason, send_alert=send_alert)
+        # FIXME: At the least, we need to add the domain to the check
+        #        for a primary; better, however, would be to store the
+        #        uuid of the status with the status and riff off uuid.
         if not manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY):
             session = meta.Session()
             statusmon.remove_all_status()

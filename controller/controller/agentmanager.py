@@ -179,22 +179,18 @@ class AgentManager(threading.Thread):
         session.commit()
         return entry
 
-    def set_displayname(self, hostname, displayname):
-        error = ""
-
+    def set_displayname(self, aconn, uuid, displayname):
         session = meta.Session()
         try:
             entry = session.query(AgentStatusEntry).\
-                filter(AgentStatusEntry.hostname == hostname).one()
+                filter(AgentStatusEntry.uuid == uuid).one()
             entry.displayname = displayname
             session.merge(entry)
             session.commit()
-            aconn = self.agent_conn_by_hostname(hostname)
             if aconn:
                 aconn.auth['displayname'] == displayname
         except NoResultFound, e:
-            error = "No agent found with hostame=%s" % (hostname)
-        return error
+            raise ValueError('No agent found with uuid=%s' % (uuid))
 
     def forget(self, agentid):
         session = meta.Session()
