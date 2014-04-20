@@ -17,13 +17,21 @@ class ManageApplication(RESTApplication):
 
     NAME = 'manage'
 
+    def __init__(self, global_conf):
+        super(ManageApplication, self).__init__(global_conf)
+
+        domainname = store.get('palette', 'domainname')
+        self.domain = Domain.get_by_name(domainname)
+        self.telnet_port = store.getint("palette", "telnet_port", default=9000)
+        self.telnet_hostname = store.get("palette", "telnet_hostname", default="localhost")
+
     def send_cmd(self, cmd):
+        # Start and stop commands are always sent to the primary.
+        preamble = "/domainid=%d /type=primary" % (self.domain.domainid)
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        telnet_port = store.getint("palette", "telnet_port", default=9000)
-        telnet_hostname = store.get("palette", "telnet_hostname", default="localhost")
-        conn.connect((telnet_hostname, telnet_port))
-        conn.send(cmd + '\n')
-        print "sent", cmd
+        conn.connect((self.telnet_hostname, self.telnet_port))
+        conn.send(preamble + ' ' + cmd + '\n')
+        print "sent", preamble + ' ' + cmd
         data = conn.recv(3).strip()
         print "got", data
         if data != 'OK':
