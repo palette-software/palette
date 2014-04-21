@@ -8,7 +8,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from rbac import User
 
 class UserProfile(User):
-    """ 
+    """
     Profile information is added to the 'users' table.
     """
     first_name = Column(String)

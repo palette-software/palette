@@ -22,7 +22,7 @@ from sqlalchemy.orm.exc import NoResultFound
 # Communicates with the Agent.
 # fixme: maybe merge with the AgentStatusEntry class.
 class AgentConnection(object):
-    
+
     _CID = 1
 
     def __init__(self, conn, addr):
@@ -115,7 +115,7 @@ class AgentManager(threading.Thread):
     def register(self, new_agent, body):
         """Called with the agent object and body /auth dictionary that
            was sent from the agent in json."""
-       
+
         self.lock()
         self.log.debug("new agent of type: %s, name %s, uuid %s, conn_id %d", body['type'], body['hostname'], body['uuid'], new_agent.conn_id)
 
@@ -165,8 +165,8 @@ class AgentManager(threading.Thread):
 
         # fixme: check for the presence of all these entries.
         entry = AgentStatusEntry(body['hostname'],
-                                 body['type'], 
-                                 body['version'], 
+                                 body['type'],
+                                 body['version'],
                                  body['ip-address'],
                                  body['listen-port'],
                                  body['uuid'],
@@ -286,7 +286,7 @@ class AgentManager(threading.Thread):
 
             if send_alert:
                 alert = Alert(self.config, self.log)
-                alert.send(reason, "\nAgent: %s\nAgent type: %s\nAgent connection-id %d" % 
+                alert.send(reason, "\nAgent: %s\nAgent type: %s\nAgent connection-id %d" %
                             (agent.displayname, agent.auth['type'], conn_id))
 
             self.forget(agent.agentid)
@@ -440,12 +440,12 @@ class AgentManager(threading.Thread):
             self.log.error(traceback.format_exc())
 
 class ReverseHTTPConnection(HTTPConnection):
-    
+
     def __init__(self, sock):
         HTTPConnection.__init__(self, 'agent')
 #        HTTPConnection.debuglevel = 1
         self.sock = sock
-    
+
     def connect(self):
         pass
 
@@ -479,7 +479,7 @@ class AgentHealthMonitor(threading.Thread):
                 self.manager.lock()
 
                 if not agents.has_key(key):
-                    self.log.debug("agent with conn_id '%d' is now gone and won't be checked." % 
+                    self.log.debug("agent with conn_id '%d' is now gone and won't be checked." %
                         key)
                     self.manager.unlock()
                     continue
@@ -499,5 +499,5 @@ class AgentHealthMonitor(threading.Thread):
                 else:
                     self.log.debug("Ping: Reply from agent '%s', type '%s', conn_id %d." %
                         (agent.displayname, agent.auth['type'], key))
-                    
+
             time.sleep(self.ping_interval)

@@ -96,7 +96,7 @@ class Alert(object):
         if type(body) != dict:
             self.log.info("alert was passed a %s instead of string or dictionary.",  type(body))
             return str(body)
-        
+
         message = subject + '\n\n'
 
         if self.alert_level < 1:   # too minimal, not even errors included.
@@ -137,7 +137,7 @@ class Alert(object):
             then all lines, indented.
 
             If the value is empty, don't return the section or value.
-            
+
             Arguments:
                 section:  The name of the section, like "Errors" or "Output".
 

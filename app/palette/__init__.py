@@ -5,7 +5,7 @@ import akiri.framework.ext.sqlalchemy
 from controller import meta
 
 class MetaEngine(object):
-    
+
     def execute(self, statement, *multiparams, **params):
         return akiri.framework.ext.sqlalchemy.engine.execute(statement, \
             *multiparams, **params)
