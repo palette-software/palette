@@ -302,7 +302,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
           StateEntry.STATE_BACKUP_NONE)
 
-        self.print(client(str(body))
+        self.print_client(str(body))
         if not body.has_key('error'):
             alert.send("Backup Finished", body)
             return
