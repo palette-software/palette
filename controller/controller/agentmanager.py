@@ -49,9 +49,6 @@ class AgentConnection(object):
     def unlock(self):
         self.lockobj.release()
 
-    def set_httpconn(self, httpconn):
-        self.httpconn = httpconn    # Used by the controller
-
     def set_auth(self, auth):
         self.auth = auth            # Used by the controller
 
@@ -291,15 +288,10 @@ class AgentManager(threading.Thread):
 
             self.forget(agent.agentid)
             self.log.debug("remove_agent: closing agent socket.")
-            try:
-                agent.socket.shutdown(socket.SHUT_RDWR)
-                agent.socket.close()
-            except socket.error as e:
-                self.log.debug("remove_agent: close agent socket failure:" + \
-                                            str(e))
-                pass
-            else:
+            if self._close(agent.socket):
                 self.log.debug("remove_agent: close agent socket succeeded.")
+            else:
+                self.log.debug("remove_agent: close agent socket failed")
 
             del self.agents[conn_id]
         else:
@@ -313,6 +305,15 @@ class AgentManager(threading.Thread):
               StateEntry.STATE_BACKUP_NONE)
 
         self.unlock()
+
+    def _close(self, sock):
+        try:
+            sock.shutdown(socket.SHUT_RDWR)
+            sock.close()
+        except socket.error as e:
+            self.log.debug("agentmanager._close socket failure: " + str(e))
+            return False
+        return True
 
     def lock(self):
         """Locks the agents list"""
@@ -412,27 +413,24 @@ class AgentManager(threading.Thread):
             for item in required:
                 if not body.has_key(item):
                     self.log.error("Missing '%s' from agent" % item)
-                    # FIXME: this overridden method doesn't do anything
-                    conn.close()
+                    self._close(conn)
                     return
 
             agent_type = body['type']
             if agent_type not in [ AgentManager.AGENT_TYPE_PRIMARY,
               AgentManager.AGENT_TYPE_WORKER, AgentManager.AGENT_TYPE_OTHER ]:
                 self.log.error("Bad agent type sent: " + agent_type)
-                # FIXME: this overridden method doesn't do anything
-                conn.close()
+                self._close(conn)
                 return
 
-            agent.set_httpconn(httpconn)
+            agent.httpconn = httpconn
             agent.set_auth(body)
 
             self.register(agent, body)
 
         except socket.error, e:
             self.log.debug("Socket error: " + str(e))
-            # FIXME: this overridden method doesn't do anything
-            conn.close()
+            self._close(conn)
         except Exception, e:
             self.log.error("Exception:")
             traceback.format_exc()
