@@ -110,7 +110,7 @@ class Command(object):
         # value of that entry is None. Validate passed agent
         # information, if any, against the database for existence
         # and uniqueness within the domain.
-        # 
+        #
         # As an optimization, if only a uuid is passed, with
         # no other agent information, accept it and use it.
         #
@@ -331,7 +331,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Check to see if we're in a state to restore
         stateman = self.server.stateman
         states = stateman.get_states()
-        
+
         main_state = states[StateEntry.STATE_TYPE_MAIN]
         if main_state != StateEntry.STATE_MAIN_STARTED and \
                 main_state != StateEntry.STATE_MAIN_STOPPED:
@@ -348,7 +348,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Do a backup before we try to do a restore.
         #FIXME: refactor do_backup() into do_backup() and backup()
         log.debug("------------Starting Backup for Restore--------------")
-            
+
         # fixme: lock to ensure against two simultaneous backups?
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
                             StateEntry.STATE_BACKUP_BACKUP)
@@ -381,7 +381,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: lock to ensure against two simultaneous restores?
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
                             StateEntry.STATE_BACKUP_RESTORE1)
-            
+
         body = server.restore_cmd(aconn, target)
 
         stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_NONE)
@@ -443,7 +443,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         if f is None:
             self.usage(self.do_list.__usage__)
             return
-        
+
         self.ack()
         f()
     do_list.__usage__ = 'list [agents|backups]'
@@ -567,7 +567,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         if not aconn:
             self.error('agent not found')
             return
-        
+
         # Check to see if we're in a state to start
         stateman = self.server.stateman
         states = stateman.get_states()
@@ -587,7 +587,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             log.debug("FAIL: Can't start - backup state is: %s", \
               states[StateEntry.STATE_TYPE_BACKUP])
             return
-            
+
         stateman.update(StateEntry.STATE_TYPE_MAIN, \
               StateEntry.STATE_MAIN_STARTING)
 
@@ -1136,7 +1136,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # fixme: make sure the source isn't the same as the dest
         if not src:
             msg = "No connected source agent with displayname: %s. " % \
-              source_displayname 
+              source_displayname
         if not dst:
             msg += "No connected destination agent with displayname: %s." % \
               dest_name
@@ -1276,14 +1276,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if maint_msg != "":
             restore_body['info'] = maint_msg
 
-        # fixme: Do we need to add restore information to the database?  
+        # fixme: Do we need to add restore information to the database?
         # fixme: check status before cleanup? Or cleanup anyway?
 
         if source_displayname != aconn.displayname:
             # If the file was copied to the Primary, delete
             # the temporary backup file we copied to the Primary.
             self.delete_file(aconn, source_fullpathname)
-            
+
         if not restore_success:
             # On a successful restore, tableau starts itself.
             # fixme: eventually control when tableau is started and
@@ -1321,7 +1321,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             we keep requesting status until the command is
             finished and that could be a long time.
         """
-            
+
         status = False
 
 #        debug for testing agent disconnects
@@ -1333,7 +1333,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         headers = {"Content-Type": "application/json"}
 
         while True:
-            self.log.debug("about to get status of command %s, '%s', xid %d", 
+            self.log.debug("about to get status of command %s, '%s', xid %d",
                     command, orig_cli_command, xid)
 
             if not manager.agent_connected(aconn):
@@ -1371,7 +1371,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 if not body.has_key('run-status'):
                     self.remove_agent(aconn, "Agent returned invalid status.")
                     return self.error("GET %s command reply was missing 'run-status'!  Will not retry." % (uri), body)
-    
+
                 if body['run-status'] == 'finished':
                     # Make sure if the command failed, that the 'error'
                     # key is set.
@@ -1394,7 +1394,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     self.remove_agent(aconn, "Communication failure with agent. Unexpected error: " + \
                                                     str(e))    # bad agent
                     return self.error("GET %s failed with: %s" % (uri, str(e)))
-    
+
     def firewall(self, aconn, method, send_body_dict={}):
         """Sends a firewall GET or POST command.
            Returns the body result.
@@ -1580,12 +1580,12 @@ class StreamLogger(object):
 def main():
     import argparse
     import logger
-    
+
     global server   # fixme
     global log      # fixme
     global manager   # fixme
     global statusmon # fixme
- 
+
     parser = argparse.ArgumentParser(description='Palette Controller')
     parser.add_argument('config', nargs='?', default=None)
     parser.add_argument('--nostatus', action='store_true', default=False)

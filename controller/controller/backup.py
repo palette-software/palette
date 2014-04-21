@@ -30,7 +30,7 @@ class BackupEntry(meta.Base):
 
 class BackupManager(object):
 
-    def __init__(self, domainid):    
+    def __init__(self, domainid):
         self.domainid = domainid
 
     def add(self, name, agentid):
