@@ -302,7 +302,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
           StateEntry.STATE_BACKUP_NONE)
 
-        print >> self.wfile, str(body)
+        self.print(client(str(body))
         if not body.has_key('error'):
             alert.send("Backup Finished", body)
             return
@@ -900,9 +900,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             copy_body = self.copy_cmd(source_path, target_conn.displayname)
 
             if copy_body.has_key('error'):
-                msg = "Copy of backup file '%s' to agent '%s' failed. "+\
+                msg = ("Copy of backup file '%s' to agent '%s' failed. "+\
                     "Will leave the backup file on the primary agent. "+\
-                    "Error was: %s" \
+                    "Error was: %s") \
                     % (backup_name, target_conn.displayname, copy_body['error'])
                 self.log.info(msg)
                 body['info'] = msg
@@ -917,8 +917,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
                 # Check if the DEL worked.
                 if remove_body.has_key('error'):
-                    body['info'] = "DEL of backup file failed after copy. "+\
-                        "Command: '%s'. Error was: %s" \
+                    body['info'] = ("DEL of backup file failed after copy. "+\
+                        "Command: '%s'. Error was: %s") \
                         % (remove_cli, remove_body['error'])
         else:
             backup_loc = aconn
