@@ -734,9 +734,13 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def do_archive(self, cmd):
         """Start or Stop the archive HTTPS server on the agent."""
-
         if len(cmd.args) < 1 or len(cmd.args) > 2:
             self.usage(self.do_archive.__usage__)
+            return
+
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
             return
 
         action = cmd.args[0].lower()
@@ -754,7 +758,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
 
-        body = server.archive(action, port)
+        body = server.archive(aconn, action, port)
         self.print_client(str(body))
     do_archive.__usage__ = 'archive [start|stop] [port]'
 
@@ -1421,13 +1425,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return self.send_immediate(aconn, "POST", "/maint", send_body)
 
-    def archive(self, action, port=-1):
-        # Get the Primary Agent handle
-        aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
-
-        if not aconn:
-            return self.error("archive: no primary agent is connected.")
-
+    def archive(self, aconn, action, port=-1):
         send_body = {"action": action}
         if port > 0:
             send_body["port"] = port
