@@ -22,7 +22,7 @@ from sqlalchemy.orm.exc import NoResultFound
 # Communicates with the Agent.
 # fixme: maybe merge with the AgentStatusEntry class.
 class AgentConnection(object):
-    
+
     _CID = 1
 
     def __init__(self, conn, addr):
@@ -48,9 +48,6 @@ class AgentConnection(object):
 
     def unlock(self):
         self.lockobj.release()
-
-    def set_httpconn(self, httpconn):
-        self.httpconn = httpconn    # Used by the controller
 
     def set_auth(self, auth):
         self.auth = auth            # Used by the controller
@@ -115,7 +112,7 @@ class AgentManager(threading.Thread):
     def register(self, new_agent, body):
         """Called with the agent object and body /auth dictionary that
            was sent from the agent in json."""
-       
+
         self.lock()
         self.log.debug("new agent of type: %s, name %s, uuid %s, conn_id %d", body['type'], body['hostname'], body['uuid'], new_agent.conn_id)
 
@@ -165,8 +162,8 @@ class AgentManager(threading.Thread):
 
         # fixme: check for the presence of all these entries.
         entry = AgentStatusEntry(body['hostname'],
-                                 body['type'], 
-                                 body['version'], 
+                                 body['type'],
+                                 body['version'],
                                  body['ip-address'],
                                  body['listen-port'],
                                  body['uuid'],
@@ -286,20 +283,15 @@ class AgentManager(threading.Thread):
 
             if send_alert:
                 alert = Alert(self.config, self.log)
-                alert.send(reason, "\nAgent: %s\nAgent type: %s\nAgent connection-id %d" % 
+                alert.send(reason, "\nAgent: %s\nAgent type: %s\nAgent connection-id %d" %
                             (agent.displayname, agent.auth['type'], conn_id))
 
             self.forget(agent.agentid)
             self.log.debug("remove_agent: closing agent socket.")
-            try:
-                agent.socket.shutdown(socket.SHUT_RDWR)
-                agent.socket.close()
-            except socket.error as e:
-                self.log.debug("remove_agent: close agent socket failure:" + \
-                                            str(e))
-                pass
-            else:
+            if self._close(agent.socket):
                 self.log.debug("remove_agent: close agent socket succeeded.")
+            else:
+                self.log.debug("remove_agent: close agent socket failed")
 
             del self.agents[conn_id]
         else:
@@ -313,6 +305,15 @@ class AgentManager(threading.Thread):
               StateEntry.STATE_BACKUP_NONE)
 
         self.unlock()
+
+    def _close(self, sock):
+        try:
+            sock.shutdown(socket.SHUT_RDWR)
+            sock.close()
+        except socket.error as e:
+            self.log.debug("agentmanager._close socket failure: " + str(e))
+            return False
+        return True
 
     def lock(self):
         """Locks the agents list"""
@@ -412,27 +413,24 @@ class AgentManager(threading.Thread):
             for item in required:
                 if not body.has_key(item):
                     self.log.error("Missing '%s' from agent" % item)
-                    # FIXME: this overridden method doesn't do anything
-                    conn.close()
+                    self._close(conn)
                     return
 
             agent_type = body['type']
             if agent_type not in [ AgentManager.AGENT_TYPE_PRIMARY,
               AgentManager.AGENT_TYPE_WORKER, AgentManager.AGENT_TYPE_OTHER ]:
                 self.log.error("Bad agent type sent: " + agent_type)
-                # FIXME: this overridden method doesn't do anything
-                conn.close()
+                self._close(conn)
                 return
 
-            agent.set_httpconn(httpconn)
+            agent.httpconn = httpconn
             agent.set_auth(body)
 
             self.register(agent, body)
 
         except socket.error, e:
             self.log.debug("Socket error: " + str(e))
-            # FIXME: this overridden method doesn't do anything
-            conn.close()
+            self._close(conn)
         except Exception, e:
             self.log.error("Exception:")
             traceback.format_exc()
@@ -440,12 +438,12 @@ class AgentManager(threading.Thread):
             self.log.error(traceback.format_exc())
 
 class ReverseHTTPConnection(HTTPConnection):
-    
+
     def __init__(self, sock):
         HTTPConnection.__init__(self, 'agent')
 #        HTTPConnection.debuglevel = 1
         self.sock = sock
-    
+
     def connect(self):
         pass
 
@@ -479,7 +477,7 @@ class AgentHealthMonitor(threading.Thread):
                 self.manager.lock()
 
                 if not agents.has_key(key):
-                    self.log.debug("agent with conn_id '%d' is now gone and won't be checked." % 
+                    self.log.debug("agent with conn_id '%d' is now gone and won't be checked." %
                         key)
                     self.manager.unlock()
                     continue
@@ -499,5 +497,5 @@ class AgentHealthMonitor(threading.Thread):
                 else:
                     self.log.debug("Ping: Reply from agent '%s', type '%s', conn_id %d." %
                         (agent.displayname, agent.auth['type'], key))
-                    
+
             time.sleep(self.ping_interval)

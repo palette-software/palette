@@ -57,7 +57,7 @@ class ManageApplication(RESTApplication):
         elif action == 'stop':
             return self.handle_stop(req)
         raise exc.HTTPBadRequest()
-        
+
 class ManageAdvancedDialog(DialogPage):
 
     NAME = "manage"

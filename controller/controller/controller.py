@@ -110,7 +110,7 @@ class Command(object):
         # value of that entry is None. Validate passed agent
         # information, if any, against the database for existence
         # and uniqueness within the domain.
-        # 
+        #
         # As an optimization, if only a uuid is passed, with
         # no other agent information, accept it and use it.
         #
@@ -302,7 +302,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
           StateEntry.STATE_BACKUP_NONE)
 
-        print >> self.wfile, str(body)
+        self.print_client(str(body))
         if not body.has_key('error'):
             alert.send("Backup Finished", body)
             return
@@ -331,7 +331,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Check to see if we're in a state to restore
         stateman = self.server.stateman
         states = stateman.get_states()
-        
+
         main_state = states[StateEntry.STATE_TYPE_MAIN]
         if main_state != StateEntry.STATE_MAIN_STARTED and \
                 main_state != StateEntry.STATE_MAIN_STOPPED:
@@ -348,7 +348,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Do a backup before we try to do a restore.
         #FIXME: refactor do_backup() into do_backup() and backup()
         log.debug("------------Starting Backup for Restore--------------")
-            
+
         # fixme: lock to ensure against two simultaneous backups?
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
                             StateEntry.STATE_BACKUP_BACKUP)
@@ -381,7 +381,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: lock to ensure against two simultaneous restores?
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
                             StateEntry.STATE_BACKUP_RESTORE1)
-            
+
         body = server.restore_cmd(aconn, target)
 
         stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_NONE)
@@ -443,7 +443,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         if f is None:
             self.usage(self.do_list.__usage__)
             return
-        
+
         self.ack()
         f()
     do_list.__usage__ = 'list [agents|backups]'
@@ -494,9 +494,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
     do_pget.__usage__ = 'pget https://...... local-name'
 
-
     def do_firewall(self, cmd):
-        if len(cmd.args) == 1 or len(cmd.args) > 2:
+        """Enable, disable or report the status of a port on an
+           agent firewall.."""
+        if len(cmd.args) != 2 or \
+                        cmd.args[0] not in ("enable", "disable", "status"):
             self.error(self.do_firewall.__usage__)
             return
 
@@ -505,39 +507,31 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error('agent not found')
             return
 
-        if len(cmd.args) == 0:
-            self.ack()
-            body = server.firewall(aconn, "GET")
-            print >> self.wfile, body
-            return
-
         try:
-            fw_port = int(cmd.args[0])
+            fw_port = int(cmd.args[1])
         except ValueError, e:
-            self.error("firewall: Invalid port: " + cmd.args[0])
-            return
-
-        if cmd.args[1] == 'enable':
-            action = 'enable'
-        elif cmd.args[1] == 'disable':
-            action = 'disable'
-        else:
-            self.error(self.do_firewall.__usage__)
+            self.error("firewall: Invalid port: " + cmd.args[1])
             return
 
         self.ack()
 
+        if cmd.args[0] == "status":
+            body = server.firewall(aconn, "GET")
+            self.print_client(str(body))
+            return
+
+        action = cmd.args[0]
+
         send_body_dict = {
-            "num": fw_port,
+            "port": fw_port,
             "action": action
         }
 
         body = server.firewall(aconn, "POST", send_body_dict)
-        print >> self.wfile, body
+        self.print_client(str(body))
         return
 
-    do_firewall.__usage__ = 'firewall port# { enable | disable }\n   or\n           firewall'
-
+    do_firewall.__usage__ = 'firewall [ enable | disable | status ] port\n'
 
     def do_ping(self, cmd):
         """Ping an agent"""
@@ -567,7 +561,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         if not aconn:
             self.error('agent not found')
             return
-        
+
         # Check to see if we're in a state to start
         stateman = self.server.stateman
         states = stateman.get_states()
@@ -587,7 +581,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             log.debug("FAIL: Can't start - backup state is: %s", \
               states[StateEntry.STATE_TYPE_BACKUP])
             return
-            
+
         stateman.update(StateEntry.STATE_TYPE_MAIN, \
               StateEntry.STATE_MAIN_STARTING)
 
@@ -734,9 +728,13 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def do_archive(self, cmd):
         """Start or Stop the archive HTTPS server on the agent."""
-
         if len(cmd.args) < 1 or len(cmd.args) > 2:
             self.usage(self.do_archive.__usage__)
+            return
+
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
             return
 
         action = cmd.args[0].lower()
@@ -754,7 +752,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
 
-        body = server.archive(action, port)
+        body = server.archive(aconn, action, port)
         self.print_client(str(body))
     do_archive.__usage__ = 'archive [start|stop] [port]'
 
@@ -900,9 +898,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             copy_body = self.copy_cmd(source_path, target_conn.displayname)
 
             if copy_body.has_key('error'):
-                msg = "Copy of backup file '%s' to agent '%s' failed. "+\
+                msg = ("Copy of backup file '%s' to agent '%s' failed. "+\
                     "Will leave the backup file on the primary agent. "+\
-                    "Error was: %s" \
+                    "Error was: %s") \
                     % (backup_name, target_conn.displayname, copy_body['error'])
                 self.log.info(msg)
                 body['info'] = msg
@@ -917,8 +915,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
                 # Check if the DEL worked.
                 if remove_body.has_key('error'):
-                    body['info'] = "DEL of backup file failed after copy. "+\
-                        "Command: '%s'. Error was: %s" \
+                    body['info'] = ("DEL of backup file failed after copy. "+\
+                        "Command: '%s'. Error was: %s") \
                         % (remove_cli, remove_body['error'])
         else:
             backup_loc = aconn
@@ -1136,7 +1134,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # fixme: make sure the source isn't the same as the dest
         if not src:
             msg = "No connected source agent with displayname: %s. " % \
-              source_displayname 
+              source_displayname
         if not dst:
             msg += "No connected destination agent with displayname: %s." % \
               dest_name
@@ -1276,14 +1274,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if maint_msg != "":
             restore_body['info'] = maint_msg
 
-        # fixme: Do we need to add restore information to the database?  
+        # fixme: Do we need to add restore information to the database?
         # fixme: check status before cleanup? Or cleanup anyway?
 
         if source_displayname != aconn.displayname:
             # If the file was copied to the Primary, delete
             # the temporary backup file we copied to the Primary.
             self.delete_file(aconn, source_fullpathname)
-            
+
         if not restore_success:
             # On a successful restore, tableau starts itself.
             # fixme: eventually control when tableau is started and
@@ -1321,7 +1319,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             we keep requesting status until the command is
             finished and that could be a long time.
         """
-            
+
         status = False
 
 #        debug for testing agent disconnects
@@ -1333,7 +1331,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         headers = {"Content-Type": "application/json"}
 
         while True:
-            self.log.debug("about to get status of command %s, '%s', xid %d", 
+            self.log.debug("about to get status of command %s, '%s', xid %d",
                     command, orig_cli_command, xid)
 
             if not manager.agent_connected(aconn):
@@ -1371,7 +1369,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 if not body.has_key('run-status'):
                     self.remove_agent(aconn, "Agent returned invalid status.")
                     return self.error("GET %s command reply was missing 'run-status'!  Will not retry." % (uri), body)
-    
+
                 if body['run-status'] == 'finished':
                     # Make sure if the command failed, that the 'error'
                     # key is set.
@@ -1394,7 +1392,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     self.remove_agent(aconn, "Communication failure with agent. Unexpected error: " + \
                                                     str(e))    # bad agent
                     return self.error("GET %s failed with: %s" % (uri, str(e)))
-    
+
     def firewall(self, aconn, method, send_body_dict={}):
         """Sends a firewall GET or POST command.
            Returns the body result.
@@ -1421,13 +1419,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return self.send_immediate(aconn, "POST", "/maint", send_body)
 
-    def archive(self, action, port=-1):
-        # Get the Primary Agent handle
-        aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
-
-        if not aconn:
-            return self.error("archive: no primary agent is connected.")
-
+    def archive(self, aconn, action, port=-1):
         send_body = {"action": action}
         if port > 0:
             send_body["port"] = port
@@ -1580,12 +1572,12 @@ class StreamLogger(object):
 def main():
     import argparse
     import logger
-    
+
     global server   # fixme
     global log      # fixme
     global manager   # fixme
     global statusmon # fixme
- 
+
     parser = argparse.ArgumentParser(description='Palette Controller')
     parser.add_argument('config', nargs='?', default=None)
     parser.add_argument('--nostatus', action='store_true', default=False)

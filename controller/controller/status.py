@@ -80,7 +80,7 @@ class StatusMonitor(threading.Thread):
         # session.query(StatusEntry).\
         #   filter(StatusEntry.agentid,in_(subq)).\
         #   delete()
-        
+
         meta.Session.query(StatusEntry).delete()
 
         # Intentionally don't commit here.  We want the existing
@@ -249,7 +249,7 @@ class StatusMonitor(threading.Thread):
             name = ' '.join(parts)  # "Repository Database'"
             if name[-1:] == "'":
                 name = name[:-1]    # Cut off trailing single quote (')
-            
+
             self.add(agentid, name, pid, status)
             self.log.debug("logged: %s, %d, %s", name, pid, status)
 

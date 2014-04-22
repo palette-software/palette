@@ -13,7 +13,7 @@ def make_logger(name, config):
     else:
         section = name
         x, name = section.split(':', 1)
-    
+
     level = getattr(logging, config.get(section, 'level', default='INFO'))
     filename = config.get(section, 'filename', default=None)
 
