@@ -17,6 +17,10 @@ class Alert(object):
 
         DEFAULT_ALERT_LEVEL = 1
         self.alert_level = config.getint("alert", "alert_level", default=DEFAULT_ALERT_LEVEL)
+
+        DEFAULT_MAX_SUBJECT_LEN = 100
+        self.max_subject_len = config.getint("alert", "max_subject_len", default=DEFAULT_MAX_SUBJECT_LEN)
+
         if self.alert_level < 1:
             self.log.err("Invalid alert level: %d, setting to %d",
                                     self.alert_level, DEFAULT_ALERT_LEVEL)
@@ -53,6 +57,10 @@ class Alert(object):
 
         msg = MIMEText(message)
 
+
+        if len(subject) > self.max_subject_len:
+            subject = subject[:self.max_subject_len]  + "..."
+
         msg['Subject'] = "Palette Alert: " + subject
         msg['From'] = self.from_email
         msg['To'] = self.to_email
@@ -67,7 +75,8 @@ class Alert(object):
                 message, e, self.smtp_server, self.smtp_port)
             return
 
-        self.log.info("Emailed event: " + message)
+        self.log.info("Emailed event: Subject: '%s', message: '%s'" % \
+                                                        (subject, message))
 
         return
 
@@ -91,7 +100,7 @@ class Alert(object):
         """
 
         if isinstance(body, str) or isinstance(body, unicode):
-            return body
+            return subject + '\n\n' + body
 
         if type(body) != dict:
             self.log.info("alert was passed a %s instead of string or dictionary.",  type(body))

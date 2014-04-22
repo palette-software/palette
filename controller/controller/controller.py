@@ -293,8 +293,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
                             StateEntry.STATE_BACKUP_BACKUP)
 
-        alert = Alert(self.server.config, log)
-        alert.send("Backup Started")
+        server.alert.send("Backup Started")
 
         self.ack()
 
@@ -304,10 +303,10 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.print_client(str(body))
         if not body.has_key('error'):
-            alert.send("Backup Finished", body)
+            server.alert.send("Backup Finished", body)
             return
         else:
-            alert.send("Backup Failed", body)
+            server.alert.send("Backup Failed", body)
             return
     do_backup.__usage__ = 'backup [target-displayname]'
 
@@ -353,8 +352,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
                             StateEntry.STATE_BACKUP_BACKUP)
 
-        alert = Alert(self.server.config, log)
-        alert.send("Backup Started")
+        server.alert.send("Backup Started")
 
         self.ack()
 
@@ -363,10 +361,10 @@ class CliHandler(socketserver.StreamRequestHandler):
                             StateEntry.STATE_BACKUP_NONE)
 
         if not body.has_key('error'):
-            alert.send("Backup Finished", body)
+            server.alert.send("Backup Finished", body)
             backup_success = True
         else:
-            alert.send("Backup Failed", body)
+            server.alert.send("Backup Failed", body)
             backup_success = False
 
         if not backup_success:
@@ -387,11 +385,10 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_NONE)
         # The "restore started" alert is done in restore_cmd(),
         # only after some sanity checking is done.
-        alert = Alert(self.server.config, log)
         if not body.has_key('error'):
-            alert.send("Restore Finished", body)
+            server.alert.send("Restore Finished", body)
         else:
-            alert.send("Restore Failed" , body)
+            server.alert.send("Restore Failed" , body)
         self.print_client(str(body))
     do_restore.__usage__ = 'restore [source:pathname]'
 
@@ -605,8 +602,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         if exit_status:
             # The "tableau start" failed.  Go back to "STOPPED" state.
-            alert = Alert(server.config, log)
-            alert.send("Could not start tableau", body)
+            server.alert.send("Could not start tableau", body)
             stateman.update(StateEntry.STATE_TYPE_MAIN,
                             StateEntry.STATE_MAIN_STOPPED)
 
@@ -638,8 +634,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
           StateEntry.STATE_BACKUP_BACKUP)
 
-        alert = Alert(self.server.config, log)
-        alert.send("Backup Started")
+        server.alert.send("Backup Started")
 
         self.ack()
 
@@ -648,9 +643,9 @@ class CliHandler(socketserver.StreamRequestHandler):
                             StateEntry.STATE_BACKUP_NONE)
 
         if not body.has_key('error'):
-            alert.send("Backup Finished", body)
+            server.alert.send("Backup Finished", body)
         else:
-            alert.send("Backup Failed", body)
+            server.alert.send("Backup Failed", body)
             # FIXME: return JSON
             self.print_client("Backup failed.  Will not attempt stop.")
             return
@@ -1207,8 +1202,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # The restore file is now on the Primary Agent.
 
-        alert = Alert(self.config, log)
-        alert.send("Restore Started")
+        server.alert.send("Restore Started")
 
         stateman = server.stateman
         orig_states = stateman.get_states()
@@ -1406,6 +1400,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return self.send_immediate(aconn, method, "/firewall", send_body)
 
     def maint(self, action, port=-1):
+        if action not in ("start", "stop"):
+            self.log.error("Invalid maint action: %s", action)
+            return self.error("Bad maint action: %s" % action)
+
         # Get the Primary Agent handle
         # FIXME: Tie agent to domain; better, pass aconn to this method.
         aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
@@ -1417,7 +1415,21 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if port > 0:
             send_body["port"] = port
 
-        return self.send_immediate(aconn, "POST", "/maint", send_body)
+        body = self.send_immediate(aconn, "POST", "/maint", send_body)
+
+        if body.has_key("error"):
+            server.alert.send(\
+                "Could not %s Maintenance web server:" % action, body['error'])
+            return body
+
+        msg = "Maintenance web page is now "
+        if action == 'start':
+            msg += 'online.'
+        else:
+            msg += 'offline.'
+
+        server.alert.send(msg)
+        return body
 
     def archive(self, aconn, action, port=-1):
         send_body = {"action": action}
@@ -1460,12 +1472,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             rawbody = res.read()
             if res.status != httplib.OK:
                 # bad agent
-                self.remove_agent(aconn, "Communication failure with agent.  Immediate command to %s, status returned: %d: %s %s, body: %s" % \
+                self.log.error(\
+                    "immediate command to %s failed with status %d: %s " + \
+                    "%s, body: %s:",
+                            aconn.displayname, res.status, method, uri, rawbody)
+                self.remove_agent(aconn,\
+                    ("Communication failure with agent. " +\
+                    "Immediate command to %s, status returned: " +\
+                    "%d: %s %s, body: %s") % \
                         (aconn.displayname, res.status, method, uri, rawbody))
-                self.log.error("immediate command to %s failed with status %d: %s %s, body:",
-                            aconn.displayname, res.status, method, rawbody)
-                return self.httperror(res, agent=aconn.displayname,
-                                      method=method, uri=uri, body=rawbody);
+                return self.httperror(res, error=rawbody,
+                        agent=aconn.displayname, method=method, uri=uri,
+                                                                body=rawbody)
             elif rawbody:
                 body = json.loads(rawbody)
                 self.log.debug("send_immediate for %s %s reply: %s",
@@ -1611,6 +1629,7 @@ def main():
 
     server = Controller((host, port), CliHandler)
     server.config = config
+    server.alert = Alert(config, log)
     server.log = log
     server.cli_get_status_interval = \
       config.get('controller', 'cli_get_status_interval', default=10)
