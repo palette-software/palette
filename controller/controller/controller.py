@@ -1564,7 +1564,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if aconn.auth['type'] != AgentManager.AGENT_TYPE_PRIMARY:
             return
 
-        states = stateman.get_states()
+        states = server.stateman.get_states()
         if states[StateEntry.STATE_TYPE_MAIN] == StateEntry.STATE_MAIN_STOPPED:
             body = self.maint("start")
             if body.has_key("error"):

@@ -78,11 +78,10 @@ class StateManager(object):
         # Backup alerts (backup/restore started/stopped done elsewhere).
         if state_type == StateEntry.STATE_TYPE_MAIN and state in \
           [StateEntry.STATE_MAIN_STARTED, StateEntry.STATE_MAIN_STOPPED]:
-            alert = Alert(self.config, self.log)
             if old_state == StateEntry.STATE_MAIN_UNKNOWN:
-                alert.send("Controller started.  Initial tableau state: " + state)
+                self.server.alert.send("Controller started.  Initial tableau state: " + state)
             else:
-                alert.send("Tableau server " + state)
+                self.server.alert.send("Tableau server " + state)
 
     def get_states(self):
         try:
