@@ -1548,17 +1548,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if aconn.auth['type'] == AgentManager.AGENT_TYPE_PRIMARY:
             body = self.maint("stop", send_alert=False)  # Put into a known state
             if body.has_key("error"):
-                server.alert(\
+                server.alert.send(\
                     "Initialize agent: Could not stop maintenance web server",
                                                                             body)
         body = self.archive(aconn, "stop")
         if body.has_key("error"):
-            server.alert("Initialize agent: Could not stop archive server", body)
+            server.alert.send("Initialize agent: Could not stop archive server", body)
 
         # Get ready.
         body = self.archive(aconn, "start")
         if body.has_key("error"):
-            server.alert("Initialize agent: Could not start archive server", body)
+            server.alert.send("Initialize agent: Could not start archive server", body)
 
         # If tableau is stopped, turn on the maintenance server
         if aconn.auth['type'] != AgentManager.AGENT_TYPE_PRIMARY:
@@ -1568,7 +1568,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if states[StateEntry.STATE_TYPE_MAIN] == StateEntry.STATE_MAIN_STOPPED:
             body = self.maint("start")
             if body.has_key("error"):
-                server.alert(\
+                server.alert.send(\
                     "Initialize agent: Could not start maintenance web server",
                     body)
 
