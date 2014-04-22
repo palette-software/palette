@@ -494,9 +494,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
     do_pget.__usage__ = 'pget https://...... local-name'
 
-
     def do_firewall(self, cmd):
-        if len(cmd.args) == 1 or len(cmd.args) > 2:
+        """Enable, disable or report the status of a port on an
+           agent firewall.."""
+        if len(cmd.args) != 2 or \
+                        cmd.args[0] not in ("enable", "disable", "status"):
             self.error(self.do_firewall.__usage__)
             return
 
@@ -505,39 +507,31 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error('agent not found')
             return
 
-        if len(cmd.args) == 0:
-            self.ack()
-            body = server.firewall(aconn, "GET")
-            print >> self.wfile, body
-            return
-
         try:
-            fw_port = int(cmd.args[0])
+            fw_port = int(cmd.args[1])
         except ValueError, e:
-            self.error("firewall: Invalid port: " + cmd.args[0])
-            return
-
-        if cmd.args[1] == 'enable':
-            action = 'enable'
-        elif cmd.args[1] == 'disable':
-            action = 'disable'
-        else:
-            self.error(self.do_firewall.__usage__)
+            self.error("firewall: Invalid port: " + cmd.args[1])
             return
 
         self.ack()
 
+        if cmd.args[0] == "status":
+            body = server.firewall(aconn, "GET")
+            self.print_client(str(body))
+            return
+
+        action = cmd.args[0]
+
         send_body_dict = {
-            "num": fw_port,
+            "port": fw_port,
             "action": action
         }
 
         body = server.firewall(aconn, "POST", send_body_dict)
-        print >> self.wfile, body
+        self.print_client(str(body))
         return
 
-    do_firewall.__usage__ = 'firewall port# { enable | disable }\n   or\n           firewall'
-
+    do_firewall.__usage__ = 'firewall [ enable | disable | status ] port\n'
 
     def do_ping(self, cmd):
         """Ping an agent"""
