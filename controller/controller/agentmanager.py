@@ -12,7 +12,6 @@ import ntpath
 
 from agentstatus import AgentStatusEntry
 from state import StateManager, StateEntry
-from alert import Alert
 
 import meta
 from sqlalchemy import func, or_
@@ -279,8 +278,8 @@ class AgentManager(threading.Thread):
                 conn_id, self.agents[conn_id].auth['hostname'], reason)
 
             if send_alert:
-                alert = Alert(self.config, self.log)
-                alert.send(reason, "\nAgent: %s\nAgent type: %s\nAgent connection-id %d" %
+                self.server.alert.send(reason,
+                    "\nAgent: %s\nAgent type: %s\nAgent connection-id %d" %
                             (agent.displayname, agent.auth['type'], conn_id))
 
             self.forget(agent.agentid)
