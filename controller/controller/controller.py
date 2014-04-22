@@ -1399,7 +1399,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return self.send_immediate(aconn, method, "/firewall", send_body)
 
-    def maint(self, action, port=-1):
+    def maint(self, action, port=-1, send_alert=True):
         if action not in ("start", "stop"):
             self.log.error("Invalid maint action: %s", action)
             return self.error("Bad maint action: %s" % action)
@@ -1420,6 +1420,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if body.has_key("error"):
             server.alert.send(\
                 "Could not %s Maintenance web server:" % action, body['error'])
+            return body
+
+        if not send_alert:
             return body
 
         msg = "Maintenance web page is now "
@@ -1538,6 +1541,36 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if body:
             d['body'] = body
         return d;
+
+    def init_new_agent(self, aconn):
+        """Agent configuration on agent connect."""
+        # Cleanup.
+        if aconn.auth['type'] == AgentManager.AGENT_TYPE_PRIMARY:
+            body = self.maint("stop", send_alert=False)  # Put into a known state
+            if body.has_key("error"):
+                server.alert(\
+                    "Initialize agent: Could not stop maintenance web server",
+                                                                            body)
+        body = self.archive(aconn, "stop")
+        if body.has_key("error"):
+            server.alert("Initialize agent: Could not stop archive server", body)
+
+        # Get ready.
+        body = self.archive(aconn, "start")
+        if body.has_key("error"):
+            server.alert("Initialize agent: Could not start archive server", body)
+
+        # If tableau is stopped, turn on the maintenance server
+        if aconn.auth['type'] != AgentManager.AGENT_TYPE_PRIMARY:
+            return
+
+        states = stateman.get_states()
+        if states[StateEntry.STATE_TYPE_MAIN] == StateEntry.STATE_MAIN_STOPPED:
+            body = self.maint("start")
+            if body.has_key("error"):
+                server.alert(\
+                    "Initialize agent: Could not start maintenance web server",
+                    body)
 
     def remove_agent(self, aconn, reason="", send_alert=True):
         manager.remove_agent(aconn, reason=reason, send_alert=send_alert)
