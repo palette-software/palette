@@ -49,9 +49,6 @@ class AgentConnection(object):
     def unlock(self):
         self.lockobj.release()
 
-    def set_auth(self, auth):
-        self.auth = auth            # Used by the controller
-
 class AgentManager(threading.Thread):
 
     PORT = 8888
@@ -424,7 +421,7 @@ class AgentManager(threading.Thread):
                 return
 
             agent.httpconn = httpconn
-            agent.set_auth(body)
+            agent.auth = body
 
             self.register(agent, body)
 
