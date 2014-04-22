@@ -7,7 +7,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from UserDict import IterableUserDict
 class Dict(IterableUserDict):
-    
+
     def __setitem__(self, key, value):
         if not hasattr(value, "__getitem__"):
             raise TypeError('value is not a list.')
