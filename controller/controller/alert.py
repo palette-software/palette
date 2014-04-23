@@ -2,6 +2,8 @@ import smtplib
 from email.mime.text import MIMEText
 from custom_alerts import CustomAlerts
 
+from mako.template import Template
+
 class Alert(object):
 
     def __init__(self, config, log):
@@ -59,10 +61,11 @@ class Alert(object):
                     "subject: " + subject + \
                     ", data: " + str(data)
             if message:
+                mako_template = Template(message)
                 try:
-                    message = message % data
-                except KeyError as e:
-                    message = "Template message conversion failure:\n" + \
+                    message = mako_template.render(**data)
+                except NameError as e:
+                    message = "Mako template message conversion failure: " + \
                         str(e) + "\ntemplate: " + message + \
                     "\ndata: " + str(data)
             else:
