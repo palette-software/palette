@@ -30,6 +30,7 @@ from alert import Alert
 from config import Config
 from domain import Domain, DomainEntry
 from profile import UserProfile
+from custom_alerts import CustomAlerts
 
 from version import VERSION
 
@@ -293,7 +294,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
                             StateEntry.STATE_BACKUP_BACKUP)
 
-        server.alert.send("Backup Started")
+        server.alert.send(CustomAlerts.BACKUP_STARTED)
 
         self.ack()
 
@@ -303,10 +304,10 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.print_client(str(body))
         if not body.has_key('error'):
-            server.alert.send("Backup Finished", body)
+            server.alert.send(CustomAlerts.BACKUP_FINISHED, body)
             return
         else:
-            server.alert.send("Backup Failed", body)
+            server.alert.send(CustomAlerts.BACKUP_FAILED, body)
             return
     do_backup.__usage__ = 'backup [target-displayname]'
 
@@ -352,7 +353,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
                             StateEntry.STATE_BACKUP_BACKUP)
 
-        server.alert.send("Backup Started")
+        server.alert.send(CustomAlerts.BACKUP_STARTED)
 
         self.ack()
 
@@ -361,10 +362,10 @@ class CliHandler(socketserver.StreamRequestHandler):
                             StateEntry.STATE_BACKUP_NONE)
 
         if not body.has_key('error'):
-            server.alert.send("Backup Finished", body)
+            server.alert.send(CustomAlerts.BACKUP_FINISHED, body)
             backup_success = True
         else:
-            server.alert.send("Backup Failed", body)
+            server.alert.send(CustomAlerts.BACKUP_FAILED, body)
             backup_success = False
 
         if not backup_success:
@@ -386,9 +387,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         # The "restore started" alert is done in restore_cmd(),
         # only after some sanity checking is done.
         if not body.has_key('error'):
-            server.alert.send("Restore Finished", body)
+            server.alert.send(CustomAlerts.RESTORE_FINISHED, body)
         else:
-            server.alert.send("Restore Failed" , body)
+            server.alert.send(CustomAlerts.RESTORE_FAILED, body)
         self.print_client(str(body))
     do_restore.__usage__ = 'restore [source:pathname]'
 
@@ -602,7 +603,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         if exit_status:
             # The "tableau start" failed.  Go back to "STOPPED" state.
-            server.alert.send("Could not start tableau", body)
+            server.alert.send(CustomAlerts.TABLEAU_START_FAILED, body)
             stateman.update(StateEntry.STATE_TYPE_MAIN,
                             StateEntry.STATE_MAIN_STOPPED)
 
@@ -634,7 +635,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(StateEntry.STATE_TYPE_BACKUP, \
           StateEntry.STATE_BACKUP_BACKUP)
 
-        server.alert.send("Backup Started")
+        server.alert.send(CustomAlerts.BACKUP_STARTED)
 
         self.ack()
 
@@ -643,9 +644,9 @@ class CliHandler(socketserver.StreamRequestHandler):
                             StateEntry.STATE_BACKUP_NONE)
 
         if not body.has_key('error'):
-            server.alert.send("Backup Finished", body)
+            server.alert.send(CustomAlerts.BACKUP_FINISHED, body)
         else:
-            server.alert.send("Backup Failed", body)
+            server.alert.send(CustomAlerts.BACKUP_FAILED, body)
             # FIXME: return JSON
             self.print_client("Backup failed.  Will not attempt stop.")
             return
@@ -1009,7 +1010,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 "_send_cli: command '%s' failed with httplib.HTTPException: %s",
                                                         cli_command, str(e))
 
-            self.remove_agent(aconn, "Communication lost with agent.") # bad agent
+            self.remove_agent(aconn, CustomAlerts.AGENT_COMM_LOST) # bad agent
             return self.error("_send_cli: '%s' command failed with: %s" %
                             (cli_command, str(e)))
         finally:
@@ -1202,7 +1203,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # The restore file is now on the Primary Agent.
 
-        server.alert.send("Restore Started")
+        server.alert.send(CustomAlerts.RESTORE_STARTED)
 
         stateman = server.stateman
         orig_states = stateman.get_states()
@@ -1344,7 +1345,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 res = aconn.httpconn.getresponse()
                 self.log.debug("status: " + str(res.status) + ' ' + str(res.reason))
                 if res.status != httplib.OK:
-                    self.remove_agent(aconn, "Failed status from agent.")
+                    self.remove_agent(aconn,
+                                 CustomAlerts.AGENT_RETURNED_INVALID_STATUS)
                     return self.error("GET %s command failed with: %s" % (uri, str(e)))
 #                debug for testing agent disconnects
 #                print "sleeping"
@@ -1361,7 +1363,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
                 self.log.debug("body = " + str(body))
                 if not body.has_key('run-status'):
-                    self.remove_agent(aconn, "Agent returned invalid status.")
+                    self.remove_agent(aconn, 
+                                     CustomAlerts.AGENT_RETURNED_INVALID_STATUS)
                     return self.error("GET %s command reply was missing 'run-status'!  Will not retry." % (uri), body)
 
                 if body['run-status'] == 'finished':
@@ -1418,18 +1421,21 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         body = self.send_immediate(aconn, "POST", "/maint", send_body)
 
         if body.has_key("error"):
-            server.alert.send(\
-                "Could not %s Maintenance web server:" % action, body['error'])
+            if action == "start":
+                server.alert.send(\
+                    CustomAlerts.MAINT_START_FAILED, body['error'])
+            else:
+                server.alert.send(\
+                    CustomAlerts.MAINT_STOP_FAILED, body['error'])
             return body
 
         if not send_alert:
             return body
 
-        msg = "Maintenance web page is now "
         if action == 'start':
-            msg += 'online.'
+            msg = CustomAlerts.MAINT_ONLINE
         else:
-            msg += 'offline.'
+            msg = CustomAlerts.MAINT_OFFLINE
 
         server.alert.send(msg)
         return body
@@ -1549,16 +1555,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             body = self.maint("stop", send_alert=False)  # Put into a known state
             if body.has_key("error"):
                 server.alert.send(\
-                    "Initialize agent: Could not stop maintenance web server",
-                                                                            body)
+                   CustomAlerts.MAINT_STOP_FAILED, body)
         body = self.archive(aconn, "stop")
         if body.has_key("error"):
-            server.alert.send("Initialize agent: Could not stop archive server", body)
+            server.alert.send(CustomAlerts.ARCHIVE_STOP_FAILED, body)
 
         # Get ready.
         body = self.archive(aconn, "start")
         if body.has_key("error"):
-            server.alert.send("Initialize agent: Could not start archive server", body)
+            server.alert.send(CustomAlerts.ARCHIVE_START_FAILED, body)
 
         # If tableau is stopped, turn on the maintenance server
         if aconn.auth['type'] != AgentManager.AGENT_TYPE_PRIMARY:
@@ -1568,9 +1573,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if states[StateEntry.STATE_TYPE_MAIN] == StateEntry.STATE_MAIN_STOPPED:
             body = self.maint("start")
             if body.has_key("error"):
-                server.alert.send(\
-                    "Initialize agent: Could not start maintenance web server",
-                    body)
+                server.alert.send(CustomAlerts.MAINT_START_FAILED, body)
 
     def remove_agent(self, aconn, reason="", send_alert=True):
         manager.remove_agent(aconn, reason=reason, send_alert=send_alert)

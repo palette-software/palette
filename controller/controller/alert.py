@@ -1,5 +1,6 @@
 import smtplib
 from email.mime.text import MIMEText
+from custom_alerts import CustomAlerts
 
 class Alert(object):
 
@@ -14,6 +15,8 @@ class Alert(object):
         self.smtp_server = config.get('alert', 'smtp_server',
                                     default="localhost")
         self.smtp_port = config.getint("alert", "smtp_port", default=25)
+        self.custom_alerts = CustomAlerts()
+        self.custom_alerts.populate()
 
         DEFAULT_ALERT_LEVEL = 1
         self.alert_level = config.getint("alert", "alert_level", default=DEFAULT_ALERT_LEVEL)
@@ -26,28 +29,54 @@ class Alert(object):
                                     self.alert_level, DEFAULT_ALERT_LEVEL)
             self.alert_level = DEFAULT_ALERT_LEVEL
 
-    def send(self, subject, body=None):
+    def send(self, subject_key, data={}):
         """Send an alert.
             Arguments:
-                subject:    The subject to send.  If alt_body is not
-                            specified, the text is used for both the
-                            subject and body.
+                subject_key:    The subject_key to look up.
 
-                body:       If not specified, the subject is also
-                            used as the body.
-                            If specified, is used as the message body
-                            and:.
-                                If body is a string, the is used for the
-                                message body.
-                                If body is a dictionary, it is assumed to
-                                be a body from a message reply and it is
-                                formatted.
+                data:           If a dictionary:
+                                    Used for both the subject_key and
+                                    alert template (from the db).
+
+                                If a string:
+                                    Used as the message body.
         """
 
-        if not body:
-            message = subject
+        alert_entry = self.custom_alerts.get_alert(subject_key)
+        if alert_entry:
+            subject = alert_entry.subject_value
+            template = alert_entry.template
         else:
-            message = self.make_message(subject, body)
+            subject = subject_key
+            template = None
+
+        # If data is a dict, use it for substitution.
+        if type(data) == dict:
+            try:
+                subject = subject % data
+            except KeyError as e:
+                subject = "Template subject conversion failure: " + str(e) + \
+                    "subject: " + subject + \
+                    ", data: " + str(data)
+            if template:
+                try:
+                    message = template % data
+                except KeyError as e:
+                    message = "Template message conversion failure:\n" + \
+                        str(e) + "\ntemplate: " + template + \
+                    "\ndata: " + str(data)
+            else:
+               message = self.make_message(subject, data)
+        elif isinstance(data, str):
+            # If data is a string, use it as the raw message body
+            message = data
+        else:
+            self.log.error("Invalid type for data: %s", str(type(data)))
+            return
+
+        if not message:
+            # If no data was sent, use the subject as the message.
+            message = subject
 
         if not self.enabled:
             self.log.info(\
@@ -56,7 +85,6 @@ class Alert(object):
             return
 
         msg = MIMEText(message)
-
 
         if len(subject) > self.max_subject_len:
             subject = subject[:self.max_subject_len]  + "..."
@@ -176,8 +204,11 @@ class Alert(object):
 if __name__ == "__main__":
     import logging
     from config import Config
+    import sqlalchemy
+    from sqlalchemy.orm import sessionmaker, scoped_session
+    import meta
 
-    config = Config("../DEBIAN/etc/controller.ini")
+    config = Config("../controller.ini")
 
     handler = logging.StreamHandler()
 
@@ -193,5 +224,20 @@ if __name__ == "__main__":
 
     log.info("alert test starting")
 
+    # database configuration
+    url = config.get("database", "url")
+    echo = config.getboolean("database", "echo", default=False)
+    # engine is once per single application process.
+    # see http://docs.sqlalchemy.org/en/rel_0_9/core/connections.html
+    meta.engine = sqlalchemy.create_engine(url, echo=echo)
+    # Create the table definition ONCE, before all the other threads start.
+    meta.Base.metadata.create_all(bind=meta.engine)
+    meta.Session = scoped_session(sessionmaker(bind=meta.engine))
+
     alert = Alert(config, log)
-    alert.send("Test Alert")
+#    alert.send("Test Alert")
+#    alert.send("restore started on %(hostname)s", {"hostname": "bigsystem"})
+#    alert.send("restore started on %(hostXXX)s", {"hostname": "bigsystem"})
+#    alert.send("restore started", {"stdout": "The restore results are here"})
+    alert.send("RESTORE-STARTED", {"stdout": "The restore results are here"})
+    alert.send("RESTORE-FINISHED", {"error": "This was the restore error"})
