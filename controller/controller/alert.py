@@ -29,26 +29,26 @@ class Alert(object):
                                     self.alert_level, DEFAULT_ALERT_LEVEL)
             self.alert_level = DEFAULT_ALERT_LEVEL
 
-    def send(self, subject_key, data={}):
+    def send(self, key, data={}):
         """Send an alert.
             Arguments:
-                subject_key:    The subject_key to look up.
+                key:    The key to look up.
 
                 data:           If a dictionary:
-                                    Used for both the subject_key and
-                                    alert template (from the db).
+                                    Used for both the subject and
+                                    message body (from the db).
 
                                 If a string:
                                     Used as the message body.
         """
 
-        alert_entry = self.custom_alerts.get_alert(subject_key)
+        alert_entry = self.custom_alerts.get_alert(key)
         if alert_entry:
-            subject = alert_entry.subject_value
-            template = alert_entry.template
+            subject = alert_entry.subject
+            message = alert_entry.message
         else:
-            subject = subject_key
-            template = None
+            subject = key
+            message = None
 
         # If data is a dict, use it for substitution.
         if type(data) == dict:
@@ -58,12 +58,12 @@ class Alert(object):
                 subject = "Template subject conversion failure: " + str(e) + \
                     "subject: " + subject + \
                     ", data: " + str(data)
-            if template:
+            if message:
                 try:
-                    message = template % data
+                    message = message % data
                 except KeyError as e:
                     message = "Template message conversion failure:\n" + \
-                        str(e) + "\ntemplate: " + template + \
+                        str(e) + "\ntemplate: " + message + \
                     "\ndata: " + str(data)
             else:
                message = self.make_message(subject, data)

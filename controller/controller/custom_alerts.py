@@ -10,15 +10,19 @@ class CustomAlertsEntry(meta.Base):
     alertid = Column(BigInteger, unique=True, nullable=False, \
                                    autoincrement=True, primary_key=True)
 
-    # The unique alert subject_key
-    subject_key = Column(String, unique=True, nullable=False)
-    subject_value = Column(String) # The custom message for the 'subject_key'.
-    template = Column(String)  # An optional template
+    # The unique alert key for the subject and message templates.
+    key = Column(String, unique=True, nullable=False)
 
-    def __init__(self, subject_key, subject_value, template=None):
-        self.subject_key = subject_key
-        self.subject_value = subject_value
-        self.template = template
+    # subject is a python key-value substitution template for the subject
+    subject = Column(String) # The custom message for the 'key'.
+
+    # message is a mako template for the message
+    message = Column(String)
+
+    def __init__(self, key, subject, message=None):
+        self.key = key
+        self.subject = subject
+        self.message = message
 
 class CustomAlerts(object):
 
@@ -51,11 +55,11 @@ class CustomAlerts(object):
     AGENT_FAILED_STATUS="AGENT-FAILED-STATUS"
     AGENT_RETURNED_INVALID_STATUS="AGENT-RETURNED-INVALID-STATUS"
 
-    def get_alert(self, subject_key):
+    def get_alert(self, key):
 
         try:
             entry = meta.Session.query(CustomAlertsEntry).\
-                filter(CustomAlertsEntry.subject_key == subject_key).one()
+                filter(CustomAlertsEntry.key == key).one()
         except NoResultFound, e:
             return None
 
@@ -107,7 +111,7 @@ class CustomAlerts(object):
             return
 
         for alert in entries:
-            entry = apply(CustomAlertsEntry,alert)
+            entry = apply(CustomAlertsEntry, alert)
             meta.Session.add(entry)
 
         meta.Session.commit()
