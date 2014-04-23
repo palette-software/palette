@@ -12,6 +12,8 @@ import ntpath
 
 from agentstatus import AgentStatusEntry
 from state import StateManager, StateEntry
+from alert import Alert
+from filemanager import FileManager
 
 import meta
 from sqlalchemy import func, or_
@@ -34,6 +36,8 @@ class AgentConnection(object):
 
         # Each agent connection has its own lock
         self.lockobj = threading.RLock()
+
+        self.filemanager = FileManager(self)
 
         # unique identifier
         # can never be 0

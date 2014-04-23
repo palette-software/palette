@@ -10,6 +10,7 @@ import json
 import time
 import copy
 
+import exc
 from request import *
 
 import httplib
@@ -756,7 +757,7 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_displayname(self, cmd):
         """Set the display name for an agent"""
         if len(cmd.args) != 1:
-            self.error(self.do_displayname.__usage__)
+            self.usage(self.do_displayname.__usage__)
             return
 
         new_displayname = cmd.args[0]
@@ -772,6 +773,57 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error(str(e))
 
     do_displayname.__usage__ = 'displayname new-displayname'
+
+    def do_file(self, cmd):
+        """Manipulate a particular file on the agent."""
+
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
+            return
+
+        if len(cmd.args) < 2 or len(cmd.args) > 3:
+            self.usage(self.do_file.__usage__)
+            return
+
+        method = cmd.args[0].upper()
+        path = cmd.args[1]
+
+        try:
+            if method == 'GET':
+                if len(cmd.args) != 3:
+                    self.usage(self.do_file.__usage__)
+                    return
+                self.ack()
+                body = aconn.filemanager.save(path, cmd.args[2])
+            elif method == 'PUT':
+                if len(cmd.args) != 3:
+                    self.usage(self.do_file.__usage__)
+                    return
+                self.ack()
+                body = aconn.filemanager.sendfile(path, cmd.args[2])
+            elif method == 'DELETE':
+                if len(cmd.args) != 2:
+                    self.usage(self.do_file.__usage__)
+                    return
+                self.ack()
+                aconn.filemanager.delete(path)
+                body = {}
+            else:
+                self.usage(self.do_file.__usage__)
+                return
+        except exc.HTTPException, e:
+            body = {'error': 'HTTP Failure',
+                 'status-code': e.status,
+                 'reason-phrase': e.reason,
+                 }
+            if e.method:
+                body['method'] = e.method
+            if e.body:
+                body['body'] = e.body
+
+        self.print_client(str(body))
+    do_file.__usage__ = '[GET|PUT|DELETE] <path> [source-or-target]'
 
     def do_nop(self, cmd):
         """usage: nop"""
