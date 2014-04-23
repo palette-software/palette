@@ -12,7 +12,6 @@ import ntpath
 
 from agentstatus import AgentStatusEntry
 from state import StateManager, StateEntry
-from alert import Alert
 
 import meta
 from sqlalchemy import func, or_
@@ -124,7 +123,7 @@ class AgentManager(threading.Thread):
                 self.remove_agent(agent, "An agent is already connected named '%s': will remove it and use the new connection." % body['uuid'], send_alert=False)
                 break
             elif new_agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
-                                agent.auth['type'] == AgentManager.AGENT_TYPE_PRIMARY:
+                        agent.auth['type'] == AgentManager.AGENT_TYPE_PRIMARY:
                     self.log.info("A primary agent is already connected: will remove it and keep the new primary agent connection.")
                     self.remove_agent(agent, "A primary agent is already connected: will remove it and keep the new primary agent connection.", send_alert=False)
 
@@ -279,8 +278,8 @@ class AgentManager(threading.Thread):
                 conn_id, self.agents[conn_id].auth['hostname'], reason)
 
             if send_alert:
-                alert = Alert(self.config, self.log)
-                alert.send(reason, "\nAgent: %s\nAgent type: %s\nAgent connection-id %d" %
+                self.server.alert.send(reason,
+                    "\nAgent: %s\nAgent type: %s\nAgent connection-id %d" %
                             (agent.displayname, agent.auth['type'], conn_id))
 
             self.forget(agent.agentid)
@@ -424,6 +423,7 @@ class AgentManager(threading.Thread):
             agent.auth = body
 
             self.register(agent, body)
+            self.server.init_new_agent(agent)
 
         except socket.error, e:
             self.log.debug("Socket error: " + str(e))

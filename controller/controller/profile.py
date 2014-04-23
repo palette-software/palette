@@ -16,7 +16,6 @@ class UserProfile(User):
     email = Column(String)
     tableau_username = Column(String)
     gmt = Column(String)
-    salt = Column(Unicode(24))
     password = Column('password', Unicode(160))
 
     @classmethod
