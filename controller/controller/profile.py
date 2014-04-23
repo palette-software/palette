@@ -14,6 +14,7 @@ class UserProfile(User):
     first_name = Column(String)
     last_name = Column(String)
     email = Column(String)
+    photo = Column(String)  # photo filename
     tableau_username = Column(String)
     gmt = Column(String)
     password = Column('password', Unicode(160))
@@ -26,4 +27,3 @@ class UserProfile(User):
         except NoResultFound, e:
             entry = None
         return entry
-
