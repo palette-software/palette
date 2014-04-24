@@ -1358,6 +1358,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 else:
                     restore_body['info'] = msg
 
+                # The "tableau start" failed. Go back to "STOPPED" state.
+                stateman.update(StateEntry.STATE_TYPE_MAIN,
+                                             StateEntry.STATE_MAIN_STOPPED)
+
         return restore_body
 
     def delete_file(self, aconn, source_fullpathname):
