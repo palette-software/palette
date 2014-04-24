@@ -51,17 +51,18 @@
   <section class="row bottom-zone">
     <dl class="profile-settings-nav col-sm-12 col-lg-2">
     	<div>
-    		<dd class="active"><a href="#panel1">My Profile</a></dd>
-	        <dd><a href="#panel2">Organization</a></dd>
-	        <dd><a href="#panel3">Backup</a></dd>
-	        <dd><a href="#panel4">System Monitor</a></dd>
-	        <dd><a href="#panel5">Billing</a></dd>
+    		<dd class="active"><a href="#profile">My Profile</a></dd>
+	        <dd><a href="#organization">Organization</a></dd>
+	        <dd><a href="#backup">Backup</a></dd>
+	        <dd><a href="#systemmonitor">System Monitor</a></dd>
+	        <dd><a href="#billing">Billing</a></dd>
     	</div>
     </dl>
-      <div class="profile-settings-content col-sm-12 col-lg-10">
-        <div class="content active" id="panel1">
+      <div class="profile-settings-content col-xs-12 col-lg-10">
+        <div class="content active" id="profile">
           <section class="row">
           	<section class="col-sm-12 col-md-8 col-lg-6">
+
           		  <label>Profile Info</label>
 				  <input type="text" name="firstname" placeholder="First Name">
 				  <input type="text" name="lastname" placeholder="Last Name">
@@ -128,9 +129,9 @@
       		<button type="submit" name="save" class="p-btn p-btn-dark-grey">Add Image</button>
       	</section>         
         </div>
-        <div class="content" id="panel2">
+        <div class="content" id="organization">
           <label>Organization Name</label>
-		  <input type="text" name="organization">
+		  <input type="text" name="organizationinput">
 		  <label>Admin Users</label>
 		  <ul class="user-list">
 		  	<li><img src="/app/module/palette/images/blankuser.png"><h4>David Olsen</h4><h5>david@xepler.com</h5><span class="fi-x"></span></li>
@@ -142,10 +143,10 @@
             <section class="col-xs-12 col-sm-6"><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></section>-->
            </section>
         </div>
-        <div class="content" id="panel3">
+        <div class="content" id="backup">
           <label>Recurring backup</label>
-	      <input type="radio" name="backup" value="Yes" id="backupYes"><label for="backupYes" class="radio-label"><span></span> Yes</label>
-	      <input type="radio" name="backup" value="No" id="backupNo"><label for="backupNo" class="radio-label"><span></span> No</label>
+	      <input type="radio" name="backupinput" value="Yes" id="backupYes"><label for="backupYes" class="radio-label"><span></span> Yes</label>
+	      <input type="radio" name="backupinput" value="No" id="backupNo"><label for="backupNo" class="radio-label"><span></span> No</label>
           <label>Scheduled Time</label>
           <section class="row">
             <section class="col-sn-12 col-md-4">
@@ -219,7 +220,7 @@
             <section class="col-xs-12 col-sm-6"><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></section>-->
            </section>
         </div>
-        <div class="content" id="panel4">
+        <div class="content" id="systemmonitor">
           <label>Email Notifications</label>
           <p class="italic-label">Add people to be notified</p>
           <ul class="user-list">
@@ -231,7 +232,7 @@
             <section class="col-xs-12 col-sm-6"><!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></section>-->
            </section>
         </div>
-        <div class="content" id="panel5">
+        <div class="content" id="billing">
           <label>Card Info</label>
 		  <input type="text" name="cardnumber" placeholder="Credit Card Number">
 		  <input type="text" name="cardname" placeholder="Name on Card">
@@ -528,3 +529,33 @@
 		
 
 <%include file="commonjs.mako" />
+
+<script type="text/javascript">
+
+	var hash = window.location.hash;
+
+	if (hash) {
+
+		$('.profile-settings-content .content, .profile-settings-nav dd').removeClass('active');
+		$('.profile-settings-content .content'+hash+'').addClass('active');
+	}
+	
+	$('.profile-settings-nav dd a').bind('click', function(e) {
+		e.preventDefault();
+	    hash = $(this).attr("href");
+
+	    if (window.location.hash == hash) {
+	    	return false;
+	    }
+
+	    window.location = hash;
+
+		$('.profile-settings-content .content, .profile-settings-nav dd').removeClass('active');
+		$('.profile-settings-content .content'+hash+'').addClass('active');
+	});
+
+	$('.profile-settings-nav dd').bind('click', function() {
+		$(this).addClass('active');
+	});
+	
+</script>
