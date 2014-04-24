@@ -33,6 +33,11 @@ class AgentConnection(object):
         self.auth = {}          # Used by the controller
         self.agentid = None
         self.uuid = None
+        self.tableau_install_dir = None
+        self.agent_type = None
+        self.yml_contents = None    # only valid if agent is a primary
+        self.info = {}  # from pinfo
+        self.initting = True
 
         # Each agent connection has its own lock
         self.lockobj = threading.RLock()
@@ -75,7 +80,6 @@ class AgentManager(threading.Thread):
         self.host = host
         self.port = port and port or self.PORT
         self.socket = None
-        self.auth = None
         # A dictionary with all AgentConnections with the key being
         # the unique 'conn_id'.
         self.agents = {}
@@ -113,10 +117,15 @@ class AgentManager(threading.Thread):
         """Called with the agent object and body /auth dictionary that
            was sent from the agent in json."""
 
-        self.lock()
-        self.log.debug("new agent of type: %s, name %s, uuid %s, conn_id %d", body['type'], body['hostname'], body['uuid'], new_agent.conn_id)
+        # The agent initialization succeeded.
+        new_agent.initting = False
 
-        new_agent_type = body['type']
+        self.lock()
+        self.log.debug(\
+            "new agent: name %s, uuid %s, conn_id %d",
+                        body['hostname'], body['uuid'], new_agent.conn_id)
+
+        new_agent_type = new_agent.agent_type
         # Don't allow two primary agents to be connected and
         # don't allow two agents with the same name to be connected.
         # Keep the newest one.
@@ -127,12 +136,12 @@ class AgentManager(threading.Thread):
                 self.remove_agent(agent, "An agent is already connected named '%s': will remove it and use the new connection." % body['uuid'], send_alert=False)
                 break
             elif new_agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
-                        agent.auth['type'] == AgentManager.AGENT_TYPE_PRIMARY:
+                        agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
                     self.log.info("A primary agent is already connected: will remove it and keep the new primary agent connection.")
                     self.remove_agent(agent, "A primary agent is already connected: will remove it and keep the new primary agent connection.", send_alert=False)
 
         # Remember the new agent
-        entry = self.remember(body)
+        entry = self.remember(new_agent, body)
         if entry:
             new_agent.agentid = entry.agentid
             new_agent.uuid = entry.uuid
@@ -157,12 +166,12 @@ class AgentManager(threading.Thread):
         self.unlock()
 
     # formerly agentstatus.add()
-    def remember(self, body):
+    def remember(self, new_agent, body):
         session = meta.Session()
 
         # fixme: check for the presence of all these entries.
         entry = AgentStatusEntry(body['hostname'],
-                                 body['type'],
+                                 new_agent.agent_type,
                                  body['version'],
                                  body['ip-address'],
                                  body['listen-port'],
@@ -218,7 +227,7 @@ class AgentManager(threading.Thread):
         Returns None if no agents of that type are connected."""
 
         for key in self.agents:
-            if self.agents[key].auth['type'] == agent_type:
+            if self.agents[key].agent_type == agent_type:
                 return self.agents[key]
 
         return None
@@ -284,7 +293,7 @@ class AgentManager(threading.Thread):
             if send_alert:
                 self.server.alert.send(reason,
                     "\nAgent: %s\nAgent type: %s\nAgent connection-id %d" %
-                            (agent.displayname, agent.auth['type'], conn_id))
+                            (agent.displayname, agent.agent_type, conn_id))
 
             self.forget(agent.agentid)
             self.log.debug("remove_agent: closing agent socket.")
@@ -296,7 +305,7 @@ class AgentManager(threading.Thread):
             del self.agents[conn_id]
         else:
             self.log.debug("remove_agent: No such agent with conn_id %d", conn_id)
-        if agent.auth['type'] == AgentManager.AGENT_TYPE_PRIMARY:
+        if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("remove_agent: Initializing state entries on removal")
             stateman = StateManager(self.server)
             stateman.update(StateEntry.STATE_TYPE_MAIN, \
@@ -398,7 +407,7 @@ class AgentManager(threading.Thread):
             res = httpconn.getresponse()
             print >> sys.stderr, 'command: auth: ' + str(res.status) + ' ' + str(res.reason)
             # Get the auth reply.
-            self.log.debug("new_agent_connection reading....")
+            self.log.debug("new_agent_connection: about to read.")
             body_json = res.read()
             if body_json:
                 body = json.loads(body_json)
@@ -408,7 +417,7 @@ class AgentManager(threading.Thread):
                 self.log.debug("done.")
 
             # Inspect the reply to make sure it has all the required values.
-            required = ['hostname', 'type', 'ip-address', \
+            required = ['hostname', 'ip-address', \
                             'version', 'listen-port', 'uuid', 'install-dir']
             for item in required:
                 if not body.has_key(item):
@@ -416,18 +425,15 @@ class AgentManager(threading.Thread):
                     self._close(conn)
                     return
 
-            agent_type = body['type']
-            if agent_type not in [ AgentManager.AGENT_TYPE_PRIMARY,
-              AgentManager.AGENT_TYPE_WORKER, AgentManager.AGENT_TYPE_OTHER ]:
-                self.log.error("Bad agent type sent: " + agent_type)
-                self._close(conn)
-                return
-
             agent.httpconn = httpconn
             agent.auth = body
 
-            self.register(agent, body)
-            self.server.init_new_agent(agent)
+            if self.server.init_new_agent(agent):
+                self.register(agent, body)
+            else:
+                self.log.error("Bad agent.  Disconnecting.")
+                self._close(conn)
+                return
 
         except socket.error, e:
             self.log.debug("Socket error: " + str(e))
@@ -486,17 +492,17 @@ class AgentHealthMonitor(threading.Thread):
                 self.manager.unlock()
 
                 self.log.debug("Ping: check for agent '%s', type '%s', conn_id %d." % \
-                        (agent.displayname, agent.auth['type'], key))
+                        (agent.displayname, agent.agent_type, key))
 
                 # fixme: add a timeout ?
                 body = self.server.ping(agent)
                 if body.has_key('error'):
                     self.log.info("Ping: Agent '%s', type '%s', conn_id %d did not respond to ping.  Removing." %
-                        (agent.displayname, agent.auth['type'], key))
+                        (agent.displayname, agent.agent_type, key))
 
                     self.manager.remove_agent(agent, "Lost contact with an agent")
                 else:
                     self.log.debug("Ping: Reply from agent '%s', type '%s', conn_id %d." %
-                        (agent.displayname, agent.auth['type'], key))
+                        (agent.displayname, agent.agent_type, key))
 
             time.sleep(self.ping_interval)

@@ -51,7 +51,6 @@ class AgentHandler(SimpleHTTPRequestHandler):
                 "password": "secret",
                 "version": version,
                 "hostname": AgentHandler.agent_hostname,
-                "type": AgentHandler.agent_type,
                 "ip-address": AgentHandler.agent_ip,
                 "listen-port": 12345,
                 "uuid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1",

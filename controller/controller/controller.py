@@ -458,7 +458,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         cli_command = ' '.join(cmd.args)
         print >> self.wfile, "Sending to displayname '%s' (type: %s):" % \
-          (aconn.displayname, aconn.auth['type'])
+          (aconn.displayname, aconn.agent_type)
         print >> self.wfile, cli_command
 
         body = server.cli_cmd(cli_command, aconn)
@@ -483,7 +483,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                 pget_cmd += ' ' + arg
         if aconn:
             print >> self.wfile, "Sending to displayname '%s' (type: %s):" % \
-                        (aconn.displayname, aconn.auth['type'])
+                        (aconn.displayname, aconn.agent_type)
         else:
             print >> self.wfile, "Sending:",
 
@@ -559,7 +559,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         print >> self.wfile, "Sending ping to displayname '%s' (type: %s)." % \
-          (aconn.displayname, aconn.auth['type'])
+          (aconn.displayname, aconn.agent_type)
 
         body = server.ping(aconn)
         self.report_status(body)
@@ -934,14 +934,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             for key in agents:
                 if agents[key].displayname == target:
                     # FIXME: make sure agent is connected
-                    if agents[key].auth['type'] != \
+                    if agents[key].agent_type != \
                       AgentManager.AGENT_TYPE_PRIMARY:
                         target_conn = agents[key]
                     target = None # so we know we found the target
                     break
         else:
             for key in agents:
-                if agents[key].auth['type'] != \
+                if agents[key].agent_type != \
                   AgentManager.AGENT_TYPE_PRIMARY:
                     # FIXME: make sure agent is connected
                     # FIXME: ticket #218: When the UI supports selecting
@@ -1049,7 +1049,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         headers = {"Content-Type": "application/json"}
 
         self.log.debug("about to send the cli command to '%s', type '%s' xid: %d, command: %s",
-                aconn.displayname, aconn.auth['type'], req.xid, cli_command)
+                aconn.displayname, aconn.agent_type, req.xid, cli_command)
         try:
             aconn.httpconn.request('POST', '/cli', req.send_body, headers)
             self.log.debug('sent cli command.')
@@ -1395,11 +1395,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.debug("about to get status of cli command '%s', xid %d",
                            orig_cli_command, xid)
 
-            if not manager.agent_connected(aconn):
+            # If the agent is initialization, then "agent_connected"
+            # will not know about it yet.
+            if not aconn.initting and not manager.agent_connected(aconn):
                 self.log.info("Agent '%s' (type: '%s', conn_id %d) disconnected before finishing: %s",
-                    aconn.displayname, aconn.auth['type'], aconn.conn_id, uri)
+                    aconn.displayname, aconn.agent_type, aconn.conn_id, uri)
                 return self.error("Agent '%s' (type: '%s', conn_id %d) disconnected before finishing: %s" %
-                    (aconn.displayname, aconn.auth['type'], aconn.conn_id, uri))
+                    (aconn.displayname, aconn.agent_type, aconn.conn_id, uri))
 
             aconn.lock()
             self.log.debug("Sending GET " + uri)
@@ -1539,8 +1541,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         headers = {"Content-Type": "application/json"}
 
-        self.log.debug("about to send an immediate command to '%s', type '%s', method '%s', uri '%s', body '%s'",
-                aconn.displayname, aconn.auth['type'], method, uri, send_body)
+        self.log.debug(\
+            "about to send an immediate command to '%s', type '%s'," + \
+                "method '%s', uri '%s', body '%s'",
+                    aconn.displayname, aconn.agent_type, method, uri, send_body)
 
         aconn.lock()
         body = {}
@@ -1618,9 +1622,57 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return d;
 
     def init_new_agent(self, aconn):
-        """Agent configuration on agent connect."""
+        """Agent-related configuration on agent connect.
+            Args:
+                aconn: agent connection
+            Returns:
+                True:  The agent responded correctly.
+                False: The agent responded incorrectly.
+        """
+
+        TABLEAU_INSTALL_DIR="tableau-install-dir"
+        YML_CONFIG_FILE_PART=ntpath.join(\
+                "Tableau Server", "data", "tabsvc", "config", "workgroup.yml")
+
+        # The info() command requires a displayname.  This displayname is
+        # is temporary until we get info from the agent:
+        aconn.displayname = 'hostname: ' + aconn.auth['hostname']
+
+        body = self.info(aconn)
+        if body.has_key("error"):
+            self.log.error("Couldn't run info command on %s: %s",
+                            aconn.displayname, body['error'])
+            return False
+        else:
+            aconn.info = body['stdout']
+            self.log.debug("info returned from %s: %s", aconn.displayname, \
+                                                                aconn.info)
+            if body.has_key(TABLEAU_INSTALL_DIR) or 1:
+#                aconn.tableau_install_dir = body[TABLEAU_INSTALL_DIR]  # add when key is returned
+                aconn.tableau_install_dir = "tableau"
+                aconn.agent_type = AgentManager.AGENT_TYPE_PRIMARY
+
+                yml_config_file = ntpath.join(aconn.tableau_install_dir,
+                                                        YML_CONFIG_FILE_PART)
+
+                try:
+                    auth.yml_contents = aconn.filemanager.get(yml_config_file)
+                except (exc.HTTPException, httplib.HTTPException,
+                                                        EnvironmentError) as e:
+                    self.log.error(\
+                        "filemanager.get(%s) on %s failed with: %s",
+                        yml_config_file, aconn.displayname, str(e))
+                    return True # fixme (remove) after filemanager is working
+                    return False
+                else:
+                    self.log.debug("Retrieved yml file from %s.",
+                                                                aconn.displayname)
+
+            else:
+                agent.agent_type = AgentManager.AGENT_TYPE_OTHER
+
         # Cleanup.
-        if aconn.auth['type'] == AgentManager.AGENT_TYPE_PRIMARY:
+        if aconn.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             body = self.maint("stop", send_alert=False)  # Put into a known state
             if body.has_key("error"):
                 server.alert.send(\
@@ -1635,14 +1687,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             server.alert.send(CustomAlerts.ARCHIVE_START_FAILED, body)
 
         # If tableau is stopped, turn on the maintenance server
-        if aconn.auth['type'] != AgentManager.AGENT_TYPE_PRIMARY:
-            return
+        if aconn.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
+            return True
 
         states = server.stateman.get_states()
         if states[StateEntry.STATE_TYPE_MAIN] == StateEntry.STATE_MAIN_STOPPED:
             body = self.maint("start")
             if body.has_key("error"):
                 server.alert.send(CustomAlerts.MAINT_START_FAILED, body)
+
+        return True
 
     def remove_agent(self, aconn, reason="", send_alert=True):
         manager.remove_agent(aconn, reason=reason, send_alert=send_alert)
