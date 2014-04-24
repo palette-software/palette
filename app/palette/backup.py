@@ -58,7 +58,7 @@ class BackupApplication(RESTApplication):
     def handle_restore(self):
         last_entry = self.get_last_backup()
         if not last_entry:
-            print >> sys.syserr, "No backups to restore from!"
+            print >> sys.stderr, "No backups to restore from!"
             return {'last': "none",
                     'next': self.scheduled }
 
