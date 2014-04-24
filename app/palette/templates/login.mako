@@ -22,6 +22,12 @@
 <script src="/app/module/palette/js/vendor/modernizr.js"></script>
 </%block>
 
+<style type="text/css">
+  body:after {
+    display:none;
+  }
+</style>
+
 </head>
 <body>
 
@@ -39,9 +45,9 @@
             <label>Password</label>
             <input type="password" name="password" id="password">
           </p>
-          <ul class=" col-sm-block-grid-1">
-              <li><button type="submit" name="login" id="login" class="p-btn p-btn-grey">Login</button></li>
-            </ul>
+          <section class="row">
+              <section class="col-xs-12"><button type="submit" name="login" id="login" class="p-btn p-btn-grey">Login</button></section>
+            </section>
           <p class="text-center text-small">
             <a href="/forgot">I forgot my username and/or password</a>
           </p>

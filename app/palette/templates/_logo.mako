@@ -1,3 +1,3 @@
-<a href="/">
-<img class="site-id" src="/app/module/palette/images/palette_logo_600dpi-2.png" alt="Palette">
-</a>
+<i class="fa fa-fw fa-bars"></i>
+<a class="site-id" href="/"></a>
+<h1 class="mobile-title">Activites</h1>
