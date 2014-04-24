@@ -492,6 +492,22 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
     do_pget.__usage__ = 'pget https://...... local-name'
 
+    def do_info(self, cmd):
+        """Run pinfo."""
+        if len(cmd.args):
+            self.error(self.do_info.__usage__)
+            return
+
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
+            return
+
+        self.ack()
+        body = server.info(aconn)
+        self.report_status(body)
+    do_info.__usage__ = 'info\n'
+
     def do_firewall(self, cmd):
         """Enable, disable or report the status of a port on an
            agent firewall.."""
@@ -887,6 +903,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
 
     PGET_BIN = "pget.exe"
+    PINFO_BIN = "pinfo.exe"
     CLI_URI = "/cli"
 
     def backup_cmd(self, aconn, target=None):
@@ -1439,6 +1456,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     self.remove_agent(aconn, "Communication failure with agent. Unexpected error: " + \
                                                     str(e))    # bad agent
                     return self.error("GET %s failed with: %s" % (uri, str(e)))
+
+    def info(self, aconn):
+        return self.cli_cmd(Controller.PINFO_BIN, aconn)
 
     def firewall(self, aconn, method, send_body_dict={}):
         """Sends a firewall GET or POST command.
