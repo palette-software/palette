@@ -14,6 +14,7 @@ from agentstatus import AgentStatusEntry
 from state import StateManager, StateEntry
 from alert import Alert
 from filemanager import FileManager
+from firewall import Firewall
 
 import meta
 from sqlalchemy import func, or_
@@ -26,7 +27,8 @@ class AgentConnection(object):
 
     _CID = 1
 
-    def __init__(self, conn, addr):
+    def __init__(self, server, conn, addr):
+        self.server = server
         self.socket = conn
         self.addr = addr
         self.httpconn = False   # Used by the controller
@@ -43,6 +45,7 @@ class AgentConnection(object):
         self.lockobj = threading.RLock()
 
         self.filemanager = FileManager(self)
+        self.firewall = Firewall(self)
 
         # unique identifier
         # can never be 0
@@ -392,7 +395,7 @@ class AgentManager(threading.Thread):
         conn.settimeout(self.socket_timeout)
 
         try:
-            agent = AgentConnection(conn, addr)
+            agent = AgentConnection(self.server, conn, addr)
 
             # sleep for 100ms to prevent:
             #  'An existing connection was forcibly closed by the remote host'
