@@ -511,9 +511,16 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_firewall(self, cmd):
         """Enable, disable or report the status of a port on an
            agent firewall.."""
-        if len(cmd.args) != 2 or \
-                        cmd.args[0] not in ("enable", "disable", "status"):
-            self.error(self.do_firewall.__usage__)
+        if len(cmd.args) == 1:
+            if cmd.args[0] != "status":
+                self.usage(self.do_firewall.__usage__)
+                return
+        elif len(cmd.args) == 2:
+            if cmd.args[0] not in ("enable", "disable"):
+                self.usage(self.do_firewall.__usage__)
+                return
+        else:
+            self.usage(self.do_firewall.__usage__)
             return
 
         aconn = self.get_aconn(cmd.dict)
@@ -521,27 +528,22 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error('agent not found')
             return
 
-        try:
-            fw_port = int(cmd.args[1])
-        except ValueError, e:
-            self.error("firewall: Invalid port: " + cmd.args[1])
-            return
+        if  cmd.args[0] != "status":
+            try:
+                port = int(cmd.args[1])
+            except ValueError, e:
+                self.error("firewall: Invalid port: " + cmd.args[1])
+                return
 
         self.ack()
 
         if cmd.args[0] == "status":
-            body = server.firewall(aconn, "GET")
-            self.print_client(str(body))
-            return
+            body = aconn.firewall.status()
+        elif cmd.args[0] == "enable":
+            body = aconn.firewall.enable(port)
+        elif cmd.args[0] == "disable":
+            body = aconn.firewall.disable(port)
 
-        action = cmd.args[0]
-
-        send_body_dict = {
-            "port": fw_port,
-            "action": action
-        }
-
-        body = server.firewall(aconn, "POST", send_body_dict)
         self.print_client(str(body))
         return
 
