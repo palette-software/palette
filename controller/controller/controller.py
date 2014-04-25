@@ -1313,7 +1313,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # 'tabadmin restore ...' starts tableau as part of the restore procedure.
         # fixme: Maybe the maintenance web server wasn't running?
         maint_msg = ""
-        maint_body = server.maint("stop")
+        maint_body = server.maint("stop", aconn=aconn)
         if maint_body.has_key("error"):
             self.log.info("Restore: maint stop failed: " + maint_body['error'])
             # continue on, not a fatal error...
@@ -1468,17 +1468,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def info(self, aconn):
         return self.cli_cmd(Controller.PINFO_BIN, aconn)
 
-    def maint(self, action, port=-1, send_alert=True):
+    def maint(self, action, port=-1, aconn=None, send_alert=True):
         if action not in ("start", "stop"):
             self.log.error("Invalid maint action: %s", action)
             return self.error("Bad maint action: %s" % action)
 
-        # Get the Primary Agent handle
-        # FIXME: Tie agent to domain; better, pass aconn to this method.
-        aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
-
+        # FIXME: Tie agent to domain
         if not aconn:
-            return self.error("maint: no primary agent is connected.")
+            aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
+
+            if not aconn:
+                return self.error("maint: no primary agent is connected.")
 
         send_body = {"action": action}
         if port > 0:
@@ -1628,7 +1628,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         TABLEAU_INSTALL_DIR="tableau-install-dir"
         YML_CONFIG_FILE_PART=ntpath.join(\
-                "Tableau Server", "data", "tabsvc", "config", "workgroup.yml")
+                "ProgramData", "Tableau", "Tableau Server", "data", "tabsvc",
+                                                    "config", "workgroup.yml")
 
         # The info() command requires a displayname.  This displayname is
         # is temporary until we get info from the agent:
@@ -1641,10 +1642,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return False
         else:
             pinfo_json = body['stdout']
-            pinfo_json = r"""{"os-version":"Microsoft Windows NT 6.1.7601 Service Pack 1","processor-type":"AMD64","processor-count":"2","installed-memory":10847518720,"machine-name":"WIN-NO8TBPC1ULB","user-name":"Administrator",
-    "volumes":{"C:":{"name":"C","type":"Fixed","label":"","drive-format":"NTFS","available-space":56572575744,"size":85793435648},"D:":{"name":"D","type":"CDRom"}},
-"tableau-install-dir":"C:\\Program Files\\Tableau\\Tableau Server\\8.1"}"""
-
             try:
                 pinfo_dict = json.loads(pinfo_json)
             except ValueError, e:
@@ -1657,12 +1654,19 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             aconn.info = pinfo_dict
             self.log.debug("info returned from %s: %s", aconn.displayname, \
                                                                 aconn.info)
-            if aconn.info.has_key(TABLEAU_INSTALL_DIR) or 1:
+            if aconn.info.has_key(TABLEAU_INSTALL_DIR):
                 aconn.tableau_install_dir = aconn.info[TABLEAU_INSTALL_DIR]
                 aconn.agent_type = AgentManager.AGENT_TYPE_PRIMARY
 
-                yml_config_file = ntpath.join(aconn.tableau_install_dir,
-                                                        YML_CONFIG_FILE_PART)
+                if aconn.tableau_install_dir.find(':') == -1:
+                    self.log.error("agent %s is missing ':': %s for %s",
+                        aconn.displayname, TABLEAU_INSTALL_DIR,
+                                                aconn.tableau_install_dir)
+                    return False
+
+                volume = aconn.tableau_install_dir.split(':')[0]
+
+                yml_config_file = ntpath.join(volume + ':\\', YML_CONFIG_FILE_PART)
 
                 try:
                     aconn.yml_contents = aconn.filemanager.get(yml_config_file)
@@ -1675,15 +1679,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     return True # fixme (remove) after filemanager is working
                     return False
                 else:
-                    self.log.debug("Retrieved yml file from %s.",
-                                                                aconn.displayname)
+                    self.log.debug("Retrieved '%s' from %s.",
+                                            yml_config_file, aconn.displayname)
 
             else:
                 agent.agent_type = AgentManager.AGENT_TYPE_OTHER
 
         # Cleanup.
         if aconn.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-            body = self.maint("stop", send_alert=False)  # Put into a known state
+            # Put into a known state
+            body = self.maint("stop", aconn=aconn, send_alert=False)
             if body.has_key("error"):
                 server.alert.send(\
                    CustomAlerts.MAINT_STOP_FAILED, body)
@@ -1702,7 +1707,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         states = server.stateman.get_states()
         if states[StateEntry.STATE_TYPE_MAIN] == StateEntry.STATE_MAIN_STOPPED:
-            body = self.maint("start")
+            body = self.maint("start", aconn=aconn)
             if body.has_key("error"):
                 server.alert.send(CustomAlerts.MAINT_START_FAILED, body)
 
