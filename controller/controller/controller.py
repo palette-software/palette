@@ -1468,18 +1468,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def info(self, aconn):
         return self.cli_cmd(Controller.PINFO_BIN, aconn)
 
-    def firewall(self, aconn, method, send_body_dict={}):
-        """Sends a firewall GET or POST command.
-           Returns the body result.
-        """
-
-        if method == "GET":
-            send_body = ""
-        else:
-            send_body = json.dumps(send_body_dict)
-
-        return self.send_immediate(aconn, method, "/firewall", send_body)
-
     def maint(self, action, port=-1, send_alert=True):
         if action not in ("start", "stop"):
             self.log.error("Invalid maint action: %s", action)
