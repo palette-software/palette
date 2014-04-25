@@ -278,12 +278,6 @@ class AgentManager(threading.Thread):
 
         return None
 
-    def lock_agent(self, agent):
-        agent.lock()
-
-    def unlock_agent(self, agent):
-        agent.unlock()
-
     def remove_agent(self, agent, reason="", send_alert=True):
         """Remove an agent.
             Args:
