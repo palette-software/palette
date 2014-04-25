@@ -11,7 +11,7 @@ import json
 import ntpath
 
 from agentstatus import AgentStatusEntry
-from agentinfo import AgentInfoEntry
+from agentinfo import AgentYmlEntry, AgentPinfoEntry, AgentVolumesEntry
 from state import StateManager, StateEntry
 from alert import Alert
 from filemanager import FileManager
@@ -39,7 +39,7 @@ class AgentConnection(object):
         self.tableau_install_dir = None
         self.agent_type = None
         self.yml_contents = None    # only valid if agent is a primary
-        self.info = {}  # from pinfo
+        self.pinfo = {}  # from pinfo
         self.initting = True
 
         # Each agent connection has its own lock
@@ -187,14 +187,68 @@ class AgentManager(threading.Thread):
             entry.displayname = entry.hostname
             entry = session.merge(entry)
 
-        # Also remember the yml contents and agent info
-        agent_info_entry = AgentInfoEntry(entry.agentid,
-                        new_agent.yml_contents, json.dumps(new_agent.info))
+        # Also remember the yml contents
+        self.update_agent_yml(session, entry.agentid, new_agent.yml_contents)
 
-        session.merge(agent_info_entry)
+        # and remember the agent pinfo
+        self.update_agent_pinfo(session, entry.agentid, new_agent.pinfo)
 
         session.commit()
         return entry
+
+    def update_agent_yml(self, session, agentid, yml_contents):
+        """update the agent_yml table with this agent's yml contents."""
+        # First delete any old entries for this agent
+        entry = session.query(AgentYmlEntry).\
+            filter(AgentYmlEntry.agentid == agentid).delete()
+
+        # This the first line ('---')
+        for line in yml_contents.strip().split('\n')[1:]:
+            key, value = line.split(":", 1)
+            entry = AgentYmlEntry(agentid, key, value)
+            session.add(entry)
+
+    def update_agent_pinfo(self, session, agentid, pinfo):
+        """Update the pinfo and volume tables from the given agent pinfo dict."""
+
+        # First delete any old entries for this agent
+        entry = session.query(AgentPinfoEntry).\
+            filter(AgentPinfoEntry.agentid == agentid).delete()
+
+        entry = session.query(AgentVolumesEntry).\
+            filter(AgentVolumesEntry.agentid == agentid).delete()
+
+        for key, value in pinfo.iteritems():
+            if key != 'volumes':
+                entry = AgentPinfoEntry(agentid, key, value)
+                session.add(entry)
+                continue
+            for volume in value:
+                name = None; vol_type = None; label = None; drive_format = None;
+                size = None; free = None;
+
+                if volume.has_key("name"):
+                    name = volume['name']
+
+                if volume.has_key("type"):
+                    vol_type = volume['type']
+
+                if volume.has_key("label"):
+                    label = volume['label']
+
+                if volume.has_key("drive-format"):
+                    drive_format = volume['drive-format']
+
+                if volume.has_key("size"):
+                    size = volume['size']
+
+                if volume.has_key('available-space'):
+                    free = volume['available-space']
+
+                entry = AgentVolumesEntry(agentid, name, vol_type, label,
+                                                    drive_format, size, free)
+
+                session.add(entry)
 
     def set_displayname(self, aconn, uuid, displayname):
         session = meta.Session()
