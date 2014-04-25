@@ -1651,11 +1651,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             if pinfo_dict == None:
                 self.log.error("Bad pinfo output: %s", pinfo_json)
                 return False
-            aconn.info = pinfo_dict
+            aconn.pinfo = pinfo_dict
             self.log.debug("info returned from %s: %s", aconn.displayname, \
-                                                                aconn.info)
-            if aconn.info.has_key(TABLEAU_INSTALL_DIR):
-                aconn.tableau_install_dir = aconn.info[TABLEAU_INSTALL_DIR]
+                                                                aconn.pinfo)
+            if aconn.pinfo.has_key(TABLEAU_INSTALL_DIR):
+                aconn.tableau_install_dir = aconn.pinfo[TABLEAU_INSTALL_DIR]
                 aconn.agent_type = AgentManager.AGENT_TYPE_PRIMARY
 
                 if aconn.tableau_install_dir.find(':') == -1:
