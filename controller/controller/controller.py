@@ -249,8 +249,9 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error('agent not found')
             return
 
+        self.ack()
         body = server.cli_cmd("tabadmin status -v", aconn)
-        self.report_status(body)
+        self.print_client(str(body))
     do_status.__usage__ = 'status'
 
 
