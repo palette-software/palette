@@ -11,6 +11,7 @@ import json
 import ntpath
 
 from agentstatus import AgentStatusEntry
+from agentinfo import AgentInfoEntry
 from state import StateManager, StateEntry
 from alert import Alert
 from filemanager import FileManager
@@ -182,6 +183,13 @@ class AgentManager(threading.Thread):
         if entry.displayname == None or entry.displayname == "":
             entry.displayname = entry.hostname
             entry = session.merge(entry)
+
+        # Also remember the yml contents and agent info
+        agent_info_entry = AgentInfoEntry(entry.agentid,
+                        new_agent.yml_contents, json.dumps(new_agent.info))
+
+        session.merge(agent_info_entry)
+
         session.commit()
         return entry
 
