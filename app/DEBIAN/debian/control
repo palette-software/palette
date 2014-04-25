@@ -13,6 +13,7 @@ Depends:
  python-docutils, python-sphinx, postgresql,
  python-sqlalchemy, python-psycopg2, telnet, controller,
  apache2, libapache2-mod-wsgi,
+ akiri.framework-sqlalchemy,
  akiri.framework (>= 0.3)
 Description: Palette Web App
  This package contains the Palette Web Application.

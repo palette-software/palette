@@ -36,10 +36,12 @@ class BackupApplication(RESTApplication):
         self.telnet_hostname = store.get("palette", "telnet_hostname", default="localhost")
 
     def send_cmd(self, cmd):
+        # Backup and restore commands are always sent to the primary.
+        preamble = "/domainid=%d /type=primary" % (self.domain.domainid)
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         conn.connect((self.telnet_hostname, self.telnet_port))
-        conn.send(cmd + '\n')
-        print "sent", cmd
+        conn.send(preamble + ' ' + cmd + '\n')
+        print "sent", preamble + ' ' + cmd
         data = conn.recv(3).strip()
         print "got", data
         if data != 'OK':
@@ -56,7 +58,7 @@ class BackupApplication(RESTApplication):
     def handle_restore(self):
         last_entry = self.get_last_backup()
         if not last_entry:
-            print >> sys.syserr, "No backups to restore from!"
+            print >> sys.stderr, "No backups to restore from!"
             return {'last': "none",
                     'next': self.scheduled }
 

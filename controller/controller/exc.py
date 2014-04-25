@@ -1,10 +1,12 @@
-__all__ = [ "HttpException", "HttpNotFound" ]
+import httplib
 
-class HttpException(StandardError):
-    def __init__(self, status_code, reason):
-        self.status_code = status_code
+__all__ = [ "HTTPException" ]
+
+class HTTPException(httplib.HTTPException):
+    def __init__(self, status, reason, method='GET', body=None):
+        message = str(status) + ' ' + reason
+        httplib.HTTPException.__init__(self, message)
+        self.method = method
+        self.status = status
         self.reason = reason
-
-class HttpNotFound(HttpException):
-    def __init__(self):
-        super(HttpNotFound, self).__init__(404, "Not Found")
+        self.body = body
