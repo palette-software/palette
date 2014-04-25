@@ -1625,6 +1625,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             d['uri'] = uri
         if body:
             d['body'] = body
+        if agent:
+            d['agent'] = agent
         return d;
 
     def init_new_agent(self, aconn):
@@ -1650,24 +1652,38 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                             aconn.displayname, body['error'])
             return False
         else:
-            aconn.info = body['stdout']
+            pinfo_json = body['stdout']
+            pinfo_json = r"""{"os-version":"Microsoft Windows NT 6.1.7601 Service Pack 1","processor-type":"AMD64","processor-count":"2","installed-memory":10847518720,"machine-name":"WIN-NO8TBPC1ULB","user-name":"Administrator",
+    "volumes":{"C:":{"name":"C","type":"Fixed","label":"","drive-format":"NTFS","available-space":56572575744,"size":85793435648},"D:":{"name":"D","type":"CDRom"}},
+"tableau-install-dir":"C:\\Program Files\\Tableau\\Tableau Server\\8.1"}"""
+
+            try:
+                pinfo_dict = json.loads(pinfo_json)
+            except ValueError, e:
+                self.log.error("Bad json from pinfo. Error: %s, json: %s", \
+                                                        str(e), pinfo_json)
+                return False
+            if pinfo_dict == None:
+                self.log.error("Bad pinfo output: %s", pinfo_json)
+                return False
+            aconn.info = pinfo_dict
             self.log.debug("info returned from %s: %s", aconn.displayname, \
                                                                 aconn.info)
-            if body.has_key(TABLEAU_INSTALL_DIR) or 1:
-#                aconn.tableau_install_dir = body[TABLEAU_INSTALL_DIR]  # add when key is returned
-                aconn.tableau_install_dir = "tableau"
+            if aconn.info.has_key(TABLEAU_INSTALL_DIR) or 1:
+                aconn.tableau_install_dir = aconn.info[TABLEAU_INSTALL_DIR]
                 aconn.agent_type = AgentManager.AGENT_TYPE_PRIMARY
 
                 yml_config_file = ntpath.join(aconn.tableau_install_dir,
                                                         YML_CONFIG_FILE_PART)
 
                 try:
-                    auth.yml_contents = aconn.filemanager.get(yml_config_file)
+                    aconn.yml_contents = aconn.filemanager.get(yml_config_file)
                 except (exc.HTTPException, httplib.HTTPException,
                                                         EnvironmentError) as e:
                     self.log.error(\
                         "filemanager.get(%s) on %s failed with: %s",
                         yml_config_file, aconn.displayname, str(e))
+                    aconn.yml_contents = "I am the yml contents" # fixme (remove)
                     return True # fixme (remove) after filemanager is working
                     return False
                 else:
