@@ -4,6 +4,8 @@ from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
 import platform
 
+from custom_alerts import CustomAlerts
+
 import meta
 
 from alert import Alert
@@ -78,11 +80,16 @@ class StateManager(object):
         # Backup alerts (backup/restore started/stopped done elsewhere).
         if state_type == StateEntry.STATE_TYPE_MAIN and state in \
           [StateEntry.STATE_MAIN_STARTED, StateEntry.STATE_MAIN_STOPPED]:
-            alert = Alert(self.config, self.log)
             if old_state == StateEntry.STATE_MAIN_UNKNOWN:
-                alert.send("Controller started.  Initial tableau state: " + state)
+                if state == StateEntry.STATE_MAIN_STARTED:
+                    self.server.alert.send(CustomAlerts.INIT_STATE_STARTED)
+                else:
+                    self.server.alert.send(CustomAlerts.INIT_STATE_STOPPED)
             else:
-                alert.send("Tableau server " + state)
+                if state == StateEntry.STATE_MAIN_STARTED:
+                    self.server.alert.send(CustomAlerts.STATE_STARTED)
+                else:
+                    self.server.alert.send(CustomAlerts.STATE_STOPPED)
 
     def get_states(self):
         try:

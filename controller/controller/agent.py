@@ -51,7 +51,6 @@ class AgentHandler(SimpleHTTPRequestHandler):
                 "password": "secret",
                 "version": version,
                 "hostname": AgentHandler.agent_hostname,
-                "type": AgentHandler.agent_type,
                 "ip-address": AgentHandler.agent_ip,
                 "listen-port": 12345,
                 "uuid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1",
@@ -61,21 +60,21 @@ class AgentHandler(SimpleHTTPRequestHandler):
 
     def command_cli(self, in_body_dict):
         """[Pretend to] Start a process for the cli command."""
-        
+
         if not in_body_dict.has_key('action'):
             raise HttpException(405)    #fixme (not 405)
 
         action = in_body_dict['action']
 
         if action == 'cleanup':
-            return { "xid": in_body_dict["xid"], 
+            return { "xid": in_body_dict["xid"],
                      "run-status": "running"}
 
         elif action != 'start':
             raise HttpException(405)    #fixme (not 405)
 
         # pretend we started...
-        return { "xid": in_body_dict["xid"], 
+        return { "xid": in_body_dict["xid"],
                      "run-status": "running"}
 
     def command_get(self, in_body_dict):

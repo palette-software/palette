@@ -8,10 +8,14 @@ import time
 import traceback
 from httplib import HTTPConnection
 import json
+import ntpath
 
 from agentstatus import AgentStatusEntry
+from agentinfo import AgentInfoEntry
 from state import StateManager, StateEntry
 from alert import Alert
+from filemanager import FileManager
+from firewall import Firewall
 
 import meta
 from sqlalchemy import func, or_
@@ -21,19 +25,28 @@ from sqlalchemy.orm.exc import NoResultFound
 # Communicates with the Agent.
 # fixme: maybe merge with the AgentStatusEntry class.
 class AgentConnection(object):
-    
+
     _CID = 1
 
-    def __init__(self, conn, addr):
+    def __init__(self, server, conn, addr):
+        self.server = server
         self.socket = conn
         self.addr = addr
         self.httpconn = False   # Used by the controller
         self.auth = {}          # Used by the controller
         self.agentid = None
         self.uuid = None
+        self.tableau_install_dir = None
+        self.agent_type = None
+        self.yml_contents = None    # only valid if agent is a primary
+        self.info = {}  # from pinfo
+        self.initting = True
 
         # Each agent connection has its own lock
         self.lockobj = threading.RLock()
+
+        self.filemanager = FileManager(self)
+        self.firewall = Firewall(self)
 
         # unique identifier
         # can never be 0
@@ -48,12 +61,6 @@ class AgentConnection(object):
     def unlock(self):
         self.lockobj.release()
 
-    def set_httpconn(self, httpconn):
-        self.httpconn = httpconn    # Used by the controller
-
-    def set_auth(self, auth):
-        self.auth = auth            # Used by the controller
-
 class AgentManager(threading.Thread):
 
     PORT = 8888
@@ -64,8 +71,6 @@ class AgentManager(threading.Thread):
     AGENT_TYPE_PRIMARY="primary"
     AGENT_TYPE_WORKER="worker"
     AGENT_TYPE_OTHER="other"
-
-    DEFAULT_INSTALL_DIR = "c:\\Program Files (x86)\\Palette\\"
 
     def __init__(self, server, host='0.0.0.0', port=0):
         super(AgentManager, self).__init__()
@@ -79,7 +84,6 @@ class AgentManager(threading.Thread):
         self.host = host
         self.port = port and port or self.PORT
         self.socket = None
-        self.auth = None
         # A dictionary with all AgentConnections with the key being
         # the unique 'conn_id'.
         self.agents = {}
@@ -116,11 +120,16 @@ class AgentManager(threading.Thread):
     def register(self, new_agent, body):
         """Called with the agent object and body /auth dictionary that
            was sent from the agent in json."""
-       
-        self.lock()
-        self.log.debug("new agent of type: %s, name %s, uuid %s, conn_id %d", body['type'], body['hostname'], body['uuid'], new_agent.conn_id)
 
-        new_agent_type = body['type']
+        # The agent initialization succeeded.
+        new_agent.initting = False
+
+        self.lock()
+        self.log.debug(\
+            "new agent: name %s, uuid %s, conn_id %d",
+                        body['hostname'], body['uuid'], new_agent.conn_id)
+
+        new_agent_type = new_agent.agent_type
         # Don't allow two primary agents to be connected and
         # don't allow two agents with the same name to be connected.
         # Keep the newest one.
@@ -131,12 +140,12 @@ class AgentManager(threading.Thread):
                 self.remove_agent(agent, "An agent is already connected named '%s': will remove it and use the new connection." % body['uuid'], send_alert=False)
                 break
             elif new_agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
-                                agent.auth['type'] == AgentManager.AGENT_TYPE_PRIMARY:
+                        agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
                     self.log.info("A primary agent is already connected: will remove it and keep the new primary agent connection.")
                     self.remove_agent(agent, "A primary agent is already connected: will remove it and keep the new primary agent connection.", send_alert=False)
 
         # Remember the new agent
-        entry = self.remember(body)
+        entry = self.remember(new_agent, body)
         if entry:
             new_agent.agentid = entry.agentid
             new_agent.uuid = entry.uuid
@@ -161,13 +170,13 @@ class AgentManager(threading.Thread):
         self.unlock()
 
     # formerly agentstatus.add()
-    def remember(self, body):
+    def remember(self, new_agent, body):
         session = meta.Session()
 
         # fixme: check for the presence of all these entries.
         entry = AgentStatusEntry(body['hostname'],
-                                 body['type'], 
-                                 body['version'], 
+                                 new_agent.agent_type,
+                                 body['version'],
                                  body['ip-address'],
                                  body['listen-port'],
                                  body['uuid'],
@@ -177,25 +186,27 @@ class AgentManager(threading.Thread):
         if entry.displayname == None or entry.displayname == "":
             entry.displayname = entry.hostname
             entry = session.merge(entry)
+
+        # Also remember the yml contents and agent info
+        agent_info_entry = AgentInfoEntry(entry.agentid,
+                        new_agent.yml_contents, json.dumps(new_agent.info))
+
+        session.merge(agent_info_entry)
         session.commit()
         return entry
 
-    def set_displayname(self, hostname, displayname):
-        error = ""
-
+    def set_displayname(self, aconn, uuid, displayname):
         session = meta.Session()
         try:
             entry = session.query(AgentStatusEntry).\
-                filter(AgentStatusEntry.hostname == hostname).one()
+                filter(AgentStatusEntry.uuid == uuid).one()
             entry.displayname = displayname
             session.merge(entry)
             session.commit()
-            aconn = self.agent_conn_by_hostname(hostname)
             if aconn:
                 aconn.auth['displayname'] == displayname
         except NoResultFound, e:
-            error = "No agent found with hostame=%s" % (hostname)
-        return error
+            raise ValueError('No agent found with uuid=%s' % (uuid))
 
     def forget(self, agentid):
         session = meta.Session()
@@ -226,7 +237,7 @@ class AgentManager(threading.Thread):
         Returns None if no agents of that type are connected."""
 
         for key in self.agents:
-            if self.agents[key].auth['type'] == agent_type:
+            if self.agents[key].agent_type == agent_type:
                 return self.agents[key]
 
         return None
@@ -280,24 +291,31 @@ class AgentManager(threading.Thread):
                 send_alert:  True or False.  If True, sends an alert.
                              If False does not send an alert.
         """
+        if reason == "":
+            reason = "Agent communication failure"
+
         self.lock()
         conn_id = agent.conn_id
         if self.agents.has_key(conn_id):
-            self.log.debug("Removing agent with conn_id %d, name %s",\
-                conn_id, self.agents[conn_id].auth['hostname'])
+            self.log.debug("Removing agent with conn_id %d, name %s, reason: %s",\
+                conn_id, self.agents[conn_id].auth['hostname'], reason)
 
             if send_alert:
-                alert = Alert(self.config, self.log)
-                if reason == "":
-                    reason = "Agent communication failure"
-                alert.send(reason, "\nAgent: %s\nAgent type: %s\nAgent connection-id %d" % 
-                            (agent.displayname, agent.auth['type'], conn_id))
+                self.server.alert.send(reason,
+                    "\nAgent: %s\nAgent type: %s\nAgent connection-id %d" %
+                            (agent.displayname, agent.agent_type, conn_id))
 
             self.forget(agent.agentid)
+            self.log.debug("remove_agent: closing agent socket.")
+            if self._close(agent.socket):
+                self.log.debug("remove_agent: close agent socket succeeded.")
+            else:
+                self.log.debug("remove_agent: close agent socket failed")
+
             del self.agents[conn_id]
         else:
             self.log.debug("remove_agent: No such agent with conn_id %d", conn_id)
-        if agent.auth['type'] == AgentManager.AGENT_TYPE_PRIMARY:
+        if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("remove_agent: Initializing state entries on removal")
             stateman = StateManager(self.server)
             stateman.update(StateEntry.STATE_TYPE_MAIN, \
@@ -306,6 +324,15 @@ class AgentManager(threading.Thread):
               StateEntry.STATE_BACKUP_NONE)
 
         self.unlock()
+
+    def _close(self, sock):
+        try:
+            sock.shutdown(socket.SHUT_RDWR)
+            sock.close()
+        except socket.error as e:
+            self.log.debug("agentmanager._close socket failure: " + str(e))
+            return False
+        return True
 
     def lock(self):
         """Locks the agents list"""
@@ -375,7 +402,7 @@ class AgentManager(threading.Thread):
         conn.settimeout(self.socket_timeout)
 
         try:
-            agent = AgentConnection(conn, addr)
+            agent = AgentConnection(self.server, conn, addr)
 
             # sleep for 100ms to prevent:
             #  'An existing connection was forcibly closed by the remote host'
@@ -390,7 +417,7 @@ class AgentManager(threading.Thread):
             res = httpconn.getresponse()
             print >> sys.stderr, 'command: auth: ' + str(res.status) + ' ' + str(res.reason)
             # Get the auth reply.
-            self.log.debug("new_agent_connection reading....")
+            self.log.debug("new_agent_connection: about to read.")
             body_json = res.read()
             if body_json:
                 body = json.loads(body_json)
@@ -400,28 +427,27 @@ class AgentManager(threading.Thread):
                 self.log.debug("done.")
 
             # Inspect the reply to make sure it has all the required values.
-            required = ['hostname', 'type', 'ip-address', 'version', 'listen-port', 'uuid']
+            required = ['hostname', 'ip-address', \
+                            'version', 'listen-port', 'uuid', 'install-dir']
             for item in required:
                 if not body.has_key(item):
                     self.log.error("Missing '%s' from agent" % item)
-                    conn.close()
+                    self._close(conn)
                     return
 
-            agent_type = body['type']
-            if agent_type not in [ AgentManager.AGENT_TYPE_PRIMARY,
-              AgentManager.AGENT_TYPE_WORKER, AgentManager.AGENT_TYPE_OTHER ]:
-                self.log.error("Bad agent type sent: " + agent_type)
-                conn.close()
+            agent.httpconn = httpconn
+            agent.auth = body
+
+            if self.server.init_new_agent(agent):
+                self.register(agent, body)
+            else:
+                self.log.error("Bad agent.  Disconnecting.")
+                self._close(conn)
                 return
-
-            agent.set_httpconn(httpconn)
-            agent.set_auth(body)
-
-            self.register(agent, body)
 
         except socket.error, e:
             self.log.debug("Socket error: " + str(e))
-            conn.close()
+            self._close(conn)
         except Exception, e:
             self.log.error("Exception:")
             traceback.format_exc()
@@ -429,12 +455,12 @@ class AgentManager(threading.Thread):
             self.log.error(traceback.format_exc())
 
 class ReverseHTTPConnection(HTTPConnection):
-    
+
     def __init__(self, sock):
         HTTPConnection.__init__(self, 'agent')
 #        HTTPConnection.debuglevel = 1
         self.sock = sock
-    
+
     def connect(self):
         pass
 
@@ -468,7 +494,7 @@ class AgentHealthMonitor(threading.Thread):
                 self.manager.lock()
 
                 if not agents.has_key(key):
-                    self.log.debug("agent with conn_id '%d' is now gone and won't be checked." % 
+                    self.log.debug("agent with conn_id '%d' is now gone and won't be checked." %
                         key)
                     self.manager.unlock()
                     continue
@@ -476,17 +502,17 @@ class AgentHealthMonitor(threading.Thread):
                 self.manager.unlock()
 
                 self.log.debug("Ping: check for agent '%s', type '%s', conn_id %d." % \
-                        (agent.displayname, agent.auth['type'], key))
+                        (agent.displayname, agent.agent_type, key))
 
                 # fixme: add a timeout ?
-                body = self.server.ping_immediate(agent)
+                body = self.server.ping(agent)
                 if body.has_key('error'):
                     self.log.info("Ping: Agent '%s', type '%s', conn_id %d did not respond to ping.  Removing." %
-                        (agent.displayname, agent.auth['type'], key))
+                        (agent.displayname, agent.agent_type, key))
 
                     self.manager.remove_agent(agent, "Lost contact with an agent")
                 else:
-                    self.log.debug("Ping: Replied for agent '%s', type '%s', conn_id %d." %
-                        (agent.displayname, agent.auth['type'], key))
-                    
+                    self.log.debug("Ping: Reply from agent '%s', type '%s', conn_id %d." %
+                        (agent.displayname, agent.agent_type, key))
+
             time.sleep(self.ping_interval)

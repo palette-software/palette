@@ -1,5 +1,8 @@
 import smtplib
 from email.mime.text import MIMEText
+from custom_alerts import CustomAlerts
+
+from mako.template import Template
 
 class Alert(object):
 
@@ -14,42 +17,80 @@ class Alert(object):
         self.smtp_server = config.get('alert', 'smtp_server',
                                     default="localhost")
         self.smtp_port = config.getint("alert", "smtp_port", default=25)
+        self.custom_alerts = CustomAlerts()
+        self.custom_alerts.populate()
 
         DEFAULT_ALERT_LEVEL = 1
         self.alert_level = config.getint("alert", "alert_level", default=DEFAULT_ALERT_LEVEL)
+
+        DEFAULT_MAX_SUBJECT_LEN = 100
+        self.max_subject_len = config.getint("alert", "max_subject_len", default=DEFAULT_MAX_SUBJECT_LEN)
+
         if self.alert_level < 1:
             self.log.err("Invalid alert level: %d, setting to %d",
                                     self.alert_level, DEFAULT_ALERT_LEVEL)
             self.alert_level = DEFAULT_ALERT_LEVEL
 
-    def send(self, subject, body=None):
+    def send(self, key, data={}):
         """Send an alert.
             Arguments:
-                subject:    The subject to send.  If alt_body is not
-                            specified, the text is used for both the
-                            subject and body.
+                key:    The key to look up.
 
-                body:       If not specified, the subject is also
-                            used as the body.
-                            If specified, is used as the message body
-                            and:.
-                                If body is a string, the is used for the
-                                message body.
-                                If body is a dictionary, it is assumed to
-                                be a body from a message reply and it is
-                                formatted.
+                data:           If a dictionary:
+                                    Used for both the subject and
+                                    message body (from the db).
+
+                                If a string:
+                                    Used as the message body.
         """
 
-        if not body:
-            message = subject
+        alert_entry = self.custom_alerts.get_alert(key)
+        if alert_entry:
+            subject = alert_entry.subject
+            message = alert_entry.message
         else:
-            message = self.make_message(subject, body)
+            subject = key
+            message = None
+
+        # If data is a dict, use it for substitution.
+        if type(data) == dict:
+            try:
+                subject = subject % data
+            except KeyError as e:
+                subject = "Template subject conversion failure: " + str(e) + \
+                    "subject: " + subject + \
+                    ", data: " + str(data)
+            if message:
+                mako_template = Template(message)
+                try:
+                    message = mako_template.render(**data)
+                except NameError as e:
+                    message = "Mako template message conversion failure: " + \
+                        str(e) + "\ntemplate: " + message + \
+                    "\ndata: " + str(data)
+            else:
+               message = self.make_message(subject, data)
+        elif isinstance(data, str):
+            # If data is a string, use it as the raw message body
+            message = data
+        else:
+            self.log.error("Invalid type for data: %s", str(type(data)))
+            return
+
+        if not message:
+            # If no data was sent, use the subject as the message.
+            message = subject
 
         if not self.enabled:
-            self.log.info("Alerts disabled.  Not sending: " + message)
+            self.log.info(\
+                "Alerts disabled.  Not sending: Subject: %s, Message: %s",
+                                                            subject, message)
             return
 
         msg = MIMEText(message)
+
+        if len(subject) > self.max_subject_len:
+            subject = subject[:self.max_subject_len]  + "..."
 
         msg['Subject'] = "Palette Alert: " + subject
         msg['From'] = self.from_email
@@ -65,7 +106,8 @@ class Alert(object):
                 message, e, self.smtp_server, self.smtp_port)
             return
 
-        self.log.info("Emailed event: " + message)
+        self.log.info("Emailed event: Subject: '%s', message: '%s'" % \
+                                                        (subject, message))
 
         return
 
@@ -89,12 +131,12 @@ class Alert(object):
         """
 
         if isinstance(body, str) or isinstance(body, unicode):
-            return body
+            return subject + '\n\n' + body
 
         if type(body) != dict:
             self.log.info("alert was passed a %s instead of string or dictionary.",  type(body))
             return str(body)
-        
+
         message = subject + '\n\n'
 
         if self.alert_level < 1:   # too minimal, not even errors included.
@@ -106,6 +148,9 @@ class Alert(object):
             return message
 
         # Reasonable alerts levels here: 1 and 2.
+        if body.has_key('error'):
+            message += self.indented("Unexpected Error", body['error']) + '\n'
+
         if body.has_key('info'):
             message += self.indented("Note", body['info']) + '\n'
 
@@ -132,7 +177,7 @@ class Alert(object):
             then all lines, indented.
 
             If the value is empty, don't return the section or value.
-            
+
             Arguments:
                 section:  The name of the section, like "Errors" or "Output".
 
@@ -162,8 +207,11 @@ class Alert(object):
 if __name__ == "__main__":
     import logging
     from config import Config
+    import sqlalchemy
+    from sqlalchemy.orm import sessionmaker, scoped_session
+    import meta
 
-    config = Config("../DEBIAN/etc/controller.ini")
+    config = Config("../controller.ini")
 
     handler = logging.StreamHandler()
 
@@ -179,5 +227,20 @@ if __name__ == "__main__":
 
     log.info("alert test starting")
 
+    # database configuration
+    url = config.get("database", "url")
+    echo = config.getboolean("database", "echo", default=False)
+    # engine is once per single application process.
+    # see http://docs.sqlalchemy.org/en/rel_0_9/core/connections.html
+    meta.engine = sqlalchemy.create_engine(url, echo=echo)
+    # Create the table definition ONCE, before all the other threads start.
+    meta.Base.metadata.create_all(bind=meta.engine)
+    meta.Session = scoped_session(sessionmaker(bind=meta.engine))
+
     alert = Alert(config, log)
-    alert.send("Test Alert")
+#    alert.send("Test Alert")
+#    alert.send("restore started on %(hostname)s", {"hostname": "bigsystem"})
+#    alert.send("restore started on %(hostXXX)s", {"hostname": "bigsystem"})
+#    alert.send("restore started", {"stdout": "The restore results are here"})
+    alert.send("RESTORE-STARTED", {"stdout": "The restore results are here"})
+    alert.send("RESTORE-FINISHED", {"error": "This was the restore error"})
