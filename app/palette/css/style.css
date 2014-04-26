@@ -38,6 +38,9 @@ p {
 .wrapper {
     height: 100%;
 }
+.hidden {
+    display: none;
+}
 #mainNav {
     background: #333;
     position: fixed;
