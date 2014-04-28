@@ -1,12 +1,12 @@
 import sqlalchemy
-from sqlalchemy import Column, String, BigInteger, Integer
+from sqlalchemy import Column, String, BigInteger, Integer, Boolean
 from sqlalchemy.schema import ForeignKey
 import meta
 
 class AgentYmlEntry(meta.Base):
     __tablename__ = "agent_yml"
 
-    rowkey = Column(Integer, unique=True, nullable=False, primary_key=True)
+    ymlid = Column(Integer, unique=True, nullable=False, primary_key=True)
 
     agentid = Column(BigInteger, ForeignKey("agent.agentid"))
     key = Column(String)
@@ -18,24 +18,19 @@ class AgentYmlEntry(meta.Base):
         self.value = value
 
 
-class AgentPinfoEntry(meta.Base):
-    __tablename__ = "agent_pinfo"
+class AgentInfoEntry(meta.Base):
+    __tablename__ = "agent_info"
 
-    rowkey = Column(Integer, unique=True, nullable=False, primary_key=True)
+    infoid = Column(Integer, unique=True, nullable=False, primary_key=True)
 
     agentid = Column(BigInteger, ForeignKey("agent.agentid"))
     key = Column(String)
     value = Column(String)
-
-    def __init__(self, agentid, key, value):
-        self.agentid = agentid
-        self.key = key
-        self.value = value
 
 class AgentVolumesEntry(meta.Base):
     __tablename__ = "agent_volumes"
 
-    rowkey = Column(Integer, unique=True, nullable=False, primary_key=True)
+    volid = Column(Integer, unique=True, nullable=False, primary_key=True)
 
     agentid = Column(BigInteger, ForeignKey("agent.agentid"))
 
@@ -47,11 +42,35 @@ class AgentVolumesEntry(meta.Base):
     size = Column(BigInteger)
     free = Column(BigInteger)
 
-    def __init__(self, agentid, name, vol_type, label, drive_format, size, free):
-        self.agentid = agentid      # required
-        self.name = name            # required
-        self.vol_type = vol_type    # required
-        self.label = label
-        self.drive_format = drive_format
-        self.size = size
-        self.free = free
+    system = Column(Boolean)    # The OS/system is installed on this volume
+
+    archive = Column(Boolean)
+    archive_limit = Column(BigInteger)
+
+    @classmethod
+    def build(cls, agentid, volume):
+
+        name = None; vol_type = None; label = None; drive_format = None;
+        size = None; free = None;
+
+        if volume.has_key("name"):
+            name = volume['name']
+
+        if volume.has_key("type"):
+            vol_type = volume['type']
+
+        if volume.has_key("label"):
+            label = volume['label']
+
+        if volume.has_key("drive-format"):
+            drive_format = volume['drive-format']
+
+        if volume.has_key("size"):
+            size = volume['size']
+
+        if volume.has_key('available-space'):
+            free = volume['available-space']
+
+        return AgentVolumesEntry(agentid=agentid, name=name,
+            vol_type=vol_type, label=label, drive_format=drive_format,
+            size=size, free=free)
