@@ -226,7 +226,7 @@ class AgentManager(threading.Thread):
             session.merge(entry)
             session.commit()
             if aconn:
-                aconn.auth['displayname'] == displayname
+                aconn.auth['displayname'] = displayname
         except NoResultFound, e:
             raise ValueError('No agent found with uuid=%s' % (uuid))
 
