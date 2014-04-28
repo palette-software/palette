@@ -195,19 +195,21 @@ class StatusMonitor(threading.Thread):
             self.log.error("Bad status returned.  Too few lines.")
             return
 
-        if len(lines) == 1:
-            # "Status: STOPPED" is the only line
-            line1 = body.split(" ")
-        else:
-            # "Status: RUNNING"
-            line1 = lines[0].split(" ")
-
-        if line1[0] != 'Status:':
-            self.log.error("Bad status returned.  First line wasn't 'Status:' %s:", line1)
-            self.log.error("Status returned: " + str(lines))
+        # Find the line beginning with "Status:".
+        status = None
+        skip = 0
+        for line in lines:
+            parts = line.strip().split(' ')
+            skip = skip + 1
+            if parts[0] == 'Status:':
+                status = parts[1].strip()
+                break;
+        if status == None:
+            self.log.error("Bad status returned: no Tableau status line: " + \
+              str(lines))
             return
-
-        status = line1[1].strip()
+        if status == 'STOPPED':
+            skip = len(lines)
 
         session = meta.Session()
 
@@ -220,7 +222,7 @@ class StatusMonitor(threading.Thread):
         # Set the "main status" state according to the current status.
         self.set_main_state(status)
 
-        for line in lines[1:]:   # Skip the first line we already did.
+        for line in lines[skip:]:   # Skip the first line we already did.
             line = line.strip()
             if len(line) == 0:
                 self.log.debug("Ignoring line due to 0 length")
