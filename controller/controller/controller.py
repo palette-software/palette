@@ -1183,7 +1183,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         for key in agents.keys():
             manager.lock()
             if not agents.has_key(key):
-                self.log.info("copy_cmd: agent with conn_id '%d' is now gone and won't be checked.", key)
+                self.log.info("copy_cmd: agent with uuid '%d' is now gone and won't be checked.", key)
                 manager.unlock()
                 continue
             agent = agents[key]
@@ -1404,10 +1404,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # If the agent is initialization, then "agent_connected"
             # will not know about it yet.
             if not aconn.initting and not manager.agent_connected(aconn):
-                self.log.info("Agent '%s' (type: '%s', conn_id %d) disconnected before finishing: %s",
-                    aconn.displayname, aconn.agent_type, aconn.conn_id, uri)
-                return self.error("Agent '%s' (type: '%s', conn_id %d) disconnected before finishing: %s" %
-                    (aconn.displayname, aconn.agent_type, aconn.conn_id, uri))
+                self.log.info("Agent '%s' (type: '%s', uuid %d) disconnected before finishing: %s",
+                    aconn.displayname, aconn.agent_type, aconn.uuid, uri)
+                return self.error("Agent '%s' (type: '%s', uuid %d) disconnected before finishing: %s" %
+                    (aconn.displayname, aconn.agent_type, aconn.uuid, uri))
 
             aconn.lock()
             self.log.debug("Sending GET " + uri)
@@ -1683,7 +1683,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                             yml_config_file, aconn.displayname)
 
             else:
-                agent.agent_type = AgentManager.AGENT_TYPE_OTHER
+                aconn.agent_type = AgentManager.AGENT_TYPE_OTHER
 
         # Cleanup.
         if aconn.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
