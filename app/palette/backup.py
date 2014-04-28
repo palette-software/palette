@@ -11,7 +11,7 @@ from webob import exc
 from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy.orm.exc import NoResultFound
 
-from akiri.framework.api import RESTApplication
+from akiri.framework.api import RESTApplication, UserInterfaceRenderer
 from akiri.framework.config import store
 
 from controller.meta import Session
@@ -134,3 +134,11 @@ class BackupDialog(DialogPage):
             data['creation-time'] = str(backup.creation_time)[:19] # Cut off fraction
             self.backup_entries.append(data)
 
+class ConfigureBackup(UserInterfaceRenderer):
+
+    TEMPLATE = "configure_backup.mako"
+    def handle(self, req):
+        return None
+
+def make_configure_backup(global_conf):
+    return ConfigureBackup(global_conf)
