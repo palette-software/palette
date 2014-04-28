@@ -629,9 +629,16 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.print_client(str(body))
 
     def do_stop(self, cmd):
-        if len(cmd.args) != 0:
+        if len(cmd.args) > 1:
             self.error(self.do_stop.__usage__)
             return
+
+        backup_first = True
+        if len(cmd.args) == 1:
+            if cmd.args[0] == "no-backup" or cmd.args[0] == "nobackup":
+                backup_first = False
+            else:
+                self.error(self.do_stop.__usage__)
 
         aconn = self.get_aconn(cmd.dict)
         if not aconn:
@@ -644,36 +651,38 @@ class CliHandler(socketserver.StreamRequestHandler):
         if states[StateEntry.STATE_TYPE_MAIN] != StateEntry.STATE_MAIN_STARTED:
             self.error("can't stop - main state is: " +\
                            states[StateEntry.STATE_TYPE_MAIN])
-            self.error("can't stop - current state is: " +\
-                           states[StateEntry.STATE_TYPE_MAIN])
             return
 
-        log.debug("------------Starting Backup for Stop---------------")
-        # fixme: lock to ensure against two simultaneous backups?
-        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
-          StateEntry.STATE_BACKUP_BACKUP)
+        if backup_first:
+            log.debug("------------Starting Backup for Stop---------------")
+            # fixme: lock to ensure against two simultaneous backups?
+            stateman.update(StateEntry.STATE_TYPE_BACKUP, \
+              StateEntry.STATE_BACKUP_BACKUP)
 
-        server.alert.send(CustomAlerts.BACKUP_STARTED)
+            server.alert.send(CustomAlerts.BACKUP_STARTED)
 
-        self.ack()
+            self.ack()
 
-        body = server.backup_cmd(aconn)
-        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
-                            StateEntry.STATE_BACKUP_NONE)
+            body = server.backup_cmd(aconn)
+            stateman.update(StateEntry.STATE_TYPE_BACKUP, \
+                                StateEntry.STATE_BACKUP_NONE)
 
-        if not body.has_key('error'):
-            server.alert.send(CustomAlerts.BACKUP_FINISHED, body)
-        else:
-            server.alert.send(CustomAlerts.BACKUP_FAILED, body)
-            # FIXME: return JSON
-            self.print_client("Backup failed.  Will not attempt stop.")
-            return
+            if not body.has_key('error'):
+                server.alert.send(CustomAlerts.BACKUP_FINISHED, body)
+            else:
+                server.alert.send(CustomAlerts.BACKUP_FAILED, body)
+                # FIXME: return JSON
+                self.print_client("Backup failed.  Will not attempt stop.")
+                return
 
         # Note: Make sure to set the state in the database before
         # we report "OK" back to the client since "OK" to the UI client
         # results in an immediate check of the state.
         stateman.update(StateEntry.STATE_TYPE_MAIN,
                         StateEntry.STATE_MAIN_STOPPING)
+
+        if not backup_first:
+            self.ack()  # The ack was sent earlier only if a backup was attempted.
 
         log.debug("-----------------Stopping Tableau-------------------")
         # fixme: Prevent stopping if the user is doing a backup or restore?
@@ -691,7 +700,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # fixme: check & report status to see if it really stopped?
         self.print_client(str(body))
-    do_stop.__usage__ = 'stop'
+    do_stop.__usage__ = 'stop [no-backup|nobackup]'
 
     def report_status(self, body):
         """Passed an HTTP body and prints info about it back to the user."""
