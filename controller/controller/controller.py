@@ -1675,8 +1675,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     self.log.error(\
                         "filemanager.get(%s) on %s failed with: %s",
                         yml_config_file, aconn.displayname, str(e))
-                    aconn.yml_contents = "I am the yml contents" # fixme (remove)
-                    return True # fixme (remove) after filemanager is working
                     return False
                 else:
                     self.log.debug("Retrieved '%s' from %s.",
