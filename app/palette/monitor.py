@@ -5,7 +5,7 @@ from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.orm.exc import NoResultFound
 import sys
 
-from akiri.framework.api import RESTApplication, DialogPage
+from akiri.framework.api import RESTApplication, DialogPage, UserInterfaceRenderer
 from akiri.framework.config import store
 
 from controller.meta import Session
@@ -127,3 +127,12 @@ class StatusDialog(DialogPage):
             if entry.name == 'Status':
                 self.main_status = entry.status
                 self.status_time = str(entry.creation_time)[:19] # Cut off fraction
+
+class ConfigureMonitor(UserInterfaceRenderer):
+
+    TEMPLATE = "configure_monitor.mako"
+    def handle(self, req):
+        return None
+
+def make_configure_monitor(global_conf):
+    return ConfigureMonitor(global_conf)
