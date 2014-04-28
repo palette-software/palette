@@ -226,7 +226,7 @@ class AgentManager(threading.Thread):
             session.merge(entry)
             session.commit()
             if aconn:
-                aconn.auth['displayname'] == displayname
+                aconn.auth['displayname'] = displayname
         except NoResultFound, e:
             raise ValueError('No agent found with uuid=%s' % (uuid))
 
@@ -313,12 +313,12 @@ class AgentManager(threading.Thread):
         self.lock()
         uuid = agent.uuid
         if self.agents.has_key(uuid):
-            self.log.debug("Removing agent with uuid %d, name %s, reason: %s",\
+            self.log.debug("Removing agent with uuid %s, name %s, reason: %s",\
                 uuid, self.agents[uuid].auth['hostname'], reason)
 
             if send_alert:
                 self.server.alert.send(reason,
-                    "\nAgent: %s\nAgent type: %s\nAgent uuid %d" %
+                    "\nAgent: %s\nAgent type: %s\nAgent uuid %s" %
                             (agent.displayname, agent.agent_type, uuid))
 
             self.forget(agent.agentid)
@@ -330,7 +330,7 @@ class AgentManager(threading.Thread):
 
             del self.agents[uuid]
         else:
-            self.log.debug("remove_agent: No such agent with uuid %d", uuid)
+            self.log.debug("remove_agent: No such agent with uuid %s", uuid)
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("remove_agent: Initializing state entries on removal")
             stateman = StateManager(self.server)
@@ -510,25 +510,25 @@ class AgentHealthMonitor(threading.Thread):
                 self.manager.lock()
 
                 if not agents.has_key(key):
-                    self.log.debug("agent with uuid '%d' is now gone and won't be checked." %
+                    self.log.debug("agent with uuid '%s' is now gone and won't be checked." %
                         key)
                     self.manager.unlock()
                     continue
                 agent = agents[key]
                 self.manager.unlock()
 
-                self.log.debug("Ping: check for agent '%s', type '%s', uuid %d." % \
+                self.log.debug("Ping: check for agent '%s', type '%s', uuid %s." % \
                         (agent.displayname, agent.agent_type, key))
 
                 # fixme: add a timeout ?
                 body = self.server.ping(agent)
                 if body.has_key('error'):
-                    self.log.info("Ping: Agent '%s', type '%s', uuid %d did not respond to ping.  Removing." %
+                    self.log.info("Ping: Agent '%s', type '%s', uuid %s did not respond to ping.  Removing." %
                         (agent.displayname, agent.agent_type, key))
 
                     self.manager.remove_agent(agent, "Lost contact with an agent")
                 else:
-                    self.log.debug("Ping: Reply from agent '%s', type '%s', uuid %d." %
+                    self.log.debug("Ping: Reply from agent '%s', type '%s', uuid %s." %
                         (agent.displayname, agent.agent_type, key))
 
             time.sleep(self.ping_interval)
