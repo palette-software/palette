@@ -178,7 +178,8 @@ class AgentManager(threading.Thread):
             entry = session.merge(entry)
 
         # Remember the yml contents
-        self.update_agent_yml(entry.agentid, new_agent.yml_contents)
+        if new_agent.yml_contents:
+            self.update_agent_yml(entry.agentid, new_agent.yml_contents)
 
         # Remember the agent pinfo
         self.update_agent_pinfo(entry.agentid, new_agent.pinfo)
@@ -215,7 +216,7 @@ class AgentManager(threading.Thread):
             for volume in value:
                 entry = AgentVolumesEntry.build(entry.agentid, volume)
                 session.add(entry)
-                
+
     def set_displayname(self, aconn, uuid, displayname):
         session = meta.Session()
         try:
