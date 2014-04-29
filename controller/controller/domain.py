@@ -19,7 +19,7 @@ class DomainEntry(meta.Base):
     def __init__(self, domainname):
         self.domainname = domainname
 
-# FIXME: merge the Domain and DomainEntry classes.
+# FIXME: combine the Domain and DomainEntry classes.
 class Domain(object):
 
     def add(self, name):
