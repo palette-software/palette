@@ -23,7 +23,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 # The Controller's Agent Manager.
 # Communicates with the Agent.
-# fixme: maybe merge with the AgentStatusEntry class.
+# fixme: maybe combine with the AgentStatusEntry class.
 class AgentConnection(object):
 
     def __init__(self, server, conn, addr):
@@ -175,7 +175,6 @@ class AgentManager(threading.Thread):
         entry = session.merge(entry)
         if entry.displayname == None or entry.displayname == "":
             entry.displayname = entry.hostname
-            entry = session.merge(entry)
 
         # Remember the yml contents
         if new_agent.yml_contents:
@@ -223,7 +222,6 @@ class AgentManager(threading.Thread):
             entry = session.query(AgentStatusEntry).\
                 filter(AgentStatusEntry.uuid == uuid).one()
             entry.displayname = displayname
-            session.merge(entry)
             session.commit()
             if aconn:
                 aconn.auth['displayname'] = displayname

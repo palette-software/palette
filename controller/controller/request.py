@@ -44,7 +44,6 @@ class Request(object):
 
         if send_body_dict["action"] == 'cleanup':
             entry.state = "finished"
-            session.merge(entry)
             session.commit()
 
     def __repr__(self):
