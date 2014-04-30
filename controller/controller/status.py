@@ -116,7 +116,6 @@ class StatusMonitor(threading.Thread):
             self.log.error("Unknown reported state: %s with status: %s",\
                                 main_state, status)
 
-        print "main_state = ", main_state
         if status == "RUNNING":
             # tabadmin calls it "RUNNING", statemanager calls it "STARTED"
             status = StateEntry.STATE_STARTED
