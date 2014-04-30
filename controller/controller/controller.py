@@ -1757,8 +1757,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if aconn.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
             return True
 
-        states = server.stateman.get_states()
-        if states[StateEntry.STATE_TYPE_REPORTED] == StateEntry.STATE_STOPPED:
+        states = server.stateman.get_state()
+        if states == StateEntry.STATE_STOPPED:
             body = self.maint("start")
             if body.has_key("error"):
                 server.alert.send(CustomAlerts.MAINT_START_FAILED, body)
