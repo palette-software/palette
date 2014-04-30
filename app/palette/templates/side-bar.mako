@@ -1,6 +1,7 @@
 <section class="main-side-bar">
 	<section class="status">
-		<img src="/app/module/palette/images/status-green-light.png"><h2>Status:<span>Super Good</span></h2>
+		<img id="status-image" src="" />
+        <h2>Status:<span id="status-text"></span></h2>
 	</section>
 	<ul class="actions">
 		<li class="divider">&nbsp;</li>	

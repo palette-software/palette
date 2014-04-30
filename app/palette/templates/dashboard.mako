@@ -16,6 +16,10 @@
 <link rel="stylesheet" type="text/css" href="/app/module/palette/css/font-awesome.min.css">
 <link rel="stylesheet" type="text/css" href="/app/module/palette/css/style.css" media="screen">
 
+<script src="/app/module/palette/js/vendor/require.js"
+        data-main="/app/module/palette/js/dashboard.js" >
+</script>
+
 <script src="/app/module/palette/js/vendor/modernizr.js"></script>
 
 <style type="text/css">
@@ -70,13 +74,5 @@
   </ul>
 </section>
 <%include file="events.mako" />
-
-<script>
-require({
-  packages: [
-    { name: "palette", location: "/app/module/palette/js" }
-  ]
-}, [ "palette/monitor", "palette/backup", "palette/manage" ]);
-</script>
 
 <%include file="commonjs.mako" />
