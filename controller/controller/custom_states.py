@@ -22,7 +22,8 @@ class CustomStatesEntry(meta.Base):
 
 class CustomStates(object):
 
-    def get_state(self, state):
+    @classmethod
+    def get_state_entry(cls, state):
 
         try:
             entry = meta.Session.query(CustomStatesEntry).\

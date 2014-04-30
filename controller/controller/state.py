@@ -91,19 +91,16 @@ class StateManager(object):
                     self.server.alert.send(CustomAlerts.STATE_STOPPED)
 
     def get_state(self):
+        return StateManager.get_state_by_domainid(self.domainid)
+
+    @classmethod
+    def get_state_by_domainid(cls, domainid):
         try:
             main_entry = meta.Session.query(StateEntry).\
-                filter(StateEntry.domainid == self.domainid).\
+                filter(StateEntry.domainid == domainid).\
                 one()
             main_status = main_entry.state
         except NoResultFound, e:
-            state = StateEntry.STATE_PENDING
-        try:
-            reported_entry = meta.Session.query(StateEntry).\
-                filter(StateEntry.domainid == self.domainid).\
-                one()
-            reported_status = reported_entry.state
-        except NoResultFound, e:
-            reported_status = StateEntry.STATE_REPORTED_NONE
+            main_status = StateEntry.STATE_PENDING
 
         return main_status
