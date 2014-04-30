@@ -39,6 +39,8 @@ class StateEntry(meta.Base):
 
     STATE_DEGRADED="DEGRADED"       # reported from tabadmin
 
+    STATE_UNKNOWN="UNKNOWN"        # no primary ever connected to the controller
+
     domainid = Column(BigInteger, ForeignKey("domain.domainid"),
                                         nullable=False, primary_key=True)
     state = Column(String)
@@ -101,6 +103,6 @@ class StateManager(object):
                 one()
             main_status = main_entry.state
         except NoResultFound, e:
-            main_status = StateEntry.STATE_PENDING
+            main_status = StateEntry.STATE_UNKNOWN
 
         return main_status

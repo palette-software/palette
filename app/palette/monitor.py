@@ -30,8 +30,6 @@ class MonitorApplication(RESTApplication):
 
 
     def handle(self, req):
-        tableau_status = "Unknown"
-        main_state = "Not connected"
 
         try:
             primary_agents = Session.query(AgentStatusEntry).\
@@ -48,7 +46,8 @@ class MonitorApplication(RESTApplication):
         primary = None
 
         # Set defaults
-        main_state = "none"
+        tableau_status = "Unknown"
+        main_state = StateEntry.STATE_UNKNOWN
         text = "none"
         color = "none"
         user_action_in_progress = False
@@ -77,25 +76,25 @@ class MonitorApplication(RESTApplication):
             except NoResultFound, e:
                 pass
 
-            # Get the state
-            print "selfdomain = ", self.domain.domainid
-            main_state = StateManager.get_state_by_domainid(self.domain.domainid)
+        # Get the state
+        main_state = StateManager.get_state_by_domainid(self.domain.domainid)
 
-            state_entry = CustomStates.get_state_entry(main_state)
-            if not state_entry:
-                print "UNKNOWN STATE!  State:", main_state
-                # fixme: stop everything?  Log this somewhere?
-                return
+        state_entry = CustomStates.get_custom_state_entry(main_state)
+        if not state_entry:
+            print "UNKNOWN STATE!  State:", main_state
+            # fixme: stop everything?  Log this somewhere?
+            return
 
-            text = state_entry.text
-            color = state_entry.color
+        text = state_entry.text
+        color = state_entry.color
 
-            if main_state in (StateEntry.STATE_STOPPED,
-                    StateEntry.STATE_STARTED, StateEntry.STATE_DEGRADED,
-                    StateEntry.STATE_PENDING, StateEntry.STATE_DISCONNECTED):
-                user_action_in_progress = False
-            else:
-                user_action_in_progress = True
+        if main_state in (StateEntry.STATE_STOPPED,
+                StateEntry.STATE_STARTED, StateEntry.STATE_DEGRADED,
+                StateEntry.STATE_PENDING, StateEntry.STATE_DISCONNECTED,
+                                                    StateEntry.STATE_UNKNOWN):
+            user_action_in_progress = False
+        else:
+            user_action_in_progress = True
 
         # Dig out the last/most recent backup.
         last_db = Session.query(BackupEntry).\
