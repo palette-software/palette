@@ -120,7 +120,6 @@ class StatusMonitor(threading.Thread):
             # tabadmin calls it "RUNNING", statemanager calls it "STARTED"
             status = StateEntry.STATE_STARTED
         if main_state == StateEntry.STATE_PENDING:
-            print "status = ", status
             self.stateman.update(status)
             return
 
