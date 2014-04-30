@@ -1,6 +1,7 @@
 require.config({
     paths: {
         'jquery': '/app/module/palette/js/vendor/jquery',
+        'topic': '/app/module/palette/js/vendor/pubsub',
         'domReady': '/app/module/palette/js/vendor/domReady',
     }
 });
@@ -10,13 +11,25 @@ require.config({
  * templates and should be named accordingly.
  */
 
-require(['jquery', 'domReady!'],
-function (jquery)
+require(['jquery', 'topic', 'domReady!'],
+function (jquery, topic)
 {
     var interval = 10000; //ms
+    var current = null;
 
     function update(data)
     {
+        var state = null;
+        if (data.hasOwnProperty('state') && data['state'] != 'none') {
+            state = data['state'];
+        }
+        
+        /* Broadcast the state change, if applicable. */
+        if (state != current) {
+            topic.publish('state', data);
+            current = state;
+        }
+
         var text = 'ERROR';
         if (data.hasOwnProperty('text') && data['text'] != 'none') {
             text = data['text'];
