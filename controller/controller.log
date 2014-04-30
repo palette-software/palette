@@ -1,0 +1,42 @@
+[04-29 12:32:32] INFO Controller version: 0.2
+[04-29 12:32:32] DEBUG Starting agent listener.
+[04-29 12:32:32] ERROR [STD] Traceback (most recent call last):
+[04-29 12:32:32] ERROR [STD]   File "controller/controller.py", line 1833, in <module>
+[04-29 12:32:32] ERROR [STD]     main()
+[04-29 12:32:32] ERROR [STD]   File "controller/controller.py", line 1800, in main
+[04-29 12:32:32] ERROR [STD]     server = Controller((host, port), CliHandler)
+[04-29 12:32:32] ERROR [STD]   File "/usr/lib/python2.7/SocketServer.py", line 419, in __init__
+[04-29 12:32:32] ERROR [STD]     self.server_bind()
+[04-29 12:32:32] ERROR [STD]   File "/usr/lib/python2.7/SocketServer.py", line 430, in server_bind
+[04-29 12:32:32] ERROR [STD]     self.socket.bind(self.server_address)
+[04-29 12:32:32] ERROR [STD]   File "/usr/lib/python2.7/socket.py", line 224, in meth
+[04-29 12:32:32] ERROR [STD]     return getattr(self._sock,name)(*args)
+[04-29 12:32:32] ERROR [STD] socket.error: [Errno 98] Address already in use
+[04-29 12:32:52] INFO Controller version: 0.2
+[04-29 12:32:52] DEBUG Starting agent listener.
+[04-29 12:32:52] ERROR [STD] Traceback (most recent call last):
+[04-29 12:32:52] ERROR [STD]   File "controller/controller.py", line 1833, in <module>
+[04-29 12:32:52] ERROR [STD]     main()
+[04-29 12:32:52] ERROR [STD]   File "controller/controller.py", line 1800, in main
+[04-29 12:32:52] ERROR [STD]     server = Controller((host, port), CliHandler)
+[04-29 12:32:52] ERROR [STD]   File "/usr/lib/python2.7/SocketServer.py", line 419, in __init__
+[04-29 12:32:52] ERROR [STD]     self.server_bind()
+[04-29 12:32:52] ERROR [STD]   File "/usr/lib/python2.7/SocketServer.py", line 430, in server_bind
+[04-29 12:32:52] ERROR [STD]     self.socket.bind(self.server_address)
+[04-29 12:32:52] ERROR [STD]   File "/usr/lib/python2.7/socket.py", line 224, in meth
+[04-29 12:32:52] ERROR [STD]     return getattr(self._sock,name)(*args)
+[04-29 12:32:52] ERROR [STD] socket.error: [Errno 98] Address already in use
+[04-29 12:34:46] INFO Controller version: 0.2
+[04-29 12:34:46] DEBUG Starting agent listener.
+[04-29 12:34:46] ERROR [STD] Traceback (most recent call last):
+[04-29 12:34:46] ERROR [STD]   File "controller/controller.py", line 1833, in <module>
+[04-29 12:34:46] ERROR [STD]     main()
+[04-29 12:34:46] ERROR [STD]   File "controller/controller.py", line 1800, in main
+[04-29 12:34:46] ERROR [STD]     server = Controller((host, port), CliHandler)
+[04-29 12:34:46] ERROR [STD]   File "/usr/lib/python2.7/SocketServer.py", line 419, in __init__
+[04-29 12:34:46] ERROR [STD]     self.server_bind()
+[04-29 12:34:46] ERROR [STD]   File "/usr/lib/python2.7/SocketServer.py", line 430, in server_bind
+[04-29 12:34:46] ERROR [STD]     self.socket.bind(self.server_address)
+[04-29 12:34:46] ERROR [STD]   File "/usr/lib/python2.7/socket.py", line 224, in meth
+[04-29 12:34:46] ERROR [STD]     return getattr(self._sock,name)(*args)
+[04-29 12:34:46] ERROR [STD] socket.error: [Errno 98] Address already in use
