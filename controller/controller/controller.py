@@ -31,6 +31,7 @@ from config import Config
 from domain import Domain, DomainEntry
 from profile import UserProfile
 from custom_alerts import CustomAlerts
+from custom_states import CustomStates
 
 from version import VERSION
 
@@ -1865,6 +1866,9 @@ def main():
     # FIXME: Pre-production hack: add domain if necessary
     server.domain.add(server.domainname)
     server.domainid = server.domain.id_by_name(server.domainname)
+
+    custom_states = CustomStates()
+    custom_states.populate()
 
     global manager  # fixme: get rid of this global.
     manager = AgentManager(server)

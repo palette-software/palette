@@ -100,7 +100,7 @@ class CustomAlerts(object):
             (CustomAlerts.ARCHIVE_STOP_FAILED,
                                         'Could not stop Archive Web Server'),
 
-            (CustomAlerts.AGENT_COMM_LOST, 'Communicate lost with agent'),
+            (CustomAlerts.AGENT_COMM_LOST, 'Communication lost with agent'),
             (CustomAlerts.AGENT_FAILED_STATUS, 'Failed status from agent'),
             (CustomAlerts.AGENT_RETURNED_INVALID_STATUS,
                                         'Agent returned invalid status')
