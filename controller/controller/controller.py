@@ -272,7 +272,9 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # lock to ensure against two simultaneous user actions
-        aconn.user_action_lock()
+        if not aconn.user_action_lock(blocking=False):
+            print >> self.wfile, "FAIL: Busy with another user request."
+            return
 
         # Check to see if we're in a state to backup
         stateman = self.server.stateman
@@ -346,7 +348,9 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # lock to ensure against two simultaneous user actions
-        aconn.user_action_lock()
+        if not aconn.user_action_lock(blocking=False):
+            print >> self.wfile, "FAIL: Busy with another user request."
+            return
 
         # Check to see if we're in a state to restore
         stateman = self.server.stateman
@@ -411,17 +415,14 @@ class CliHandler(socketserver.StreamRequestHandler):
         # The "restore started" alert is done in restore_cmd(),
         # only after some sanity checking is done.
         if not body.has_key('error'):
-            # Restore finished successfully.  Set the main state.
-            # A successful restore results in a STARTED state.
-            stateman.update(StateEntry.STATE_STARTED)
-
+            # Restore finished successfully.  The main state has.
+            # already been set.
             server.alert.send(CustomAlerts.RESTORE_FINISHED, body)
-
         else:
             server.alert.send(CustomAlerts.RESTORE_FAILED, body)
             # Restore failed.  We won't update the main status here
             # since the restore failed and we don't know what
-            # state tableua is in.
+            # state tableau is in.
 
         self.print_client(str(body))
 
@@ -619,7 +620,9 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # lock to ensure against two simultaneous user actions
-        aconn.user_action_lock()
+        if not aconn.user_action_lock(blocking=False):
+            print >> self.wfile, "FAIL: Busy with another user request."
+            return
 
         # Check to see if we're in a state to start
         stateman = self.server.stateman
@@ -694,7 +697,9 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # lock to ensure against two simultaneous user actions
-        aconn.user_action_lock()
+        if not aconn.user_action_lock(blocking=False):
+            print >> self.wfile, "FAIL: Busy with another user request."
+            return
 
         # Check to see if we're in a state to stop
         stateman = self.server.stateman
@@ -702,7 +707,6 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # Stop can be done only if tableau is started
         if main_state != StateEntry.STATE_STARTED:
-            self.error("can't stop - main state is: " + main_state)
             self.error("can't stop - main state is: " + main_state)
             aconn.user_action_unlock()
             return
@@ -1417,7 +1421,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 else:
                     restore_body['info'] = msg
 
-                # The "tableau start" failed. Go back to "STOPPED" state.
+                 # The "tableau start" failed.  Go back to the "STOPPED" state.
+                stateman.update(StateEntry.STATE_STOPPED)
+            else:
+                # The "tableau start" succeeded
+                stateman.update(StateEntry.STATE_STARTED)
 
         return restore_body
 
