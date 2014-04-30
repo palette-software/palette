@@ -23,7 +23,7 @@ class CustomStatesEntry(meta.Base):
 class CustomStates(object):
 
     @classmethod
-    def get_state_entry(cls, state):
+    def get_custom_state_entry(cls, state):
 
         try:
             entry = meta.Session.query(CustomStatesEntry).\
@@ -102,6 +102,10 @@ class CustomStates(object):
 
             (StateEntry.STATE_DEGRADED,
                 "Tableau is in a DEGRADED state.",
+                "red"),
+
+            (StateEntry.STATE_UNKNOWN,
+                "No primary agent has connected to this controller.",
                 "red")
         ]
 
