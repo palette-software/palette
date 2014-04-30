@@ -17,6 +17,11 @@ from agentstatus import AgentStatusEntry
 class StatusEntry(meta.Base):
     __tablename__ = 'status'
 
+    ###Possible status as reported by "tabadmin status [...]"
+    STATUS_RUNNING="RUNNING"
+    STATUS_STOPPED="STOPPED"
+    STATUS_DEGRADED="DEGRADED"
+
     # FIXME: Make combination of agentid and name a unique key
 
     name = Column(String, unique=True, nullable=False, primary_key=True)
@@ -27,12 +32,6 @@ class StatusEntry(meta.Base):
     modification_time = Column(DateTime, server_default=func.now(), \
       server_onupdate=func.current_timestamp())
     UniqueConstraint('agentid', 'name')
-
-    def __init__(self, agentid, name, pid, status):
-        self.agentid = agentid
-        self.name = name
-        self.pid = pid
-        self.status = status
 
 class StatusMonitor(threading.Thread):
 
@@ -88,11 +87,14 @@ class StatusMonitor(threading.Thread):
         # committed.
 
     def add(self, agentid, name, pid, status):
-        """Note a session is passed.  When updating the status table, we do
-        remove_all_status, then slowly add in the new status before doing the commit,
-        so the table is not every empty/building if somebody checks it."""
+        """Note a session is passed.  When updating the status table, we
+        do remove_all_status, then slowly add in the new status before
+        doing the commit, so the table is not every empty/building if
+        somebody checks it.
+        """
+
         session = meta.Session()
-        entry = StatusEntry(agentid, name, pid, status)
+        entry = StatusEntry(agentid=agentid, name=name, pid=pid, status=status)
         session.add(entry)
 
     def get_all_status(self):
@@ -101,68 +103,37 @@ class StatusMonitor(threading.Thread):
             filter(AgentStatusEntry.domainid == self.domainid).\
             all()
 
-    def get_main_status(self):
+    def get_reported_status(self):
         return meta.Session().query(StatusEntry).\
             join(AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domainid).\
             filter(StatusEntry.name == 'Status').\
-            one()
-        return main_status
+            one().status
 
     def set_main_state(self, status):
-        """Set main_state if appropriate."""
+        main_state = self.stateman.get_state()
+        if status not in ("RUNNING", "STOPPED", "DEGRADED"):
+            self.log.error("Unknown reported state: %s with status: %s",\
+                                main_state, status)
 
-        states = self.stateman.get_states()
-        main_state = states[StateEntry.STATE_TYPE_MAIN]
-
+        print "main_state = ", main_state
         if status == "RUNNING":
-            if main_state == StateEntry.STATE_MAIN_STARTING or \
-                                        main_state == StateEntry.STATE_MAIN_UNKNOWN:
-                self.stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STARTED)
-                self.log.debug("Updated state table with main status: %s", StateEntry.STATE_MAIN_STARTED)
-            elif main_state == StateEntry.STATE_MAIN_STOPPED:
-                # This shouldn't happen.
-                self.log.error("Unexpected Status! Status is RUNNING but main_state was STOPPED!")
-            elif main_state == StateEntry.STATE_MAIN_STARTED or \
-                                    main_state == StateEntry.STATE_MAIN_STOPPING:
-                # Don't change the state.
-                pass
-            else:
-                self.log.error("Unexpected main state: %s with status: %s", main_state, status)
+            # tabadmin calls it "RUNNING", statemanager calls it "STARTED"
+            status = StateEntry.STATE_STARTED
+        if main_state == StateEntry.STATE_PENDING:
+            print "status = ", status
+            self.stateman.update(status)
+            return
 
-        elif status == 'STOPPED':
-            if main_state == StateEntry.STATE_MAIN_STOPPING or \
-                                    main_state == StateEntry.STATE_MAIN_UNKNOWN:
-                self.stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STOPPED)
-                self.log.debug("Updated state table with main status: %s", StateEntry.STATE_MAIN_STOPPED)
-
-                if main_state == StateEntry.STATE_MAIN_UNKNOWN:
-                    # If we are transitioning from UNKNOWN to STOPPED, then
-                    # send a "maint start" command to the agent.
-                    return    # return here to skip 'maint start'
-                    self.log.info("Sending 'maint start' command for transition from STATE_MAIN_UNKNOWN to STATE_MAIN_STOPPED")
-                    maint_body = self.server.maint("start")
-                    if maint_body.has_key("error"):
-                        self.log.error("set_main_state: 'maint start' failed after transition from STATE_MAIN_UNKNOWN to STATE_MAIN_STOPPED: " + maint_body['error'])
-
-            elif main_state == StateEntry.STATE_MAIN_STARTING or \
-                                        main_state == StateEntry.STATE_MAIN_STOPPED:
-                # don't change the state.
-                pass
-            elif main_state == StateEntry.STATE_MAIN_STARTED:
-                self.log.error("Unexpected Status! Status is STOPPED but main_state was STARTED!")
-            else:
-                self.log.error("Unexpected main state %s with status %s", main_state, status)
-
-        elif status == 'DEGRADED':
-                # fixme: do anything for this?
-                pass
-        else:
-            self.log.error("Unknown status: %s", status)
+        # If the main state is wrong, correct it.
+        if main_state == StateEntry.STATE_STOPPED and status == 'RUNNING':
+            self.stateman.update(StateEntry.STATE_STARTED)
+        elif main_state == StateEntry.STATE_STARTED and status == 'STOPPED':
+            self.stateman.update(StateEntry.STATE_STOPPED)
 
     def run(self):
         while True:
-            self.log.debug("status-check: About to wait for a new primary to connect or timeout")
+            self.log.debug("status-check: About to timeout or wait for a new primary to connect")
             new_primary = self.manager.new_primary_event.wait(self.status_request_interval)
             self.log.debug("status-check: new_primary: %s", new_primary)
             if new_primary:
@@ -179,12 +150,29 @@ class StatusMonitor(threading.Thread):
             self.remove_all_status()
             session.commit()
             return
+
+        # Don't do a 'tabadmin status -v' if the user is doing an action.
+        acquired = aconn.user_action_lock(blocking=False)
+        if not acquired:
+            self.log.debug(\
+                "status thread: Primary agent locked for user action. " + \
+                "Skipping status check.")
+            return
+
+        # We don't force the user to delay starting their request
+        # until the 'tabadmin status -v' is finished.
+        aconn.user_action_unlock()
+
+        self.check_status_with_connection(aconn)
+
+    def check_status_with_connection(self, aconn):
         agentid = aconn.agentid
 
         body = self.server.status_cmd(aconn)
         if not body.has_key('stdout'):
             # fixme: Probably update the status table to say something's wrong.
-            self.log.error("No output received for status monitor. body:" + str(body))
+            self.log.error(\
+                    "No output received for status monitor. body:" + str(body))
             return
 
         body = body['stdout']
@@ -203,7 +191,8 @@ class StatusMonitor(threading.Thread):
             line1 = lines[0].split(" ")
 
         if line1[0] != 'Status:':
-            self.log.error("Bad status returned.  First line wasn't 'Status:' %s:", line1)
+            self.log.error(\
+                "Bad status returned.  First line wasn't 'Status:' %s:", line1)
             self.log.error("Status returned: " + str(lines))
             return
 
@@ -217,7 +206,6 @@ class StatusMonitor(threading.Thread):
         self.log.debug("Logging main status: %s", status)
         session.commit()
 
-        # Set the "main status" state according to the current status.
         self.set_main_state(status)
 
         for line in lines[1:]:   # Skip the first line we already did.
@@ -260,7 +248,9 @@ class StatusMonitor(threading.Thread):
         self.log.debug("--------current status---------------")
         all_status = self.get_all_status()
         for status in all_status:
-            self.log.debug("status: %s (%d) %s", status.name, status.pid, status.status)
+            self.log.debug("status: %s (%d) %s", status.name, status.pid,
+                                                                status.status)
 
-        main_status = self.get_main_status()
-        self.log.debug("main_status: %s: %s", main_status.name, main_status.status)
+        reported_status = self.get_reported_status()
+        self.log.debug("reported_status: %s: %s", reported_status.name,
+                                                    reported_status.status)

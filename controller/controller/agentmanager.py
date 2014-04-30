@@ -42,8 +42,13 @@ class AgentConnection(object):
         self.info = {}  # from pinfo
         self.initting = True
 
-        # Each agent connection has its own lock
+        # Each agent connection has its own lock to allow only
+        # one thread to send/recv  on the agent socket at a time.
         self.lockobj = threading.RLock()
+
+        # A lock for to allow only one user action (backup/restore/etc.)
+        # at a time.
+        self.user_action_lockobj = threading.Lock()
 
         self.filemanager = FileManager(self)
         self.firewall = Firewall(self)
@@ -60,6 +65,12 @@ class AgentConnection(object):
 
     def unlock(self):
         self.lockobj.release()
+
+    def user_action_lock(self, blocking=True):
+        return self.user_action_lockobj.acquire(blocking)
+
+    def user_action_unlock(self):
+        self.user_action_lockobj.release()
 
 class AgentManager(threading.Thread):
 
@@ -158,10 +169,7 @@ class AgentManager(threading.Thread):
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("register: Initializing state entries on connect")
             stateman = StateManager(self.server)
-            stateman.update(StateEntry.STATE_TYPE_MAIN, \
-              StateEntry.STATE_MAIN_UNKNOWN)
-            stateman.update(StateEntry.STATE_TYPE_BACKUP, \
-              StateEntry.STATE_BACKUP_NONE)
+            stateman.update(StateEntry.STATE_PENDING)
 
             # Tell the status thread to start getting status on
             # the new primary.
@@ -318,10 +326,10 @@ class AgentManager(threading.Thread):
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("remove_agent: Initializing state entries on removal")
             stateman = StateManager(self.server)
-            stateman.update(StateEntry.STATE_TYPE_MAIN, \
-              StateEntry.STATE_MAIN_UNKNOWN)
-            stateman.update(StateEntry.STATE_TYPE_BACKUP, \
-              StateEntry.STATE_BACKUP_NONE)
+            stateman.update(StateEntry.STATE_DISCONNECTED)
+            # Note: We don't update/clear the "reported" state from
+            # a previous agent, so the user will see what was the last
+            # real state.
 
         self.unlock()
 
