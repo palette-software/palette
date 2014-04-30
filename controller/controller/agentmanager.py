@@ -11,7 +11,7 @@ import json
 import ntpath
 
 from agentstatus import AgentStatusEntry
-from agentinfo import AgentInfoEntry
+from agentinfo import AgentYmlEntry, AgentInfoEntry, AgentVolumesEntry
 from state import StateManager, StateEntry
 from alert import Alert
 from filemanager import FileManager
@@ -23,10 +23,8 @@ from sqlalchemy.orm.exc import NoResultFound
 
 # The Controller's Agent Manager.
 # Communicates with the Agent.
-# fixme: maybe merge with the AgentStatusEntry class.
+# fixme: maybe combine with the AgentStatusEntry class.
 class AgentConnection(object):
-
-    _CID = 1
 
     def __init__(self, server, conn, addr):
         self.server = server
@@ -39,7 +37,7 @@ class AgentConnection(object):
         self.tableau_install_dir = None
         self.agent_type = None
         self.yml_contents = None    # only valid if agent is a primary
-        self.info = {}  # from pinfo
+        self.pinfo = {}  # from pinfo
         self.initting = True
 
         # Each agent connection has its own lock to allow only
@@ -52,13 +50,6 @@ class AgentConnection(object):
 
         self.filemanager = FileManager(self)
         self.firewall = Firewall(self)
-
-        # unique identifier
-        # can never be 0
-        self.conn_id = AgentConnection._CID
-        AgentConnection._CID += 1
-        if AgentConnection._CID == 0:
-            AgentConnection._CID += 1
 
     def lock(self):
         self.lockobj.acquire()
@@ -96,7 +87,7 @@ class AgentManager(threading.Thread):
         self.port = port and port or self.PORT
         self.socket = None
         # A dictionary with all AgentConnections with the key being
-        # the unique 'conn_id'.
+        # the unique 'uuid'.
         self.agents = {}
 
         self.socket_timeout = self.config.getint('controller','socket_timeout', default=60)
@@ -136,9 +127,8 @@ class AgentManager(threading.Thread):
         new_agent.initting = False
 
         self.lock()
-        self.log.debug(\
-            "new agent: name %s, uuid %s, conn_id %d",
-                        body['hostname'], body['uuid'], new_agent.conn_id)
+        self.log.debug("new agent: name %s, uuid %s", \
+          body['hostname'], body['uuid'])
 
         new_agent_type = new_agent.agent_type
         # Don't allow two primary agents to be connected and
@@ -164,7 +154,7 @@ class AgentManager(threading.Thread):
         else:
             # FIXME: handle this as an error
             pass
-        self.agents[new_agent.conn_id] = new_agent
+        self.agents[new_agent.uuid] = new_agent
 
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("register: Initializing state entries on connect")
@@ -193,15 +183,46 @@ class AgentManager(threading.Thread):
         entry = session.merge(entry)
         if entry.displayname == None or entry.displayname == "":
             entry.displayname = entry.hostname
-            entry = session.merge(entry)
 
-        # Also remember the yml contents and agent info
-        agent_info_entry = AgentInfoEntry(entry.agentid,
-                        new_agent.yml_contents, json.dumps(new_agent.info))
+        # Remember the yml contents
+        if new_agent.yml_contents:
+            self.update_agent_yml(entry.agentid, new_agent.yml_contents)
 
-        session.merge(agent_info_entry)
+        # Remember the agent pinfo
+        self.update_agent_pinfo(entry.agentid, new_agent.pinfo)
+
         session.commit()
         return entry
+
+    def update_agent_yml(self, agentid, yml_contents):
+        """update the agent_yml table with this agent's yml contents."""
+        session = meta.Session()
+        # First delete any old entries for this agent
+        entry = session.query(AgentYmlEntry).\
+            filter(AgentYmlEntry.agentid == agentid).delete()
+
+        # This the first line ('---')
+        for line in yml_contents.strip().split('\n')[1:]:
+            key, value = line.split(":", 1)
+            entry = AgentYmlEntry(agentid=agentid, key=key, value=value)
+            session.add(entry)
+
+    def update_agent_pinfo(self, agentid, pinfo):
+        session = meta.Session()
+        # First delete any old entries for this agent
+        entry = session.query(AgentInfoEntry).\
+            filter(AgentInfoEntry.agentid == agentid).delete()
+        entry = session.query(AgentVolumesEntry).\
+            filter(AgentVolumesEntry.agentid == agentid).delete()
+
+        for key, value in pinfo.iteritems():
+            if key != 'volumes':
+                entry = AgentInfoEntry(agentid=agentid, key=key, value=value)
+                session.add(entry)
+                continue
+            for volume in value:
+                entry = AgentVolumesEntry.build(entry.agentid, volume)
+                session.add(entry)
 
     def set_displayname(self, aconn, uuid, displayname):
         session = meta.Session()
@@ -209,10 +230,9 @@ class AgentManager(threading.Thread):
             entry = session.query(AgentStatusEntry).\
                 filter(AgentStatusEntry.uuid == uuid).one()
             entry.displayname = displayname
-            session.merge(entry)
             session.commit()
             if aconn:
-                aconn.auth['displayname'] == displayname
+                aconn.auth['displayname'] = displayname
         except NoResultFound, e:
             raise ValueError('No agent found with uuid=%s' % (uuid))
 
@@ -285,12 +305,6 @@ class AgentManager(threading.Thread):
 
         return None
 
-    def lock_agent(self, agent):
-        agent.lock()
-
-    def unlock_agent(self, agent):
-        agent.unlock()
-
     def remove_agent(self, agent, reason="", send_alert=True):
         """Remove an agent.
             Args:
@@ -303,15 +317,15 @@ class AgentManager(threading.Thread):
             reason = "Agent communication failure"
 
         self.lock()
-        conn_id = agent.conn_id
-        if self.agents.has_key(conn_id):
-            self.log.debug("Removing agent with conn_id %d, name %s, reason: %s",\
-                conn_id, self.agents[conn_id].auth['hostname'], reason)
+        uuid = agent.uuid
+        if self.agents.has_key(uuid):
+            self.log.debug("Removing agent with uuid %s, name %s, reason: %s",\
+                uuid, self.agents[uuid].auth['hostname'], reason)
 
             if send_alert:
                 self.server.alert.send(reason,
-                    "\nAgent: %s\nAgent type: %s\nAgent connection-id %d" %
-                            (agent.displayname, agent.agent_type, conn_id))
+                    "\nAgent: %s\nAgent type: %s\nAgent uuid %s" %
+                            (agent.displayname, agent.agent_type, uuid))
 
             self.forget(agent.agentid)
             self.log.debug("remove_agent: closing agent socket.")
@@ -320,9 +334,9 @@ class AgentManager(threading.Thread):
             else:
                 self.log.debug("remove_agent: close agent socket failed")
 
-            del self.agents[conn_id]
+            del self.agents[uuid]
         else:
-            self.log.debug("remove_agent: No such agent with conn_id %d", conn_id)
+            self.log.debug("remove_agent: No such agent with uuid %s", uuid)
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("remove_agent: Initializing state entries on removal")
             stateman = StateManager(self.server)
@@ -502,25 +516,25 @@ class AgentHealthMonitor(threading.Thread):
                 self.manager.lock()
 
                 if not agents.has_key(key):
-                    self.log.debug("agent with conn_id '%d' is now gone and won't be checked." %
+                    self.log.debug("agent with uuid '%s' is now gone and won't be checked." %
                         key)
                     self.manager.unlock()
                     continue
                 agent = agents[key]
                 self.manager.unlock()
 
-                self.log.debug("Ping: check for agent '%s', type '%s', conn_id %d." % \
+                self.log.debug("Ping: check for agent '%s', type '%s', uuid %s." % \
                         (agent.displayname, agent.agent_type, key))
 
                 # fixme: add a timeout ?
                 body = self.server.ping(agent)
                 if body.has_key('error'):
-                    self.log.info("Ping: Agent '%s', type '%s', conn_id %d did not respond to ping.  Removing." %
+                    self.log.info("Ping: Agent '%s', type '%s', uuid %s did not respond to ping.  Removing." %
                         (agent.displayname, agent.agent_type, key))
 
                     self.manager.remove_agent(agent, "Lost contact with an agent")
                 else:
-                    self.log.debug("Ping: Reply from agent '%s', type '%s', conn_id %d." %
+                    self.log.debug("Ping: Reply from agent '%s', type '%s', uuid %s." %
                         (agent.displayname, agent.agent_type, key))
 
             time.sleep(self.ping_interval)

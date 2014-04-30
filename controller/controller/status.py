@@ -194,7 +194,8 @@ class StatusMonitor(threading.Thread):
             self.log.error("Status returned: " + str(lines))
             return
 
-        status = line1[1].strip()
+        if status == 'STOPPED':
+            skip = len(lines)
 
         session = meta.Session()
 
@@ -206,7 +207,7 @@ class StatusMonitor(threading.Thread):
 
         self.set_main_state(status)
 
-        for line in lines[1:]:   # Skip the first line we already did.
+        for line in lines[skip:]:   # Skip the first line we already did.
             line = line.strip()
             if len(line) == 0:
                 self.log.debug("Ignoring line due to 0 length")

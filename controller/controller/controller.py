@@ -676,9 +676,16 @@ class CliHandler(socketserver.StreamRequestHandler):
         aconn.user_action_unlock()
 
     def do_stop(self, cmd):
-        if len(cmd.args) != 0:
+        if len(cmd.args) > 1:
             self.error(self.do_stop.__usage__)
             return
+
+        backup_first = True
+        if len(cmd.args) == 1:
+            if cmd.args[0] == "no-backup" or cmd.args[0] == "nobackup":
+                backup_first = False
+            else:
+                self.error(self.do_stop.__usage__)
 
         aconn = self.get_aconn(cmd.dict)
         if not aconn:
@@ -730,6 +737,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         # results in an immediate check of the state.
         stateman.update(StateEntry.STATE_STOPPING)
 
+        if not backup_first:
+            self.ack()  # The ack was sent earlier only if a backup was attempted.
+
         log.debug("-----------------Stopping Tableau-------------------")
         # fixme: Reply with "OK" only after the agent received the command?
 
@@ -757,8 +767,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             stateman.update(reported_status)
 
         aconn.user_action_unlock()
-
-    do_stop.__usage__ = 'stop'
+    do_stop.__usage__ = 'stop [no-backup|nobackup]'
 
     def report_status(self, body):
         """Passed an HTTP body and prints info about it back to the user."""
@@ -1250,7 +1259,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         for key in agents.keys():
             manager.lock()
             if not agents.has_key(key):
-                self.log.info("copy_cmd: agent with conn_id '%d' is now gone and won't be checked.", key)
+                self.log.info("copy_cmd: agent with uuid '%s' is now gone and won't be checked.", key)
                 manager.unlock()
                 continue
             agent = agents[key]
@@ -1359,7 +1368,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # 'tabadmin restore ...' starts tableau as part of the restore procedure.
         # fixme: Maybe the maintenance web server wasn't running?
         maint_msg = ""
-        maint_body = server.maint("stop")
+        maint_body = server.maint("stop", aconn=aconn)
         if maint_body.has_key("error"):
             self.log.info("Restore: maint stop failed: " + maint_body['error'])
             # continue on, not a fatal error...
@@ -1449,10 +1458,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # If the agent is initialization, then "agent_connected"
             # will not know about it yet.
             if not aconn.initting and not manager.agent_connected(aconn):
-                self.log.info("Agent '%s' (type: '%s', conn_id %d) disconnected before finishing: %s",
-                    aconn.displayname, aconn.agent_type, aconn.conn_id, uri)
-                return self.error("Agent '%s' (type: '%s', conn_id %d) disconnected before finishing: %s" %
-                    (aconn.displayname, aconn.agent_type, aconn.conn_id, uri))
+                self.log.info("Agent '%s' (type: '%s', uuid %s) disconnected before finishing: %s",
+                    aconn.displayname, aconn.agent_type, aconn.uuid, uri)
+                return self.error("Agent '%s' (type: '%s', uuid %s) disconnected before finishing: %s" %
+                    (aconn.displayname, aconn.agent_type, aconn.uuid, uri))
 
             aconn.lock()
             self.log.debug("Sending GET " + uri)
@@ -1513,17 +1522,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def info(self, aconn):
         return self.cli_cmd(Controller.PINFO_BIN, aconn)
 
-    def maint(self, action, port=-1, send_alert=True):
+    def maint(self, action, port=-1, aconn=None, send_alert=True):
         if action not in ("start", "stop"):
             self.log.error("Invalid maint action: %s", action)
             return self.error("Bad maint action: %s" % action)
 
-        # Get the Primary Agent handle
-        # FIXME: Tie agent to domain; better, pass aconn to this method.
-        aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
-
+        # FIXME: Tie agent to domain
         if not aconn:
-            return self.error("maint: no primary agent is connected.")
+            aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
+
+            if not aconn:
+                return self.error("maint: no primary agent is connected.")
 
         send_body = {"action": action}
         if port > 0:
@@ -1673,7 +1682,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         TABLEAU_INSTALL_DIR="tableau-install-dir"
         YML_CONFIG_FILE_PART=ntpath.join(\
-                "Tableau Server", "data", "tabsvc", "config", "workgroup.yml")
+                "ProgramData", "Tableau", "Tableau Server", "data", "tabsvc",
+                                                    "config", "workgroup.yml")
 
         # The info() command requires a displayname.  This displayname is
         # is temporary until we get info from the agent:
@@ -1686,10 +1696,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return False
         else:
             pinfo_json = body['stdout']
-            pinfo_json = r"""{"os-version":"Microsoft Windows NT 6.1.7601 Service Pack 1","processor-type":"AMD64","processor-count":"2","installed-memory":10847518720,"machine-name":"WIN-NO8TBPC1ULB","user-name":"Administrator",
-    "volumes":{"C:":{"name":"C","type":"Fixed","label":"","drive-format":"NTFS","available-space":56572575744,"size":85793435648},"D:":{"name":"D","type":"CDRom"}},
-"tableau-install-dir":"C:\\Program Files\\Tableau\\Tableau Server\\8.1"}"""
-
             try:
                 pinfo_dict = json.loads(pinfo_json)
             except ValueError, e:
@@ -1699,15 +1705,22 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             if pinfo_dict == None:
                 self.log.error("Bad pinfo output: %s", pinfo_json)
                 return False
-            aconn.info = pinfo_dict
+            aconn.pinfo = pinfo_dict
             self.log.debug("info returned from %s: %s", aconn.displayname, \
-                                                                aconn.info)
-            if aconn.info.has_key(TABLEAU_INSTALL_DIR) or 1:
-                aconn.tableau_install_dir = aconn.info[TABLEAU_INSTALL_DIR]
+                                                                aconn.pinfo)
+            if aconn.pinfo.has_key(TABLEAU_INSTALL_DIR):
+                aconn.tableau_install_dir = aconn.pinfo[TABLEAU_INSTALL_DIR]
                 aconn.agent_type = AgentManager.AGENT_TYPE_PRIMARY
 
-                yml_config_file = ntpath.join(aconn.tableau_install_dir,
-                                                        YML_CONFIG_FILE_PART)
+                if aconn.tableau_install_dir.find(':') == -1:
+                    self.log.error("agent %s is missing ':': %s for %s",
+                        aconn.displayname, TABLEAU_INSTALL_DIR,
+                                                aconn.tableau_install_dir)
+                    return False
+
+                volume = aconn.tableau_install_dir.split(':')[0]
+
+                yml_config_file = ntpath.join(volume + ':\\', YML_CONFIG_FILE_PART)
 
                 try:
                     aconn.yml_contents = aconn.filemanager.get(yml_config_file)
@@ -1716,19 +1729,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     self.log.error(\
                         "filemanager.get(%s) on %s failed with: %s",
                         yml_config_file, aconn.displayname, str(e))
-                    aconn.yml_contents = "I am the yml contents" # fixme (remove)
-                    return True # fixme (remove) after filemanager is working
                     return False
                 else:
-                    self.log.debug("Retrieved yml file from %s.",
-                                                                aconn.displayname)
+                    self.log.debug("Retrieved '%s' from %s.",
+                                            yml_config_file, aconn.displayname)
 
             else:
-                agent.agent_type = AgentManager.AGENT_TYPE_OTHER
+                aconn.agent_type = AgentManager.AGENT_TYPE_OTHER
 
         # Cleanup.
         if aconn.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-            body = self.maint("stop", send_alert=False)  # Put into a known state
+            # Put into a known state
+            body = self.maint("stop", aconn=aconn, send_alert=False)
             if body.has_key("error"):
                 server.alert.send(\
                    CustomAlerts.MAINT_STOP_FAILED, body)
