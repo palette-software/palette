@@ -10,10 +10,11 @@ from akiri.framework.config import store
 
 from controller.meta import Session
 from controller.status import StatusEntry
-from controller.state import StateEntry
+from controller.state import StateEntry, StateManager
 from controller.backup import BackupEntry
 from controller.agentstatus import AgentStatusEntry
 from controller.domain import Domain
+from controller.custom_states import CustomStates
 
 __all__ = ["MonitorApplication"]
 
@@ -27,10 +28,10 @@ class MonitorApplication(RESTApplication):
         domainname = store.get('palette', 'domainname')
         self.domain = Domain.get_by_name(domainname)
 
+
     def handle(self, req):
         tableau_status = "Unknown"
         main_state = "Not connected"
-        backup_state = StateEntry.STATE_BACKUP_NONE
 
         try:
             primary_agents = Session.query(AgentStatusEntry).\
@@ -45,6 +46,12 @@ class MonitorApplication(RESTApplication):
         # the table.
 
         primary = None
+
+        # Set defaults
+        main_state = "none"
+        text = "none"
+        color = "none"
+        user_action_in_progress = False
 
         if primary_agents:
             for agent in primary_agents:
@@ -70,18 +77,25 @@ class MonitorApplication(RESTApplication):
             except NoResultFound, e:
                 pass
 
-            # Dig out the states
-            state_entries = Session.query(StateEntry).\
-                filter(AgentStatusEntry.domainid == self.domain.domainid).\
-                all()
+            # Get the state
+            print "selfdomain = ", self.domain.domainid
+            main_state = StateManager.get_state_by_domainid(self.domain.domainid)
 
-            for state_entry in state_entries:
-                if state_entry.state_type == StateEntry.STATE_TYPE_MAIN:
-                    main_state = state_entry.state
-                elif state_entry.state_type == StateEntry.STATE_TYPE_BACKUP:
-                    backup_state = state_entry.state
-                else:
-                    print "monitor: Uknown state_type:", state_entry.state_type
+            state_entry = CustomStates.get_state_entry(main_state)
+            if not state_entry:
+                print "UNKNOWN STATE!  State:", main_state
+                # fixme: stop everything?  Log this somewhere?
+                return
+
+            text = state_entry.text
+            color = state_entry.color
+
+            if main_state in (StateEntry.STATE_STOPPED,
+                    StateEntry.STATE_STARTED, StateEntry.STATE_DEGRADED,
+                    StateEntry.STATE_PENDING, StateEntry.STATE_DISCONNECTED):
+                user_action_in_progress = False
+            else:
+                user_action_in_progress = True
 
         # Dig out the last/most recent backup.
         last_db = Session.query(BackupEntry).\
@@ -99,10 +113,12 @@ class MonitorApplication(RESTApplication):
 #        print 'tableau-status: %s, main-state: %s, backup-state: %s, last-backup: %s' % (tableau_status, main_state, backup_state, last_backup)
 
         return {'tableau-status': tableau_status,
-                'main-state': main_state,
-                'backup-state': backup_state,
+                'state': main_state,
+                'text': text,
+                'color': color,
+                'user-action-in-progress': user_action_in_progress,
                 'last-backup': last_backup
-                }
+               }
 
 class StatusDialog(DialogPage):
 
