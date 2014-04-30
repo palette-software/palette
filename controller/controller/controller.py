@@ -25,7 +25,7 @@ from agentmanager import AgentManager
 from agentstatus import AgentStatusEntry
 from backup import BackupManager
 from state import StateManager, StateEntry
-from status import StatusMonitor
+from status import StatusMonitor, StatusEntry
 from alert import Alert
 from config import Config
 from domain import Domain, DomainEntry
@@ -270,48 +270,63 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error('agent not found.')
             return
 
+        # lock to ensure against two simultaneous user actions
+        aconn.user_action_lock()
+
         # Check to see if we're in a state to backup
         stateman = self.server.stateman
-        states = stateman.get_states()
+        main_state = stateman.get_state()
 
         # Backups can be done when Tableau is either started or stopped.
-        if states[StateEntry.STATE_TYPE_MAIN] not in \
-          (StateEntry.STATE_MAIN_STARTED, StateEntry.STATE_MAIN_STOPPED):
+        if main_state not in \
+                        (StateEntry.STATE_STARTED, StateEntry.STATE_STOPPED):
             print >> self.wfile, "FAIL: Can't backup - main state is:", \
-              states[StateEntry.STATE_TYPE_MAIN]
-            log.debug("Can't backup - main state is: %s", \
-              states[StateEntry.STATE_TYPE_MAIN])
+                                                                  main_state
+            log.debug("Can't backup - main state is: %s",  main_state)
+            aconn.user_action_unlock()
             return
-        if states[StateEntry.STATE_TYPE_BACKUP] != StateEntry.STATE_BACKUP_NONE:
-            print >> self.wfile, "FAIL: Can't backup - backup state is:", \
-              states[StateEntry.STATE_TYPE_BACKUP]
-            log.debug("Can't backup - backup state is: %s", \
-              states[StateEntry.STATE_TYPE_BACKUP])
+
+        reported_status = statusmon.get_reported_status()
+        # The reported status from tableau needs to be running or stopped
+        # to do a backup.
+        if reported_status == StatusEntry.STATUS_RUNNING:
+            stateman.update(StateEntry.STATE_STARTED_BACKUP)
+        elif reported_status == StatusEntry.STATUS_STOPPED:
+            stateman.update(StateEntry.STATE_STOPPED_BACKUP)
+        else:
+            print >> self.wfile, "FAIL: Can't backup - reported status is:", \
+                                                              reported_status
+            log.debug("Can't backup - reported status is:", \
+                                                            reported_status)
+            aconn.user_action_unlock()
             return
 
         log.debug("-----------------Starting Backup-------------------")
-
-        # fixme: lock to ensure against two simultaneous backups?
-        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
-                            StateEntry.STATE_BACKUP_BACKUP)
 
         server.alert.send(CustomAlerts.BACKUP_STARTED)
 
         self.ack()
 
         body = server.backup_cmd(aconn, target)
-        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
-          StateEntry.STATE_BACKUP_NONE)
 
         self.print_client(str(body))
         if not body.has_key('error'):
             server.alert.send(CustomAlerts.BACKUP_FINISHED, body)
-            return
+
+            if reported_status == StatusEntry.STATUS_RUNNING:
+                stateman.update(StateEntry.STATE_STARTED)
+            elif reported_status == StatusEntry.STATUS_STOPPED:
+                stateman.update(StateEntry.STATE_STOPPED)
         else:
             server.alert.send(CustomAlerts.BACKUP_FAILED, body)
-            return
-    do_backup.__usage__ = 'backup [target-displayname]'
 
+        # Get the latest status from tabadmin
+        statusmon.check_status_with_connection(aconn)
+        # Don't unlock to allow the status thread to ALSO do
+        # 'tabadmin status -v' until at least we finish with ours.
+        aconn.user_action_unlock()
+
+    do_backup.__usage__ = 'backup [target-displayname]'
 
     def do_restore(self, cmd):
         """Restore.  If the file/path we are restoring from is on a different
@@ -329,38 +344,50 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error('agent not found')
             return
 
+        # lock to ensure against two simultaneous user actions
+        aconn.user_action_lock()
+
         # Check to see if we're in a state to restore
         stateman = self.server.stateman
-        states = stateman.get_states()
+        main_state = stateman.get_state()
 
-        main_state = states[StateEntry.STATE_TYPE_MAIN]
-        if main_state != StateEntry.STATE_MAIN_STARTED and \
-                main_state != StateEntry.STATE_MAIN_STOPPED:
-            self.error("can't backup - main state is: " + main_state)
-            log.debug("can't restore - main state is: " + main_state)
+        # Backups can be done when Tableau is either started or stopped.
+        if main_state not in \
+                        (StateEntry.STATE_STARTED, StateEntry.STATE_STOPPED):
+            print >> self.wfile,\
+                "FAIL: Can't backup before restore - main state is:", \
+                                                                  main_state
+            log.debug("Can't backup before restore - main state is: %s",
+                                                                    main_state)
+            aconn.user_action_unlock()
             return
 
-        backup_state = states[StateEntry.STATE_TYPE_BACKUP]
-        if backup_state != StateEntry.STATE_BACKUP_NONE:
-            self.error("can't restore - backup state is: " + backup_state)
-            log.debug("can't restore - backup state is: " + backup_state)
+        reported_status = statusmon.get_reported_status()
+        # The reported status from tableau needs to be running or stopped
+        # to do a backup.  If it is, set our state to
+        # STATE_*_BACKUP_RESTORE.
+        if reported_status == StatusEntry.STATUS_RUNNING:
+            stateman.update(StateEntry.STATE_STARTED_BACKUP_RESTORE)
+        elif reported_status == StatusEntry.STATUS_STOPPED:
+            stateman.update(StateEntry.STATE_STOPPED_BACKUP_RESTORE)
+        else:
+            print >> self.wfile, \
+                "FAIL: Can't backup before restore - reported status is:", \
+                                                              reported_status
+            log.debug("Can't backup before restore - reported status is:", \
+                                                            reported_status)
+            aconn.user_action_unlock()
             return
 
         # Do a backup before we try to do a restore.
         #FIXME: refactor do_backup() into do_backup() and backup()
         log.debug("------------Starting Backup for Restore--------------")
 
-        # fixme: lock to ensure against two simultaneous backups?
-        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
-                            StateEntry.STATE_BACKUP_BACKUP)
-
         server.alert.send(CustomAlerts.BACKUP_STARTED)
 
         self.ack()
 
         body = server.backup_cmd(aconn, target)
-        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
-                            StateEntry.STATE_BACKUP_NONE)
 
         if not body.has_key('error'):
             server.alert.send(CustomAlerts.BACKUP_FINISHED, body)
@@ -378,20 +405,31 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         log.debug("-----------------Starting Restore-------------------")
 
-        # fixme: lock to ensure against two simultaneous restores?
-        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
-                            StateEntry.STATE_BACKUP_RESTORE1)
-
         body = server.restore_cmd(aconn, target)
 
-        stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_NONE)
         # The "restore started" alert is done in restore_cmd(),
         # only after some sanity checking is done.
         if not body.has_key('error'):
+            # Restore finished successfully.  Set the main state.
+            # A successful restore results in a STARTED state.
+            stateman.update(StateEntry.STATE_STARTED)
+
             server.alert.send(CustomAlerts.RESTORE_FINISHED, body)
+
         else:
             server.alert.send(CustomAlerts.RESTORE_FAILED, body)
+            # Restore failed.  We won't update the main status here
+            # since the restore failed and we don't know what
+            # state tableua is in.
+
         self.print_client(str(body))
+
+        # Get the latest status from tabadmin
+        statusmon.check_status_with_connection(aconn)
+        # Don't unlock to allow the status thread to ALSO do
+        # 'tabadmin status -v' until at least we finish with ours.
+        aconn.user_action_unlock()
+
     do_restore.__usage__ = 'restore [source:pathname]'
 
     def do_copy(self, cmd):
@@ -579,28 +617,30 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error('agent not found')
             return
 
+        # lock to ensure against two simultaneous user actions
+        aconn.user_action_lock()
+
         # Check to see if we're in a state to start
         stateman = self.server.stateman
-        states = stateman.get_states()
-        if states[StateEntry.STATE_TYPE_MAIN] != 'stopped':
-            # Even "Unknown" is not an okay state for starting as it
-            # could mean the primary agent probably isn't connected.
+        main_state = stateman.get_state()
+
+        # Start can be done only when Tableau is stopped.
+        if main_state != StateEntry.STATE_STOPPED:
             print >> self.wfile, "FAIL: Can't start - main state is:", \
-              states[StateEntry.STATE_TYPE_MAIN]
-            log.debug("FAIL: Can't start - main state is: %s", \
-              states[StateEntry.STATE_TYPE_MAIN])
+                                                                  main_state
+            log.debug("Can't start - main state is: %s",  main_state)
+            aconn.user_action_unlock()
             return
 
-        if states[StateEntry.STATE_TYPE_BACKUP] != \
-              StateEntry.STATE_BACKUP_NONE:
-            print >> self.wfile, "FAIL: Can't start - backup state is:", \
-              states[StateEntry.STATE_TYPE_BACKUP]
-            log.debug("FAIL: Can't start - backup state is: %s", \
-              states[StateEntry.STATE_TYPE_BACKUP])
+        reported_status = statusmon.get_reported_status()
+        if reported_status != StatusEntry.STATUS_STOPPED:
+            print >> self.wfile, "FAIL: Can't start - reported status is:", \
+                                                              reported_status
+            log.debug("Can't start - reported status is: %s",  reported_status)
+            aconn.user_action_unlock()
             return
 
-        stateman.update(StateEntry.STATE_TYPE_MAIN, \
-              StateEntry.STATE_MAIN_STARTING)
+        stateman.update(StateEntry.STATE_STARTING)
 
         log.debug("-----------------Starting Tableau-------------------")
         # fixme: Reply with "OK" only after the agent received the command?
@@ -623,11 +663,17 @@ class CliHandler(socketserver.StreamRequestHandler):
         if exit_status:
             # The "tableau start" failed.  Go back to "STOPPED" state.
             server.alert.send(CustomAlerts.TABLEAU_START_FAILED, body)
-            stateman.update(StateEntry.STATE_TYPE_MAIN,
-                            StateEntry.STATE_MAIN_STOPPED)
+            stateman.update(StateEntry.STATE_STOPPED)
+        else:
+            stateman.update(StateEntry.STATE_STARTED)
 
         # STARTED is set by the status monitor since it really knows the status.
         self.print_client(str(body))
+
+        # Get the latest status from tabadmin
+        statusmon.check_status_with_connection(aconn)
+
+        aconn.user_action_unlock()
 
     def do_stop(self, cmd):
         if len(cmd.args) != 0:
@@ -639,28 +685,36 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error('agent not found')
             return
 
+        # lock to ensure against two simultaneous user actions
+        aconn.user_action_lock()
+
         # Check to see if we're in a state to stop
         stateman = self.server.stateman
-        states = stateman.get_states()
-        if states[StateEntry.STATE_TYPE_MAIN] != StateEntry.STATE_MAIN_STARTED:
-            self.error("can't stop - main state is: " +\
-                           states[StateEntry.STATE_TYPE_MAIN])
-            self.error("can't stop - current state is: " +\
-                           states[StateEntry.STATE_TYPE_MAIN])
+        main_state = stateman.get_state()
+
+        # Stop can be done only if tableau is started
+        if main_state != StateEntry.STATE_STARTED:
+            self.error("can't stop - main state is: " + main_state)
+            self.error("can't stop - main state is: " + main_state)
+            aconn.user_action_unlock()
+            return
+
+        reported_status = statusmon.get_reported_status()
+        if reported_status != StatusEntry.STATUS_RUNNING:
+            print >> self.wfile, "FAIL: Can't start - reported status is:", \
+                                                              reported_status
+            log.debug("Can't start - reported status is: %s",  reported_status)
+            aconn.user_action_unlock()
             return
 
         log.debug("------------Starting Backup for Stop---------------")
-        # fixme: lock to ensure against two simultaneous backups?
-        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
-          StateEntry.STATE_BACKUP_BACKUP)
 
+        stateman.update(StateEntry.STATE_STARTED_BACKUP_STOP)
         server.alert.send(CustomAlerts.BACKUP_STARTED)
 
         self.ack()
 
         body = server.backup_cmd(aconn)
-        stateman.update(StateEntry.STATE_TYPE_BACKUP, \
-                            StateEntry.STATE_BACKUP_NONE)
 
         if not body.has_key('error'):
             server.alert.send(CustomAlerts.BACKUP_FINISHED, body)
@@ -668,16 +722,15 @@ class CliHandler(socketserver.StreamRequestHandler):
             server.alert.send(CustomAlerts.BACKUP_FAILED, body)
             # FIXME: return JSON
             self.print_client("Backup failed.  Will not attempt stop.")
+            aconn.user_action_unlock()
             return
 
         # Note: Make sure to set the state in the database before
         # we report "OK" back to the client since "OK" to the UI client
         # results in an immediate check of the state.
-        stateman.update(StateEntry.STATE_TYPE_MAIN,
-                        StateEntry.STATE_MAIN_STOPPING)
+        stateman.update(StateEntry.STATE_STOPPING)
 
         log.debug("-----------------Stopping Tableau-------------------")
-        # fixme: Prevent stopping if the user is doing a backup or restore?
         # fixme: Reply with "OK" only after the agent received the command?
 
         body = server.cli_cmd('tabadmin stop', aconn)
@@ -687,11 +740,24 @@ class CliHandler(socketserver.StreamRequestHandler):
             maint_body = server.maint("start")
             if maint_body.has_key("error"):
                 self.print_client("maint start failed: " + str(maint_body))
-
-        # STOPPED is set by the status monitor since it really knows the status.
+            # We don't set the state here since we aren't really sure
+            # since 'tabadmin stop' failed.
+            stateman.update(StateEntry.STATE_STOPPED)
 
         # fixme: check & report status to see if it really stopped?
         self.print_client(str(body))
+
+        # Get the latest status from tabadmin
+        statusmon.check_status_with_connection(aconn)
+
+        # If the 'stop' had failed, set the status to what we just
+        # got back from 'tabadmin status ...'
+        if body.has_key('error'):
+            reported_status = statusmon.get_reported_status()
+            stateman.update(reported_status)
+
+        aconn.user_action_unlock()
+
     do_stop.__usage__ = 'stop'
 
     def report_status(self, body):
@@ -1275,12 +1341,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         server.alert.send(CustomAlerts.RESTORE_STARTED)
 
         stateman = server.stateman
-        orig_states = stateman.get_states()
-        main_state = orig_states[StateEntry.STATE_TYPE_MAIN]
-        if main_state == StateEntry.STATE_MAIN_STARTED:
+        reported_status = statusmon.get_reported_status()
+
+        if reported_status == StatusEntry.STATUS_RUNNING:
             # Restore can run only when tableau is stopped.
-            stateman.update(StateEntry.STATE_TYPE_MAIN, \
-                                StateEntry.STATE_MAIN_STOPPING)
+            stateman.update(StateEntry.STATE_STOPPING_RESTORE)
             log.debug("------------Stopping Tableau for restore-------------")
             stop_body = self.cli_cmd("tabadmin stop", aconn)
             if stop_body.has_key('error'):
@@ -1291,26 +1356,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     self.delete_file(aconn, source_fullpathname)
                 return stop_body
 
-            # Give Tableau and the status thread a bit of time to stop
-            # and update the state to STOPPED.
-            stopped = False
-            for i in range(15):
-                states = stateman.get_states()
-                if states[StateEntry.STATE_TYPE_MAIN] == StateEntry.STATE_MAIN_STOPPED:
-                    stopped = True
-                    self.log.debug("Restore: Tableau has stopped (on check %d)", i)
-                    break
-                self.log.debug("Restore: Check #%d: Tableau has not yet stopped", i)
-                time.sleep(8)
-
-            if not stopped:
-                if source_displayname != aconn.displayname:
-                    # If the file was copied to the Primary, delete
-                    # the temporary backup file we copied to the Primary.
-                    self.delete_file(aconn, source_fullpathname)
-                return self.error('Tableau did not stop as requested.  ' +
-                                  'Restore aborted.')
-
         # 'tabadmin restore ...' starts tableau as part of the restore procedure.
         # fixme: Maybe the maintenance web server wasn't running?
         maint_msg = ""
@@ -1319,10 +1364,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.info("Restore: maint stop failed: " + maint_body['error'])
             # continue on, not a fatal error...
             maint_msg = "Restore: maint stop failed.  Error was: %s" \
-                % maint_body['error']
+                                                    % maint_body['error']
 
-        stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_STARTING)
-        stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_RESTORE2)
+        stateman.update(StateEntry.STATE_STARTING_RESTORE)
         try:
             cmd = 'tabadmin restore \\\"%s\\\"' % source_fullpathname
             self.log.debug("restore sending command: %s", cmd)
@@ -1354,16 +1398,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.info("Restore: starting tableau after failed restore.")
             start_body = self.cli_cmd("tabadmin start", aconn)
             if start_body.has_key('error'):
-                self.log.info("Restore: 'tabadmin start' failed after failed restore.")
-                msg = "Restore: 'tabadmin start' failed after failed restore.  Error was: %s" % start_body['error']
+                self.log.info(\
+                    "Restore: 'tabadmin start' failed after failed restore.")
+                msg = "Restore: 'tabadmin start' failed after failed restore."
+                msg += " Error was: %s" % start_body['error']
                 if restore_body.has_key('info'):
                     restore_body['info'] += "\n" + msg
                 else:
                     restore_body['info'] = msg
 
                 # The "tableau start" failed. Go back to "STOPPED" state.
-                stateman.update(StateEntry.STATE_TYPE_MAIN,
-                                             StateEntry.STATE_MAIN_STOPPED)
 
         return restore_body
 
@@ -1702,7 +1746,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return True
 
         states = server.stateman.get_states()
-        if states[StateEntry.STATE_TYPE_MAIN] == StateEntry.STATE_MAIN_STOPPED:
+        if states[StateEntry.STATE_TYPE_REPORTED] == StateEntry.STATE_STOPPED:
             body = self.maint("start")
             if body.has_key("error"):
                 server.alert.send(CustomAlerts.MAINT_START_FAILED, body)

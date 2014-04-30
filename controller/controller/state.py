@@ -10,44 +10,42 @@ import meta
 
 from alert import Alert
 
-# The tabadmin state table:
-#   main   state: starting, started, stopping, stopped, unknown
-#   backup state: backup, restore or none
-
 class StateEntry(meta.Base):
     __tablename__ = 'state'
 
-    # State types
-    STATE_TYPE_MAIN="main"
-    STATE_TYPE_BACKUP="backup"
+    # possible states
+    STATE_DISCONNECTED="DISCONNECTED"
+    # connected but no status reported from tabadmin yet
+    STATE_PENDING="PENDING"
 
-    # main states
-    STATE_MAIN_STARTING="starting"
-    STATE_MAIN_STARTED="started"
-    STATE_MAIN_STOPPING="stopping"
-    STATE_MAIN_STOPPED="stopped"
-    STATE_MAIN_UNKNOWN="unknown"
+    STATE_STOPPING="STOPPING"
+    STATE_STOPPING_RESTORE="STOPPING-RESTORE"
 
-    # backup states
-    STATE_BACKUP_BACKUP="backup"
-    STATE_BACKUP_RESTORE1="restore1"
-    STATE_BACKUP_RESTORE2="restore2"
-    STATE_BACKUP_NONE="none"
+    STATE_STOPPED="STOPPED"         # reported from tabadmin
+    STATE_STOPPED_RESTORE="STOPPED-RESTORE"
+    STATE_STOPPED_BACKUP="STOPPED-BACKUP"
+    # backup for/before restore
+    STATE_STOPPED_BACKUP_RESTORE="STOPPED-BACKUP-RESTORE"
 
-    # FIXME: Make combination of domainid and state_type a unique key
+    STATE_STARTING="STARTING"
+    STATE_STARTING_RESTORE="STARTING-RESTORE"
 
-    state_type = Column(String, unique=True, nullable=False, primary_key=True)
-    domainid = Column(BigInteger, ForeignKey("domain.domainid"), nullable=False)
+    STATE_STARTED="STARTED"         # reported as "running" from tabadmin
+    STATE_STARTED_BACKUP="STARTED-BACKUP"
+    # backup for/before restore
+    STATE_STARTED_BACKUP_RESTORE="STARTED-BACKUP-RESTORE"
+    STATE_STARTED_RESTORE="STARTED-RESTORE"
+    # backup for/before stop
+    STATE_STARTED_BACKUP_STOP="STARTED-BACKUP-STOP"
+
+    STATE_DEGRADED="DEGRADED"       # reported from tabadmin
+
+    domainid = Column(BigInteger, ForeignKey("domain.domainid"),
+                                        nullable=False, primary_key=True)
     state = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
       server_onupdate=func.current_timestamp())
-    UniqueConstraint('domainid', 'state_type')
-
-    def __init__(self, domainid, state_type, state):
-        self.domainid = domainid
-        self.state_type = state_type
-        self.state = state
 
 class StateManager(object):
 
@@ -57,58 +55,56 @@ class StateManager(object):
         self.log = self.server.log
         self.domainid = self.server.domainid
 
-    def update(self, state_type, state):
+    def update(self, state):
+        if state == "RUNNING":
+            # tabadmin calls it "RUNNING", we called it "STARTED"
+            state = StateEntry.STATE_STARTED
+
+        self.log.info("-------state changing to %s----------", state)
         session = meta.Session()
         entry = session.query(StateEntry).\
-            filter(StateEntry.domainid == self.domainid).\
-            filter(StateEntry.state_type == state_type).first()
+            filter(StateEntry.domainid == self.domainid).first()
 
         if entry:
             old_state = entry.state
             session.query(StateEntry).\
                 filter(StateEntry.domainid == self.domainid).\
-                filter(StateEntry.state_type == state_type).\
                 update({'state': state})
 
         else:
-            entry = StateEntry(self.domainid, state_type, state)
+            entry = StateEntry(domainid=self.domainid, state=state)
             session.add(entry)
 
         session.commit()
 
         # Send out the main started/stopped alert.
         # Backup alerts (backup/restore started/stopped done elsewhere).
-        if state_type == StateEntry.STATE_TYPE_MAIN and state in \
-          [StateEntry.STATE_MAIN_STARTED, StateEntry.STATE_MAIN_STOPPED]:
-            if old_state == StateEntry.STATE_MAIN_UNKNOWN:
-                if state == StateEntry.STATE_MAIN_STARTED:
+        if state in [StateEntry.STATE_STARTED, StateEntry.STATE_STOPPED]:
+            if old_state == StateEntry.STATE_PENDING:
+                if state == StateEntry.STATE_STARTED:
                     self.server.alert.send(CustomAlerts.INIT_STATE_STARTED)
                 else:
                     self.server.alert.send(CustomAlerts.INIT_STATE_STOPPED)
             else:
-                if state == StateEntry.STATE_MAIN_STARTED:
+                if state == StateEntry.STATE_STARTED:
                     self.server.alert.send(CustomAlerts.STATE_STARTED)
                 else:
                     self.server.alert.send(CustomAlerts.STATE_STOPPED)
 
-    def get_states(self):
+    def get_state(self):
         try:
             main_entry = meta.Session.query(StateEntry).\
                 filter(StateEntry.domainid == self.domainid).\
-                filter(StateEntry.state_type == StateEntry.STATE_TYPE_MAIN).\
                 one()
             main_status = main_entry.state
         except NoResultFound, e:
-            main_status = StateEntry.STATE_MAIN_UNKNOWN
-
+            state = StateEntry.STATE_PENDING
         try:
-            backup_entry = meta.Session.query(StateEntry).\
+            reported_entry = meta.Session.query(StateEntry).\
                 filter(StateEntry.domainid == self.domainid).\
-                filter(StateEntry.state_type == StateEntry.STATE_TYPE_BACKUP).\
                 one()
-            backup_status = backup_entry.state
+            reported_status = reported_entry.state
         except NoResultFound, e:
-            backup_status = StateEntry.STATE_BACKUP_NONE
+            reported_status = StateEntry.STATE_REPORTED_NONE
 
-        return { StateEntry.STATE_TYPE_MAIN: main_status, \
-          StateEntry.STATE_TYPE_BACKUP: backup_status }
+        return main_status
