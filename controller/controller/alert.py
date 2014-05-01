@@ -6,25 +6,28 @@ from mako.template import Template
 
 class Alert(object):
 
-    def __init__(self, config, log):
-        self.config = config
-        self.log = log
-        self.enabled = config.getboolean('alert', 'enabled', default=False)
-        self.to_email = config.get('alert', 'to_email',
+    def __init__(self, server):
+        self.config = server.config
+        self.event = server.event
+        self.log = server.log
+        self.enabled = self.config.getboolean('alert', 'enabled', default=False)
+        self.to_email = self.config.get('alert', 'to_email',
                                    default="nobody@nowhere.nohow")
-        self.from_email = config.get('alert', 'from_email',
+        self.from_email = self.config.get('alert', 'from_email',
                                      default="alerts@palette-software.com")
-        self.smtp_server = config.get('alert', 'smtp_server',
+        self.smtp_server = self.config.get('alert', 'smtp_server',
                                     default="localhost")
-        self.smtp_port = config.getint("alert", "smtp_port", default=25)
+        self.smtp_port = self.config.getint("alert", "smtp_port", default=25)
         self.custom_alerts = CustomAlerts()
         self.custom_alerts.populate()
 
         DEFAULT_ALERT_LEVEL = 1
-        self.alert_level = config.getint("alert", "alert_level", default=DEFAULT_ALERT_LEVEL)
+        self.alert_level = self.config.getint("alert", "alert_level",
+                                                        default=DEFAULT_ALERT_LEVEL)
 
         DEFAULT_MAX_SUBJECT_LEN = 100
-        self.max_subject_len = config.getint("alert", "max_subject_len", default=DEFAULT_MAX_SUBJECT_LEN)
+        self.max_subject_len = self.config.getint("alert", "max_subject_len",
+                                                default=DEFAULT_MAX_SUBJECT_LEN)
 
         if self.alert_level < 1:
             self.log.err("Invalid alert level: %d, setting to %d",
@@ -77,6 +80,13 @@ class Alert(object):
             self.log.error("Invalid type for data: %s", str(type(data)))
             return
 
+        # Log the event to the database
+        if alert_entry.message:
+            # If the was a message template, then include the derived message.
+            self.event.add(subject + '.  Message: ' + message)
+        else:
+            self.event.add(subject)
+
         if not message:
             # If no data was sent, use the subject as the message.
             message = subject
@@ -98,15 +108,15 @@ class Alert(object):
         msg_str = msg.as_string()
 
         try:
-            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
-            server.sendmail(self.from_email, [self.to_email], msg_str)
-            server.quit()
+            mail_server = smtplib.SMTP(self.smtp_server, self.smtp_port)
+            mail_server.sendmail(self.from_email, [self.to_email], msg_str)
+            mail_server.quit()
         except (smtplib.SMTPException, EnvironmentError) as e:
             self.log.error("Email send failed, text: %s, exception: %s, server: %s, port: %d",
                 message, e, self.smtp_server, self.smtp_port)
             return
 
-        self.log.info("Emailed event: Subject: '%s', message: '%s'" % \
+        self.log.info("Emailed alert: Subject: '%s', message: '%s'" % \
                                                         (subject, message))
 
         return

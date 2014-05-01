@@ -32,6 +32,7 @@ from domain import Domain, DomainEntry
 from profile import UserProfile
 from custom_alerts import CustomAlerts
 from custom_states import CustomStates
+from event import EventManager, EventEntry
 
 from version import VERSION
 
@@ -254,7 +255,6 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = server.cli_cmd("tabadmin status -v", aconn)
         self.print_client(str(body))
     do_status.__usage__ = 'status'
-
 
     def do_backup(self, cmd):
         """ Perform a Tableau backup and potentially migrate. """
@@ -1871,7 +1871,6 @@ def main():
 
     server = Controller((host, port), CliHandler)
     server.config = config
-    server.alert = Alert(config, log)
     server.log = log
     server.cli_get_status_interval = \
       config.get('controller', 'cli_get_status_interval', default=10)
@@ -1881,6 +1880,9 @@ def main():
     # FIXME: Pre-production hack: add domain if necessary
     server.domain.add(server.domainname)
     server.domainid = server.domain.id_by_name(server.domainname)
+
+    server.event = EventManager(server.domainid)
+    server.alert = Alert(server)
 
     custom_states = CustomStates()
     custom_states.populate()
