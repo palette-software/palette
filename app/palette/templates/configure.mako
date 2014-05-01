@@ -1,19 +1,5 @@
 # -*- coding: utf-8 -*- 
-<%inherit file="_layout.mako" />
-
-<%block name="favicon">
-<%include file="favicon.mako" />
-</%block>
-<%block name="fullstyle">
-<meta charset="utf-8">
-<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
-<link href='http://fonts.googleapis.com/css?family=Roboto:300,500' rel='stylesheet' type='text/css'>
-<link rel="stylesheet" type="text/css" href="/app/module/palette/css/bootstrap.min.css">
-<link rel="stylesheet" type="text/css" href="/app/module/palette/css/font-awesome.min.css">
-<link rel="stylesheet" type="text/css" href="/app/module/palette/css/style.css" media="screen">
-</%block>
-
-<script src="/app/module/palette/js/vendor/modernizr.js"></script>
+<%inherit file="layout.mako" />
 
 <style type="text/css">
 .main-side-bar ul.actions li.active-profile a {
@@ -62,3 +48,17 @@
 </section>
 
 ${next.body()}
+
+<script type="text/javascript">
+	$(function(){
+		$('#toggle-side-menu').bind('click', function() {
+			$('.main-side-bar').toggleClass('collapsed');
+		});
+
+		$('#mainNav .container > i').bind('click', function() {
+			$('.main-side-bar').toggleClass('open');
+			$(this).toggleClass('open');
+		});
+		
+	});
+</script>
