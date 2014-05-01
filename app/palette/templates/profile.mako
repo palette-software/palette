@@ -80,8 +80,6 @@
   </section>
 </section>
 
-<%include file="commonjs.mako" />
-
 <script type="text/javascript">
 
 	var hash = window.location.hash;

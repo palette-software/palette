@@ -311,4 +311,3 @@
   </section>
 </section>
 
-<%include file="commonjs.mako" />
