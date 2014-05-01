@@ -115,8 +115,8 @@ class StatusMonitor(threading.Thread):
         main_state = self.stateman.get_state()
         if status not in (StatusEntry.STATUS_RUNNING, StatusEntry.STATUS_STOPPED,
                                                     StatusEntry.STATUS_DEGRADED):
-            self.log.error("Unknown reported state: %s with status: %s",\
-                                main_state, status)
+            self.log.error("Unknown reported status from tableau: %s. " + \
+                                        "main_state: %s", status, main_state)
             return  # fixme: do something more drastic than return?
 
         if main_state == StateEntry.STATE_PENDING:
@@ -124,11 +124,11 @@ class StatusMonitor(threading.Thread):
             if status == StatusEntry.STATUS_RUNNING:
                 # StateEntry calls the state "STARTED"; Tableau calls
                 # it "RUNNING".
-                self.server.alert.send(CustomAlerts.STATE_STARTED)
+                self.server.alert.send(CustomAlerts.INIT_STATE_STARTED)
             elif status == StatusEntry.STATUS_STOPPED:
-                self.server.alert.send(CustomAlerts.STATE_STOPPED)
+                self.server.alert.send(CustomAlerts.INIT_STATE_STOPPED)
             elif status == StatusEntry.STATUS_DEGRADED:
-                self.server.alert.send(CustomAlerts.STATE_DEGRADED)
+                self.server.alert.send(CustomAlerts.INIT_STATE_DEGRADED)
             return
 
         # If the main state is wrong, correct it.

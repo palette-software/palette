@@ -28,6 +28,7 @@ class CustomAlerts(object):
 
     INIT_STATE_STARTED="INIT-STATE-STARTED"
     INIT_STATE_STOPPED="INIT-STATE-STOPPED"
+    INIT_STATE_DEGRADED="INIT-STATE-DEGRADED"
 
     STATE_STARTED="STATE-STARTED"
     STATE_STOPPED="STATE-STOPPED"
@@ -75,6 +76,8 @@ class CustomAlerts(object):
                         'Controller started.  Initial tableau state: started'),
             (CustomAlerts.INIT_STATE_STOPPED,
                         'Controller started.  Initial tableau state: stopped'),
+            (CustomAlerts.INIT_STATE_DEGRADED,
+                        'Controller started. Initial tableau state: degraded'),
             (CustomAlerts.STATE_STARTED, 'Tableau server started'),
             (CustomAlerts.STATE_STOPPED, 'Tableau server stopped'),
             (CustomAlerts.STATE_DEGRADED, 'Tableau server degraded'),
