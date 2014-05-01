@@ -20,7 +20,6 @@
 </%block>
 
 <script src="/app/module/palette/js/vendor/jquery.js"></script>
-<script src="/app/module/palette/js/vendor/modernizr.js"></script>
 
 </head>
 <body>
