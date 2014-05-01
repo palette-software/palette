@@ -95,10 +95,9 @@ p {
     transition: all 0.1s ease-in;
 }
 .secondary-side-bar ul.server-list li a:hover {
-    background-color: rgba(0,0,0,0.1);
+    background-color: rgba(0, 0, 0, 0.1);
     color: #fff;
 }
-
 .secondary-side-bar ul.server-list li img {
     max-width: 40px;
     margin-left: 25px;
@@ -119,7 +118,7 @@ p {
 .secondary-side-bar ul.server-list li p {
     position: absolute;
     left: 80px;
-    bottom: 10px;
+    bottom: 7px;
     margin: 0;
     font-size: 16px;
     font-weight: 300;
@@ -154,7 +153,6 @@ p {
 .profile {
     width: 250px;
 }
-
 .main-side-bar {
     height: 100%;
     display: block;
@@ -411,15 +409,12 @@ p {
     bottom: 0;
     padding: 0;
 }
-
 .dynamic-content .top-zone a.alert:hover {
     text-decoration: none;
 }
-
 .dynamic-content .top-zone a.alert:hover span {
-    box-shadow: 0 0 0 9001px rgba(250,250,250,0.2) inset;
+    box-shadow: 0 0 0 9001px rgba(250, 250, 250, 0.2) inset;
 }
-
 .dynamic-content .top-zone a.alert span {
     display: inline-block;
     width: 24px;
@@ -431,21 +426,18 @@ p {
     color: #fff;
     border-radius: 50%;
 }
-
 .dynamic-content .top-zone a.alert.warnings {
     color: #DC994C;
 }
 .dynamic-content .top-zone a.alert.errors {
     color: #EF5455;
 }
-
 .dynamic-content .top-zone a.alert.warnings span {
     background-color: #DC994C;
 }
 .dynamic-content .top-zone a.alert.errors span {
     background-color: #EF5455;
 }
-
 .dynamic-content .bottom-zone {
     overflow-y:scroll;
     height: 100%;
@@ -461,8 +453,6 @@ p {
 .dynamic-content .top-zone label.select:first-of-type {
     margin-left: 0;
 }
-
-
 h1.page-title {
     font-size: 42px;
     display: inline-block;
@@ -472,7 +462,6 @@ h1.page-title {
     color: #697078;
     vertical-align: bottom;
 }
-
 #mainNav a.site-id {
     background-image: url('/app/module/palette/images/palette_logo_600dpi-2.png');
     background-size: 100%;
@@ -859,14 +848,12 @@ ul.title-area > li > h1 > a {
 #mainNav ul.nav li > ul.visible {
     display: block;
 }
-
 #mainNav ul.nav li > ul > li {
     display: block;
     height: 45px;
     padding: 0;
     position: relative;
 }
-
 #mainNav ul.nav li > ul li a {
     background-color: #fff;
     line-height: 45px;
@@ -877,14 +864,12 @@ ul.title-area > li > h1 > a {
     display: block;
     font-size: 14px;
 }
-
 #mainNav ul.nav li > ul li a i {
     color:#8e96a3;
     font-size: 20px;
     padding-right: 3px;
     line-height: 45px;
 }
-
 #mainNav ul.nav li > ul li a:hover {
     text-decoration: none;
     color: #53c3f1;
@@ -1191,10 +1176,15 @@ article.activity p {
         display: inline-block !important;
     }
 
+    #mainNav ul.nav li > a span {
+        display: none;
+    }
+    .Psmall-only {
+        display: inline-block !important;
+    }
     .profile-settings-nav > div {
         position: relative;
     }
-
     #toggle-side-menu {
         position: static;
         margin-top: 35px;
