@@ -73,17 +73,14 @@ p {
     margin: 25px 0 8px 0;
     font-size: 16px;
 }
-
 .secondary-side-bar ul.server-list {
     list-style-type: none;
     margin: 0;
     padding: 0;
 }
-
 .secondary-side-bar ul.server-list li {
     padding: 0;
 }
-
 .secondary-side-bar ul.server-list li a {
     width: 100%;
     height: 100%;
@@ -97,7 +94,6 @@ p {
     -o-transition: all 0.1s ease-in;
     transition: all 0.1s ease-in;
 }
-
 .secondary-side-bar ul.server-list li a:hover {
     background-color: rgba(0,0,0,0.1);
     color: #fff;
@@ -107,7 +103,6 @@ p {
     max-width: 40px;
     margin-left: 25px;
 }
-
 .secondary-side-bar ul.server-list li h5 {
     position: absolute;
     left: 80px;
@@ -121,7 +116,6 @@ p {
     text-overflow:ellipsis;
     white-space: nowrap;
 }   
-
 .secondary-side-bar ul.server-list li p {
     position: absolute;
     left: 80px;
@@ -135,6 +129,67 @@ p {
     overflow: hidden;
     text-overflow:ellipsis;
     white-space: nowrap;    
+}
+
+.secondary-side-bar ul.server-list {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+.secondary-side-bar ul.server-list li {
+    padding: 0;
+}
+.secondary-side-bar ul.server-list li a {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: block;
+    padding: 12px 0;
+    color: #fff;
+    -webkit-transition: all 0.1s ease-in;
+    -moz-transition: all 0.1s ease-in;
+    -ms-transition: all 0.1s ease-in;
+    -o-transition: all 0.1s ease-in;
+    transition: all 0.1s ease-in;
+}
+.secondary-side-bar ul.server-list li a:hover {
+    background-color: rgba(0,0,0,0.1);
+    color: #fff;
+}
+
+.secondary-side-bar ul.server-list li img {
+    max-width: 40px;
+    margin-left: 25px;
+}
+.secondary-side-bar ul.server-list li h5 {
+    position: absolute;
+    left: 80px;
+    top: 10px;
+    margin: 0;
+    padding: 0;    
+    font-size: 16px;
+    font-weight: 300;
+    width: 70%;
+    overflow: hidden;
+    text-overflow:ellipsis;
+    white-space: nowrap;
+}   
+.secondary-side-bar ul.server-list li p {
+    position: absolute;
+    left: 80px;
+    bottom: 10px;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 300;
+    color: #8e96a3;
+    vertical-align: bottom;
+    width: 65%;
+    overflow: hidden;
+    text-overflow:ellipsis;
+    white-space: nowrap;    
+}
+.profile {
+    width: 250px;
 }
 
 .main-side-bar {
@@ -283,6 +338,61 @@ p {
     box-shadow: 0 -2px rgba(0, 0, 0, 0.1);
 }
 .main-side-bar ul.actions li.divider {
+    height: 2px;
+    display: block;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.secondary-side-bar .header {
+    position: relative;
+    top: 0;
+    width: 100%;
+    display: block;
+    height: 75px;
+
+}
+
+.secondary-side-bar ul.actions {
+    margin: 0;
+    padding:0;
+    list-style-type: none;
+}
+.secondary-side-bar ul.actions li i {
+    color: #8e96a3;
+    font-size: 32px;
+    line-height: 55px;
+    margin: 0 7px 0 10px;
+    vertical-align: middle;
+}
+.secondary-side-bar ul.actions li a {
+    line-height: 55px;
+    width: 100%;
+    display: block;
+    font-size: 18px;
+    color: #fff;
+    font-weight: 500;
+    vertical-align: top;
+    position: relative;
+    -webkit-transition: all 0.1s ease-in;
+    -moz-transition: all 0.1s ease-in;
+    -ms-transition: all 0.1s ease-in;
+    -o-transition: all 0.1s ease-in;
+    transition: all 0.1s ease-in;
+    width: 100%;
+    overflow: hidden;
+    text-overflow:ellipsis;
+    white-space: nowrap;
+}
+.secondary-side-bar ul.actions li a:hover {
+    text-decoration: none;
+    background-color: rgba(50, 50, 50, 0.1);
+}
+.secondary-side-bar ul.actions li a:active {
+    background-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 -2px rgba(0, 0, 0, 0.1);
+}
+.secondary-side-bar ul.actions li.divider {
     height: 2px;
     display: block;
     width: 100%;

@@ -12,7 +12,7 @@
 		<li class="active-backup"><a href="#"><i class="fa fa-fw fa-cloud-upload"></i> <span>Backup / Restore</a></span></li>
 		<li class="active-logs"><a href="/"><i class="fa fa-fw fa-list"></i> <span>Logs</a></span></li>  
 		<li class="divider">&nbsp;</li>
-		<li class="active-config"><a href="/profile"><i class="fa fa-fw fa-cog"></i> <span>Configure</a></span></li>
+		<li class="active-config"><a href="/configure/profile"><i class="fa fa-fw fa-cog"></i> <span>Configure</a></span></li>
 	</ul>
 <i id="toggle-side-menu" class="fa fa-fw fa-arrow-left"></i>
 </section>
