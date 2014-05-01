@@ -670,6 +670,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             stateman.update(StateEntry.STATE_STOPPED)
         else:
             stateman.update(StateEntry.STATE_STARTED)
+            server.alert.send(CustomAlerts.STATE_STARTED)
 
         # STARTED is set by the status monitor since it really knows the status.
         self.print_client(str(body))
@@ -755,9 +756,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             maint_body = server.maint("start")
             if maint_body.has_key("error"):
                 self.print_client("maint start failed: " + str(maint_body))
-            # We don't set the state here since we aren't really sure
-            # since 'tabadmin stop' failed.
-            stateman.update(StateEntry.STATE_STOPPED)
+
+        # We set the state to stop, even though the stop failed.
+        # This will be corrected by the 'tabadmin status -v' processing
+        # later.
+        stateman.update(StateEntry.STATE_STOPPED)
+        server.alert.send(CustomAlerts.STATE_STOPPED)
 
         # fixme: check & report status to see if it really stopped?
         self.print_client(str(body))
@@ -1351,7 +1355,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 return body
 
         # The restore file is now on the Primary Agent.
-
         server.alert.send(CustomAlerts.RESTORE_STARTED)
 
         stateman = server.stateman
@@ -1404,7 +1407,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # the temporary backup file we copied to the Primary.
             self.delete_file(aconn, source_fullpathname)
 
-        if not restore_success:
+        if restore_success:
+            stateman.update(StateEntry.STATE_STARTED)
+            server.alert.send(CustomAlerts.STATE_STARTED)
+        else:
             # On a successful restore, tableau starts itself.
             # fixme: eventually control when tableau is started and
             # stopped, rather than have tableau automatically start
@@ -1426,6 +1432,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             else:
                 # The "tableau start" succeeded
                 stateman.update(StateEntry.STATE_STARTED)
+                server.alert.send(CustomAlerts.STATE_STARTED)
 
         return restore_body
 
@@ -1599,7 +1606,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         headers = {"Content-Type": "application/json"}
 
         self.log.debug(\
-            "about to send an immediate command to '%s', type '%s'," + \
+            "about to send an immediate command to '%s', type '%s', " + \
                 "method '%s', uri '%s', body '%s'",
                     aconn.displayname, aconn.agent_type, method, uri, send_body)
 
@@ -1766,9 +1773,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if aconn.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
             return True
 
-        states = server.stateman.get_state()
-        if states == StateEntry.STATE_STOPPED:
-            body = self.maint("start")
+        main_state = server.stateman.get_state()
+        if main_state == StateEntry.STATE_STOPPED:
+            body = self.maint("start", aconn=aconn, send_alert=False)
             if body.has_key("error"):
                 server.alert.send(CustomAlerts.MAINT_START_FAILED, body)
 

@@ -46,7 +46,7 @@ class MonitorApplication(RESTApplication):
         primary = None
 
         # Set defaults
-        tableau_status = "Unknown"
+        tableau_status = "unknown"
         main_state = StateEntry.STATE_UNKNOWN
         text = "none"
         color = "none"
@@ -76,6 +76,21 @@ class MonitorApplication(RESTApplication):
             except NoResultFound, e:
                 pass
 
+            # Dig out the last/most recent backup.
+            last_db = Session.query(BackupEntry).\
+                join(AgentStatusEntry).\
+                filter(AgentStatusEntry.domainid == self.domain.domainid).\
+                filter(StatusEntry.name == 'Status').\
+                order_by(BackupEntry.creation_time.desc()).\
+                first()
+
+            if last_db:
+                last_backup = str(last_db.creation_time)[:19]
+            else:
+                last_backup = "none"
+        else:
+            last_backup = "unknown"
+
         # Get the state
         main_state = StateManager.get_state_by_domainid(self.domain.domainid)
 
@@ -95,21 +110,6 @@ class MonitorApplication(RESTApplication):
             user_action_in_progress = False
         else:
             user_action_in_progress = True
-
-        # Dig out the last/most recent backup.
-        last_db = Session.query(BackupEntry).\
-            join(AgentStatusEntry).\
-            filter(AgentStatusEntry.domainid == self.domain.domainid).\
-            filter(StatusEntry.name == 'Status').\
-            order_by(BackupEntry.creation_time.desc()).\
-            first()
-
-        if last_db:
-            last_backup = str(last_db.creation_time)[:19]
-        else:
-            last_backup = "none"
-
-#        print 'tableau-status: %s, main-state: %s, backup-state: %s, last-backup: %s' % (tableau_status, main_state, backup_state, last_backup)
 
         return {'tableau-status': tableau_status,
                 'state': main_state,
