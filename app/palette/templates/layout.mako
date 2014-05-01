@@ -31,5 +31,8 @@
 ${next.body()}
 </div>
 </div>
+
+<%include file="commonjs.mako" />
+
 </body>
 </html>
