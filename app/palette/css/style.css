@@ -188,6 +188,27 @@ p {
     text-overflow:ellipsis;
     white-space: nowrap;    
 }
+.secondary-side-bar ul.actions li.active a {
+    background-color:rgba(0,0,0,0.1);
+    box-shadow:0 -2px rgba(0,0,0,0.1);
+}
+.secondary-side-bar ul.actions li.active a:after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 50%;
+    margin-top: -12px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 12px 12px 12px 0;
+    border-color: transparent #ececec transparent transparent;
+    display: block;
+}
+.secondary-side-bar.collapsed .actions li.active a {
+    background-color: #ececec;
+}
+
 .profile {
     width: 250px;
 }
