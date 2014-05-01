@@ -32,6 +32,7 @@ class DashboardPage(MainPage):
 
     def __init__(self, global_conf):
         super(DashboardPage, self).__init__(global_conf)
+        self.main_active = 'home'
         self.next = store.get('backup', 'next',
                               default='No backup is scheduled.')
 
