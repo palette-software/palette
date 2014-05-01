@@ -79,18 +79,12 @@ class StateManager(object):
         session.commit()
 
         # Send out the main started/stopped alert.
-        # Backup alerts (backup/restore started/stopped done elsewhere).
         if state in [StateEntry.STATE_STARTED, StateEntry.STATE_STOPPED]:
             if old_state == StateEntry.STATE_PENDING:
                 if state == StateEntry.STATE_STARTED:
                     self.server.alert.send(CustomAlerts.INIT_STATE_STARTED)
                 else:
                     self.server.alert.send(CustomAlerts.INIT_STATE_STOPPED)
-            else:
-                if state == StateEntry.STATE_STARTED:
-                    self.server.alert.send(CustomAlerts.STATE_STARTED)
-                else:
-                    self.server.alert.send(CustomAlerts.STATE_STOPPED)
 
     def get_state(self):
         return StateManager.get_state_by_domainid(self.domainid)
