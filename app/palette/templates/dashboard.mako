@@ -39,4 +39,3 @@
 </section>
 <%include file="events.mako" />
 
-<%include file="commonjs.mako" />
