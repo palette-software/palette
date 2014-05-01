@@ -26,6 +26,7 @@ meta.Session = MetaSession()
 import monitor
 import backup
 import manage
+import event
 
 class DashboardPage(MainPage):
     TEMPLATE = 'dashboard.mako'
