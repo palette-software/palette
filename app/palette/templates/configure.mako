@@ -2,11 +2,11 @@
 <%inherit file="layout.mako" />
 
 <style type="text/css">
-.main-side-bar ul.actions li.active-profile a {
+.main-side-bar ul.actions li.active-config a {
 	background-color:rgba(0,0,0,0.1);
 	box-shadow:0 -2px rgba(0,0,0,0.1);
 }
-.main-side-bar ul.actions li.active-profile a:after {
+.main-side-bar ul.actions li.active-config a:after {
 	content: "";
 	position: absolute;
 	right: 0;
@@ -16,10 +16,10 @@
 	height: 0;
 	border-style: solid;
 	border-width: 12px 12px 12px 0;
-	border-color: transparent #ececec transparent transparent;
+	border-color: transparent #555A60 transparent transparent;
 	display: block;
 }
-.main-side-bar.collapsed .actions li.active-profile a {
+.main-side-bar.collapsed .actions li.active-config a {
   background-color: #ececec;
 }
 </style>
