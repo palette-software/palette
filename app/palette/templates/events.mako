@@ -2,7 +2,7 @@
   <section class="top-zone">
     <section class="row">
       <section class="col-xs-12">
-        <h1 class="page-title">Events</h1><a href="#" class="alert errors"><span>2</span>Unresolved Errors</a><a href="#" class="alert warnings"><span>3</span> Unresolved Warnings</a>
+        <h1 class="page-title">Events</h1><a href="#" class="alert errors"><span>2</span></a><a href="#" class="alert warnings"><span>3</span></a>
       </section>
     </section>
     <section class="row">
