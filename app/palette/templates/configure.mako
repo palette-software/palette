@@ -32,13 +32,13 @@
   </section>
   <ul class="actions">
     <li class="divider">&nbsp;</li>
-    <li>
+    <li ${obj.configure_active == 'profile' and 'class="active"' or ''}>
       <a href="/configure/profile">
         <i class="fa fa-fw fa-home"></i>
         <span>Profile</span>
       </a>
     </li>
-    <li>
+    <li ${obj.configure_active == 'billing' and 'class="active"' or ''}>
       <a href="/configure/billing">
         <i class="fa fa-fw fa-home"></i>
         <span>Billing</span>
@@ -62,3 +62,7 @@ ${next.body()}
 		
 	});
 </script>
+
+<div>
+  ${obj.main_active}
+</div>

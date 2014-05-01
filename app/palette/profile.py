@@ -1,6 +1,5 @@
 import os
 
-from akiri.framework.api import UserInterfaceRenderer
 from akiri.framework.api import RESTApplication
 from akiri.framework.config import store
 
@@ -10,11 +9,14 @@ from webob import exc
 from controller.meta import Session
 from controller.profile import UserProfile
 
-class Profile(UserInterfaceRenderer):
+from configure import ConfigureRenderer
 
+class Profile(ConfigureRenderer):
     TEMPLATE = "profile.mako"
-    def handle(self, req):
-        return None
+
+    def __init__(self, global_conf):
+        super(Profile, self).__init__(global_conf)
+        self.configure_active = 'profile'
 
 def make_profile(global_conf):
     return Profile(global_conf)
