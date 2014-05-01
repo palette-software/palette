@@ -13,6 +13,7 @@ import meta
 from state import StateManager, StateEntry
 from agentmanager import AgentManager
 from agentstatus import AgentStatusEntry
+from custom_alerts import CustomAlerts
 
 class StatusEntry(meta.Base):
     __tablename__ = 'status'
@@ -117,17 +118,23 @@ class StatusMonitor(threading.Thread):
                                 main_state, status)
 
         if status == "RUNNING":
-            # tabadmin calls it "RUNNING", statemanager calls it "STARTED"
+            # tabadmin calls it "RUNNING"; statemanager calls it "STARTED"
             status = StateEntry.STATE_STARTED
         if main_state == StateEntry.STATE_PENDING:
             self.stateman.update(status)
+            if status == StateEntry.STATE_STARTED:
+                self.server.alert.send(CustomAlerts.STATE_STARTED)
+            elif status == StateEntry.STATE_STOPPED:
+                self.server.alert.send(CustomAlerts.STATE_STOPPED)
             return
 
         # If the main state is wrong, correct it.
         if main_state == StateEntry.STATE_STOPPED and status == 'RUNNING':
             self.stateman.update(StateEntry.STATE_STARTED)
+            self.server.alert.send(CustomAlerts.STATE_STARTED)
         elif main_state == StateEntry.STATE_STARTED and status == 'STOPPED':
             self.stateman.update(StateEntry.STATE_STOPPED)
+            self.server.alert.send(CustomAlerts.STATE_STOPPED)
 
     def run(self):
         while True:

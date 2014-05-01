@@ -62,16 +62,16 @@ class CustomStates(object):
             # reported from tabadmin
             (StateEntry.STATE_STOPPED_RESTORE,
                 "Performing a restore.  Tableau is stopped.",
-                "yellow"),
+                "green"),
 
             (StateEntry.STATE_STOPPED_BACKUP,
                 "Performing a backup.  Tableau is stopped.",
-                "yellow"),
+                "green"),
 
             # backup for/before restore
             (StateEntry.STATE_STOPPED_BACKUP_RESTORE,
                 "Performing a backup before a restore.  Tableau is stopped.",
-                "yellow"),
+                "green"),
 
             (StateEntry.STATE_STARTING,
                 "Starting Tableau.",
@@ -79,7 +79,7 @@ class CustomStates(object):
 
             (StateEntry.STATE_STARTING_RESTORE,
                 "Starting a restore.",
-                "yellow"),
+                "green"),
 
             (StateEntry.STATE_STARTED,
                 "Tableau is running.",
