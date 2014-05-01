@@ -113,28 +113,37 @@ class StatusMonitor(threading.Thread):
 
     def set_main_state(self, status):
         main_state = self.stateman.get_state()
-        if status not in ("RUNNING", "STOPPED", "DEGRADED"):
-            self.log.error("Unknown reported state: %s with status: %s",\
-                                main_state, status)
+        if status not in (StatusEntry.STATUS_RUNNING, StatusEntry.STATUS_STOPPED,
+                                                    StatusEntry.STATUS_DEGRADED):
+            self.log.error("Unknown reported status from tableau: %s. " + \
+                                        "main_state: %s", status, main_state)
+            return  # fixme: do something more drastic than return?
 
-        if status == "RUNNING":
-            # tabadmin calls it "RUNNING"; statemanager calls it "STARTED"
-            status = StateEntry.STATE_STARTED
         if main_state == StateEntry.STATE_PENDING:
             self.stateman.update(status)
-            if status == StateEntry.STATE_STARTED:
-                self.server.alert.send(CustomAlerts.STATE_STARTED)
-            elif status == StateEntry.STATE_STOPPED:
-                self.server.alert.send(CustomAlerts.STATE_STOPPED)
+            if status == StatusEntry.STATUS_RUNNING:
+                # StateEntry calls the state "STARTED"; Tableau calls
+                # it "RUNNING".
+                self.server.alert.send(CustomAlerts.INIT_STATE_STARTED)
+            elif status == StatusEntry.STATUS_STOPPED:
+                self.server.alert.send(CustomAlerts.INIT_STATE_STOPPED)
+            elif status == StatusEntry.STATUS_DEGRADED:
+                self.server.alert.send(CustomAlerts.INIT_STATE_DEGRADED)
             return
 
         # If the main state is wrong, correct it.
-        if main_state == StateEntry.STATE_STOPPED and status == 'RUNNING':
+        if main_state == StateEntry.STATE_STOPPED and \
+                                            status == StatusEntry.STATUS_RUNNING:
             self.stateman.update(StateEntry.STATE_STARTED)
             self.server.alert.send(CustomAlerts.STATE_STARTED)
-        elif main_state == StateEntry.STATE_STARTED and status == 'STOPPED':
+        elif main_state == StateEntry.STATE_STARTED and \
+                                            status == StatusEntry.STATUS_STOPPED:
             self.stateman.update(StateEntry.STATE_STOPPED)
             self.server.alert.send(CustomAlerts.STATE_STOPPED)
+        elif status == StatusEntry.STATUS_DEGRADED and \
+                                    main_state != StatusEntry.STATUS_DEGRADED:
+            self.stateman.update(StateEntry.STATE_DEGRADED)
+            self.server.alert.send(CustomAlerts.STATE_DEGRADED)
 
     def run(self):
         while True:
