@@ -14,9 +14,9 @@
 	</ul>
       </li>
       <li class="more">
-	<a id="profile-link" href="/profile"><i class="fa fa-user"></i> <span>John Abdo</span></a>
+	<a id="profile-link" href="/configure/profile"><i class="fa fa-user"></i> <span>John Abdo</span></a>
 	<ul>
-	  <li><a href="/profile"><i class="fa fa-fw fa-user"></i> Edit Profile</a></li>
+	  <li><a href="/configure/profile"><i class="fa fa-fw fa-user"></i> Edit Profile</a></li>
 	  <li><a href="/logout"><i class="fa fa-fw fa-sign-out"></i> Log out</a></li>
 	</ul>
       </li>
