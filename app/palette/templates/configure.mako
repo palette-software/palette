@@ -3,7 +3,7 @@
 
 <%include file="side-bar.mako" />
 
-<section class="secondary-side-bar">
+<section class="secondary-side-bar config">
   <ul class="actions">
     <li class="divider">&nbsp;</li>
     <li ${obj.configure_active == 'profile' and 'class="active"' or ''}>
