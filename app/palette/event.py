@@ -1,5 +1,4 @@
 import socket
-import json
 
 from webob import exc
 
@@ -34,7 +33,7 @@ class EventApplication(RESTApplication):
                              "text": entry.text,
                              "date": str(entry.creation_time)[:19]
                           })
-        return json.dumps(events)
+        return events
 
     def handle_post(self, req):
         if 'limit' in req.POST:     # max rows to return
@@ -119,7 +118,7 @@ class EventApplication(RESTApplication):
                              "text": entry.text,
                              "date": str(entry.creation_time)[:19]
                           })
-        return json.dumps(events)
+        return events
 
     def startend_check(self, incoming):
         """Check the start or end for validity.  Valid is:
