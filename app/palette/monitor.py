@@ -28,9 +28,7 @@ class MonitorApplication(RESTApplication):
         domainname = store.get('palette', 'domainname')
         self.domain = Domain.get_by_name(domainname)
 
-
-    def handle(self, req):
-
+    def handle_monitor(self, eq):
         try:
             primary_agents = Session.query(AgentStatusEntry).\
                 filter(AgentStatusEntry.domainid == self.domain.domainid).\
@@ -118,6 +116,40 @@ class MonitorApplication(RESTApplication):
                 'user-action-in-progress': user_action_in_progress,
                 'last-backup': last_backup
                }
+
+    def handle_monitor_verbose(self, req):
+        data = {}
+
+        agent_entries = Session.query(AgentStatusEntry).\
+            filter(AgentStatusEntry.domainid == self.domain.domainid).\
+            all()
+
+        production_agents = []
+        for entry in agent_entries:
+            agent = {}
+            agent['uuid'] = entry.uuid
+            agent['displayname'] = entry.displayname
+            agent['hostname'] = entry.hostname
+            agent['agent_type'] = entry.agent_type
+            agent['version'] = entry.version
+            agent['ip_address'] = entry.ip_address
+            agent['listen_port'] = entry.listen_port
+            agent['creation_time'] = str(entry.creation_time)[:19]
+            agent['modification_time'] = str(entry.modification_time)[:19]
+            agent['last_connnection_time'] = str(entry.last_connection_time)[:19]
+            agent['last_disconnect_time'] = str(entry.last_disconnect_time)[:19]
+            production_agents.append(agent)
+
+        data['production-agents'] = production_agents
+
+        return data
+
+    def handle(self, req):
+        if req.environ['PATH_INFO'] == '/monitor':
+            return self.handle_monitor(req)
+        elif req.environ['PATH_INFO'] == '/monitor/verbose':
+            return self.handle_monitor_verbose(req)
+        raise exc.HTTPBadRequest()
 
 class StatusDialog(DialogPage):
 
