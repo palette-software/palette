@@ -31,14 +31,14 @@
     </li>
     <li class="active-logs">
       <a href="/"><i class="fa fa-fw fa-list"></i>
-	<span>Logs</span>
+        <span>Logs</span>
       </a>
     </li>  
     <li class="divider">&nbsp;</li>
     <li ${obj.main_active == 'configure' and 'class="active"' or ''}>
       <a href="/configure/profile">
-	<i class="fa fa-fw fa-cog"></i>
-	<span>Configure</span>
+      	<i class="fa fa-fw fa-cog"></i>
+      	<span>Configure</span>
       </a>
     </li>
   </ul>
