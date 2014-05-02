@@ -7,7 +7,7 @@
 
 <section class="dynamic-content config-content">
     <section class="top-zone">
-        <h1 class="page-title">Configure</h1>
+        <h1 class="page-title">Profile</h1>
     </section>
     <section class="row bottom-zone">
         <section class="col-sm-12 col-md-8 col-lg-6">
