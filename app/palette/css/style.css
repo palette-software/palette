@@ -1227,17 +1227,32 @@ article.activity p {
         width: 100%;
         left: 0;
     }
+    .secondary-side-bar.config {
+        width: 30%;
+        left: 0;
+    }
+    .secondary-side-bar.config ul.actions li i {
+        font-size: 18px;
+    }
+    .secondary-side-bar.config ul.actions li a {
+        font-size: 12px;
+    }
+    .secondary-side-bar.config + .dynamic-content {
+        left: 30%;
+        width: 70%;
+    }
+    .secondary-side-bar.config + .dynamic-content .top-zone {
+        display: none;
+    }
     .secondary-side-bar.closed {
         left: -90%;
     }
     .secondary-side-bar.closed + .dynamic-content {
         right: 0;
     }
-
     .main-side-bar.open + .secondary-side-bar {
         left: 90%;
     }
-
     .main-side-bar.open.collapsed + .secondary-side-bar {
         left: 64px;
         width: 90%;
@@ -1289,7 +1304,6 @@ article.activity p {
     .config-content {
         max-width: none;
         padding: 15px;
-        margin-top: 24px;
     }
     .profile-settings-nav {
         padding: 15px;
