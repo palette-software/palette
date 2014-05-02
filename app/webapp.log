@@ -540,3 +540,36 @@
 [2014-05-02 11:38:36] INFO  * Server starting ...
 [2014-05-02 11:38:36] INFO Using plugin directory : /home/jerv/Documents/github/palette/app/plugins
 [2014-05-02 11:39:51] INFO kill_hung_threads status: 10 threads (0 working, 10 idle, 0 starting) ave time N/A, max time 0.00sec, killed 0 workers
+[2014-05-02 11:40:46] INFO  * Server starting ...
+[2014-05-02 11:40:46] INFO Using plugin directory : /home/jerv/Documents/github/palette/app/plugins
+[2014-05-02 11:42:31] INFO  * Server starting ...
+[2014-05-02 11:42:31] INFO Using plugin directory : /home/jerv/Documents/github/palette/app/plugins
+[2014-05-02 11:48:30] INFO kill_hung_threads status: 10 threads (0 working, 10 idle, 0 starting) ave time N/A, max time 0.00sec, killed 0 workers
+[2014-05-02 11:49:51] INFO  * Server starting ...
+[2014-05-02 11:49:51] INFO Using plugin directory : /home/jerv/Documents/github/palette/app/plugins
+[2014-05-02 11:51:22] INFO  * Server starting ...
+[2014-05-02 11:51:22] INFO Using plugin directory : /home/jerv/Documents/github/palette/app/plugins
+[2014-05-02 11:54:00] INFO kill_hung_threads status: 10 threads (0 working, 10 idle, 0 starting) ave time N/A, max time 0.00sec, killed 0 workers
+[2014-05-02 11:57:51] INFO kill_hung_threads status: 10 threads (2 working, 8 idle, 0 starting) ave time 0.00sec, max time 0.00sec, killed 0 workers
+[2014-05-02 12:00:30] INFO kill_hung_threads status: 10 threads (1 working, 9 idle, 0 starting) ave time 0.00sec, max time 0.00sec, killed 0 workers
+[2014-05-02 12:04:01] INFO kill_hung_threads status: 10 threads (0 working, 10 idle, 0 starting) ave time N/A, max time 0.00sec, killed 0 workers
+[2014-05-02 13:32:40] INFO  * Server starting ...
+[2014-05-02 13:32:40] INFO Using plugin directory : /home/jerv/Documents/github/palette/app/plugins
+[2014-05-02 13:35:39] INFO  * Server starting ...
+[2014-05-02 13:35:39] INFO Using plugin directory : /home/jerv/Documents/github/palette/app/plugins
+[2014-05-02 13:35:43] INFO Shutting down threadpool
+[2014-05-02 13:35:43] INFO All workers stopped
+[2014-05-02 13:35:43] INFO Shutting down threadpool
+[2014-05-02 13:35:43] INFO All workers stopped
+[2014-05-02 13:39:24] INFO  * Server starting ...
+[2014-05-02 13:39:24] INFO Using plugin directory : /home/jerv/Documents/github/palette/app/plugins
+[2014-05-02 13:39:28] INFO  * Server starting ...
+[2014-05-02 13:39:28] INFO Using plugin directory : /home/jerv/Documents/github/palette/app/plugins
+[2014-05-02 13:39:52] INFO  * Server starting ...
+[2014-05-02 13:39:52] INFO Using plugin directory : /home/jerv/Documents/github/palette/app/plugins
+[2014-05-02 13:39:59] INFO Shutting down threadpool
+[2014-05-02 13:39:59] INFO All workers stopped
+[2014-05-02 13:39:59] INFO Shutting down threadpool
+[2014-05-02 13:39:59] INFO All workers stopped
+[2014-05-02 13:48:27] INFO  * Server starting ...
+[2014-05-02 13:48:27] INFO Using plugin directory : /home/jerv/Documents/github/palette/app/plugins
