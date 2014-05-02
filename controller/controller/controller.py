@@ -315,13 +315,13 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.print_client(str(body))
         if not body.has_key('error'):
             server.alert.send(CustomAlerts.BACKUP_FINISHED, body)
-
-            if reported_status == StatusEntry.STATUS_RUNNING:
-                stateman.update(StateEntry.STATE_STARTED)
-            elif reported_status == StatusEntry.STATUS_STOPPED:
-                stateman.update(StateEntry.STATE_STOPPED)
         else:
             server.alert.send(CustomAlerts.BACKUP_FAILED, body)
+
+        if reported_status == StatusEntry.STATUS_RUNNING:
+            stateman.update(StateEntry.STATE_STARTED)
+        elif reported_status == StatusEntry.STATUS_STOPPED:
+            stateman.update(StateEntry.STATE_STOPPED)
 
         # Get the latest status from tabadmin
         statusmon.check_status_with_connection(aconn)
@@ -392,7 +392,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
 
-        body = server.backup_cmd(aconn, target)
+        body = server.backup_cmd(aconn, None)
 
         if not body.has_key('error'):
             server.alert.send(CustomAlerts.BACKUP_FINISHED, body)
@@ -423,6 +423,11 @@ class CliHandler(socketserver.StreamRequestHandler):
             # Restore failed.  We won't update the main status here
             # since the restore failed and we don't know what
             # state tableau is in.
+
+        if reported_status == StatusEntry.STATUS_RUNNING:
+            stateman.update(StateEntry.STATE_STARTED)
+        elif reported_status == StatusEntry.STATUS_STOPPED:
+            stateman.update(StateEntry.STATE_STOPPED)
 
         self.print_client(str(body))
 
@@ -995,11 +1000,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def backup_cmd(self, aconn, target=None):
         """Perform a backup - not including any necessary migration."""
-        # fixme: make sure another backup isn't already running?
-
-        # Note: In a backup context 'target' is the destination for the backup,
-        #       while in a restore context, 'target' is the source.
-
         # Example name: Jan27_162225.tsbak
         backup_name = time.strftime("%b%d_%H%M%S") + ".tsbak"
 
@@ -1024,8 +1024,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     if agents[key].agent_type != \
                       AgentManager.AGENT_TYPE_PRIMARY:
                         target_conn = agents[key]
-                    target = None # so we know we found the target
                     break
+            if not target_conn:
+                return self.error(\
+                            "agent %s does not exist or is offline" % target)
         else:
             for key in agents:
                 if agents[key].agent_type != \
@@ -1040,8 +1042,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                         if agents[key].displayname < \
                           target_conn.displayname:
                             target_conn = agents[key]
-        if target:
-            self.error("agent %s does not exist or is offline" % target)
 
         if target_conn:
             backup_loc = target_conn
@@ -1328,7 +1328,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error('Invalid target: ' + target)
 
         if os.path.isabs(source_filename):
-            return self.error("[ERROR] May not specify an absolute pathname or disk: " + source_filename)
+            return self.error(\
+                "[ERROR] May not specify an absolute pathname or disk: " + \
+                                                                source_filename)
 
         install_dir = aconn.auth['install-dir']
         source_fullpathname = ntpath.join(install_dir, "Data", source_filename)

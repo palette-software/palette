@@ -81,8 +81,7 @@ class Alert(object):
             return
 
         # Log the event to the database
-        if alert_entry.message:
-            # If the was a message template, then include the derived message.
+        if subject != message.rstrip():
             self.event.add(subject + '.  Message: ' + message)
         else:
             self.event.add(subject)
