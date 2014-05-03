@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*- 
 <%inherit file="layout.mako" />
 
-<%include file="side-bar.mako" />
-
 <section class="secondary-side-bar config">
   <ul class="actions">
     <li class="divider">&nbsp;</li>
@@ -22,3 +20,6 @@
 </section>
 
 ${next.body()}
+
+<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/common.js">
+</script>

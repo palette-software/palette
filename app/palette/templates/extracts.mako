@@ -1,40 +1,16 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*- 
 <%inherit file="layout.mako" />
 
 <%block name="title">
-    <title>Palette - Extracts</title>
+<title>Palette - Extracts</title>
 </%block>
 
-<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/dashboard.js">
-</script>
-
-<%include file="side-bar.mako" />
-
-<section class="secondary-side-bar">
-    <a class="Psmall-only" id="toggle-events" href="#"><i class="fa fa-align-justify"></i><span> View Events</span></a>
-    <h5>Production</h5>
-    <ul class="server-list">
-        <li>
-            <a href="#">
-                <img src="/app/module/palette/images/server-icons-green.png">
-                <h5>Tableau Server Worker</h5>
-                <p>123.123.1.2</p>
-            </a>
-        </li>
-        <li>
-            <a href="#">
-                <img src="/app/module/palette/images/server-icons-green.png">
-                <h5>Tableau Server Worker</h5>
-                <p>123.123.1.2</p>
-            </a>
-        </li>
-        <li>
-            <a href="#">
-                <img src="/app/module/palette/images/server-icons-green.png">
-                <h5>Tableau Server Worker</h5>
-                <p>123.123.1.2</p>
-            </a>
-        </li>
-    </ul>
+<section class="row">
+  <section class="collumns col-sm-12 col-lg-6">
+  </section>
+  <section class="collumns col-sm-12 col-lg-6">
+  </section>
 </section>
-<%include file="events.mako" />
+
+<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/common.js">
+</script>

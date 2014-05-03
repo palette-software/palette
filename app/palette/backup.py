@@ -134,11 +134,10 @@ class BackupDialog(DialogPage):
             data['creation-time'] = str(backup.creation_time)[:19] # Cut off fraction
             self.backup_entries.append(data)
 
-class ConfigureBackup(UserInterfaceRenderer):
+class Backup(UserInterfaceRenderer):
 
-    TEMPLATE = "configure_backup.mako"
-    def handle(self, req):
-        return None
+    TEMPLATE = "backup.mako"
+    main_active = "backup"
 
-def make_configure_backup(global_conf):
-    return ConfigureBackup(global_conf)
+def make_backup(global_conf):
+    return Backup(global_conf)

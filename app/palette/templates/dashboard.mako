@@ -5,11 +5,6 @@
     <title>Palette - Activities</title>
 </%block>
 
-<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/dashboard.js">
-</script>
-
-<%include file="side-bar.mako" />
-
 <section class="secondary-side-bar">
     <a class="Psmall-only" id="toggle-events" href="#"><i class="fa fa-align-justify"></i><span> View Events</span></a>
     <h5>Production</h5>
@@ -37,4 +32,8 @@
         </li>
     </ul>
 </section>
+
 <%include file="events.mako" />
+
+<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/dashboard.js">
+</script>
