@@ -2,7 +2,7 @@
 <%inherit file="layout.mako" />
 
 <%block name="title">
-    <title>Palette - Activities</title>
+    <title>Palette - Logs</title>
 </%block>
 
 <script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/dashboard.js">
