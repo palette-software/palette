@@ -19,7 +19,7 @@
 	  </a>
 	  </li>
 	  <li>
-	    <a href="#">
+	    <a href="http://www.tableausoftware.com/support/help">
 	      <i class="fa fa-fw fa-book"></i> Tableau Docs
 	    </a>
 	  </li>
