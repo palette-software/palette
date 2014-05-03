@@ -13,10 +13,7 @@ from configure import ConfigureRenderer
 
 class Profile(ConfigureRenderer):
     TEMPLATE = "profile.mako"
-
-    def __init__(self, global_conf):
-        super(Profile, self).__init__(global_conf)
-        self.configure_active = 'profile'
+    configure_active = 'profile'
 
 def make_profile(global_conf):
     return Profile(global_conf)

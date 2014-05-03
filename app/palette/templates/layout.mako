@@ -19,8 +19,6 @@
 <link rel="stylesheet" type="text/css" href="/app/module/palette/css/style.css" media="screen">
 </%block>
 
-<script src="/app/module/palette/js/vendor/jquery.js"></script>
-
 </head>
 <body>
 
@@ -28,11 +26,12 @@
 
 <div class="wrapper">
 <div class="container">
+
+<%include file="side-bar.mako" />
+
 ${next.body()}
 </div>
 </div>
-
-<%include file="commonjs.mako" />
 
 </body>
 </html>
