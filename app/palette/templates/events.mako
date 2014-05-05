@@ -7,26 +7,46 @@
     </section>
     <section class="row">
       <section class="col-xs-12">
-        <label class="select">
-          <select class="styled-select">
-            <option>All Sites</option>
-          </select>
-        </label>
-        <label class="select">
-            <select class="styled-select">
-              <option>All Types</option>
-              <option>Errors</option>
-              <option>Warnings</option>
-              <option>Misc</option>
-            </select>
-        </label>
-        <label class="select">
-            <select class="styled-select">
-              <option>All Status</option>
-              <option>Unresolved</option>
-              <option>Resolved</option>
-            </select>
-        </label>
+        <div class="btn-group">
+          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"> All Sites<span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#">All Sites</a></li>
+            <li><a href="#">Another action</a></li>
+            <li><a href="#">Something else here</a></li>
+          </ul>
+        </div>
+        <div class="btn-group">
+          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"> All Types<span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#">All</a></li>
+            <li><a href="#">Errors</a></li>
+            <li><a href="#">Warnings</a></li>
+            <li><a href="#">Misc</a></li>
+          </ul>
+        </div>
+        <div class="btn-group">
+          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"> All Status<span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#">All</a></li>
+            <li><a href="#">Unresolved Only</a></li>
+            <li><a href="#">Resolved Only</a></li>
+          </ul>
+        </div>
+        <div class="btn-group pull-right">
+          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><i class="fa fa-fw fa-calendar"></i> Select Date<span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#">1 Week ago</a></li>
+            <li><a href="#">2 Weeks ago</a></li>
+            <li><a href="#">1 Month ago</a></li>
+            <li><a href="#">2 Months ago</a></li>
+            <li><a href="#">3 Months ago</a></li>
+            <li><a href="#">6 Months ago</a></li>
+          </ul>
+        </div>
       </section>
     </section>
   </section>

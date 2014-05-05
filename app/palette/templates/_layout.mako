@@ -12,6 +12,7 @@
 <%block name="fullstyle">
 <link href="http://fonts.googleapis.com/css?family=News+Cycle:400,700|Roboto:300,400,700" rel="stylesheet" type="text/css">
 <link rel="stylesheet" type="text/css" href="/app/module/akiri.framework/css/style.css" media="screen">
+<script src="/app/module/palette/js/bootstrap.min.js" type="text/javascript"></script>
 <%block name="style"></%block>
 </%block>
 <body>
