@@ -933,6 +933,47 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.print_client(str(body))
     do_file.__usage__ = '[GET|PUT|DELETE] <path> [source-or-target]'
 
+    def do_s3(self, cmd):
+        """Send a file to or receive a file from an S3 bucket"""
+
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
+            return
+
+        if len(cmd.args) < 3 or len(cmd.args) > 4:
+            self.usage(self.do_s3.__usage__)
+            return
+
+        action = cmd.args[0].upper()
+        bucket = cmd.args[1]
+        uri = cmd.args[2]
+
+        if len(cmd.args) == 3:
+            if action != 'GET':
+                self.usage(self.do_s3.__usage__)
+                return
+            L = uri.rsplit('/', 1)
+            if len(L) == 2:
+                path = L[1]
+            path = uri
+        elif len(cmd.args) == 4:
+            path = cmd.args[3]
+
+        self.ack()
+
+        command = Controller.PS3_BIN+' %s %s %s "%s"' % \
+            (action, bucket, uri, path)
+
+        env = {'ACCESS_KEY': 'XXX',
+               'SECRET_KEY': 'YYYYYY',
+               'SESSION': 'ZZZZZZZZZZ' }
+
+        # Send command to the agent
+        body = server.cli_cmd(command, aconn, env=env)
+        self.print_client(str(body))
+    do_s3.__usage__ = '[GET|PUT] <bucket> <URI> [source-or-target]'
+
     def do_nop(self, cmd):
         """usage: nop"""
 
@@ -996,6 +1037,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     PGET_BIN = "pget.exe"
     PINFO_BIN = "pinfo.exe"
+    PS3_BIN = "ps3.exe"
     CLI_URI = "/cli"
 
     def backup_cmd(self, aconn, target=None):
@@ -1084,14 +1126,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def status_cmd(self, aconn):
         return self.cli_cmd('tabadmin status -v', aconn)
 
-    def cli_cmd(self, command, aconn):
+    def cli_cmd(self, command, aconn, env=None):
         """ 1) Sends the command (a string)
             2) Waits for status/completion.  Saves the body from the status.
             3) Sends cleanup.
             4) Returns body from the status.
         """
 
-        body = self._send_cli(command, aconn)
+        body = self._send_cli(command, aconn, env=env)
 
         if body.has_key('error'):
             return body
@@ -1122,7 +1164,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return cli_body
 
-    def _send_cli(self, cli_command, aconn):
+    def _send_cli(self, cli_command, aconn, env=None):
         """Send a "cli" command to an Agent.
             Returns a body with the results.
             Called without the connection lock."""
@@ -1131,7 +1173,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn.lock()
 
-        req = CliStartRequest(cli_command)
+        req = CliStartRequest(cli_command, env=env)
 
         headers = {"Content-Type": "application/json"}
 
