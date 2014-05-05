@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.orm.exc import NoResultFound
+from webob import exc
 import sys
 
 from akiri.framework.api import RESTApplication, DialogPage, UserInterfaceRenderer
@@ -11,7 +12,6 @@ from akiri.framework.config import store
 from controller.meta import Session
 from controller.status import StatusEntry
 from controller.state import StateEntry, StateManager
-from controller.backup import BackupEntry
 from controller.agentstatus import AgentStatusEntry
 from controller.domain import Domain
 from controller.custom_states import CustomStates
@@ -60,8 +60,8 @@ class MonitorApplication(RESTApplication):
                     # This agent has disconnected.
                     continue
 
-        # If there is a primary agent connected, get tableau status,
-        # main, and backup states.
+        # If there is a primary agent connected, get tableau status and
+        # main state, etc.
         if primary:
             # Dig out the tableau status.
             try:
@@ -73,21 +73,6 @@ class MonitorApplication(RESTApplication):
                 tableau_status = tableau_entry.status
             except NoResultFound, e:
                 pass
-
-            # Dig out the last/most recent backup.
-            last_db = Session.query(BackupEntry).\
-                join(AgentStatusEntry).\
-                filter(AgentStatusEntry.domainid == self.domain.domainid).\
-                filter(StatusEntry.name == 'Status').\
-                order_by(BackupEntry.creation_time.desc()).\
-                first()
-
-            if last_db:
-                last_backup = str(last_db.creation_time)[:19]
-            else:
-                last_backup = "none"
-        else:
-            last_backup = "unknown"
 
         # Get the state
         main_state = StateManager.get_state_by_domainid(self.domain.domainid)
@@ -109,15 +94,6 @@ class MonitorApplication(RESTApplication):
         else:
             user_action_in_progress = True
 
-        return {'tableau-status': tableau_status,
-                'state': main_state,
-                'text': text,
-                'color': color,
-                'user-action-in-progress': user_action_in_progress,
-                'last-backup': last_backup
-               }
-
-    def handle_monitor_verbose(self, req):
         data = {}
 
         agent_entries = Session.query(AgentStatusEntry).\
@@ -140,15 +116,22 @@ class MonitorApplication(RESTApplication):
             agent['last_disconnect_time'] = str(entry.last_disconnect_time)[:19]
             production_agents.append(agent)
 
-        data['production-agents'] = production_agents
+        environments = [ { "name": "production",
+                            "agents": production_agents} ]
+
+        return {'tableau-status': tableau_status,
+                'state': main_state,
+                'text': text,
+                'color': color,
+                'user-action-in-progress': user_action_in_progress,
+                'environments': environments
+               }
 
         return data
 
     def handle(self, req):
         if req.environ['PATH_INFO'] == '/monitor':
             return self.handle_monitor(req)
-        elif req.environ['PATH_INFO'] == '/monitor/verbose':
-            return self.handle_monitor_verbose(req)
         raise exc.HTTPBadRequest()
 
 class StatusDialog(DialogPage):
