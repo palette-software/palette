@@ -24,7 +24,7 @@ class Request(object):
         body: <body>
     """
 
-    def __init__(self, action, send_body_dict = {}, xid = False):
+    def __init__(self, action, send_body_dict={}, xid=None):
         session = meta.Session()
 
         entry = None
@@ -51,8 +51,11 @@ class Request(object):
             (self.action, self.send_body, self.xid)
 
 class CliStartRequest(Request):
-    def __init__(self, cli_command):
-        super(CliStartRequest, self).__init__("start", {"cli": cli_command})
+    def __init__(self, cli_command, env=None):
+        d = {"cli": cli_command}
+        if env:
+            d["env"] = env
+        super(CliStartRequest, self).__init__("start", d)
 
 class CleanupRequest(Request):
     def __init__(self, xid):
