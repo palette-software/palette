@@ -116,7 +116,7 @@ class MonitorApplication(RESTApplication):
             agent['last_disconnect_time'] = str(entry.last_disconnect_time)[:19]
             production_agents.append(agent)
 
-        environments = [ { "name": "production",
+        environments = [ { "name": "Production",
                             "agents": production_agents} ]
 
         return {'tableau-status': tableau_status,
