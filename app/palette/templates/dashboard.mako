@@ -2,7 +2,7 @@
 <%inherit file="layout.mako" />
 
 <%block name="title">
-    <title>Palette - Activities</title>
+    <title>Palette - Home</title>
 </%block>
 
 <section class="secondary-side-bar">
