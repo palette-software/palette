@@ -5,4 +5,3 @@
 ../etc/ssl/certs/DigiCertCA.crt	/etc/ssl/certs
 ../etc/ssl/private/ssl-cert-palette-software.key	/etc/ssl/private
 ../opt/palette.wsgi		/opt/palette
-../var/palette/data/photos/blankuser.png	/var/palette/data/photos
