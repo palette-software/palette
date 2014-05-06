@@ -13,16 +13,17 @@ class CustomAlertsEntry(meta.Base):
     # The unique alert key for the subject and message templates.
     key = Column(String, unique=True, nullable=False)
 
+    # level: E (Error), W (Warning) or I (Info)
+    level = Column(String(1))
+
     # subject is a python key-value substitution template for the subject
     subject = Column(String) # The custom message for the 'key'.
 
     # message is a mako template for the message
     message = Column(String)
 
-    def __init__(self, key, subject, message=None):
-        self.key = key
-        self.subject = subject
-        self.message = message
+    icon = Column(String)
+    color = Column(String)
 
 class CustomAlerts(object):
 
@@ -37,6 +38,10 @@ class CustomAlerts(object):
     BACKUP_STARTED="BACKUP-STARTED"
     BACKUP_FINISHED="BACKUP-FINISHED"
     BACKUP_FAILED="BACKUP-FAILED"
+
+    BACKUP_BEFORE_RESTORE_STARTED="BACKUP-BEFORE-RESTORE-STARTED"
+    BACKUP_BEFORE_RESTORE_FINISHED="BACKUP-BEFORE-RESTORE-FINISHED"
+    BACKUP_BEFORE_RESTORE_FAILED="BACKUP-BEFORE-RESTORE-FAILED"
 
     RESTORE_STARTED="RESTORE-STARTED"
     RESTORE_FINISHED="RESTORE-FINISHED"
@@ -57,6 +62,11 @@ class CustomAlerts(object):
     AGENT_FAILED_STATUS="AGENT-FAILED-STATUS"
     AGENT_RETURNED_INVALID_STATUS="AGENT-RETURNED-INVALID-STATUS"
 
+    # levels
+    LEVEL_ERROR="E"
+    LEVEL_WARNING="W"
+    LEVEL_INFO="I"
+
     def get_alert(self, key):
 
         try:
@@ -73,42 +83,89 @@ class CustomAlerts(object):
         # fixme: Init the custom alerts elsewhere.
         entries = [
             (CustomAlerts.INIT_STATE_STARTED,
+                        CustomAlerts.LEVEL_INFO,
                         'Controller started.  Initial tableau state: started'),
             (CustomAlerts.INIT_STATE_STOPPED,
+                        CustomAlerts.LEVEL_INFO,
                         'Controller started.  Initial tableau state: stopped'),
             (CustomAlerts.INIT_STATE_DEGRADED,
-                        'Controller started. Initial tableau state: degraded'),
-            (CustomAlerts.STATE_STARTED, 'Tableau server started'),
-            (CustomAlerts.STATE_STOPPED, 'Tableau server stopped'),
-            (CustomAlerts.STATE_DEGRADED, 'Tableau server degraded'),
+                        CustomAlerts.LEVEL_INFO,
+                        'Controller started.  Initial tableau state: degraded'),
 
-            (CustomAlerts.BACKUP_STARTED, 'Backup Started'),
-            (CustomAlerts.BACKUP_FINISHED, 'Backup Finished'),
-            (CustomAlerts.BACKUP_FAILED, 'Backup Failed'),
+            (CustomAlerts.STATE_STARTED,
+                            CustomAlerts.LEVEL_INFO,
+                            'Tableau server started'),
+            (CustomAlerts.STATE_STOPPED,
+                            CustomAlerts.LEVEL_INFO,
+                            'Tableau server stopped'),
+            (CustomAlerts.STATE_DEGRADED,
+                            CustomAlerts.LEVEL_INFO,
+                            'Tableau server degraded'),
 
-            (CustomAlerts.RESTORE_STARTED, 'Restore Started'),
-            (CustomAlerts.RESTORE_FINISHED, 'Restore Finished'),
-            (CustomAlerts.RESTORE_FAILED, 'Restore Failed'),
+            (CustomAlerts.BACKUP_STARTED,
+                            CustomAlerts.LEVEL_INFO,
+                            'Backup Started'),
+            (CustomAlerts.BACKUP_FINISHED,
+                            CustomAlerts.LEVEL_INFO,
+                            'Backup Finished'),
+            (CustomAlerts.BACKUP_FAILED,
+                            CustomAlerts.LEVEL_INFO,
+                            'Backup Failed'),
 
-            (CustomAlerts.TABLEAU_START_FAILED, 'Tableau Start Failed'),
+            (CustomAlerts.BACKUP_BEFORE_RESTORE_STARTED,
+                                    CustomAlerts.LEVEL_INFO,
+                                    'Backup Before Restore Started'),
+            (CustomAlerts.BACKUP_BEFORE_RESTORE_FINISHED,
+                                    CustomAlerts.LEVEL_INFO,
+                                    'Backup Before Restore Finished'),
+            (CustomAlerts.BACKUP_BEFORE_RESTORE_FAILED,
+                                    CustomAlerts.LEVEL_ERROR,
+                                    'Backup Before Restore Failed'),
+
+            (CustomAlerts.RESTORE_STARTED,
+                                    CustomAlerts.LEVEL_INFO,
+                                    'Restore Started'),
+            (CustomAlerts.RESTORE_FINISHED,
+                                    CustomAlerts.LEVEL_INFO,
+                                    'Restore Finished'),
+            (CustomAlerts.RESTORE_FAILED,
+                                    CustomAlerts.LEVEL_ERROR,
+                                    'Restore Failed'),
+
+            (CustomAlerts.TABLEAU_START_FAILED,
+                                    CustomAlerts.LEVEL_ERROR,
+                                    'Tableau Start Failed'),
 
             (CustomAlerts.MAINT_START_FAILED,
-                                'Could not start Maintenance Web Server'),
+                                    CustomAlerts.LEVEL_ERROR,
+                                    'Could not start Maintenance Web Server'),
             (CustomAlerts.MAINT_STOP_FAILED,
-                                'Could not stop Maintenance Web Server'),
+                                    CustomAlerts.LEVEL_ERROR,
+                                    'Could not stop Maintenance Web Server'),
 
-            (CustomAlerts.MAINT_OFFLINE, 'Maintenance web page is now offline'),
-            (CustomAlerts.MAINT_ONLINE, 'Maintenance web page is now online'),
+            (CustomAlerts.MAINT_OFFLINE,
+                                    CustomAlerts.LEVEL_INFO,
+                                    'Maintenance web page is now offline'),
+            (CustomAlerts.MAINT_ONLINE,
+                                    CustomAlerts.LEVEL_INFO,
+                                    'Maintenance web page is now online'),
 
             (CustomAlerts.ARCHIVE_START_FAILED,
-                                        'Could not start Archive Web Server'),
+                                    CustomAlerts.LEVEL_ERROR,
+                                    'Could not start Archive Web Server'),
             (CustomAlerts.ARCHIVE_STOP_FAILED,
-                                        'Could not stop Archive Web Server'),
+                                    CustomAlerts.LEVEL_ERROR,
+                                    'Could not stop Archive Web Server'),
 
-            (CustomAlerts.AGENT_COMM_LOST, 'Communication lost with agent'),
-            (CustomAlerts.AGENT_FAILED_STATUS, 'Failed status from agent'),
+            (CustomAlerts.AGENT_COMM_LOST,
+                                    CustomAlerts.LEVEL_ERROR,
+                                    'Communication lost with agent'),
+            (CustomAlerts.AGENT_FAILED_STATUS,
+                                    CustomAlerts.LEVEL_ERROR,
+                                    'Failed status from agent'),
             (CustomAlerts.AGENT_RETURNED_INVALID_STATUS,
-                                        'Agent returned invalid status')
+                                    CustomAlerts.LEVEL_ERROR,
+                                    'Agent returned invalid status')
         ]
         entry = meta.Session.query(CustomAlertsEntry).first()
 
@@ -116,7 +173,10 @@ class CustomAlerts(object):
             return
 
         for alert in entries:
-            entry = apply(CustomAlertsEntry, alert)
+            entry = CustomAlertsEntry()
+            entry.key = alert[0]
+            entry.level = alert[1]
+            entry.subject = alert[2]
             meta.Session.add(entry)
 
         meta.Session.commit()

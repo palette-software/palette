@@ -39,12 +39,9 @@ class Alert(object):
             Arguments:
                 key:    The key to look up.
 
-                data:           If a dictionary:
-                                    Used for both the subject and
-                                    message body (from the db).
-
-                                If a string:
-                                    Used as the message body.
+                data:   A Dictionary:
+                        Used for both the subject and
+                        message body (from the db).
         """
 
         alert_entry = self.custom_alerts.get_alert(key)
@@ -55,36 +52,27 @@ class Alert(object):
             subject = key
             message = None
 
-        # If data is a dict, use it for substitution.
-        if type(data) == dict:
+        # Use the data dict it for template substitution.
+        try:
+            subject = subject % data
+        except KeyError as e:
+            subject = "Template subject conversion failure: " + str(e) + \
+                "subject: " + subject + \
+                ", data: " + str(data)
+        if message:
+            mako_template = Template(message)
             try:
-                subject = subject % data
-            except KeyError as e:
-                subject = "Template subject conversion failure: " + str(e) + \
-                    "subject: " + subject + \
-                    ", data: " + str(data)
-            if message:
-                mako_template = Template(message)
-                try:
-                    message = mako_template.render(**data)
-                except NameError as e:
-                    message = "Mako template message conversion failure: " + \
-                        str(e) + "\ntemplate: " + message + \
-                    "\ndata: " + str(data)
-            else:
-               message = self.make_message(subject, data)
-        elif isinstance(data, str):
-            # If data is a string, use it as the raw message body
-            message = data
+                message = mako_template.render(**data)
+            except NameError as e:
+                message = "Mako template message conversion failure: " + \
+                    str(e) + "\ntemplate: " + message + \
+                "\ndata: " + str(data)
         else:
-            self.log.error("Invalid type for data: %s", str(type(data)))
-            return
+           message = self.make_message(subject, data)
 
         # Log the event to the database
-        if subject != message.rstrip():
-            self.event.add(subject + '.  Message: ' + message)
-        else:
-            self.event.add(subject)
+        self.event.add(subject, message, alert_entry.level, alert_entry.icon, \
+                                                            alert_entry.color)
 
         if not message:
             # If no data was sent, use the subject as the message.
@@ -135,16 +123,12 @@ class Alert(object):
 
             Arguments:
                 subject  The subject for the alert message.
-                body     A string or the 'body' dictionary response
-                         from the agent.
+                body     The 'body' dictionary which is a response
+                         from the agent or well-known key-value pairs (see below)
         """
 
         if isinstance(body, str) or isinstance(body, unicode):
             return subject + '\n\n' + body
-
-        if type(body) != dict:
-            self.log.info("alert was passed a %s instead of string or dictionary.",  type(body))
-            return str(body)
 
         message = subject + '\n\n'
 
@@ -161,7 +145,8 @@ class Alert(object):
             message += self.indented("Unexpected Error", body['error']) + '\n'
 
         if body.has_key('info'):
-            message += self.indented("Note", body['info']) + '\n'
+            message += self.indented("Additional information", body['info']) + \
+                                                                        '\n'
 
         # Always include stderr.
         if body.has_key('stderr'):

@@ -26,6 +26,8 @@ from sqlalchemy.orm.exc import NoResultFound
 # fixme: maybe combine with the AgentStatusEntry class.
 class AgentConnection(object):
 
+    TABLEAU_DATA_DIR = ntpath.join("ProgramData", "Tableau", "Tableau Server")
+
     def __init__(self, server, conn, addr):
         self.server = server
         self.socket = conn
@@ -56,6 +58,12 @@ class AgentConnection(object):
 
     def unlock(self):
         self.lockobj.release()
+
+    def get_tableau_data_dir(self):
+        if not self.tableau_install_dir:
+            return None
+        volume = self.tableau_install_dir.split(':')[0]
+        return ntpath.join(volume + ':\\', AgentConnection.TABLEAU_DATA_DIR)
 
     def user_action_lock(self, blocking=True):
         return self.user_action_lockobj.acquire(blocking)
@@ -324,8 +332,8 @@ class AgentManager(threading.Thread):
 
             if send_alert:
                 self.server.alert.send(reason,
-                    "\nAgent: %s\nAgent type: %s\nAgent uuid %s" %
-                            (agent.displayname, agent.agent_type, uuid))
+                    {'info': "\nAgent: %s\nAgent type: %s\nAgent uuid %s" %
+                            (agent.displayname, agent.agent_type, uuid) } )
 
             self.forget(agent.agentid)
             self.log.debug("remove_agent: closing agent socket.")
