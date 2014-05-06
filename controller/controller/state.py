@@ -67,7 +67,6 @@ class StateManager(object):
             filter(StateEntry.domainid == self.domainid).first()
 
         if entry:
-            old_state = entry.state
             session.query(StateEntry).\
                 filter(StateEntry.domainid == self.domainid).\
                 update({'state': state})

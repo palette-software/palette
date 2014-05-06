@@ -388,17 +388,17 @@ class CliHandler(socketserver.StreamRequestHandler):
         #FIXME: refactor do_backup() into do_backup() and backup()
         log.debug("------------Starting Backup for Restore--------------")
 
-        server.alert.send(CustomAlerts.BACKUP_STARTED)
+        server.alert.send(CustomAlerts.BACKUP_BEFORE_RESTORE_STARTED)
 
         self.ack()
 
         body = server.backup_cmd(aconn, None)
 
         if not body.has_key('error'):
-            server.alert.send(CustomAlerts.BACKUP_FINISHED, body)
+            server.alert.send(CustomAlerts.BACKUP_BEFORE_RESTORE_FINISHED, body)
             backup_success = True
         else:
-            server.alert.send(CustomAlerts.BACKUP_FAILED, body)
+            server.alert.send(CustomAlerts.BACKUP_BEFORE_RESTORE_FAILED, body)
             backup_success = False
 
         if not backup_success:
@@ -1603,10 +1603,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if body.has_key("error"):
             if action == "start":
                 server.alert.send(\
-                    CustomAlerts.MAINT_START_FAILED, body['error'])
+                    CustomAlerts.MAINT_START_FAILED, {'error': body['error']})
             else:
                 server.alert.send(\
-                    CustomAlerts.MAINT_STOP_FAILED, body['error'])
+                    CustomAlerts.MAINT_STOP_FAILED, {'error': body['error']})
             return body
 
         if not send_alert:
@@ -1741,9 +1741,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """
 
         TABLEAU_INSTALL_DIR="tableau-install-dir"
-        YML_CONFIG_FILE_PART=ntpath.join(\
-                "ProgramData", "Tableau", "Tableau Server", "data", "tabsvc",
-                                                    "config", "workgroup.yml")
+        YML_CONFIG_FILE_PART=ntpath.join("data", "tabsvc", "config",
+                                                            "workgroup.yml")
 
         # The info() command requires a displayname.  This displayname is
         # is temporary until we get info from the agent:
@@ -1778,9 +1777,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                                 aconn.tableau_install_dir)
                     return False
 
-                volume = aconn.tableau_install_dir.split(':')[0]
-
-                yml_config_file = ntpath.join(volume + ':\\', YML_CONFIG_FILE_PART)
+                yml_config_file = ntpath.join(
+                            aconn.get_tableau_data_dir(), YML_CONFIG_FILE_PART)
 
                 try:
                     aconn.yml_contents = aconn.filemanager.get(yml_config_file)
