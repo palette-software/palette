@@ -114,6 +114,10 @@ class MonitorApplication(RESTApplication):
             agent['modification_time'] = str(entry.modification_time)[:19]
             agent['last_connnection_time'] = str(entry.last_connection_time)[:19]
             agent['last_disconnect_time'] = str(entry.last_disconnect_time)[:19]
+            if entry.connected():
+                agent['color'] = 'green'
+            else:
+                agent['color'] = 'red'
             production_agents.append(agent)
 
         environments = [ { "name": "Production",
