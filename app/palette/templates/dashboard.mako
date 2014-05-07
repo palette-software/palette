@@ -6,7 +6,7 @@
 </%block>
 
 <section class="secondary-side-bar">
-    <a class="Psmall-only" id="toggle-events" href="#"><i class="fa fa-align-justify"></i><span> View Events</span></a>
+    <a class="Psmall-only" id="toggle-events" href="#"><i class="fa"></i></a>
     <h5>Production</h5>
     <ul class="server-list">
         <li>

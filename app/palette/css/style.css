@@ -63,6 +63,7 @@ p {
     transition: all 0.3s ease-out;
     overflow-y:scroll;
     padding-bottom: 64px;
+    max-width: 600px;
 }
 .secondary-side-bar h5 {
     width: 100%;
@@ -269,7 +270,7 @@ ul.dropdown-menu li {
     overflow: hidden;
 }
 ul.dropdown-menu a {
-    padding: 5px 20px !important;
+    padding: 5px 20px 5px 10px !important;
     font-weight: 300;
     color: #fff;
 }
@@ -318,10 +319,10 @@ ul.dropdown-menu a:hover {
 .main-side-bar.collapsed {
     width: 64px;
 }
-.main-side-bar.collapsed + .secondary-side-bar {
+.secondary-side-bar.collapsed {
     left: 64px;
 }
-.main-side-bar.collapsed + .secondary-side-bar + .dynamic-content {
+.dynamic-content.collapsed {
     left: 384px;
 }
 .main-side-bar.collapsed img {
@@ -777,6 +778,9 @@ input[type="text"], input[type="password"], input[type="email"], select {
     width: 100%;
     margin: 5px 0 15px 0;
 }
+.config-content input[type="text"], input[type="password"], input[type="email"], select {
+    max-width: none;
+}
 input[type="text"]:focus, input[type="password"]:focus, input[type="date"]:focus, input[type="datetime"]:focus, input[type="datetime-local"]:focus, input[type="month"]:focus, input[type="week"]:focus, input[type="email"]:focus, input[type="number"]:focus, input[type="search"]:focus, input[type="tel"]:focus, input[type="time"]:focus, input[type="url"]:focus, textarea:focus {
     border: 1px solid #66c3f0;
     outline: 0;
@@ -1056,7 +1060,7 @@ ul.title-area > li > h1 > a {
     cursor: pointer;
 }
 article.event {
-    background-color: #e1e1e1;
+    background-color: #e5e5e5;
     border-radius: 5px;
     display: block;
     width: 100%;
@@ -1075,7 +1079,7 @@ article.event.open {
     height: auto;
 }
 article.event:hover {
-    background-color: #d5d5d5;
+    background-color: #e1e1e1;
     cursor: pointer;    
 }
 article.event i {
@@ -1169,38 +1173,53 @@ article.event.open div {
 /*SMALL SCREENS */
  @media screen and (max-width: 960px) {
 
-    #toggle-events {
+    .secondary-side-bar #toggle-events {
         position: absolute;
         font-size: 12px;
         top: 0;
         right: 0;
-        z-index: 20;
+        z-index: 50;
         display: block;
-        padding: 0 10px;
-        height: 48px;
+        padding: 0;
+        width: 64px;
+        height: 64px;
+        line-height: 64px;
         text-align: center;
-        line-height: 48px;
+        line-height: 64px;
         color: #8e96a3;
+        display: none;
     }
-    #toggle-events:hover, #toggle-events:active {
+    .secondary-side-bar.closed #toggle-events:hover, .secondary-side-bar.closed #toggle-events:active {
         text-decoration: none;
         background-color: rgba(250, 250, 250, 0.1);
         color: #fff;
     }
-    #toggle-events i {
+    .secondary-side-bar #toggle-events i {
         font-size: 18px;
         vertical-align: middle;
         margin-right: 10px;
         color: #fff;
         text-align: center;
-        line-height: 48px;
     }
     .secondary-side-bar.closed #toggle-events {
-        padding: 0 0;
-        width: 48px;
+        display: block;
     }
-    .secondary-side-bar.closed #toggle-events span {
-        display: none;
+    #toggle-events.active i {
+        color: #fff;
+    }
+    #toggle-events.active i:after {
+        bottom: -24px;
+        left: 50%;
+        border: solid transparent;
+        content: " ";
+        height: 0;
+        width: 0;
+        position: absolute;
+        pointer-events: none;
+        border-color: rgba(51, 51, 51, 0);
+        border-top-color: #333;
+        border-width: 12px;
+        margin-left: -12px;
     }
     .secondary-side-bar.closed #toggle-events i {
         margin: 0;
@@ -1208,14 +1227,17 @@ article.event.open div {
     .secondary-side-bar.closed #toggle-events i:before {
         content:"\f060";
     }
-    .main-side-bar.open.collapsed + .secondary-side-bar #toggle-events {
-        right: 22px;
-    }
     #mainNav ul.nav li, .nav>li {
         position: static;
     }
     #mainNav ul.nav li > ul {
         width: 100%;
+    }
+    #mainNav ul.nav li > a {
+        padding: 0 8px;
+    }
+    #mainNav ul.nav li > a i {
+        font-size: 18px;
     }
     #mainNav ul.nav li > a span {
         display: none;
@@ -1304,9 +1326,9 @@ article.event.open div {
 
     .dynamic-content {
         left: auto;
-        padding: 25px 7px 120px 7px;
+        padding: 20px 10px 120px 10px;
         width: 90%;
-        right: -90%;
+        left: 600px;
     }
 
     .secondary-side-bar {
@@ -1323,31 +1345,33 @@ article.event.open div {
     .secondary-side-bar.config ul.actions li a {
         font-size: 12px;
     }
-    .secondary-side-bar.config + .dynamic-content {
+    .dynamic-content.config-content {
         left: 30%;
         width: 70%;
     }
     .secondary-side-bar.closed {
-        left: -90%;
+        left: -540px;
+        width: 600px;
     }
-    .secondary-side-bar.closed + .dynamic-content {
-        right: 0;
+    .dynamic-content.closed  {
+        left: 60px;
     }
-    .main-side-bar.open + .secondary-side-bar {
+    .secondary-side-bar.open {
         left: 90%;
     }
-    .main-side-bar.open.collapsed + .secondary-side-bar {
+    .secondary-side-bar.open.collapsed {
         left: 64px;
         width: 90%;
     }
-    .main-side-bar.open + .secondary-side-bar + .dynamic-content {
+    .dynamic-content.open {
         left: 90%;
     }
-    .main-side-bar.collapsed + .secondary-side-bar {
+    .secondary-side-bar.collapsed {
         left:0;
     }
-    .main-side-bar.open.collapsed + .secondary-side-bar + .dynamic-content {
-        left: 67px;
+    .dynamic-content.open.collapsed {
+        left: 90%;
+        margin-left: -50px;
     }
     .main-side-bar.open.collapsed {
         left: 0;
@@ -1453,8 +1477,7 @@ article.event.open div {
         color: #fff;
     }
     #toggle-event-filters i {
-        font-size: 18px;
-        vertical-align: middle;
+        font-size: 24px;
         margin-right: 10px;
         color: #8e96a3;
         text-align: center;
@@ -1464,9 +1487,13 @@ article.event.open div {
         content: " show filters";
         color: #8e96a3;
         font-size: 14px;
+        vertical-align: top;
     }
     #toggle-event-filters.open i {
         color: #697078;
+    }
+    #toggle-event-filters.open i:before {
+        content: "\f107";
     }
     #toggle-event-filters.open i:after {
         content: " hide filters";

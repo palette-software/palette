@@ -13,7 +13,7 @@
     </section>
     <h5 class="sub">Timeframe</h5>
     <div class="btn-group">
-	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"> Cloud Only<span class="caret"></span>
+	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>Cloud Only</div><span class="caret"></span>
 	  </button>
 	  <ul class="dropdown-menu" role="menu">
 	    <li><a href="#">Cloud Only</a></li>
@@ -23,7 +23,7 @@
 	</div>
     <h5 class="sub">Publisher</h5>
     <div class="btn-group">
-	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"> First Publisher<span class="caret"></span>
+	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>First Publisher</div><span class="caret"></span>
 	  </button>
 	  <ul class="dropdown-menu" role="menu">
 	    <li><a href="#">First Publisher</a></li>
@@ -33,7 +33,7 @@
 	</div>
 	<h5 class="sub">Project</h5>
     <div class="btn-group">
-	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"> First Project<span class="caret"></span>
+	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>First Project</div><span class="caret"></span>
 	  </button>
 	  <ul class="dropdown-menu" role="menu">
 	    <li><a href="#">Cloud Only</a></li>
@@ -43,7 +43,7 @@
 	</div>
 	<h5 class="sub">Site</h5>
     <div class="btn-group">
-	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"> First Site<span class="caret"></span>
+	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>First Site</div><span class="caret"></span>
 	  </button>
 	  <ul class="dropdown-menu" role="menu">
 	    <li><a href="#">Cloud Only</a></li>
@@ -53,7 +53,7 @@
 	</div>
 	<h5 class="sub">Status</h5>
     <div class="btn-group">
-	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"> Type<span class="caret"></span>
+	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>Type</div><span class="caret"></span>
 	  </button>
 	  <ul class="dropdown-menu" role="menu">
 	    <li><a href="#">All</a></li>

@@ -13,7 +13,7 @@
     </section>
     <h5 class="sub">Placeholder</h5>
     <div class="btn-group">
-	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"> Placeholder<span class="caret"></span>
+	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>Placeholder</div><span class="caret"></span>
 	  </button>
 	  <ul class="dropdown-menu" role="menu">
 	    <li><a href="#">Example</a></li>
@@ -23,7 +23,7 @@
 	</div>
     <h5 class="sub">Placeholder</h5>
     <div class="btn-group">
-	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"> Placeholder<span class="caret"></span>
+	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>Placeholder</div><span class="caret"></span>
 	  </button>
 	  <ul class="dropdown-menu" role="menu">
 	    <li><a href="#">Example</a></li>
