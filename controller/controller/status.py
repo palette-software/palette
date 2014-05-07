@@ -137,7 +137,7 @@ class StatusMonitor(threading.Thread):
         if main_state == StateEntry.STATE_DEGRADED and \
                                 status != StatusEntry.STATUS_DEGRADED:
             self.stateman.update(status)
-            if status == StateEntry.STATUS_RUNNING:
+            if status == StatusEntry.STATUS_RUNNING:
                 # fixme: should we have a unique alert for the transition
                 # from DEGRADED to RUNNING instead of this standard
                 # "started" alert?
