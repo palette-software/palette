@@ -22,6 +22,20 @@ class EventApplication(RESTApplication):
         self.domainid = Domain.get_by_name(domainname).domainid
 
     def handle_get(self, req):
+        # Event retrieval accepts:
+        #   What should be selected from the event table:
+        #       start: eventid or a date/time.  Requirement: start <= end
+        #       end: eventid or a date/time
+        #   You don't have to specify both a start and end.
+        #
+        #   After the rows are selected by the above 'start' and 'end',
+        #   you can choose EITHER "low" or "high".
+        #   If "low" is specifified, low/earlier rows are returned.
+        #   If "high" is specfieid, high/later rows are returned.
+        #   With "low" and "high", you specify the maximum number of rows to return:
+        #       low=30 (return the lowest 30 rows)
+        #   or
+        #       high=30 (return the highest 30 rows)
         # Sample requests:
         #   http://localhost:8080/rest/events?start=3&end=10&low=2&order=asc
         #   http://localhost:8080/rest/events?end=10&high=3&order=asc
@@ -33,12 +47,12 @@ class EventApplication(RESTApplication):
         #       (start=datetime, end=eventid)
         #   http://localhost:8080/rest/events?start=5&end=4&low=3
         #       (end < start)
-        # start and end are event-id's.
+        # start and end are event-id's or date-related:
         #   event-id (integer), "now", "epoch", or a datetime.
         #   datetime examples:
-        #   2014-04-12
-        #   12/04/2013 12:00:00
-        #   12/04/2013 12:34:54 PM
+        #       2014-04-12
+        #       12/04/2013 12:00:00
+        #       12/04/2013 12:34:54 PM
         start = None
         end = None
         # Can't specify low AND high
@@ -61,9 +75,9 @@ class EventApplication(RESTApplication):
                 print "Invalid high:", req.GET['high']
                 raise exc.HTTPBadRequest()
 
-        if low and high:
-            print "Can't specify both 'low' and 'high'"
-            raise exc.HTTPBadRequest()
+            if low:
+                print "Can't specify both 'low' and 'high'"
+                raise exc.HTTPBadRequest()
 
         if 'order' in req.GET:
             order = req.GET['order']
