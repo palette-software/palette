@@ -18,7 +18,7 @@
             <input type="email" name="username" placeholder="Tableau Username" />
             <label>Admin Type</label>
             <div class="btn-group">
-              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">No Administrator Access<span class="caret"></span>
+              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>No Administrator Access</div><span class="caret"></span>
               </button>
               <ul class="dropdown-menu" role="menu">
                 <li><a href="#">No Administrator Access</a></li>
@@ -28,7 +28,7 @@
             </div>
             <label>Location Info</label>
             <div class="btn-group">
-              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">No Administrator Access<span class="caret"></span>
+              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>Time Zone</div><span class="caret"></span>
               </button>
               <ul class="dropdown-menu" role="menu">
                 <li><a href="#">(GMT -12:00) Eniwetok, Kwajalein</a></li>

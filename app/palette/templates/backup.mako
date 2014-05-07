@@ -23,7 +23,7 @@
     </ul>
     <h5 class="sub">Archive Backups to</h5>
     <div class="btn-group">
-	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"> Cloud Only <span class="caret"></span>
+	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>Cloud Only</div><span class="caret"></span>
 	  </button>
 	  <ul class="dropdown-menu" role="menu">
 	    <li><a href="#">Cloud Only</a></li>
