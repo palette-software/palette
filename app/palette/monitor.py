@@ -142,7 +142,7 @@ class MonitorApplication(RESTApplication):
 
         return {'tableau-status': tableau_status,
                 'state': main_state,
-                'allowable_actions': allowable_actions,
+                'allowable-actions': allowable_actions,
                 'text': text,
                 'color': color,
                 'user-action-in-progress': user_action_in_progress,
