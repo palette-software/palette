@@ -15,7 +15,7 @@
         	</a>
         </li>
         <li>
-        	<a href="#"> 
+        	<a href="#" class="inactive"> 
         		<i class="fa fa-fw fa-repeat"></i>
         		<span>Restore</span>
         	</a>

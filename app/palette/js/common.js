@@ -14,6 +14,14 @@ require.config({
 require(['jquery', 'topic', 'domReady!'],
 function (jquery, topic)
 {
+    /* MOBILE TITLE */
+
+    $(function(){
+        var pageTitle = $('title').text();
+        $('.mobile-title').text(pageTitle);
+    });
+
+
     /* SIDEBAR */
     $('#toggle-side-menu').bind('click', function() {
 	$('.main-side-bar').toggleClass('collapsed');
@@ -32,10 +40,21 @@ function (jquery, topic)
     }
 
     $(function(){
-	$('#toggle-events').bind('click', function() {
-	    clearmenu();
-	    $('.secondary-side-bar').toggleClass('closed');
-	});	
+    	$('#toggle-events').bind('click', function() {
+    	    clearmenu();
+    	    $('.secondary-side-bar').toggleClass('closed');
+    	});	
+    });
+
+    /* EVENTS */
+
+    $('.event').bind('click', function() {
+        $(this).toggleClass('open');
+    });
+
+    $('#toggle-event-filters').bind('click', function() {
+        $(this).toggleClass('open');
+        $('.top-zone').find('.btn-group').toggleClass('visible');
     });
 
     /* HEADER POPUP MENUS */
