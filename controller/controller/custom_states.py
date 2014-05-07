@@ -148,7 +148,7 @@ class CustomStates(object):
             entry.state = state[0]
             entry.text = state[1]
             entry.allowable_actions = state[2]
-            entry.color = "green"    # fixme: bad default
+            entry.color = state[3]
             meta.Session.add(entry)
 
         meta.Session.commit()
