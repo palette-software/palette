@@ -1417,6 +1417,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     self.delete_file(aconn, source_fullpathname)
                 return stop_body
 
+            server.alert.send(CustomAlerts.STATE_STOPPED)
+
         # 'tabadmin restore ...' starts tableau as part of the restore procedure.
         # fixme: Maybe the maintenance web server wasn't running?
         maint_msg = ""
