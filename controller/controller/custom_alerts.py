@@ -84,7 +84,7 @@ class CustomAlerts(object):
         entries = [
             (CustomAlerts.INIT_STATE_STARTED,
                         CustomAlerts.LEVEL_INFO,
-                        'Controller started.  Initial tableau state: started'),
+                        'Controller started.  Initial tableau state: running'),
             (CustomAlerts.INIT_STATE_STOPPED,
                         CustomAlerts.LEVEL_INFO,
                         'Controller started.  Initial tableau state: stopped'),
@@ -94,7 +94,7 @@ class CustomAlerts(object):
 
             (CustomAlerts.STATE_STARTED,
                             CustomAlerts.LEVEL_INFO,
-                            'Tableau server started'),
+                            'Tableau server running'),
             (CustomAlerts.STATE_STOPPED,
                             CustomAlerts.LEVEL_INFO,
                             'Tableau server stopped'),
