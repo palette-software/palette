@@ -175,23 +175,71 @@ class AgentManager(threading.Thread):
 
         self.unlock()
 
-    # formerly agentstatus.add()
+    def calc_new_displayname(self, new_agent):
+        """
+            The naming scheme for V1:
+                Tableau Primary
+                Tableau Worker #1
+                Tableau Worker #2
+                    ...
+                Other Server #1
+                Other Server #2
+                    ...
+        """
+        PRIMARY_TEMPLATE="Tableau Primary" # not a template since only 1
+        WORKER_TEMPLATE="Tableau Worker #%d"
+        OTHER_TEMPLATE="Tableau Other #%d"
+
+        if new_agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+            return PRIMARY_TEMPLATE
+
+        session = meta.Session()
+
+        # Count how many of this agent type exist.
+        rows = session.query(AgentStatusEntry).\
+            filter(AgentStatusEntry.domainid == self.domainid).\
+            filter(AgentStatusEntry.agent_type == new_agent.agent_type).\
+            all()
+
+        # The new agent will be the next one.
+        count = len(rows) + 1
+
+        if new_agent.agent_type == AgentManager.AGENT_TYPE_WORKER:
+            return WORKER_TEMPLATE % count
+        elif new_agent.agent_type == AgentManager.AGENT_TYPE_OTHER:
+            return OTHER_TEMPLATE % count
+        self.log.error("calc_new_displayname: INVALID agent type: %s",
+                                                            new_agent.agent_type)
+        return "INVALID AGENT TYPE: %s" % new_agent.agent_type
+
     def remember(self, new_agent, body):
         session = meta.Session()
 
         # fixme: check for the presence of all these entries.
-        entry = AgentStatusEntry(body['hostname'],
-                                 new_agent.agent_type,
-                                 body['version'],
-                                 body['ip-address'],
-                                 body['listen-port'],
-                                 body['uuid'],
-                                 self.domainid)
-        entry.last_connection_time = func.now()
-        entry = session.merge(entry)
-        if entry.displayname == None or entry.displayname == "":
-            entry.displayname = entry.hostname
+        try:
+            entry = session.query(AgentStatusEntry).\
+                filter(AgentStatusEntry.domainid == self.domainid).\
+                filter(AgentStatusEntry.uuid == body['uuid']).\
+                one()
+            found = True
+        except NoResultFound, e:
+            found = False
 
+        if not found or entry.displayname == None or entry.displayname == "":
+            displayname = self.calc_new_displayname(new_agent)
+
+        entry = AgentStatusEntry(body['hostname'],
+                         new_agent.agent_type,
+                         body['version'],
+                         body['ip-address'],
+                         body['listen-port'],
+                         body['uuid'],
+                         self.domainid)
+        entry.last_connection_time = func.now()
+        if not found:
+            entry.displayname = displayname
+
+        entry = session.merge(entry)
         # Remember the yml contents
         if new_agent.yml_contents:
             self.update_agent_yml(entry.agentid, new_agent.yml_contents)
