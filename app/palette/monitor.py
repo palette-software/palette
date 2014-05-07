@@ -83,22 +83,18 @@ class MonitorApplication(RESTApplication):
                 one()
         except NoResultFound, e:
             main_state = StateEntry.STATE_DISCONNECTED
-            allowable_actions_str = ""
         else:
             main_state = state_entry.state
-            allowable_actions_str = state_entry.allowable_actions
-            if allowable_actions_str == None:
-                allowable_actions_str = ""
-
-        # Convert the space-sparated string to a list, e.g.
-        # "start stop reset" --> ["start", "stop", "reset"]
-        allowable_actions = allowable_actions_str.split(' ')
 
         custom_state_entry = CustomStates.get_custom_state_entry(main_state)
         if not custom_state_entry:
             print "UNKNOWN STATE!  State:", main_state
             # fixme: stop everything?  Log this somewhere?
             return
+
+        # Convert the space-sparated string to a list, e.g.
+        # "start stop reset" --> ["start", "stop", "reset"]
+        allowable_actions = custom_state_entry.allowable_actions.split(' ')
 
         text = custom_state_entry.text
         color = custom_state_entry.color

@@ -41,16 +41,9 @@ class StateEntry(meta.Base):
 
     STATE_UNKNOWN="UNKNOWN"        # no primary ever connected to the controller
 
-    # Allowable actions:
-    ACTION_START="start"
-    ACTION_STOP="stop"
-    ACTION_RESET="reset"
-    ACTION_RESTART="restart"
-
     domainid = Column(BigInteger, ForeignKey("domain.domainid"),
                                         nullable=False, primary_key=True)
     state = Column(String)
-    allowable_actions = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
       server_onupdate=func.current_timestamp())
@@ -68,19 +61,6 @@ class StateManager(object):
             # tabadmin calls it "RUNNING", we called it "STARTED"
             state = StateEntry.STATE_STARTED
 
-        # Determine what allowable actions are for the given state
-        # (Only for stop/start/reset/restart and not backup/restore-related)
-        if state == StateEntry.STATE_STARTED:
-            allowable_actions = ' '.join(\
-                [StateEntry.ACTION_STOP, StateEntry.ACTION_RESET,
-                                                        StateEntry.ACTION_RESTART])
-        elif state == StateEntry.STATE_STOPPED:
-            allowable_actions = ' '.join(
-                [StateEntry.ACTION_START, StateEntry.ACTION_RESET,
-                                                        StateEntry.ACTION_RESTART])
-        else:
-            allowable_actions = ""
-
         self.log.info("-------state changing to %s----------", state)
         session = meta.Session()
         entry = session.query(StateEntry).\
@@ -89,8 +69,7 @@ class StateManager(object):
         if entry:
             session.query(StateEntry).\
                 filter(StateEntry.domainid == self.domainid).\
-                update({'state': state,
-                        'allowable_actions': allowable_actions})
+                update({'state': state})
         else:
             entry = StateEntry(domainid=self.domainid, state=state)
             session.add(entry)
