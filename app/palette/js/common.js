@@ -115,6 +115,7 @@ function (jquery, topic)
         }
         var src = '/app/module/palette/images/status-'+color+'-light.png';
         jquery('#status-image').attr('src', src);
+        jquery('#status-text').attr("class", color);
     }
 
     function poll() {

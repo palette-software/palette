@@ -311,10 +311,23 @@ ul.dropdown-menu a:hover {
 }
 .main-side-bar .status h2 span {
     display: block;
-    color: #75e25a;
+    color: white;
     font-size: 24px;
     font-weight: 400;
 }
+
+.main-side-bar .status h2 span.green {
+    color: #75e25a;
+}
+
+.main-side-bar .status h2 span.yellow {
+    color: #dc994c;
+}
+
+.main-side-bar .status h2 span.red {
+    color: #ef5455;
+}
+
 .main-side-bar.collapsed {
     width: 64px;
 }
