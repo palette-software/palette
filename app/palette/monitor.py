@@ -13,6 +13,7 @@ from controller.meta import Session
 from controller.status import StatusEntry
 from controller.state import StateEntry, StateManager
 from controller.agentstatus import AgentStatusEntry
+from controller.agentmanager import AgentManager
 from controller.domain import Domain
 from controller.custom_states import CustomStates
 
@@ -113,7 +114,9 @@ class MonitorApplication(RESTApplication):
             filter(AgentStatusEntry.domainid == self.domain.domainid).\
             all()
 
-        production_agents = []
+        primary_agent = []
+        worker_agents = []
+        other_agents = []
         for entry in agent_entries:
             agent = {}
             agent['uuid'] = entry.uuid
@@ -131,10 +134,22 @@ class MonitorApplication(RESTApplication):
                 agent['color'] = 'green'
             else:
                 agent['color'] = 'red'
-            production_agents.append(agent)
+            if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+                primary_agent.append(agent)
+            elif entry.agent_type == AgentManager.AGENT_TYPE_WORKER:
+                worker_agents.append(agent)
+            elif entry.agent_type == AgentManager.AGENT_TYPE_OTHER:
+                other_agents.append(agent)
+            else:
+                print "ERROR: Bad agent type:", entry.agent_type
 
+        # Sort the agents before returning them.
+        worker_agents = sorted(worker_agents, key=lambda ag: ag['displayname'])
+        other_agents = sorted(other_agents, key=lambda ag: ag['displayname'])
+
+        production_agents = []
         environments = [ { "name": "Production",
-                            "agents": production_agents} ]
+                            "agents": primary_agent + worker_agents + other_agents } ]
 
         return {'tableau-status': tableau_status,
                 'state': main_state,
