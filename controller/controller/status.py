@@ -152,14 +152,17 @@ class StatusMonitor(threading.Thread):
         # If the main state is wrong, correct it.
         if main_state == StateEntry.STATE_STOPPED and \
                                         status == StatusEntry.STATUS_RUNNING:
+            self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateEntry.STATE_STARTED)
             self.server.alert.send(CustomAlerts.STATE_STARTED)
         elif main_state == StateEntry.STATE_STARTED and \
                                         status == StatusEntry.STATUS_STOPPED:
+            self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateEntry.STATE_STOPPED)
             self.server.alert.send(CustomAlerts.STATE_STOPPED)
         elif status == StatusEntry.STATUS_DEGRADED and \
                                     main_state != StatusEntry.STATUS_DEGRADED:
+            self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateEntry.STATE_DEGRADED)
             self.server.alert.send(CustomAlerts.STATE_DEGRADED)
 
