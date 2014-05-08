@@ -43,7 +43,7 @@ class ProfileApplication(RESTApplication):
         self.profile = {}
         # Convert db entry into a dictionary
         for key in ['userid', 'name', 'first_name', 'last_name', 'email',
-                                        'tableau_username', 'gmt']:
+                        'tableau_username', 'gmt', 'timezone_offset_minutes']:
             self.profile[key] = getattr(user_profile, key)
 
         # Add a list of roles the user has
