@@ -18,6 +18,8 @@ function (jquery, topic)
 
     $(function(){
         var pageTitle = $('title').text();
+        pageTitle = pageTitle.replace('Palette - ', '');
+        
         $('.mobile-title').text(pageTitle);
     });
 
