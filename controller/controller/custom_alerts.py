@@ -183,6 +183,7 @@ class CustomAlerts(object):
             entry.key = alert[0]
             entry.level = alert[1]
             entry.subject = alert[2]
+            entry.color = "green"   # fixme: set correct colors
             meta.Session.add(entry)
 
         meta.Session.commit()
