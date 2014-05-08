@@ -7,7 +7,6 @@
 
 <section class="secondary-side-bar">
     <a class="Psmall-only" id="toggle-events" href="#"><i class="fa"></i></a>
-    <h5>Production</h5>
     <div id="server-list"></div>
 </section>
 
