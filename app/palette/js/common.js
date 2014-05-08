@@ -24,27 +24,20 @@ function (jquery, topic)
 
     /* SIDEBAR */
     $('#toggle-side-menu').bind('click', function() {
-	$('.main-side-bar').toggleClass('collapsed');
+	$('.main-side-bar, .secondary-side-bar, .dynamic-content').toggleClass('collapsed');
     });
 
     $('#mainNav .container > i').bind('click', function() {
-	$('.main-side-bar').toggleClass('open');
+    $('.main-side-bar, .secondary-side-bar, .dynamic-content').toggleClass('open');
 	$(this).toggleClass('open');
     });
     
 
     function clearmenu() {
-	$('.main-side-bar').removeClass('open');
-	$('.main-side-bar').removeClass('collapsed');
+	$('.main-side-bar, .secondary-side-bar, .dynamic-content').removeClass('open');
+	$('.main-side-bar, .secondary-side-bar, .dynamic-content').removeClass('collapsed');
 	$('#mainNav .container > i').removeClass('open');
     }
-
-    $(function(){
-    	$('#toggle-events').bind('click', function() {
-    	    clearmenu();
-    	    $('.secondary-side-bar').toggleClass('closed');
-    	});	
-    });
 
     /* EVENTS */
 
@@ -55,6 +48,38 @@ function (jquery, topic)
     $('#toggle-event-filters').bind('click', function() {
         $(this).toggleClass('open');
         $('.top-zone').find('.btn-group').toggleClass('visible');
+    });
+
+    $(function(){
+        $('.dynamic-content').bind('click', function() {
+            var viewport = $(window).width();
+            var dynamicClosed = $(this).hasClass('closed');
+            if (viewport <= 960 && dynamicClosed != true) {
+                clearmenu();
+                $('.secondary-side-bar, .dynamic-content').toggleClass('closed');
+                $('#toggle-events').toggleClass('active');
+            }
+        }); 
+    });
+
+    $(function(){
+        $('.secondary-side-bar').bind('click', function() {
+            var viewport = $(window).width();
+            var dynamicClosed = $(this).hasClass('closed');
+            if (viewport <= 960 && dynamicClosed == true) {
+                clearmenu();
+                $('.secondary-side-bar, .dynamic-content').toggleClass('closed');
+                $('#toggle-events').toggleClass('active');
+            }
+        }); 
+    });
+
+    $(function(){
+        $('#toggle-events').bind('click', function() {
+            clearmenu();
+            $('.secondary-side-bar, .dynamic-content').toggleClass('closed');
+            $(this).toggleClass('active');
+        }); 
     });
 
     /* HEADER POPUP MENUS */
@@ -74,7 +99,6 @@ function (jquery, topic)
     
     $('#mainNav ul.nav li.more a').bind('click', function() {
         if (viewport <= 960) {
-        	$('#mainNav ul.nav li.more ul').removeClass('visible');
             event.preventDefault();
         }
 
@@ -82,12 +106,25 @@ function (jquery, topic)
 
     $('#mainNav ul.nav li.more').bind('click', function() {
         if (viewport <= 960) {
-            $(this).find('ul').toggleClass('visible');
+            var navOpen = $(this).find('ul').hasClass('visible'); 
+            $('#mainNav ul.nav li.more').find('ul').removeClass('visible');
+            if (navOpen) {
+                $(this).find('ul').removeClass('visible');
+            }
+            else {
+                $(this).find('ul').addClass('visible');
+            }           
         } 
     });
 
+    /* DROP DOWN FUNCTIONALITY */
+    $('.dropdown-menu li').bind('click', function() {
+        var dropdownSelect = $(this).find('a').text();     
+        $(this).parent().siblings().find('div').text(dropdownSelect);
+    });
+
     /* MONITOR TIMER */
-    var interval = 10000; //ms
+    var interval = 1000; //ms - FIXME: make configurable from the backend.
     var current = null;
 
     function update(data)
