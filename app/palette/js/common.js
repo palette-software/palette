@@ -40,7 +40,6 @@ function (jquery, topic)
     }
 
     /* EVENTS */
-
     $('.event').bind('click', function() {
         $(this).toggleClass('open');
     });
