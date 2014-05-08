@@ -13,7 +13,6 @@ import meta
 class AgentStatusEntry(meta.Base):
     __tablename__ = 'agent'
 
-    # FIXME: Make (domainid, displayname) a unique key.
     agentid = Column(BigInteger, unique=True, nullable=False, \
       autoincrement=True, primary_key=True)
     domainid = Column(BigInteger, ForeignKey("domain.domainid"))

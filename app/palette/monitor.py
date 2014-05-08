@@ -11,7 +11,7 @@ from akiri.framework.config import store
 
 from controller.meta import Session
 from controller.status import StatusEntry
-from controller.state import StateEntry, StateManager
+from controller.state import StateManager
 from controller.agentstatus import AgentStatusEntry
 from controller.agentmanager import AgentManager
 from controller.domain import Domain
@@ -46,7 +46,7 @@ class MonitorApplication(RESTApplication):
 
         # Set defaults
         tableau_status = "unknown"
-        main_state = StateEntry.STATE_UNKNOWN
+        main_state = StateManager.STATE_UNKNOWN
         text = "none"
         color = "none"
         user_action_in_progress = False
@@ -78,15 +78,6 @@ class MonitorApplication(RESTApplication):
         # Get the state
         main_state = StateManager.get_state_by_domainid(self.domain.domainid)
 
-        try:
-            state_entry = Session.query(StateEntry).\
-                filter(StateEntry.domainid == self.domain.domainid).\
-                one()
-        except NoResultFound, e:
-            main_state = StateEntry.STATE_DISCONNECTED
-        else:
-            main_state = state_entry.state
-
         custom_state_entry = CustomStates.get_custom_state_entry(main_state)
         if not custom_state_entry:
             print "UNKNOWN STATE!  State:", main_state
@@ -100,10 +91,10 @@ class MonitorApplication(RESTApplication):
         text = custom_state_entry.text
         color = custom_state_entry.color
 
-        if main_state in (StateEntry.STATE_STOPPED,
-                StateEntry.STATE_STARTED, StateEntry.STATE_DEGRADED,
-                StateEntry.STATE_PENDING, StateEntry.STATE_DISCONNECTED,
-                                                    StateEntry.STATE_UNKNOWN):
+        if main_state in (StateManager.STATE_STOPPED,
+                StateManager.STATE_STARTED, StateManager.STATE_DEGRADED,
+                StateManager.STATE_PENDING, StateManager.STATE_DISCONNECTED,
+                                                    StateManager.STATE_UNKNOWN):
             user_action_in_progress = False
         else:
             user_action_in_progress = True
