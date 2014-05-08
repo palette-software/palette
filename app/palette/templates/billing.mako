@@ -15,7 +15,7 @@
             <input type="text" name="cardnumber" placeholder="Credit Card Number" />
             <input type="text" name="cardname" placeholder="Name on Card" />
             <div class="btn-group">
-              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Card Type<span class="caret"></span>
+              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>Card Type</div><span class="caret"></span>
               </button>
               <ul class="dropdown-menu" role="menu">
                 <li><a href="#">Card Type</a></li>
@@ -40,7 +40,7 @@
                 <secton class="col-xs-12 col-md-6">
                     <input type="text" name="city" placeholder="City" />
                     <div class="btn-group">
-                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Country<span class="caret"></span>
+                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>Country</div><span class="caret"></span>
                       </button>
                       <ul class="dropdown-menu" role="menu">
                         <li><a href="#">Country</a></li>

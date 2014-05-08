@@ -23,7 +23,7 @@
   </ul>
   <h5 class="sub">Archive Backups to</h5>
   <div class="btn-group">
-    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"> Cloud Only <span class="caret"></span>
+    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>Cloud Only</div><span class="caret"></span>
     </button>
     <ul class="dropdown-menu" role="menu">
       <li><a href="#">Cloud Only</a></li>
@@ -43,6 +43,19 @@
     <li><a href="#"> 12:00 AM on Tuesday, March 11, 2014</a></li>
     <li><a href="#"> 12:00 AM on Tuesday, March 11, 2014</a></li>
   </ul>
+</div>
+<h5 class="sub">Produciton Backups</h5>
+<ul class="Logs">
+  <li><a href="#"> 12:00 AM on Tuesday, March 11, 2014</a></li>
+  <li><a href="#"> 12:00 AM on Tuesday, March 11, 2014</a></li>
+  <li><a href="#"> 12:00 AM on Tuesday, March 11, 2014</a></li>
+</ul>
+<h5 class="sub">Staging Backups</h5>
+<ul class="Logs">
+  <li><a href="#"> 12:00 AM on Tuesday, March 11, 2014</a></li>
+  <li><a href="#"> 12:00 AM on Tuesday, March 11, 2014</a></li>
+  <li><a href="#"> 12:00 AM on Tuesday, March 11, 2014</a></li>
+</ul>
 </section>
 
 <%include file="events.mako" />

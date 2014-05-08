@@ -3,13 +3,13 @@
     <section class="row">
       <section class="col-xs-12">
         <h1 class="page-title">Events</h1><a href="#" class="alert errors"><span>2</span></a><a href="#" class="alert warnings"><span>3</span></a>
-        <a class="Psmallish-only" id="toggle-event-filters" href="#"><i class="fa fa-filter"></i></a>
+        <a class="Psmallish-only" id="toggle-event-filters" href="#"><i class="fa fa-angle-left"></i></a>
       </section>
     </section>
     <section class="row">
       <section class="col-xs-12">
         <div class="btn-group">
-          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"> All Sites<span class="caret"></span>
+          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Sites</div><span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
             <li><a href="#">All Sites</a></li>
@@ -18,7 +18,7 @@
           </ul>
         </div>
         <div class="btn-group">
-          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"> All Types<span class="caret"></span>
+          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Types</div><span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
             <li><a href="#">All</a></li>
@@ -28,7 +28,7 @@
           </ul>
         </div>
         <div class="btn-group">
-          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"> All Status<span class="caret"></span>
+          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Status</div><span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
             <li><a href="#">All</a></li>
