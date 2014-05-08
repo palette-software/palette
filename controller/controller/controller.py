@@ -1615,11 +1615,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return body
 
         if action == 'start':
-            msg = CustomAlerts.MAINT_ONLINE
+            server.alert.send(CustomAlerts.MAINT_ONLINE)
         else:
-            msg = CustomAlerts.MAINT_OFFLINE
+            server.alert.send(CustomAlerts.MAINT_OFFLINE)
 
-        server.alert.send(msg)
         return body
 
     def archive(self, aconn, action, port=-1):
