@@ -2,7 +2,7 @@ import sqlalchemy
 
 import meta
 
-from sqlalchemy import Column, String, Boolean, Unicode
+from sqlalchemy import Column, String, Integer, Boolean, Unicode
 from sqlalchemy.orm.exc import NoResultFound
 
 from rbac import User
@@ -16,6 +16,7 @@ class UserProfile(User):
     email = Column(String)
     tableau_username = Column(String)
     gmt = Column(String)
+    timezone_offset_minutes = Column(Integer)
     password = Column('password', Unicode(160))
 
     @classmethod
