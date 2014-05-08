@@ -62,6 +62,8 @@ class CustomAlerts(object):
     AGENT_FAILED_STATUS="AGENT-FAILED-STATUS"
     AGENT_RETURNED_INVALID_STATUS="AGENT-RETURNED-INVALID-STATUS"
 
+    AGENT_DISCONNECT="AGENT-DISCONNECT"
+
     # levels
     LEVEL_ERROR="E"
     LEVEL_WARNING="W"
@@ -165,7 +167,11 @@ class CustomAlerts(object):
                                     'Failed status from agent'),
             (CustomAlerts.AGENT_RETURNED_INVALID_STATUS,
                                     CustomAlerts.LEVEL_ERROR,
-                                    'Agent returned invalid status')
+                                    'Agent returned invalid status'),
+
+            (CustomAlerts.AGENT_DISCONNECT,
+                                        CustomAlerts.LEVEL_ERROR,
+                                        'Agent disconnected')
         ]
         entry = meta.Session.query(CustomAlertsEntry).first()
 
