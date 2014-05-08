@@ -470,7 +470,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def list_backups(self):
         s = ''
-        for backup in BackupManager.all():
+        for backup in BackupManager.all(self.server.domainid):
             s += str(backup.todict()) + '\n'
         self.print_client(s)
 
