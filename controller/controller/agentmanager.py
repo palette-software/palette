@@ -14,6 +14,7 @@ from agentstatus import AgentStatusEntry
 from agentinfo import AgentYmlEntry, AgentInfoEntry, AgentVolumesEntry
 from state import StateManager, StateEntry
 from alert import Alert
+from custom_alerts import CustomAlerts
 from filemanager import FileManager
 from firewall import Firewall
 
@@ -379,9 +380,10 @@ class AgentManager(threading.Thread):
                 uuid, self.agents[uuid].auth['hostname'], reason)
 
             if send_alert:
-                self.server.alert.send(reason,
-                    {'info': "\nAgent: %s\nAgent type: %s\nAgent uuid %s" %
-                            (agent.displayname, agent.agent_type, uuid) } )
+                self.server.alert.send(CustomAlerts.AGENT_DISCONNECT,
+                    { 'error': reason,
+                      'info': "\nAgent: %s\nAgent type: %s\nAgent uuid %s" %
+                        (agent.displayname, agent.agent_type, uuid) } )
 
             self.forget(agent.agentid)
             self.log.debug("remove_agent: closing agent socket.")
