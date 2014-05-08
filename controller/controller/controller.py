@@ -1258,7 +1258,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.error("_send_cleanup: POST %s for cmd '%s' failed,"
                                "%d %s : %s", uri, orig_cli_command,
                                res.status, res.reason, body_json)
-                alert = "Command to agent failed with error: " + str(e)
+                alert = "Command to agent failed with status: " + str(res.status)
                 self.remove_agent(aconn, alert)
                 return self.httperror(aconn, res, method="POST",
                                       agent=aconn.displayname, 
