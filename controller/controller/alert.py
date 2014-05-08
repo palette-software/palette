@@ -49,8 +49,8 @@ class Alert(object):
             subject = alert_entry.subject
             message = alert_entry.message
         else:
-            subject = key
-            message = None
+            self.log.err("No such alert key: %s. data: %s\n", key, str(data))
+            return
 
         # Use the data dict it for template substitution.
         try:
@@ -204,6 +204,7 @@ if __name__ == "__main__":
     import sqlalchemy
     from sqlalchemy.orm import sessionmaker, scoped_session
     import meta
+    from custom_alerts import CustomAlerts
 
     config = Config("../controller.ini")
 
@@ -232,9 +233,7 @@ if __name__ == "__main__":
     meta.Session = scoped_session(sessionmaker(bind=meta.engine))
 
     alert = Alert(config, log)
-#    alert.send("Test Alert")
-#    alert.send("restore started on %(hostname)s", {"hostname": "bigsystem"})
-#    alert.send("restore started on %(hostXXX)s", {"hostname": "bigsystem"})
-#    alert.send("restore started", {"stdout": "The restore results are here"})
-    alert.send("RESTORE-STARTED", {"stdout": "The restore results are here"})
-    alert.send("RESTORE-FINISHED", {"error": "This was the restore error"})
+    alert.send(CustomAlerts.RESTORE_STARTED,\
+                                {"stdout": "The restore results are here"})
+    alert.send(CustomAlerts.RESTORE_FINISHED,\
+                                    {"error": "This was the restore error"})
