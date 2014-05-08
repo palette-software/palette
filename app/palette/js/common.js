@@ -87,7 +87,7 @@ function (jquery, topic)
     });
 
     /* MONITOR TIMER */
-    var interval = 10000; //ms
+    var interval = 1000; //ms - FIXME: make configurable from the backend.
     var current = null;
 
     function update(data)
