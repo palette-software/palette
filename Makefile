@@ -12,3 +12,8 @@ clean:
 	make -C app clean
 	make -C controller clean
 .PHONY: clean
+
+install:
+	cd app; python setup.py clean; python setup.py build; python setup.py install
+	cd controller; python setup.py clean; python setup.py build; python setup.py install
+.PHONY: install
