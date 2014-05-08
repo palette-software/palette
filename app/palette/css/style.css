@@ -501,7 +501,7 @@ ul.dropdown-menu a:hover {
     left: 550px;
     right: 0;
     top: 67px;
-    padding: 25px 25px 0 25px;
+    padding: 25px 15px 0 15px;
     -webkit-transition: all 0.3s ease-out;
     -moz-transition: all 0.3s ease-out;
     -ms-transition: all 0.3s ease-out;
