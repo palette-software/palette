@@ -22,7 +22,7 @@
       </a>
     </li>
     <li>
-      <a href="#" id="restart"> 
+      <a href="#" id="restart-ok"> 
         <i class="fa fa-fw fa-repeat inactive"></i>
         <span>Restart Application</span>
       </a>
