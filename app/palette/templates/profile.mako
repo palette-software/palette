@@ -2,7 +2,7 @@
 <%inherit file="configure.mako" />
 
 <%block name="title">
-    <title>Palette - Configure - Profile</title>
+    <title>Palette - Profile</title>
 </%block>
 
 <section class="dynamic-content config-content">
