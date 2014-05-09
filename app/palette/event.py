@@ -98,9 +98,9 @@ class EventApplication(RESTApplication):
             if end.isdigit():
                 end = int(end)
                 # Validity check
-                if type(start) == int and end > start:
-                        print "Error: start (%d) must be <= end (%d)." % (start, end)
-                        raise exc.HTTPBadRequest()
+                if type(start) == int and start > end:
+                    print "Error: start (%d) must be <= end (%d)." % (start, end)
+                    raise exc.HTTPBadRequest()
             elif end == 'now':
                 end = u'now()'
 
