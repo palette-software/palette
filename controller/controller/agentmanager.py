@@ -12,7 +12,7 @@ import ntpath
 
 from agentstatus import AgentStatusEntry
 from agentinfo import AgentYmlEntry, AgentInfoEntry, AgentVolumesEntry
-from state import StateManager, StateEntry
+from state import StateManager
 from alert import Alert
 from custom_alerts import CustomAlerts
 from filemanager import FileManager
@@ -168,7 +168,7 @@ class AgentManager(threading.Thread):
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("register: Initializing state entries on connect")
             stateman = StateManager(self.server)
-            stateman.update(StateEntry.STATE_PENDING)
+            stateman.update(StateManager.STATE_PENDING)
 
             # Tell the status thread to start getting status on
             # the new primary.
@@ -398,7 +398,7 @@ class AgentManager(threading.Thread):
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("remove_agent: Initializing state entries on removal")
             stateman = StateManager(self.server)
-            stateman.update(StateEntry.STATE_DISCONNECTED)
+            stateman.update(StateManager.STATE_DISCONNECTED)
             # Note: We don't update/clear the "reported" state from
             # a previous agent, so the user will see what was the last
             # real state.

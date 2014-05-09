@@ -19,9 +19,10 @@
     {{#agents}}
     <li>
       <a href="#">
-        <img src="/app/module/palette/images/server-icons-{{color}}.png" />
+        <i class="fa fa-fw fa-hdd-o {{color}}"></i>
         <h5>{{displayname}}</h5>
-        <p>{{ip_address}}</p>
+        <span class="hostname">{{hostname}}</span>
+        <span class="address">{{ip_address}}</span>
       </a>
     </li>
     {{/agents}}

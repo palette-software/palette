@@ -72,7 +72,7 @@ a img {
 .secondary-side-bar h5 {
     width: 100%;
     padding: 0 0 0 25px;
-    overflow: hidden;
+    overflow: visible;
     white-space: nowrap;
     text-overflow:ellipsis;
     margin: 25px 0 8px 0;
@@ -96,6 +96,7 @@ a img {
 }
 .secondary-side-bar ul > li {
     padding: 0;
+    height: 85px;
 }
 .secondary-side-bar ul > li a {
     width: 100%;
@@ -126,12 +127,24 @@ a img {
 .secondary-side-bar ul > li a.inactive:active, .secondary-side-bar ul.actions > li a.inactive:active {
     box-shadow: 0 0;
 }
-.secondary-side-bar ul > li img {
-    max-width: 40px;
+.secondary-side-bar ul > li i {
+    width: 64px;
+    line-height: 64px;
+    font-size: 64px;
 }
+.secondary-side-bar ul > li i.green {
+    color: #75e25a;
+}
+.secondary-side-bar ul > li i.yellow {
+    color: #dc994c;
+}
+.secondary-side-bar ul > li i.red {
+    color: #ef5455;
+}
+
 .secondary-side-bar ul > li h5 {
     position: absolute;
-    left: 80px;
+    left: 104px;
     top: 10px;
     margin: 0;
     padding: 0;
@@ -142,10 +155,8 @@ a img {
     text-overflow:ellipsis;
     white-space: nowrap;
 }
-.secondary-side-bar ul > li p {
+.secondary-side-bar ul > li span {
     position: absolute;
-    left: 80px;
-    bottom: 7px;
     margin: 0;
     font-size: 16px;
     font-weight: 300;
@@ -155,7 +166,15 @@ a img {
     overflow: hidden;
     text-overflow:ellipsis;
     white-space: nowrap;
+    left: 104px;
 }
+.secondary-side-bar ul > li span.hostname {
+    bottom: 30px;
+}
+.secondary-side-bar ul > li span.address {
+    bottom: 7px;
+}
+
 .secondary-side-bar ul.Logs li a {
     padding: 0 25px;
     line-height: 32px;
@@ -290,14 +309,14 @@ ul.dropdown-menu a:hover {
     top: 0;
     width: 100%;
     display: block;
-    height: 75px;
+    height: 125px;
+    background-color: #ececec;
 }
 .main-side-bar .status img {
     position: absolute;
-    width: 42px;
-    height: 42px;
-    top: 50%;
-    margin-top: -21px;
+    width: 64px;
+    height: 64px;
+    top: 15px;
     right: 15px;
     -webkit-transition: all 0.2s ease-in;
     -moz-transition: all 0.2s ease-in;
@@ -307,29 +326,36 @@ ul.dropdown-menu a:hover {
 }
 .main-side-bar .status h2 {
     position: absolute;
-    top: 8px;
+    top: 35px;
     left: 15px;
     font-size: 24px;
-    line-height: 29px;
+    line-height: 24px;
     margin: 0;
     font-weight: 300;
+    color: #697078;
 }
-.main-side-bar .status h2 span {
+.main-side-bar .status h3 {
+    position: absolute;
+    top: 84px;
+    left: 15px;
     display: block;
-    color: white;
+    color: #75e25a;
     font-size: 24px;
     font-weight: 400;
+    width: 220px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    margin: 0;
+    text-align: center;
 }
-
-.main-side-bar .status h2 span.green {
+.main-side-bar .status h3.green {
     color: #75e25a;
 }
-
-.main-side-bar .status h2 span.yellow {
+.main-side-bar .status h3.yellow {
     color: #dc994c;
 }
-
-.main-side-bar .status h2 span.red {
+.main-side-bar .status h3.red {
     color: #ef5455;
 }
 
@@ -343,15 +369,15 @@ ul.dropdown-menu a:hover {
     left: 384px;
 }
 .main-side-bar.collapsed img {
-    width: 32px;
-    height: 32px;
-    right: 16px;
-    top: 37px;
+    width: 42px;
+    height: 42px;
+    right: 11px;
+    top: 11px;
 }
 .main-side-bar.collapsed .status {
     height: 64px;
 }
-.main-side-bar.collapsed h2 {
+.main-side-bar.collapsed h2, .main-side-bar.collapsed h3  {
     display: none;
 }
 .main-side-bar.collapsed .actions li a span {

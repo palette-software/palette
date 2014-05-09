@@ -34,6 +34,14 @@ class ProfileApplication(RESTApplication):
         raise exc.HTTPBadRequest()
 
     def handle_profile_GET(self, req):
+        return {
+                'userid': 1,
+                'name': 'john',
+                'first-name': "John",
+                'last-name': "Abdo",
+                'email': "john@palette-software.com",
+                'timezone-offset-minutes': -480
+                }
         user_name = req.environ['REMOTE_USER']
         user_profile = UserProfile.get_by_name(user_name)
 
@@ -44,6 +52,7 @@ class ProfileApplication(RESTApplication):
         # Convert db entry into a dictionary
         for key in ['userid', 'name', 'first_name', 'last_name', 'email',
                         'tableau_username', 'gmt', 'timezone_offset_minutes']:
+            # fixme: convert '_' in key to '-'
             self.profile[key] = getattr(user_profile, key)
 
         # Add a list of roles the user has
