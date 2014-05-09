@@ -23,6 +23,18 @@ function (jquery, topic)
         $('.mobile-title').text(pageTitle);
     });
 
+    /* POPUPS */
+    $('a.popup-link').bind('click', function() {
+        $('article.popup').removeClass('visible');
+        
+        var popTarget = $(this).attr('name');
+
+        $('article.popup#'+popTarget).addClass('visible');
+    });
+
+    $('.popup-close, article.popup .shade').bind('click', function() {
+        $('article.popup').removeClass('visible');
+    });
 
     /* SIDEBAR */
     $('#toggle-side-menu').bind('click', function() {
