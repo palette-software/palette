@@ -24,7 +24,8 @@ import meta
 from agentmanager import AgentManager
 from agentstatus import AgentStatusEntry
 from backup import BackupManager
-from state import StateManager, StateEntry
+from state import StateManager
+from system import SystemManager
 from status import StatusMonitor, StatusEntry
 from alert import Alert
 from config import Config
@@ -282,7 +283,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # Backups can be done when Tableau is either started or stopped.
         if main_state not in \
-                        (StateEntry.STATE_STARTED, StateEntry.STATE_STOPPED):
+                        (StateManager.STATE_STARTED, StateManager.STATE_STOPPED):
             print >> self.wfile, "FAIL: Can't backup - main state is:", \
                                                                   main_state
             log.debug("Can't backup - main state is: %s",  main_state)
@@ -293,9 +294,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         # The reported status from tableau needs to be running or stopped
         # to do a backup.
         if reported_status == StatusEntry.STATUS_RUNNING:
-            stateman.update(StateEntry.STATE_STARTED_BACKUP)
+            stateman.update(StateManager.STATE_STARTED_BACKUP)
         elif reported_status == StatusEntry.STATUS_STOPPED:
-            stateman.update(StateEntry.STATE_STOPPED_BACKUP)
+            stateman.update(StateManager.STATE_STOPPED_BACKUP)
         else:
             print >> self.wfile, "FAIL: Can't backup - reported status is:", \
                                                               reported_status
@@ -319,9 +320,9 @@ class CliHandler(socketserver.StreamRequestHandler):
             server.alert.send(CustomAlerts.BACKUP_FAILED, body)
 
         if reported_status == StatusEntry.STATUS_RUNNING:
-            stateman.update(StateEntry.STATE_STARTED)
+            stateman.update(StateManager.STATE_STARTED)
         elif reported_status == StatusEntry.STATUS_STOPPED:
-            stateman.update(StateEntry.STATE_STOPPED)
+            stateman.update(StateManager.STATE_STOPPED)
 
         # Get the latest status from tabadmin
         statusmon.check_status_with_connection(aconn)
@@ -358,7 +359,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # Backups can be done when Tableau is either started or stopped.
         if main_state not in \
-                        (StateEntry.STATE_STARTED, StateEntry.STATE_STOPPED):
+                        (StateManager.STATE_STARTED, StateManager.STATE_STOPPED):
             print >> self.wfile,\
                 "FAIL: Can't backup before restore - main state is:", \
                                                                   main_state
@@ -372,9 +373,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         # to do a backup.  If it is, set our state to
         # STATE_*_BACKUP_RESTORE.
         if reported_status == StatusEntry.STATUS_RUNNING:
-            stateman.update(StateEntry.STATE_STARTED_BACKUP_RESTORE)
+            stateman.update(StateManager.STATE_STARTED_BACKUP_RESTORE)
         elif reported_status == StatusEntry.STATUS_STOPPED:
-            stateman.update(StateEntry.STATE_STOPPED_BACKUP_RESTORE)
+            stateman.update(StateManager.STATE_STOPPED_BACKUP_RESTORE)
         else:
             print >> self.wfile, \
                 "FAIL: Can't backup before restore - reported status is:", \
@@ -388,46 +389,41 @@ class CliHandler(socketserver.StreamRequestHandler):
         #FIXME: refactor do_backup() into do_backup() and backup()
         log.debug("------------Starting Backup for Restore--------------")
 
-        server.alert.send(CustomAlerts.BACKUP_STARTED)
+        server.alert.send(CustomAlerts.BACKUP_BEFORE_RESTORE_STARTED)
 
         self.ack()
 
+        # No alerts or state updates are done in backup_cmd().
         body = server.backup_cmd(aconn, None)
 
         if not body.has_key('error'):
-            server.alert.send(CustomAlerts.BACKUP_FINISHED, body)
+            server.alert.send(CustomAlerts.BACKUP_BEFORE_RESTORE_FINISHED, body)
             backup_success = True
         else:
-            server.alert.send(CustomAlerts.BACKUP_FAILED, body)
+            server.alert.send(CustomAlerts.BACKUP_BEFORE_RESTORE_FAILED, body)
             backup_success = False
 
         if not backup_success:
-            self.print_client("Backup failed.  Will still try to restore.")
-            # fixme: Is this the right behavior?  In some cases
-            # backup will fail, but restore will succeed.
-            # The correct behavior is probably to have the UI
-            # ask the user what they want to do.
+            self.print_client("Backup failed.  Aborting restore.")
+            stateman.update(main_state)
+            aconn.user_action_unlock()
+            return
 
         log.debug("-----------------Starting Restore-------------------")
 
-        body = server.restore_cmd(aconn, target)
+        # restore_cmd() updates the state correctly depending on the
+        # success of backup, copy, stop, restore, etc.
+        body = server.restore_cmd(aconn, target, main_state)
 
-        # The "restore started" alert is done in restore_cmd(),
-        # only after some sanity checking is done.
+        # The final RESTORE_FINISHED/RESTORE_FAILED alert is sent only here and
+        # not in restore_cmd().  Intermediate alerts like RESTORE_STARTED
+        # are sent in restore_cmd().
         if not body.has_key('error'):
             # Restore finished successfully.  The main state has.
             # already been set.
             server.alert.send(CustomAlerts.RESTORE_FINISHED, body)
         else:
             server.alert.send(CustomAlerts.RESTORE_FAILED, body)
-            # Restore failed.  We won't update the main status here
-            # since the restore failed and we don't know what
-            # state tableau is in.
-
-        if reported_status == StatusEntry.STATUS_RUNNING:
-            stateman.update(StateEntry.STATE_STARTED)
-        elif reported_status == StatusEntry.STATUS_STOPPED:
-            stateman.update(StateEntry.STATE_STOPPED)
 
         self.print_client(str(body))
 
@@ -469,7 +465,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def list_backups(self):
         s = ''
-        for backup in BackupManager.all():
+        for backup in BackupManager.all(self.server.domainid):
             s += str(backup.todict()) + '\n'
         self.print_client(s)
 
@@ -634,7 +630,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         main_state = stateman.get_state()
 
         # Start can be done only when Tableau is stopped.
-        if main_state != StateEntry.STATE_STOPPED:
+        if main_state != StateManager.STATE_STOPPED:
             print >> self.wfile, "FAIL: Can't start - main state is:", \
                                                                   main_state
             log.debug("Can't start - main state is: %s",  main_state)
@@ -649,7 +645,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return
 
-        stateman.update(StateEntry.STATE_STARTING)
+        stateman.update(StateManager.STATE_STARTING)
 
         log.debug("-----------------Starting Tableau-------------------")
         # fixme: Reply with "OK" only after the agent received the command?
@@ -672,9 +668,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         if exit_status:
             # The "tableau start" failed.  Go back to "STOPPED" state.
             server.alert.send(CustomAlerts.TABLEAU_START_FAILED, body)
-            stateman.update(StateEntry.STATE_STOPPED)
+            stateman.update(StateManager.STATE_STOPPED)
         else:
-            stateman.update(StateEntry.STATE_STARTED)
+            stateman.update(StateManager.STATE_STARTED)
             server.alert.send(CustomAlerts.STATE_STARTED)
 
         # STARTED is set by the status monitor since it really knows the status.
@@ -712,7 +708,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         main_state = stateman.get_state()
 
         # Stop can be done only if tableau is started
-        if main_state != StateEntry.STATE_STARTED:
+        if main_state != StateManager.STATE_STARTED:
             self.error("can't stop - main state is: " + main_state)
             aconn.user_action_unlock()
             return
@@ -727,7 +723,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         log.debug("------------Starting Backup for Stop---------------")
 
-        stateman.update(StateEntry.STATE_STARTED_BACKUP_STOP)
+        stateman.update(StateManager.STATE_STARTED_BACKUP_STOP)
         server.alert.send(CustomAlerts.BACKUP_STARTED)
 
         self.ack()
@@ -746,7 +742,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Note: Make sure to set the state in the database before
         # we report "OK" back to the client since "OK" to the UI client
         # results in an immediate check of the state.
-        stateman.update(StateEntry.STATE_STOPPING)
+        stateman.update(StateManager.STATE_STOPPING)
 
         if not backup_first:
             self.ack()  # The ack was sent earlier only if a backup was attempted.
@@ -765,7 +761,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # We set the state to stop, even though the stop failed.
         # This will be corrected by the 'tabadmin status -v' processing
         # later.
-        stateman.update(StateEntry.STATE_STOPPED)
+        stateman.update(StateManager.STATE_STOPPED)
         server.alert.send(CustomAlerts.STATE_STOPPED)
 
         # fixme: check & report status to see if it really stopped?
@@ -933,6 +929,47 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.print_client(str(body))
     do_file.__usage__ = '[GET|PUT|DELETE] <path> [source-or-target]'
 
+    def do_s3(self, cmd):
+        """Send a file to or receive a file from an S3 bucket"""
+
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
+            return
+
+        if len(cmd.args) < 3 or len(cmd.args) > 4:
+            self.usage(self.do_s3.__usage__)
+            return
+
+        action = cmd.args[0].upper()
+        bucket = cmd.args[1]
+        uri = cmd.args[2]
+
+        if len(cmd.args) == 3:
+            if action != 'GET':
+                self.usage(self.do_s3.__usage__)
+                return
+            L = uri.rsplit('/', 1)
+            if len(L) == 2:
+                path = L[1]
+            path = uri
+        elif len(cmd.args) == 4:
+            path = cmd.args[3]
+
+        self.ack()
+
+        command = Controller.PS3_BIN+' %s %s %s "%s"' % \
+            (action, bucket, uri, path)
+
+        env = {'ACCESS_KEY': 'XXX',
+               'SECRET_KEY': 'YYYYYY',
+               'SESSION': 'ZZZZZZZZZZ' }
+
+        # Send command to the agent
+        body = server.cli_cmd(command, aconn, env=env)
+        self.print_client(str(body))
+    do_s3.__usage__ = '[GET|PUT] <bucket> <URI> [source-or-target]'
+
     def do_nop(self, cmd):
         """usage: nop"""
 
@@ -996,6 +1033,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     PGET_BIN = "pget.exe"
     PINFO_BIN = "pinfo.exe"
+    PS3_BIN = "ps3.exe"
     CLI_URI = "/cli"
 
     def backup_cmd(self, aconn, target=None):
@@ -1084,14 +1122,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def status_cmd(self, aconn):
         return self.cli_cmd('tabadmin status -v', aconn)
 
-    def cli_cmd(self, command, aconn):
+    def cli_cmd(self, command, aconn, env=None):
         """ 1) Sends the command (a string)
             2) Waits for status/completion.  Saves the body from the status.
             3) Sends cleanup.
             4) Returns body from the status.
         """
 
-        body = self._send_cli(command, aconn)
+        body = self._send_cli(command, aconn, env=env)
 
         if body.has_key('error'):
             return body
@@ -1122,7 +1160,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return cli_body
 
-    def _send_cli(self, cli_command, aconn):
+    def _send_cli(self, cli_command, aconn, env=None):
         """Send a "cli" command to an Agent.
             Returns a body with the results.
             Called without the connection lock."""
@@ -1131,7 +1169,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn.lock()
 
-        req = CliStartRequest(cli_command)
+        req = CliStartRequest(cli_command, env=env)
 
         headers = {"Content-Type": "application/json"}
 
@@ -1215,7 +1253,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.error("_send_cleanup: POST %s for cmd '%s' failed,"
                                "%d %s : %s", uri, orig_cli_command,
                                res.status, res.reason, body_json)
-                alert = "Command to agent failed with error: " + str(e)
+                alert = "Command to agent failed with status: " + str(res.status)
                 self.remove_agent(aconn, alert)
                 return self.httperror(aconn, res, method="POST",
                                       agent=aconn.displayname, 
@@ -1303,7 +1341,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         copy_body = self.cli_cmd(command, dst)
         return copy_body
 
-    def restore_cmd(self, aconn, target):
+    def restore_cmd(self, aconn, target, orig_state):
         """Do a tabadmin restore of the passed target, except
            the target is in the format:
                 source-displayname:pathname
@@ -1325,9 +1363,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             source_displayname = parts[0]
             source_filename = parts[1]
         else:
+            stateman.update(orig_state)
             return self.error('Invalid target: ' + target)
 
         if os.path.isabs(source_filename):
+            stateman.update(orig_state)
             return self.error(\
                 "[ERROR] May not specify an absolute pathname or disk: " + \
                                                                 source_filename)
@@ -1354,6 +1394,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                source_fullpathname,
                                source_displayname,
                                body['error'])
+                stateman.update(orig_state)
                 return body
 
         # The restore file is now on the Primary Agent.
@@ -1364,7 +1405,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if reported_status == StatusEntry.STATUS_RUNNING:
             # Restore can run only when tableau is stopped.
-            stateman.update(StateEntry.STATE_STOPPING_RESTORE)
+            stateman.update(StateManager.STATE_STOPPING_RESTORE)
             log.debug("------------Stopping Tableau for restore-------------")
             stop_body = self.cli_cmd("tabadmin stop", aconn)
             if stop_body.has_key('error'):
@@ -1373,7 +1414,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     # If the file was copied to the Primary, delete
                     # the temporary backup file we copied to the Primary.
                     self.delete_file(aconn, source_fullpathname)
+                stateman.update(orig_state)
                 return stop_body
+
+            server.alert.send(CustomAlerts.STATE_STOPPED)
 
         # 'tabadmin restore ...' starts tableau as part of the restore procedure.
         # fixme: Maybe the maintenance web server wasn't running?
@@ -1385,7 +1429,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             maint_msg = "Restore: maint stop failed.  Error was: %s" \
                                                     % maint_body['error']
 
-        stateman.update(StateEntry.STATE_STARTING_RESTORE)
+        stateman.update(StateManager.STATE_STARTING_RESTORE)
         try:
             cmd = 'tabadmin restore \\\"%s\\\"' % source_fullpathname
             self.log.debug("restore sending command: %s", cmd)
@@ -1410,13 +1454,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.delete_file(aconn, source_fullpathname)
 
         if restore_success:
-            stateman.update(StateEntry.STATE_STARTED)
-            server.alert.send(CustomAlerts.STATE_STARTED)
+            stateman.update(StateManager.STATE_STARTED)
         else:
             # On a successful restore, tableau starts itself.
             # fixme: eventually control when tableau is started and
             # stopped, rather than have tableau automatically start
-            # during the restore.
+            # during the restore.  (Tableau does not support this currently.)
             self.log.info("Restore: starting tableau after failed restore.")
             start_body = self.cli_cmd("tabadmin start", aconn)
             if start_body.has_key('error'):
@@ -1430,11 +1473,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     restore_body['info'] = msg
 
                  # The "tableau start" failed.  Go back to the "STOPPED" state.
-                stateman.update(StateEntry.STATE_STOPPED)
+                stateman.update(StateManager.STATE_STOPPED)
             else:
                 # The "tableau start" succeeded
-                stateman.update(StateEntry.STATE_STARTED)
-                server.alert.send(CustomAlerts.STATE_STARTED)
+                stateman.update(StateManager.STATE_STARTED)
 
         return restore_body
 
@@ -1561,21 +1603,20 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if body.has_key("error"):
             if action == "start":
                 server.alert.send(\
-                    CustomAlerts.MAINT_START_FAILED, body['error'])
+                    CustomAlerts.MAINT_START_FAILED, {'error': body['error']})
             else:
                 server.alert.send(\
-                    CustomAlerts.MAINT_STOP_FAILED, body['error'])
+                    CustomAlerts.MAINT_STOP_FAILED, {'error': body['error']})
             return body
 
         if not send_alert:
             return body
 
         if action == 'start':
-            msg = CustomAlerts.MAINT_ONLINE
+            server.alert.send(CustomAlerts.MAINT_ONLINE)
         else:
-            msg = CustomAlerts.MAINT_OFFLINE
+            server.alert.send(CustomAlerts.MAINT_OFFLINE)
 
-        server.alert.send(msg)
         return body
 
     def archive(self, aconn, action, port=-1):
@@ -1699,9 +1740,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """
 
         TABLEAU_INSTALL_DIR="tableau-install-dir"
-        YML_CONFIG_FILE_PART=ntpath.join(\
-                "ProgramData", "Tableau", "Tableau Server", "data", "tabsvc",
-                                                    "config", "workgroup.yml")
+        YML_CONFIG_FILE_PART=ntpath.join("data", "tabsvc", "config",
+                                                            "workgroup.yml")
 
         # The info() command requires a displayname.  This displayname is
         # is temporary until we get info from the agent:
@@ -1736,9 +1776,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                                 aconn.tableau_install_dir)
                     return False
 
-                volume = aconn.tableau_install_dir.split(':')[0]
-
-                yml_config_file = ntpath.join(volume + ':\\', YML_CONFIG_FILE_PART)
+                yml_config_file = ntpath.join(
+                            aconn.get_tableau_data_dir(), YML_CONFIG_FILE_PART)
 
                 try:
                     aconn.yml_contents = aconn.filemanager.get(yml_config_file)
@@ -1776,7 +1815,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return True
 
         main_state = server.stateman.get_state()
-        if main_state == StateEntry.STATE_STOPPED:
+        if main_state == StateManager.STATE_STOPPED:
             body = self.maint("start", aconn=aconn, send_alert=False)
             if body.has_key("error"):
                 server.alert.send(CustomAlerts.MAINT_START_FAILED, body)
@@ -1885,6 +1924,7 @@ def main():
 
     server.event = EventManager(server.domainid)
     server.alert = Alert(server)
+    server.system = SystemManager(server.domainid)
 
     custom_states = CustomStates()
     custom_states.populate()

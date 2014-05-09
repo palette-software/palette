@@ -2,6 +2,7 @@ import time
 import sys
 import os
 import socket
+import datetime
 
 from akiri.framework.api import RESTApplication, DialogPage
 from akiri.framework.config import store
@@ -15,7 +16,7 @@ from akiri.framework.api import RESTApplication, UserInterfaceRenderer
 from akiri.framework.config import store
 
 from controller.meta import Session
-from controller.backup import BackupEntry
+from controller.backup import BackupEntry, BackupManager
 from controller.agentstatus import AgentStatusEntry
 from controller.domain import Domain
 
@@ -25,15 +26,14 @@ class BackupApplication(RESTApplication):
 
     NAME = 'backup'
 
-    scheduled = 'Thursday, November 7 at 12:00 AM'
-
     def __init__(self, global_conf):
         super(BackupApplication, self).__init__(global_conf)
 
         domainname = store.get('palette', 'domainname')
         self.domain = Domain.get_by_name(domainname)
         self.telnet_port = store.getint("palette", "telnet_port", default=9000)
-        self.telnet_hostname = store.get("palette", "telnet_hostname", default="localhost")
+        self.telnet_hostname = store.get("palette", "telnet_hostname",
+                                         default="localhost")
 
     def send_cmd(self, cmd):
         # Backup and restore commands are always sent to the primary.
@@ -52,15 +52,13 @@ class BackupApplication(RESTApplication):
     def handle_backup(self):
         self.send_cmd("backup")
         now = time.strftime('%A, %B %d at %I:%M %p')
-        return {'last': now,
-                'next': self.scheduled }
+        return {'last': now }
 
     def handle_restore(self):
         last_entry = self.get_last_backup()
         if not last_entry:
             print >> sys.stderr, "No backups to restore from!"
-            return {'last': "none",
-                    'next': self.scheduled }
+            return {'last': "none" }
 
         displayname = self.get_displayname_by_agentid(last_entry.agentid)
 
@@ -88,24 +86,45 @@ class BackupApplication(RESTApplication):
             first()
         return last_db
 
+    def handle_action(self, req):
+        action = req.POST['action'].lower()
+        if action == 'backup':
+            return self.handle_backup()
+        elif action == 'restore':
+            return self.handle_restore()
+        raise exc.HTTPBadRequest()
+
+    def handle_set(self, req):
+        d = req.POST['set']
+        for key in d:
+            if key != 'target-location':
+                raise exc.HTTPBadRequest("Invalid set key : " + key)
+
     def handle(self, req):
         if req.method == 'GET':
-            last_entry = self.get_last_backup()
-            if not last_entry:
-                last = "No backups done."
-            else:
-                last = str(last_entry.creation_time)
+            domainid = self.domain.domainid
+            L = [x.todict(pretty=True) for x in BackupManager.all(domainid)]
+            # FIXME: convert TIMEZONE
+            tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+            midnight = datetime.datetime.combine(tomorrow, datetime.time(0,0))
+            scheduled = midnight.strftime(BackupEntry.DATEFMT)
 
-            return {'last': last,
-                    'next': self.scheduled}
+            options = [{'item': 'Palette Cloud Storage'},
+                       {'item': 'On-Premise Archive Servers'}]
+            return {
+                'config': [{'name': 'archive-backup',
+                            'options': options,
+                            'value': options[1]['item']}],
+                'backups': {'type': 'Production Backups', 'items': L},
+                'next': scheduled
+                }
         elif req.method == 'POST':
-            if 'action' not in req.POST:
-                raise exc.HTTPBadRequest()
-            action = req.POST['action'].lower()
-            if action == 'backup':
-                return self.handle_backup()
-            elif action == 'restore':
-                return self.handle_restore()
+            if 'action' in req.POST and 'set' in req.POST:
+                raise exc.HTTPBadRequest("'action' and 'set' are exclusive.")
+            if 'action' in req.POST:
+                return self.handle_action(req)
+            if 'set' in req.POST:
+                return self.handle_set(req)
             raise exc.HTTPBadRequest()
         raise exc.HTTPMethodNotAllowed()
 

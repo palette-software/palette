@@ -1,18 +1,8 @@
-import sqlalchemy
-from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
-from sqlalchemy.schema import ForeignKey, UniqueConstraint
-from sqlalchemy.orm.exc import NoResultFound
 import platform
-
-from custom_alerts import CustomAlerts
-
 import meta
+from system import SystemManager
 
-from alert import Alert
-
-class StateEntry(meta.Base):
-    __tablename__ = 'state'
-
+class StateManager(object):
     # possible states
     STATE_DISCONNECTED="DISCONNECTED"
     # connected but no status reported from tabadmin yet
@@ -41,42 +31,21 @@ class StateEntry(meta.Base):
 
     STATE_UNKNOWN="UNKNOWN"        # no primary ever connected to the controller
 
-    domainid = Column(BigInteger, ForeignKey("domain.domainid"),
-                                        nullable=False, primary_key=True)
-    state = Column(String)
-    creation_time = Column(DateTime, server_default=func.now())
-    modification_time = Column(DateTime, server_default=func.now(), \
-      server_onupdate=func.current_timestamp())
-
-class StateManager(object):
-
     def __init__(self, server):
         self.server = server
+        self.system = self.server.system
         self.config = self.server.config
         self.log = self.server.log
         self.domainid = self.server.domainid
 
     def update(self, state):
         if state == "RUNNING":
-            # tabadmin calls it "RUNNING", we called it "STARTED"
-            state = StateEntry.STATE_STARTED
+            # tabadmin calls it "RUNNING"; we called it "STARTED"
+            state = StateManager.STATE_STARTED
 
         self.log.info("-------state changing to %s----------", state)
-        session = meta.Session()
-        entry = session.query(StateEntry).\
-            filter(StateEntry.domainid == self.domainid).first()
 
-        if entry:
-            old_state = entry.state
-            session.query(StateEntry).\
-                filter(StateEntry.domainid == self.domainid).\
-                update({'state': state})
-
-        else:
-            entry = StateEntry(domainid=self.domainid, state=state)
-            session.add(entry)
-
-        session.commit()
+        self.system.save(SystemManager.SYSTEM_KEY_STATE, state)
 
     def get_state(self):
         return StateManager.get_state_by_domainid(self.domainid)
@@ -84,11 +53,6 @@ class StateManager(object):
     @classmethod
     def get_state_by_domainid(cls, domainid):
         try:
-            main_entry = meta.Session.query(StateEntry).\
-                filter(StateEntry.domainid == domainid).\
-                one()
-            main_status = main_entry.state
-        except NoResultFound, e:
-            main_status = StateEntry.STATE_UNKNOWN
-
-        return main_status
+            return SystemManager(domainid).get(SystemManager.SYSTEM_KEY_STATE)
+        except ValueError, e:
+            return StateManager.STATE_DISCONNECTED

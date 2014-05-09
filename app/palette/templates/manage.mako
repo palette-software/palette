@@ -2,36 +2,36 @@
 <%inherit file="layout.mako" />
 
 <%block name="title">
-    <title>Palette - Manage</title>
+<title>Palette - Manage</title>
 </%block>
 
 <section class="secondary-side-bar">
     <a class="Psmall-only" id="toggle-events" href="#"><i class="fa"></i></a>
     <h5>Tableau Server Application</h5>
-    <h5 class="sub">123.123.1.1</h5>
-    <h5 class="sub">Port 6577</h5>
+    <h5 class="sub">X.X.X.X</h5>
+    <h5 class="sub">Port XXXX</h5>
     <ul class="actions">
         <li>
-        	<a name="popupStart" class="popup-link"> 
+        	<a name="popupStart" class="popup-link inactive" id="start"> 
         		<i class="fa fa-fw fa-play"></i>
         		<span>Start</span>
         	</a>
         </li>
         <li>
-        	<a name="popupStop" class="popup-link"> 
+        	<a name="popupStop" class="popup-link inactive" id="stop"> 
         		<i class="fa fa-fw fa-stop"></i>
         		<span>Stop</span>
         	</a>
         </li>
         <li>
-        	<a name="popupRestore" class="popup-link"> 
+        	<a name="popupRestore" class="popup-link inactive" id="reset"> 
         		<i class="fa fa-fw fa-repeat"></i>
         		<span>Reset</span>
         	</a>
         </li>
         <li>
         	<a href="#"> 
-        		<i class="fa fa-fw fa-power-off"></i>
+        		<i class="fa fa-fw fa-power-off inactive" id="restart"></i>
         		<span>Restart Server</span>
         	</a>
         </li>
@@ -118,4 +118,5 @@
 </article>
 
 <script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/common.js">
+<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/manage.js">
 </script>

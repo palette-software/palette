@@ -6,19 +6,18 @@ import platform
 
 import sqlalchemy
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
-from sqlalchemy.schema import ForeignKey
+from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
 import meta
 
 class AgentStatusEntry(meta.Base):
     __tablename__ = 'agent'
 
-    # FIXME: Make (domainid, displayname) a unique key.
     agentid = Column(BigInteger, unique=True, nullable=False, \
       autoincrement=True, primary_key=True)
     domainid = Column(BigInteger, ForeignKey("domain.domainid"))
     uuid = Column(String, unique=True, index=True)
-    displayname = Column(String, nullable=True)
+    displayname = Column(String)
     hostname = Column(String)
     agent_type = Column(String)
     version = Column(String)
@@ -29,6 +28,7 @@ class AgentStatusEntry(meta.Base):
       server_onupdate=func.current_timestamp())
     last_connection_time = Column(DateTime, server_default=func.now())
     last_disconnect_time = Column(DateTime)
+    UniqueConstraint('domainid', 'displayname')
 
     def __init__(self, hostname, agent_type, version, ip_address, listen_port, uuid, domainid):
         try:
