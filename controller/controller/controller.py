@@ -257,7 +257,7 @@ class CliHandler(socketserver.StreamRequestHandler):
     do_status.__usage__ = 'status'
 
     def do_backup(self, cmd):
-        """ Perform a Tableau backup and potentially migrate. """
+        """Perform a Tableau backup and potentially migrate."""
 
         target = None
         if len(cmd.args) > 1:
@@ -330,6 +330,20 @@ class CliHandler(socketserver.StreamRequestHandler):
         aconn.user_action_unlock()
 
     do_backup.__usage__ = 'backup [target-displayname]'
+
+    def do_backupdel(self, cmd):
+        """Delete a Tableau backup."""
+
+        target = None
+        if len(cmd.args) != 1:
+            self.usage(self.do_backup.__usage__)
+            return
+        backup = cmd.args[0]
+
+        self.ack()
+        body = server.backupdel_cmd(backup)
+        self.report_status(body)
+    do_backupdel.__usage__ = 'backupdel backup-name'
 
     def do_restore(self, cmd):
         """Restore.  If the file/path we are restoring from is on a different
@@ -449,7 +463,6 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = server.copy_cmd(cmd.args[0], cmd.args[1])
         self.report_status(body)
     do_copy.__usage__ = 'copy source-agent-name:filename dest-agent-name'
-
 
     # FIXME: print status too
     def list_agents(self):
@@ -1002,7 +1015,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             if uuid:
                 aconn = manager.agent_conn_by_uuid(uuid)
                 if not aconn:
-                    self.error("No connected agent with uuid=%s", uuid)
+                    self.error("No connected agent with uuid=%s" % (uuid))
             else:
                 self.error("No agent specified")
         else: # should never happen
@@ -1117,11 +1130,30 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # Backup file remains on the primary.
 
         # Save name of backup, agentid to the db.
-        # fixme: create one of these per server.
-        self.backup = BackupManager(self.domainid)
         self.backup.add(backup_name, backup_loc.agentid)
 
         return body
+
+    def backupdel_cmd(self, backup):
+        """Delete a Tableau backup."""
+
+        # FIXME: tie backup to domain
+
+        try:
+            B, A = self.backup.find_by_name(backup)
+            uuid = A.uuid
+        except sqlalchemy.orm.exc.NoResultFound:
+            return self.error("no backup found with name: %s" % \
+              (backup))
+        except sqlalchemy.orm.exc.MultipleResultsFound:
+            return self.error("multiple backups found with name: %s" % \
+              (backup))
+
+        aconn = manager.agent_conn_by_uuid(uuid)
+        if not aconn:
+            return self.error("No connected agent with uuid=%s" % (uuid))
+
+        return {}
 
     def status_cmd(self, aconn):
         return self.cli_cmd('tabadmin status -v', aconn)
@@ -1929,6 +1961,8 @@ def main():
 
     custom_states = CustomStates()
     custom_states.populate()
+
+    server.backup = BackupManager(server.domainid)
 
     global manager  # fixme: get rid of this global.
     manager = AgentManager(server)
