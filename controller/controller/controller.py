@@ -1836,7 +1836,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                             yml_config_file, aconn.displayname)
 
             else:
-                aconn.agent_type = AgentManager.AGENT_TYPE_OTHER
+                aconn.agent_type = AgentManager.AGENT_TYPE_ARCHIVE
 
         # Cleanup.
         if aconn.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
