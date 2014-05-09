@@ -7,9 +7,7 @@
 
 <section class="secondary-side-bar">
   <a class="Psmall-only" id="toggle-events" href="#"><i class="fa"></i></a>
-  <h5>Tableau Server Application</h5>
-  <h5 class="sub">X.X.X.X</h5>
-  <h5 class="sub">Port XXXX</h5>
+  <h5>Production Tableau Server</h5>
   <ul class="actions">
     <li>
       <a href="#" id="start" class="inactive">
@@ -24,15 +22,9 @@
       </a>
     </li>
     <li>
-      <a href="#" id="reset" class="inactive"> 
-        <i class="fa fa-fw fa-repeat"></i>
-        <span>Reset</span>
-      </a>
-    </li>
-    <li>
       <a href="#" id="restart" class="inactive"> 
-        <i class="fa fa-fw fa-power-off"></i>
-        <span>Restart Server</span>
+        <i class="fa fa-fw fa-repeat"></i>
+        <span>Restart Application</span>
       </a>
     </li>
   </ul>
