@@ -26,8 +26,6 @@ class BackupApplication(RESTApplication):
 
     NAME = 'backup'
 
-    scheduled = 'Thursday, November 7 at 12:00 AM'
-
     def __init__(self, global_conf):
         super(BackupApplication, self).__init__(global_conf)
 
@@ -54,15 +52,13 @@ class BackupApplication(RESTApplication):
     def handle_backup(self):
         self.send_cmd("backup")
         now = time.strftime('%A, %B %d at %I:%M %p')
-        return {'last': now,
-                'next': self.scheduled }
+        return {'last': now }
 
     def handle_restore(self):
         last_entry = self.get_last_backup()
         if not last_entry:
             print >> sys.stderr, "No backups to restore from!"
-            return {'last': "none",
-                    'next': self.scheduled }
+            return {'last': "none" }
 
         displayname = self.get_displayname_by_agentid(last_entry.agentid)
 
@@ -111,10 +107,10 @@ class BackupApplication(RESTApplication):
             # FIXME: convert TIMEZONE
             tomorrow = datetime.date.today() + datetime.timedelta(days=1)
             midnight = datetime.datetime.combine(tomorrow, datetime.time(0,0))
-            scheduled = midnight.ctime()
+            scheduled = midnight.strftime(BackupEntry.DATEFMT)
 
             options = [{'item': 'Palette Cloud Storage'},
-                       {'item': 'On-Premise Storage'}]
+                       {'item': 'On-Premise Archive Servers'}]
             return {
                 'config': [{'name': 'archive-backup',
                             'options': options,

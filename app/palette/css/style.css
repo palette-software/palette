@@ -72,7 +72,7 @@ a img {
 .secondary-side-bar h5 {
     width: 100%;
     padding: 0 0 0 25px;
-    overflow: hidden;
+    overflow: visible;
     white-space: nowrap;
     text-overflow:ellipsis;
     margin: 25px 0 8px 0;

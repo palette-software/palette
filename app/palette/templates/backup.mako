@@ -10,18 +10,20 @@
   <ul class="actions">
     <li>
       <a href="#" id="backup" class="inactive"> 
-        <i class="fa fa-fw fa-download"></i>
+        <i class="fa fa-fw fa-upload"></i>
         <span>Backup</span>
       </a>
     </li>
     <li>
       <a href="#" id="restore" class="inactive"> 
-        <i class="fa fa-fw fa-repeat"></i>
+        <i class="fa fa-fw fa-download"></i>
         <span>Restore</span>
       </a>
     </li>
   </ul>
-  <h5 class="sub">Archive Backups to</h5>
+  <h5>Next Scheduled Backup at</h5>
+  <h5 id="next-backup" class="sub"></h5>
+  <h5>Archive Backups to</h5>
   <div id="archive-backup" class="btn-group dropdown"></div>
   <div id="backup-list"></div>
 </section>

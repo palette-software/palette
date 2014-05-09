@@ -72,11 +72,9 @@ function (jquery, topic, template)
         var rendered = template.render(t, data);
         $('#backup-list').html(rendered);
 
-        if (!data.hasOwnProperty('config')) {
-            return;
-        }
-
         var config = data['config'];
+        if (config == null) return;
+
         for (var i in config) {
             var d = config[i];
             if (!d.hasOwnProperty('name')) {
@@ -84,10 +82,8 @@ function (jquery, topic, template)
                 continue;
             }
             var name = d['name'];
-            if (!templates.hasOwnProperty(name+'-template')) {
-                continue;
-            }
             var t = templates[name+'-template'];
+            if (t == null) continue;
             rendered = template.render(t, d);
             jquery('#'+name).html(rendered);
         }
@@ -101,6 +97,8 @@ function (jquery, topic, template)
             var dropdownSelect = jquery(this).find('a').text();
             jquery(this).parent().siblings().find('div').text(dropdownSelect);
         });
+
+        jquery('#next-backup').html(data['next']);
     }
 
     function updateBackups() {
