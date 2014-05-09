@@ -1524,11 +1524,6 @@ article.event.open div {
         width: 64px;
     }
 
-    .dynamic-content .top-zone {
-        height: 45px;
-        margin-bottom: 0;
-    }
-
     .dynamic-content .top-zone > section {
         right: auto;
         left: 0;
