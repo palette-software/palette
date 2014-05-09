@@ -741,16 +741,16 @@ class CliHandler(socketserver.StreamRequestHandler):
         log.debug("------------Starting Backup for Stop---------------")
 
         stateman.update(StateManager.STATE_STARTED_BACKUP_STOP)
-        server.alert.send(CustomAlerts.BACKUP_STARTED)
+        server.alert.send(CustomAlerts.BACKUP_BEFORE_STOP_STARTED)
 
         self.ack()
 
         body = server.backup_cmd(aconn)
 
         if not body.has_key('error'):
-            server.alert.send(CustomAlerts.BACKUP_FINISHED, body)
+            server.alert.send(CustomAlerts.BACKUP_BEFORE_STOP_FINISHED, body)
         else:
-            server.alert.send(CustomAlerts.BACKUP_FAILED, body)
+            server.alert.send(BACKUP_BEFORE_STOP_FAILED, body)
             # FIXME: return JSON
             self.print_client("Backup failed.  Will not attempt stop.")
             aconn.user_action_unlock()
