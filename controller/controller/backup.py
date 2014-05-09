@@ -47,6 +47,14 @@ class BackupManager(object):
             filter(Backup.agentid == agentid).delete()
         session.commit()
 
+    def find_by_name(self, name):
+        entry = meta.Session.query(BackupEntry, AgentStatusEntry).\
+            filter(AgentStatusEntry.domainid == self.domainid).\
+            filter(BackupEntry.name == name).\
+            filter(BackupEntry.agentid == AgentStatusEntry.agentid).\
+            one()
+        return entry
+
     @classmethod
     def all(cls):
         return meta.Session.query(BackupEntry).all()
