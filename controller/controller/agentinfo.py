@@ -51,26 +51,29 @@ class AgentVolumesEntry(meta.Base):
     def build(cls, agentid, volume):
 
         name = None; vol_type = None; label = None; drive_format = None;
-        size = None; free = None;
+        archive = False; archive_limit = None; size = None; free = None;
 
         if volume.has_key("name"):
             name = volume['name']
 
+        if volume.has_key("size"):
+            size = volume['size']
+
         if volume.has_key("type"):
             vol_type = volume['type']
+            if vol_type == 'Fixed':
+                archive = True
+                if size:
+                    archive_limit = size    # fixme: can't use whole disk
 
         if volume.has_key("label"):
             label = volume['label']
 
         if volume.has_key("drive-format"):
             drive_format = volume['drive-format']
-
-        if volume.has_key("size"):
-            size = volume['size']
-
         if volume.has_key('available-space'):
             free = volume['available-space']
 
         return AgentVolumesEntry(agentid=agentid, name=name,
             vol_type=vol_type, label=label, drive_format=drive_format,
-            size=size, free=free)
+            archive=archive, archive_limit=archive_limit, size=size, free=free)
