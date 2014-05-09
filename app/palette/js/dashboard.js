@@ -7,7 +7,7 @@ require.config({
     }
 });
 
-require(['jquery', 'topic', 'template', 'common'],
+require(['jquery', 'topic', 'template'],
 function (jquery, topic, template)
 {
     var t = $('#server-list-template').html();
@@ -18,3 +18,5 @@ function (jquery, topic, template)
         $('#server-list').html(rendered);
     });
 });
+
+require(['common']);
