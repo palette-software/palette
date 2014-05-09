@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.orm.exc import NoResultFound
+from webob import exc
 import sys
 
 from akiri.framework.api import RESTApplication, DialogPage, UserInterfaceRenderer
@@ -10,9 +11,9 @@ from akiri.framework.config import store
 
 from controller.meta import Session
 from controller.status import StatusEntry
-from controller.state import StateEntry, StateManager
-from controller.backup import BackupEntry
+from controller.state import StateManager
 from controller.agentstatus import AgentStatusEntry
+from controller.agentmanager import AgentManager
 from controller.domain import Domain
 from controller.custom_states import CustomStates
 
@@ -45,7 +46,7 @@ class MonitorApplication(RESTApplication):
 
         # Set defaults
         tableau_status = "unknown"
-        main_state = StateEntry.STATE_UNKNOWN
+        main_state = StateManager.STATE_UNKNOWN
         text = "none"
         color = "none"
         user_action_in_progress = False
@@ -60,8 +61,8 @@ class MonitorApplication(RESTApplication):
                     # This agent has disconnected.
                     continue
 
-        # If there is a primary agent connected, get tableau status,
-        # main, and backup states.
+        # If there is a primary agent connected, get tableau status and
+        # main state, etc.
         if primary:
             # Dig out the tableau status.
             try:
@@ -74,57 +75,39 @@ class MonitorApplication(RESTApplication):
             except NoResultFound, e:
                 pass
 
-            # Dig out the last/most recent backup.
-            last_db = Session.query(BackupEntry).\
-                join(AgentStatusEntry).\
-                filter(AgentStatusEntry.domainid == self.domain.domainid).\
-                filter(StatusEntry.name == 'Status').\
-                order_by(BackupEntry.creation_time.desc()).\
-                first()
-
-            if last_db:
-                last_backup = str(last_db.creation_time)[:19]
-            else:
-                last_backup = "none"
-        else:
-            last_backup = "unknown"
-
         # Get the state
         main_state = StateManager.get_state_by_domainid(self.domain.domainid)
 
-        state_entry = CustomStates.get_custom_state_entry(main_state)
-        if not state_entry:
+        custom_state_entry = CustomStates.get_custom_state_entry(main_state)
+        if not custom_state_entry:
             print "UNKNOWN STATE!  State:", main_state
             # fixme: stop everything?  Log this somewhere?
             return
 
-        text = state_entry.text
-        color = state_entry.color
+        # Convert the space-sparated string to a list, e.g.
+        # "start stop reset" --> ["start", "stop", "reset"]
+        allowable_actions = custom_state_entry.allowable_actions.split(' ')
 
-        if main_state in (StateEntry.STATE_STOPPED,
-                StateEntry.STATE_STARTED, StateEntry.STATE_DEGRADED,
-                StateEntry.STATE_PENDING, StateEntry.STATE_DISCONNECTED,
-                                                    StateEntry.STATE_UNKNOWN):
+        text = custom_state_entry.text
+        color = custom_state_entry.color
+
+        if main_state in (StateManager.STATE_STOPPED,
+                StateManager.STATE_STARTED, StateManager.STATE_DEGRADED,
+                StateManager.STATE_PENDING, StateManager.STATE_DISCONNECTED,
+                                                    StateManager.STATE_UNKNOWN):
             user_action_in_progress = False
         else:
             user_action_in_progress = True
 
-        return {'tableau-status': tableau_status,
-                'state': main_state,
-                'text': text,
-                'color': color,
-                'user-action-in-progress': user_action_in_progress,
-                'last-backup': last_backup
-               }
-
-    def handle_monitor_verbose(self, req):
         data = {}
 
         agent_entries = Session.query(AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domain.domainid).\
             all()
 
-        production_agents = []
+        primary_agent = []
+        worker_agents = []
+        other_agents = []
         for entry in agent_entries:
             agent = {}
             agent['uuid'] = entry.uuid
@@ -138,17 +121,41 @@ class MonitorApplication(RESTApplication):
             agent['modification_time'] = str(entry.modification_time)[:19]
             agent['last_connnection_time'] = str(entry.last_connection_time)[:19]
             agent['last_disconnect_time'] = str(entry.last_disconnect_time)[:19]
-            production_agents.append(agent)
+            if entry.connected():
+                agent['color'] = 'green'
+            else:
+                agent['color'] = 'red'
+            if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+                primary_agent.append(agent)
+            elif entry.agent_type == AgentManager.AGENT_TYPE_WORKER:
+                worker_agents.append(agent)
+            elif entry.agent_type == AgentManager.AGENT_TYPE_OTHER:
+                other_agents.append(agent)
+            else:
+                print "ERROR: Bad agent type:", entry.agent_type
 
-        data['production-agents'] = production_agents
+        # Sort the agents before returning them.
+        worker_agents = sorted(worker_agents, key=lambda ag: ag['displayname'])
+        other_agents = sorted(other_agents, key=lambda ag: ag['displayname'])
+
+        production_agents = []
+        environments = [ { "name": "Production",
+                            "agents": primary_agent + worker_agents + other_agents } ]
+
+        return {'tableau-status': tableau_status,
+                'state': main_state,
+                'allowable-actions': allowable_actions,
+                'text': text,
+                'color': color,
+                'user-action-in-progress': user_action_in_progress,
+                'environments': environments
+               }
 
         return data
 
     def handle(self, req):
         if req.environ['PATH_INFO'] == '/monitor':
             return self.handle_monitor(req)
-        elif req.environ['PATH_INFO'] == '/monitor/verbose':
-            return self.handle_monitor_verbose(req)
         raise exc.HTTPBadRequest()
 
 class StatusDialog(DialogPage):

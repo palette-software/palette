@@ -10,7 +10,7 @@ from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 import meta
 
-from state import StateManager, StateEntry
+from state import StateManager
 from agentmanager import AgentManager
 from agentstatus import AgentStatusEntry
 from custom_alerts import CustomAlerts
@@ -46,7 +46,8 @@ class StatusMonitor(threading.Thread):
         self.log = logger.get(self.LOGGER_NAME)
         self.domainid = self.server.domainid
 
-        self.status_request_interval = self.config.getint('status', 'status_request_interval', default=10)
+        self.status_request_interval = self.config.getint('status', \
+                                        'status_request_interval', default=10)
 
         # Start fresh: status table
         session = meta.Session()
@@ -63,8 +64,12 @@ class StatusMonitor(threading.Thread):
 
     # Remove all entries to get ready for new status info.
     def remove_all_status(self):
-        """Note a session is passed.  When updating the status table, we don't
-        want everything to go away (commit) until we've added the new entries."""
+        """
+            Note a session is passed.  When updating the status table,
+            we don't want everything to go away (commit) until we've added
+            the new entries.
+        """
+
         # FIXME: Need to figure out how to do this in session.query:
         #        DELETE FROM status USING agent
         #          WHERE status.agentid = agent.agentid
@@ -113,16 +118,17 @@ class StatusMonitor(threading.Thread):
 
     def set_main_state(self, status):
         main_state = self.stateman.get_state()
-        if status not in (StatusEntry.STATUS_RUNNING, StatusEntry.STATUS_STOPPED,
-                                                    StatusEntry.STATUS_DEGRADED):
+        if status not in \
+            (StatusEntry.STATUS_RUNNING, StatusEntry.STATUS_STOPPED,
+                                                StatusEntry.STATUS_DEGRADED):
             self.log.error("Unknown reported status from tableau: %s. " + \
                                         "main_state: %s", status, main_state)
             return  # fixme: do something more drastic than return?
 
-        if main_state == StateEntry.STATE_PENDING:
+        if main_state == StateManager.STATE_PENDING:
             self.stateman.update(status)
             if status == StatusEntry.STATUS_RUNNING:
-                # StateEntry calls the state "STARTED"; Tableau calls
+                # StateManager calls the state "STARTED"; Tableau calls
                 # it "RUNNING".
                 self.server.alert.send(CustomAlerts.INIT_STATE_STARTED)
             elif status == StatusEntry.STATUS_STOPPED:
@@ -131,24 +137,46 @@ class StatusMonitor(threading.Thread):
                 self.server.alert.send(CustomAlerts.INIT_STATE_DEGRADED)
             return
 
+        # If the main state was DEGRADED but status isn't DEGRADED any more,
+        # update the main state.
+        if main_state == StateManager.STATE_DEGRADED and \
+                                status != StatusEntry.STATUS_DEGRADED:
+            self.stateman.update(status)
+            if status == StatusEntry.STATUS_RUNNING:
+                # fixme: should we have a unique alert for the transition
+                # from DEGRADED to RUNNING instead of this standard
+                # "started" alert?
+                self.server.alert.send(CustomAlerts.STATE_STARTED)
+            elif status == StateManager.STATUS_STOPPED:
+                self.server.alert.send(CustomAlerts.STATE_STOPPED)
+            else:
+                self.log.error("Unexpected transition from DEGRADED to: %s",
+                                                                    status)
+            return
+
         # If the main state is wrong, correct it.
-        if main_state == StateEntry.STATE_STOPPED and \
-                                            status == StatusEntry.STATUS_RUNNING:
-            self.stateman.update(StateEntry.STATE_STARTED)
+        if main_state == StateManager.STATE_STOPPED and \
+                                        status == StatusEntry.STATUS_RUNNING:
+            self.log.debug("Updating main state to %s", status)
+            self.stateman.update(StateManager.STATE_STARTED)
             self.server.alert.send(CustomAlerts.STATE_STARTED)
-        elif main_state == StateEntry.STATE_STARTED and \
-                                            status == StatusEntry.STATUS_STOPPED:
-            self.stateman.update(StateEntry.STATE_STOPPED)
+        elif main_state == StateManager.STATE_STARTED and \
+                                        status == StatusEntry.STATUS_STOPPED:
+            self.log.debug("Updating main state to %s", status)
+            self.stateman.update(StateManager.STATE_STOPPED)
             self.server.alert.send(CustomAlerts.STATE_STOPPED)
         elif status == StatusEntry.STATUS_DEGRADED and \
                                     main_state != StatusEntry.STATUS_DEGRADED:
-            self.stateman.update(StateEntry.STATE_DEGRADED)
+            self.log.debug("Updating main state to %s", status)
+            self.stateman.update(StateManager.STATE_DEGRADED)
             self.server.alert.send(CustomAlerts.STATE_DEGRADED)
 
     def run(self):
         while True:
-            self.log.debug("status-check: About to timeout or wait for a new primary to connect")
-            new_primary = self.manager.new_primary_event.wait(self.status_request_interval)
+            self.log.debug("status-check: About to timeout or wait for a " + \
+                                                    "new primary to connect")
+            new_primary = self.manager.new_primary_event.wait(\
+                                                self.status_request_interval)
             self.log.debug("status-check: new_primary: %s", new_primary)
             if new_primary:
                 self.manager.new_primary_event.clear()
@@ -160,7 +188,8 @@ class StatusMonitor(threading.Thread):
         aconn = self.manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
         if not aconn:
             session = meta.Session()
-            self.log.debug("status thread: No primary agent currently connected.")
+            self.log.debug(\
+                        "status thread: No primary agent currently connected.")
             self.remove_all_status()
             session.commit()
             return

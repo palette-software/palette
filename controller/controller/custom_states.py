@@ -3,7 +3,7 @@ from sqlalchemy import Column, BigInteger, String
 from sqlalchemy.orm.exc import NoResultFound
 import meta
 
-from state import StateEntry
+from state import StateManager
 
 class CustomStatesEntry(meta.Base):
     __tablename__ = "custom_states"
@@ -13,14 +13,23 @@ class CustomStatesEntry(meta.Base):
 
     state = Column(String, unique=True)
     text = Column(String)
+    allowable_actions = Column(String)
     color = Column(String)  # icon color: e.g. red, green, yellow
 
-    def __init__(self, state, text, color):
-        self.state = state
-        self.text = text
-        self.color = color
-
 class CustomStates(object):
+
+    # Allowable actions:
+    ACTION_START="start"
+    ACTION_STOP="stop"
+    ACTION_BACKUP="backup"
+    ACTION_RESTORE="restore"
+    ACTION_RESET="reset"
+    ACTION_RESTART="restart"
+    ACTION_NONE=""
+
+    COLOR_RED="red"
+    COLOR_GREEN="green"
+    COLOR_YELLOW="yellow"
 
     @classmethod
     def get_custom_state_entry(cls, state):
@@ -38,75 +47,99 @@ class CustomStates(object):
 
         # fixme: Init the custom states elsewhere.
         entries = [
-            (StateEntry.STATE_DISCONNECTED,
+            (StateManager.STATE_DISCONNECTED,
                 "Disconnected from the primary agent",
-                "red"),
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_RED),
 
             # connected but no status reported from tabadmin yet
-            (StateEntry.STATE_PENDING,
+            (StateManager.STATE_PENDING,
                 "Primary agent is connected.  Retrieving Tableau status.",
-                "yellow"),
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_YELLOW),
 
-            (StateEntry.STATE_STOPPING,
+            (StateManager.STATE_STOPPING,
                 "Tableau is stopping",
-                "yellow"),
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_YELLOW),
 
-            (StateEntry.STATE_STOPPING_RESTORE,
+            (StateManager.STATE_STOPPING_RESTORE,
                 "Stopping Tableau in preparation to start a restore.",
-                "yellow"),
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_YELLOW),
 
-            (StateEntry.STATE_STOPPED,
+            (StateManager.STATE_STOPPED,
                 "Tableau is stopped.",
-                "red"),
+                ' '.join([CustomStates.ACTION_START, 
+                            CustomStates.ACTION_BACKUP,
+                            CustomStates.ACTION_RESTORE,
+                            CustomStates.ACTION_RESET,
+                            CustomStates.ACTION_RESTART]),
+                CustomStates.COLOR_RED),
 
             # reported from tabadmin
-            (StateEntry.STATE_STOPPED_RESTORE,
+            (StateManager.STATE_STOPPED_RESTORE,
                 "Performing a restore.  Tableau is stopped.",
-                "green"),
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_GREEN),
 
-            (StateEntry.STATE_STOPPED_BACKUP,
+            (StateManager.STATE_STOPPED_BACKUP,
                 "Performing a backup.  Tableau is stopped.",
-                "green"),
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_GREEN),
 
             # backup for/before restore
-            (StateEntry.STATE_STOPPED_BACKUP_RESTORE,
+            (StateManager.STATE_STOPPED_BACKUP_RESTORE,
                 "Performing a backup before a restore.  Tableau is stopped.",
-                "green"),
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_GREEN),
 
-            (StateEntry.STATE_STARTING,
+            (StateManager.STATE_STARTING,
                 "Starting Tableau.",
-                "yellow"),
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_YELLOW),
 
-            (StateEntry.STATE_STARTING_RESTORE,
+            (StateManager.STATE_STARTING_RESTORE,
                 "Starting a restore.",
-                "green"),
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_GREEN),
 
-            (StateEntry.STATE_STARTED,
+            (StateManager.STATE_STARTED,
                 "Tableau is running.",
-                "green"),
+                ' '.join([CustomStates.ACTION_STOP, 
+                            CustomStates.ACTION_BACKUP,
+                            CustomStates.ACTION_RESTORE,
+                            CustomStates.ACTION_RESET,
+                            CustomStates.ACTION_RESTART]),
+                CustomStates.COLOR_GREEN),
 
-            (StateEntry.STATE_STARTED_BACKUP,
+            (StateManager.STATE_STARTED_BACKUP,
                 "Performing a backup.  Tableau is running.",
-                "green"),
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_GREEN),
 
             # backup for/before restore
-            (StateEntry.STATE_STARTED_BACKUP_RESTORE,
+            (StateManager.STATE_STARTED_BACKUP_RESTORE,
                 "Performing a backup before a restore is done. " + \
                 "Tableau is running.",
-                "green"),
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_GREEN),
 
             # backup for/before stop
-            (StateEntry.STATE_STARTED_BACKUP_STOP,
+            (StateManager.STATE_STARTED_BACKUP_STOP,
                 "Performing a backup before Tableau is stopped.",
-                "green"),
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_GREEN),
 
-            (StateEntry.STATE_DEGRADED,
+            (StateManager.STATE_DEGRADED,
                 "Tableau is in a DEGRADED state.",
-                "red"),
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_RED),
 
-            (StateEntry.STATE_UNKNOWN,
+            (StateManager.STATE_UNKNOWN,
                 "No primary agent has connected to this controller.",
-                "red")
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_RED)
         ]
 
         entry = meta.Session.query(CustomStatesEntry).first()
@@ -115,7 +148,11 @@ class CustomStates(object):
             return
 
         for state in entries:
-            entry = apply(CustomStatesEntry, state)
+            entry = apply(CustomStatesEntry)
+            entry.state = state[0]
+            entry.text = state[1]
+            entry.allowable_actions = state[2]
+            entry.color = state[3]
             meta.Session.add(entry)
 
         meta.Session.commit()
