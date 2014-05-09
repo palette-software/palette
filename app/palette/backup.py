@@ -2,6 +2,7 @@ import time
 import sys
 import os
 import socket
+import datetime
 
 from akiri.framework.api import RESTApplication, DialogPage
 from akiri.framework.config import store
@@ -108,6 +109,9 @@ class BackupApplication(RESTApplication):
             domainid = self.domain.domainid
             L = [x.todict(pretty=True) for x in BackupManager.all(domainid)]
             # FIXME: convert TIMEZONE
+            tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+            midnight = datetime.datetime.combine(tomorrow, datetime.time(0,0))
+            scheduled = midnight.ctime()
 
             options = [{'item': 'Palette Cloud Storage'},
                        {'item': 'On-Premise Storage'}]
@@ -115,15 +119,16 @@ class BackupApplication(RESTApplication):
                 'config': [{'name': 'archive-backup',
                             'options': options,
                             'value': options[1]['item']}],
-                'backups': {'type': 'Production Backups', 'items': L}
+                'backups': {'type': 'Production Backups', 'items': L},
+                'next': scheduled
                 }
         elif req.method == 'POST':
             if 'action' in req.POST and 'set' in req.POST:
                 raise exc.HTTPBadRequest("'action' and 'set' are exclusive.")
             if 'action' in req.POST:
-                return handle_action(req)
+                return self.handle_action(req)
             if 'set' in req.POST:
-                return handle_set(req)
+                return self.handle_set(req)
             raise exc.HTTPBadRequest()
         raise exc.HTTPMethodNotAllowed()
 

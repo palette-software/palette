@@ -72,7 +72,7 @@ class Alert(object):
 
         # Log the event to the database
         self.event.add(subject, message, alert_entry.level, alert_entry.icon, \
-                                                            alert_entry.color)
+                                alert_entry.color, alert_entry.alert_type)
 
         if not message:
             # If no data was sent, use the subject as the message.
