@@ -1137,6 +1137,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         try:
             B, A = self.backup.find_by_name(backup)
             uuid = A.uuid
+            agentid = A.agentid
+            displayname = A.displayname
         except sqlalchemy.orm.exc.NoResultFound:
             return self.error("no backup found with name: %s" % \
               (backup))
@@ -1146,9 +1148,20 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn = manager.agent_conn_by_uuid(uuid)
         if not aconn:
-            return self.error("No connected agent with uuid=%s" % (uuid))
+            return self.error("agent not connected: displayname=%s uuid=%s" % \
+              (displayname, uuid))
 
-        return {}
+        install_dir = aconn.auth['install-dir']
+        backup_path = ntpath.join(install_dir, "Data", backup)
+        body = self.delete_file(aconn, backup_path)
+        if not body.has_key('error'):
+            try:
+                self.backup.remove(backup, agentid)
+            except sqlalchemy.orm.exc.NoResultFound:
+                return self.error("backup not found name=%s agent=%s" % \
+              (backup, displayname))
+
+        return body
 
     def status_cmd(self, aconn):
         return self.cli_cmd('tabadmin status -v', aconn)

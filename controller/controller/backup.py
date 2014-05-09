@@ -48,8 +48,9 @@ class BackupManager(object):
     def remove(self, name, agentid):
         session = meta.Session()
         session.query(BackupEntry).\
-            filter(Backup.name == name).\
-            filter(Backup.agentid == agentid).delete()
+            filter(BackupEntry.agentid == agentid).\
+            filter(BackupEntry.name == name).\
+            delete()
         session.commit()
 
     def find_by_name(self, name):
