@@ -16,8 +16,8 @@
 	</a>
       </li>
       <li ${obj.main_active=='activity' and 'class="active"' or ''}>
-        <a href="/activity"><i class="fa fa-fw fa-group"></i>
-	  <span>User Activity</span>
+        <a href="/activity"><i class="fa fa-fw fa-book"></i>
+	  <span>Workbook Archives</span>
 	</a>
       </li>
       <li ${obj.main_active=='manage' and 'class="active"' or ''}>
