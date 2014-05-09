@@ -41,6 +41,10 @@ class CustomAlerts(object):
     BACKUP_FINISHED="BACKUP-FINISHED"
     BACKUP_FAILED="BACKUP-FAILED"
 
+    BACKUP_BEFORE_STOP_STARTED="BACKUP-BEFORE-STOP-STARTED"
+    BACKUP_BEFORE_STOP_FINISHED="BACKUP-BEFORE-STOP-FINISHED"
+    BACKUP_BEFORE_STOP_FAILED="BACKUP-BEFORE-STOP-FAILED"
+
     BACKUP_BEFORE_RESTORE_STARTED="BACKUP-BEFORE-RESTORE-STARTED"
     BACKUP_BEFORE_RESTORE_FINISHED="BACKUP-BEFORE-RESTORE-FINISHED"
     BACKUP_BEFORE_RESTORE_FAILED="BACKUP-BEFORE-RESTORE-FAILED"
@@ -132,6 +136,19 @@ class CustomAlerts(object):
                             CustomAlerts.LEVEL_INFO,
                             CustomAlerts.TYPE_BACKUP,
                             'Backup Failed'),
+
+            (CustomAlerts.BACKUP_BEFORE_STOP_STARTED,
+                                    CustomAlerts.LEVEL_INFO,
+                                    CustomAlerts.TYPE_BACKUP,
+                                    'Backup Before Stop Started'),
+            (CustomAlerts.BACKUP_BEFORE_STOP_FINISHED,
+                                    CustomAlerts.LEVEL_INFO,
+                                    CustomAlerts.TYPE_BACKUP,
+                                    'Backup Before Stop Finished'),
+            (CustomAlerts.BACKUP_BEFORE_STOP_FAILED,
+                                    CustomAlerts.LEVEL_ERROR,
+                                    CustomAlerts.TYPE_BACKUP,
+                                    'Backup Before Stop Failed'),
 
             (CustomAlerts.BACKUP_BEFORE_RESTORE_STARTED,
                                     CustomAlerts.LEVEL_INFO,
