@@ -11,16 +11,6 @@
     <section class="padding">
     	<input type="text" placeholder="example">
     </section>
-    <h5 class="sub">Timeframe</h5>
-    <div class="btn-group">
-	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>Cloud Only</div><span class="caret"></span>
-	  </button>
-	  <ul class="dropdown-menu" role="menu">
-	    <li><a href="#">Cloud Only</a></li>
-	    <li><a href="#">Another action</a></li>
-	    <li><a href="#">Something else here</a></li>
-	  </ul>
-	</div>
     <h5 class="sub">Publisher</h5>
     <div class="btn-group">
 	  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>First Publisher</div><span class="caret"></span>
