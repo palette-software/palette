@@ -81,7 +81,7 @@ class AgentManager(threading.Thread):
     # Agent types
     AGENT_TYPE_PRIMARY="primary"
     AGENT_TYPE_WORKER="worker"
-    AGENT_TYPE_OTHER="other"
+    AGENT_TYPE_ARCHIVE="archive"
 
     def __init__(self, server, host='0.0.0.0', port=0):
         super(AgentManager, self).__init__()
@@ -212,7 +212,7 @@ class AgentManager(threading.Thread):
 
         if new_agent.agent_type == AgentManager.AGENT_TYPE_WORKER:
             return (WORKER_TEMPLATE % (count + WORKER_START), count + WORKER_START)
-        elif new_agent.agent_type == AgentManager.AGENT_TYPE_OTHER:
+        elif new_agent.agent_type == AgentManager.AGENT_TYPE_ARCHIVE:
             return (ARCHIVE_TEMPLATE % (count + ARCHIVE_START),
                                                         count + ARCHIVE_START)
         self.log.error("calc_new_displayname: INVALID agent type: %s",
