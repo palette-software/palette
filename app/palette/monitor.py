@@ -103,15 +103,15 @@ class MonitorApplication(RESTApplication):
 
         agent_entries = Session.query(AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domain.domainid).\
+            order_by(AgentStatusEntry.display_order).\
             all()
 
-        primary_agent = []
-        worker_agents = []
-        other_agents = []
+        agents = []
         for entry in agent_entries:
             agent = {}
             agent['uuid'] = entry.uuid
             agent['displayname'] = entry.displayname
+            agent['display_order'] = entry.display_order
             agent['hostname'] = entry.hostname
             agent['agent_type'] = entry.agent_type
             agent['version'] = entry.version
@@ -125,22 +125,10 @@ class MonitorApplication(RESTApplication):
                 agent['color'] = 'green'
             else:
                 agent['color'] = 'red'
-            if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-                primary_agent.append(agent)
-            elif entry.agent_type == AgentManager.AGENT_TYPE_WORKER:
-                worker_agents.append(agent)
-            elif entry.agent_type == AgentManager.AGENT_TYPE_OTHER:
-                other_agents.append(agent)
-            else:
-                print "ERROR: Bad agent type:", entry.agent_type
-
-        # Sort the agents before returning them.
-        worker_agents = sorted(worker_agents, key=lambda ag: ag['displayname'])
-        other_agents = sorted(other_agents, key=lambda ag: ag['displayname'])
+            agents.append(agent)
 
         production_agents = []
-        environments = [ { "name": "Production",
-                            "agents": primary_agent + worker_agents + other_agents } ]
+        environments = [ { "name": "Production", "agents": agents } ]
 
         return {'tableau-status': tableau_status,
                 'state': main_state,
