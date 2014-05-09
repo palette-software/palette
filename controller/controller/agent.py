@@ -247,7 +247,7 @@ if __name__ == '__main__':
     parser.add_argument("--type", help="announce agent as type primary, worker or other", default=DEFAULT_AGENT_TYPE,
         choices=(AgentManager.AGENT_TYPE_PRIMARY,
                     AgentManager.AGENT_TYPE_WORKER,
-                    AgentManager.AGENT_TYPE_OTHER))
+                    AgentManager.AGENT_TYPE_ARCHIVE))
     parser.add_argument("--ip", help="announce my local ip address as this", default=DEFAULT_AGENT_IP)
     parser.add_argument("--ssl", help="connect to the controller with ssl", action="store_true", default=False)
     parser.add_argument("--controller", help="controller to connect to", default=DEFAULT_CONTROLLER)

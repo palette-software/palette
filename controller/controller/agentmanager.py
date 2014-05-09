@@ -81,7 +81,7 @@ class AgentManager(threading.Thread):
     # Agent types
     AGENT_TYPE_PRIMARY="primary"
     AGENT_TYPE_WORKER="worker"
-    AGENT_TYPE_OTHER="other"
+    AGENT_TYPE_ARCHIVE="archive"
 
     def __init__(self, server, host='0.0.0.0', port=0):
         super(AgentManager, self).__init__()
@@ -178,21 +178,26 @@ class AgentManager(threading.Thread):
 
     def calc_new_displayname(self, new_agent):
         """
+            Returns (agent-display-name, agent-display-order)
             The naming scheme for V1:
                 Tableau Primary
                 Tableau Worker #1
                 Tableau Worker #2
                     ...
-                Other Server #1
-                Other Server #2
+                Archive Server #1 (formerly "Other")
+                Archive Server #2
                     ...
         """
         PRIMARY_TEMPLATE="Tableau Primary" # not a template since only 1
         WORKER_TEMPLATE="Tableau Worker #%d"
-        OTHER_TEMPLATE="Tableau Other #%d"
+        ARCHIVE_TEMPLATE="Tableau Archive #%d"
+
+        # Starting point for 
+        WORKER_START=100
+        ARCHIVE_START=200
 
         if new_agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-            return PRIMARY_TEMPLATE
+            return (PRIMARY_TEMPLATE, 1)
 
         session = meta.Session()
 
@@ -206,12 +211,13 @@ class AgentManager(threading.Thread):
         count = len(rows) + 1
 
         if new_agent.agent_type == AgentManager.AGENT_TYPE_WORKER:
-            return WORKER_TEMPLATE % count
-        elif new_agent.agent_type == AgentManager.AGENT_TYPE_OTHER:
-            return OTHER_TEMPLATE % count
+            return (WORKER_TEMPLATE % (count + WORKER_START), count + WORKER_START)
+        elif new_agent.agent_type == AgentManager.AGENT_TYPE_ARCHIVE:
+            return (ARCHIVE_TEMPLATE % (count + ARCHIVE_START),
+                                                        count + ARCHIVE_START)
         self.log.error("calc_new_displayname: INVALID agent type: %s",
                                                             new_agent.agent_type)
-        return "INVALID AGENT TYPE: %s" % new_agent.agent_type
+        return ("INVALID AGENT TYPE: %s" % new_agent.agent_type, 0)
 
     def remember(self, new_agent, body):
         session = meta.Session()
@@ -227,7 +233,7 @@ class AgentManager(threading.Thread):
             found = False
 
         if not found or entry.displayname == None or entry.displayname == "":
-            displayname = self.calc_new_displayname(new_agent)
+            (displayname, display_order) = self.calc_new_displayname(new_agent)
 
         entry = AgentStatusEntry(body['hostname'],
                          new_agent.agent_type,
@@ -239,6 +245,7 @@ class AgentManager(threading.Thread):
         entry.last_connection_time = func.now()
         if not found:
             entry.displayname = displayname
+            entry.display_order = display_order
 
         entry = session.merge(entry)
         # Remember the yml contents
