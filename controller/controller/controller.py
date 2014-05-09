@@ -1499,6 +1499,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if restore_success:
             stateman.update(StateManager.STATE_STARTED)
+            server.alert.send(CustomAlerts.STATE_STARTED)
         else:
             # On a successful restore, tableau starts itself.
             # fixme: eventually control when tableau is started and
