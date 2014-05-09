@@ -290,14 +290,14 @@ ul.dropdown-menu a:hover {
     top: 0;
     width: 100%;
     display: block;
-    height: 75px;
+    height: 125px;
+    background-color: #ececec;
 }
 .main-side-bar .status img {
     position: absolute;
-    width: 42px;
-    height: 42px;
-    top: 50%;
-    margin-top: -21px;
+    width: 64px;
+    height: 64px;
+    top: 15px;
     right: 15px;
     -webkit-transition: all 0.2s ease-in;
     -moz-transition: all 0.2s ease-in;
@@ -307,33 +307,39 @@ ul.dropdown-menu a:hover {
 }
 .main-side-bar .status h2 {
     position: absolute;
-    top: 8px;
+    top: 35px;
     left: 15px;
     font-size: 24px;
-    line-height: 29px;
+    line-height: 24px;
     margin: 0;
     font-weight: 300;
+    color: #697078;
 }
-.main-side-bar .status h2 span {
+.main-side-bar .status h3 {
+    position: absolute;
+    top: 84px;
+    left: 15px;
     display: block;
     color: #75e25a;
-    font-size: 1em;
+    font-size: 24px;
     font-weight: 400;
-    width: 170px;
+    width: 220px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    margin: 0;
+    text-align: center;
 }
 
-.main-side-bar .status h2 span.green {
+.main-side-bar .status h3.green {
     color: #75e25a;
 }
 
-.main-side-bar .status h2 span.yellow {
+.main-side-bar .status h3.yellow {
     color: #dc994c;
 }
 
-.main-side-bar .status h2 span.red {
+.main-side-bar .status h3.red {
     color: #ef5455;
 }
 
@@ -347,15 +353,15 @@ ul.dropdown-menu a:hover {
     left: 384px;
 }
 .main-side-bar.collapsed img {
-    width: 32px;
-    height: 32px;
-    right: 16px;
-    top: 37px;
+    width: 42px;
+    height: 42px;
+    right: 11px;
+    top: 11px;
 }
 .main-side-bar.collapsed .status {
     height: 64px;
 }
-.main-side-bar.collapsed h2 {
+.main-side-bar.collapsed h2, .main-side-bar.collapsed h3  {
     display: none;
 }
 .main-side-bar.collapsed .actions li a span {
