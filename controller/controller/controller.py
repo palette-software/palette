@@ -230,7 +230,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         print >> self.wfile, 'Optional prepended domain args:'
         print >> self.wfile, '    /domainid=id /domainname=name'
         print >> self.wfile, 'Optional prepended agent args:'
-        print >> self.wfile, '    /displayname=name /hostname=name /uuid=uuid /type=type'
+        print >> self.wfile, '    /displayname=name /hostname=name ' + \
+                                                    '/uuid=uuid /type=type'
         for name, m in inspect.getmembers(self, predicate=inspect.ismethod):
             if name.startswith("do_"):
                 name = name[3:].replace('_', '-')
@@ -503,7 +504,10 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def do_cli(self, cmd):
         if len(cmd.args) < 1:
-            print >> self.wfile, "[ERROR] usage: cli [ { /displayname=dname | /hostname=hname | /uuid=uuidname | /type={primary|worker|other} } ] command"
+            print >> self.wfile, \
+                "[ERROR] usage: cli [ { /displayname=dname | " + \
+                        "/hostname=hname | /uuid=uuidname | " + \
+                                    "/type={primary|worker|other} } ] command"
             return
 
         aconn = self.get_aconn(cmd.dict)
@@ -737,16 +741,16 @@ class CliHandler(socketserver.StreamRequestHandler):
         log.debug("------------Starting Backup for Stop---------------")
 
         stateman.update(StateManager.STATE_STARTED_BACKUP_STOP)
-        server.alert.send(CustomAlerts.BACKUP_STARTED)
+        server.alert.send(CustomAlerts.BACKUP_BEFORE_STOP_STARTED)
 
         self.ack()
 
         body = server.backup_cmd(aconn)
 
         if not body.has_key('error'):
-            server.alert.send(CustomAlerts.BACKUP_FINISHED, body)
+            server.alert.send(CustomAlerts.BACKUP_BEFORE_STOP_FINISHED, body)
         else:
-            server.alert.send(CustomAlerts.BACKUP_FAILED, body)
+            server.alert.send(BACKUP_BEFORE_STOP_FAILED, body)
             # FIXME: return JSON
             self.print_client("Backup failed.  Will not attempt stop.")
             aconn.user_action_unlock()
@@ -758,7 +762,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(StateManager.STATE_STOPPING)
 
         if not backup_first:
-            self.ack()  # The ack was sent earlier only if a backup was attempted.
+            # The ack was sent earlier only if a backup was attempted.
+            self.ack()
 
         log.debug("-----------------Stopping Tableau-------------------")
         # fixme: Reply with "OK" only after the agent received the command?
@@ -1021,7 +1026,14 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def handle(self):
         while True:
-            data = self.rfile.readline().strip()
+            try:
+                data = self.rfile.readline().strip()
+            except socket.error as e:
+                self.log.debug(\
+                    "CliHandler: telnet client socket failure/disconnect: " + \
+                                                                        str(e))
+                break
+
             if not data: break
 
             try:
@@ -1189,7 +1201,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         cli_body = self._get_cli_status(body['xid'], aconn, command)
 
         if not cli_body.has_key("stdout"):
-            self.log.error("check status of cli failed - missing 'stdout' in reply", cli_body)
+            self.log.error(\
+                "check status of cli failed - missing 'stdout' in reply",
+                                                                    cli_body)
             return self.error(\
                 "Missing 'stdout' in agent reply for command '%s'" % command,
                                                                     cli_body)
@@ -1264,7 +1278,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("POST /cli response missing 'run-status'", body)
         if body['run-status'] != 'running' and body['run-status'] != 'finished':
             # FIXME: could possibly be finished.
-            return self.error("POST /cli response for 'run-status' was not 'running'", body)
+            return self.error(\
+                "POST /cli response for 'run-status' was not 'running'", body)
 
         return body
 
@@ -1297,12 +1312,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.error("_send_cleanup: POST %s for cmd '%s' failed,"
                                "%d %s : %s", uri, orig_cli_command,
                                res.status, res.reason, body_json)
-                alert = "Command to agent failed with status: " + str(res.status)
+                alert = "Command to agent failed with status: " + \
+                                                            str(res.status)
                 self.remove_agent(aconn, alert)
                 return self.httperror(aconn, res, method="POST",
-                                      agent=aconn.displayname, 
+                                      agent=aconn.displayname,
                                       uri=uri, body=body_json)
- 
+
             self.log.debug("headers: " + str(res.getheaders()))
             self.log.debug("_send_cleanup reading...")
 
@@ -1350,7 +1366,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         for key in agents.keys():
             manager.lock()
             if not agents.has_key(key):
-                self.log.info("copy_cmd: agent with uuid '%s' is now gone and won't be checked.", key)
+                self.log.info(\
+                    "copy_cmd: agent with uuid '%s' is now gone and " + \
+                                                    "won't be checked.", key)
                 manager.unlock()
                 continue
             agent = agents[key]
@@ -1463,7 +1481,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             server.alert.send(CustomAlerts.STATE_STOPPED)
 
-        # 'tabadmin restore ...' starts tableau as part of the restore procedure.
+        # 'tabadmin restore ...' starts tableau as part of the
+        # restore procedure.
         # fixme: Maybe the maintenance web server wasn't running?
         maint_msg = ""
         maint_body = server.maint("stop", aconn=aconn)
@@ -1499,6 +1518,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if restore_success:
             stateman.update(StateManager.STATE_STARTED)
+            server.alert.send(CustomAlerts.STATE_STARTED)
         else:
             # On a successful restore, tableau starts itself.
             # fixme: eventually control when tableau is started and
@@ -1592,13 +1612,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
                 body = json.loads(body_json)
                 if body == None:
-                    return self.error("Get /%s getresponse returned a null body" % uri)
+                    return self.error(\
+                            "Get /%s getresponse returned a null body" % uri)
 
                 self.log.debug("body = " + str(body))
                 if not body.has_key('run-status'):
-                    self.remove_agent(aconn, 
+                    self.remove_agent(aconn,
                                      CustomAlerts.AGENT_RETURNED_INVALID_STATUS)
-                    return self.error("GET %s command reply was missing 'run-status'!  Will not retry." % (uri), body)
+                    return self.error(\
+                        "GET %s command reply was missing 'run-status'!  " + \
+                        "Will not retry." % (uri), body)
 
                 if body['run-status'] == 'finished':
                     # Make sure if the command failed, that the 'error'
@@ -1836,7 +1859,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                             yml_config_file, aconn.displayname)
 
             else:
-                aconn.agent_type = AgentManager.AGENT_TYPE_OTHER
+                aconn.agent_type = AgentManager.AGENT_TYPE_ARCHIVE
 
         # Cleanup.
         if aconn.agent_type == AgentManager.AGENT_TYPE_PRIMARY:

@@ -18,6 +18,7 @@ class AgentStatusEntry(meta.Base):
     domainid = Column(BigInteger, ForeignKey("domain.domainid"))
     uuid = Column(String, unique=True, index=True)
     displayname = Column(String)
+    display_order = Column(Integer)
     hostname = Column(String)
     agent_type = Column(String)
     version = Column(String)

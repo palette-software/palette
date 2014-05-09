@@ -122,7 +122,16 @@ class EventApplication(RESTApplication):
         green_count = len(Session.query(EventEntry).\
                     filter(EventEntry.color == CustomStates.COLOR_GREEN).all())
 
-        return { 'red': red_count, 'yellow': yellow_count, 'green': green_count,
+        # Get the list of all event_types found.
+        query = Session.query(EventEntry).\
+            distinct(EventEntry.event_type).\
+            order_by(EventEntry.event_type).\
+            all()
+
+        event_types = [entry.event_type for entry in query]
+
+        return { 'event-types': event_types,
+                'red': red_count, 'yellow': yellow_count, 'green': green_count,
                                                                 'events': events }
 
     def event_query(self, start, end, low, high, order):
