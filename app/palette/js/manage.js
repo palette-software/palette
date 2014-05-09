@@ -9,7 +9,7 @@ require.config({
 require(['jquery', 'topic', 'domReady!'],
 function (jquery, topic)
 {
-    var actionList = ['start', 'stop', 'reset', 'restart']
+    var actionList = ['start', 'stop', 'restart']
 
     function disableAll() {
         for (var i in actionList) {
@@ -39,10 +39,6 @@ function (jquery, topic)
 
     function stop() {
         POST('stop');
-    }
-
-    function reset() {
-        alert('TBD');
     }
 
     function restart() {
@@ -78,7 +74,6 @@ function (jquery, topic)
 
     bind("#start", start);
     bind("#stop", stop);
-    bind("#reset", reset);
     bind("#restart", restart);
 
     topic.subscribe('state', function(message, data) {
