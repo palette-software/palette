@@ -1,11 +1,10 @@
 <section class="main-side-bar">
   <section class="status">
     <img id="status-image" src="" />
-    <h2>Status:
-      <span id="status-text"></span>
-    </h2>
-    </section>
-    <ul class="actions">
+    <h2>Status</h2>
+    <h3 id="status-text"></h3>
+  </section>
+  <ul class="actions">
       <li class="divider">&nbsp;</li>
       <li ${obj.main_active=='home' and 'class="active"' or ''}>
         <a href="/"><i class="fa fa-fw fa-home"></i><span>Home</span>

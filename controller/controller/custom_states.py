@@ -3,7 +3,7 @@ from sqlalchemy import Column, BigInteger, String
 from sqlalchemy.orm.exc import NoResultFound
 import meta
 
-from state import StateEntry
+from state import StateManager
 
 class CustomStatesEntry(meta.Base):
     __tablename__ = "custom_states"
@@ -27,6 +27,10 @@ class CustomStates(object):
     ACTION_RESTART="restart"
     ACTION_NONE=""
 
+    COLOR_RED="red"
+    COLOR_GREEN="green"
+    COLOR_YELLOW="yellow"
+
     @classmethod
     def get_custom_state_entry(cls, state):
 
@@ -43,99 +47,99 @@ class CustomStates(object):
 
         # fixme: Init the custom states elsewhere.
         entries = [
-            (StateEntry.STATE_DISCONNECTED,
+            (StateManager.STATE_DISCONNECTED,
                 "Disconnected from the primary agent",
                 CustomStates.ACTION_NONE,
-                "red"),
+                CustomStates.COLOR_RED),
 
             # connected but no status reported from tabadmin yet
-            (StateEntry.STATE_PENDING,
+            (StateManager.STATE_PENDING,
                 "Primary agent is connected.  Retrieving Tableau status.",
                 CustomStates.ACTION_NONE,
-                "yellow"),
+                CustomStates.COLOR_YELLOW),
 
-            (StateEntry.STATE_STOPPING,
+            (StateManager.STATE_STOPPING,
                 "Tableau is stopping",
                 CustomStates.ACTION_NONE,
-                "yellow"),
+                CustomStates.COLOR_YELLOW),
 
-            (StateEntry.STATE_STOPPING_RESTORE,
+            (StateManager.STATE_STOPPING_RESTORE,
                 "Stopping Tableau in preparation to start a restore.",
                 CustomStates.ACTION_NONE,
-                "yellow"),
+                CustomStates.COLOR_YELLOW),
 
-            (StateEntry.STATE_STOPPED,
+            (StateManager.STATE_STOPPED,
                 "Tableau is stopped.",
                 ' '.join([CustomStates.ACTION_START, 
                             CustomStates.ACTION_BACKUP,
                             CustomStates.ACTION_RESTORE,
                             CustomStates.ACTION_RESET,
                             CustomStates.ACTION_RESTART]),
-                "red"),
+                CustomStates.COLOR_RED),
 
             # reported from tabadmin
-            (StateEntry.STATE_STOPPED_RESTORE,
+            (StateManager.STATE_STOPPED_RESTORE,
                 "Performing a restore.  Tableau is stopped.",
                 CustomStates.ACTION_NONE,
-                "green"),
+                CustomStates.COLOR_GREEN),
 
-            (StateEntry.STATE_STOPPED_BACKUP,
+            (StateManager.STATE_STOPPED_BACKUP,
                 "Performing a backup.  Tableau is stopped.",
                 CustomStates.ACTION_NONE,
-                "green"),
+                CustomStates.COLOR_GREEN),
 
             # backup for/before restore
-            (StateEntry.STATE_STOPPED_BACKUP_RESTORE,
+            (StateManager.STATE_STOPPED_BACKUP_RESTORE,
                 "Performing a backup before a restore.  Tableau is stopped.",
                 CustomStates.ACTION_NONE,
-                "green"),
+                CustomStates.COLOR_GREEN),
 
-            (StateEntry.STATE_STARTING,
+            (StateManager.STATE_STARTING,
                 "Starting Tableau.",
                 CustomStates.ACTION_NONE,
-                "yellow"),
+                CustomStates.COLOR_YELLOW),
 
-            (StateEntry.STATE_STARTING_RESTORE,
+            (StateManager.STATE_STARTING_RESTORE,
                 "Starting a restore.",
                 CustomStates.ACTION_NONE,
-                "green"),
+                CustomStates.COLOR_GREEN),
 
-            (StateEntry.STATE_STARTED,
+            (StateManager.STATE_STARTED,
                 "Tableau is running.",
                 ' '.join([CustomStates.ACTION_STOP, 
                             CustomStates.ACTION_BACKUP,
                             CustomStates.ACTION_RESTORE,
                             CustomStates.ACTION_RESET,
                             CustomStates.ACTION_RESTART]),
-                "green"),
+                CustomStates.COLOR_GREEN),
 
-            (StateEntry.STATE_STARTED_BACKUP,
+            (StateManager.STATE_STARTED_BACKUP,
                 "Performing a backup.  Tableau is running.",
                 CustomStates.ACTION_NONE,
-                "green"),
+                CustomStates.COLOR_GREEN),
 
             # backup for/before restore
-            (StateEntry.STATE_STARTED_BACKUP_RESTORE,
+            (StateManager.STATE_STARTED_BACKUP_RESTORE,
                 "Performing a backup before a restore is done. " + \
                 "Tableau is running.",
                 CustomStates.ACTION_NONE,
-                "green"),
+                CustomStates.COLOR_GREEN),
 
             # backup for/before stop
-            (StateEntry.STATE_STARTED_BACKUP_STOP,
+            (StateManager.STATE_STARTED_BACKUP_STOP,
                 "Performing a backup before Tableau is stopped.",
                 CustomStates.ACTION_NONE,
-                "green"),
+                CustomStates.COLOR_GREEN),
 
-            (StateEntry.STATE_DEGRADED,
+            (StateManager.STATE_DEGRADED,
                 "Tableau is in a DEGRADED state.",
                 CustomStates.ACTION_NONE,
-                "red"),
+                CustomStates.COLOR_RED),
 
-            (StateEntry.STATE_UNKNOWN,
+            (StateManager.STATE_UNKNOWN,
                 "No primary agent has connected to this controller.",
                 CustomStates.ACTION_NONE,
-                "red")
+                CustomStates.COLOR_RED)
         ]
 
         entry = meta.Session.query(CustomStatesEntry).first()

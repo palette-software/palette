@@ -7,6 +7,7 @@ import meta
 
 class BackupEntry(meta.Base):
     __tablename__ = 'backup'
+    DATEFMT = "%I:%M %p on %A, %B %d, %Y"
 
     key = Column(Integer, unique=True, nullable=False, primary_key=True)
     agentid = Column(BigInteger, ForeignKey("agent.agentid"))
@@ -21,11 +22,15 @@ class BackupEntry(meta.Base):
         self.agentid = agentid
         self.name = name
 
-    def todict(self):
+    def todict(self, pretty=False):
         d = {'agent': self.agent.displayname,
-             'name': self.name,
-             'creation_time': str(self.creation_time),
-             'modification_time': str(self.modification_time) }
+             'name': self.name}
+        if pretty:
+            d['creation-time'] = self.creation_time.strftime(self.DATEFMT)
+            d['modification-time'] = self.modification_time.strftime(self.DATEFMT)
+        else:
+            d['creation_time'] = str(self.creation_time)
+            d['modification_time'] = str(self.modification_time)
         return d
 
 
@@ -56,5 +61,12 @@ class BackupManager(object):
         return entry
 
     @classmethod
-    def all(cls):
-        return meta.Session.query(BackupEntry).all()
+    def all(cls, domainid, asc=True):
+        q = meta.Session.query(BackupEntry).\
+            join(AgentStatusEntry).\
+            filter(AgentStatusEntry.domainid == domainid)
+        if asc:
+            q = q.order_by(BackupEntry.creation_time.asc())
+        else:
+            q = q.order_by(BackupEntry.creation_time.desc())
+        return q.all()

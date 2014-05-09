@@ -2,7 +2,7 @@
 <%inherit file="configure.mako" />
 
 <%block name="title">
-    <title>Palette - Configure - Billing</title>
+    <title>Palette - Billing</title>
 </%block>
 
 <section class="dynamic-content config-content">
