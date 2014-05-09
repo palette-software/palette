@@ -1113,14 +1113,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             else:
                 # The copy succeeded.
                 # Remove the backup file from the primary
-                remove_cli = 'CMD /C DEL \\\"%s\\\"' % backup_path
-                remove_body = self.cli_cmd(remove_cli, aconn)
+                remove_body = self.delete_file(aconn, backup_path)
 
                 # Check if the DEL worked.
                 if remove_body.has_key('error'):
                     body['info'] = ("DEL of backup file failed after copy. "+\
-                        "Command: '%s'. Error was: %s") \
-                        % (remove_cli, remove_body['error'])
+                        "file: '%s'. Error was: %s") \
+                        % (backup_path, remove_body['error'])
         else:
             backup_loc = aconn
             # Backup file remains on the primary.
