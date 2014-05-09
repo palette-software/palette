@@ -20,6 +20,3 @@
 </section>
 
 ${next.body()}
-
-<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/common.js">
-</script>
