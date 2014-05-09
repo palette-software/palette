@@ -25,11 +25,13 @@ function (jquery, topic)
 
     /* POPUPS */
     $('a.popup-link').bind('click', function() {
-        $('article.popup').removeClass('visible');
-        
-        var popTarget = $(this).attr('name');
+        var popupLink = $(this).hasClass('inactive');
 
-        $('article.popup#'+popTarget).addClass('visible');
+        if (popupLink == false) {
+            $('article.popup').removeClass('visible');
+            var popTarget = $(this).attr('name');
+            $('article.popup#'+popTarget).addClass('visible');
+        }
     });
 
     $('.popup-close, article.popup .shade').bind('click', function() {
@@ -142,15 +144,17 @@ function (jquery, topic)
 
     function update(data)
     {
-        var state = null;
-        if (data.hasOwnProperty('state') && data['state'] != 'none') {
-            state = data['state'];
-        }
+        var state = data['state']
+        var json = JSON.stringify(data);
         
-        /* Broadcast the state change, if applicable. */
-        if (state != current) {
+        /*
+         * Broadcast the state change, if applicable.
+         * NOTE: this method may lead to false positive, which is OK.
+         */
+        if (json != current) {
             topic.publish('state', data);
-            current = state;
+            current = json;
+            console.log("state change");
         }
 
         var text = 'ERROR';

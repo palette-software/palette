@@ -62,13 +62,14 @@ function (jquery, topic)
     }
 
     function bind(id, f) {
-        jquery(id).bind('click', function(event) {
+        jquery(id+'-ok').bind('click', function(event) {
             event.stopPropagation();
             event.preventDefault();
             if (jquery(this).hasClass('inactive')) {
                 return;
             }
             f();
+            jquery('article.popup').removeClass('visible');
         });
     }
 

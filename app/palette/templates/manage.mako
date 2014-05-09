@@ -41,10 +41,10 @@
     </section>
     <section class="row">
       <section class="col-xs-6">
-        <button type="submit" name="save" class="p-btn p-btn-grey popup-close">Cancel</button>
+        <button class="p-btn p-btn-grey popup-close">Cancel</button>
       </section>
       <section class="col-xs-6">
-        <button type="submit" name="save" class="p-btn p-btn-blue">Start</button>
+        <button id="start-ok" class="p-btn p-btn-blue">Start</button>
       </section>
     </section>
   </section>
@@ -60,10 +60,10 @@
     </section>
     <section class="row">
       <section class="col-xs-6">
-        <button type="submit" name="save" class="p-btn p-btn-grey popup-close">Cancel</button>
+        <button class="p-btn p-btn-grey popup-close">Cancel</button>
       </section>
       <section class="col-xs-6">
-        <button type="submit" name="save" class="p-btn p-btn-blue">Stop</button>
+        <button id="stop-ok" class="p-btn p-btn-blue">Stop</button>
       </section>
     </section>
   </section>
