@@ -178,6 +178,7 @@ class EventApplication(RESTApplication):
                              "level": entry.level,
                              "icon": entry.icon,
                              "color": entry.color,
+                             "event-type": entry.event_type,
                              "date": str(entry.creation_time)[:19]
                           })
         return events

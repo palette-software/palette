@@ -17,6 +17,7 @@ class EventEntry(meta.Base):
     level = Column(String(1)) # E(rror), W(arning), or I(nfo)
     icon = Column(String)
     color = Column(String)
+    event_type = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
 
 class EventManager(object):
@@ -24,12 +25,12 @@ class EventManager(object):
     def __init__(self, domainid):
         self.domainid = domainid
 
-    def add(self, title, description, level, icon, color):
+    def add(self, title, description, level, icon, color, event_type):
         summary = "Event timestamp: " + time.ctime()
 
         session = meta.Session()
         entry = EventEntry(domainid=self.domainid, title=title,
             description=description, level=level, icon=icon, color=color,
-                                                            summary=summary)
+                                    event_type=event_type, summary=summary)
         session.add(entry)
         session.commit()
