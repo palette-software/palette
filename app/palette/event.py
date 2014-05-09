@@ -8,6 +8,7 @@ from akiri.framework.config import store
 from controller.meta import Session
 from controller.domain import Domain
 from controller.event import EventEntry
+from controller.custom_states import CustomStates
 
 __all__ = ["EventApplication"]
 
@@ -111,11 +112,22 @@ class EventApplication(RESTApplication):
                                         (start, type(start), end, (type(end)))
                 raise exc.HTTPBadRequest()
 
-        return self.event_query(start, end, low, high, order)
+        events = self.event_query(start, end, low, high, order)
+
+        # Count the number of red, yellow and green events.
+        red_count = len(Session.query(EventEntry).\
+                    filter(EventEntry.color == CustomStates.COLOR_RED).all())
+        yellow_count = len(Session.query(EventEntry).\
+                    filter(EventEntry.color == CustomStates.COLOR_YELLOW).all())
+        green_count = len(Session.query(EventEntry).\
+                    filter(EventEntry.color == CustomStates.COLOR_GREEN).all())
+
+        return { 'red': red_count, 'yellow': yellow_count, 'green': green_count,
+                                                                'events': events }
 
     def event_query(self, start, end, low, high, order):
-        print "start:", start, ", end:", end, ", low:",low, ", high:", high,
-        print ", order:", order
+#        print "start:", start, ", end:", end, ", low:",low, ", high:", high,
+#        print ", order:", order
         query = Session.query(EventEntry).\
             filter(EventEntry.domainid == self.domainid)
 
@@ -166,6 +178,7 @@ class EventApplication(RESTApplication):
                              "level": entry.level,
                              "icon": entry.icon,
                              "color": entry.color,
+                             "event-type": entry.event_type,
                              "date": str(entry.creation_time)[:19]
                           })
         return events

@@ -25,6 +25,8 @@ class CustomAlertsEntry(meta.Base):
     icon = Column(String)
     color = Column(String)
 
+    alert_type = Column(String) # backup, restore, etc.
+
 class CustomAlerts(object):
 
     INIT_STATE_STARTED="INIT-STATE-STARTED"
@@ -69,6 +71,14 @@ class CustomAlerts(object):
     LEVEL_WARNING="W"
     LEVEL_INFO="I"
 
+    # alert_types
+    TYPE_BACKUP="backup"
+    TYPE_RESTORE="restore"
+    TYPE_MAINT_SERVER="maint-server"
+    TYPE_ARCHIVE_SERVER="archive-server"
+    TYPE_STATUS="status"
+    TYPE_AGENT="agent"
+
     def get_alert(self, key):
 
         try:
@@ -86,91 +96,117 @@ class CustomAlerts(object):
         entries = [
             (CustomAlerts.INIT_STATE_STARTED,
                         CustomAlerts.LEVEL_INFO,
+                        CustomAlerts.TYPE_STATUS,
                         'Controller started.  Initial tableau state: running'),
             (CustomAlerts.INIT_STATE_STOPPED,
                         CustomAlerts.LEVEL_INFO,
+                        CustomAlerts.TYPE_STATUS,
                         'Controller started.  Initial tableau state: stopped'),
             (CustomAlerts.INIT_STATE_DEGRADED,
                         CustomAlerts.LEVEL_INFO,
+                        CustomAlerts.TYPE_STATUS,
                         'Controller started.  Initial tableau state: degraded'),
 
             (CustomAlerts.STATE_STARTED,
                             CustomAlerts.LEVEL_INFO,
+                            CustomAlerts.TYPE_STATUS,
                             'Tableau server running'),
             (CustomAlerts.STATE_STOPPED,
                             CustomAlerts.LEVEL_INFO,
+                            CustomAlerts.TYPE_STATUS,
                             'Tableau server stopped'),
             (CustomAlerts.STATE_DEGRADED,
                             CustomAlerts.LEVEL_INFO,
+                            CustomAlerts.TYPE_STATUS,
                             'Tableau server degraded'),
 
             (CustomAlerts.BACKUP_STARTED,
                             CustomAlerts.LEVEL_INFO,
+                            CustomAlerts.TYPE_BACKUP,
                             'Backup Started'),
             (CustomAlerts.BACKUP_FINISHED,
                             CustomAlerts.LEVEL_INFO,
+                            CustomAlerts.TYPE_BACKUP,
                             'Backup Finished'),
             (CustomAlerts.BACKUP_FAILED,
                             CustomAlerts.LEVEL_INFO,
+                            CustomAlerts.TYPE_BACKUP,
                             'Backup Failed'),
 
             (CustomAlerts.BACKUP_BEFORE_RESTORE_STARTED,
                                     CustomAlerts.LEVEL_INFO,
+                                    CustomAlerts.TYPE_RESTORE,
                                     'Backup Before Restore Started'),
             (CustomAlerts.BACKUP_BEFORE_RESTORE_FINISHED,
                                     CustomAlerts.LEVEL_INFO,
+                                    CustomAlerts.TYPE_RESTORE,
                                     'Backup Before Restore Finished'),
             (CustomAlerts.BACKUP_BEFORE_RESTORE_FAILED,
                                     CustomAlerts.LEVEL_ERROR,
+                                    CustomAlerts.TYPE_RESTORE,
                                     'Backup Before Restore Failed'),
 
             (CustomAlerts.RESTORE_STARTED,
                                     CustomAlerts.LEVEL_INFO,
+                                    CustomAlerts.TYPE_RESTORE,
                                     'Restore Started'),
             (CustomAlerts.RESTORE_FINISHED,
                                     CustomAlerts.LEVEL_INFO,
+                                    CustomAlerts.TYPE_RESTORE,
                                     'Restore Finished'),
             (CustomAlerts.RESTORE_FAILED,
                                     CustomAlerts.LEVEL_ERROR,
+                                    CustomAlerts.TYPE_RESTORE,
                                     'Restore Failed'),
 
             (CustomAlerts.TABLEAU_START_FAILED,
                                     CustomAlerts.LEVEL_ERROR,
+                                    CustomAlerts.TYPE_STATUS,
                                     'Tableau Start Failed'),
 
             (CustomAlerts.MAINT_START_FAILED,
                                     CustomAlerts.LEVEL_ERROR,
+                                    CustomAlerts.TYPE_MAINT_SERVER,
                                     'Could not start Maintenance Web Server'),
             (CustomAlerts.MAINT_STOP_FAILED,
                                     CustomAlerts.LEVEL_ERROR,
+                                    CustomAlerts.TYPE_MAINT_SERVER,
                                     'Could not stop Maintenance Web Server'),
 
             (CustomAlerts.MAINT_OFFLINE,
                                     CustomAlerts.LEVEL_INFO,
+                                    CustomAlerts.TYPE_MAINT_SERVER,
                                     'Maintenance web page is now offline'),
             (CustomAlerts.MAINT_ONLINE,
                                     CustomAlerts.LEVEL_INFO,
+                                    CustomAlerts.TYPE_MAINT_SERVER,
                                     'Maintenance web page is now online'),
 
             (CustomAlerts.ARCHIVE_START_FAILED,
                                     CustomAlerts.LEVEL_ERROR,
+                                    CustomAlerts.TYPE_MAINT_SERVER,
                                     'Could not start Archive Web Server'),
             (CustomAlerts.ARCHIVE_STOP_FAILED,
                                     CustomAlerts.LEVEL_ERROR,
+                                    CustomAlerts.TYPE_MAINT_SERVER,
                                     'Could not stop Archive Web Server'),
 
             (CustomAlerts.AGENT_COMM_LOST,
                                     CustomAlerts.LEVEL_ERROR,
+                                    CustomAlerts.TYPE_AGENT,
                                     'Communication lost with agent'),
             (CustomAlerts.AGENT_FAILED_STATUS,
                                     CustomAlerts.LEVEL_ERROR,
+                                    CustomAlerts.TYPE_AGENT,
                                     'Failed status from agent'),
             (CustomAlerts.AGENT_RETURNED_INVALID_STATUS,
                                     CustomAlerts.LEVEL_ERROR,
+                                    CustomAlerts.TYPE_AGENT,
                                     'Agent returned invalid status'),
 
             (CustomAlerts.AGENT_DISCONNECT,
                                         CustomAlerts.LEVEL_ERROR,
+                                        CustomAlerts.TYPE_AGENT,
                                         'Agent disconnected')
         ]
         entry = meta.Session.query(CustomAlertsEntry).first()
@@ -182,7 +218,9 @@ class CustomAlerts(object):
             entry = CustomAlertsEntry()
             entry.key = alert[0]
             entry.level = alert[1]
-            entry.subject = alert[2]
+            entry.alert_type = alert[2]
+            entry.subject = alert[3]
+            entry.color = "green"   # fixme: set correct colors
             meta.Session.add(entry)
 
         meta.Session.commit()

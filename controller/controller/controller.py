@@ -393,6 +393,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
 
+        # No alerts or state updates are done in backup_cmd().
         body = server.backup_cmd(aconn, None)
 
         if not body.has_key('error'):
@@ -403,32 +404,26 @@ class CliHandler(socketserver.StreamRequestHandler):
             backup_success = False
 
         if not backup_success:
-            self.print_client("Backup failed.  Will still try to restore.")
-            # fixme: Is this the right behavior?  In some cases
-            # backup will fail, but restore will succeed.
-            # The correct behavior is probably to have the UI
-            # ask the user what they want to do.
+            self.print_client("Backup failed.  Aborting restore.")
+            stateman.update(main_state)
+            aconn.user_action_unlock()
+            return
 
         log.debug("-----------------Starting Restore-------------------")
 
-        body = server.restore_cmd(aconn, target)
+        # restore_cmd() updates the state correctly depending on the
+        # success of backup, copy, stop, restore, etc.
+        body = server.restore_cmd(aconn, target, main_state)
 
-        # The "restore started" alert is done in restore_cmd(),
-        # only after some sanity checking is done.
+        # The final RESTORE_FINISHED/RESTORE_FAILED alert is sent only here and
+        # not in restore_cmd().  Intermediate alerts like RESTORE_STARTED
+        # are sent in restore_cmd().
         if not body.has_key('error'):
             # Restore finished successfully.  The main state has.
             # already been set.
             server.alert.send(CustomAlerts.RESTORE_FINISHED, body)
         else:
             server.alert.send(CustomAlerts.RESTORE_FAILED, body)
-            # Restore failed.  We won't update the main status here
-            # since the restore failed and we don't know what
-            # state tableau is in.
-
-        if reported_status == StatusEntry.STATUS_RUNNING:
-            stateman.update(StateManager.STATE_STARTED)
-        elif reported_status == StatusEntry.STATUS_STOPPED:
-            stateman.update(StateManager.STATE_STOPPED)
 
         self.print_client(str(body))
 
@@ -1346,7 +1341,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         copy_body = self.cli_cmd(command, dst)
         return copy_body
 
-    def restore_cmd(self, aconn, target):
+    def restore_cmd(self, aconn, target, orig_state):
         """Do a tabadmin restore of the passed target, except
            the target is in the format:
                 source-displayname:pathname
@@ -1368,9 +1363,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             source_displayname = parts[0]
             source_filename = parts[1]
         else:
+            stateman.update(orig_state)
             return self.error('Invalid target: ' + target)
 
         if os.path.isabs(source_filename):
+            stateman.update(orig_state)
             return self.error(\
                 "[ERROR] May not specify an absolute pathname or disk: " + \
                                                                 source_filename)
@@ -1397,6 +1394,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                source_fullpathname,
                                source_displayname,
                                body['error'])
+                stateman.update(orig_state)
                 return body
 
         # The restore file is now on the Primary Agent.
@@ -1416,6 +1414,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     # If the file was copied to the Primary, delete
                     # the temporary backup file we copied to the Primary.
                     self.delete_file(aconn, source_fullpathname)
+                stateman.update(orig_state)
                 return stop_body
 
             server.alert.send(CustomAlerts.STATE_STOPPED)
@@ -1456,12 +1455,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if restore_success:
             stateman.update(StateManager.STATE_STARTED)
-            server.alert.send(CustomAlerts.STATE_STARTED)
         else:
             # On a successful restore, tableau starts itself.
             # fixme: eventually control when tableau is started and
             # stopped, rather than have tableau automatically start
-            # during the restore.
+            # during the restore.  (Tableau does not support this currently.)
             self.log.info("Restore: starting tableau after failed restore.")
             start_body = self.cli_cmd("tabadmin start", aconn)
             if start_body.has_key('error'):
@@ -1479,7 +1477,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             else:
                 # The "tableau start" succeeded
                 stateman.update(StateManager.STATE_STARTED)
-                server.alert.send(CustomAlerts.STATE_STARTED)
 
         return restore_body
 
