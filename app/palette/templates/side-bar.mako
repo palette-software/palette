@@ -36,10 +36,22 @@
 	</a>
       </li>
       <li class="divider">&nbsp;</li>
-      <li ${obj.main_active=='configure' and 'class="active"' or ''}>
+      <li class="Phidden-tiny" ${obj.main_active=='configure' and 'class="active"' or ''}>
         <a href="/configure/profile">
           <i class="fa fa-fw fa-cog"></i>
           <span>Configure</span>
+        </a>
+      </li>
+      <li class="Psmall-only-block">
+        <a href="/configure/profile">
+          <i class="fa fa-fw fa-user"></i>
+          <span>Profile</span>
+        </a>
+      </li>
+      <li class="Psmall-only-block">
+        <a href="/configure/billing">
+          <i class="fa fa-fw fa-credit-card"></i>
+          <span>Billing</span>
         </a>
       </li>
     </ul>
