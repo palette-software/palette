@@ -139,8 +139,8 @@ article.popup .shade {
 }
 .secondary-side-bar ul > li {
     padding: 0;
-    height: 85px;
 }
+
 .secondary-side-bar ul > li a {
     width: 100%;
     height: 100%;
@@ -170,18 +170,18 @@ article.popup .shade {
 .secondary-side-bar ul > li a.inactive:active, .secondary-side-bar ul.actions > li a.inactive:active {
     box-shadow: 0 0;
 }
-.secondary-side-bar ul > li i {
+.secondary-side-bar ul.server-list > li i {
     width: 64px;
     line-height: 64px;
     font-size: 64px;
 }
-.secondary-side-bar ul > li i.green {
+.secondary-side-bar ul.server-list > li i.green {
     color: #75e25a;
 }
-.secondary-side-bar ul > li i.yellow {
+.secondary-side-bar ul.server-list > li i.yellow {
     color: #dc994c;
 }
-.secondary-side-bar ul > li i.red {
+.secondary-side-bar ul.server-list > li i.red {
     color: #ef5455;
 }
 
@@ -198,7 +198,7 @@ article.popup .shade {
     text-overflow:ellipsis;
     white-space: nowrap;
 }
-.secondary-side-bar ul > li span {
+.secondary-side-bar ul.server-list > li span {
     position: absolute;
     margin: 0;
     font-size: 16px;
@@ -211,10 +211,10 @@ article.popup .shade {
     white-space: nowrap;
     left: 104px;
 }
-.secondary-side-bar ul > li span.hostname {
+.secondary-side-bar ul.server-list > li span.hostname {
     bottom: 30px;
 }
-.secondary-side-bar ul > li span.address {
+.secondary-side-bar ul.server-list > li span.address {
     bottom: 7px;
 }
 

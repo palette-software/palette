@@ -22,8 +22,8 @@
       </a>
     </li>
     <li>
-      <a href="#"> 
-        <i class="fa fa-fw fa-repeat inactive" id="restart"></i>
+      <a href="#" id="restart"> 
+        <i class="fa fa-fw fa-repeat inactive"></i>
         <span>Restart Application</span>
       </a>
     </li>
