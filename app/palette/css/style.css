@@ -96,6 +96,7 @@ a img {
 }
 .secondary-side-bar ul > li {
     padding: 0;
+    height: 85px;
 }
 .secondary-side-bar ul > li a {
     width: 100%;
@@ -126,12 +127,24 @@ a img {
 .secondary-side-bar ul > li a.inactive:active, .secondary-side-bar ul.actions > li a.inactive:active {
     box-shadow: 0 0;
 }
-.secondary-side-bar ul > li img {
-    max-width: 40px;
+.secondary-side-bar ul > li i {
+    width: 64px;
+    line-height: 64px;
+    font-size: 64px;
 }
+.secondary-side-bar ul > li i.green {
+    color: #75e25a;
+}
+.secondary-side-bar ul > li i.yellow {
+    color: #dc994c;
+}
+.secondary-side-bar ul > li i.red {
+    color: #ef5455;
+}
+
 .secondary-side-bar ul > li h5 {
     position: absolute;
-    left: 80px;
+    left: 104px;
     top: 10px;
     margin: 0;
     padding: 0;
@@ -142,10 +155,8 @@ a img {
     text-overflow:ellipsis;
     white-space: nowrap;
 }
-.secondary-side-bar ul > li p {
+.secondary-side-bar ul > li span {
     position: absolute;
-    left: 80px;
-    bottom: 7px;
     margin: 0;
     font-size: 16px;
     font-weight: 300;
@@ -155,7 +166,15 @@ a img {
     overflow: hidden;
     text-overflow:ellipsis;
     white-space: nowrap;
+    left: 104px;
 }
+.secondary-side-bar ul > li span.hostname {
+    bottom: 30px;
+}
+.secondary-side-bar ul > li span.address {
+    bottom: 7px;
+}
+
 .secondary-side-bar ul.Logs li a {
     padding: 0 25px;
     line-height: 32px;
@@ -330,15 +349,12 @@ ul.dropdown-menu a:hover {
     margin: 0;
     text-align: center;
 }
-
 .main-side-bar .status h3.green {
     color: #75e25a;
 }
-
 .main-side-bar .status h3.yellow {
     color: #dc994c;
 }
-
 .main-side-bar .status h3.red {
     color: #ef5455;
 }
