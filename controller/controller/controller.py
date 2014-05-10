@@ -314,7 +314,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         body = server.backup_cmd(aconn, target)
 
-        self.print_client(str(body))
+        self.print_client("%s", str(body))
         if not body.has_key('error'):
             server.alert.send(CustomAlerts.BACKUP_FINISHED, body)
         else:
