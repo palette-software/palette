@@ -9,31 +9,33 @@
     <section class="row">
       <section class="col-xs-12">
         <div class="btn-group">
+          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Status</div><span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#">All Statuses</a></li>
+            <li><a href="#">Success</a></li>
+            <li><a href="#">Warning</a></li>
+            <li><a href="#">Error</a></li>
+          </ul>
+        </div>
+        <div class="btn-group">
           <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Sites</div><span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
             <li><a href="#">All Sites</a></li>
-            <li><a href="#">Another action</a></li>
-            <li><a href="#">Something else here</a></li>
+            <li><a href="#">Finance</a></li>
+            <li><a href="#">Marketing</a></li>
           </ul>
         </div>
         <div class="btn-group">
           <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Types</div><span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
-            <li><a href="#">All</a></li>
-            <li><a href="#">Errors</a></li>
-            <li><a href="#">Warnings</a></li>
-            <li><a href="#">Misc</a></li>
-          </ul>
-        </div>
-        <div class="btn-group">
-          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Status</div><span class="caret"></span>
-          </button>
-          <ul class="dropdown-menu" role="menu">
-            <li><a href="#">All</a></li>
-            <li><a href="#">Unresolved Only</a></li>
-            <li><a href="#">Resolved Only</a></li>
+            <li><a href="#">All Types</a></li>
+            <li><a href="#">Application</a></li>
+            <li><a href="#">Communication</a></li>
+            <li><a href="#">Extract</a></li>
+            <li><a href="#">System</a></li>
           </ul>
         </div>
         <div class="btn-group pull-right">

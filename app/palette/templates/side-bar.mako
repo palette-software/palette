@@ -17,7 +17,7 @@
       </li>
       <li ${obj.main_active=='activity' and 'class="active"' or ''}>
         <a href="/activity"><i class="fa fa-fw fa-book"></i>
-	  <span>Workbook Archives</span>
+	  <span>Workbook Archive</span>
 	</a>
       </li>
       <li ${obj.main_active=='manage' and 'class="active"' or ''}>
@@ -26,7 +26,7 @@
 	</a>
       </li>
       <li ${obj.main_active=='backup' and 'class="active"' or ''}>
-        <a href="/backup"><i class="fa fa-fw fa-cloud-upload"></i>
+        <a href="/backup"><i class="fa fa-fw fa-upload"></i>
 	  <span>Backup / Restore</span>
 	</a>
       </li>

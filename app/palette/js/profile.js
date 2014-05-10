@@ -9,10 +9,13 @@ function (jquery)
 {
 
     function update(data) {
-        jquery("input[name='firstname']").val(data['first-name']);
-        jquery("input[name='lastname']").val(data['last-name']);
+        var friendly = data['first-name'] + ' ' + data['last-name']
+        jquery("input[name='friendly']").val(friendly);
         jquery("input[name='email']").val(data['email']);
         jquery("input[name='username']").val(data['name']);
+        jquery("input[name='user-license']").val('Interactor');
+        jquery("input[name='user-administrator-role']").val('System Administrator');
+        jquery("input[name='user-publisher-role']").val('Publisher');
     }
 
     jquery.ajax({

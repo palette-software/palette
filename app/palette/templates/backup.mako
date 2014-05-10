@@ -7,6 +7,7 @@
 
 <section class="secondary-side-bar">
   <a class="Psmall-only" id="toggle-events" href="#"><i class="fa"></i></a>
+  <h2>Actions</h2>
   <ul class="actions">
     <li>
       <a href="#" id="backup" class="inactive"> 
@@ -21,10 +22,13 @@
       </a>
     </li>
   </ul>
-  <h5>Next Scheduled Backup at</h5>
+
+  <h5 class="backup-page">Next Scheduled Backup</h5>
   <h5 id="next-backup" class="sub"></h5>
-  <h5>Archive Backups to</h5>
+
+  <h5 class="backup-page">Backup Archive Location</h5>
   <div id="archive-backup" class="btn-group dropdown"></div>
+
   <div id="backup-list"></div>
 </section>
 
@@ -32,10 +36,10 @@
 
 <script id="backup-list-template" type="x-tmpl-mustache">
   {{#backups}}
-  <h5>{{type}}</h5>
+  <h5 class="backup-page">{{type}}</h5>
   <ul class="Logs">
     {{#items}}
-    <li><a href="#">{{creation-time}}</a></li>
+    <li class="backup">{{creation-time}}</li>
     {{/items}}
   </ul>
   {{/backups}}

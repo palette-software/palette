@@ -7,7 +7,7 @@ import meta
 
 class BackupEntry(meta.Base):
     __tablename__ = 'backup'
-    DATEFMT = "%I:%M %p on %A, %B %d, %Y"
+    DATEFMT = "%I:%M %p PDT on %B %d, %Y"
 
     key = Column(Integer, unique=True, nullable=False, primary_key=True)
     agentid = Column(BigInteger, ForeignKey("agent.agentid"))

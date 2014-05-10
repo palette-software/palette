@@ -92,6 +92,10 @@ article.popup .shade {
     background-color: rgba(0,0,0,0.2);
     z-index: 9998;
 }
+article.popup p {
+    font-size: 28px;
+}
+
 .secondary-side-bar {
     height: 100%;
     display: block;
@@ -112,7 +116,7 @@ article.popup .shade {
     padding-bottom: 64px;
     max-width: 600px;
 }
-.secondary-side-bar h5 {
+.secondary-side-bar h2, .secondary-side-bar h5 {
     width: 100%;
     padding: 0 0 0 25px;
     overflow: visible;
@@ -121,10 +125,16 @@ article.popup .shade {
     margin: 25px 0 8px 0;
     font-size: 16px;
 }
+.secondary-side-bar h2 {
+    font-size: 32px;
+}
 .secondary-side-bar h5.sub {
     padding: 5px 0 0 25px;
     margin: 0 0 5px 0;
     color: #D3D3D3;
+}
+.secondary-side-bar h5.backup-page, .secondary-side-bar h5.logs-page {
+    margin-top: 50px;
 }
 .secondary-side-bar h5 i {
     text-align: left;
@@ -139,6 +149,14 @@ article.popup .shade {
 }
 .secondary-side-bar ul > li {
     padding: 0;
+}
+
+.secondary-side-bar ul > li.backup {
+    color: #d3d3d3;
+    padding: 5px 0 0 25px;
+    margin: 0 0 5px 0;
+    font-size: 16px;
+    font-weight: 500;
 }
 
 .secondary-side-bar ul > li a {
@@ -831,6 +849,9 @@ label {
 label:first-of-type {
     margin: 0 0 4px 0;
 }
+label.profile-page {
+    margin: 10px 0 4px 0;
+}
 .p-btn {
     border-radius: 5px;
     color: #fff;
@@ -856,6 +877,7 @@ label:first-of-type {
 }
 input[type="text"], input[type="password"], input[type="email"] {
     margin: 5px 0 15px 0;
+    color: black;
 }
 input[type="text"], input[type="password"], input[type="email"], select {
     width: 100%;
