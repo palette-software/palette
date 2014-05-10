@@ -63,6 +63,8 @@
   </section>
 </section>
 
+<%include file="servers.mako" />
+
 <script id="workbook-list-template" type="x-tmpl-mustache">
   {{#workbooks}}
   <article class="event">

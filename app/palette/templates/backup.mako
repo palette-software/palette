@@ -32,6 +32,8 @@
   <div id="backup-list"></div>
 </section>
 
+<%include file="servers.mako" />
+
 <%include file="events.mako" />
 
 <script id="backup-list-template" type="x-tmpl-mustache">
