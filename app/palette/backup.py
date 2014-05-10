@@ -25,6 +25,7 @@ __all__ = ["BackupApplication"]
 class BackupApplication(RESTApplication):
 
     NAME = 'backup'
+    DATEFMT = "%I:%M %p PDT on %B %d, %Y"
 
     def __init__(self, global_conf):
         super(BackupApplication, self).__init__(global_conf)
@@ -103,14 +104,15 @@ class BackupApplication(RESTApplication):
     def handle(self, req):
         if req.method == 'GET':
             domainid = self.domain.domainid
-            L = [x.todict(pretty=True) for x in BackupManager.all(domainid)]
+            L = [x.todict(pretty=True) for x \
+                     in BackupManager.all(domainid, asc=False)]
             # FIXME: convert TIMEZONE
             tomorrow = datetime.date.today() + datetime.timedelta(days=1)
             midnight = datetime.datetime.combine(tomorrow, datetime.time(0,0))
-            scheduled = midnight.strftime(BackupEntry.DATEFMT)
+            scheduled = midnight.strftime(self.DATEFMT)
 
             options = [{'item': 'Palette Cloud Storage'},
-                       {'item': 'On-Premise Archive Servers'}]
+                       {'item': 'On-Premise Storage'}]
             return {
                 'config': [{'name': 'archive-backup',
                             'options': options,

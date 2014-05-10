@@ -7,7 +7,7 @@
 
 <section class="secondary-side-bar">
   <a class="Psmall-only" id="toggle-events" href="#"><i class="fa"></i></a>
-  <h5>Production Tableau Server</h5>
+  <h2>Actions</h2>
   <ul class="actions">
     <li>
       <a name="popupStart" class="popup-link inactive" id="start"> 
@@ -36,7 +36,7 @@
   <section class="popup-body">
     <section class="row">
       <section class="col-xs-12">
-        <p>Are you sure want to <span class="bold">start</span> the Tableau Server Application</p>
+        <p>Are you sure want to <span class="bold">START</span> the <br/>Tableau Server Application?</p>
       </section>
     </section>
     <section class="row">
@@ -44,7 +44,7 @@
         <button class="p-btn p-btn-grey popup-close">Cancel</button>
       </section>
       <section class="col-xs-6">
-        <button id="start-ok" class="p-btn p-btn-blue">Start</button>
+        <button id="start-ok" class="p-btn p-btn-grey">Start</button>
       </section>
     </section>
   </section>
@@ -55,7 +55,7 @@
   <section class="popup-body">
     <section class="row">
       <section class="col-xs-12">
-        <p>Are you sure want to <span class="bold">stop</span> the Tableau Server Application</p>
+        <p>Are you sure want to <span class="bold">STOP</span> the <br/>Tableau Server Application?</p>
       </section>
     </section>
     <section class="row">
@@ -63,7 +63,7 @@
         <button class="p-btn p-btn-grey popup-close">Cancel</button>
       </section>
       <section class="col-xs-6">
-        <button id="stop-ok" class="p-btn p-btn-blue">Stop</button>
+        <button id="stop-ok" class="p-btn p-btn-grey">Stop</button>
       </section>
     </section>
   </section>
