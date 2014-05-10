@@ -69,6 +69,8 @@ class BackupApplication(RESTApplication):
             print "Error: No displayname for agentid=%d uuid=%s" % \
               (last_entry.agentid, last_entry.uuid)
 
+        return {}
+
     def get_displayname_by_agentid(self, agentid):
         try:
             agent_entry = Session.query(AgentStatusEntry).\
