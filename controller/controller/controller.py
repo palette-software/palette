@@ -1412,6 +1412,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             Returns a body with the results/status.
         """
 
+        stateman = server.stateman
+
         # Note: In a restore context, 'target' is the source of the backup,
         #       while in a backup context 'target' is the destination.
 
@@ -1462,7 +1464,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # The restore file is now on the Primary Agent.
         server.alert.send(CustomAlerts.RESTORE_STARTED)
 
-        stateman = server.stateman
         reported_status = statusmon.get_reported_status()
 
         if reported_status == StatusEntry.STATUS_RUNNING:
