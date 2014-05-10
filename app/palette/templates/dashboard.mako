@@ -5,12 +5,11 @@
     <title>Palette - Home</title>
 </%block>
 
-<section class="secondary-side-bar">
-    <a class="Psmall-only" id="toggle-events" href="#"><i class="fa"></i></a>
-    <div id="server-list"></div>
-</section>
+<%include file="servers.mako" />
 
-<%include file="events.mako" />
+<section class="home-events">
+    <%include file="events.mako" />
+</section>
 
 <script id="server-list-template" type="x-tmpl-mustache">
   {{#environments}}
