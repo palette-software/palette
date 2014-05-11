@@ -17,6 +17,8 @@ function (jquery, topic, template)
     var interval = 1000; // FIXME
 
     function update(data) {
+        jquery('a.alert.errors span').html(data['red']);
+        jquery('a.alert.warnings span').html(data['red']);
         if (!data.hasOwnProperty('events')) {
             console.log('/rest/events response did not contain "events"');
             return;
