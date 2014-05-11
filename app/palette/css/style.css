@@ -1297,6 +1297,13 @@ article.event i.red {
 article.event i.green {
     color: #76e259;
 }
+article.event i.edit {
+    display: inline;
+    position: static;
+    font-size: 14px;
+    margin: 0 0 0 5px;
+}
+
 article.event h3 {
     font-weight: 400;
     font-size: 14px;

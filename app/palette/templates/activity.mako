@@ -72,7 +72,7 @@
         <p>John Abdo</p>
         <div>
           <a href="#">05:30 PM PDT on May 1, 2014</a> by John Abdo<br/>
-	  <a href="#">02:17 PM PDT on April 14, 2014</a> by Matthew Laue
+	      <a href="#">02:17 PM PDT on April 14, 2014</a> by Matthew Laue <a href="#"><i class="fa fa-fw fa-pencil edit"></i></a>
         </div>
       </article>
       <article class="event">
