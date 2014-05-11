@@ -129,7 +129,6 @@ function (jquery, topic, template)
     }
 
     function updateBackups() {
-        console.log('update backups ...');
         jquery.ajax({
             url: '/rest/backup',
             success: function(data) {
