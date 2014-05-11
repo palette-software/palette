@@ -844,9 +844,6 @@ label {
 label:first-of-type {
     margin: 0 0 4px 0;
 }
-label.profile-page {
-    margin: 10px 0 4px 0;
-}
 .p-btn {
     border-radius: 5px;
     color: #fff;
