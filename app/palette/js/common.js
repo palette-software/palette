@@ -154,7 +154,6 @@ function (jquery, topic)
         if (json != current) {
             topic.publish('state', data);
             current = json;
-            console.log("state change");
         }
 
         var text = 'ERROR';

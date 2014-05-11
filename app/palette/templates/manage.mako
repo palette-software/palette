@@ -22,12 +22,32 @@
       </a>
     </li>
     <li>
-      <a href="#" id="restart-ok"> 
+      <a name="popupRestart" class="popup-link inactive" id="restart"> 
         <i class="fa fa-fw fa-repeat inactive"></i>
         <span>Restart Application</span>
       </a>
     </li>
+        <li>
+      <a href="#" id="backup" class="inactive"> 
+        <i class="fa fa-fw fa-upload"></i>
+        <span>Backup</span>
+      </a>
+    </li>
+    <li>
+      <a name="popupRestore" id="restore" class="popup-link inactive"> 
+        <i class="fa fa-fw fa-download"></i>
+        <span>Restore</span>
+      </a>
+    </li>
   </ul>
+
+  <h5 class="backup-page">Next Scheduled Backup</h5>
+  <h5 id="next-backup" class="sub"></h5>
+
+  <h5 class="backup-page">Backup Archive Location</h5>
+  <div id="archive-backup" class="btn-group dropdown"></div>
+
+  <div id="backup-list"></div>
 </section>
 
 <%include file="events.mako" />
@@ -70,7 +90,26 @@
   <div class="shade">&nbsp;</div>
 </article>
 
-<article class="popup" id="popupRestore">
+<article class="popup" id="popupRestart">
+  <section class="popup-body">
+    <section class="row">
+      <section class="col-xs-12">
+        <p>Are you sure want to <span class="bold">RESTART</span> the <br/>Tableau Server Application?</p>
+      </section>
+    </section>
+    <section class="row">
+      <section class="col-xs-6">
+        <button class="p-btn p-btn-grey popup-close">Cancel</button>
+      </section>
+      <section class="col-xs-6">
+        <button id="restart-ok" class="p-btn p-btn-grey">Restart</button>
+      </section>
+    </section>
+  </section>
+  <div class="shade">&nbsp;</div>
+</article>
+
+ <article class="popup" id="popupRestore">
   <section class="popup-body">
     <section class="row">
       <section class="col-xs-12">
@@ -79,6 +118,29 @@
     </section>
     <section class="row">
       <section class="col-xs-12">
+        <ul class="radio">
+          <li>
+            <input type="radio" name="restorepoint">
+              <label class="radio">
+                <span></span>
+                <div>(4/23/2014) -</div> Backup
+              </label>
+          </li>
+          <li>
+            <input type="radio" name="restorepoint">
+              <label class="radio">
+                <span></span>
+                <div>(4/18/2014) -</div> Backup 2
+              </label>
+          </li>
+          <li>
+            <input type="radio" name="restorepoint">
+              <label class="radio">
+                <span></span>
+                <div>(4/7/2014) -</div> Backup 3
+              </label>
+          </li>
+        </ul>
         <ul class="checkbox">
           <li>
             <input type="checkbox">
@@ -99,15 +161,37 @@
     </section>
     <section class="row">
       <section class="col-xs-6">
-        <button type="submit" name="save" class="p-btn p-btn-grey popup-close">Cancel</button>
+        <button class="p-btn p-btn-grey popup-close">Cancel</button>
       </section>
       <section class="col-xs-6">
-        <button type="submit" name="save" class="p-btn p-btn-blue">Restore</button>
+        <button id="save-ok" class="p-btn p-btn-blue">Restore</button>
       </section>
     </section>
   </section>
   <div class="shade">&nbsp;</div>
 </article>
+
+<script id="backup-list-template" type="x-tmpl-mustache">
+  {{#backups}}
+  <h5 class="backup-page">{{type}}</h5>
+  <ul class="Logs">
+    {{#items}}
+    <li class="backup">{{creation-time}}</li>
+    {{/items}}
+  </ul>
+  {{/backups}}
+</script>
+
+<script id="archive-backup-template" type="x-tmpl-mustache">
+  <button type="button" class="btn btn-default dropdown-toggle"
+          data-toggle="dropdown"><div>{{value}}</div><span class="caret"></span>
+  </button>
+  <ul class="dropdown-menu" role="menu">
+    {{#options}}
+    <li><a href="#">{{item}}</a></li>
+    {{/options}}
+  </ul>
+</script>
 
 <script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/manage.js">
 </script>
