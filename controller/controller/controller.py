@@ -34,6 +34,8 @@ from profile import UserProfile
 from custom_alerts import CustomAlerts
 from custom_states import CustomStates
 from event import EventManager, EventEntry
+from extracts import ExtractsEntry
+from workbooks import WorkbookEntry, WorkbookManager
 
 from version import VERSION
 
@@ -1996,6 +1998,9 @@ def main():
 
     custom_states = CustomStates()
     custom_states.populate()
+
+    workbook_manager = WorkbookManager(server.domainid)
+    workbook_manager.populate()
 
     server.backup = BackupManager(server.domainid)
 
