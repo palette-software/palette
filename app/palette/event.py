@@ -131,8 +131,8 @@ class EventApplication(RESTApplication):
         event_types = [entry.event_type for entry in query]
 
         return { 'event-types': event_types,
-                'red': red_count, 'yellow': yellow_count, 'green': green_count,
-                                                                'events': events }
+                 'red': red_count, 'yellow': yellow_count, 'green': green_count,
+                 'events': events }
 
     def event_query(self, start, end, low, high, order):
 #        print "start:", start, ", end:", end, ", low:",low, ", high:", high,

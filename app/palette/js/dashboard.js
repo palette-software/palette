@@ -7,7 +7,7 @@ require.config({
     }
 });
 
-require(['jquery', 'topic', 'template'],
+require(['jquery', 'topic', 'template', 'event', 'domReady!'],
 function (jquery, topic, template)
 {
     var t = $('#server-list-template').html();

@@ -7,8 +7,8 @@ require.config({
     }
 });
 
-require(['jquery', 'topic', 'template', 'domReady!'],
-        function (jquery, topic, template)
+require(['jquery', 'topic', 'template', 'event', 'domReady!'],
+function (jquery, topic, template)
 {
     var actions = {'start': start,
                    'stop': stop,
