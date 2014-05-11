@@ -12,17 +12,19 @@
   <section class="row bottom-zone">
     <section class="col-sm-12 col-md-8">
       <label class="profile-page">Tableau Server Friendly Name</label>
-      <input type="text" name="friendly" placeholder="Friendly Name" />
+      <p id="friendly"></p>
       <label class="profile-page">Tableau Server Username</label>
-      <input type="email" name="username" placeholder="Tableau Username" />
+      <p id="username"></p>
       <label class="profile-page">Email</label>
-      <input type="email" name="email" placeholder="Email Name" />
+      <p><span id="email"></span> 
+        <a href="#"><i class="fa fa-fw fa-pencil"></i></a>
+      </p>
       <label class="profile-page">Tableau Server User License</label>
-      <input type="text" name="user-license" placeholder="User License Type" />
+      <p id="user-license"></p>
       <label class="profile-page">Tableau Server Administrator Role</label>
-      <input type="text" name="user-administrator-role" placeholder="User Administrator Role" />
+      <p id="user-administrator-role"></p>
       <label class="profile-page">Tableau Server User Publisher Role</label>
-      <input type="text" name="user-publisher-role" placeholder="User Publisher Role" />
+      <p id="user-publisher-role"></p>
       </div>
       <section class="row margin-top">
         <section class="col-xs-12 col-sm-6">

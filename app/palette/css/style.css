@@ -1146,6 +1146,10 @@ ul.title-area > li > h1 > a {
 .config-content label {
     text-align: left;
 }
+.config-content p {
+    font-weight: 500 !important;
+    margin: 0 0 20px;
+}
 .italic-label {
     font-style: italic;
     color: #8D96A3;
