@@ -95,121 +95,21 @@
   </section>
   <section class="row bottom-zone">
     <section class="col-lg-12">
-        <article class="event">
-          <i class="fa fa-fw fa-hdd-o red"></i>
-          <h3>Served Accessed</h3>
-          <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
-          <div>
-            Bixly Production Server has completed a lorem ipsum text placeholder words. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum 
-          </div>
-        </article>
-        <article class="event">
-          <i class="fa fa-fw fa-copy grey"></i>
-          <h3>Backup Started</h3>
-          <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
-          <div>
-            Bixly Production Server has completed a lorem ipsum text placeholder words. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum 
-          </div>
-        </article>
-        <article class="event">
-          <i class="fa fa-fw fa-copy green"></i>
-          <h3>Restoration initializated on Xepler Production Server #2</h3>
-          <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
-          <div>
-            Bixly Production Server has completed a lorem ipsum text placeholder words. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum 
-          </div>
-        </article>
-        <article class="event">
-          <i class="fa fa-fw fa-copy green"></i>
-          <h3>Served Accessed</h3>
-          <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
-          <div>
-            Bixly Production Server has completed a lorem ipsum text placeholder words. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum 
-          </div>
-        </article>
-        <article class="event">
-          <i class="fa fa-fw fa-copy red"></i>
-          <h3>Served Accessed</h3>
-          <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
-          <div>
-            Bixly Production Server has completed a lorem ipsum text placeholder words. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum 
-          </div>
-        </article>
-        <article class="event">
-          <i class="fa fa-fw fa-copy green"></i>
-          <h3>Served Settings Modified</h3>
-          <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
-          <div>
-            Bixly Production Server has completed a lorem ipsum text placeholder words. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum 
-          </div>
-        </article>
-        <article class="event">
-          <i class="fa fa-fw fa-copy green"></i>
-          <h3>Served Accessed</h3>
-          <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
-          <div>
-            Bixly Production Server has completed a lorem ipsum text placeholder words. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum 
-          </div>
-        </article>
-        <article class="event">
-          <i class="fa fa-fw fa-copy green"></i>
-          <h3>Served Accessed</h3>
-          <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
-          <div>
-            Bixly Production Server has completed a lorem ipsum text placeholder words. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum 
-          </div>
-        </article>
-        <article class="event">
-          <i class="fa fa-fw fa-copy green"></i>
-          <h3>Backup Started</h3>
-          <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
-          <div>
-            Bixly Production Server has completed a lorem ipsum text placeholder words. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum 
-          </div>
-        </article>
-        <article class="event">
-          <i class="fa fa-fw fa-copy green"></i>
-          <h3>Restoration initializated on Xepler Production Server #2</h3>
-          <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
-          <div>
-            Bixly Production Server has completed a lorem ipsum text placeholder words. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum 
-          </div>
-        </article>
-        <article class="event">
-          <i class="fa fa-fw fa-copy green"></i>
-          <h3>Served Accessed</h3>
-          <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
-          <div>
-            Bixly Production Server has completed a lorem ipsum text placeholder words. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum 
-          </div>
-        </article>
-        <article class="event">
-          <i class="fa fa-fw fa-copy green"></i>
-          <h3>Served Accessed</h3>
-          <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
-          <div>
-            Bixly Production Server has completed a lorem ipsum text placeholder words. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum 
-          </div>
-        </article>
-        <article class="event">
-          <i class="fa fa-fw fa-copy green"></i>
-          <h3>Served Accessed</h3>
-          <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
-          <div>
-            Bixly Production Server has completed a lorem ipsum text placeholder words. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum 
-          </div>
-        </article>
-        <article class="event">
-          <i class="fa fa-fw fa-copy green"></i>
-          <h3>Served Accessed</h3>
-          <p>Bixly Production Server --- <span>5:03 am</span><span> 4/14/2014</span></p>
-          <div>
-            Bixly Production Server has completed a lorem ipsum text placeholder words. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum 
-          </div>
-        </article>
+      <div id="extract-list"></div>
     </section>
   </section>
 </section>
 
-<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/common.js">
+<script id="extract-list-template" type="x-tmpl-mustache">
+  {{#extracts}}
+  <article class="event">
+    <i class="fa fa-fw fa-copy {{color}}"></i>
+    <h3>{{name}}</h3>
+    <p>{{summary}}</p>
+    <div>{{description}}</div>
+  </article>
+  {{/extracts}}
+</script>
+
+<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/extracts.js">
 </script>
