@@ -599,6 +599,7 @@ ul.dropdown-menu a:hover {
     position: absolute;
     height: 100%;
     left: 550px;
+    top: 67px;
     right: 0;
     padding: 0 15px 15px 15px;
     -webkit-transition: all 0.3s ease-out;
@@ -611,10 +612,8 @@ ul.dropdown-menu a:hover {
 .dynamic-content .top-zone {
     width: 100%;
     height: 120px;
-    position: fixed;
     background-color: #ececec;
     z-index: 20;
-    top: 60px;
 }
 .dynamic-content .top-zone .row {
     height: auto !important;
@@ -669,10 +668,6 @@ ul.dropdown-menu a:hover {
     margin-left: 0;
 }
 .dynamic-content .bottom-zone {
-    padding-top: 115px;
-}
-.dynamic-content.config-content .bottom-zone {
-    padding-top: 185px;
 }
 .btn-default:hover, .btn-default:focus, .btn-default:active, .btn-default.active, .open .dropdown-toggle.btn-default {
     background-color: #8D96A3;
