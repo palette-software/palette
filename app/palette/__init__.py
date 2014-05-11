@@ -27,6 +27,8 @@ import monitor
 import backup
 import manage
 import event
+import extracts
+import workbooks
 
 class DashboardPage(MainPage):
     TEMPLATE = 'dashboard.mako'
