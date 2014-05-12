@@ -41,6 +41,24 @@ function (jquery, topic, template)
         var rendered = template.render(t, data);
         html = rendered + '\n' + html;
         $('#event-list').html(html);
+
+        /* FIXME - copied from common.js */
+        $('.event').bind('click', function() {
+            $(this).toggleClass('open');
+        });
+
+        /* FIXME: - copied from common.js */
+        $(function(){
+            $('.dynamic-content').bind('click', function() {
+                var viewport = $(window).width();
+                var dynamicClosed = $(this).hasClass('closed');
+                if (viewport <= 960 && dynamicClosed != true) {
+                    clearmenu();
+                    $('.secondary-side-bar, .dynamic-content').toggleClass('closed');
+                    $('#toggle-events').toggleClass('active');
+                }
+            });
+        });
     }
 
     function poll() {
