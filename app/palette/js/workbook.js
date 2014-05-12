@@ -7,7 +7,7 @@ require.config({
     }
 });
 
-require(['jquery', 'template'],
+require(['jquery', 'template', 'common'],
 function (jquery, template)
 {
     var t = $('#workbook-list-template').html();
@@ -18,6 +18,10 @@ function (jquery, template)
         success: function(data) {
             var rendered = template.render(t, data);
             jquery('#workbook-list').html(rendered);
+            /* FIXME */
+            $('.event').bind('click', function() {
+                $(this).toggleClass('open');
+            });
         },
         error: function(req, textStatus, errorThrown) {
             console.log('[workbook] ' + textStatus + ': ' + errorThrown);

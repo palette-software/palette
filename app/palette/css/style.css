@@ -1292,10 +1292,17 @@ article.event i.red {
 article.event i.green {
     color: #76e259;
 }
-article.event i.edit {
+article.event a {
+    text-decoration: underline;
+}
+article.event a.edit {
+    text-decoration: none;
+}
+article.event a.edit i {
     display: inline;
     position: static;
     font-size: 14px;
+    line-height: 20px;
     margin: 0 0 0 5px;
 }
 
@@ -1307,7 +1314,7 @@ article.event h3 {
     top: 8px;
     margin: 0;
     width: 70%;
-    overflow: hidden;
+    overflow: visible;
     white-space: nowrap;
     text-overflow:ellipsis;
 }
@@ -1331,10 +1338,13 @@ article.event div {
 article.event.open div {
     display: block;
 }
+article.event ul {
+    padding: 0 0 0 20px;
+    margin: 0;
+}
 article.event li {
     list-style-type: none;
 }
-
 .mobile-title {
     display:none;
 }
