@@ -70,12 +70,13 @@ function (jquery, topic, template)
 
     function restore() {
         var ts = jquery('#restore-timestamp').html();
+        var filename = jquery('#restore-filename').val();
 
         jquery.ajax({
             type: 'POST',
             url: '/rest/backup',
             data: {'action': 'restore',
-                   'timestamp': ts},
+                   'filename': filename},
             dataType: 'json',
             async: false,
             
@@ -136,10 +137,12 @@ function (jquery, topic, template)
 
         jquery('li.backup a').bind('click', function(event) {
             event.preventDefault();
-            var ts = jquery(this).html();
+            var ts = jquery('span.timestamp', this).text();
+            var filename = jquery('span.filename', this).text();
 
             $('article.popup').removeClass('visible');
             jquery('#restore-timestamp').html(ts);
+            jquery('#restore-filename').val(filename);
             $('article.popup#restore-dialog').addClass('visible');
         });
 

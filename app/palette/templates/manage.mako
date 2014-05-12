@@ -222,6 +222,7 @@
     </section>
   </section>
   <div class="shade">&nbsp;</div>
+  <input type="hidden" id="restore-filename" />
 </article>
 
 <script id="backup-list-template" type="x-tmpl-mustache">
@@ -229,7 +230,12 @@
   <h5 class="backup-page">{{type}}</h5>
   <ul class="Logs">
     {{#items}}
-    <li class="backup"><a href="#">{{creation-time}}</a></li>
+    <li class="backup">
+      <a href="#">
+        <span class="timestamp">{{creation-time}}</span>
+        <span class="filename">{{name}}</span>
+      </a>
+    </li>
     {{/items}}
   </ul>
   {{/backups}}
