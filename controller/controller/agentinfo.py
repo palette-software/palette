@@ -12,11 +12,11 @@ class AgentYmlEntry(meta.Base):
     key = Column(String)
     value = Column(String)
 
-    def __init__(self, agentid, key, value):
-        self.agentid = agentid
-        self.key = key
-        self.value = value
-
+    def todict(self):
+        return {'ymlid': self.ymlid,
+                'agentid': self.agentid,
+                'key': self.key,
+                'value': self.value}
 
 class AgentInfoEntry(meta.Base):
     __tablename__ = "agent_info"

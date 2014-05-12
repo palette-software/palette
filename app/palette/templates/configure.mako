@@ -16,6 +16,18 @@
         <span>Billing</span>
       </a>
     </li>
+    <li ${obj.configure_active == 'yml' and 'class="active"' or ''}>
+      <a href="/configure/yml">
+        <i class="fa fa-fw fa-cog"></i>
+        <span>Tableau Settings</span>
+      </a>
+    </li>
+    <li ${obj.configure_active == 'splunk' and 'class="active"' or ''}>
+      <a href="/configure/splunk">
+        <i class="fa fa-fw fa-arrows-alt"></i>
+        <span>Splunk Integration</span>
+      </a>
+    </li>
   </ul>
 </section>
 

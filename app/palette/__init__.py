@@ -29,6 +29,7 @@ import manage
 import event
 import extracts
 import workbooks
+import yml
 
 class DashboardPage(MainPage):
     TEMPLATE = 'dashboard.mako'
