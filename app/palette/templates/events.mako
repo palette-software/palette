@@ -3,8 +3,10 @@
     <section class="row">
       <section class="col-xs-12">
         <h1 class="page-title">Events</h1>
+<!--
         <a href="#" class="alert errors"><span>0</span></a>
         <a href="#" class="alert warnings"><span>0</span></a>
+-->
         <a class="Psmallish-only" id="toggle-event-filters" href="#"><i class="fa fa-angle-left"></i></a>
       </section>
     </section>

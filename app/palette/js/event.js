@@ -18,7 +18,7 @@ function (jquery, topic, template)
 
     function update(data) {
         jquery('a.alert.errors span').html(data['red']);
-        jquery('a.alert.warnings span').html(data['red']);
+        jquery('a.alert.warnings span').html(data['yellow']);
         if (!data.hasOwnProperty('events')) {
             console.log('/rest/events response did not contain "events"');
             return;

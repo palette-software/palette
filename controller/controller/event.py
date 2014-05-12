@@ -21,12 +21,13 @@ class EventEntry(meta.Base):
     creation_time = Column(DateTime, server_default=func.now())
 
 class EventManager(object):
+    DATEFMT = "%I:%M %p PDT on %B %d, %Y"
     
     def __init__(self, domainid):
         self.domainid = domainid
 
     def add(self, title, description, level, icon, color, event_type):
-        summary = "Event timestamp: " + time.ctime()
+        summary = time.strftime(self.DATEFMT)
 
         session = meta.Session()
         entry = EventEntry(domainid=self.domainid, title=title,

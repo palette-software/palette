@@ -55,7 +55,7 @@
       <input type="email" name="email" placeholder="Email" />
       <section class="row margin-top">
         <section class="col-xs-12 col-sm-6">
-          <button type="submit" name="save" class="p-btn p-btn-blue">Save</button>
+          <button type="submit" name="save" class="p-btn p-btn-grey">Save</button>
         </section>
         <section class="col-xs-12 col-sm-6">
           <!-- ONLY SHOW AFTER SAVE IS PRESSED <button type="submit" name="revert" class="p-btn p-btn-grey"><span class="fi-refresh"></span> Revert</button></section>-->

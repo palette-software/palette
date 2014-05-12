@@ -79,6 +79,27 @@
       </section>
     </section>
     <section class="row">
+      <section class="col-xs-12">
+        <ul class="checkbox">
+          <li>
+            <input type="checkbox" checked/>
+            <label class="checkbox">
+              <span></span>
+              Confirm license validity
+            </label>
+          </li>
+          <li>
+            <input type="checkbox" checked/>
+            <label class="checkbox">
+              <span></span>
+              Backup rollback protection
+            </label>
+          </li>
+        </ul>
+      </section>
+    </section>
+
+    <section class="row">
       <section class="col-xs-6">
         <button class="p-btn p-btn-grey popup-close">Cancel</button>
       </section>
