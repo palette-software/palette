@@ -55,21 +55,39 @@ class BackupApplication(RESTApplication):
         now = time.strftime('%A, %B %d at %I:%M %p')
         return {'last': now }
 
-    def handle_restore(self):
-        last_entry = self.get_last_backup()
-        if not last_entry:
-            print >> sys.stderr, "No backups to restore from!"
-            return {'last': "none" }
+    def handle_restore(self, req):
+        if not 'filename' in req.POST:
+            print >> sys.stderr, "Missing filename.  Ignoring backup request."
+            return {}
 
-        displayname = self.get_displayname_by_agentid(last_entry.agentid)
+        filename = req.POST['filename']
+
+        backup_entry = self.get_backup_entry_from_backup_name(filename)
+        if not backup_entry:
+            print >> sys.stderr, "Backup not found:", filename
+            return {}
+
+        displayname = self.get_displayname_by_agentid(backup_entry.agentid)
 
         if displayname:
-            self.send_cmd('restore "%s:%s"' % (displayname, last_entry.name))
+            self.send_cmd('restore "%s:%s"' % (displayname, backup_entry.name))
         else:
-            print "Error: No displayname for agentid=%d uuid=%s" % \
-              (last_entry.agentid, last_entry.uuid)
+            print >> sys.stderr ,"Error: No displayname for agentid=%d uuid=%s" % \
+              (backup_entry.agentid, backup_entry.uuid)
 
         return {}
+
+    def get_backup_entry_from_backup_name(self, name):
+        try:
+            entry = Session.query(BackupEntry).\
+                join(AgentStatusEntry).\
+                filter(AgentStatusEntry.domainid == self.domain.domainid).\
+                filter(BackupEntry.name == name).\
+                one()
+        except NoResultFound, e:
+            return None
+
+        return entry
 
     def get_displayname_by_agentid(self, agentid):
         try:
@@ -94,7 +112,7 @@ class BackupApplication(RESTApplication):
         if action == 'backup':
             return self.handle_backup()
         elif action == 'restore':
-            return self.handle_restore()
+            return self.handle_restore(req)
         raise exc.HTTPBadRequest()
 
     def handle_set(self, req):
