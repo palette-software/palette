@@ -752,7 +752,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         if not body.has_key('error'):
             server.alert.send(CustomAlerts.BACKUP_BEFORE_STOP_FINISHED, body)
         else:
-            server.alert.send(BACKUP_BEFORE_STOP_FAILED, body)
+            server.alert.send(CustomAlerts.BACKUP_BEFORE_STOP_FAILED, body)
             # FIXME: return JSON
             self.print_client("Backup failed.  Will not attempt stop.")
             aconn.user_action_unlock()
