@@ -263,8 +263,16 @@ class StatusMonitor(threading.Thread):
 
             # 'Tableau Server Repository Database' (1764) is running.
             if parts[0] != "'Tableau" or parts[1] != 'Server':
-                self.log.error("Bad status line, ignoring: " + parts[0])
-                continue
+                #self.log.error("Bad status line, ignoring: " + parts[0])
+                #continue
+
+                # FIXME: This is a temporary workaround. In a clustered configuration,
+                #        Tableau reports the status of multiple servers. Eventually,
+                #        we need to track all the status. For now, assume that the
+                #        primary status comes first, and that the first line that
+                #        does not begin with "Tableau Server" marks the demarcation
+                #        between the primary and the other servers.
+                break
 
             status = parts[-1:][0]      # "running."
             status = status[:-1]         # "running" (no period)
