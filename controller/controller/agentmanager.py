@@ -41,7 +41,6 @@ class AgentConnection(object):
         self.agent_type = None
         self.yml_contents = None    # only valid if agent is a primary
         self.pinfo = {}  # from pinfo
-        self.display_order = None
         self.initting = True
 
         # Each agent connection has its own lock to allow only
@@ -161,7 +160,6 @@ class AgentManager(threading.Thread):
             new_agent.agentid = entry.agentid
             new_agent.uuid = entry.uuid
             new_agent.displayname = entry.displayname
-            new_agent.display_order = entry.display_order
         else:
             # FIXME: handle this as an error
             pass
