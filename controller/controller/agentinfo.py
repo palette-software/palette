@@ -8,7 +8,7 @@ class AgentYmlEntry(meta.Base):
 
     ymlid = Column(Integer, unique=True, nullable=False, primary_key=True)
 
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"))
+    agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False)
     key = Column(String)
     value = Column(String)
 
@@ -23,7 +23,7 @@ class AgentInfoEntry(meta.Base):
 
     infoid = Column(Integer, unique=True, nullable=False, primary_key=True)
 
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"))
+    agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False)
     key = Column(String)
     value = Column(String)
 
@@ -32,7 +32,7 @@ class AgentVolumesEntry(meta.Base):
 
     volid = Column(Integer, unique=True, nullable=False, primary_key=True)
 
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"))
+    agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False)
 
     name = Column(String)
     vol_type = Column(String)
