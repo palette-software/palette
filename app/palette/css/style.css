@@ -1328,6 +1328,10 @@ article.event div {
 article.event.open div {
     display: block;
 }
+article.event li {
+    list-style-type: none;
+}
+
 .mobile-title {
     display:none;
 }
