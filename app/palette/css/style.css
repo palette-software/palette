@@ -238,12 +238,14 @@ article.popup p {
 .secondary-side-bar ul.server-list > li span.address {
     bottom: 7px;
 }
-
 .secondary-side-bar ul.Logs li a {
     padding: 0 25px;
     line-height: 32px;
     font-size: 14px;
     color: #D3D3D3;
+}
+.secondary-side-bar ul.Logs li a span.filename {
+    display: none;
 }
 .secondary-side-bar ul.Logs {
     margin-bottom: 15px;
