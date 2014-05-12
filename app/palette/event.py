@@ -180,10 +180,22 @@ class EventApplication(RESTApplication):
 
         events = []
         for entry in query:
+
+            description = ""
+
+            for line in entry.description.split('\n'):
+                # Replace each leading space with '&nbsp;'
+                line_lstripped = line.lstrip(' ')
+                lspace_count = len(line) - len(line_lstripped)
+                line = '&nbsp;' * lspace_count + line_lstripped
+
+                # Add a break at each line
+                description += line + "<br />" + "\n"
+
             events.append({  "eventid": entry.eventid,
                              "title": entry.title,
                              "summary": entry.summary,
-                             "description": entry.description,
+                             "description": description,
                              "level": entry.level,
                              "icon": entry.icon,
                              "color": entry.color,
