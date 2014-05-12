@@ -125,7 +125,7 @@ article.popup p {
 .secondary-side-bar.servers.servers-visible {
     width: 300px;
 }
-.secondary-side-bar h5 .secondary-side-bar h2 {
+.secondary-side-bar h5, .secondary-side-bar h2 {
     width: 100%;
     padding: 0 0 0 25px;
     overflow: visible;
@@ -133,6 +133,7 @@ article.popup p {
     text-overflow:ellipsis;
     margin: 25px 0 8px 0;
     font-size: 16px;
+    font-weight: 300;
 }
 .secondary-side-bar h2 {
     font-size: 32px;
@@ -208,6 +209,7 @@ article.popup p {
     color: #8E96A3;
     position: relative;
 }
+
 .secondary-side-bar > ul > li > a > i.warning {
     color: #DC994C;
 }
@@ -228,38 +230,48 @@ article.popup p {
 }
 
 .secondary-side-bar ul > li h5 {
-    position: absolute;
-    left: 104px;
-    top: 10px;
-    margin: 0;
+    position: relative;
+    margin: 0 0 10px 0;
     padding: 0;
     font-size: 16px;
     font-weight: 300;
-    width: 70%;
+    width: 100%;
     overflow: hidden;
     text-overflow:ellipsis;
     white-space: nowrap;
+    display: block;
+    float: left;
 }
-.secondary-side-bar ul.server-list > li span {
+.secondary-side-bar ul.server-list > li > a {
+    height: 100px;
+}
+.secondary-side-bar ul.server-list > li > a > div {
     position: absolute;
-    margin: 0;
+    left:80px;
+    top: 15px;
+}
+.secondary-side-bar ul.server-list > li > a > div > span {
+    position: relative;
+    margin: 0 0 0 0;
     font-size: 16px;
     font-weight: 300;
     color: #8e96a3;
     vertical-align: bottom;
-    width: 65%;
+    width: 100%;
     overflow: hidden;
     text-overflow:ellipsis;
     white-space: nowrap;
-    left: 104px;
+    display: block;
+    float: left;
 }
-.secondary-side-bar ul.server-list > li span.hostname {
-    bottom: 30px;
+.secondary-side-bar ul.server-list > li > a > i {
+    position: absolute;
+    line-height: 100px;
+    top: 0;
+    left: 0;
+    width: 80px;
+    font-size: 50px;
 }
-.secondary-side-bar ul.server-list > li span.address {
-    bottom: 7px;
-}
-
 .secondary-side-bar ul.Logs li a {
     padding: 0 25px;
     line-height: 32px;
@@ -430,14 +442,14 @@ ul.dropdown-menu a:hover {
 }
 .main-side-bar .status h3 {
     position: absolute;
-    top: 84px;
+    top: 83px;
     left: 15px;
     display: block;
     color: #697078;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 300;
     width: 220px;
-    overflow: visible;
+    overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     margin: 0;
@@ -537,6 +549,7 @@ ul.processes.visible {
     top: 0;
     font-size: 12px;
     display: none;
+    top: 20px;
 }
 
 .secondary-side-bar > ul > li > a  > i.warning span.warnings {
@@ -550,13 +563,13 @@ ul.processes.visible {
 .secondary-side-bar > ul > li > a > i span.warnings {
     background-color: #DC994C;
     color: #fff;
-    right: 0;
+    right: 18px;
 }
 
 .secondary-side-bar > ul > li > a > i span.errors {
     background-color: #EF5455;
     color: #fff;
-    left: 0;
+    left: 18px;
 }
 
 .secondary-side-bar ul.processes > li a {
@@ -694,7 +707,7 @@ ul.processes.visible {
     left: 550px;
     top: 67px;
     right: 0;
-    padding: 0 15px 15px 40px;
+    padding: 0 15px 15px 18px;
     -webkit-transition: all 0.3s ease-out;
     -moz-transition: all 0.3s ease-out;
     -ms-transition: all 0.3s ease-out;
@@ -739,9 +752,6 @@ ul.processes.visible {
 .dynamic-content .top-zone {
     width: 100%;
     height: 120px;
-    background-color: #ececec;
-    z-index: 20;
-    top: 67px;
 }
 .dynamic-content .top-zone .row {
     height: auto !important;
@@ -796,7 +806,7 @@ ul.processes.visible {
     margin-left: 0;
 }
 .dynamic-content .bottom-zone {
-    padding-top: 195px;
+    padding-top: 20px;
 }
 .btn-default:hover, .btn-default:focus, .btn-default:active, .btn-default.active, .open .dropdown-toggle.btn-default {
     background-color: #8D96A3;
