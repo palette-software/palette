@@ -8,9 +8,9 @@
 <section class="secondary-side-bar">
   <a class="Psmall-only" id="toggle-events" href="#"><i class="fa"></i></a>
   <h2>Filter</h2>
-  <h5 class="sub margin-top">Workbook Name</h5>
+  <h5 class="sub margin-top">Workbook</h5>
   <section class="padding">
-    <input type="text" placeholder="example" value="Workbook Name">
+    <input type="text" placeholder="Workbook">
   </section>
   <h5 class="sub">Project</h5>
   <div class="btn-group">

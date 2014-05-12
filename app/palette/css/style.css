@@ -16,6 +16,9 @@ h1, h2, h3, h4, h5, h6 {
 p {
     font-weight: 300 !important;
 }
+a, a:hover {
+    color: #697078;
+}
 a img {
     border: 0 !important;
     outline: 0;
@@ -392,7 +395,7 @@ ul.dropdown-menu a:hover {
     font-size: 24px;
     line-height: 24px;
     margin: 0;
-    font-weight: 300;
+    font-weight: 500;
     color: #697078;
 }
 .main-side-bar .status h3 {
@@ -400,15 +403,15 @@ ul.dropdown-menu a:hover {
     top: 84px;
     left: 15px;
     display: block;
-    color: #75e25a;
+    color: #697078;
     font-size: 24px;
-    font-weight: 400;
+    font-weight: 300;
     width: 220px;
-    overflow: hidden;
+    overflow: visible;
     white-space: nowrap;
     text-overflow: ellipsis;
     margin: 0;
-    text-align: center;
+    text-align: left;
 }
 .main-side-bar .status h3.green {
     color: #75e25a;
@@ -601,7 +604,7 @@ ul.dropdown-menu a:hover {
     left: 550px;
     top: 67px;
     right: 0;
-    padding: 0 15px 15px 15px;
+    padding: 0 15px 15px 40px;
     -webkit-transition: all 0.3s ease-out;
     -moz-transition: all 0.3s ease-out;
     -ms-transition: all 0.3s ease-out;
@@ -939,7 +942,6 @@ ul.checkbox li label {
     font-weight: 300;
     float: left;
     line-height: 28px;
-    text-transform: lowercase;
 }
 
 ul.checkbox li input[type="checkbox"] {
@@ -982,7 +984,7 @@ ul.checkbox li input[type="checkbox"]:hover {
 }
 
 ul.checkbox li input[type="checkbox"]:checked + label span {
-    background-color: #55c6ff;
+    background-color: #a2adbd;
 }
 
 ul.checkbox li input[type="checkbox"]:checked + label span:after {
@@ -1139,6 +1141,7 @@ ul.title-area > li > h1 > a {
     text-align: left;
 }
 .config-content p {
+    font-size: 28px;
     font-weight: 500 !important;
     margin: 0 0 20px;
 }

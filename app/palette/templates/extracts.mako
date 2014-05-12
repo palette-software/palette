@@ -8,13 +8,13 @@
 <section class="secondary-side-bar">
   <a class="Psmall-only" id="toggle-events" href="#"><i class="fa"></i></a>
   <h2>Filter</h2>
-  <h5 class="sub margin-top">Extract Name</h5>
+  <h5 class="sub margin-top">Extract</h5>
   <section class="padding">
-    <input type="text" placeholder="extract">
+    <input type="text" placeholder="Extract">
   </section>
   <h5 class="sub">Workbook</h5>
   <section class="padding">
-    <input type="text" placeholder="workbook">
+    <input type="text" placeholder="Workbook">
   </section>
   <h5 class="sub">Publisher</h5>
   <div class="btn-group">

@@ -11,7 +11,7 @@
   </section>
   <section class="row bottom-zone">
     <section class="col-sm-12 col-md-8">
-      <label class="profile-page">Tableau Server Friendly Name</label>
+      <label class="profile-page">Tableau Server Display Name</label>
       <p id="friendly"></p>
       <label class="profile-page">Tableau Server Username</label>
       <p id="username"></p>
