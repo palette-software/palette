@@ -1031,7 +1031,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             try:
                 data = self.rfile.readline().strip()
             except socket.error as e:
-                self.log.debug(\
+                self.error(\
                     "CliHandler: telnet client socket failure/disconnect: " + \
                                                                         str(e))
                 break
@@ -1094,19 +1094,28 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 return self.error(\
                             "agent %s does not exist or is offline" % target)
         else:
-            for key in agents:
-                if agents[key].agent_type != \
-                  AgentManager.AGENT_TYPE_PRIMARY:
+            # Get the current order of agents, according to the database
+            # column "display_order".
+            agent_keys_sorted = \
+                    AgentStatusEntry.display_order_by_domainid(server.domainid)
+
+            for key in agent_keys_sorted:
+                if not agents.has_key(key):
+                    self.error("backup_cmd: agent in memory by not in db! " + \
+                                                            "agentid: %d" % key)
+                    continue
+
+                self.log.debug("backup_cmd: Checking agent %s", \
+                                                    agents[key].displayname)
+                if agents[key].agent_type != AgentManager.AGENT_TYPE_PRIMARY:
                     # FIXME: make sure agent is connected
                     # FIXME: ticket #218: When the UI supports selecting
                     #        a target, remove the code that automatically
                     #        selects a remote.
-                    if target_conn == None:
-                        target_conn = agents[key]
-                    else:
-                        if agents[key].displayname < \
-                          target_conn.displayname:
-                            target_conn = agents[key]
+                    self.log.debug("backup_cmd: setting target to agent %s", \
+                                                    agents[key].displayname)
+                    target_conn = agents[key]
+                    break
 
         if target_conn:
             backup_loc = target_conn

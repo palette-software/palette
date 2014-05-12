@@ -55,3 +55,14 @@ class AgentStatusEntry(meta.Base):
             return True # connected
         else:
             return False # not connected
+
+    @classmethod
+    def display_order_by_domainid(cls, domainid):
+        """Returns a list of agent uuids, sorted by display_order."""
+        agent_entries = meta.Session.query(AgentStatusEntry).\
+            filter(AgentStatusEntry.domainid == domainid).\
+            order_by(AgentStatusEntry.display_order).\
+            all()
+
+        agents_sorted = [entry.uuid for entry in agent_entries]
+        return agents_sorted
