@@ -1102,7 +1102,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             for key in agent_keys_sorted:
                 if not agents.has_key(key):
                     self.error("backup_cmd: agent in memory by not in db! " + \
-                                                            "agentid: %d" % key)
+                                                            "agentid: %s" % key)
                     continue
 
                 self.log.debug("backup_cmd: Checking agent %s", \
