@@ -72,7 +72,10 @@
     <div>
       <ul>
          {{#updates}}
-         <li><a href="#">{{timestamp}}</a> by {{name}}</li>
+         <li>
+	       <a href="#">{{timestamp}}</a> by {{name}}
+           <a class="edit" href="#"><i class="fa fa-fw fa-pencil"></i></a>
+	     </li>
          {{/updates}}
       </ul>
     </div>
@@ -81,5 +84,4 @@
 </script>
 
 <script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/workbook.js">
-
 </script>
