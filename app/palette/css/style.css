@@ -1145,6 +1145,9 @@ ul.title-area > li > h1 > a {
     font-weight: 500 !important;
     margin: 0 0 20px;
 }
+.config-content .key {
+    font-weight: 500;
+}
 .italic-label {
     font-style: italic;
     color: #8D96A3;
