@@ -33,14 +33,16 @@ class ExtractsApplication(RESTApplication):
     def handle_get(self, req):
         query = Session.query(ExtractsEntry).\
             filter(ExtractsEntry.domainid == self.domainid).\
+            order_by(ExtractsEntry.extractid.asc()).\
             all()
 
-        extracts = {}
+        extracts = []
         for entry in query:
-            extracts['name' ] = entry.name
-            extracts['summary'] = entry.summary
-            extracts['description'] = entry.description
-            extracts['color'] = entry.color
+            extract = {'name': entry.name,
+                       'summary':entry.summary,
+                       'description': entry.description,
+                       'color': entry.color}
+            extracts.append(extract)
 
         return {'extracts': extracts}
 
