@@ -121,10 +121,13 @@ class MonitorApplication(RESTApplication):
             agent['modification_time'] = str(entry.modification_time)[:19]
             agent['last_connnection_time'] = str(entry.last_connection_time)[:19]
             agent['last_disconnect_time'] = str(entry.last_disconnect_time)[:19]
-            if entry.connected():
-                agent['color'] = 'green'
+            if primary and primary.uuid == entry.uuid:
+                agent['color'] = color
             else:
-                agent['color'] = 'red'
+                if entry.connected():
+                    agent['color'] = 'green'
+                else:
+                    agent['color'] = 'red'
             agents.append(agent)
 
         production_agents = []
