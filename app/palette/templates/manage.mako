@@ -28,15 +28,9 @@
       </a>
     </li>
         <li>
-      <a href="#" id="backup" class="inactive"> 
+      <a name="popupBackup" class="popup-link inactive" id="backup"> 
         <i class="fa fa-fw fa-upload"></i>
         <span>Backup</span>
-      </a>
-    </li>
-    <li>
-      <a name="popupRestore" id="restore" class="popup-link inactive"> 
-        <i class="fa fa-fw fa-download"></i>
-        <span>Restore</span>
       </a>
     </li>
   </ul>
@@ -130,6 +124,25 @@
   <div class="shade">&nbsp;</div>
 </article>
 
+<article class="popup" id="popupBackup">
+  <section class="popup-body">
+    <section class="row">
+      <section class="col-xs-12">
+        <p>Are you sure want to <span class="bold">BACKUP</span> the <br/>Tableau Server Application?</p>
+      </section>
+    </section>
+    <section class="row">
+      <section class="col-xs-6">
+        <button class="p-btn p-btn-grey popup-close">Cancel</button>
+      </section>
+      <section class="col-xs-6">
+        <button id="backup-ok" class="p-btn p-btn-grey">Backup</button>
+      </section>
+    </section>
+  </section>
+  <div class="shade">&nbsp;</div>
+</article>
+
  <article class="popup" id="popupRestore">
   <section class="popup-body">
     <section class="row">
@@ -192,12 +205,31 @@
   <div class="shade">&nbsp;</div>
 </article>
 
+ <article class="popup" id="restore-dialog">
+  <section class="popup-body">
+    <section class="row">
+      <section class="col-xs-12">
+        <p>Are you sure want to <span class="bold">RESTORE</span> the Tableau Server Application with backup from <span class="bold" id="restore-timestamp"></span>?</p>
+      </section>
+    </section>
+    <section class="row">
+      <section class="col-xs-6">
+        <button class="p-btn p-btn-grey popup-close">Cancel</button>
+      </section>
+      <section class="col-xs-6">
+        <button id="restore-ok" class="p-btn p-btn-grey">Restore</button>
+      </section>
+    </section>
+  </section>
+  <div class="shade">&nbsp;</div>
+</article>
+
 <script id="backup-list-template" type="x-tmpl-mustache">
   {{#backups}}
   <h5 class="backup-page">{{type}}</h5>
   <ul class="Logs">
     {{#items}}
-    <li class="backup">{{creation-time}}</li>
+    <li class="backup"><a href="#">{{creation-time}}</a></li>
     {{/items}}
   </ul>
   {{/backups}}

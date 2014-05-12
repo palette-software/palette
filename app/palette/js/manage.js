@@ -20,13 +20,13 @@ function (jquery, topic, template)
                      'archive-backup-template': null};
 
     function disableAll() {
+        /* FIXME - do this with a class */
         for (var action in actions) {
             $('#'+action).addClass('inactive');
         }
     }
 
     function managePOST(action) {
-        disableAll();
         jquery.ajax({
             type: 'POST',
             url: '/rest/manage',
@@ -37,22 +37,6 @@ function (jquery, topic, template)
             success: function(data) {},
             error: function(req, textStatus, errorThrown) {
                 alert(textStatus);
-            }
-        });
-    }
-
-    function backupPOST(action) {
-        disableAll();
-        jquery.ajax({
-            type: 'POST',
-            url: '/rest/backup',
-            data: {'action': action},
-            dataType: 'json',
-            async: false,
-            
-            success: function(data) {},
-            error: function(req, textStatus, errorThrown) {
-                alert(textStatus + ': ' + errorThrown);
             }
         });
     }
@@ -70,11 +54,36 @@ function (jquery, topic, template)
     }
 
     function backup() {
-        backupPOST('backup');
+        jquery.ajax({
+            type: 'POST',
+            url: '/rest/backup',
+            data: {'action': 'backup'},
+            dataType: 'json',
+            async: false,
+            
+            success: function(data) {},
+            error: function(req, textStatus, errorThrown) {
+                alert(textStatus + ': ' + errorThrown);
+            }
+        });
     }
 
     function restore() {
-        backupPOST('restore');
+        var ts = jquery('#restore-timestamp').html();
+
+        jquery.ajax({
+            type: 'POST',
+            url: '/rest/backup',
+            data: {'action': 'restore',
+                   'timestamp': ts},
+            dataType: 'json',
+            async: false,
+            
+            success: function(data) {},
+            error: function(req, textStatus, errorThrown) {
+                alert(textStatus);
+            }
+        });
     }
 
     function updateState(data) {
@@ -125,6 +134,15 @@ function (jquery, topic, template)
             jquery(this).parent().siblings().find('div').text(dropdownSelect);
         });
 
+        jquery('li.backup a').bind('click', function(event) {
+            event.preventDefault();
+            var ts = jquery(this).html();
+
+            $('article.popup').removeClass('visible');
+            jquery('#restore-timestamp').html(ts);
+            $('article.popup#restore-dialog').addClass('visible');
+        });
+
         jquery('#next-backup').html(data['next']);
     }
 
@@ -147,6 +165,7 @@ function (jquery, topic, template)
             if (jquery(this).hasClass('inactive')) {
                 return;
             }
+            disableAll();
             f();
             jquery('article.popup').removeClass('visible');
         });
@@ -159,6 +178,7 @@ function (jquery, topic, template)
         templates[name] = t;
     }
 
+    /* bind basic actions */
     for (var key in actions) {
         bind('#'+key, actions[key]);
     }

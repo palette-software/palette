@@ -98,6 +98,10 @@ function (jquery, topic, template)
             jquery(this).parent().siblings().find('div').text(dropdownSelect);
         });
 
+        jquery('li.backup a').bind('click', function(event) {
+            alert(jquery(this));
+        });
+
         jquery('#next-backup').html(data['next']);
     }
 
