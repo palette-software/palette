@@ -44,6 +44,8 @@
   <div id="backup-list"></div>
 </section>
 
+<%include file="servers.mako" />
+
 <%include file="events.mako" />
 
 <article class="popup" id="popupStart">

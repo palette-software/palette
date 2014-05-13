@@ -119,7 +119,13 @@ article.popup p {
     padding-bottom: 64px;
     max-width: 600px;
 }
-.secondary-side-bar h2, .secondary-side-bar h5 {
+.secondary-side-bar.servers {
+    width: 1px;
+}
+.secondary-side-bar.servers.servers-visible {
+    width: 300px;
+}
+.secondary-side-bar h5, .secondary-side-bar h2 {
     width: 100%;
     padding: 0 0 0 25px;
     overflow: visible;
@@ -127,6 +133,7 @@ article.popup p {
     text-overflow:ellipsis;
     margin: 25px 0 8px 0;
     font-size: 16px;
+    font-weight: 300;
 }
 .secondary-side-bar h2 {
     font-size: 32px;
@@ -180,6 +187,9 @@ article.popup p {
     color: #fff;
     text-decoration: none;
 }
+.secondary-side-bar ul > li a.visible {
+    background-color: rgba(250, 250, 250, 0.2);
+}
 .secondary-side-bar ul > li a.inactive, .secondary-side-bar ul.actions > li a.inactive, .secondary-side-bar ul.actions > li a.inactive i {
     color: #444;
 }
@@ -191,10 +201,23 @@ article.popup p {
 .secondary-side-bar ul > li a.inactive:active, .secondary-side-bar ul.actions > li a.inactive:active {
     box-shadow: 0 0;
 }
-.secondary-side-bar ul.server-list > li i {
-    width: 64px;
-    line-height: 64px;
-    font-size: 64px;
+.secondary-side-bar > ul > li > a > i {
+    line-height: 40px;
+    font-size: 40px;
+    text-align: center;
+    width: 40px;
+    color: #8E96A3;
+    position: relative;
+}
+
+.secondary-side-bar > ul > li > a > i.warning {
+    color: #DC994C;
+}
+.secondary-side-bar > ul > li > a > i.running {
+    color: #75E25A;
+}
+.secondary-side-bar > ul > li > a > i.stopped {
+    color: #EF5455;
 }
 .secondary-side-bar ul.server-list > li i.green {
     color: #75e25a;
@@ -207,36 +230,47 @@ article.popup p {
 }
 
 .secondary-side-bar ul > li h5 {
-    position: absolute;
-    left: 104px;
-    top: 10px;
-    margin: 0;
+    position: relative;
+    margin: 0 0 10px 0;
     padding: 0;
     font-size: 16px;
     font-weight: 300;
-    width: 70%;
+    width: 100%;
     overflow: hidden;
     text-overflow:ellipsis;
     white-space: nowrap;
+    display: block;
+    float: left;
 }
-.secondary-side-bar ul.server-list > li span {
+.secondary-side-bar ul.server-list > li > a {
+    height: 100px;
+}
+.secondary-side-bar ul.server-list > li > a > div {
     position: absolute;
-    margin: 0;
+    left:80px;
+    top: 15px;
+}
+.secondary-side-bar ul.server-list > li > a > div > span {
+    position: relative;
+    margin: 0 0 0 0;
     font-size: 16px;
     font-weight: 300;
     color: #8e96a3;
     vertical-align: bottom;
-    width: 65%;
+    width: 100%;
     overflow: hidden;
     text-overflow:ellipsis;
     white-space: nowrap;
-    left: 104px;
+    display: block;
+    float: left;
 }
-.secondary-side-bar ul.server-list > li span.hostname {
-    bottom: 30px;
-}
-.secondary-side-bar ul.server-list > li span.address {
-    bottom: 7px;
+.secondary-side-bar ul.server-list > li > a > i {
+    position: absolute;
+    line-height: 100px;
+    top: 0;
+    left: 0;
+    width: 80px;
+    font-size: 50px;
 }
 .secondary-side-bar ul.Logs li a {
     padding: 0 25px;
@@ -369,15 +403,24 @@ ul.dropdown-menu a:hover {
 }
 .main-side-bar::-webkit-scrollbar, .secondary-side-bar::-webkit-scrollbar {
     width: 0 !important;
+    position: fixed;
+    z-index: 11000;
+}
+.main-side-bar, .secondary-side-bar {
+    overflow: -moz-scrollbars-none;
 }
 .main-side-bar .status {
     position: relative;
     top: 0;
     width: 100%;
     display: block;
-    height: 125px;
+    height: 120px;
     background-color: #ececec;
 }
+.main-side-bar .status:hover {
+    cursor: pointer;
+}
+
 .main-side-bar .status img {
     position: absolute;
     width: 64px;
@@ -392,24 +435,24 @@ ul.dropdown-menu a:hover {
 }
 .main-side-bar .status h2 {
     position: absolute;
-    top: 35px;
+    top: 30px;
     left: 15px;
     font-size: 24px;
     line-height: 24px;
     margin: 0;
-    font-weight: 500;
+    font-weight: 300;
     color: #697078;
 }
 .main-side-bar .status h3 {
     position: absolute;
-    top: 84px;
+    top: 83px;
     left: 15px;
     display: block;
     color: #697078;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 300;
     width: 220px;
-    overflow: visible;
+    overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     margin: 0;
@@ -429,7 +472,7 @@ ul.dropdown-menu a:hover {
     width: 64px;
 }
 .secondary-side-bar.collapsed {
-    left: 64px;
+    left: 60px;
 }
 .dynamic-content.collapsed {
     left: 384px;
@@ -476,6 +519,68 @@ ul.dropdown-menu a:hover {
 .main-side-bar.collapsed .actions li.active a {
   background-color: #ececec;
 }
+ul.processes {
+    display: none;
+    background-color: rgba(0,0,0,0.1);
+    border-bottom: 1px solid rgba(0,0,0,0.2);
+}
+ul.processes i.running {
+    color:#75E25A;
+}
+ul.processes i.warning {
+    color:#DC994C;
+}
+ul.processes i.stopped {
+    color:#EF5455;
+}
+
+ul.processes.visible {
+    display: block;
+}
+
+.secondary-side-bar > ul > li > a > i span {
+    display: block;
+    background-color: #fff;
+    color: #333;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    font-weight: bold;
+    position: absolute;
+    top: 0;
+    font-size: 12px;
+    display: none;
+    top: 20px;
+}
+
+.secondary-side-bar > ul > li > a  > i.warning span.warnings {
+    display: block;
+}
+
+.secondary-side-bar > ul > li > a  > i.stopped span.errors {
+    display: block;
+}
+
+.secondary-side-bar > ul > li > a > i span.warnings {
+    background-color: #DC994C;
+    color: #fff;
+    right: 18px;
+}
+
+.secondary-side-bar > ul > li > a > i span.errors {
+    background-color: #EF5455;
+    color: #fff;
+    left: 18px;
+}
+
+.secondary-side-bar ul.processes > li a {
+    padding: 8px 25px 8px 25px;
+    font-size: 12px;
+}
+
+
 
 #toggle-side-menu {
     color: #8e96a3;
@@ -599,14 +704,13 @@ ul.dropdown-menu a:hover {
     width: 100%;
     background-color: rgba(0, 0, 0, 0.1);
 }
-
 .dynamic-content {
     position: absolute;
     height: 100%;
     left: 550px;
     top: 67px;
     right: 0;
-    padding: 0 15px 15px 40px;
+    padding: 0 15px 15px 18px;
     -webkit-transition: all 0.3s ease-out;
     -moz-transition: all 0.3s ease-out;
     -ms-transition: all 0.3s ease-out;
@@ -614,18 +718,50 @@ ul.dropdown-menu a:hover {
     transition: all 0.3s ease-out;
     overflow-y: scroll;
 }
+.home-events .dynamic-content {
+    left: 250px;
+}
+.home-events .dynamic-content.servers-visible {
+    left: 550px;
+}
+.home-events .dynamic-content.collapsed {
+    left: 60px;
+}
+.secondary-side-bar.servers-visible {
+    left: 550px;
+}
+.secondary-side-bar.servers.servers-visible {
+    left: 250px;
+    border-right: 1px solid rgba(0,0,0,0.2);
+}
+.dynamic-content.servers-visible {
+    left: 850px;
+}
+.secondary-side-bar.collapsed.servers-visible {
+    left: 360px;
+}
+.secondary-side-bar.servers.collapsed.servers-visible {
+    left: 60px;
+}
+.dynamic-content.servers-visible {
+    left: 850px;
+}
+.dynamic-content.collapsed.servers-visible {
+    left: 550px;
+}
+.dynamic-content.servers-visible.collapsed {
+    left: 660px;
+}
 .dynamic-content .top-zone {
     width: 100%;
     height: 120px;
-    background-color: #ececec;
-    z-index: 20;
 }
 .dynamic-content .top-zone .row {
     height: auto !important;
 }
 .dynamic-content .top-zone a.alert {
     font-size: 16px;
-    margin: 0 0 0 10px;
+    margin: 0 0 25px 10px;
     display: inline-block;
     vertical-align: middle;
     position: relative;
@@ -673,6 +809,7 @@ ul.dropdown-menu a:hover {
     margin-left: 0;
 }
 .dynamic-content .bottom-zone {
+    padding-top: 20px;
 }
 .btn-default:hover, .btn-default:focus, .btn-default:active, .btn-default.active, .open .dropdown-toggle.btn-default {
     background-color: #8D96A3;
@@ -684,7 +821,7 @@ h1.page-title {
     display: inline-block;
     font-weight: 300;
     line-height: 32px;
-    margin: 20px 0 0 0;
+    margin: 20px 0 25px 0;
     color: #697078;
     vertical-align: bottom;
 }
@@ -920,16 +1057,16 @@ p.error {
     margin: -8px 0 25px 0;
     color: #E52C22;
 }
-.checkbox {
+.checkbox, .radio {
     padding: 0;
 }
 
-ul.checkbox {
+ul.checkbox, ul.radio {
     margin: 15px 0;
     list-style-type: none;
 }
 
-ul.checkbox li {
+ul.checkbox li, ul.radio li {
     position: relative;
     height: 28px;
     width: 100%;
@@ -938,7 +1075,7 @@ ul.checkbox li {
     margin: 0 0 5px 0;
 }
 
-ul.checkbox li label {
+ul.checkbox li label, ul.radio li label {
     margin-bottom: 0;
     display: inline-block;
     font-weight: 300;
@@ -946,7 +1083,7 @@ ul.checkbox li label {
     line-height: 28px;
 }
 
-ul.checkbox li input[type="checkbox"] {
+ul.checkbox li input[type="checkbox"], ul.radio li input[type="radio"] {
     display: block;
     width: 16px;
     height: 16px;
@@ -958,9 +1095,9 @@ ul.checkbox li input[type="checkbox"] {
     z-index: 0;
 }
 
-ul.checkbox li label span {
+ul.checkbox li label span, ul.radio li label span {
     background-color: #ddd;
-    border-radius: 3px;
+    border-radius: 2px;
     cursor: pointer;
     width: 18px;
     height: 18px;
@@ -981,15 +1118,23 @@ ul.checkbox li label span {
     transition: all 0.2s ease-out;
 }
 
-ul.checkbox li input[type="checkbox"]:hover {
+ul.radio li label span {
+    border-radius: 50%;
+}
+
+ul.checkbox li label div, ul.radio li label div {
+    display: inline-block;
+}
+
+ul.checkbox li input[type="checkbox"]:hover, ul.radio li input[type="radio"]:hover  {
     cursor: pointer;
 }
 
-ul.checkbox li input[type="checkbox"]:checked + label span {
-    background-color: #a2adbd;
+ul.checkbox li input[type="checkbox"]:checked + label span, ul.radio li input[type="radio"]:checked + label span {
+    background-color: #55c6ff;
 }
 
-ul.checkbox li input[type="checkbox"]:checked + label span:after {
+ul.checkbox li input[type="checkbox"]:checked + label span:after, ul.radio li input[type="radio"]:checked + label span:after {
     content: "\f00c";
     display: inline-block;
     font-family: FontAwesome;
