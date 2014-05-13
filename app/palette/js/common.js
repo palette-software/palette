@@ -15,7 +15,6 @@ define(['jquery', 'topic', 'domReady!'],
 function (jquery, topic)
 {
     /* MOBILE TITLE */
-
     $(function(){
         var pageTitle = $('title').text();
         pageTitle = pageTitle.replace('Palette - ', '');

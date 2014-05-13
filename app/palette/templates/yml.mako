@@ -7,7 +7,7 @@
 
 <section class="dynamic-content config-content">
   <section class="top-zone">
-    <h1 class="page-title">Tableu Settings</h1>
+    <h1 class="page-title">Tableau Settings</h1>
   </section>
   <section class="bottom-zone">
     <div id="yml-list"></div>
