@@ -52,7 +52,7 @@
   <section class="popup-body">
     <section class="row">
       <section class="col-xs-12">
-        <p>Are you sure want to <span class="bold">START</span> the <br/>Tableau Server Application?</p>
+        <p>Are you sure want to start the <br/>Tableau Server Application?</p>
       </section>
     </section>
     <section class="row">
@@ -71,7 +71,7 @@
   <section class="popup-body">
     <section class="row">
       <section class="col-xs-12">
-        <p>Are you sure want to <span class="bold">STOP</span> the <br/>Tableau Server Application?</p>
+        <p>Are you sure want to stop the <br/>Tableau Server?</p>
       </section>
     </section>
     <section class="row">
@@ -111,7 +111,7 @@
   <section class="popup-body">
     <section class="row">
       <section class="col-xs-12">
-        <p>Are you sure want to <span class="bold">RESTART</span> the <br/>Tableau Server Application?</p>
+        <p>Are you sure want to restart the <br/>Tableau Server?</p>
       </section>
     </section>
     <section class="row">
@@ -130,7 +130,7 @@
   <section class="popup-body">
     <section class="row">
       <section class="col-xs-12">
-        <p>Are you sure want to <span class="bold">BACKUP</span> the <br/>Tableau Server Application?</p>
+        <p>Are you sure want to backup?</p>
       </section>
     </section>
     <section class="row">
@@ -149,7 +149,7 @@
   <section class="popup-body">
     <section class="row">
       <section class="col-xs-12">
-        <p>Are you sure want to <span class="bold">restore</span> the Tableau Server Application with backup from <span class="bold"> 12:00 AM on April 15, 2014</span>?</p>
+        <p>Are you sure want to restore the Tableau Server Application with backup from <span class="bold"> 12:00 AM on April 15, 2014</span>?</p>
       </section>
     </section>
     <section class="row">
@@ -211,7 +211,7 @@
   <section class="popup-body">
     <section class="row">
       <section class="col-xs-12">
-        <p>Are you sure want to <span class="bold">RESTORE</span> the Tableau Server Application with backup from <span class="bold" id="restore-timestamp"></span>?</p>
+        <p>Are you sure want to restore from<br/><span id="restore-timestamp"></span>?</p>
       </section>
     </section>
     <section class="row">
