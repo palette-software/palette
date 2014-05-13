@@ -38,6 +38,16 @@ function (jquery, topic)
         $('article.popup').removeClass('visible');
     });
 
+    /* SERVER LIST */
+    $('.main-side-bar .status').bind('click', function() {
+        $('.secondary-side-bar, .dynamic-content, .secondary-side-bar.servers').toggleClass('servers-visible');
+    });
+
+    $('.server-list li a').bind('click', function() {
+        $(this).toggleClass('visible');
+        $(this).parent().find('ul.processes').toggleClass('visible');
+    });
+
     /* SIDEBAR */
     $('#toggle-side-menu').bind('click', function() {
 	    $('.main-side-bar, .secondary-side-bar, .dynamic-content').toggleClass('collapsed');
