@@ -33,8 +33,6 @@
   </ul>
 </section>
 
-<%include file="servers.mako" />
-
 <%include file="events.mako" />
 
 <script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/logs.js">

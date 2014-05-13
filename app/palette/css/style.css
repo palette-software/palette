@@ -452,7 +452,7 @@ ul.dropdown-menu a:hover {
     font-size: 20px;
     font-weight: 300;
     width: 220px;
-    overflow: hidden;
+    overflow: visible;
     white-space: nowrap;
     text-overflow: ellipsis;
     margin: 0;

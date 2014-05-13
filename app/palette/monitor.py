@@ -131,7 +131,7 @@ class MonitorApplication(RESTApplication):
             agents.append(agent)
 
         production_agents = []
-        environments = [ { "name": "Production", "agents": agents } ]
+        environments = [ { "name": "My Servers", "agents": agents } ]
 
         return {'tableau-status': tableau_status,
                 'state': main_state,

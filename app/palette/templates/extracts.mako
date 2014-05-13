@@ -100,9 +100,6 @@
   </section>
 </section>
 
-<%include file="servers.mako" />
-
-
 <script id="extract-list-template" type="x-tmpl-mustache">
   {{#extracts}}
   <article class="event">

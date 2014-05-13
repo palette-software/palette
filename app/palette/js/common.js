@@ -38,10 +38,6 @@ function (jquery, topic)
     });
 
     /* SERVER LIST */
-    $('.main-side-bar .status').bind('click', function() {
-        $('.secondary-side-bar, .dynamic-content, .secondary-side-bar.servers').toggleClass('servers-visible');
-    });
-
     $('.server-list li a').bind('click', function() {
         $(this).toggleClass('visible');
         $(this).parent().find('ul.processes').toggleClass('visible');
@@ -56,7 +52,6 @@ function (jquery, topic)
         $('.main-side-bar, .secondary-side-bar, .dynamic-content').toggleClass('open');
 	    $(this).toggleClass('open');
     });
-    
 
     function clearmenu() {
 	$('.main-side-bar, .secondary-side-bar, .dynamic-content').removeClass('open');

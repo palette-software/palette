@@ -44,15 +44,13 @@
   <div id="backup-list"></div>
 </section>
 
-<%include file="servers.mako" />
-
 <%include file="events.mako" />
 
 <article class="popup" id="popupStart">
   <section class="popup-body">
     <section class="row">
       <section class="col-xs-12">
-        <p>Are you sure want to start the <br/>Tableau Server Application?</p>
+        <p>Are you sure want to start the <br/>Tableau Server?</p>
       </section>
     </section>
     <section class="row">
@@ -145,69 +143,7 @@
   <div class="shade">&nbsp;</div>
 </article>
 
- <article class="popup" id="popupRestore">
-  <section class="popup-body">
-    <section class="row">
-      <section class="col-xs-12">
-        <p>Are you sure want to restore the Tableau Server Application with backup from <span class="bold"> 12:00 AM on April 15, 2014</span>?</p>
-      </section>
-    </section>
-    <section class="row">
-      <section class="col-xs-12">
-        <ul class="radio">
-          <li>
-            <input type="radio" name="restorepoint">
-              <label class="radio">
-                <span></span>
-                <div>(4/23/2014) -</div> Backup
-              </label>
-          </li>
-          <li>
-            <input type="radio" name="restorepoint">
-              <label class="radio">
-                <span></span>
-                <div>(4/18/2014) -</div> Backup 2
-              </label>
-          </li>
-          <li>
-            <input type="radio" name="restorepoint">
-              <label class="radio">
-                <span></span>
-                <div>(4/7/2014) -</div> Backup 3
-              </label>
-          </li>
-        </ul>
-        <ul class="checkbox">
-          <li>
-            <input type="checkbox">
-              <label class="checkbox">
-                <span></span>
-                With configureation settings
-              </label>
-          </li>
-          <li>
-            <input type="checkbox">
-              <label class="checkbox">
-                <span></span>
-                With backup rollback protection
-              </label>
-          </li>
-        </ul>
-      </section>
-    </section>
-    <section class="row">
-      <section class="col-xs-6">
-        <button class="p-btn p-btn-grey popup-close">Cancel</button>
-      </section>
-      <section class="col-xs-6">
-        <button id="save-ok" class="p-btn p-btn-blue">Restore</button>
-      </section>
-    </section>
-  </section>
-  <div class="shade">&nbsp;</div>
-</article>
-
- <article class="popup" id="restore-dialog">
+<article class="popup" id="restore-dialog">
   <section class="popup-body">
     <section class="row">
       <section class="col-xs-12">
