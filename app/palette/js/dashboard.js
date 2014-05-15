@@ -1,13 +1,21 @@
-require(['jquery', 'topic', 'template', 'event', 'domReady!'],
-function (jquery, topic, template)
+require(['jquery', 'topic', 'template', 'common',
+         'bootstrap', 'event', 'domReady!'],
+function (jquery, topic, template, common)
 {
+    /*
+     * bindStatus()
+     * Make the clicking on the status box show the server list.
+     */
+    function bindStatus() {
+        $('.main-side-bar .status').bind('click', function() {
+            $('.secondary-side-bar, .dynamic-content, .secondary-side-bar.servers').toggleClass('servers-visible');
+        });
+    }
+
     var t = $('#server-list-template').html();
     template.parse(t);   // optional, speeds up future uses
 
-    /* STATUS BUTTON */
-    $('.main-side-bar .status').bind('click', function() {
-        $('.secondary-side-bar, .dynamic-content, .secondary-side-bar.servers').toggleClass('servers-visible');
-    });
+    bindStatus();
 
     topic.subscribe('state', function (message, data) {
         var rendered = template.render(t, data);
@@ -19,6 +27,8 @@ function (jquery, topic, template)
             $(this).parent().find('ul.processes').toggleClass('visible');
         });
     });
+
+    common.startup();
+    common.setupDropdowns();
 });
 
-require(['common']);

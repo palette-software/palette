@@ -1,5 +1,5 @@
-require(['jquery', 'topic', 'template'],
-function (jquery, topic, template)
+require(['jquery', 'topic', 'template', 'common'],
+function (jquery, topic, template, common)
 {
     var t = $('#event-list-template').html();
     template.parse(t);   // optional, speeds up future uses
@@ -34,23 +34,7 @@ function (jquery, topic, template)
         html = rendered + '\n' + html;
         $('#event-list').html(html);
 
-        /* FIXME - copied from common.js */
-        $('.event').bind('click', function() {
-            $(this).toggleClass('open');
-        });
-
-        /* FIXME: - copied from common.js */
-        $(function(){
-            $('.dynamic-content').bind('click', function() {
-                var viewport = $(window).width();
-                var dynamicClosed = $(this).hasClass('closed');
-                if (viewport <= 960 && dynamicClosed != true) {
-                    clearmenu();
-                    $('.secondary-side-bar, .dynamic-content').toggleClass('closed');
-                    $('#toggle-events').toggleClass('active');
-                }
-            });
-        });
+        common.bindEvents();
     }
 
     function poll() {

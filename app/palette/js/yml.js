@@ -1,5 +1,5 @@
-require(['jquery', 'template', 'common'],
-function (jquery, template)
+require(['jquery', 'template', 'common', 'domReady!'],
+function (jquery, template, common)
 {
     var t = jquery('#yml-list-template').html();
     template.parse(t);
@@ -18,4 +18,6 @@ function (jquery, template)
             console.log('[ERROR] '+textStatus+': '+errorThrown);
         },
     });
+
+    common.startup();
 });
