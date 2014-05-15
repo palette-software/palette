@@ -10,12 +10,17 @@ fi
 
 set +x
 
-# apache: Don't listen on port 80
-sed --in-place 's/^Listen 80/#&/' /etc/apache2/ports.conf
+# apache: List on 80 again to redirect.
+sed --in-place 's/^#Listen 80/Listen 80/' /etc/apache2/ports.conf
 
 chmod 610 /etc/ssl/private/ssl-cert-palette-software.key
-/usr/sbin/a2ensite palette-software-ssl
-/usr/sbin/a2enmod ssl
+
+/usr/sbin/a2enmod ssl rewrite
+
+# port 80/http site is used only to redirect to 443/https
+/usr/sbin/a2dissite 000-default
+
+/usr/sbin/a2ensite palette-software palette-software-ssl
 
 mkdir -p /var/log/palette
 mkdir -p /opt/palette/plugins
