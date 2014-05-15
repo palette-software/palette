@@ -1,5 +1,5 @@
-require(['jquery', 'template', 'common'],
-function (jquery, template)
+require(['jquery', 'template', 'common', 'bootstrap', 'domReady!'],
+function (jquery, template, common)
 {
     var t = $('#workbook-list-template').html();
     template.parse(t);
@@ -9,16 +9,12 @@ function (jquery, template)
         success: function(data) {
             var rendered = template.render(t, data);
             jquery('#workbook-list').html(rendered);
-            /* FIXME */
-            $('.event').bind('click', function() {
-                $(this).toggleClass('open');
-            });
+            common.bindEvents(); /* workbooks have '.event' class */
         },
         error: function(req, textStatus, errorThrown) {
             console.log('[workbook] ' + textStatus + ': ' + errorThrown);
         },
     });
-});
 
-/* Do this last so that event expansion is bound correctly. */
-require(['common']);
+    common.startup();
+});

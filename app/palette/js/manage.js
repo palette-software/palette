@@ -1,5 +1,6 @@
-require(['jquery', 'topic', 'template', 'event', 'domReady!'],
-function (jquery, topic, template)
+require(['jquery', 'topic', 'template', 'common',
+         'event', 'bootstrap', 'domReady!'],
+function (jquery, topic, template, common)
 {
     var actions = {'start': start,
                    'stop': stop,
@@ -177,14 +178,12 @@ function (jquery, topic, template)
         bind('#'+key, actions[key]);
     }
 
+    common.setupDialogs();
+    common.setupDropdowns();
+
     topic.subscribe('state', function(message, data) {
         updateState(data);
     });
-});
 
-/* 
- * Load 'common' separately to ensure that we've subscribed to the 'state'
- * topic before the AJAX call is made - this avoids the race condition
- * between topic subscribe and the first published state.
- */
-require(['common']);
+    common.startup();
+});

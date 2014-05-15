@@ -1,5 +1,5 @@
-require(['jquery', 'common'],
-function (jquery)
+require(['jquery', 'common', 'bootstrap', 'domReady!'],
+function (jquery, common)
 {
 
     function update(data) {
@@ -21,4 +21,6 @@ function (jquery)
             console.log('[ERROR] '+textStatus+': '+errorThrown);
         },
     });
+
+    common.startup();
 });
