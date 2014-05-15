@@ -30,51 +30,6 @@ class MonitorApplication(RESTApplication):
         self.domain = Domain.get_by_name(domainname)
 
     def handle_monitor(self, eq):
-        try:
-            primary_agents = Session.query(AgentStatusEntry).\
-                filter(AgentStatusEntry.domainid == self.domain.domainid).\
-                filter(AgentStatusEntry.agent_type == "primary").\
-                all()
-        except NoResultFound, e:
-            primary_agents = None
-
-        # If there is more than one primary agent in the table, look for
-        # the primary agent that is connected and use that.
-        # the table.
-
-        primary = None
-
-        # Set defaults
-        tableau_status = "unknown"
-        main_state = StateManager.STATE_UNKNOWN
-        text = "none"
-        color = "none"
-        user_action_in_progress = False
-
-        if primary_agents:
-            for agent in primary_agents:
-                if agent.connected():
-                    # This primary agent is connected.  We will use it.
-                    primary = agent
-                    break
-                else:
-                    # This agent has disconnected.
-                    continue
-
-        # If there is a primary agent connected, get tableau status and
-        # main state, etc.
-        if primary:
-            # Dig out the tableau status.
-            try:
-                tableau_entry = Session.query(StatusEntry).\
-                    join(AgentStatusEntry).\
-                    filter(AgentStatusEntry.domainid == self.domain.domainid).\
-                    filter(StatusEntry.name == 'Status').\
-                    one()
-                tableau_status = tableau_entry.status
-            except NoResultFound, e:
-                pass
-
         # Get the state
         main_state = StateManager.get_state_by_domainid(self.domain.domainid)
 
@@ -99,13 +54,12 @@ class MonitorApplication(RESTApplication):
         else:
             user_action_in_progress = True
 
-        data = {}
-
         agent_entries = Session.query(AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domain.domainid).\
             order_by(AgentStatusEntry.display_order).\
             all()
 
+        primary = None
         agents = []
         for entry in agent_entries:
             agent = {}
@@ -121,7 +75,9 @@ class MonitorApplication(RESTApplication):
             agent['modification_time'] = str(entry.modification_time)[:19]
             agent['last_connnection_time'] = str(entry.last_connection_time)[:19]
             agent['last_disconnect_time'] = str(entry.last_disconnect_time)[:19]
-            if primary and primary.uuid == entry.uuid:
+            if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
+                                                                entry.connected():
+                primary = entry
                 agent['color'] = color
             else:
                 if entry.connected():
@@ -130,10 +86,32 @@ class MonitorApplication(RESTApplication):
                     agent['color'] = 'red'
             agents.append(agent)
 
-        production_agents = []
+        # Get tableau processes' status and overall status.
+        status_entries = Session.query(StatusEntry).\
+            join(AgentStatusEntry).\
+            filter(AgentStatusEntry.domainid == self.domain.domainid).\
+            all()
+
+        tableau_status = "unknown"
+        tableau_procs = []
+        for entry in status_entries:
+            proc_entry = {}
+
+            if entry.name == 'Status':
+                tableau_status = entry.status
+
+            proc_entry['pid'] = entry.pid
+            proc_entry['name'] = entry.name
+            proc_entry['status'] = entry.status
+            proc_entry['creation_time']  = str(entry.creation_time)[:19] # no fraction
+            proc_entry['modification_time']  = str(entry.modification_time)[:19]
+
+            tableau_procs.append(proc_entry)
+
         environments = [ { "name": "My Servers", "agents": agents } ]
 
         return {'tableau-status': tableau_status,
+                'tableau-procs': tableau_procs,
                 'state': main_state,
                 'allowable-actions': allowable_actions,
                 'text': text,
@@ -141,8 +119,6 @@ class MonitorApplication(RESTApplication):
                 'user-action-in-progress': user_action_in_progress,
                 'environments': environments
                }
-
-        return data
 
     def handle(self, req):
         if req.environ['PATH_INFO'] == '/monitor':
