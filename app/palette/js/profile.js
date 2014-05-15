@@ -1,9 +1,3 @@
-require.config({
-    paths: {
-        'jquery': '/app/module/palette/js/vendor/jquery',
-    }
-});
-
 require(['jquery', 'common'],
 function (jquery)
 {

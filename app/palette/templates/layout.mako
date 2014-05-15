@@ -19,6 +19,24 @@
 <link rel="stylesheet" type="text/css" href="/app/module/palette/css/style.css" media="screen">
 </%block>
 
+<script>
+  var require = {
+    paths: {
+      'jquery': '/app/module/palette/js/vendor/jquery',
+      'topic': '/app/module/palette/js/vendor/pubsub',
+      'template' : '/app/module/palette/js/vendor/mustache',
+      'domReady': '/app/module/palette/js/vendor/domReady',
+
+      'bootstrap': '/app/module/palette/js/vendor/bootstrap'
+    },
+    shim: {
+      'bootstrap': {
+         deps: ['jquery']
+      }
+    }
+  };
+</script>
+
 </head>
 <body>
 

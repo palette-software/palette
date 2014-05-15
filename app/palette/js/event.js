@@ -1,11 +1,3 @@
-require.config({
-    paths: {
-        'jquery': '/app/module/palette/js/vendor/jquery',
-        'template' : '/app/module/palette/js/vendor/mustache',
-        'domReady': '/app/module/palette/js/vendor/domReady',
-    }
-});
-
 require(['jquery', 'topic', 'template'],
 function (jquery, topic, template)
 {
