@@ -1,0 +1,7 @@
+<VirtualHost *:80>
+    RewriteEngine On
+    # Redirects everything to https
+    RewriteRule ^/?(.*) https://%{SERVER_NAME}/$1 [R=permanent,L]
+
+    DocumentRoot /var/www
+</VirtualHost>
