@@ -23,8 +23,6 @@ class StatusEntry(meta.Base):
     STATUS_STOPPED="STOPPED"
     STATUS_DEGRADED="DEGRADED"
 
-    # FIXME: Make combination of agentid and name a unique key
-
     name = Column(String, unique=True, nullable=False, primary_key=True)
     agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False)
     pid = Column(Integer)
