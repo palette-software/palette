@@ -1393,7 +1393,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         msg = ""
         # fixme: make sure the source isn't the same as the dest
         if not src:
-            msg = "No connected source agent with displayname: %s. " % \
+            msg = "No connected source agent with displayname: %s." % \
               source_displayname
         if not dst:
             msg += "No connected destination agent with displayname: %s." % \
@@ -1594,10 +1594,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # If the agent is initialization, then "agent_connected"
             # will not know about it yet.
             if not aconn.initting and not manager.agent_connected(aconn):
-                self.log.info("Agent '%s' (type: '%s', uuid %s) disconnected before finishing: %s",
-                    aconn.displayname, aconn.agent_type, aconn.uuid, uri)
-                return self.error("Agent '%s' (type: '%s', uuid %s) disconnected before finishing: %s" %
-                    (aconn.displayname, aconn.agent_type, aconn.uuid, uri))
+                self.log.info("Agent '%s' (type: '%s', uuid %s) " + \
+                        "disconnected before finishing: %s",
+                           aconn.displayname, aconn.agent_type, aconn.uuid, uri)
+                return self.error("Agent '%s' (type: '%s', uuid %s) " + \
+                    "disconnected before finishing: %s" %
+                        (aconn.displayname, aconn.agent_type, aconn.uuid, uri))
 
             aconn.lock()
             self.log.debug("Sending GET " + uri)
@@ -1607,7 +1609,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
                 self.log.debug("Getting response from GET " +  uri)
                 res = aconn.httpconn.getresponse()
-                self.log.debug("status: " + str(res.status) + ' ' + str(res.reason))
+                self.log.debug("status: " + str(res.status) + ' ' + \
+                                                            str(res.reason))
                 if res.status != httplib.OK:
                     self.remove_agent(aconn,
                                  CustomAlerts.AGENT_RETURNED_INVALID_STATUS)
@@ -1649,14 +1652,21 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     time.sleep(self.cli_get_status_interval)
                     continue
                 else:
-                    self.remove_agent(aconn, "Communication failure with agent:  Unknown run-status returned from agent: %s" % body['run-status'])    # bad agent
-                    return self.error("Unknown run-status: %s.  Will not retry." % body['run-status'], body)
+                    self.remove_agent(aconn,
+                        "Communication failure with agent:  " + \
+                        "Unknown run-status returned from agent: %s" % \
+                                            body['run-status'])    # bad agent
+                    return self.error("Unknown run-status: %s.  Will not " + \
+                                            "retry." % body['run-status'], body)
             except httplib.HTTPException, e:
-                    self.remove_agent(aconn, "HTTP communication failure with agent: " + str(e))    # bad agent
-                    return self.error("GET %s failed with HTTPException: %s" % (uri, str(e)))
+                    self.remove_agent(aconn,
+                        "HTTP communication failure with agent: " + \
+                                                        str(e))    # bad agent
+                    return self.error("GET %s failed with HTTPException: %s" \
+                                                                % (uri, str(e)))
             except EnvironmentError, e:
-                    self.remove_agent(aconn, "Communication failure with agent. Unexpected error: " + \
-                                                    str(e))    # bad agent
+                    self.remove_agent(aconn, "Communication failure with " + \
+                            "agent. Unexpected error: " + str(e))    # bad agent
                     return self.error("GET %s failed with: %s" % (uri, str(e)))
 
     def info(self, aconn):
