@@ -236,7 +236,7 @@ article.popup p {
     font-size: 16px;
     font-weight: 300;
     width: 100%;
-    overflow: hidden;
+    overflow: visible;
     text-overflow:ellipsis;
     white-space: nowrap;
     display: block;
