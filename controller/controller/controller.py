@@ -1124,7 +1124,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             copy_body = self.copy_cmd(source_path, target_conn.displayname)
 
             if copy_body.has_key('error'):
-                msg = ("Copy of backup file '%s' to agent '%s' failed. "+\
+                msg = (u"Copy of backup file '%s' to agent '%s' failed. "+\
                     "Will leave the backup file on the primary agent. "+\
                     "Error was: %s") \
                     % (backup_name, target_conn.displayname, copy_body['error'])
@@ -1642,7 +1642,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                         if body.has_key('stderr'):
                             body['error'] = body['stderr']
                         else:
-                            body['error'] = "Failed with exit status: %d" % body['exit-status']
+                            body['error'] = u"Failed with exit status: %d" % \
+                                                            body['exit-status']
                     return body
                 elif body['run-status'] == 'running':
                     time.sleep(self.cli_get_status_interval)
@@ -1786,7 +1787,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
            a return_dict, then adds to it, otherwise a new return_dict
            is created."""
 
-        return_dict['error'] = msg
+        return_dict['error'] = unicode(msg)
         return return_dict
 
     def httperror(self, res, error='HTTP failure',
