@@ -148,9 +148,10 @@ class Alert(object):
             message += self.indented("Additional information", body['info']) + \
                                                                         '\n'
 
-        # Always include stderr.
+        # Include stderr, unless it is a duplicate of body['error']
         if body.has_key('stderr'):
-            message += self.indented('Error', body['stderr'])
+            if not body.has_key('error') or (body['stderr'] != body['error']):
+                message += self.indented('Error', body['stderr'])
 
         # And include stdout
         if body.has_key('stdout'):
