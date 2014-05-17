@@ -40,7 +40,7 @@
         <section class="row">
           <section class="col-xs-12">
             <button type="submit" name="login" id="login"
-                    class="p-btn p-btn-grey">Login
+                    class="p-btn">Login
             </button>
           </section>
         </section>
