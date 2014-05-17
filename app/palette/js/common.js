@@ -88,7 +88,6 @@ function (jquery, topic)
      * setupDropdowns()
      * Enable the select-like elements created with the dropdown class.
      */
-    /* DROP DOWN FUNCTIONALITY */
     function setupDropdowns() {
         jquery('.dropdown-menu li').bind('click', function() {
             var dropdownSelect = jquery(this).find('a').text();     

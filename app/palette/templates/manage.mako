@@ -169,7 +169,7 @@
   <ul class="Logs">
     {{#items}}
     <li class="backup">
-      <a href="#">
+      <a class="inactive" href="#">
         <span class="timestamp">{{creation-time}}</span>
         <span class="filename">{{name}}</span>
       </a>
