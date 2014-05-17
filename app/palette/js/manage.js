@@ -4,7 +4,6 @@ function (jquery, topic, template, common)
 {
     var actions = {'start': start,
                    'stop': stop,
-                   'restart': restart,
                    'backup': backup};
 
     var templates = {'backup-list-template': null,
@@ -40,10 +39,6 @@ function (jquery, topic, template, common)
 
     function stop() {
         managePOST('stop');
-    }
-
-    function restart() {
-        alert('TBD');
     }
 
     function backup() {

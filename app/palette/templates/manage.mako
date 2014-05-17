@@ -22,12 +22,6 @@
       </a>
     </li>
     <li>
-      <a name="popupRestart" class="popup-link inactive" id="restart"> 
-        <i class="fa fa-fw fa-repeat inactive"></i>
-        <span>Restart Application</span>
-      </a>
-    </li>
-        <li>
       <a name="popupBackup" class="popup-link inactive" id="backup"> 
         <i class="fa fa-fw fa-upload"></i>
         <span>Backup</span>
@@ -99,25 +93,6 @@
       </section>
       <section class="col-xs-6">
         <button id="stop-ok" class="p-btn p-btn-grey">Stop</button>
-      </section>
-    </section>
-  </section>
-  <div class="shade">&nbsp;</div>
-</article>
-
-<article class="popup" id="popupRestart">
-  <section class="popup-body">
-    <section class="row">
-      <section class="col-xs-12">
-        <p>Are you sure want to restart the <br/>Tableau Server?</p>
-      </section>
-    </section>
-    <section class="row">
-      <section class="col-xs-6">
-        <button class="p-btn p-btn-grey popup-close">Cancel</button>
-      </section>
-      <section class="col-xs-6">
-        <button id="restart-ok" class="p-btn p-btn-grey">Restart</button>
       </section>
     </section>
   </section>
