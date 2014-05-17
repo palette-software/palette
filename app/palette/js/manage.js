@@ -5,11 +5,12 @@ function (jquery, topic, template, common)
     var actions = {'start': start,
                    'stop': stop,
                    'restart': restart,
-                   'backup': backup,
-                   'restore': restore};
+                   'backup': backup};
 
     var templates = {'backup-list-template': null,
                      'archive-backup-template': null};
+
+    var allowed = [];
 
     function disableAll() {
         /* FIXME - do this with a class */
@@ -84,7 +85,8 @@ function (jquery, topic, template, common)
             console.log("'allowable-actions' missing from JSON data.");
             return;
         }
-        var allowed = data['allowable-actions'];
+        
+        allowed = data['allowable-actions'];
         for (var action in actions) {
             if (jquery.inArray(action, allowed) >= 0) {
                 $('#'+action).removeClass('inactive');
@@ -117,26 +119,25 @@ function (jquery, topic, template, common)
             jquery('#'+name).html(rendered);
         }
 
-        /*
-         * FIXME: (from common.js) Re-bind since this code runs after the
-         * AJAX request has returned - the HTML isn't ready in the first bind. 
-         */
-        jquery('.dropdown-menu li').bind('click', function(event) {
-            event.preventDefault();
-            var dropdownSelect = jquery(this).find('a').text();
-            jquery(this).parent().siblings().find('div').text(dropdownSelect);
-        });
+        common.setupDropdowns();
 
         jquery('li.backup a').bind('click', function(event) {
             event.preventDefault();
             var ts = jquery('span.timestamp', this).text();
             var filename = jquery('span.filename', this).text();
 
-            $('article.popup').removeClass('visible');
-            jquery('#restore-timestamp').html(ts);
-            jquery('#restore-filename').val(filename);
-            $('article.popup#restore-dialog').addClass('visible');
+            var popupLink = $(this).hasClass('inactive');
+            if (popupLink == false) {
+                jquery('article.popup').removeClass('visible');
+                jquery('#restore-timestamp').html(ts);
+                jquery('#restore-filename').val(filename);
+                jquery('article.popup#restore-dialog').addClass('visible');
+            }
         });
+
+        if (jquery.inArray('restore', allowed) >= 0) {
+            jquery('li.backup a').removeClass('inactive');
+        }
 
         jquery('#next-backup').html(data['next']);
     }

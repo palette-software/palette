@@ -278,6 +278,10 @@ article.popup p {
     font-size: 14px;
     color: #D3D3D3;
 }
+.secondary-side-bar ul.Logs li a.inactive {
+    color: #444;
+}
+
 .secondary-side-bar ul.Logs li a span.filename {
     display: none;
 }
