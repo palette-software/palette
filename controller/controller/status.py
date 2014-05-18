@@ -8,6 +8,7 @@ import platform
 import sqlalchemy
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 import meta
 
 from state import StateManager
@@ -23,8 +24,9 @@ class StatusEntry(meta.Base):
     STATUS_STOPPED="STOPPED"
     STATUS_DEGRADED="DEGRADED"
 
-    name = Column(String, unique=True, nullable=False, primary_key=True)
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False)
+    name = Column(String, nullable=False, primary_key=True)
+    agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False,\
+      primary_key=True)
     pid = Column(Integer)
     status = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
@@ -206,6 +208,39 @@ class StatusMonitor(threading.Thread):
 
         self.check_status_with_connection(aconn)
 
+    def get_agent_id_from_host(self, host):
+        # FIXME: As an optimization, look in the acon list before looking
+        #        in the database.
+
+        # Note: The passed host may be a hostname or an IP address.
+
+        agentid = None;
+
+        # FIXME: Should the caller pass us a session?
+        session = meta.Session()
+
+        try:
+            entry = session.query(AgentStatusEntry).\
+              filter(AgentStatusEntry.hostname == host).\
+              one()
+            agentid = entry.agentid;
+        except NoResultFound, e:
+            try:
+                entry = session.query(AgentStatusEntry).\
+                  filter(AgentStatusEntry.ip_address == host).\
+                  one()
+                agentid = entry.agentid;
+            except NoResultFound, e:
+                pass
+            except MultipleResultsFound, e:
+                # FIXME: log error
+                pass
+        except MultipleResultsFound, e:
+            # FIXME: log error
+            pass
+
+        return agentid
+
     def check_status_with_connection(self, aconn):
         agentid = aconn.agentid
 
@@ -219,89 +254,66 @@ class StatusMonitor(threading.Thread):
         body = body['stdout']
         lines = string.split(body, '\n')
 
-        if len(lines) < 1:
-            # fixme: Probably update the status table to say something's wrong.
-            self.log.error("Bad status returned.  Too few lines.")
-            return
-
-        # Find the line beginning with "Status:".
-        status = None
-        skip = 0
-        for line in lines:
-            parts = line.strip().split(' ')
-            skip = skip + 1
-            if parts[0] == 'Status:':
-                status = parts[1].strip()
-                break;
-        if status == None:
-            self.log.error("Bad status returned: no Tableau status line: " + \
-              str(lines))
-            return
-        if status == 'STOPPED':
-            skip = len(lines)
-
         session = meta.Session()
 
-        # Store the second part (like "RUNNING") into the database
         self.remove_all_status()
-        self.add(agentid, "Status", 0, status)
-        self.log.debug("Logging main status: %s", status)
         session.commit()
 
-        # Set the "main status" state according to the current status.
-        self.set_main_state(status)
-
-        for line in lines[skip:]:   # Skip the first line we already did.
-            line = line.strip()
-            if len(line) == 0:
-                self.log.debug("Ignoring line due to 0 length")
-                continue
-
-            parts = line.split(' ')
+        system_status = None;
+        for line in lines:
+            parts = line.strip().split(' ')
 
             # 'Tableau Server Repository Database' (1764) is running.
-            if parts[0] != "'Tableau" or parts[1] != 'Server':
-                #self.log.error("Bad status line, ignoring: " + parts[0])
-                #continue
+            if parts[0] == "'Tableau" and parts[1] == 'Server':
+                if agentid:
+                    status = parts[-1:][0]     # "running."
+                    status = status[:-1]       # "running" (no period)
+                    pid_part = parts[-3:-2][0] # "(1764)"
+                    pid_str = pid_part[1:-1]   # "1764"
+                    try:
+                        pid = int(pid_str)
+                    except:
+                        self.log.error("Bad PID: " + pid_str)
+                        continue
 
-                # FIXME: This is a temporary workaround. In a clustered configuration,
-                #        Tableau reports the status of multiple servers. Eventually,
-                #        we need to track all the status. For now, assume that the
-                #        primary status comes first, and that the first line that
-                #        does not begin with "Tableau Server" marks the demarcation
-                #        between the primary and the other servers.
-                break
+                    del parts[0:2]  # Remove 'Tableau' and 'Server'
+                    del parts[-3:]  # Remove ['(1764)', 'is', 'running.']
+                    name = ' '.join(parts)  # "Repository Database'"
+                    if name[-1:] == "'":
+                        name = name[:-1]    # Cut off trailing single quote (')
 
-            status = parts[-1:][0]      # "running."
-            status = status[:-1]         # "running" (no period)
-            pid_part = parts[-3:-2][0]  # "(1764)"
-            pid_str = pid_part[1:-1]        # "1764"
-            try:
-                pid = int(pid_str)
-            except:
-                self.log.error("Bad PID: " + pid_str)
-                continue
-
-            del parts[0:2]  # Remove 'Tableau' and 'Server'
-            del parts[-3:]  # Remove ['(1764)', 'is', 'running.']
-
-            name = ' '.join(parts)  # "Repository Database'"
-            if name[-1:] == "'":
-                name = name[:-1]    # Cut off trailing single quote (')
-
-            self.add(agentid, name, pid, status)
-            self.log.debug("logged: %s, %d, %s", name, pid, status)
+                    self.add(agentid, name, pid, status)
+                    self.log.debug("logged: %s, %d, %s", name, pid, status)
+                else:
+                    # FIXME: log error
+                    pass
+            elif parts[0] == 'Status:':
+                server_status = parts[1].strip()
+                if agentid:
+                    self.add(agentid, "Status", 0, server_status)
+                    if system_status == None or server_status == 'DEGRADED':
+                        system_status = server_status
+                else:
+                    # FIXME: log error
+                    pass
+            else:
+                host = parts[0].strip().replace(':','')
+                agentid = self.get_agent_id_from_host(host)
 
         session.commit()
 
-        return    # no debugging for now
-        # debug - try to get it back
-        self.log.debug("--------current status---------------")
-        all_status = self.get_all_status()
-        for status in all_status:
-            self.log.debug("status: %s (%d) %s", status.name, status.pid,
-                                                                status.status)
+        self.set_main_state(system_status)
+        self.log.debug("Logging main status: %s", system_status)
 
-        reported_status = self.get_reported_status()
-        self.log.debug("reported_status: %s: %s", reported_status.name,
-                                                    reported_status.status)
+        session.commit()
+
+        # debug - try to get it back
+        #self.log.debug("--------current status---------------")
+        #all_status = self.get_all_status()
+        #for status in all_status:
+        #    self.log.debug("status: %s (%d) %s", status.name, status.pid,
+        #                                                        status.status)
+        #
+        #reported_status = self.get_reported_status()
+        #self.log.debug("reported_status: %s: %s", reported_status.name,
+        #                                            reported_status.status)
