@@ -17,6 +17,7 @@ from alert import Alert
 from custom_alerts import CustomAlerts
 from filemanager import FileManager
 from firewall import Firewall
+from odbc import ODBC
 
 import meta
 from sqlalchemy import func, or_
@@ -52,6 +53,7 @@ class AgentConnection(object):
         self.user_action_lockobj = threading.Lock()
 
         self.filemanager = FileManager(self)
+        self.odbc = ODBC(self)
         self.firewall = Firewall(self)
 
     def lock(self):
