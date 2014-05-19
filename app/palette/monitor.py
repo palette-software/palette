@@ -99,8 +99,12 @@ class MonitorApplication(RESTApplication):
                 for entry in status_entries:
                     proc = {}
 
+                    if entry.pid == 0:
+                        continue
+
                     proc['pid'] = entry.pid
                     proc['name'] = entry.name
+                    proc['status'] = entry.status
                     proc['creation_time']  = str(entry.creation_time)[:19]
                     proc['modification_time'] = \
                                             str(entry.modification_time)[:19]
