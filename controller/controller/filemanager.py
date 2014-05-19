@@ -8,6 +8,7 @@ import exc
 class FileManager(object):
 
     def __init__(self, agent):
+        self.server = agent.server
         self.agent = agent
 
     def uri(self, path):
