@@ -39,7 +39,6 @@ from workbooks import WorkbookEntry, WorkbookManager
 
 from version import VERSION
 
-global manager # fixme
 global server # fixme
 global log # fixme
 
@@ -465,7 +464,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     # FIXME: print status too
     def list_agents(self):
-        agents = manager.all_agents()
+        agents = self.server.agentmanager.all_agents()
 
         if len(agents) == 0:
             self.print_client('{}')
@@ -888,7 +887,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         uuid = cmd.dict['uuid']
 
         # Note: aconn will be None if agent is not connected, which is OK
-        aconn = manager.agent_conn_by_uuid(uuid)
+        aconn = self.server.agentmanager.agent_conn_by_uuid(uuid)
 
         try:
             server.displayname_cmd(aconn, uuid, new_displayname)
@@ -896,6 +895,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         except ValueError, e:
             self.error(str(e))
 
+        body = {}
+        self.print_client(str(body))
     do_displayname.__usage__ = 'displayname new-displayname'
 
     def do_file(self, cmd):
@@ -1016,7 +1017,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         if opts.has_key('uuid'): # should never fail
             uuid = opts['uuid'] # may be None
             if uuid:
-                aconn = manager.agent_conn_by_uuid(uuid)
+                aconn = self.server.agentmanager.agent_conn_by_uuid(uuid)
                 if not aconn:
                     self.error("No connected agent with uuid=%s" % (uuid))
             else:
@@ -1078,7 +1079,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if body.has_key('error'):
             return body
 
-        agents = manager.all_agents()
+        agents = self.server.agentmanager.all_agents()
 
         # target_conn is the destination agent - if applicable.
         target_conn = None
@@ -1169,7 +1170,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("multiple backups found with name: %s" % \
               (backup))
 
-        aconn = manager.agent_conn_by_uuid(uuid)
+        aconn = self.agentmanager.agent_conn_by_uuid(uuid)
         if not aconn:
             return self.error("agent not connected: displayname=%s uuid=%s" % \
               (displayname, uuid))
@@ -1371,19 +1372,19 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if len(source_displayname) == 0 or len(source_path) == 0:
             return self.error("[ERROR] Invalid source specification.")
 
-        agents = manager.all_agents()
+        agents = self.server.agentmanager.all_agents()
         src = dst = None
 
         for key in agents.keys():
-            manager.lock()
+            self.server.agentmanager.lock()
             if not agents.has_key(key):
                 self.log.info(\
                     "copy_cmd: agent with uuid '%s' is now gone and " + \
                                                     "won't be checked.", key)
-                manager.unlock()
+                self.server.agentmanager.unlock()
                 continue
             agent = agents[key]
-            manager.unlock()
+            self.server.agentmanager.unlock()
 
             if agent.displayname == source_displayname:
                 src = agent
@@ -1593,7 +1594,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             # If the agent is initialization, then "agent_connected"
             # will not know about it yet.
-            if not aconn.initting and not manager.agent_connected(aconn):
+            if not aconn.initting and \
+                    not self.agentmanager.agent_connected(aconn):
                 self.log.info("Agent '%s' (type: '%s', uuid %s) " + \
                         "disconnected before finishing: %s",
                            aconn.displayname, aconn.agent_type, aconn.uuid, uri)
@@ -1677,10 +1679,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.error("Invalid maint action: %s", action)
             return self.error("Bad maint action: %s" % action)
 
+        manager = self.agentmanager
+
         # FIXME: Tie agent to domain
         if not aconn:
             aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
-
             if not aconn:
                 return self.error("maint: no primary agent is connected.")
 
@@ -1790,7 +1793,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """Sets displayname for the agent with the given hostname. At
            this point assumes hostname is unique in the database."""
 
-        manager.set_displayname(aconn, uuid, displayname)
+        self.agentmanager.set_displayname(aconn, uuid, displayname)
 
     def error(self, msg, return_dict={}):
         """Returns error dictionary in standard format.  If passed
@@ -1833,9 +1836,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         YML_CONFIG_FILE_PART=ntpath.join("data", "tabsvc", "config",
                                                             "workgroup.yml")
 
-        # The info() command requires a displayname.  This displayname is
-        # is temporary until we get info from the agent:
-        aconn.displayname = 'hostname: ' + aconn.auth['hostname']
+        # The info() command requires a displayname (for debug output).
+        # Temporarily use the hostname until the real value can be pulled
+        # from the database (or otherwise assigned).
+        aconn.displayname = aconn.auth['hostname'] + '*'
 
         body = self.info(aconn)
         if body.has_key("error"):
@@ -1913,6 +1917,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return True
 
     def remove_agent(self, aconn, reason="", send_alert=True):
+        manager = self.agentmanager
         manager.remove_agent(aconn, reason=reason, send_alert=send_alert)
         # FIXME: At the least, we need to add the domain to the check
         #        for a primary; better, however, would be to store the
@@ -1966,7 +1971,6 @@ def main():
 
     global server   # fixme
     global log      # fixme
-    global manager   # fixme
     global statusmon # fixme
 
     parser = argparse.ArgumentParser(description='Palette Controller')
@@ -2024,8 +2028,9 @@ def main():
 
     server.backup = BackupManager(server.domainid)
 
-    global manager  # fixme: get rid of this global.
     manager = AgentManager(server)
+    server.agentmanager = manager
+
     manager.update_last_disconnect_time()
     manager.start()
 
