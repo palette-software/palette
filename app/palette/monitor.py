@@ -101,7 +101,6 @@ class MonitorApplication(RESTApplication):
 
                     proc['pid'] = entry.pid
                     proc['name'] = entry.name
-                    proc['status'] = entry.status
                     proc['creation_time']  = str(entry.creation_time)[:19]
                     proc['modification_time'] = \
                                             str(entry.modification_time)[:19]
