@@ -991,6 +991,27 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.print_client(str(body))
     do_s3.__usage__ = '[GET|PUT] <bucket> <URI> [source-or-target]'
 
+    def do_sql(self, cmd):
+        """Run a SQL statement against the Tableau database."""
+
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
+            return
+
+        # FIXME: check for primary agent
+
+        if len(cmd.args) != 1:
+            self.usage(self.do_sql.__usage__)
+            return
+
+        stmt = cmd.args[0]
+        self.ack()
+
+        body = aconn.odbc.execute(stmt)
+        self.print_client(str(body))
+    do_sql.__usage__ = '<statement>'
+
     def do_nop(self, cmd):
         """usage: nop"""
 
