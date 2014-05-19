@@ -73,10 +73,11 @@ class MonitorApplication(RESTApplication):
             agent['listen_port'] = entry.listen_port
             agent['creation_time'] = str(entry.creation_time)[:19]
             agent['modification_time'] = str(entry.modification_time)[:19]
-            agent['last_connnection_time'] = str(entry.last_connection_time)[:19]
+            agent['last_connnection_time'] = \
+                                    str(entry.last_connection_time)[:19]
             agent['last_disconnect_time'] = str(entry.last_disconnect_time)[:19]
             if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
-                                                                entry.connected():
+                                                            entry.connected():
                 primary = entry
                 agent['color'] = color
             else:
@@ -84,35 +85,38 @@ class MonitorApplication(RESTApplication):
                     agent['color'] = 'green'
                 else:
                     agent['color'] = 'red'
+
+            if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY or \
+                        entry.agent_type == AgentManager.AGENT_TYPE_WORKER:
+
+                # Add tableau processes for this agent
+                status_entries = Session.query(StatusEntry).\
+                    filter(StatusEntry.agentid == entry.agentid).\
+                    order_by(StatusEntry.name).\
+                    all()
+
+                tableau_procs = []
+                for entry in status_entries:
+                    proc = {}
+
+                    proc['pid'] = entry.pid
+                    proc['name'] = entry.name
+                    proc['status'] = entry.status
+                    proc['creation_time']  = str(entry.creation_time)[:19]
+                    proc['modification_time'] = \
+                                            str(entry.modification_time)[:19]
+                    tableau_procs.append(proc)
+
+                agent['details'] = tableau_procs
+            else:
+                # For now, only primaries and workers have details
+                agent['details'] = []
+
             agents.append(agent)
-
-        # Get tableau processes' status and overall status.
-        status_entries = Session.query(StatusEntry).\
-            join(AgentStatusEntry).\
-            filter(AgentStatusEntry.domainid == self.domain.domainid).\
-            all()
-
-        tableau_status = "unknown"
-        tableau_procs = []
-        for entry in status_entries:
-            proc_entry = {}
-
-            if entry.name == 'Status':
-                tableau_status = entry.status
-
-            proc_entry['pid'] = entry.pid
-            proc_entry['name'] = entry.name
-            proc_entry['status'] = entry.status
-            proc_entry['creation_time']  = str(entry.creation_time)[:19] # no fraction
-            proc_entry['modification_time']  = str(entry.modification_time)[:19]
-
-            tableau_procs.append(proc_entry)
 
         environments = [ { "name": "My Servers", "agents": agents } ]
 
-        return {'tableau-status': tableau_status,
-                'tableau-procs': tableau_procs,
-                'state': main_state,
+        return {'state': main_state,
                 'allowable-actions': allowable_actions,
                 'text': text,
                 'color': color,
@@ -124,30 +128,6 @@ class MonitorApplication(RESTApplication):
         if req.environ['PATH_INFO'] == '/monitor':
             return self.handle_monitor(req)
         raise exc.HTTPBadRequest()
-
-class StatusDialog(DialogPage):
-
-    NAME = "status"
-    TEMPLATE = "status.mako"
-
-    def __init__(self, global_conf):
-        super(StatusDialog, self).__init__(global_conf)
-
-        domainname = store.get('palette', 'domainname')
-        self.domain = Domain.get_by_name(domainname)
-
-        self.status_entries = Session.query(StatusEntry).\
-            join(AgentStatusEntry).\
-            filter(AgentStatusEntry.domainid == self.domain.domainid).\
-            all()
-
-        # Dig out the main status and time
-        self.main_status = "Unknown"
-        self.status_time = "Unknown"
-        for entry in self.status_entries:
-            if entry.name == 'Status':
-                self.main_status = entry.status
-                self.status_time = str(entry.creation_time)[:19] # Cut off fraction
 
 class ConfigureMonitor(UserInterfaceRenderer):
 
