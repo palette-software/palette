@@ -174,6 +174,8 @@ function (jquery, topic, template, common)
         bind('#'+key, actions[key]);
     }
 
+    bind('#restore', restore);
+
     common.setupDialogs();
     common.setupDropdowns();
 
