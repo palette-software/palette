@@ -23,6 +23,7 @@ class MetaSession(object):
 
 meta.Session = MetaSession()
 
+import auth
 import monitor
 import backup
 import manage
