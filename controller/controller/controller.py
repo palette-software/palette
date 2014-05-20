@@ -23,6 +23,7 @@ import meta
 
 from agentmanager import AgentManager
 from agentstatus import AgentStatusEntry
+from auth import AuthManager
 from backup import BackupManager
 from state import StateManager
 from system import SystemManager
@@ -1011,6 +1012,36 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = aconn.odbc.execute(stmt)
         self.print_client(str(body))
     do_sql.__usage__ = '<statement>'
+
+    def do_auth(self, cmd):
+        """Work with the Tableau user data."""
+
+        if len(cmd.args) < 1:
+            self.usage(self.do_auth.__usage__)
+            return
+
+        action = cmd.args[0].lower()
+        
+        if action == 'import':
+            if len(cmd.args) != 1:
+                self.usage(self.do_auth.__usage__)
+                return
+            aconn = self.get_aconn(cmd.dict)
+            if not aconn:
+                self.error('agent not found')
+                return
+            body = self.server.auth.load(aconn)
+        elif action == 'verify':
+            if len(cmd.args) != 3:
+                self.usage(self.do_auth.__usage__)
+                return
+            result = self.server.auth.verify(cmd.args[1], cmd.args[2])
+            body = {u'status': result and 'OK' or 'INVALID'}
+        else:
+            self.usage(self.do_auth.__usage__)
+            return
+        self.print_client(str(body))
+    do_auth.__usage__ = "[import|verify] <username> <password>"
 
     def do_nop(self, cmd):
         """usage: nop"""
@@ -2043,6 +2074,9 @@ def main():
 
     custom_states = CustomStates()
     custom_states.populate()
+
+    server.auth = AuthManager(server)
+    UserProfile.populate()
 
     workbook_manager = WorkbookManager(server.domainid)
     workbook_manager.populate()
