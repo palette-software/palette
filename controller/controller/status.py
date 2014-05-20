@@ -111,6 +111,7 @@ class StatusMonitor(threading.Thread):
         return meta.Session().query(StatusEntry).\
             join(AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domainid).\
+            filter(AgentStatusEntry.agent_type == 'primary').\
             filter(StatusEntry.name == 'Status').\
             one().status
 
