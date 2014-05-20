@@ -31,3 +31,7 @@ def verify(secret, h):
 def encrypt(password):
     """ Returned format: $pbkdf2-digest$rounds$salt$checksum """
     return context.encrypt(password)
+
+import hashlib
+def tableau_encrypt(password, salt):
+    return hashlib.sha1(password + "fnord" + salt).hexdigest()
