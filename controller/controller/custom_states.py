@@ -133,7 +133,7 @@ class CustomStates(object):
 
             (StateManager.STATE_DEGRADED,
                 "Tableau is in a DEGRADED state.",
-                CustomStates.ACTION_NONE,
+                CustomStates.ACTION_STOP,
                 CustomStates.COLOR_RED),
 
             (StateManager.STATE_UNKNOWN,
