@@ -786,7 +786,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: check & report status to see if it really stopped?
         self.print_client(str(body))
 
-        # Get the latest status from tabadmin
+        # Get the latest status from tabadmin which sets the main state.
         statusmon.check_status_with_connection(aconn)
 
         # If the 'stop' had failed, set the status to what we just
@@ -1907,7 +1907,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                             yml_config_file, aconn.displayname)
 
             else:
-                aconn.agent_type = AgentManager.AGENT_TYPE_ARCHIVE
+                if server.agentmanager.is_tableau_worker(\
+                                                    aconn.auth['ip-address']):
+                    aconn.agent_type = AgentManager.AGENT_TYPE_WORKER
+                else:
+                    aconn.agent_type = AgentManager.AGENT_TYPE_ARCHIVE
 
         # Cleanup.
         if aconn.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
