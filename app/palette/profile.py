@@ -6,7 +6,6 @@ from akiri.framework.config import store
 from paste import fileapp
 from webob import exc
 
-from controller.meta import Session
 from controller.profile import UserProfile
 
 from configure import ConfigureRenderer

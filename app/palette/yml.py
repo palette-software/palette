@@ -2,7 +2,8 @@ from webob import exc
 
 from akiri.framework.api import RESTApplication
 
-from controller.meta import Session
+from akiri.framework.ext.sqlalchemy import meta
+
 from controller.agentinfo import AgentYmlEntry
 
 from configure import ConfigureRenderer
@@ -14,7 +15,7 @@ class YMLApplication(RESTApplication):
         if req.method != 'GET':
             raise exc.HTTPBadRequest();
         
-        query = Session.query(AgentYmlEntry).\
+        query = meta.Session.query(AgentYmlEntry).\
             order_by(AgentYmlEntry.key.asc())
 
         return {'items': [x.todict() for x in query.all()]}

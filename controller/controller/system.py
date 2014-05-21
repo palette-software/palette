@@ -1,10 +1,9 @@
-import sqlalchemy
 from sqlalchemy import Column, String, BigInteger, DateTime, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 
-import meta
+from akiri.framework.ext.sqlalchemy import meta
 
 class SystemEntry(meta.Base):
     __tablename__ = 'system'

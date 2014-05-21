@@ -4,11 +4,11 @@ import time
 import threading
 import platform
 
-import sqlalchemy
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
-import meta
+
+from akiri.framework.ext.sqlalchemy import meta
 
 class AgentStatusEntry(meta.Base):
     __tablename__ = 'agent'
