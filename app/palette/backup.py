@@ -15,7 +15,8 @@ from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.api import RESTApplication, UserInterfaceRenderer
 from akiri.framework.config import store
 
-from controller.meta import Session
+from akiri.framework.ext.sqlalchemy import meta
+
 from controller.backup import BackupEntry, BackupManager
 from controller.agentstatus import AgentStatusEntry
 from controller.domain import Domain
@@ -79,7 +80,7 @@ class BackupApplication(RESTApplication):
 
     def get_backup_entry_from_backup_name(self, name):
         try:
-            entry = Session.query(BackupEntry).\
+            entry = meta.Session.query(BackupEntry).\
                 join(AgentStatusEntry).\
                 filter(AgentStatusEntry.domainid == self.domain.domainid).\
                 filter(BackupEntry.name == name).\
@@ -91,7 +92,7 @@ class BackupApplication(RESTApplication):
 
     def get_displayname_by_agentid(self, agentid):
         try:
-            agent_entry = Session.query(AgentStatusEntry).\
+            agent_entry = meta.Session.query(AgentStatusEntry).\
                 filter(AgentStatusEntry.agentid == agentid).\
                 one()
         except NoResultFound, e:
@@ -100,7 +101,7 @@ class BackupApplication(RESTApplication):
         return agent_entry.displayname
 
     def get_last_backup(self):
-        last_db = Session.query(BackupEntry).\
+        last_db = meta.Session.query(BackupEntry).\
             join(AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domain.domainid).\
             order_by(BackupEntry.creation_time.desc()).\
@@ -162,7 +163,7 @@ class BackupDialog(DialogPage):
         self.domain = Domain.get_by_name(domainname)
 
         # FIXME: use a mapping here.
-        query = Session.query(BackupEntry, AgentStatusEntry).\
+        query = meta.Session.query(BackupEntry, AgentStatusEntry).\
             join(AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domain.domainid).\
             order_by(BackupEntry.creation_time.desc())

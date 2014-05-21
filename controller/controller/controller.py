@@ -19,7 +19,7 @@ import ntpath
 
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker, scoped_session
-import meta
+from akiri.framework.ext.sqlalchemy import meta
 
 from agentmanager import AgentManager
 from agentstatus import AgentStatusEntry

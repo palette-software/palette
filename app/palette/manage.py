@@ -10,7 +10,8 @@ import sqlalchemy
 from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy.schema import ForeignKey
 
-from controller.meta import Session
+from akiri.framework.ext.sqlalchemy import meta
+
 from controller.agentstatus import AgentStatusEntry
 from controller.domain import Domain
 
@@ -70,7 +71,7 @@ class ManageAdvancedDialog(DialogPage):
         domainname = store.get('palette', 'domainname')
         self.domain = Domain.get_by_name(domainname)
 
-        self.agents = Session.query(AgentStatusEntry).\
+        self.agents = meta.Session.query(AgentStatusEntry).\
           filter(AgentStatusEntry.domainid == self.domain.domainid).\
           order_by(AgentStatusEntry.last_connection_time.desc()).\
           all()

@@ -9,7 +9,8 @@ import sys
 from akiri.framework.api import RESTApplication, DialogPage, UserInterfaceRenderer
 from akiri.framework.config import store
 
-from controller.meta import Session
+from akiri.framework.ext.sqlalchemy import meta
+
 from controller.status import StatusEntry
 from controller.state import StateManager
 from controller.agentstatus import AgentStatusEntry
@@ -54,7 +55,7 @@ class MonitorApplication(RESTApplication):
         else:
             user_action_in_progress = True
 
-        agent_entries = Session.query(AgentStatusEntry).\
+        agent_entries = meta.Session.query(AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domain.domainid).\
             order_by(AgentStatusEntry.display_order).\
             all()
@@ -90,7 +91,7 @@ class MonitorApplication(RESTApplication):
                         entry.agent_type == AgentManager.AGENT_TYPE_WORKER:
 
                 # Add tableau processes for this agent
-                status_entries = Session.query(StatusEntry).\
+                status_entries = meta.Session.query(StatusEntry).\
                     filter(StatusEntry.agentid == entry.agentid).\
                     order_by(StatusEntry.name).\
                     all()

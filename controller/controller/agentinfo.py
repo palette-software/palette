@@ -1,7 +1,6 @@
-import sqlalchemy
 from sqlalchemy import Column, String, BigInteger, Integer, Boolean
 from sqlalchemy.schema import ForeignKey
-import meta
+from akiri.framework.ext.sqlalchemy import meta
 
 class AgentYmlEntry(meta.Base):
     __tablename__ = "agent_yml"

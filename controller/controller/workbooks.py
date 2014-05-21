@@ -1,8 +1,8 @@
 import time
-import sqlalchemy
 from sqlalchemy import Column, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey
-import meta
+
+from akiri.framework.ext.sqlalchemy import meta
 
 class WorkbookEntry(meta.Base):
     __tablename__ = "workbooks"

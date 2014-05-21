@@ -1,9 +1,8 @@
 import json
 
-import sqlalchemy
 from sqlalchemy import Column, String, BigInteger, DateTime, func
 
-import meta
+from akiri.framework.ext.sqlalchemy import meta
 
 class XIDEntry(meta.Base):
     __tablename__ = 'xid'

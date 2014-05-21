@@ -2,8 +2,9 @@ from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
+from akiri.framework.ext.sqlalchemy import meta
+
 from agentstatus import AgentStatusEntry
-import meta
 
 class BackupEntry(meta.Base):
     __tablename__ = 'backup'

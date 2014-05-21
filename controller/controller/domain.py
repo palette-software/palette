@@ -1,9 +1,8 @@
-import sqlalchemy
 from sqlalchemy import Column, String, BigInteger, DateTime, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
-import meta
+from akiri.framework.ext.sqlalchemy import meta
 
 class DomainEntry(meta.Base):
     __tablename__ = 'domain'

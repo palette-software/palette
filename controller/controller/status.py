@@ -5,11 +5,10 @@ import time
 import threading
 import platform
 
-import sqlalchemy
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
-import meta
+from akiri.framework.ext.sqlalchemy import meta
 
 from state import StateManager
 from agentmanager import AgentManager
