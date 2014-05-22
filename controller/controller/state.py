@@ -1,5 +1,4 @@
 import platform
-import meta
 from system import SystemManager
 
 class StateManager(object):

@@ -1,7 +1,7 @@
-import sqlalchemy
 from sqlalchemy import Column, BigInteger, String
 from sqlalchemy.orm.exc import NoResultFound
-import meta
+
+from akiri.framework.ext.sqlalchemy import meta
 
 from state import StateManager
 

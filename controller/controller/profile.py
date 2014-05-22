@@ -1,9 +1,7 @@
-import sqlalchemy
-
-import meta
-
 from sqlalchemy import Column, String, Integer, Boolean, Unicode
 from sqlalchemy.orm.exc import NoResultFound
+
+from akiri.framework.ext.sqlalchemy import meta
 
 from rbac import User
 

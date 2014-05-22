@@ -18,9 +18,9 @@ from custom_alerts import CustomAlerts
 from filemanager import FileManager
 from firewall import Firewall
 
-import meta
 from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
+from akiri.framework.ext.sqlalchemy import meta
 
 # The Controller's Agent Manager.
 # Communicates with the Agent.
