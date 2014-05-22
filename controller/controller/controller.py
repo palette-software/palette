@@ -37,6 +37,7 @@ from custom_states import CustomStates
 from event import EventManager, EventEntry
 from extracts import ExtractsEntry
 from workbooks import WorkbookEntry, WorkbookManager
+from s3 import S3
 
 from version import VERSION
 
@@ -978,38 +979,47 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error('agent not found')
             return
 
-        if len(cmd.args) < 3 or len(cmd.args) > 4:
+        if len(cmd.args) != 3 or len(cmd.args) > 4:
             self.usage(self.do_s3.__usage__)
             return
 
         action = cmd.args[0].upper()
-        bucket = cmd.args[1]
-        uri = cmd.args[2]
+        name = cmd.args[1]
+        keypath = cmd.args[2]
 
-        if len(cmd.args) == 3:
-            if action != 'GET':
-                self.usage(self.do_s3.__usage__)
-                return
-            L = uri.rsplit('/', 1)
-            if len(L) == 2:
-                path = L[1]
-            path = uri
-        elif len(cmd.args) == 4:
-            path = cmd.args[3]
+        entry = S3.get_by_name(name)
+        if not entry:
+            self.error("s3 instance '" + name + "' not found.")
+            return
+
+        if 'install-dir' not in aconn.auth:
+            self.error("agent connection is missing 'install-dir'")
+            return
+        install_dir = aconn.auth['install-dir']
+        data_dir = ntpath.join(install_dir, 'data')
 
         self.ack()
 
-        command = Controller.PS3_BIN+' %s %s %s "%s"' % \
-            (action, bucket, uri, path)
+        resource = os.path.basename(keypath)
+        token = entry.get_token(resource)
 
-        env = {'ACCESS_KEY': 'XXX',
-               'SECRET_KEY': 'YYYYYY',
-               'SESSION': 'ZZZZZZZZZZ' }
+        command = Controller.PS3_BIN+' %s %s "%s"' % \
+            (action, entry.bucket, keypath)
+
+        env = {u'ACCESS_KEY': token.credentials.access_key,
+               u'SECRET_KEY': token.credentials.secret_key,
+               u'SESSION': token.credentials.session_token,
+               u'REGION_ENDPOINT': entry.region,
+               u'PWD': data_dir}
 
         # Send command to the agent
         body = server.cli_cmd(command, aconn, env=env)
+
+        body[u'env'] = env
+        body[u'resource'] = resource
+
         self.print_client(str(body))
-    do_s3.__usage__ = '[GET|PUT] <bucket> <URI> [source-or-target]'
+    do_s3.__usage__ = '[GET|PUT] <bucket> <key-or-path>'
 
     def do_sql(self, cmd):
         """Run a SQL statement against the Tableau database."""
