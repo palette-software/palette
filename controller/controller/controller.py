@@ -348,9 +348,22 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, "FAIL: Busy with another user request."
             return
 
+        stateman = self.server.stateman
+        main_state = stateman.get_state()
+        if main_state == StateManager.STATE_STARTED:
+            stateman.update(StateManager.STATE_STARTED_BACKUPDEL)
+        elif main_state == StateManager.STATE_STOPPED:
+            stateman.update(StateManager.STATE_STOPPED_BACKUPDEL)
+        else:
+            print >> self.wfile, "FAIL: Main state is %s." % (main_state)
+            aconn.user_action_unlock()
+            return
+
         self.ack()
         body = server.backupdel_cmd(backup)
         self.print_client("%s", str(body))
+
+        stateman.update(main_state)
 
         aconn.user_action_unlock()
     do_backupdel.__usage__ = 'backupdel backup-name'
@@ -1066,6 +1079,17 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, "FAIL: Busy with another user request."
             return
 
+        stateman = self.server.stateman
+        main_state = stateman.get_state()
+        if main_state == StateManager.STATE_STARTED:
+            stateman.update(StateManager.STATE_STARTED_ZIPLOGS)
+        elif main_state == StateManager.STATE_STOPPED:
+            stateman.update(StateManager.STATE_STOPPED_ZIPLOGS)
+        else:
+            print >> self.wfile, "FAIL: Main state is %s." % (main_state)
+            aconn.user_action_unlock()
+            return
+
         # FIXME: Do we want to send alerts?
         #server.alert.send(CustomAlerts.BACKUP_STARTED)
         self.ack()
@@ -1081,6 +1105,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             # FIXME: Do we want to send alerts?
             #server.alert.send(CustomAlerts.ZIPLOGS_FAILED, body)
             pass
+
+        stateman.update(main_state)
 
         aconn.user_action_unlock();
     do_ziplogs.__usage__ = 'ziplogs'

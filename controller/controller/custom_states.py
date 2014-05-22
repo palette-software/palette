@@ -94,6 +94,16 @@ class CustomStates(object):
                 CustomStates.ACTION_NONE,
                 CustomStates.COLOR_GREEN),
 
+            (StateManager.STATE_STOPPED_BACKUPDEL,
+                "Deleting a backup.  Tableau is stopped.",
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_RED),
+
+            (StateManager.STATE_STOPPED_ZIPLOGS,
+                "Running ziplogs.  Tableau is stopped.",
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_RED),
+
             (StateManager.STATE_STARTING,
                 "Starting Tableau.",
                 CustomStates.ACTION_NONE,
@@ -128,6 +138,16 @@ class CustomStates(object):
             # backup for/before stop
             (StateManager.STATE_STARTED_BACKUP_STOP,
                 "Performing a backup before Tableau is stopped.",
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_GREEN),
+
+            (StateManager.STATE_STARTED_BACKUPDEL,
+                "Deleting a backup.  Tableau is running.",
+                CustomStates.ACTION_NONE,
+                CustomStates.COLOR_GREEN),
+
+            (StateManager.STATE_STARTED_ZIPLOGS,
+                "Running ziplogs.  Tableau is running.",
                 CustomStates.ACTION_NONE,
                 CustomStates.COLOR_GREEN),
 
