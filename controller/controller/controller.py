@@ -1131,7 +1131,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if body.has_key('error'):
             return body
 
-        agents = self.server.agentmanager.all_agents()
+        agents = self.agentmanager.all_agents()
 
         # target_conn is the destination agent - if applicable.
         target_conn = None
@@ -1191,11 +1191,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 # Remove the backup file from the primary
                 remove_body = self.delete_file(aconn, backup_path)
 
+                body['info'] = \
+                    "Backup file copied to '%s'" % target_conn.displayname
+
                 # Check if the DEL worked.
                 if remove_body.has_key('error'):
-                    body['info'] = ("DEL of backup file failed after copy. "+\
-                        "file: '%s'. Error was: %s") \
-                        % (backup_path, remove_body['error'])
+                    body['info'] += \
+                        ("\nDEL of backup file failed after copy. "+\
+                            "file: '%s'. Error was: %s") \
+                            % (backup_path, remove_body['error'])
         else:
             backup_loc = aconn
             # Backup file remains on the primary.
@@ -1424,19 +1428,19 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if len(source_displayname) == 0 or len(source_path) == 0:
             return self.error("[ERROR] Invalid source specification.")
 
-        agents = self.server.agentmanager.all_agents()
+        agents = self.agentmanager.all_agents()
         src = dst = None
 
         for key in agents.keys():
-            self.server.agentmanager.lock()
+            self.agentmanager.lock()
             if not agents.has_key(key):
                 self.log.info(\
                     "copy_cmd: agent with uuid '%s' is now gone and " + \
                                                     "won't be checked.", key)
-                self.server.agentmanager.unlock()
+                self.agentmanager.unlock()
                 continue
             agent = agents[key]
-            self.server.agentmanager.unlock()
+            self.agentmanager.unlock()
 
             if agent.displayname == source_displayname:
                 src = agent
@@ -1454,6 +1458,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if not src or not dst:
             return self.error(msg)
+
+        # Enable the firewall port on the source host.
+        self.log.debug("Enabling firewall port %d on src host '%s'", \
+                                    server.xfer_port, src.displayname)
+#        fw_body = src.firewall.enable(server.xfer_port)
+#        if fw_body.has_key("error"):
+        if 0:
+            self.log.err(\
+                "firewall enable port %d on src host %s failed with: %s",
+                server.xfer_port, src.displayname)
+            return fw_body
 
         source_ip = src.auth['ip-address']
 
@@ -1644,15 +1659,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.debug("about to get status of cli command '%s', xid %d",
                            orig_cli_command, xid)
 
-            # If the agent is initialization, then "agent_connected"
+            # If the agent is initializing, then "agent_connected"
             # will not know about it yet.
             if not aconn.initting and \
                     not self.agentmanager.agent_connected(aconn):
                 self.log.info("Agent '%s' (type: '%s', uuid %s) " + \
                         "disconnected before finishing: %s",
                            aconn.displayname, aconn.agent_type, aconn.uuid, uri)
-                return self.error("Agent '%s' (type: '%s', uuid %s) " + \
-                    "disconnected before finishing: %s" %
+                return self.error(("Agent '%s' (type: '%s', uuid %s) " + \
+                    "disconnected before finishing: %s") %
                         (aconn.displayname, aconn.agent_type, aconn.uuid, uri))
 
             aconn.lock()
@@ -2064,10 +2079,11 @@ def main():
     server.config = config
     server.log = log
     server.cli_get_status_interval = \
-      config.get('controller', 'cli_get_status_interval', default=10)
+      config.getint('controller', 'cli_get_status_interval', default=10)
 
     server.domainname = config.get('palette', 'domainname')
     server.domain = Domain()
+    server.xfer_port = config.getint('palette', 'xfer_port', default=8889)
     # FIXME: Pre-production hack: add domain if necessary
     server.domain.add(server.domainname)
     server.domainid = server.domain.id_by_name(server.domainname)
