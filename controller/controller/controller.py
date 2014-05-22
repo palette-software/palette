@@ -344,9 +344,15 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
         backup = cmd.args[0]
 
+        if not aconn.user_action_lock(blocking=False):
+            print >> self.wfile, "FAIL: Busy with another user request."
+            return
+
         self.ack()
         body = server.backupdel_cmd(backup)
         self.print_client("%s", str(body))
+
+        aconn.user_action_unlock()
     do_backupdel.__usage__ = 'backupdel backup-name'
 
     def do_restore(self, cmd):
@@ -1056,6 +1062,10 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error('agent not found.')
             return
 
+        if not aconn.user_action_lock(blocking=False):
+            print >> self.wfile, "FAIL: Busy with another user request."
+            return
+
         # FIXME: Do we want to send alerts?
         #server.alert.send(CustomAlerts.BACKUP_STARTED)
         self.ack()
@@ -1071,6 +1081,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             # FIXME: Do we want to send alerts?
             #server.alert.send(CustomAlerts.ZIPLOGS_FAILED, body)
             pass
+
+        aconn.user_action_unlock();
     do_ziplogs.__usage__ = 'ziplogs'
 
     def do_nop(self, cmd):
