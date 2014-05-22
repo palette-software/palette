@@ -1,8 +1,7 @@
-import sqlalchemy
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
-import meta
+from akiri.framework.ext.sqlalchemy import meta
 
 class CustomAlertsEntry(meta.Base):
     __tablename__ = "custom_alerts"

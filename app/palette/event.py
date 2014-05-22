@@ -5,7 +5,8 @@ from webob import exc
 from akiri.framework.api import RESTApplication
 from akiri.framework.config import store
 
-from controller.meta import Session
+from akiri.framework.ext.sqlalchemy import meta
+
 from controller.domain import Domain
 from controller.event import EventEntry
 from controller.custom_states import CustomStates
@@ -115,15 +116,15 @@ class EventApplication(RESTApplication):
         events = self.event_query(start, end, low, high, order)
 
         # Count the number of red, yellow and green events.
-        red_count = len(Session.query(EventEntry).\
+        red_count = len(meta.Session.query(EventEntry).\
                     filter(EventEntry.color == CustomStates.COLOR_RED).all())
-        yellow_count = len(Session.query(EventEntry).\
+        yellow_count = len(meta.Session.query(EventEntry).\
                     filter(EventEntry.color == CustomStates.COLOR_YELLOW).all())
-        green_count = len(Session.query(EventEntry).\
+        green_count = len(meta.Session.query(EventEntry).\
                     filter(EventEntry.color == CustomStates.COLOR_GREEN).all())
 
         # Get the list of all event_types found.
-        query = Session.query(EventEntry).\
+        query = meta.Session.query(EventEntry).\
             distinct(EventEntry.event_type).\
             order_by(EventEntry.event_type).\
             all()
@@ -137,7 +138,7 @@ class EventApplication(RESTApplication):
     def event_query(self, start, end, low, high, order):
 #        print "start:", start, ", end:", end, ", low:",low, ", high:", high,
 #        print ", order:", order
-        query = Session.query(EventEntry).\
+        query = meta.Session.query(EventEntry).\
             filter(EventEntry.domainid == self.domainid)
 
         if type(start) == int or type(end) == int:

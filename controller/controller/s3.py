@@ -1,6 +1,5 @@
 from sqlalchemy import Column, BigInteger, String
-
-import meta
+from akiri.framework.ext.sqlalchemy import meta
 
 class S3(meta.Base):
     __tablename__ = 's3'

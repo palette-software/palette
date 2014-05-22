@@ -5,7 +5,8 @@ from webob import exc
 from akiri.framework.api import RESTApplication
 from akiri.framework.config import store
 
-from controller.meta import Session
+from akiri.framework.ext.sqlalchemy import meta
+
 from controller.domain import Domain
 from controller.extracts import ExtractsEntry
 
@@ -31,7 +32,7 @@ class ExtractsApplication(RESTApplication):
         self.domainid = Domain.get_by_name(domainname).domainid
 
     def handle_get(self, req):
-        query = Session.query(ExtractsEntry).\
+        query = meta.Session.query(ExtractsEntry).\
             filter(ExtractsEntry.domainid == self.domainid).\
             order_by(ExtractsEntry.extractid.asc()).\
             all()

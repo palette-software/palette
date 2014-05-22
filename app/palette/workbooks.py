@@ -5,7 +5,8 @@ from webob import exc
 from akiri.framework.api import RESTApplication
 from akiri.framework.config import store
 
-from controller.meta import Session
+from akiri.framework.ext.sqlalchemy import meta
+
 from controller.domain import Domain
 from controller.workbooks import WorkbookEntry, WorkbookUpdatesEntry
 
@@ -22,7 +23,7 @@ class WorkbookApplication(RESTApplication):
         self.domainid = Domain.get_by_name(domainname).domainid
 
     def handle_get(self, req):
-        query = Session.query(WorkbookEntry).\
+        query = meta.Session.query(WorkbookEntry).\
             all()
 
         workbooks = []
@@ -32,7 +33,7 @@ class WorkbookApplication(RESTApplication):
             workbook['summary'] = entry.summary
             workbook['color'] = entry.color
 
-            update_query = Session.query(WorkbookUpdatesEntry).\
+            update_query = meta.Session.query(WorkbookUpdatesEntry).\
                 filter(WorkbookUpdatesEntry.domainid == self.domainid).\
                 filter(WorkbookUpdatesEntry.workbookid == entry.workbookid).\
                 all()
