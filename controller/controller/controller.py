@@ -346,7 +346,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
         body = server.backupdel_cmd(backup)
-        self.report_status(body)
+        self.print_client("%s", str(body))
     do_backupdel.__usage__ = 'backupdel backup-name'
 
     def do_restore(self, cmd):
@@ -1901,7 +1901,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         cmd = 'tabadmin ziplogs -l -n -a \\\"%s\\\"' % ziplog_path
         body = self.cli_cmd(cmd, aconn)
-        body['info'] = 'tabadmin ziplogs -l -n -a ziplog_name'
+        body[u'info'] = u'tabadmin ziplogs -l -n -a ziplog_name'
         return body
 
     def error(self, msg, return_dict={}):
