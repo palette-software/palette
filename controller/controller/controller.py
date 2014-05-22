@@ -1043,6 +1043,36 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.print_client(str(body))
     do_auth.__usage__ = "[import|verify] <username> <password>"
 
+    def do_ziplogs(self, cmd):
+        """Run 'tabadmin ziplogs'."""
+
+        target = None
+        if len(cmd.args) != 0:
+            self.usage(self.do_backup.__usage__)
+            return
+
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found.')
+            return
+
+        # FIXME: Do we want to send alerts?
+        #server.alert.send(CustomAlerts.BACKUP_STARTED)
+        self.ack()
+
+        body = server.ziplogs_cmd(aconn)
+
+        self.print_client("%s", str(body))
+        if not body.has_key('error'):
+            # FIXME: Do we want to send alerts?
+            #server.alert.send(CustomAlerts.ZIPLOGS_FINISHED, body)
+            pass
+        else:
+            # FIXME: Do we want to send alerts?
+            #server.alert.send(CustomAlerts.ZIPLOGS_FAILED, body)
+            pass
+    do_ziplogs.__usage__ = 'ziplogs'
+
     def do_nop(self, cmd):
         """usage: nop"""
 
@@ -1118,8 +1148,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def backup_cmd(self, aconn, target=None):
         """Perform a backup - not including any necessary migration."""
-        # Example name: Jan27_162225.tsbak
-        backup_name = time.strftime("%b%d_%H%M%S") + ".tsbak"
+        # Example name: 20140127_162225.tsbak
+        backup_name = time.strftime("%Y%m%d_%H%M%S") + ".tsbak"
 
         # aconn is the primary
         install_dir = aconn.auth['install-dir']
@@ -1861,6 +1891,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
            this point assumes hostname is unique in the database."""
 
         self.agentmanager.set_displayname(aconn, uuid, displayname)
+
+    def ziplogs_cmd(self, aconn, target=None):
+        """Run tabadmin ziplogs'."""
+        
+        ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
+        install_dir = aconn.auth['install-dir']
+        ziplog_path = ntpath.join(install_dir, "Data", ziplog_name)
+
+        cmd = 'tabadmin ziplogs -l -n -a \\\"%s\\\"' % ziplog_path
+        body = self.cli_cmd(cmd, aconn)
+        body['info'] = 'tabadmin ziplogs -l -n -a ziplog_name'
+        return body
 
     def error(self, msg, return_dict={}):
         """Returns error dictionary in standard format.  If passed
