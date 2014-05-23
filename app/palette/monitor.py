@@ -15,6 +15,7 @@ from controller.status import StatusEntry
 from controller.state import StateManager
 from controller.agentstatus import AgentStatusEntry
 from controller.agentmanager import AgentManager
+from controller.agentinfo import AgentVolumesEntry
 from controller.domain import Domain
 from controller.custom_states import CustomStates
 
@@ -123,6 +124,13 @@ class MonitorApplication(RESTApplication):
                 # For now, only primaries and workers have details
                 agent['details'] = []
 
+            # Add in disk space information
+            volume_entries = meta.Session.query(AgentVolumesEntry).\
+                filter(AgentVolumesEntry.agentid == entry.agentid).\
+                order_by(AgentVolumesEntry.name).\
+                all()
+
+            agent['volumes'] = [x.todict() for x in volume_entries]
             agents.append(agent)
 
         environments = [ { "name": "My Servers", "agents": agents } ]

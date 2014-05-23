@@ -50,6 +50,19 @@ class AgentVolumesEntry(meta.Base):
     archive = Column(Boolean)
     archive_limit = Column(BigInteger)
 
+    def todict(self):
+        return {'name': self.name,
+                'vol_type': self.vol_type,
+                'label': self.label,
+                'drive_format': self.drive_format,
+                'size': self.size,
+                'free': self.free,
+                'system': self.system,
+                'archive': self.archive,
+                'archive_limit': self.archive_limit
+                }
+
+
     @classmethod
     def build(cls, agentid, volume):
 
@@ -92,6 +105,7 @@ class AgentVolumesEntry(meta.Base):
                     filter(AgentVolumesEntry.agentid == agentid).\
                     filter(AgentVolumesEntry.vol_type == "Fixed").\
                     filter(AgentVolumesEntry.archive == True).\
+                    filter(AgentVolumesEntry.free >= min_needed).\
                     filter(AgentVolumesEntry.archive_limit >= min_needed).\
                     one()   # for now, choosen any one - no particular order.
 
