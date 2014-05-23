@@ -42,18 +42,6 @@
             <li><a href="#">System</a></li>
           </ul>
         </div>
-        <div class="btn-group pull-right">
-          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><i class="fa fa-fw fa-calendar"></i> Select Date<span class="caret"></span>
-          </button>
-          <ul class="dropdown-menu" role="menu">
-            <li><a href="#">1 Week ago</a></li>
-            <li><a href="#">2 Weeks ago</a></li>
-            <li><a href="#">1 Month ago</a></li>
-            <li><a href="#">2 Months ago</a></li>
-            <li><a href="#">3 Months ago</a></li>
-            <li><a href="#">6 Months ago</a></li>
-          </ul>
-        </div>
       </section>
     </section>
   </section>

@@ -17,6 +17,7 @@ from alert import Alert
 from custom_alerts import CustomAlerts
 from filemanager import FileManager
 from firewall import Firewall
+from odbc import ODBC
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
@@ -52,6 +53,7 @@ class AgentConnection(object):
         self.user_action_lockobj = threading.Lock()
 
         self.filemanager = FileManager(self)
+        self.odbc = ODBC(self)
         self.firewall = Firewall(self)
 
     def lock(self):
@@ -170,11 +172,44 @@ class AgentManager(threading.Thread):
             stateman = StateManager(self.server)
             stateman.update(StateManager.STATE_PENDING)
 
+            # Check to see if we need to reclassify archive agents as
+            # worker agents.  For example, a worker may have
+            # connected before the primary ever connected with its
+            # yml file that tells us the ip addresses of workers.
+            self.set_agent_types()
+
             # Tell the status thread to start getting status on
             # the new primary.
             self.new_primary_event.set()
 
         self.unlock()
+
+    def set_agent_types(self):
+        """Look through the list of agents and reclassify archive agents as
+        worker agents if needed.  For example, a worker may have
+        connected and set as "archive" before the primary ever connected
+        with its yml file that tells us the ip addresses of workers.
+        """
+        session = meta.Session()
+
+        rows = session.query(AgentStatusEntry).\
+            filter(AgentStatusEntry.agent_type != \
+                                        AgentManager.AGENT_TYPE_PRIMARY).\
+            all()
+
+        for entry in rows:
+            if self.is_tableau_worker(entry.ip_address):
+                agent_type = AgentManager.AGENT_TYPE_WORKER
+            else:
+                agent_type = AgentManager.AGENT_TYPE_ARCHIVE
+
+            if entry.agent_type != agent_type:
+#                print "Correcting agent type from", entry.agent_type, "to", agent_type
+                # Set the agent to the correct type.
+                entry.agent_type = agent_type
+                session.merge(entry)
+
+        session.commit()
 
     def calc_new_displayname(self, new_agent):
         """
@@ -288,6 +323,35 @@ class AgentManager(threading.Thread):
             for volume in value:
                 entry = AgentVolumesEntry.build(entry.agentid, volume)
                 session.add(entry)
+
+    def is_tableau_worker(self, ip):
+        """Returns True if the passed ip adress (string) is
+           known to be a tableau worker host.  The type of tableau host is
+           reported in the tableau primary host's yml file on the
+           "worker.hosts" line.  For example:
+                worker.hosts:  DEV-PRIMARY, 10.0.0.102
+            The first host is the primary, and subsequent hosts
+            are the workers.
+        """
+
+        session = meta.Session()
+        query = session.query(AgentYmlEntry).\
+            filter(AgentYmlEntry.key == "worker.hosts").first()
+
+        if not query:
+            return False    # We don't know what it is until primary yml file
+
+        # The value is in the format:
+        #       "DEV-PRIMARY, 10.0.0.102"
+        # where the first host is the primary and the remaining are
+        # Tableau workers.
+        hosts = [x.strip() for x in query.value.split(',')]
+        if len(hosts) == 1:
+            return False
+        if ip in hosts:
+            return True
+        else:
+            return False
 
     def set_displayname(self, aconn, uuid, displayname):
         session = meta.Session()

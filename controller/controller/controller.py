@@ -23,6 +23,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from agentmanager import AgentManager
 from agentstatus import AgentStatusEntry
+from auth import AuthManager
 from backup import BackupManager
 from state import StateManager
 from system import SystemManager
@@ -36,10 +37,10 @@ from custom_states import CustomStates
 from event import EventManager, EventEntry
 from extracts import ExtractsEntry
 from workbooks import WorkbookEntry, WorkbookManager
+from s3 import S3
 
 from version import VERSION
 
-global manager # fixme
 global server # fixme
 global log # fixme
 
@@ -344,9 +345,28 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
         backup = cmd.args[0]
 
+        if not aconn.user_action_lock(blocking=False):
+            print >> self.wfile, "FAIL: Busy with another user request."
+            return
+
+        stateman = self.server.stateman
+        main_state = stateman.get_state()
+        if main_state == StateManager.STATE_STARTED:
+            stateman.update(StateManager.STATE_STARTED_BACKUPDEL)
+        elif main_state == StateManager.STATE_STOPPED:
+            stateman.update(StateManager.STATE_STOPPED_BACKUPDEL)
+        else:
+            print >> self.wfile, "FAIL: Main state is %s." % (main_state)
+            aconn.user_action_unlock()
+            return
+
         self.ack()
         body = server.backupdel_cmd(backup)
-        self.report_status(body)
+        self.print_client("%s", str(body))
+
+        stateman.update(main_state)
+
+        aconn.user_action_unlock()
     do_backupdel.__usage__ = 'backupdel backup-name'
 
     def do_restore(self, cmd):
@@ -465,7 +485,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     # FIXME: print status too
     def list_agents(self):
-        agents = manager.all_agents()
+        agents = self.server.agentmanager.all_agents()
 
         if len(agents) == 0:
             self.print_client('{}')
@@ -787,7 +807,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: check & report status to see if it really stopped?
         self.print_client(str(body))
 
-        # Get the latest status from tabadmin
+        # Get the latest status from tabadmin which sets the main state.
         statusmon.check_status_with_connection(aconn)
 
         # If the 'stop' had failed, set the status to what we just
@@ -888,7 +908,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         uuid = cmd.dict['uuid']
 
         # Note: aconn will be None if agent is not connected, which is OK
-        aconn = manager.agent_conn_by_uuid(uuid)
+        aconn = self.server.agentmanager.agent_conn_by_uuid(uuid)
 
         try:
             server.displayname_cmd(aconn, uuid, new_displayname)
@@ -896,6 +916,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         except ValueError, e:
             self.error(str(e))
 
+        body = {}
+        self.print_client(str(body))
     do_displayname.__usage__ = 'displayname new-displayname'
 
     def do_file(self, cmd):
@@ -957,38 +979,147 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error('agent not found')
             return
 
-        if len(cmd.args) < 3 or len(cmd.args) > 4:
+        if len(cmd.args) != 3 or len(cmd.args) > 4:
             self.usage(self.do_s3.__usage__)
             return
 
         action = cmd.args[0].upper()
-        bucket = cmd.args[1]
-        uri = cmd.args[2]
+        name = cmd.args[1]
+        keypath = cmd.args[2]
 
-        if len(cmd.args) == 3:
-            if action != 'GET':
-                self.usage(self.do_s3.__usage__)
-                return
-            L = uri.rsplit('/', 1)
-            if len(L) == 2:
-                path = L[1]
-            path = uri
-        elif len(cmd.args) == 4:
-            path = cmd.args[3]
+        entry = S3.get_by_name(name)
+        if not entry:
+            self.error("s3 instance '" + name + "' not found.")
+            return
+
+        if 'install-dir' not in aconn.auth:
+            self.error("agent connection is missing 'install-dir'")
+            return
+        install_dir = aconn.auth['install-dir']
+        data_dir = ntpath.join(install_dir, 'data')
 
         self.ack()
 
-        command = Controller.PS3_BIN+' %s %s %s "%s"' % \
-            (action, bucket, uri, path)
+        resource = os.path.basename(keypath)
+        token = entry.get_token(resource)
 
-        env = {'ACCESS_KEY': 'XXX',
-               'SECRET_KEY': 'YYYYYY',
-               'SESSION': 'ZZZZZZZZZZ' }
+        command = Controller.PS3_BIN+' %s %s "%s"' % \
+            (action, entry.bucket, keypath)
+
+        env = {u'ACCESS_KEY': token.credentials.access_key,
+               u'SECRET_KEY': token.credentials.secret_key,
+               u'SESSION': token.credentials.session_token,
+               u'REGION_ENDPOINT': entry.region,
+               u'PWD': data_dir}
 
         # Send command to the agent
         body = server.cli_cmd(command, aconn, env=env)
+
+        body[u'env'] = env
+        body[u'resource'] = resource
+
         self.print_client(str(body))
-    do_s3.__usage__ = '[GET|PUT] <bucket> <URI> [source-or-target]'
+    do_s3.__usage__ = '[GET|PUT] <bucket> <key-or-path>'
+
+    def do_sql(self, cmd):
+        """Run a SQL statement against the Tableau database."""
+
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
+            return
+
+        # FIXME: check for primary agent
+
+        if len(cmd.args) != 1:
+            self.usage(self.do_sql.__usage__)
+            return
+
+        stmt = cmd.args[0]
+        self.ack()
+
+        body = aconn.odbc.execute(stmt)
+        self.print_client(str(body))
+    do_sql.__usage__ = '<statement>'
+
+    def do_auth(self, cmd):
+        """Work with the Tableau user data."""
+
+        if len(cmd.args) < 1:
+            self.usage(self.do_auth.__usage__)
+            return
+
+        action = cmd.args[0].lower()
+        
+        if action == 'import':
+            if len(cmd.args) != 1:
+                self.usage(self.do_auth.__usage__)
+                return
+            aconn = self.get_aconn(cmd.dict)
+            if not aconn:
+                self.error('agent not found')
+                return
+            body = self.server.auth.load(aconn)
+        elif action == 'verify':
+            if len(cmd.args) != 3:
+                self.usage(self.do_auth.__usage__)
+                return
+            result = self.server.auth.verify(cmd.args[1], cmd.args[2])
+            body = {u'status': result and 'OK' or 'INVALID'}
+        else:
+            self.usage(self.do_auth.__usage__)
+            return
+        self.print_client(str(body))
+    do_auth.__usage__ = "[import|verify] <username> <password>"
+
+    def do_ziplogs(self, cmd):
+        """Run 'tabadmin ziplogs'."""
+
+        target = None
+        if len(cmd.args) != 0:
+            self.usage(self.do_backup.__usage__)
+            return
+
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found.')
+            return
+
+        if not aconn.user_action_lock(blocking=False):
+            print >> self.wfile, "FAIL: Busy with another user request."
+            return
+
+        stateman = self.server.stateman
+        main_state = stateman.get_state()
+        if main_state == StateManager.STATE_STARTED:
+            stateman.update(StateManager.STATE_STARTED_ZIPLOGS)
+        elif main_state == StateManager.STATE_STOPPED:
+            stateman.update(StateManager.STATE_STOPPED_ZIPLOGS)
+        else:
+            print >> self.wfile, "FAIL: Main state is %s." % (main_state)
+            aconn.user_action_unlock()
+            return
+
+        # FIXME: Do we want to send alerts?
+        #server.alert.send(CustomAlerts.BACKUP_STARTED)
+        self.ack()
+
+        body = server.ziplogs_cmd(aconn)
+
+        self.print_client("%s", str(body))
+        if not body.has_key('error'):
+            # FIXME: Do we want to send alerts?
+            #server.alert.send(CustomAlerts.ZIPLOGS_FINISHED, body)
+            pass
+        else:
+            # FIXME: Do we want to send alerts?
+            #server.alert.send(CustomAlerts.ZIPLOGS_FAILED, body)
+            pass
+
+        stateman.update(main_state)
+
+        aconn.user_action_unlock();
+    do_ziplogs.__usage__ = 'ziplogs'
 
     def do_nop(self, cmd):
         """usage: nop"""
@@ -1016,7 +1147,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         if opts.has_key('uuid'): # should never fail
             uuid = opts['uuid'] # may be None
             if uuid:
-                aconn = manager.agent_conn_by_uuid(uuid)
+                aconn = self.server.agentmanager.agent_conn_by_uuid(uuid)
                 if not aconn:
                     self.error("No connected agent with uuid=%s" % (uuid))
             else:
@@ -1065,8 +1196,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def backup_cmd(self, aconn, target=None):
         """Perform a backup - not including any necessary migration."""
-        # Example name: Jan27_162225.tsbak
-        backup_name = time.strftime("%b%d_%H%M%S") + ".tsbak"
+        # Example name: 20140127_162225.tsbak
+        backup_name = time.strftime("%Y%m%d_%H%M%S") + ".tsbak"
 
         # aconn is the primary
         install_dir = aconn.auth['install-dir']
@@ -1078,7 +1209,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if body.has_key('error'):
             return body
 
-        agents = manager.all_agents()
+        agents = self.agentmanager.all_agents()
 
         # target_conn is the destination agent - if applicable.
         target_conn = None
@@ -1138,11 +1269,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 # Remove the backup file from the primary
                 remove_body = self.delete_file(aconn, backup_path)
 
+                body['info'] = \
+                    "Backup file copied to '%s'" % target_conn.displayname
+
                 # Check if the DEL worked.
                 if remove_body.has_key('error'):
-                    body['info'] = ("DEL of backup file failed after copy. "+\
-                        "file: '%s'. Error was: %s") \
-                        % (backup_path, remove_body['error'])
+                    body['info'] += \
+                        ("\nDEL of backup file failed after copy. "+\
+                            "file: '%s'. Error was: %s") \
+                            % (backup_path, remove_body['error'])
         else:
             backup_loc = aconn
             # Backup file remains on the primary.
@@ -1169,7 +1304,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("multiple backups found with name: %s" % \
               (backup))
 
-        aconn = manager.agent_conn_by_uuid(uuid)
+        aconn = self.agentmanager.agent_conn_by_uuid(uuid)
         if not aconn:
             return self.error("agent not connected: displayname=%s uuid=%s" % \
               (displayname, uuid))
@@ -1371,19 +1506,19 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if len(source_displayname) == 0 or len(source_path) == 0:
             return self.error("[ERROR] Invalid source specification.")
 
-        agents = manager.all_agents()
+        agents = self.agentmanager.all_agents()
         src = dst = None
 
         for key in agents.keys():
-            manager.lock()
+            self.agentmanager.lock()
             if not agents.has_key(key):
                 self.log.info(\
                     "copy_cmd: agent with uuid '%s' is now gone and " + \
                                                     "won't be checked.", key)
-                manager.unlock()
+                self.agentmanager.unlock()
                 continue
             agent = agents[key]
-            manager.unlock()
+            self.agentmanager.unlock()
 
             if agent.displayname == source_displayname:
                 src = agent
@@ -1401,6 +1536,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if not src or not dst:
             return self.error(msg)
+
+        # Enable the firewall port on the source host.
+        self.log.debug("Enabling firewall port %d on src host '%s'", \
+                                    server.xfer_port, src.displayname)
+#        fw_body = src.firewall.enable(server.xfer_port)
+#        if fw_body.has_key("error"):
+        if 0:
+            self.log.err(\
+                "firewall enable port %d on src host %s failed with: %s",
+                server.xfer_port, src.displayname)
+            return fw_body
 
         source_ip = src.auth['ip-address']
 
@@ -1591,14 +1737,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.debug("about to get status of cli command '%s', xid %d",
                            orig_cli_command, xid)
 
-            # If the agent is initialization, then "agent_connected"
+            # If the agent is initializing, then "agent_connected"
             # will not know about it yet.
-            if not aconn.initting and not manager.agent_connected(aconn):
+            if not aconn.initting and \
+                    not self.agentmanager.agent_connected(aconn):
                 self.log.info("Agent '%s' (type: '%s', uuid %s) " + \
                         "disconnected before finishing: %s",
                            aconn.displayname, aconn.agent_type, aconn.uuid, uri)
-                return self.error("Agent '%s' (type: '%s', uuid %s) " + \
-                    "disconnected before finishing: %s" %
+                return self.error(("Agent '%s' (type: '%s', uuid %s) " + \
+                    "disconnected before finishing: %s") %
                         (aconn.displayname, aconn.agent_type, aconn.uuid, uri))
 
             aconn.lock()
@@ -1677,10 +1824,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.error("Invalid maint action: %s", action)
             return self.error("Bad maint action: %s" % action)
 
+        manager = self.agentmanager
+
         # FIXME: Tie agent to domain
         if not aconn:
             aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
-
             if not aconn:
                 return self.error("maint: no primary agent is connected.")
 
@@ -1790,7 +1938,19 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """Sets displayname for the agent with the given hostname. At
            this point assumes hostname is unique in the database."""
 
-        manager.set_displayname(aconn, uuid, displayname)
+        self.agentmanager.set_displayname(aconn, uuid, displayname)
+
+    def ziplogs_cmd(self, aconn, target=None):
+        """Run tabadmin ziplogs'."""
+        
+        ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
+        install_dir = aconn.auth['install-dir']
+        ziplog_path = ntpath.join(install_dir, "Data", ziplog_name)
+
+        cmd = 'tabadmin ziplogs -l -n -a \\\"%s\\\"' % ziplog_path
+        body = self.cli_cmd(cmd, aconn)
+        body[u'info'] = u'tabadmin ziplogs -l -n -a ziplog_name'
+        return body
 
     def error(self, msg, return_dict={}):
         """Returns error dictionary in standard format.  If passed
@@ -1833,9 +1993,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         YML_CONFIG_FILE_PART=ntpath.join("data", "tabsvc", "config",
                                                             "workgroup.yml")
 
-        # The info() command requires a displayname.  This displayname is
-        # is temporary until we get info from the agent:
-        aconn.displayname = 'hostname: ' + aconn.auth['hostname']
+        # The info() command requires a displayname (for debug output).
+        # Temporarily use the hostname until the real value can be pulled
+        # from the database (or otherwise assigned).
+        aconn.displayname = aconn.auth['hostname'] + '*'
 
         body = self.info(aconn)
         if body.has_key("error"):
@@ -1882,7 +2043,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                             yml_config_file, aconn.displayname)
 
             else:
-                aconn.agent_type = AgentManager.AGENT_TYPE_ARCHIVE
+                if server.agentmanager.is_tableau_worker(\
+                                                    aconn.auth['ip-address']):
+                    aconn.agent_type = AgentManager.AGENT_TYPE_WORKER
+                else:
+                    aconn.agent_type = AgentManager.AGENT_TYPE_ARCHIVE
 
         # Cleanup.
         if aconn.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
@@ -1913,6 +2078,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return True
 
     def remove_agent(self, aconn, reason="", send_alert=True):
+        manager = self.agentmanager
         manager.remove_agent(aconn, reason=reason, send_alert=send_alert)
         # FIXME: At the least, we need to add the domain to the check
         #        for a primary; better, however, would be to store the
@@ -1966,7 +2132,6 @@ def main():
 
     global server   # fixme
     global log      # fixme
-    global manager   # fixme
     global statusmon # fixme
 
     parser = argparse.ArgumentParser(description='Palette Controller')
@@ -2004,10 +2169,11 @@ def main():
     server.config = config
     server.log = log
     server.cli_get_status_interval = \
-      config.get('controller', 'cli_get_status_interval', default=10)
+      config.getint('controller', 'cli_get_status_interval', default=10)
 
     server.domainname = config.get('palette', 'domainname')
     server.domain = Domain()
+    server.xfer_port = config.getint('palette', 'xfer_port', default=8889)
     # FIXME: Pre-production hack: add domain if necessary
     server.domain.add(server.domainname)
     server.domainid = server.domain.id_by_name(server.domainname)
@@ -2019,13 +2185,17 @@ def main():
     custom_states = CustomStates()
     custom_states.populate()
 
+    server.auth = AuthManager(server)
+    UserProfile.populate()
+
     workbook_manager = WorkbookManager(server.domainid)
     workbook_manager.populate()
 
     server.backup = BackupManager(server.domainid)
 
-    global manager  # fixme: get rid of this global.
     manager = AgentManager(server)
+    server.agentmanager = manager
+
     manager.update_last_disconnect_time()
     manager.start()
 
