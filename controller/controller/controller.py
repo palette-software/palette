@@ -1303,9 +1303,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
                     # fixme: send the backup to a specific volume on the target
                     self.log.debug("backup_cmd: setting target to " + \
-                        "agent %s.  Need %d, have %d, archive limit %d",
+                        "agent '%s'.  Need %d, have %d, size %d, archive limit %d",
                             agents[key].displayname, min_target_disk_needed,
-                                        vol_entry.free, vol_entry.archive_limit)
+                                                vol_entry.free, vol_entry.size, 
+                                                        vol_entry.archive_limit)
 
                     target_conn = agents[key]
                     break

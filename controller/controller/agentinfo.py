@@ -106,7 +106,8 @@ class AgentVolumesEntry(meta.Base):
                     filter(AgentVolumesEntry.vol_type == "Fixed").\
                     filter(AgentVolumesEntry.archive == True).\
                     filter(AgentVolumesEntry.free >= min_needed).\
-                    filter(AgentVolumesEntry.archive_limit >= min_needed).\
+                    filter(AgentVolumesEntry.size - AgentVolumesEntry.free + \
+                            min_needed < AgentVolumesEntry.archive_limit).\
                     one()   # for now, choosen any one - no particular order.
 
         except NoResultFound, e:
