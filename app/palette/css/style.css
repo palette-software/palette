@@ -1225,6 +1225,7 @@ ul.title-area > li > h1 > a {
     vertical-align: middle;
 }
 #mainNav ul.nav li > a:hover {
+    color: #5F6670 !important /*#8D96A3*/;
     background-color: rgba(250, 250, 250, 0.1) !important;
 }
 #mainNav ul.nav li > a span {

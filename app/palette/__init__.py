@@ -7,6 +7,7 @@ import akiri.framework.ext.sqlalchemy
 controller.meta.meta = akiri.framework.ext.sqlalchemy.meta
 print str(controller.meta.meta)
 
+import auth
 import monitor
 import backup
 import manage

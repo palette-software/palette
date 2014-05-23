@@ -15,19 +15,9 @@
 	    <span>Extracts</span>
 	  </a>
     </li>
-    <li ${obj.main_active=='activity' and 'class="active"' or ''}>
-      <a href="/activity"><i class="fa fa-fw fa-book"></i>
-	    <span>Workbook Archive</span>
-	  </a>
-    </li>
     <li ${obj.main_active=='manage' and 'class="active"' or ''}>
       <a href="/manage"><i class="fa fa-fw fa-wrench"></i>
 	    <span>Manage Tableau</span>
-	  </a>
-    </li>
-    <li ${obj.main_active=='logs' and 'class="active"' or ''}>
-      <a href="/logs"><i class="fa fa-fw fa-list"></i>
-        <span>Logs</span>
 	  </a>
     </li>
     <li class="divider">&nbsp;</li>
