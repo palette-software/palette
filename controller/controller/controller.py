@@ -23,6 +23,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from agentmanager import AgentManager
 from agentstatus import AgentStatusEntry
+from agentinfo import AgentInfoEntry, AgentVolumesEntry
 from auth import AuthManager
 from backup import BackupManager
 from state import StateManager
@@ -43,6 +44,8 @@ from version import VERSION
 
 global server # fixme
 global log # fixme
+
+GB = 1024*1024*1024
 
 class CommandException(Exception):
     def __init__(self, errmsg):
@@ -1050,7 +1053,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         action = cmd.args[0].lower()
-        
+
         if action == 'import':
             if len(cmd.args) != 1:
                 self.usage(self.do_auth.__usage__)
@@ -1196,6 +1199,50 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def backup_cmd(self, aconn, target=None):
         """Perform a backup - not including any necessary migration."""
+
+        # Disk space check.
+        if not AgentInfoEntry.TABLEAU_DATA_DIR_KEY in aconn.pinfo:
+            return self.error(\
+                    "Missing '%s' in pinfo.  Cannot proceed with backup." % \
+                                    AgentInfoEntry.TABLEAU_DATA_DIR_KEY)
+
+        min_primary_disk_needed = \
+            aconn.pinfo[AgentInfoEntry.TABLEAU_DATA_SIZE_KEY] * 2
+
+        # e.g. "C:"
+        data_volume = \
+                aconn.pinfo[AgentInfoEntry.TABLEAU_DATA_DIR_KEY].split(':')[0]
+
+        volume_l = [vol for vol in aconn.pinfo['volumes'] \
+                                        if vol['name'] == data_volume]
+
+        if not volume_l:
+            return self.error(\
+                ("Missing volume/disk free information from pinfo for " + \
+                    "'%s' volume '%s'") % (aconn.displayname, data_volume))
+
+        volume = volume_l[0]
+
+        if not "available-space" in volume:
+            return self.error(("Missing 'available-space' value from " + \
+                                "pinfo for '%s' volume '%s'") % \
+                                            (aconn.displayname, data_volume))
+
+        primary_free = volume['available-space']
+
+        if primary_free < min_primary_disk_needed:
+            return self.error(\
+                ("Cannot backup due to shortage of disk space on " + \
+                "primary host '%s': %d needed, but only %d free." ) % \
+                    aconn.displayname, min_primary_disk_needed, primary_free)
+
+        self.log.debug(\
+            "backup_cmd: primary has enough space.  Need %d and have %d",
+                                    min_primary_disk_needed, primary_free)
+
+        min_target_disk_needed = .3 * \
+                        aconn.pinfo[AgentInfoEntry.TABLEAU_DATA_SIZE_KEY]
+
         # Example name: 20140127_162225.tsbak
         backup_name = time.strftime("%Y%m%d_%H%M%S") + ".tsbak"
 
@@ -1243,8 +1290,23 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     # FIXME: ticket #218: When the UI supports selecting
                     #        a target, remove the code that automatically
                     #        selects a remote.
-                    self.log.debug("backup_cmd: setting target to agent %s", \
-                                                    agents[key].displayname)
+
+                    # Check to see if this target has a volume
+                    # with enough free disk space.
+                    vol_entry = AgentVolumesEntry.has_free_space(\
+                                    agents[key].agentid, min_target_disk_needed)
+
+                    if not vol_entry:
+                        self.log.debug("backup_cmd: No space on '%s'",
+                                                agents[key].displayname)
+                        continue    # no, not enough free space on this target
+
+                    # fixme: send the backup to a specific volume on the target
+                    self.log.debug("backup_cmd: setting target to " + \
+                        "agent %s.  Need %d, have %d, archive limit %d",
+                            agents[key].displayname, min_target_disk_needed,
+                                        vol_entry.free, vol_entry.archive_limit)
+
                     target_conn = agents[key]
                     break
 
@@ -1256,7 +1318,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             if copy_body.has_key('error'):
                 msg = (u"Copy of backup file '%s' to agent '%s' failed. "+\
-                    "Will leave the backup file on the primary agent. "+\
+                    "Will leave the backup file on the primary agent. " + \
                     "Error was: %s") \
                     % (backup_name, target_conn.displayname, copy_body['error'])
                 self.log.info(msg)
@@ -1942,7 +2004,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def ziplogs_cmd(self, aconn, target=None):
         """Run tabadmin ziplogs'."""
-        
+
         ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
         install_dir = aconn.auth['install-dir']
         ziplog_path = ntpath.join(install_dir, "Data", ziplog_name)
