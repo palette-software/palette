@@ -109,6 +109,13 @@ class MonitorApplication(RESTApplication):
 #                    proc['creation_time']  = str(entry.creation_time)[:19]
 #                    proc['modification_time'] = \
 #                                            str(entry.modification_time)[:19]
+                    if entry.status == 'running':
+                        proc['color'] = 'green'
+                    else:
+                        proc['color'] = 'red'
+                        # The agent needs to be red too.
+                        agent['color'] = 'red'
+
                     tableau_procs.append(proc)
 
                 agent['details'] = tableau_procs
