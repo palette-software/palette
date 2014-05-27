@@ -16,15 +16,12 @@ h1, h2, h3, h4, h5, h6 {
 p {
     font-weight: 300 !important;
 }
-a, a:hover {
+a {
     color: #697078;
 }
 a img {
     border: 0 !important;
     outline: 0;
-}
-a:hover {
-    cursor: pointer;
 }
 .bold {
     font-weight: bold;
@@ -1028,6 +1025,16 @@ input[type="text"], input[type="password"], input[type="email"], select {
 .config-content input[type="text"], input[type="password"], input[type="email"], select {
     max-width: none;
 }
+
+.profile {
+    position: absolute;
+    left: 250px;
+    padding: 10px;
+    width: 100%;
+    height: 100%;
+    border-left: 1px solid #8D96A3;
+}
+
 input[type="text"]:focus, input[type="password"]:focus, input[type="date"]:focus, input[type="datetime"]:focus, input[type="datetime-local"]:focus, input[type="month"]:focus, input[type="week"]:focus, input[type="email"]:focus, input[type="number"]:focus, input[type="search"]:focus, input[type="tel"]:focus, input[type="time"]:focus, input[type="url"]:focus, textarea:focus {
     border: 1px solid #66c3f0;
     outline: 0;
@@ -1240,7 +1247,7 @@ ul.title-area > li > h1 > a {
     position: absolute;
     border-top: 7px solid #8D96A3;
     top: 60px;
-    width: 320px;
+    width: 240px;
     right: 0;
     background-color: #fff;
     list-style-type: none;
@@ -1277,7 +1284,7 @@ ul.title-area > li > h1 > a {
     line-height: 45px;
 }
 #mainNav ul.nav li > ul li a:hover {
-    text-decoration: none;
+    text-decoration: underline;
     color: #53c3f1; /* FIXME: color: #5f6670; */
     background-color:#f5f5f5;
 }
