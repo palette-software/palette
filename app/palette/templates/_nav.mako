@@ -31,13 +31,13 @@
         </ul>
       </li>
       <li class="more">
-        <a id="profile-link" href="/configure/profile">
+        <a id="profile-link" href="/profile">
           <i class="fa fa-user"></i> 
           <span>${req.remote_user.friendly_name}</span>
         </a>
         <ul>
           <li>
-            <a href="/configure/profile">
+            <a href="/profile">
               <i class="fa fa-fw fa-user"></i> Edit Profile
             </a>
           </li>

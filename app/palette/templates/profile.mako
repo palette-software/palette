@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-<%inherit file="configure.mako" />
+<%inherit file="layout.mako" />
 
 <%block name="title">
 <title>Palette - Profile</title>
 </%block>
 
-<section class="dynamic-content config-content">
+<section class="profile config-content">
   <section class="top-zone">
     <h1 class="page-title">Profile</h1>
   </section>
