@@ -14,11 +14,6 @@
 	</a>
         <ul>
           <li>
-            <a href="/support/ticket">
-              <i class="fa fa-fw fa-suitcase"></i> Create Support Ticket
-            </a>
-          </li>
-          <li>
             <a href="/support/contact">
               <i class="fa fa-fw fa-mail-forward"></i> Contact Support
             </a>
