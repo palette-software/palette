@@ -12,19 +12,19 @@
   <section class="row bottom-zone">
     <section class="col-sm-12 col-md-8">
       <label class="profile-page">Tableau Server Display Name</label>
-      <p id="friendly"></p>
+      <p>${req.remote_user.friendly_name}</p>
       <label class="profile-page">Tableau Server Username</label>
-      <p id="username"></p>
+      <p>${req.remote_user.name}</p>
       <label class="profile-page">Email</label>
-      <p><span id="email"></span> 
-        <a href="#"><i class="fa fa-fw fa-pencil"></i></a>
+      <p class="editbox" data-href="/rest/profile/email">
+        ${req.remote_user.email or ''}
       </p>
       <label class="profile-page">Tableau Server User License</label>
-      <p id="user-license"></p>
+      <p>Interactor</p>
       <label class="profile-page">Tableau Server Administrator Role</label>
-      <p id="user-administrator-role"></p>
+      <p>System Administrator</p>
       <label class="profile-page">Tableau Server User Publisher Role</label>
-      <p id="user-publisher-role"></p>
+      <p>Publisher</p>
       </div>
       <section class="row margin-top">
         <section class="col-xs-12 col-sm-6">
@@ -34,6 +34,17 @@
     </section>
   </section>
 </section>
+
+<script id="editbox-view" type="x-tmpl-mustache">
+  <span>{{value}}</span>
+  <i class="fa fa-fw fa-pencil"></i>
+</script>
+
+<script id="editbox-edit" type="x-tmpl-mustache">
+  <input value="{{value}}" />
+  <i class="fa fa-fw fa-check ok"></i>
+  <i class="fa fa-fw fa-times cancel"></i>
+</script>
 
 <script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/profile.js">
 </script>
