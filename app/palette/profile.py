@@ -3,6 +3,8 @@ import os
 from akiri.framework.api import RESTApplication
 from akiri.framework.config import store
 
+from akiri.framework.ext.sqlalchemy import meta
+
 from paste import fileapp
 from webob import exc
 
@@ -21,42 +23,45 @@ class ProfileApplication(RESTApplication):
     # The REST application will be available at "/rest/profile"
     NAME = 'profile'
 
+    def get(self, req):
+        # REST handlers don't automatically load profile objects
+        user = req.environ['REMOTE_USER']
+        return UserProfile.get_by_name(user)
+
     def handle(self, req):
         if not 'REMOTE_USER' in req.environ:
             raise exc.HTTPBadRequest()
 
-        if req.environ['PATH_INFO'] == '/profile':
+        # REST handlers return the handle path prefix too, strip it.
+        path_info = req.environ['PATH_INFO']
+        if path_info.startswith('/' + self.NAME):
+            path_info = path_info[len(self.NAME)+1:]
+        if path_info.startswith('/'):
+            path_info = path_info[1:]
+        if path_info == '':
             return self.handle_profile(req)
-        raise exc.HTTPBadRequest()
+        if path_info == 'email':
+            return self.handle_email(req);
+        raise exc.HTTPNotFound()
 
     def handle_profile_POST(self, req):
         raise exc.HTTPBadRequest()
 
     def handle_profile_GET(self, req):
-        return {
-                'userid': 1,
-                'name': 'john',
-                'first-name': "John",
-                'last-name': "Abdo",
-                'email': "john@palette-software.com",
-                'timezone-offset-minutes': -480
-                }
-        user_name = req.environ['REMOTE_USER']
-        user_profile = UserProfile.get_by_name(user_name)
-
-        if not user_profile:
+        profile = self.get(req)
+        if not profile:
             return {}
 
         self.profile = {}
         # Convert db entry into a dictionary
-        for key in ['userid', 'name', 'first_name', 'last_name', 'email',
-                        'tableau_username', 'gmt', 'timezone_offset_minutes']:
-            # fixme: convert '_' in key to '-'
-            self.profile[key] = getattr(user_profile, key)
+        for key in ['name', 'friendly_name', 'email']:
+            value = getattr(profile, key)
+            if value:
+                self.profile[key.replace('_','-')] = value
 
         # Add a list of roles the user has
         self.profile['roles'] = []
-        for role in user_profile.roles:
+        for role in profile.roles:
             self.profile['roles'].append(role.name)
 
         return self.profile
@@ -66,4 +71,23 @@ class ProfileApplication(RESTApplication):
             return self.handle_profile_POST(req)
         elif req.method == 'GET':
             return self.handle_profile_GET(req)
-        raise exc.HTTPBadRequest()
+        raise exc.HTTPMethodNotAllowed()
+
+    def handle_email_POST(self, req):
+        if 'value' not in req.POST:
+            raise exc.HTTPBadRequest()
+        profile = self.get(req);
+        profile.email = req.POST['value']
+        meta.Session.commit()
+        return {}
+
+    def handle_email_GET(self, req):
+        profile = self.get(req)
+        return {'value': profile.email and profile.email or ''}
+
+    def handle_email(self, req):
+        if req.method == 'POST':
+            return self.handle_email_POST(req)
+        if req.method == 'GET':
+            return self.handle_email_GET(req)
+        raise exc.HTTPMethodNotAllowed()
