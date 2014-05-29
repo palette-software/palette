@@ -1,8 +1,8 @@
-from configure import ConfigureRenderer
+from akiri.framework.api import UserInterfaceRenderer
 
-class Splunk(ConfigureRenderer):
+class Splunk(UserInterfaceRenderer):
     TEMPLATE = "splunk.mako"
-    configure_active = 'splunk'
+    active = 'splunk'
 
 def make_splunk(global_conf):
     return Splunk(global_conf)

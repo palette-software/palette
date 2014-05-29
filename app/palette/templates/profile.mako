@@ -5,7 +5,7 @@
 <title>Palette - Profile</title>
 </%block>
 
-<section class="profile config-content">
+<section class="config-content">
   <section class="top-zone">
     <h1 class="page-title">Profile</h1>
   </section>

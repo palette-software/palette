@@ -17,7 +17,7 @@ import yml
 
 class DashboardPage(MainPage):
     TEMPLATE = 'dashboard.mako'
-    main_active = 'home'
+    active = 'home'
 
     def __init__(self, global_conf):
         super(DashboardPage, self).__init__(global_conf)

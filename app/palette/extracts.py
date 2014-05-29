@@ -16,7 +16,7 @@ __all__ = ["ExtractsApplication"]
 
 class Extract(UserInterfaceRenderer):
     TEMPLATE = 'extracts.mako'
-    main_active = 'extracts'
+    active = 'extracts'
 
 def make_extracts(global_conf):
     return Extract(global_conf)

@@ -6,7 +6,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from controller.agentinfo import AgentYmlEntry
 
-from configure import ConfigureRenderer
+from akiri.framework.api import UserInterfaceRenderer
 
 class YMLApplication(RESTApplication):
     NAME='yml'
@@ -20,9 +20,9 @@ class YMLApplication(RESTApplication):
 
         return {'items': [x.todict() for x in query.all()]}
 
-class YML(ConfigureRenderer):
+class YML(UserInterfaceRenderer):
     TEMPLATE = 'yml.mako'
-    configure_active = 'yml'
+    active = 'yml'
 
 def make_yml(global_conf):
     return YML(global_conf)

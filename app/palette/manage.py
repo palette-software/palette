@@ -85,7 +85,7 @@ class ManageAdvancedDialog(DialogPage):
 
 class Manage(UserInterfaceRenderer):
     TEMPLATE = 'manage.mako'
-    main_active = 'manage'
+    active = 'manage'
 
 def make_manage(global_conf):
     return Manage(global_conf)
