@@ -10,6 +10,7 @@ from webob import exc
 
 from controller.profile import UserProfile
 from page import PalettePage
+from rest import PaletteRESTHandler
 
 class Profile(PalettePage):
     TEMPLATE = "profile.mako"
@@ -17,7 +18,7 @@ class Profile(PalettePage):
 def make_profile(global_conf):
     return Profile(global_conf)
 
-class ProfileApplication(RESTApplication):
+class ProfileApplication(PaletteRESTHandler):
     # The REST application will be available at "/rest/profile"
     NAME = 'profile'
 
@@ -30,12 +31,7 @@ class ProfileApplication(RESTApplication):
         if not 'REMOTE_USER' in req.environ:
             raise exc.HTTPBadRequest()
 
-        # REST handlers return the handle path prefix too, strip it.
-        path_info = req.environ['PATH_INFO']
-        if path_info.startswith('/' + self.NAME):
-            path_info = path_info[len(self.NAME)+1:]
-        if path_info.startswith('/'):
-            path_info = path_info[1:]
+        path_info = self.base_path_info(req)
         if path_info == '':
             return self.handle_profile(req)
         if path_info == 'email':

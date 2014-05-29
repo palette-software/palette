@@ -56,7 +56,7 @@
     <i class="fa fa-fw fa-hdd-o {{color}}"></i>
     <h3>{{title}}</h3>
     <p>{{summary}}</p>
-    <div>{{{description}}}</p>
+    <div>{{{description}}}</div>
   </article>
   {{/events}}
 </script>

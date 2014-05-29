@@ -1071,7 +1071,7 @@ input[type="text"], input[type="password"], input[type="email"], select {
 }
 
 .config-content .btn-group {  
-    width: 100%;
+/*    width: 100%; */
     margin: 5px 0 15px 0;
 }
 .config-content input[type="text"], input[type="password"], input[type="email"], select {
@@ -1339,8 +1339,21 @@ ul.title-area > li > h1 > a {
     font-weight: 500 !important;
     margin: 0 0 20px;
 }
+.config-content .key, .config-content .label {
+    display: inline;
+    font-size: inherit;
+    font-weight: 700;
+    line-height: 1;
+    color: #5F6670;
+    text-align: left;
+    white-space: nowrap;
+    padding: 0;
+}
 .config-content .key {
-    font-weight: 500;
+    padding: .25em .25em .25em 1em;
+}
+.config-content .label {
+    padding: 0 .25em 0 0;
 }
 .italic-label {
     font-style: italic;
@@ -1489,6 +1502,13 @@ article.event i.red {
 article.event i.green {
     color: #76e259;
 }
+article.event i.help {
+    position: static;
+    display: inline-block;
+    line-height: inherit;
+    font-size: 1.5em;
+    width: inherit;
+}
 article.event a {
     text-decoration: underline;
 }
@@ -1515,7 +1535,7 @@ article.event h3 {
     white-space: nowrap;
     text-overflow:ellipsis;
 }
-article.event p {
+article.event > p {
     font-size: 14px;
     margin: 0;
     position: absolute;
@@ -1526,14 +1546,17 @@ article.event p {
     white-space: nowrap;
     text-overflow:ellipsis;
 }
-article.event div {
+article.event > div {
     position: relative;
     display: none;
     margin: 45px 0 0 50px;
-    width: auto;
+    width: 100%;
 }
-article.event.open div {
-    display: block;
+article.event.open > div {
+    display: inline-block;
+}
+article.event.open > div > div {
+    padding: 1em .25em 1em 0;
 }
 article.event ul {
     padding: 0 0 0 20px;
@@ -1542,6 +1565,10 @@ article.event ul {
 article.event li {
     list-style-type: none;
 }
+article.event article {
+    padding-top: 5px;
+}
+
 .mobile-title {
     display:none;
 }
