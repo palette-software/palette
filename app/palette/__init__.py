@@ -15,7 +15,9 @@ import extracts
 import workbooks
 import yml
 
-class DashboardPage(MainPage):
+from page import PalettePageMixin
+
+class DashboardPage(MainPage, PalettePageMixin):
     TEMPLATE = 'dashboard.mako'
     active = 'home'
 

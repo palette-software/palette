@@ -1,6 +1,6 @@
-from akiri.framework.api import UserInterfaceRenderer
+from page import PalettePage
 
-class Splunk(UserInterfaceRenderer):
+class Splunk(PalettePage):
     TEMPLATE = "splunk.mako"
     active = 'splunk'
 

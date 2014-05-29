@@ -1,6 +1,6 @@
-from akiri.framework.api import UserInterfaceRenderer
+from page import PalettePage
 
-class Ticket(UserInterfaceRenderer):
+class Ticket(PalettePage):
     TEMPLATE = "ticket.mako"
     active = None
 

@@ -1,6 +1,6 @@
-from akiri.framework.api import UserInterfaceRenderer
+from page import PalettePage
 
-class Billing(UserInterfaceRenderer):
+class Billing(PalettePage):
     TEMPLATE = "billing.mako"
     active = 'billing'
 

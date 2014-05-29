@@ -1,6 +1,6 @@
-from akiri.framework.api import UserInterfaceRenderer
+from page import PalettePage
 
-class Log(UserInterfaceRenderer):
+class Log(PalettePage):
     TEMPLATE = 'logs.mako'
     active = 'logs'
 

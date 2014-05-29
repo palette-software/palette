@@ -6,7 +6,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from webob import exc
 import sys
 
-from akiri.framework.api import RESTApplication, DialogPage, UserInterfaceRenderer
+from akiri.framework.api import RESTApplication, DialogPage
 from akiri.framework.config import store
 
 from akiri.framework.ext.sqlalchemy import meta
@@ -18,6 +18,8 @@ from controller.agentmanager import AgentManager
 from controller.agentinfo import AgentVolumesEntry
 from controller.domain import Domain
 from controller.custom_states import CustomStates
+
+from page import PalettePage
 
 __all__ = ["MonitorApplication"]
 
@@ -148,7 +150,7 @@ class MonitorApplication(RESTApplication):
             return self.handle_monitor(req)
         raise exc.HTTPBadRequest()
 
-class ConfigureMonitor(UserInterfaceRenderer):
+class ConfigureMonitor(PalettePage):
 
     TEMPLATE = "configure_monitor.mako"
     def handle(self, req):

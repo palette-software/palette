@@ -12,7 +12,7 @@ from webob import exc
 from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy.orm.exc import NoResultFound
 
-from akiri.framework.api import RESTApplication, UserInterfaceRenderer
+from akiri.framework.api import RESTApplication
 from akiri.framework.config import store
 
 from akiri.framework.ext.sqlalchemy import meta
@@ -20,6 +20,8 @@ from akiri.framework.ext.sqlalchemy import meta
 from controller.backup import BackupEntry, BackupManager
 from controller.agentstatus import AgentStatusEntry
 from controller.domain import Domain
+
+from page import PalettePage
 
 __all__ = ["BackupApplication"]
 
@@ -176,8 +178,7 @@ class BackupDialog(DialogPage):
             data['creation-time'] = str(backup.creation_time)[:19] # Cut off fraction
             self.backup_entries.append(data)
 
-class Backup(UserInterfaceRenderer):
-
+class Backup(PalettePage):
     TEMPLATE = "backup.mako"
     active = "backup"
 

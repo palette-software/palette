@@ -1,6 +1,6 @@
-from akiri.framework.api import UserInterfaceRenderer
+from page import PalettePage
 
-class Organization(UserInterfaceRenderer):
+class Organization(PalettePage):
 
     TEMPLATE = "organization.mako"
     def handle(self, req):

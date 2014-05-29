@@ -9,12 +9,10 @@ from paste import fileapp
 from webob import exc
 
 from controller.profile import UserProfile
+from page import PalettePage
 
-from akiri.framework.api import UserInterfaceRenderer
-
-class Profile(UserInterfaceRenderer):
+class Profile(PalettePage):
     TEMPLATE = "profile.mako"
-    active = 'profile'
 
 def make_profile(global_conf):
     return Profile(global_conf)

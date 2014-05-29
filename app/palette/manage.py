@@ -3,7 +3,6 @@ import socket
 from webob import exc
 
 from akiri.framework.api import RESTApplication, DialogPage
-from akiri.framework.api import UserInterfaceRenderer
 from akiri.framework.config import store
 
 import sqlalchemy
@@ -14,6 +13,8 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from controller.agentstatus import AgentStatusEntry
 from controller.domain import Domain
+
+from page import PalettePage
 
 class ManageApplication(RESTApplication):
 
@@ -83,7 +84,7 @@ class ManageAdvancedDialog(DialogPage):
                 agent.last_connection_time_str = str(agent.last_connection_time)[:19] # Cut off fraction
                 agent.last_disconnect_time_str = str(agent.last_disconnect_time)[:19] # Cut off fraction
 
-class Manage(UserInterfaceRenderer):
+class Manage(PalettePage):
     TEMPLATE = 'manage.mako'
     active = 'manage'
 
