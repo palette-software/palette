@@ -40,7 +40,7 @@
 	</li>
 	<li  ${obj.active=='yml' and 'class="active"' or ''}>
 	      <a href="/configure/yml">
-            <i class="fa fa-fw fa-cog"></i>
+            <i class="fa fa-fw tableau"></i>
             <span>Tableau Settings</span>
 	      </a>
 	    </li>
