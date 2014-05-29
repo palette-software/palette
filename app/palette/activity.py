@@ -1,6 +1,6 @@
-from akiri.framework.api import UserInterfaceRenderer
+from page import PalettePage
 
-class Activity(UserInterfaceRenderer):
+class Activity(PalettePage):
     TEMPLATE = 'activity.mako'
     active = 'activity'
 

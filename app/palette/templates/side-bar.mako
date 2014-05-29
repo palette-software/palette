@@ -25,7 +25,7 @@
         <span>Configure</span>
 	<i class="fa fa-fw fa-angle-down expand"></i>
       </a>
-      <ul>
+      <ul ${obj.expanded and 'class="visible"' or ''}>
 	<li ${obj.active=='users' and 'class="active"' or ''}>
 	  <a href="/configure/users">
             <i class="fa fa-fw fa-group"></i>

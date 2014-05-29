@@ -1,12 +1,11 @@
 from webob import exc
 
 from akiri.framework.api import RESTApplication
-
 from akiri.framework.ext.sqlalchemy import meta
 
 from controller.agentinfo import AgentYmlEntry
 
-from akiri.framework.api import UserInterfaceRenderer
+from page import PalettePage
 
 class YMLApplication(RESTApplication):
     NAME='yml'
@@ -20,9 +19,10 @@ class YMLApplication(RESTApplication):
 
         return {'items': [x.todict() for x in query.all()]}
 
-class YML(UserInterfaceRenderer):
+class YML(PalettePage):
     TEMPLATE = 'yml.mako'
     active = 'yml'
+    expanded = True
 
 def make_yml(global_conf):
     return YML(global_conf)

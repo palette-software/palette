@@ -1,8 +1,9 @@
-from akiri.framework.api import UserInterfaceRenderer
+from page import PalettePage
 
-class UserConfig(UserInterfaceRenderer):
+class UserConfig(PalettePage):
     TEMPLATE = "user.mako"
     active = 'users'
+    expanded = True
 
 def make_users(global_conf):
     return UserConfig(global_conf)

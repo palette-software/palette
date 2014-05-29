@@ -2,7 +2,7 @@ import socket
 
 from webob import exc
 
-from akiri.framework.api import RESTApplication
+from akiri.framework.api import Page, RESTApplication
 from akiri.framework.config import store
 
 from akiri.framework.ext.sqlalchemy import meta
@@ -10,11 +10,11 @@ from akiri.framework.ext.sqlalchemy import meta
 from controller.domain import Domain
 from controller.extracts import ExtractsEntry
 
-from akiri.framework.api import UserInterfaceRenderer
+from page import PalettePage
 
 __all__ = ["ExtractsApplication"]
 
-class Extract(UserInterfaceRenderer):
+class Extract(PalettePage):
     TEMPLATE = 'extracts.mako'
     active = 'extracts'
 

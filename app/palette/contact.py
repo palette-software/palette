@@ -1,6 +1,6 @@
-from akiri.framework.api import UserInterfaceRenderer
+from page import PalettePage
 
-class Contact(UserInterfaceRenderer):
+class Contact(PalettePage):
 
     TEMPLATE = "contact.mako"
     active = None
