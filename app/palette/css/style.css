@@ -28,6 +28,13 @@ i.expand {
     color: #484F53 !important;
     font-size: 26px !important;
 }
+i.tableau {
+    background:url(/app/module/palette/images/tableau.svg);
+    background-repeat: no-repeat;
+    height: 28px;
+    width: 28px;
+    margin: 13px 14px 13px 17px !important;
+}
 
 .bold {
     font-weight: bold;
