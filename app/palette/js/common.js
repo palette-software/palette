@@ -4,7 +4,7 @@
  */
 
 define(['jquery', 'topic'],
-function (jquery, topic)
+function ($, topic)
 {
 
     function clearmenu() {
@@ -74,12 +74,12 @@ function (jquery, topic)
      */
     function setupDialogs()
     {
-        jquery('a.popup-link').bind('click', function() {
+        $('a.popup-link').bind('click', function() {
             var popupLink = $(this).hasClass('inactive');
             if (popupLink == false) {
-                jquery('article.popup').removeClass('visible');
+                $('article.popup').removeClass('visible');
                 var popTarget = $(this).attr('name');
-                jquery('article.popup#'+popTarget).addClass('visible');
+                $('article.popup#'+popTarget).addClass('visible');
             }
         });
     }
@@ -89,9 +89,28 @@ function (jquery, topic)
      * Enable the select-like elements created with the dropdown class.
      */
     function setupDropdowns() {
-        jquery('.dropdown-menu li').bind('click', function() {
-            var dropdownSelect = jquery(this).find('a').text();     
-            jquery(this).parent().siblings().find('div').text(dropdownSelect);
+        $('.dropdown-menu li').bind('click', function() {
+            var dropdownSelect = $(this).find('a').text();     
+            $(this).parent().siblings().find('div').text(dropdownSelect);
+        });
+    }
+
+    /*
+     * setupConfigure
+     * Enable the configure expansion item on main sidebar.
+     */
+    function setupCategories() {
+        $('.expand').parent().bind('click', function(event) {
+            event.preventDefault();
+            if ($('.expand', this).hasClass('fa-angle-down')) {
+                $('.expand', this).removeClass('fa-angle-down');
+                $('.expand', this).addClass('fa-angle-up');
+                $(this).parent().find('ul').addClass('visible');
+            } else {
+                $('.expand', this).removeClass('fa-angle-up');
+                $('.expand', this).addClass('fa-angle-down');
+                $(this).parent().find('ul').removeClass('visible');
+            }                
         });
     }
 
@@ -117,19 +136,19 @@ function (jquery, topic)
         if (data.hasOwnProperty('text') && data['text'] != 'none') {
             text = data['text'];
         }
-        jquery('#status-text').html(text);
+        $('#status-text').html(text);
 
         var color = 'red';
         if (data.hasOwnProperty('color') && data['color'] != 'none') {
             color = data['color'];
         }
         var src = '/app/module/palette/images/status-'+color+'-light.png';
-        jquery('#status-image').attr('src', src);
-        //jquery('#status-text').attr("class", color);
+        $('#status-image').attr('src', src);
+        //$('#status-text').attr("class", color);
     }
 
     function poll() {
-        jquery.ajax({
+        $.ajax({
             url: '/rest/monitor',
             success: function(data) {
                 update(data);
@@ -214,6 +233,8 @@ function (jquery, topic)
         setupEvents();
         /* FIXME: run after AJAX */
         bindEvents();
+        
+        setupCategories();
 
         /* 
          * Start a timer that periodically polls the status every

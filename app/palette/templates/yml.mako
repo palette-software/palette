@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-<%inherit file="configure.mako" />
+<%inherit file="layout.mako" />
 
 <%block name="title">
 <title>Palette - Tableau Settings</title>
 </%block>
 
-<section class="dynamic-content config-content">
+<section class="config-content">
   <section class="top-zone">
     <h1 class="page-title">Tableau Settings</h1>
   </section>
@@ -17,7 +17,7 @@
 <script id="yml-list-template" type="x-tmpl-mustache">
   {{#items}}
   <section class="row">
-    <section class="col-md-6 key">
+    <section class="col-md-4 key">
       {{key}}
     </section>
     <section class="col-md-6">

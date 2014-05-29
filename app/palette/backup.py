@@ -179,7 +179,7 @@ class BackupDialog(DialogPage):
 class Backup(UserInterfaceRenderer):
 
     TEMPLATE = "backup.mako"
-    main_active = "backup"
+    active = "backup"
 
 def make_backup(global_conf):
     return Backup(global_conf)

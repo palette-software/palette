@@ -1,8 +1,8 @@
-from configure import ConfigureRenderer
+from akiri.framework.api import UserInterfaceRenderer
 
-class Billing(ConfigureRenderer):
+class Billing(UserInterfaceRenderer):
     TEMPLATE = "billing.mako"
-    configure_active = 'billing'
+    active = 'billing'
 
 def make_billing(global_conf):
     return Billing(global_conf)

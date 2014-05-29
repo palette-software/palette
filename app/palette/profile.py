@@ -10,11 +10,11 @@ from webob import exc
 
 from controller.profile import UserProfile
 
-from configure import ConfigureRenderer
+from akiri.framework.api import UserInterfaceRenderer
 
-class Profile(ConfigureRenderer):
+class Profile(UserInterfaceRenderer):
     TEMPLATE = "profile.mako"
-    configure_active = 'profile'
+    active = 'profile'
 
 def make_profile(global_conf):
     return Profile(global_conf)
