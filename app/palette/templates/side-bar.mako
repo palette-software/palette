@@ -23,7 +23,7 @@
       <a href="/configure/yml">
         <i class="fa fa-fw fa-cog"></i>
         <span>Configure</span>
-	<i class="fa fa-fw fa-angle-down expand"></i>
+	<i class="fa fa-fw fa-angle-${obj.expanded and 'up' or 'down'} expand"></i>
       </a>
       <ul ${obj.expanded and 'class="visible"' or ''}>
 	<li ${obj.active=='users' and 'class="active"' or ''}>
