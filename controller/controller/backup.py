@@ -23,6 +23,7 @@ class BackupEntry(meta.Base):
         self.agentid = agentid
         self.name = name
 
+    # FIXME: make this a mixin
     def todict(self, pretty=False):
         d = {'agent': self.agent.displayname,
              'name': self.name}

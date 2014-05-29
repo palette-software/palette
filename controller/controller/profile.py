@@ -5,8 +5,9 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from rbac import User
 from passwd import tableau_hash
+from mixin import BaseDictMixin
 
-class UserProfile(User):
+class UserProfile(User, BaseDictMixin):
     """
     Profile information is added to the 'users' table.
     """
