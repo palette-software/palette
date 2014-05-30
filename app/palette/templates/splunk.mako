@@ -5,10 +5,8 @@
 <title>Palette - Splunk Integration</title>
 </%block>
 
-<section class="dynamic-content config-content">
-  <section class="top-zone">
-    <h1 class="page-title">Splunk Integration</h1>
-  </section>
+<section class="dynamic-content">
+  <h1 class="page-title">Splunk Integration</h1>
   <section class="row bottom-zone">
     <section class="col-sm-12 col-md-8">
       <label class="profile-page">Splunk Server Address</label>

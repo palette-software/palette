@@ -5,10 +5,8 @@
 <title>Palette - Server Configuration</title>
 </%block>
 
-<section class="config-content">
-  <section class="top-zone">
-    <h1 class="page-title">Servers</h1>
-  </section>
+<section class="dynamic-content">
+  <h1 class="page-title">Servers</h1>
 </section>
 
 <script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/servers.js">

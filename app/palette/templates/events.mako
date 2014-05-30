@@ -52,12 +52,13 @@
 <script id="event-list-template" type="x-tmpl-mustache">
   {{#events}}
   <article class="event">
-    <div class="summary">
+    <div class="summary clearfix">
       <i class="fa fa-fw fa-hdd-o {{color}}"></i>
       <div>
 	<h3>{{title}}</h3>
 	<p>{{summary}}</p>
       </div>
+      <i class="fa fa-fw fa-angle-down expand"></i>
     </div>
     <div class="description">{{{description}}}</div>
   </article>
