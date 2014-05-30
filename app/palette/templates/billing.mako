@@ -5,10 +5,8 @@
 <title>Palette - Billing</title>
 </%block>
 
-<section class="dynamic-content config-content">
-  <section class="top-zone">
-    <h1 class="page-title">Billing</h1>
-  </section>
+<section class="dynamic-content">
+  <h1 class="page-title">Billing</h1>
   <section class="row bottom-zone">
     <div class="col-sm-12 col-md-8 col-lg-6">
       <label>Card Info</label>

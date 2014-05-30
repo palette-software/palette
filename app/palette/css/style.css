@@ -24,9 +24,10 @@ a img {
     outline: 0;
 }
 i.expand {
-    float: right;
+    float: right !important;
     color: #484F53 !important;
     font-size: 26px !important;
+    clear: none !important;
 }
 i.tableau {
     background:url(/app/module/palette/images/tableau.svg);
@@ -715,9 +716,9 @@ ul.processes.visible {
 .dynamic-content {
     position: absolute;
     height: 100%;
-    left: 550px;
     top: 67px;
     right: 0;
+    left: 250px;
     padding: 0 15px 15px 18px;
     -webkit-transition: all 0.3s ease-out;
     -moz-transition: all 0.3s ease-out;
@@ -725,9 +726,6 @@ ul.processes.visible {
     -o-transition: all 0.3s ease-out;
     transition: all 0.3s ease-out;
     overflow-y: scroll;
-}
-.home-events .dynamic-content {
-    left: 250px;
 }
 .home-events .dynamic-content.servers-visible {
     left: 550px;
@@ -818,6 +816,30 @@ ul.processes.visible {
 }
 .dynamic-content .bottom-zone {
     padding-top: 20px;
+}
+.dynamic-content label {
+    text-align: left;
+}
+.dynamic-content .key, .dynamic-content .label {
+    display: inline;
+    font-size: inherit;
+    font-weight: 700;
+    line-height: 1;
+    color: #5F6670;
+    text-align: left;
+    overflow: hidden;
+    text-overflow:ellipsis;
+    white-space: nowrap;
+    padding: 0;
+}
+.dynamic-content .key {
+    padding: .25em .25em .25em 1em;
+}
+.dynamic-content .label {
+    padding: 0 .25em 0 0;
+}
+.dynamic-content input {
+    width: 80%;
 }
 .btn-default:hover, .btn-default:focus, .btn-default:active, .btn-default.active, .open .dropdown-toggle.btn-default {
     background-color: #8D96A3;
@@ -1024,34 +1046,6 @@ input[type="text"], input[type="password"], input[type="email"], select {
     box-sizing:border-box;
     font-size: 14px;
     max-width: 320px;
-}
-
-.config-content {
-    position: absolute;
-    top: 67px;
-    left: 250px;
-    padding: 10px;
-    width: 100%;
-    height: 100%;
-}
-
-.config-content i {
-    color: #8e96a3;
-}
-.config-content i:hover {
-    cursor: pointer;
-    color: #697078;
-}
-.config-content input {
-    width: 80%;
-}
-
-.config-content .btn-group {  
-/*    width: 100%; */
-    margin: 5px 0 15px 0;
-}
-.config-content input[type="text"], input[type="password"], input[type="email"], select {
-    max-width: none;
 }
 
 input[type="text"]:focus, input[type="password"]:focus, input[type="date"]:focus, input[type="datetime"]:focus, input[type="datetime-local"]:focus, input[type="month"]:focus, input[type="week"]:focus, input[type="email"]:focus, input[type="number"]:focus, input[type="search"]:focus, input[type="tel"]:focus, input[type="time"]:focus, input[type="url"]:focus, textarea:focus {
@@ -1307,30 +1301,6 @@ ul.title-area > li > h1 > a {
     color: #53c3f1; /* FIXME: color: #5f6670; */
     background-color:#f5f5f5;
 }
-.config-content label {
-    text-align: left;
-}
-.config-content p {
-    font-size: 28px;
-    font-weight: 500 !important;
-    margin: 0 0 20px;
-}
-.config-content .key, .config-content .label {
-    display: inline;
-    font-size: inherit;
-    font-weight: 700;
-    line-height: 1;
-    color: #5F6670;
-    text-align: left;
-    white-space: nowrap;
-    padding: 0;
-}
-.config-content .key {
-    padding: .25em .25em .25em 1em;
-}
-.config-content .label {
-    padding: 0 .25em 0 0;
-}
 .italic-label {
     font-style: italic;
     color: #8D96A3;
@@ -1440,6 +1410,7 @@ article.event {
     -ms-transition: all 0.3s ease-in;
     -o-transition: all 0.3s ease-in;
     transition: all 0.3s ease-in;
+    clear: all;
 }
 article.event.open {
     height: auto;
@@ -1494,7 +1465,8 @@ article.event a.edit i {
     line-height: 20px;
     margin: 0 0 0 5px;
 }
-article.event > div.summary div {
+article.event > div.summary > div, article.event > div.description > div {
+    float:left;
     padding: 10px 0;
 }
 article.event > div.summary h3 {
@@ -1502,8 +1474,7 @@ article.event > div.summary h3 {
     font-weight: 500;
     font-size: 14px;
     margin: 0;
-    width: 70%;
-    overflow: visible;
+    overflow: hidden;
     white-space: nowrap;
     text-overflow:ellipsis;
 }

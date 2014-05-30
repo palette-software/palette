@@ -5,10 +5,8 @@
 <title>Palette - Profile</title>
 </%block>
 
-<section class="config-content">
-  <section class="top-zone">
-    <h1 class="page-title">Profile</h1>
-  </section>
+<section class="dynamic-content">
+  <h1 class="page-title">Profile</h1>
   <section class="row bottom-zone">
     <section class="col-sm-12 col-md-8">
       <label class="profile-page">Tableau Server Display Name</label>

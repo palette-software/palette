@@ -5,10 +5,8 @@
 <title>Palette - Tableau Settings</title>
 </%block>
 
-<section class="config-content">
-  <section class="top-zone">
-    <h1 class="page-title">Tableau Settings</h1>
-  </section>
+<section class="dynamic-content">
+  <h1 class="page-title">Tableau Settings</h1>
   <section class="bottom-zone">
     <div id="yml-list"></div>
   </section>
