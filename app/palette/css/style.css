@@ -1431,9 +1431,8 @@ article.event {
     background-color: #e5e5e5;
     border-radius: 5px;
     display: block;
-    width: 100%;
-    position: relative;
     min-height: 55px;
+    width: 100%;
     color: #5f6670;
     margin-bottom: 8px;
     -webkit-transition: all 0.3s ease-in;
@@ -1441,7 +1440,6 @@ article.event {
     -ms-transition: all 0.3s ease-in;
     -o-transition: all 0.3s ease-in;
     transition: all 0.3s ease-in;
-    padding: 10px;
 }
 article.event.open {
     height: auto;
@@ -1451,9 +1449,7 @@ article.event:hover {
     cursor: pointer;    
 }
 article.event i {
-    position: absolute;
-    left: 0;
-    top: 0;
+    float: left;
     width: 60px;
     display: block;
     text-align: center;
@@ -1479,7 +1475,7 @@ article.event i.green {
     color: #76e259;
 }
 article.event i.help {
-    position: static;
+    float: none;
     display: inline-block;
     line-height: inherit;
     font-size: 1.5em;
@@ -1498,41 +1494,39 @@ article.event a.edit i {
     line-height: 20px;
     margin: 0 0 0 5px;
 }
-
-article.event h3 {
-    font-weight: 400;
+article.event > div.summary div {
+    padding: 10px 0;
+}
+article.event > div.summary h3 {
+    height: 20px;
+    font-weight: 500;
     font-size: 14px;
-    position: absolute;
-    left: 60px;
-    top: 8px;
     margin: 0;
     width: 70%;
     overflow: visible;
     white-space: nowrap;
     text-overflow:ellipsis;
 }
-article.event > p {
+article.event > div.summary p {
     font-size: 14px;
+    font-weight: 300 !important;
+    color: #5F6670;
     margin: 0;
-    position: absolute;
-    left: 60px;
-    top: 28px;
-    width: 70%;
     overflow: hidden;
     white-space: nowrap;
     text-overflow:ellipsis;
 }
-article.event > div {
-    position: relative;
+article.event > div.description {
     display: none;
-    margin: 45px 0 0 50px;
+    margin: 0 0 0 60px;
     width: 100%;
 }
-article.event.open > div {
-    display: inline-block;
+article.event.open > div.description {
+    display: block;
+    padding: 0 0 20px 0;
 }
-article.event.open > div > div {
-    padding: 1em .25em 1em 0;
+article.event.open > div.description > div.col-md-4 {
+    padding: 0 15px 0 0;
 }
 article.event ul {
     padding: 0 0 0 20px;

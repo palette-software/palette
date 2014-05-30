@@ -17,10 +17,19 @@
 <script id="user-list-template" type="x-tmpl-mustache">
   {{#users}}
   <article class="event">
-    <i class="fa fa-fw fa-user"></i>
-    <h3>{{friendly-name}}</h3>
-    <p>Last Visited Jan 1, 1970 at 12:00AM PT</p>
-    <div>
+    <div class="summary clearfix">
+      <i class="fa fa-fw fa-user"></i>
+      <div class="col-md-4">
+	<h3>{{friendly-name}}</h3>
+	<p>Last Visited Jan 1, 1970 at 12:00AM PT</p>
+      </div>
+      <div class="col-md-4">
+	<p>{{friendly-name}}</p>
+	<p>Last Visited Jan 1, 1970 at 12:00AM PT</p>
+      </div>
+      <i class="fa fa-fw fa-angle-down expand"></i>
+    </div>
+    <div class="description clearfix">
       <div class="col-md-4">
         <article><span class="label">Tableau User Name</span>{{name}}</article>
         <article>
