@@ -22,18 +22,19 @@ class FileManager(object):
 
     def checkpath(self, path):
         if path.endswith('/') or path.endswith('\\'):
-            raise ArgumentException("'path' may not refer to a directory")
+            raise ValueError("'path' may not refer to a directory")
 
     def get(self, path):
         self.checkpath(path)
         uri = self.uri(path)
-        self.agent.httpconn.request('GET', uri)
-        res = self.agent.httpconn.getresponse()
+        self.server.log.debug("FileManager GET %s", uri)
+        res = self.agent.http_send('GET', uri)
         if res.status != httplib.OK:
             self.httpexc(res)
         return res.read()
 
     def save(self, path, target='.'):
+        """Retrieves a remote file and saves it locally."""
         target = os.path.abspath(os.path.expanduser(target))
         self.checkpath(path)
 
@@ -52,8 +53,8 @@ class FileManager(object):
     def put(self, path, data):
         self.checkpath(path)
         uri = self.uri(path)
-        self.agent.httpconn.request('PUT', uri, data)
-        res = self.agent.httpconn.getresponse()
+        self.server.log.debug("FileManager PUT %s: %s", uri, data)
+        res = self.agent.http_send('PUT', uri, data)
         if res.status != httplib.OK:
             self.httpexc(res, method='PUT')
 
@@ -71,7 +72,7 @@ class FileManager(object):
     def delete(self, path):
         self.checkpath(path)
         uri = self.uri(path)
-        self.agent.httpconn.request('DELETE', uri)
-        res = self.agent.httpconn.getresponse()
+        self.server.log.debug("FileManager DELETE %s", uri)
+        res = self.agent.http_send('DELETE', uri)
         if res.status != httplib.OK:
-            self.httpexec(res, method='DELETE')
+            self.httpexc(res, method='DELETE')
