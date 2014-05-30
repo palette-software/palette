@@ -18,6 +18,7 @@ from akiri.framework.config import store
 from akiri.framework.ext.sqlalchemy import meta
 
 from controller.backup import BackupEntry, BackupManager
+from controller.agentinfo import AgentInfoEntry, AgentVolumesEntry
 from controller.agentstatus import AgentStatusEntry
 from controller.domain import Domain
 
@@ -74,16 +75,14 @@ class BackupApplication(RESTApplication):
             self.send_cmd('restore "%s:%s"' % (displayname, backup_entry.name))
         else:
             print >> sys.stderr, \
-                "Error: No displayname for agentid=%d uuid=%s" % \
-                                  (backup_entry.agentid, backup_entry.uuid)
+                "Error: No displayname for volid=%d uuid=%s" % \
+                                  (backup_entry.volid, backup_entry.uuid)
 
         return {}
 
     def get_backup_entry_from_backup_name(self, name):
         try:
             entry = meta.Session.query(BackupEntry).\
-                join(AgentStatusEntry).\
-                filter(AgentStatusEntry.domainid == self.domain.domainid).\
                 filter(BackupEntry.name == name).\
                 one()
         except NoResultFound, e:
@@ -93,7 +92,7 @@ class BackupApplication(RESTApplication):
 
     def get_displayname_by_volid(self, volid):
         try:
-            agent_entry = meta.Session.query(\
+            agent_entry, vol_entry = meta.Session.query(\
                 AgentStatusEntry, AgentVolumesEntry).\
                 filter(AgentStatusEntry.agentid == AgentVolumesEntry.agentid).\
                 filter(AgentVolumesEntry.volid == volid).\
@@ -106,8 +105,6 @@ class BackupApplication(RESTApplication):
 
     def get_last_backup(self):
         last_db = meta.Session.query(BackupEntry).\
-            join(AgentStatusEntry).\
-            filter(AgentStatusEntry.domainid == self.domain.domainid).\
             order_by(BackupEntry.creation_time.desc()).\
             first()
         return last_db
@@ -166,10 +163,13 @@ class BackupDialog(DialogPage):
         domainname = store.get('palette', 'domainname')
         self.domain = Domain.get_by_name(domainname)
 
-        # FIXME: use a mapping here.
-        query = meta.Session.query(BackupEntry, AgentStatusEntry).\
-            join(AgentStatusEntry).\
+        our_vols = meta.Session.query(AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domain.domainid).\
+            subquery()
+
+        query = meta.Session.query(BackupEntry, AgentVolumesEntry).\
+            filter(BackupEntry.volid == AgentVolumesEntry.volid).\
+            filter(AgentVolumesEntry.volid.has(our_vols)).\
             order_by(BackupEntry.creation_time.desc())
 
         self.backup_entries = []
