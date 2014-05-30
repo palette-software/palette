@@ -52,10 +52,14 @@
 <script id="event-list-template" type="x-tmpl-mustache">
   {{#events}}
   <article class="event">
-    <i class="fa fa-fw fa-hdd-o {{color}}"></i>
-    <h3>{{title}}</h3>
-    <p>{{summary}}</p>
-    <div>{{{description}}}</div>
+    <div class="summary">
+      <i class="fa fa-fw fa-hdd-o {{color}}"></i>
+      <div>
+	<h3>{{title}}</h3>
+	<p>{{summary}}</p>
+      </div>
+    </div>
+    <div class="description">{{{description}}}</div>
   </article>
   {{/events}}
 </script>

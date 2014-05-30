@@ -19,8 +19,9 @@ function ($, topic)
      * NOTE: Must be run after the AJAX request which populates the list.
      */
     function bindEvents() {
-        $('.event').bind('click', function() {
-            $(this).toggleClass('open');
+        $('.event > div.summary').bind('click', function() {
+            $(this).parent().toggleClass('open');
+            $(this).find('i.expand').toggleClass("fa-angle-up fa-angle-down");
         });
     }
 
