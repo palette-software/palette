@@ -823,7 +823,7 @@ ul.processes.visible {
 .dynamic-content .key, .dynamic-content .label {
     display: inline;
     font-size: inherit;
-    font-weight: 700;
+    font-weight: 500;
     line-height: 1;
     color: #5F6670;
     text-align: left;
