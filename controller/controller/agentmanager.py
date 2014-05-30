@@ -67,15 +67,21 @@ class AgentConnection(object):
         volume = self.tableau_install_dir.split(':')[0]
         return ntpath.join(volume + ':\\', AgentConnection.TABLEAU_DATA_DIR)
 
-    def http_send(self, method, uri, body=None):
-#        Check to see if state is not PENDING or DISCONNECTED?
+    def httpexc(self, res, method='GET', body=None):
+        if body is None:
+            body = res.read()
+        raise exc.HTTPException(res.status, res.reason,
+                                method=method, body=body)
 
+    def http_send(self, method, uri, body=None):
+        # Check to see if state is not PENDING or DISCONNECTED?
         self.lock()
         try:
             self.httpconn.request(method, uri, body)
-            return self.httpconn.getresponse()
-        except:
-            raise
+            res = self.httpconn.getresponse()
+            if res.status != httplib.OK:
+                self.httpexc(res, method=method)
+            return res.read()
         finally:
             self.unlock()
 
