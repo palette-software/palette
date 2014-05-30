@@ -6,7 +6,6 @@
 </%block>
 
 <section class="secondary-side-bar servers">
-  <a class="Psmall-only" id="toggle-events" href="#"><i class="fa"></i></a>
   <div id="server-list"></div>
 </section>
 

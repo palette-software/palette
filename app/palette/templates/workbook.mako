@@ -6,7 +6,6 @@
 </%block>
 
 <section class="secondary-side-bar">
-  <a class="Psmall-only" id="toggle-events" href="#"><i class="fa"></i></a>
   <h2>Filter</h2>
   <h5 class="sub margin-top">Workbook</h5>
   <section class="padding">
@@ -39,7 +38,6 @@
     <section class="row">
       <section class="col-xs-12">
         <h1 class="page-title">Workbook Archive</h1>
-        <a class="Psmallish-only" id="toggle-event-filters" href="#"><i class="fa fa-angle-left"></i></a>
       </section>
     </section>
     <section class="row">

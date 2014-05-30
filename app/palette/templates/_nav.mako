@@ -1,13 +1,8 @@
 <nav id="mainNav" data-topbar>
   <div class="container">
-    <%include file="_logo.mako" />
+    <a class="site-id" href="/"></a>
     <span id="toggle-main-menu" class="fi-list"></span>
     <ul class="nav">
-      <li class="Psmall-only more">
-        <a id="toggle-events" href="#">
-          <i class="fa fa-fw fa-list-alt"></i> 
-        </a>
-      </li>
       <li class="more">
         <a href="/support/ticket"><i class="fa fa-medkit"></i>
 	  <span>Need Help?</span>
