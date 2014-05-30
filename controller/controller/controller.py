@@ -21,11 +21,12 @@ import sqlalchemy
 from sqlalchemy.orm import sessionmaker, scoped_session
 from akiri.framework.ext.sqlalchemy import meta
 
-from agentmanager import AgentManager
+from agentmanager import AgentManager, AgentConnection
 from agentstatus import AgentStatusEntry
 from agentinfo import AgentInfoEntry, AgentVolumesEntry
 from auth import AuthManager
 from backup import BackupManager
+from diskcheck import DiskCheck
 from state import StateManager
 from system import SystemManager
 from status import StatusMonitor, StatusEntry
@@ -268,11 +269,16 @@ class CliHandler(socketserver.StreamRequestHandler):
         """Perform a Tableau backup and potentially migrate."""
 
         target = None
-        if len(cmd.args) > 1:
+        volume_name = None
+
+        if len(cmd.args) > 2:
             self.usage(self.do_backup.__usage__)
             return
         elif len(cmd.args) == 1:
             target = cmd.args[0]
+        elif len(cmd.args) == 2:
+            target = cmd.args[0]
+            volume_name = cmd.args[1]
 
         aconn = self.get_aconn(cmd.dict)
         if not aconn:
@@ -318,7 +324,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
 
-        body = server.backup_cmd(aconn, target)
+        body = server.backup_cmd(aconn, target, volume_name)
 
         self.print_client("%s", str(body))
         if not body.has_key('error'):
@@ -337,7 +343,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # 'tabadmin status -v' until at least we finish with ours.
         aconn.user_action_unlock()
 
-    do_backup.__usage__ = 'backup [target-displayname]'
+    do_backup.__usage__ = 'backup [target-displayname [volume-name]]'
 
     def do_backupdel(self, cmd):
         """Delete a Tableau backup."""
@@ -434,7 +440,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
 
         # No alerts or state updates are done in backup_cmd().
-        body = server.backup_cmd(aconn, None)
+        body = server.backup_cmd(aconn)
 
         if not body.has_key('error'):
             server.alert.send(CustomAlerts.BACKUP_BEFORE_RESTORE_FINISHED, body)
@@ -548,10 +554,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = server.cli_cmd(cli_command, aconn)
         self.report_status(body)
 
-
-    def do_pget(self, cmd):
+    def do_phttp(self, cmd):
         if len(cmd.args) < 2:
-            self.error(self.do_pget.__usage__)
+            self.error(self.do_phttp.__usage__)
             return
 
         aconn = self.get_aconn(cmd.dict)
@@ -559,22 +564,22 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error('agent not found')
             return
 
-        pget_cmd = Controller.PGET_BIN
+        phttp_cmd = Controller.PHTTP_BIN
         for arg in cmd.args:
             if ' ' in arg:
-                pget_cmd += ' "' + arg + '"'
+                phttp_cmd += ' "' + arg + '"'
             else:
-                pget_cmd += ' ' + arg
+                phttp_cmd += ' ' + arg
         if aconn:
             print >> self.wfile, "Sending to displayname '%s' (type: %s):" % \
                         (aconn.displayname, aconn.agent_type)
         else:
             print >> self.wfile, "Sending:",
 
-        print >> self.wfile, pget_cmd
-        body = server.cli_cmd(pget_cmd, aconn)
+        print >> self.wfile, phttp_cmd
+        body = server.cli_cmd(phttp_cmd, aconn)
         self.report_status(body)
-    do_pget.__usage__ = 'pget https://...... local-name'
+    do_phttp.__usage__ = 'phttp GET https://...... local-name'
 
     def do_info(self, cmd):
         """Run pinfo."""
@@ -958,6 +963,9 @@ class CliHandler(socketserver.StreamRequestHandler):
                 self.ack()
                 aconn.filemanager.delete(path)
                 body = {}
+            elif method == "REALPUT":
+                self.ack()
+                body = aconn.filemanager.put(path, cmd.args[2])
             else:
                 self.usage(self.do_file.__usage__)
                 return
@@ -1008,6 +1016,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         command = Controller.PS3_BIN+' %s %s "%s"' % \
             (action, entry.bucket, keypath)
+
 
         env = {u'ACCESS_KEY': token.credentials.access_key,
                u'SECRET_KEY': token.credentials.secret_key,
@@ -1192,148 +1201,67 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     LOGGER_NAME = "main"
     allow_reuse_address = True
 
-    PGET_BIN = "pget.exe"
+    PHTTP_BIN = "phttp.exe"
     PINFO_BIN = "pinfo.exe"
     PS3_BIN = "ps3.exe"
     CLI_URI = "/cli"
 
-    def backup_cmd(self, aconn, target=None):
+    def backup_cmd(self, aconn, target=None, volume_name=None):
         """Perform a backup - not including any necessary migration."""
 
+        if volume_name and not target:
+            return self.error(\
+                "volume_name can be specified only when target is specified.")
+
         # Disk space check.
-        if not AgentInfoEntry.TABLEAU_DATA_DIR_KEY in aconn.pinfo:
-            return self.error(\
-                    "Missing '%s' in pinfo.  Cannot proceed with backup." % \
-                                    AgentInfoEntry.TABLEAU_DATA_DIR_KEY)
-
-        min_primary_disk_needed = \
-            aconn.pinfo[AgentInfoEntry.TABLEAU_DATA_SIZE_KEY] * 2
-
-        # e.g. "C:"
-        data_volume = \
-                aconn.pinfo[AgentInfoEntry.TABLEAU_DATA_DIR_KEY].split(':')[0]
-
-        volume_l = [vol for vol in aconn.pinfo['volumes'] \
-                                        if vol['name'] == data_volume]
-
-        if not volume_l:
-            return self.error(\
-                ("Missing volume/disk free information from pinfo for " + \
-                    "'%s' volume '%s'") % (aconn.displayname, data_volume))
-
-        volume = volume_l[0]
-
-        if not "available-space" in volume:
-            return self.error(("Missing 'available-space' value from " + \
-                                "pinfo for '%s' volume '%s'") % \
-                                            (aconn.displayname, data_volume))
-
-        primary_free = volume['available-space']
-
-        if primary_free < min_primary_disk_needed:
-            return self.error(\
-                ("Cannot backup due to shortage of disk space on " + \
-                "primary host '%s': %d needed, but only %d free." ) % \
-                    aconn.displayname, min_primary_disk_needed, primary_free)
-
-        self.log.debug(\
-            "backup_cmd: primary has enough space.  Need %d and have %d",
-                                    min_primary_disk_needed, primary_free)
-
-        min_target_disk_needed = .3 * \
-                        aconn.pinfo[AgentInfoEntry.TABLEAU_DATA_SIZE_KEY]
+        dcheck = DiskCheck(self, aconn, target, volume_name)
+        if not dcheck.set_locs():
+            return self.error(dcheck.error_msg)
 
         # Example name: 20140127_162225.tsbak
         backup_name = time.strftime("%Y%m%d_%H%M%S") + ".tsbak"
 
         # aconn is the primary
         install_dir = aconn.auth['install-dir']
-        backup_path = ntpath.join(install_dir, "Data", backup_name)
+        backup_path = ntpath.join(install_dir, AgentConnection.DATA_DIR,
+                                                                backup_name)
 
-        # e.g.: c:\\Program\ Files\ (x86)\\Palette\\Data\\Jan27_162225.tsbak
+        # e.g.: c:\\Program\ Files\ (x86)\\Palette\\Data\\2014Jan27_162225.tsbak
         cmd = 'tabadmin backup \\\"%s\\\"' % backup_path
         body = self.cli_cmd(cmd, aconn)
         if body.has_key('error'):
             return body
 
-        agents = self.agentmanager.all_agents()
+        body['info'] = ""
 
-        # target_conn is the destination agent - if applicable.
-        target_conn = None
-        if target != None:
-            for key in agents:
-                if agents[key].displayname == target:
-                    # FIXME: make sure agent is connected
-                    if agents[key].agent_type != \
-                      AgentManager.AGENT_TYPE_PRIMARY:
-                        target_conn = agents[key]
-                    break
-            if not target_conn:
-                return self.error(\
-                            "agent %s does not exist or is offline" % target)
-        else:
-            # Get the current order of agents, according to the database
-            # column "display_order".
-            agent_keys_sorted = \
-                    AgentStatusEntry.display_order_by_domainid(server.domainid)
-
-            for key in agent_keys_sorted:
-                if not agents.has_key(key):
-                    self.error("backup_cmd: agent in memory by not in db! " + \
-                                                            "agentid: %s" % key)
-                    continue
-
-                self.log.debug("backup_cmd: Checking agent %s", \
-                                                    agents[key].displayname)
-                if agents[key].agent_type != AgentManager.AGENT_TYPE_PRIMARY:
-                    # FIXME: make sure agent is connected
-                    # FIXME: ticket #218: When the UI supports selecting
-                    #        a target, remove the code that automatically
-                    #        selects a remote.
-
-                    # Check to see if this target has a volume
-                    # with enough free disk space.
-                    vol_entry = AgentVolumesEntry.has_free_space(\
-                                    agents[key].agentid, min_target_disk_needed)
-
-                    if not vol_entry:
-                        self.log.debug("backup_cmd: No space on '%s'",
-                                                agents[key].displayname)
-                        continue    # no, not enough free space on this target
-
-                    # fixme: send the backup to a specific volume on the target
-                    self.log.debug("backup_cmd: setting target to " + \
-                        "agent '%s'.  Need %d, have %d, size %d, archive limit %d",
-                            agents[key].displayname, min_target_disk_needed,
-                                                vol_entry.free, vol_entry.size, 
-                                                        vol_entry.archive_limit)
-
-                    target_conn = agents[key]
-                    break
-
-        if target_conn:
-            backup_loc = target_conn
+        backup_vol_entry = None
+        # If the target is not the primary, copy the backup to the target.
+        if dcheck.target_conn:
+            backup_vol_entry = dcheck.vol_entry
             # Copy the backup to a non-primary agent
             source_path = "%s:%s" % (aconn.displayname, backup_name)
-            copy_body = self.copy_cmd(source_path, target_conn.displayname)
+            copy_body = self.copy_cmd(source_path,
+                        dcheck.target_conn.displayname, dcheck.target_path)
 
             if copy_body.has_key('error'):
-                msg = (u"Copy of backup file '%s' to agent '%s' failed. "+\
+                msg = (u"Copy of backup file '%s' to agent '%s:%s' failed. "+\
                     "Will leave the backup file on the primary agent. " + \
                     "Error was: %s") \
-                    % (backup_name, target_conn.displayname, copy_body['error'])
+                    % (backup_name, dcheck.target_conn.displayname, 
+                                    dcheck.target_path, copy_body['error'])
                 self.log.info(msg)
-                body['info'] = msg
+                body['info'] += msg
                 # Something was wrong with the copy to the non-primary agent.
                 #  Leave the backup on the primary after all.
-                backup_loc = aconn
+                backup_vol_entry = None
             else:
                 # The copy succeeded.
                 # Remove the backup file from the primary
                 remove_body = self.delete_file(aconn, backup_path)
 
-                body['info'] = \
-                    "Backup file copied to '%s'" % target_conn.displayname
+                body['info'] += \
+                    "Backup file copied to '%s'" % \
+                                        dcheck.target_conn.displayname
 
                 # Check if the DEL worked.
                 if remove_body.has_key('error'):
@@ -1341,12 +1269,24 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                         ("\nDEL of backup file failed after copy. "+\
                             "file: '%s'. Error was: %s") \
                             % (backup_path, remove_body['error'])
-        else:
-            backup_loc = aconn
-            # Backup file remains on the primary.
 
-        # Save name of backup, agentid to the db.
-        self.backup.add(backup_name, backup_loc.agentid)
+        # Save backup filename and volid to the db.
+        if backup_vol_entry:
+            # Backup was copied to a target
+            self.backup.add(backup_name, backup_vol_entry.volid)
+        else:
+            # Backup remains on the primary.  Dig out the volid for it.
+            try:
+                vol_entry = meta.Session.query(AgentVolumesEntry).\
+                    filter(AgentVolumesEntry.agentid == aconn.agentid).\
+                    filter(AgentVolumesEntry.primary_data_loc == True).\
+                    one()
+            except sqlalchemy.orm.exc.NoResultFound:
+                body['info'] += "no primary data location volume found! " + \
+                        "backup information cannot be saved to the database."
+                return body
+
+            self.backup.add(backup_name, vol_entry.volid)
 
         return body
 
@@ -1551,12 +1491,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("POST /%s getresponse returned null body" % uri)
         return body
 
-    def copy_cmd(self, source_path, dest_name):
-        """Sends a pget command and checks the status.
+    def copy_cmd(self, source_path, dest_name, target_path=None):
+        """Sends a phttp command and checks the status.
            copy source-displayname:/path/to/file dest-displayname
                        <source_path>          <dest-displayname>
            generates:
-               pget.exe https://primary-ip:192.168.1.1/file dir/
+               phttp.exe GET https://primary-ip:192.168.1.1/file dir/
            and sends it as a cli command to agent:
                 dest-displayname
            Returns the body dictionary from the status."""
@@ -1602,25 +1542,41 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # Enable the firewall port on the source host.
         self.log.debug("Enabling firewall port %d on src host '%s'", \
-                                    server.xfer_port, src.displayname)
-#        fw_body = src.firewall.enable(server.xfer_port)
-#        if fw_body.has_key("error"):
-        if 0:
+                                    src.auth['listen-port'], src.displayname)
+        fw_body = src.firewall.enable(src.auth['listen-port'])
+        if fw_body.has_key("error"):
             self.log.err(\
                 "firewall enable port %d on src host %s failed with: %s",
-                server.xfer_port, src.displayname)
+                                src.auth['listen-port'], src.displayname)
             return fw_body
 
         source_ip = src.auth['ip-address']
 
-        target_dir = ntpath.join(dst.auth['install-dir'], 'Data')
+        if target_path:
+            target_dir = target_path
+        else:
+            target_dir = ntpath.join(dst.auth['install-dir'], 'Data')
 
-        command = '%s https://%s:%s/%s "%s"' % \
-            (Controller.PGET_BIN, source_ip, src.auth['listen-port'],
+        command = '%s GET https://%s:%s/%s "%s"' % \
+            (Controller.PHTTP_BIN, source_ip, src.auth['listen-port'],
              source_path, target_dir)
 
+        try:
+            entry = meta.Session.query(AgentStatusEntry).\
+                filter(AgentStatusEntry.agentid == src.agentid).\
+                one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            self.log.err("Source agent not found!  agentid: %d", src.agentid)
+            return self.error("Source agent not found in agent table: %d " % \
+                                                                src.agentid)
+
+        env = {u'BASIC_USERNAME': entry.username,
+               u'BASIC_PASSWORD': entry.password}
+
+        self.log.debug("agent username: %s, password: %s", entry.username,
+                                                            entry.password)
         # Send command to destination agent
-        copy_body = self.cli_cmd(command, dst)
+        copy_body = self.cli_cmd(command, dst, env=env)
         return copy_body
 
     def restore_cmd(self, aconn, target, orig_state):
@@ -2236,7 +2192,6 @@ def main():
 
     server.domainname = config.get('palette', 'domainname')
     server.domain = Domain()
-    server.xfer_port = config.getint('palette', 'xfer_port', default=8889)
     # FIXME: Pre-production hack: add domain if necessary
     server.domain.add(server.domainname)
     server.domainid = server.domain.id_by_name(server.domainname)

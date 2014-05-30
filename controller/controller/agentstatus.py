@@ -24,6 +24,8 @@ class AgentStatusEntry(meta.Base):
     version = Column(String)
     ip_address = Column(String)
     listen_port = Column(Integer)
+    username = Column(String)
+    password = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
       server_onupdate=func.current_timestamp())
@@ -31,7 +33,8 @@ class AgentStatusEntry(meta.Base):
     last_disconnect_time = Column(DateTime)
     UniqueConstraint('domainid', 'displayname')
 
-    def __init__(self, hostname, agent_type, version, ip_address, listen_port, uuid, domainid):
+    def __init__(self, hostname, agent_type, version, ip_address, listen_port,
+                                            username, password, uuid, domainid):
         try:
             # FIXME: shouldn't this be a merge?
             entry = meta.Session.query(AgentStatusEntry).\
@@ -46,6 +49,8 @@ class AgentStatusEntry(meta.Base):
         self.version = version
         self.ip_address = ip_address
         self.listen_port = listen_port
+        self.username = username
+        self.password = password
         self.uuid = uuid
         self.domainid = domainid
 

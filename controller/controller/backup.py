@@ -11,20 +11,15 @@ class BackupEntry(meta.Base):
     DATEFMT = "%I:%M %p PDT on %B %d, %Y"
 
     key = Column(Integer, unique=True, nullable=False, primary_key=True)
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"))
+    volid = Column(BigInteger, ForeignKey("agent_volumes.volid"))
     name = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
       server_onupdate=func.current_timestamp())
-    UniqueConstraint('agentid', 'name')
-    agent = relationship("AgentStatusEntry")
-
-    def __init__(self, agentid, name):
-        self.agentid = agentid
-        self.name = name
+    UniqueConstraint('volid', 'name')
 
     def todict(self, pretty=False):
-        d = {'agent': self.agent.displayname,
+        d = {'volid': self.volid,
              'name': self.name}
         if pretty:
             d['creation-time'] = self.creation_time.strftime(self.DATEFMT)
@@ -40,25 +35,25 @@ class BackupManager(object):
     def __init__(self, domainid):
         self.domainid = domainid
 
-    def add(self, name, agentid):
+    def add(self, name, volid):
         session = meta.Session()
-        entry = BackupEntry(agentid, name)
+        entry = BackupEntry(name=name, volid=volid)
         session.add(entry)
         session.commit()
 
-    def remove(self, name, agentid):
+    def remove(self, name, volid):
         session = meta.Session()
         session.query(BackupEntry).\
-            filter(BackupEntry.agentid == agentid).\
+            filter(BackupEntry.volid == volid).\
             filter(BackupEntry.name == name).\
             delete()
         session.commit()
 
-    def find_by_name(self, name):
+    @classmethod
+    def find_by_name(cls, name):
         entry = meta.Session.query(BackupEntry, AgentStatusEntry).\
             filter(AgentStatusEntry.domainid == self.domainid).\
             filter(BackupEntry.name == name).\
-            filter(BackupEntry.agentid == AgentStatusEntry.agentid).\
             one()
         return entry
 

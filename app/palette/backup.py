@@ -68,13 +68,14 @@ class BackupApplication(RESTApplication):
             print >> sys.stderr, "Backup not found:", filename
             return {}
 
-        displayname = self.get_displayname_by_agentid(backup_entry.agentid)
+        displayname = self.get_displayname_by_volid(backup_entry.volid)
 
         if displayname:
             self.send_cmd('restore "%s:%s"' % (displayname, backup_entry.name))
         else:
-            print >> sys.stderr ,"Error: No displayname for agentid=%d uuid=%s" % \
-              (backup_entry.agentid, backup_entry.uuid)
+            print >> sys.stderr, \
+                "Error: No displayname for agentid=%d uuid=%s" % \
+                                  (backup_entry.agentid, backup_entry.uuid)
 
         return {}
 
@@ -90,15 +91,18 @@ class BackupApplication(RESTApplication):
 
         return entry
 
-    def get_displayname_by_agentid(self, agentid):
+    def get_displayname_by_volid(self, volid):
         try:
-            agent_entry = meta.Session.query(AgentStatusEntry).\
-                filter(AgentStatusEntry.agentid == agentid).\
+            agent_entry = meta.Session.query(\
+                AgentStatusEntry, AgentVolumesEntry).\
+                filter(AgentStatusEntry.agentid == AgentVolumesEntry.agentid).\
+                filter(AgentVolumesEntry.volid == volid).\
                 one()
         except NoResultFound, e:
             return None
 
         return agent_entry.displayname
+
 
     def get_last_backup(self):
         last_db = meta.Session.query(BackupEntry).\
