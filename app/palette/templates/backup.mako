@@ -6,7 +6,6 @@
 </%block>
 
 <section class="secondary-side-bar">
-  <a class="Psmall-only" id="toggle-events" href="#"><i class="fa"></i></a>
   <h2>Actions</h2>
   <ul class="actions">
     <li>
