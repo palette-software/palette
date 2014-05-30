@@ -59,9 +59,7 @@ class BackupManager(object):
 
     @classmethod
     def all(cls, domainid, asc=True):
-        q = meta.Session.query(BackupEntry).\
-            join(AgentStatusEntry).\
-            filter(AgentStatusEntry.domainid == domainid)
+        q = meta.Session.query(BackupEntry)
         if asc:
             q = q.order_by(BackupEntry.creation_time.asc())
         else:
