@@ -185,11 +185,6 @@ function ($, topic)
             $(this).parent().find('ul.processes').toggleClass('visible');
         });
 
-        /* SIDEBAR */
-        $('#toggle-side-menu').bind('click', function() {
-	        $('.main-side-bar, .secondary-side-bar, .dynamic-content').toggleClass('collapsed');
-        });
-
         $('#mainNav .container > i').bind('click', function() {
             $('.main-side-bar, .secondary-side-bar, .dynamic-content').toggleClass('open');
 	        $(this).toggleClass('open');

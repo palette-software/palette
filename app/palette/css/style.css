@@ -513,9 +513,6 @@ ul.dropdown-menu a:hover {
 .main-side-bar.collapsed .actions li a i {
     display: block;
 }
-.main-side-bar.collapsed #toggle-side-menu:before {
-    content:"\f061";
-}
 .main-side-bar ul.actions li.active a {
     background-color:rgba(0,0,0,0.1);
     box-shadow:0 -2px rgba(0,0,0,0.1);
@@ -605,27 +602,6 @@ ul.processes.visible {
 .secondary-side-bar ul.processes > li a {
     padding: 8px 25px 8px 25px;
     font-size: 12px;
-}
-
-#toggle-side-menu {
-    color: #8e96a3;
-    font-size: 32px;
-    bottom: 67px;
-    right: 0;
-    height: 64px;
-    width: 64px;
-    line-height: 64px;
-    text-align: center;
-    float: right;
-    position: absolute;
-}
-#toggle-side-menu:hover {
-    background-color: rgba(250, 250, 250, 0.1);
-    cursor: pointer;
-}
-#toggle-side-menu:active {
-    background-color: rgba(0, 0, 0, 0.1);
-    box-shadow: 0 2px rgba(0, 0, 0, 0.1) inset;
 }
 .main-side-bar > ul.actions {
     margin: 0;
