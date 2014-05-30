@@ -9,8 +9,9 @@ from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
 
 from akiri.framework.ext.sqlalchemy import meta
+from mixin import BaseDictMixin
 
-class AgentStatusEntry(meta.Base):
+class AgentStatusEntry(meta.Base, BaseDictMixin):
     __tablename__ = 'agent'
 
     agentid = Column(BigInteger, unique=True, nullable=False, \

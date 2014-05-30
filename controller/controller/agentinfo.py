@@ -3,7 +3,9 @@ from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
 
-class AgentYmlEntry(meta.Base):
+from mixin import BaseDictMixin
+
+class AgentYmlEntry(meta.Base, BaseDictMixin):
     __tablename__ = "agent_yml"
 
     ymlid = Column(Integer, unique=True, nullable=False, primary_key=True)
@@ -12,13 +14,7 @@ class AgentYmlEntry(meta.Base):
     key = Column(String)
     value = Column(String)
 
-    def todict(self):
-        return {'ymlid': self.ymlid,
-                'agentid': self.agentid,
-                'key': self.key,
-                'value': self.value}
-
-class AgentInfoEntry(meta.Base):
+class AgentInfoEntry(meta.Base, BaseDictMixin):
     __tablename__ = "agent_info"
 
     TABLEAU_DATA_DIR_KEY = "tableau-data-dir"
@@ -30,7 +26,7 @@ class AgentInfoEntry(meta.Base):
     key = Column(String)
     value = Column(String)
 
-class AgentVolumesEntry(meta.Base):
+class AgentVolumesEntry(meta.Base, BaseDictMixin):
     __tablename__ = "agent_volumes"
 
     volid = Column(Integer, unique=True, nullable=False, primary_key=True)
@@ -49,19 +45,6 @@ class AgentVolumesEntry(meta.Base):
 
     archive = Column(Boolean)
     archive_limit = Column(BigInteger)
-
-    def todict(self):
-        return {'name': self.name,
-                'vol_type': self.vol_type,
-                'label': self.label,
-                'drive_format': self.drive_format,
-                'size': self.size,
-                'free': self.free,
-                'system': self.system,
-                'archive': self.archive,
-                'archive_limit': self.archive_limit
-                }
-
 
     @classmethod
     def build(cls, agentid, volume):
