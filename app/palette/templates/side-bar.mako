@@ -47,5 +47,4 @@
       </ul>
     </li>
   </ul>
-  <i id="toggle-side-menu" class="fa fa-fw fa-arrow-left"></i>
 </section>
