@@ -1226,6 +1226,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         backup_path = ntpath.join(install_dir, AgentConnection.DATA_DIR,
                                                                 backup_name)
 
+        backup_vol = backup_path.split(':')[0]
         # e.g.: c:\\Program\ Files\ (x86)\\Palette\\Data\\2014Jan27_162225.tsbak
         cmd = 'tabadmin backup \\\"%s\\\"' % backup_path
         body = self.cli_cmd(cmd, aconn)
@@ -1239,16 +1240,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if dcheck.target_conn:
             backup_vol_entry = dcheck.vol_entry
             # Copy the backup to a non-primary agent
-            source_path = "%s:%s" % (aconn.displayname, backup_path)
+            source_path = "%s:%s/%s" % (aconn.displayname, backup_vol,
+                                                                backup_name)
             copy_body = self.copy_cmd(source_path,
-                        dcheck.target_conn.displayname, dcheck.target_path)
+                        dcheck.target_conn.displayname, dcheck.target_dir)
 
             if copy_body.has_key('error'):
                 msg = (u"Copy of backup file '%s' to agent '%s:%s' failed. "+\
                     "Will leave the backup file on the primary agent. " + \
                     "Error was: %s") \
                     % (backup_name, dcheck.target_conn.displayname, 
-                                    dcheck.target_path, copy_body['error'])
+                                    dcheck.target_dir, copy_body['error'])
                 self.log.info(msg)
                 body['info'] += msg
                 # Something was wrong with the copy to the non-primary agent.
@@ -1491,7 +1493,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("POST /%s getresponse returned null body" % uri)
         return body
 
-    def copy_cmd(self, source_path, dest_name, target_path=None):
+    def copy_cmd(self, source_path, dest_name, target_dir=None):
         """Sends a phttp command and checks the status.
            copy source-displayname:/path/to/file dest-displayname
                        <source_path>          <dest-displayname>
@@ -1552,12 +1554,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         source_ip = src.auth['ip-address']
 
-        if target_path:
-            target_dir = target_path
-        else:
+        if not target_dir:
             target_dir = ntpath.join(dst.auth['install-dir'], 'Data')
 
-        command = '%s GET https://%s:%s/%s "%s"' % \
+        command = '%s GET "https://%s:%s/%s" "%s"' % \
             (Controller.PHTTP_BIN, source_ip, src.auth['listen-port'],
              source_path, target_dir)
 

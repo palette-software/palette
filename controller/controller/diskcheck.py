@@ -22,7 +22,7 @@ class DiskCheck(object):
 
         # outputs
         self.target_conn = None
-        self.target_path = ""
+        self.target_dir = ""
         self.vol_entry = None
         self.min_target_disk_needed = .3 * \
                         aconn.pinfo[AgentInfoEntry.TABLEAU_DATA_SIZE_KEY]
@@ -169,15 +169,15 @@ class DiskCheck(object):
                     continue # Not enough available space on this target
 
                 self.target_conn = agents[key]
-                self.target_path = ntpath.join(vol_entry.name + ":/",
+                self.target_dir = ntpath.join(vol_entry.name + ":/",
                                                             vol_entry.path)
 
                 self.log.debug("we_choose_target: set target to " + \
-                    "agent '%s' volume path '%s'. " + \
+                    "agent '%s' dest dir '%s'. " + \
                     "Need %d, have %d, size %d, " + \
                     "archive limit %d",
                         agents[key].displayname,
-                        self.target_path,
+                        self.target_dir,
                         self.min_target_disk_needed,
                                 vol_entry.available_space, vol_entry.size, 
                                                     vol_entry.archive_limit)
@@ -227,7 +227,7 @@ class DiskCheck(object):
                         entry.archive_limit,
                         entry.size - entry.available_space +  \
                                             self.min_target_disk_needed))
-        self.target_path = ntpath.join(entry.name + ":", entry.path)
+        self.target_dir = ntpath.join(entry.name + ":", entry.path)
         self.vol_entry = entry
 
         return True
@@ -248,7 +248,7 @@ class DiskCheck(object):
             return self.error("we_choose_volume: No space on chosen " + \
                             "target '%s'" % agents[key].displayname)
 
-        self.target_path = ntpath.join(vol_entry.name + ":", 
+        self.target_dir = ntpath.join(vol_entry.name + ":", 
                                                         vol_entry.path)
         self.vol_entry = vol_entry
 
