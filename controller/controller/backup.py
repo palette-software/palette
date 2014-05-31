@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 from akiri.framework.ext.sqlalchemy import meta
 
 from agentstatus import AgentStatusEntry
+from agentinfo import AgentVolumesEntry
 
 class BackupEntry(meta.Base):
     __tablename__ = 'backup'
@@ -59,9 +60,27 @@ class BackupManager(object):
 
     @classmethod
     def all(cls, domainid, asc=True):
-        q = meta.Session.query(BackupEntry)
-        if asc:
-            q = q.order_by(BackupEntry.creation_time.asc())
-        else:
-            q = q.order_by(BackupEntry.creation_time.desc())
-        return q.all()
+        our_vols = meta.Session.query(AgentStatusEntry).\
+            filter(AgentStatusEntry.domainid == domainid).\
+            subquery()
+
+        query = meta.Session.query(BackupEntry, AgentVolumesEntry).\
+            filter(BackupEntry.volid == AgentVolumesEntry.volid).\
+            filter(AgentVolumesEntry.volid.exists(our_vols)).\
+            order_by(BackupEntry.creation_time.desc()).\
+            all()
+
+        for backup, vol in query.all():
+            print "name:", backup.name
+            print "void:", backup.volid
+            print "volume:", vol.name
+            print "path:", vol.path
+            print "-----------------"
+            data['displayname'] = agent.displayname
+            data['creation-time'] = str(backup.creation_time)[:19] # Cut off fraction
+#        q = meta.Session.query(BackupEntry)
+#        if asc:
+#            q = q.order_by(BackupEntry.creation_time.asc())
+#        else:
+#            q = q.order_by(BackupEntry.creation_time.desc())
+#        return q.all()

@@ -32,7 +32,8 @@ from akiri.framework.ext.sqlalchemy import meta
 class AgentConnection(object):
 
     TABLEAU_DATA_DIR = ntpath.join("ProgramData", "Tableau", "Tableau Server")
-    DEFAULT_VOLUME_PATH = ntpath.join("Program Files (x86)", "Palette", "Data")
+    DEFAULT_VOLUME_PATH = ntpath.join("\\", "Program Files (x86)", "Palette",
+                                                                        "Data")
     DATA_DIR = "Data"
 
     def __init__(self, server, conn, addr):
@@ -739,28 +740,29 @@ class AgentManager(threading.Thread):
             self.log.error(traceback.format_exc())
 
     def save_routes(self, agent):
-        return  # fixme, of course
-
         lines = ""
         rows = meta.Session().query(AgentVolumesEntry).\
             filter(AgentVolumesEntry.agentid == agent.agentid).\
             all()
 
+        lines = []
         for volentry in rows:
             if not volentry.archive:
                 continue
+            lines.append("%s:%s\r\n" % (volentry.name, volentry.path))
 
-            lines += "%s:%s" % (volentry.name, volentry.path)
-            print "row has:", volentry.name, volentry.path
+        # remove duplicate lines: The primary_data_loc could be
+        # the same as a volume path entered by the user.
+        lines = list(set(lines))
 
-        print "lines = ", lines
+        lines = ''.join(lines)
+
         if 'install-dir' not in agent.auth:
             self.log.error("save_routes: agent is missing 'install-dir'")
             return
 
         route_path = ntpath.join(agent.auth['install-dir'], "conf",
                                                                 "routes.txt")
-        print "route_path= ", route_path
         try:
             agent.filemanager.put(route_path, lines)
         except (exc.HTTPException, httplib.HTTPException,
