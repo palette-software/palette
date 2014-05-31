@@ -60,27 +60,26 @@ class BackupManager(object):
 
     @classmethod
     def all(cls, domainid, asc=True):
-        our_vols = meta.Session.query(AgentStatusEntry).\
-            filter(AgentStatusEntry.domainid == domainid).\
-            subquery()
+        """
+        fixme: finish this.
+        sql = \
+            "SELECT backup agent_volumes FROM backup, agent_volumes " + \
+            "WHERE backup.volid = agent_volumes.volid AND " + \
+            "agent_volumes.agentid IN " + \
+            "(SELECT agent.agentid FROM agent WHERE agent.domainid = %d) " + \
+            "ORDER BY backup.creation_time " % (domainid)
 
-        query = meta.Session.query(BackupEntry, AgentVolumesEntry).\
-            filter(BackupEntry.volid == AgentVolumesEntry.volid).\
-            filter(AgentVolumesEntry.volid.exists(our_vols)).\
-            order_by(BackupEntry.creation_time.desc()).\
-            all()
+        if asc:
+            sql += "ASC"
+        else:
+            sql += "DESC"
 
-        for backup, vol in query.all():
-            print "name:", backup.name
-            print "void:", backup.volid
-            print "volume:", vol.name
-            print "path:", vol.path
-            print "-----------------"
-            data['displayname'] = agent.displayname
-            data['creation-time'] = str(backup.creation_time)[:19] # Cut off fraction
-#        q = meta.Session.query(BackupEntry)
-#        if asc:
-#            q = q.order_by(BackupEntry.creation_time.asc())
-#        else:
-#            q = q.order_by(BackupEntry.creation_time.desc())
-#        return q.all()
+        return meta.engine.execute(sql)
+        """
+
+        q = meta.Session.query(BackupEntry)
+        if asc:
+            q = q.order_by(BackupEntry.creation_time.asc())
+        else:
+            q = q.order_by(BackupEntry.creation_time.desc())
+        return q.all()

@@ -70,13 +70,21 @@ class BackupApplication(RESTApplication):
             return {}
 
         displayname = self.get_displayname_by_volid(backup_entry.volid)
-
-        if displayname:
-            self.send_cmd('restore "%s:%s"' % (displayname, backup_entry.name))
-        else:
+        if not displayname:
             print >> sys.stderr, \
                 "Error: No displayname for volid=%d uuid=%s" % \
                                   (backup_entry.volid, backup_entry.uuid)
+            return {}
+
+        vol_entry = AgentVolumesEntry.get_vol_entry_by_volid(backup_entry.volid)
+        if not vol_entry:
+            print >> sys.stderr, \
+                "Error: No vol_entry for volid=%d uuid=%s" % \
+                                  (backup_entry.volid, backup_entry.uuid)
+            return {}
+
+        self.send_cmd('restore "%s:%s/%s"' % \
+                (displayname, vol_entry.name, backup_entry.name))
 
         return {}
 

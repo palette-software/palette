@@ -761,7 +761,7 @@ class AgentManager(threading.Thread):
             self.log.error("save_routes: agent is missing 'install-dir'")
             return
 
-        route_path = ntpath.join(agent.auth['install-dir'], "conf",
+        route_path = ntpath.join(agent.auth['install-dir'], "conf", "archive",
                                                                 "routes.txt")
         try:
             agent.filemanager.put(route_path, lines)

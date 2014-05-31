@@ -125,3 +125,12 @@ class AgentVolumesEntry(meta.Base):
 
         except NoResultFound, e:
             return False
+
+    @classmethod
+    def get_vol_entry_by_volid(cls, volid):
+        try:
+            return meta.Session.query(AgentVolumesEntry).\
+                filter(AgentVolumesEntry.volid == volid).\
+                one()
+        except NoResultFound, e:
+            return None
