@@ -1598,26 +1598,32 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         parts = target.split(':')
         if len(parts) == 1:
             source_displayname = aconn.displayname
-            source_filename = parts[0]
+            source_spec = parts[0]
         elif len(parts) == 2:
-            source_displayname = parts[0]
-            source_filename = parts[1]
+            source_displayname = parts[0]   #.e.g "Tableau Archive #201"
+            source_spec = parts[1]          # e.g. "C/20140531_153629.tsbak"
         else:
             stateman.update(orig_state)
             return self.error('Invalid target: ' + target)
 
-        if os.path.isabs(source_filename):
+        if os.path.isabs(source_spec):
             stateman.update(orig_state)
             return self.error(\
                 "[ERROR] May not specify an absolute pathname or disk: " + \
-                                                                source_filename)
+                                                                source_spec)
+        parts = source_spec.split('/')
+        if len(parts) == 0:
+            return self.error(\
+                "[ERROR] restore: Bad target spec:  Missing '/': %s",
+                                                            source_spec)
+        filename_only = parts[1] #  e.g. "20140531_153629.tsbak"
 
         install_dir = aconn.auth['install-dir']
-        source_fullpathname = ntpath.join(install_dir, "Data", source_filename)
+        local_fullpathname = ntpath.join(install_dir, "Data", filename_only)
 
-        # Check if the source_filename is on the Primary Agent.
+        # Check if the file is on the Primary Agent.
         if source_displayname != aconn.displayname:
-            # The source_filename isn't on the Primary agent:
+            # The file isn't on the Primary agent:
             # We need to copy the file to the Primary.
 
             # copy_cmd arguments:
@@ -1625,13 +1631,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             #   dest-agent-displayname
             self.log.debug("restore: Sending copy command: %s, %s", \
                                target, aconn.displayname)
+            # target is something like: "C/20140531_153629.tsbak"
             body = server.copy_cmd(target, aconn.displayname)
 
             if body.has_key("error"):
                 fmt = "restore: copy backup file '%s' from '%s' failed. " +\
                     "Error was: %s"
                 self.log.debug(fmt,
-                               source_fullpathname,
+                               source_spec,
                                source_displayname,
                                body['error'])
                 stateman.update(orig_state)
@@ -1652,7 +1659,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 if source_displayname != aconn.displayname:
                     # If the file was copied to the Primary, delete
                     # the temporary backup file we copied to the Primary.
-                    self.delete_file(aconn, source_fullpathname)
+                    self.delete_file(aconn, local_fullpathname)
                 stateman.update(orig_state)
                 return stop_body
 
@@ -1671,7 +1678,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         stateman.update(StateManager.STATE_STARTING_RESTORE)
         try:
-            cmd = 'tabadmin restore \\\"%s\\\"' % source_fullpathname
+            cmd = 'tabadmin restore \\\"%s\\\"' % local_fullpathname
             self.log.debug("restore sending command: %s", cmd)
             restore_body = self.cli_cmd(cmd, aconn)
         except httplib.HTTPException, e:
@@ -1691,7 +1698,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if source_displayname != aconn.displayname:
             # If the file was copied to the Primary, delete
             # the temporary backup file we copied to the Primary.
-            self.delete_file(aconn, source_fullpathname)
+            self.delete_file(aconn, local_fullpathname)
 
         if restore_success:
             stateman.update(StateManager.STATE_STARTED)

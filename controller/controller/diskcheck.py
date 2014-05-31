@@ -106,7 +106,7 @@ class DiskCheck(object):
         if self.target:
             return self.set_target()
         else:
-            return self.we_choose_target()
+            return self.we_choose_target_and_vol()
 
     def set_target(self):
         """We were passed a target.  Look for the target
@@ -136,7 +136,7 @@ class DiskCheck(object):
         else:
             return self.we_choose_volume()
 
-    def we_choose_target(self):
+    def we_choose_target_and_vol(self):
         # We weren't passed a specific target to copy the backup to.
         # Get the current order of agents, according to the database
         # column "display_order".
@@ -168,15 +168,17 @@ class DiskCheck(object):
                                             agents[key].displayname)
                     continue # Not enough available space on this target
 
+                self.vol_entry = vol_entry
                 self.target_conn = agents[key]
                 self.target_dir = ntpath.join(vol_entry.name + ":/",
                                                             vol_entry.path)
 
                 self.log.debug("we_choose_target: set target to " + \
-                    "agent '%s' dest dir '%s'. " + \
+                    "agent '%s', volid %d, target dir '%s'. " + \
                     "Need %d, have %d, size %d, " + \
                     "archive limit %d",
                         agents[key].displayname,
+                        vol_entry.volid,
                         self.target_dir,
                         self.min_target_disk_needed,
                                 vol_entry.available_space, vol_entry.size, 
