@@ -32,7 +32,9 @@
   </ul>
 </section>
 
-<%include file="events.mako" />
+<section class="dynamic-content">
+    <%include file="events.mako" />
+</section>
 
 <script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/logs.js">
 </script>

@@ -9,8 +9,7 @@
   <div id="server-list"></div>
 </section>
 
-
-<section class="home-events">
+<section class="dynamic-content">
     <%include file="events.mako" />
 </section>
 

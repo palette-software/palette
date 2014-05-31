@@ -37,7 +37,9 @@
   <div id="backup-list"></div>
 </section>
 
-<%include file="events.mako" />
+<section class="dynamic-content with-secondary-sidebar">
+  <%include file="events.mako" />
+</section>
 
 <article class="popup" id="popupStart">
   <section class="popup-body">

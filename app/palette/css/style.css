@@ -24,7 +24,8 @@ a img {
     outline: 0;
 }
 i.expand {
-    float: right !important;
+    position: absolute;
+    right: 0;
     color: #484F53 !important;
     font-size: 26px !important;
     clear: none !important;
@@ -727,6 +728,9 @@ ul.processes.visible {
     transition: all 0.3s ease-out;
     overflow-y: scroll;
 }
+.dynamic-content.with-secondary-sidebar {
+    left: 550px;
+}
 .home-events .dynamic-content.servers-visible {
     left: 550px;
 }
@@ -1410,7 +1414,7 @@ article.event {
     -ms-transition: all 0.3s ease-in;
     -o-transition: all 0.3s ease-in;
     transition: all 0.3s ease-in;
-    clear: all;
+    position: relative;
 }
 article.event.open {
     height: auto;
@@ -1465,12 +1469,26 @@ article.event a.edit i {
     line-height: 20px;
     margin: 0 0 0 5px;
 }
-article.event > div.summary > div, article.event > div.description > div {
-    float:left;
-    padding: 10px 0;
+article.event .col2 {
+    float: left;
+    width: 50%;
+}
+article.event > div.description > div {
+    padding: 0 50px 0 0;
+}
+article.event > div.summary > div {
+    position: absolute;
+    left: 0;
+    top: 0;
+    padding: 10px 60px;
+    width: 100%;
+    height: 55px;
+}
+article.event > div.summary div.col2 {
+    padding: 0 10px 0 0;
 }
 article.event > div.summary h3 {
-    height: 20px;
+    line-height: 20px;
     font-weight: 500;
     font-size: 14px;
     margin: 0;
@@ -1489,15 +1507,11 @@ article.event > div.summary p {
 }
 article.event > div.description {
     display: none;
-    margin: 0 0 0 60px;
-    width: 100%;
 }
 article.event.open > div.description {
     display: block;
-    padding: 0 0 20px 0;
-}
-article.event.open > div.description > div.col-md-4 {
-    padding: 0 15px 0 0;
+    padding: 0 10px 20px 60px;
+    width: 100%;
 }
 article.event ul {
     padding: 0 0 0 20px;
