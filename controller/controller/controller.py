@@ -529,10 +529,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def do_cli(self, cmd):
         if len(cmd.args) < 1:
-            print >> self.wfile, \
-                "[ERROR] usage: cli [ { /displayname=dname | " + \
-                        "/hostname=hname | /uuid=uuidname | " + \
-                                    "/type={primary|worker|other} } ] command"
+            return self.error(self.do_cli.__usage__)
             return
 
         aconn = self.get_aconn(cmd.dict)
@@ -540,14 +537,17 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error('agent not found')
             return
 
-        cli_command = ' '.join(cmd.args)
-        print >> self.wfile, "Sending to displayname '%s' (type: %s):" % \
-          (aconn.displayname, aconn.agent_type)
-        print >> self.wfile, cli_command
+        self.ack()
 
+        cli_command = cmd.args[0]
+        for arg in cmd.args[1:]:
+            if ' ' in arg:
+                cli_command += ' "' + arg + '" '
+            else:
+                cli_command += ' ' + arg
         body = server.cli_cmd(cli_command, aconn)
         self.report_status(body)
-
+    do_cli.__usage__ = 'cli <command> [args...]'
 
     def do_pget(self, cmd):
         if len(cmd.args) < 2:
