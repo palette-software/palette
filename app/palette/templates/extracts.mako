@@ -48,7 +48,7 @@
   </div>
 </section>
 
-<section class="dynamic-content">
+<section class="dynamic-content with-secondary-sidebar">
   <section class="top-zone">
     <section class="row">
       <section class="col-xs-12">
@@ -89,10 +89,15 @@
 <script id="extract-list-template" type="x-tmpl-mustache">
   {{#extracts}}
   <article class="event">
-    <i class="fa fa-fw fa-copy {{color}}"></i>
-    <h3>{{name}}</h3>
-    <p>{{summary}}</p>
-    <div>{{description}}</div>
+    <div class="summary clearfix">
+      <i class="fa fa-fw fa-copy {{color}}"></i>
+      <div>
+	<h3>{{name}}</h3>
+	<p>{{summary}}</p>
+      </div>
+      <i class="fa fa-fw fa-angle-down expand"></i>
+    </div>
+    <div class="description">{{description}}</div>
   </article>
   {{/extracts}}
 </script>
