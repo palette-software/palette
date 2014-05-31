@@ -7,9 +7,7 @@
 
 <section class="dynamic-content">
   <h1 class="page-title">Servers</h1>
-  <section class="bottom-zone">
-    <div id="server-list"></div>
-  </section>
+  <div id="server-list"></div>
 </section>
 
 <script id="server-list-template" type="x-tmpl-mustache">
