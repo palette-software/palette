@@ -7,9 +7,7 @@
 
 <section class="dynamic-content">
   <h1 class="page-title">Tableau Settings</h1>
-  <section class="bottom-zone">
-    <div id="yml-list"></div>
-  </section>
+  <div id="yml-list"></div>
 </section>
 
 <script id="yml-list-template" type="x-tmpl-mustache">

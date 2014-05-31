@@ -7,9 +7,7 @@
 
 <section class="dynamic-content">
   <h1 class="page-title">Users</h1>
-  <section class="bottom-zone">
-    <div id="user-list"></div>
-  </section>
+  <div id="user-list"></div>
 </section>
 
 <script id="user-list-template" type="x-tmpl-mustache">
