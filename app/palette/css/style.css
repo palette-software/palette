@@ -10,10 +10,14 @@ html, body {
     overflow: hidden;
     position: relative;
 }
+body {
+    background: #ececec;
+}
 h1, h2, h3, h4, h5, h6 {
     font-family:'Roboto', sans-serif;
 }
 p {
+    color: #5F6670;
     font-weight: 300 !important;
 }
 a {
@@ -1174,12 +1178,6 @@ ul.checkbox li input[type="checkbox"]:checked + label span:after, ul.radio li in
 #status p {
     padding: 1em 0 2em 0;
     text-align: center;
-}
-body {
-    background: #ececec;
-}
-p {
-    color: #3b3b3b;
 }
 ul.title-area > li > h1 > a {
     color: #fff;
