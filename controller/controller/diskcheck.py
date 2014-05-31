@@ -95,7 +95,7 @@ class DiskCheck(object):
                                                         primary_available)
 
         self.log.debug(\
-            "backup_cmd: primary has enough space.  Need %d and have %d",
+            "primary_check: primary has enough space.  Need %d and have %d",
                                     min_primary_disk_needed, primary_available)
 
         return True
@@ -146,11 +146,11 @@ class DiskCheck(object):
         agents = self.agentmanager.all_agents()
         for key in agent_keys_sorted:
             if not agents.has_key(key):
-                self.error("backup_cmd: agent in memory by not in db! " + \
-                                                        "agentid: %s" % key)
+                self.error("we_choose_target: agent in memory not in " + \
+                                                    "db! agentid: %s" % key)
                 continue
 
-            self.log.debug("backup_cmd: Checking agent %s", \
+            self.log.debug("we_choose_target: Checking agent %s", \
                                                 agents[key].displayname)
             if agents[key].agent_type != AgentManager.AGENT_TYPE_PRIMARY:
                 # FIXME: make sure agent is connected
@@ -164,15 +164,15 @@ class DiskCheck(object):
                             agents[key].agentid, self.min_target_disk_needed)
 
                 if not vol_entry:
-                    self.log.debug("backup_cmd: No space on '%s'",
+                    self.log.debug("we_choose_target: No space on '%s'",
                                             agents[key].displayname)
                     continue # Not enough available space on this target
 
                 self.target_conn = agents[key]
-                self.target_path = ntpath.join(vol_entry.name + ":",
+                self.target_path = ntpath.join(vol_entry.name + ":/",
                                                             vol_entry.path)
 
-                self.log.debug("backup_cmd: set target to " + \
+                self.log.debug("we_choose_target: set target to " + \
                     "agent '%s' volume path '%s'. " + \
                     "Need %d, have %d, size %d, " + \
                     "archive limit %d",
@@ -245,7 +245,7 @@ class DiskCheck(object):
                         target_conn.agentid, self.min_target_disk_needed)
 
         if not vol_entry:
-            return self.error("backup_cmd: No space on chosen " + \
+            return self.error("we_choose_volume: No space on chosen " + \
                             "target '%s'" % agents[key].displayname)
 
         self.target_path = ntpath.join(vol_entry.name + ":", 

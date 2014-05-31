@@ -1239,7 +1239,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if dcheck.target_conn:
             backup_vol_entry = dcheck.vol_entry
             # Copy the backup to a non-primary agent
-            source_path = "%s:%s" % (aconn.displayname, backup_name)
+            source_path = "%s:%s" % (aconn.displayname, backup_path)
             copy_body = self.copy_cmd(source_path,
                         dcheck.target_conn.displayname, dcheck.target_path)
 
