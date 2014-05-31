@@ -1,4 +1,4 @@
-from meta import meta
+from akiri.framework.ext.sqlalchemy import meta
 
 from sqlalchemy import Column, Integer, BigInteger, String
 from sqlalchemy.schema import ForeignKey, Table
