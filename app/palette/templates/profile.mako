@@ -7,30 +7,20 @@
 
 <section class="dynamic-content">
   <h1 class="page-title">Profile</h1>
-  <section class="row bottom-zone">
-    <section class="col-sm-12 col-md-8">
-      <label class="profile-page">Tableau Server Display Name</label>
-      <p>${req.remote_user.friendly_name}</p>
-      <label class="profile-page">Tableau Server Username</label>
-      <p>${req.remote_user.name}</p>
-      <label class="profile-page">Email</label>
-      <p class="editbox" data-href="/rest/profile/email">
-        ${req.remote_user.email or ''}
-      </p>
-      <label class="profile-page">Tableau Server User License</label>
-      <p>Interactor</p>
-      <label class="profile-page">Tableau Server Administrator Role</label>
-      <p>System Administrator</p>
-      <label class="profile-page">Tableau Server User Publisher Role</label>
-      <p>Publisher</p>
-      </div>
-      <section class="row margin-top">
-        <section class="col-xs-12 col-sm-6">
-          <button type="submit" name="save" class="p-btn">Save</button>
-        </section>
-      </section>
-    </section>
-  </section>
+  <label class="profile-page">Tableau Server Display Name</label>
+  <p>${req.remote_user.friendly_name}</p>
+  <label class="profile-page">Tableau Server Username</label>
+  <p>${req.remote_user.name}</p>
+  <label class="profile-page">Email</label>
+  <p class="editbox" data-href="/rest/profile/email">
+    ${req.remote_user.email or ''}
+  </p>
+  <label class="profile-page">Tableau Server User License</label>
+  <p>Interactor</p>
+  <label class="profile-page">Tableau Server Administrator Role</label>
+  <p>System Administrator</p>
+  <label class="profile-page">Tableau Server User Publisher Role</label>
+  <p>Publisher</p>
 </section>
 
 <script id="editbox-view" type="x-tmpl-mustache">
