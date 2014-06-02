@@ -90,9 +90,30 @@ function ($, topic)
      * Enable the select-like elements created with the dropdown class.
      */
     function setupDropdowns() {
-        $('.dropdown-menu li').bind('click', function() {
-            var dropdownSelect = $(this).find('a').text();     
-            $(this).parent().siblings().find('div').text(dropdownSelect);
+        $('.dropdown-menu li').bind('click', function(event) {
+            event.preventDefault();
+            var a = $(this).find('a');
+            var div =  $(this).parent().siblings().find('div')
+            var href = a.attr('href');
+            if (!href || href == '#') {
+                div.text(a.text());
+                return;
+            }
+            data = customDataAttributes(a);
+            $.ajax({
+                type: 'POST',
+                url: href,
+                data: data,
+                dataType: 'json',
+                async: false,
+            
+                success: function(data) {
+                    div.text(a.text());
+                },
+                error: function(req, textStatus, errorThrown) {
+                    alert(textStatus + ": " + errorThrown);
+                }
+            });
         });
     }
 
@@ -113,6 +134,25 @@ function ($, topic)
                 $(this).parent().find('ul').removeClass('visible');
             }                
         });
+    }
+
+    /*
+     * customDataAttributes
+     * Return the HTML5 custom data attributes for a selector or domNode.
+     */
+    function customDataAttributes(obj) {
+        if (obj instanceof $) {
+            obj = obj.get(0);
+        }
+        var d = {}
+        for (var i=0, attrs=obj.attributes, l=attrs.length; i<l; i++){
+            var name = attrs.item(i).nodeName;
+            if (!name.match('^data-')) {
+                continue;
+            }
+            d[name.substring(5)] = attrs.item(i).nodeValue;
+        }
+        return d;
     }
 
     /* MONITOR TIMER */

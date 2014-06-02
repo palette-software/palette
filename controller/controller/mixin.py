@@ -9,7 +9,9 @@ class BaseDictMixin(object):
         for c in self.__table__.columns:
             if c.name in exclude:
                 continue
-            value = str(getattr(self, c.name))
+            value = getattr(self, c.name)
+            if not isinstance(value, (int, long)):
+                value = str(value)
             name = pretty and c.name.replace('_', '-') or c.name
             d[name] = value
         return d

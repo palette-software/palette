@@ -29,9 +29,9 @@
     </div>
     <div class="description clearfix">
       <div>
-	<div class="col2">
+	    <div class="col2">
           <article>
-	    <span class="label">Tableau User Name</span>{{name}}</article>
+	        <span class="label">Tableau User Name</span>{{name}}</article>
           <article>
             <span class="label">License Level</span>{{license-level}}
           </article>
@@ -40,25 +40,25 @@
           </article>
           <article><span class="label">Created</span>{{created}}</article>
           <article><span class="label">Updated</span>{{updated}}</article>
-	</div>
-	<div class="col2">
+	    </div>
+	    <div class="col2">
           <article>
             <span class="label">Palette Admin Permissions</span>
             <i class="fa fa-fw fa-question-circle fa-2x help"></i>
           </article>
           <div class="btn-group dropdown">
             <button type="button" class="btn btn-default dropdown-toggle"
-                  data-toggle="dropdown">
-              <div>No Admin</div><span class="caret"></span>
+                    data-toggle="dropdown">
+              <div>{{admin-type}}</div><span class="caret"></span>
             </button>
             <ul class="dropdown-menu" role="menu">
-              <li><a href="#">No Admin</a></li>
-              <li><a href="#">Read-Only Admin</a></li>
-              <li><a href="#">Manager Admin</a></li>
-              <li><a href="#">Super Admin</a></li>
+	          {{#admin-levels}}
+              <li><a data-userid="{{userid}}" data-roleid="{{id}}"
+                     href="/rest/users/admin">{{name}}</a></li>
+	          {{/admin-levels}}
             </ul>
           </div>
-	</div>
+	    </div>
       </div>
     </div>
   </article>

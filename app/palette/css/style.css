@@ -394,11 +394,21 @@ article.popup p {
     border-top-left-radius: 15px;
     box-shadow: 0 0;
 }
+ul.dropdown-menu {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
 ul.dropdown-menu li {
     overflow: hidden;
 }
 ul.dropdown-menu a {
     padding: 5px 20px 5px 10px !important;
+    text-decoration: none !important;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: block;
     font-weight: 300;
     color: #fff;
 }
@@ -1513,10 +1523,12 @@ article.event.open > div.description {
     padding: 0 10px 20px 60px;
     width: 100%;
 }
+/*
 article.event ul {
     padding: 0 0 0 20px;
     margin: 0;
 }
+*/
 article.event li {
     list-style-type: none;
 }

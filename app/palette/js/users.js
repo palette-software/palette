@@ -1,4 +1,4 @@
-require(['jquery', 'template', 'common'],
+require(['jquery', 'template', 'common', 'bootstrap'],
 function ($, template, common)
 {
     function update(data) {
@@ -7,6 +7,7 @@ function ($, template, common)
             var rendered = template.render(t, data);
             $('#user-list').html(rendered);
             common.bindEvents();
+            common.setupDropdowns();
         });
     }
 
