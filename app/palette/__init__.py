@@ -1,10 +1,7 @@
 from akiri.framework.config import store
 from akiri.framework.api import MainPage, LoginPage
 
-import controller.meta
 import akiri.framework.ext.sqlalchemy
-
-controller.meta.meta = akiri.framework.ext.sqlalchemy.meta
 
 import auth
 import monitor
