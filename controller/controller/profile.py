@@ -30,6 +30,15 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     role = relationship("Role")
 
     @classmethod
+    def get(cls, userid):
+        try:
+            entry = meta.Session.query(UserProfile).\
+                            filter(UserProfile.userid == userid).one()
+        except NoResultFound, e:
+            entry = None
+        return entry
+
+    @classmethod
     def get_by_name(cls, name):
         try:
             entry = meta.Session.query(UserProfile).\
