@@ -1547,9 +1547,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                     src.auth['listen-port'], src.displayname)
         fw_body = src.firewall.enable(src.auth['listen-port'])
         if fw_body.has_key("error"):
-            self.log.err(\
+            self.log.error(\
                 "firewall enable port %d on src host %s failed with: %s",
-                                src.auth['listen-port'], src.displayname)
+                        src.auth['listen-port'], src.displayname, 
+                                                        fw_body['error'])
             return fw_body
 
         source_ip = src.auth['ip-address']
