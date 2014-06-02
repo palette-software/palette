@@ -32,8 +32,6 @@ from akiri.framework.ext.sqlalchemy import meta
 class AgentConnection(object):
 
     TABLEAU_DATA_DIR = ntpath.join("ProgramData", "Tableau", "Tableau Server")
-    DEFAULT_VOLUME_PATH = ntpath.join("\\", "Program Files (x86)", "Palette",
-                                                                        "Data")
     DATA_DIR = "Data"
 
     def __init__(self, server, conn, addr):
@@ -188,7 +186,11 @@ class AgentManager(threading.Thread):
             new_agent.displayname = entry.displayname
         else:
             # FIXME: handle this as an error
-            pass
+            self.log.error("Bad agent.  Will not remember it: %s",
+                                                        str(new_agent.auth))
+            self.unlock()
+            return False
+
         self.agents[new_agent.uuid] = new_agent
 
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
@@ -207,6 +209,7 @@ class AgentManager(threading.Thread):
             self.new_primary_event.set()
 
         self.unlock()
+        return True
 
     def set_agent_types(self):
         """Look through the list of agents and reclassify archive agents as
@@ -354,8 +357,8 @@ class AgentManager(threading.Thread):
                                                 new_agent.auth['install-dir'])
             return False
 
-        install_dir_vol = parts[0]
-        install_dir_path = parts[1]
+        install_dir_vol_name = parts[0]
+        install_data_dir = ntpath.join(parts[1], AgentConnection.DATA_DIR)
 
         for key, value in pinfo.iteritems():
             if key != 'volumes':
@@ -370,26 +373,17 @@ class AgentManager(threading.Thread):
                         "agentid %d. Will ignore: %s", agentid, str(volume))
                     continue
 
+                # Check to see if the volume alread exists.
                 try:
                     entry = session.query(AgentVolumesEntry).\
                         filter(AgentVolumesEntry.agentid == agentid).\
                         filter(AgentVolumesEntry.name == name).\
-                        filter(AgentVolumesEntry.primary_data_loc == False).\
                         one()
                     found = True
                 except NoResultFound, e:
                     found = False
 
-                if not found:
-                    if 'type' in volume:
-                        if volume['type'] == "Fixed":
-                            # Set a default path for new "Fixed" volumes.
-                            # (Only "Fixed" volumes can be used for an archive.)
-                            volume['path'] = AgentConnection.DEFAULT_VOLUME_PATH
-
-                        entry = AgentVolumesEntry.build(agentid, volume)
-                        session.add(entry)
-                else:
+                if found:
                     # Merge it in to the existing volume entry.
                     # It should already have archive, archive_limit, etc.
                     if 'size' in volume:
@@ -408,47 +402,62 @@ class AgentManager(threading.Thread):
 
                     entry.active = True  # Note the agent reported it
                     session.merge(entry)
+                else:
+                    # Add the volume
+                    if 'type' in volume:
+                        if volume['type'] == "Fixed":
+                            # Set a default path for new "Fixed" volumes.
+                            # (Only "Fixed" volumes can be used for an archive.)
+                            volume['path'] = install_data_dir
 
-                if new_agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY \
-                                            and install_dir_vol == entry.name:
+                        entry = AgentVolumesEntry.build(agentid, volume)
 
-                    # Add or merge a volume for primary data dir
-                    pri_data_dir = ntpath.join(install_dir_path,
-                                                    AgentConnection.DATA_DIR)
+                        # If it is the primary agent and install volume,
+                        # mark it as the "primary_data_loc" volume.
+                        if new_agent.agent_type == \
+                                AgentManager.AGENT_TYPE_PRIMARY and \
+                                        install_dir_vol_name == volume['name']:
+                            entry.primary_data_loc = True
+                        else:
+                            entry.primary_data_loc = False
 
-                    try:
-                        entry = session.query(AgentVolumesEntry).\
-                            filter(AgentVolumesEntry.agentid == agentid).\
-                            filter(AgentVolumesEntry.primary_data_loc == True).\
-                            one()
-                        found = True
-                    except NoResultFound, e:
-                        found = False
-
-                    if not found:
-                        entry = AgentVolumesEntry(agentid=agentid,
-                            name=entry.name,
-                            path=pri_data_dir,
-                            vol_type=entry.vol_type,
-                            drive_format=entry.drive_format,
-                            size=entry.size,
-                            available_space=entry.available_space,
-                            system=entry.system,
-                            archive=entry.archive,
-                            archive_limit=entry.archive_limit,
-                            primary_data_loc=True,
-                            active=True
-                        )
                         session.add(entry)
-                    else:
-                        entry.path=pri_data_dir
-                        active=True
 
-                        session.merge(entry)
+            if new_agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
+                continue
 
         session.commit()
 
+        # Sanity check.
+        # If this is the primary agent, check to see if a volume
+        # exists for the install directory.   There must be
+        # one since 1) we use it for backups and 2) We need to
+        # know how much available disk space is used on the backup
+        # volume.
+        if new_agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
+                not self.primary_data_vol_exists(agentid, install_dir_vol_name):
+            self.log.error("pinfo for the primary did not include" + \
+                " the install dir volume.  " + \
+                "agentid: %d, install_dir_vol_name: %s",
+                                            agentid, install_dir_vol_name)
+            return False
+
         return True
+
+    def primary_data_vol_exists(self, agentid, install_dir_vol_name):
+        """Check to see if there is a volume for the primary
+           data directory.  If there is not one, add it.
+           Return True if exists, False if doesn't exist.
+        """
+        try:
+            entry = meta.Session.query(AgentVolumesEntry).\
+                filter(AgentVolumesEntry.agentid == agentid).\
+                filter(AgentVolumesEntry.name == install_dir_vol_name).\
+                filter(AgentVolumesEntry.primary_data_loc == True).\
+                one()
+            return True
+        except NoResultFound, e:
+            return False
 
     def is_tableau_worker(self, ip):
         """Returns True if the passed ip adress (string) is
@@ -722,8 +731,7 @@ class AgentManager(threading.Thread):
             agent.httpconn = httpconn
             agent.auth = body
 
-            if self.server.init_new_agent(agent):
-                self.register(agent, body)
+            if self.server.init_new_agent(agent) and self.register(agent, body):
                 self.save_routes(agent) # fixme: check return value?
             else:
                 self.log.error("Bad agent.  Disconnecting.")
