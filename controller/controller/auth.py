@@ -1,3 +1,4 @@
+from sqlalchemy import not_
 from akiri.framework.ext.sqlalchemy import meta
 
 from profile import UserProfile
@@ -24,16 +25,33 @@ class AuthManager(object):
 
         session = meta.Session()
         # FIXME: do this is a better way.
-        session.query(UserProfile).\
-            filter(UserProfile.name != 'palette').delete()
+        #session.query(UserProfile).\
+        #    filter(UserProfile.name != 'palette').delete()
+
+        names = ['palette']
 
         for L in data['']:
-            entry = UserProfile(name=L[0], email=L[1], hashed_password=L[2],
-                                salt=L[3], friendly_name=L[4],
-                                licensing_role_id=L[5], admin_level=L[6],
-                                publisher_tristate=L[7],
-                                created_at=L[8], updated_at=L[9])
-            session.add(entry)
+            name = L[0]
+            names.append(name)
+
+            entry = UserProfile.get_by_name(name)
+            if not entry:
+                entry =  UserProfile(name=name, email=L[1])
+            entry.hashed_password = L[2]
+            entry.salt = L[3]
+            entry.friendly_name=L[4],
+            entry.licensing_role_id=L[5]
+            entry.admin_level=L[6]
+            entry.publisher_tristate=L[7]
+            entry.created_at=L[8]
+            entry.updated_at=L[9]
+            session.merge(entry)
+
+        # delete entries no longer found in the Tableau database.
+        session.query(UserProfile).\
+            filter(not_(UserProfile.name.in_(names))).\
+            delete(synchronize_session='fetch')
+
         session.commit()
 
         return {u'status': 'OK',
