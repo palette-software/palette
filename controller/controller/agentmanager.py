@@ -10,6 +10,9 @@ from httplib import HTTPConnection
 import json
 import ntpath
 
+import exc
+import httplib
+
 from agentstatus import AgentStatusEntry
 from agentinfo import AgentYmlEntry, AgentInfoEntry, AgentVolumesEntry
 from state import StateManager
@@ -29,6 +32,9 @@ from akiri.framework.ext.sqlalchemy import meta
 class AgentConnection(object):
 
     TABLEAU_DATA_DIR = ntpath.join("ProgramData", "Tableau", "Tableau Server")
+    DEFAULT_VOLUME_PATH = ntpath.join("\\", "Program Files (x86)", "Palette",
+                                                                        "Data")
+    DATA_DIR = "Data"
 
     def __init__(self, server, conn, addr):
         self.server = server
@@ -56,17 +62,35 @@ class AgentConnection(object):
         self.odbc = ODBC(self)
         self.firewall = Firewall(self)
 
-    def lock(self):
-        self.lockobj.acquire()
-
-    def unlock(self):
-        self.lockobj.release()
-
     def get_tableau_data_dir(self):
         if not self.tableau_install_dir:
             return None
         volume = self.tableau_install_dir.split(':')[0]
         return ntpath.join(volume + ':\\', AgentConnection.TABLEAU_DATA_DIR)
+
+    def httpexc(self, res, method='GET', body=None):
+        if body is None:
+            body = res.read()
+        raise exc.HTTPException(res.status, res.reason,
+                                method=method, body=body)
+
+    def http_send(self, method, uri, body=None):
+        # Check to see if state is not PENDING or DISCONNECTED?
+        self.lock()
+        try:
+            self.httpconn.request(method, uri, body)
+            res = self.httpconn.getresponse()
+            if res.status != httplib.OK:
+                self.httpexc(res, method=method)
+            return res.read()
+        finally:
+            self.unlock()
+
+    def lock(self):
+        self.lockobj.acquire()
+
+    def unlock(self):
+        self.lockobj.release()
 
     def user_action_lock(self, blocking=True):
         return self.user_action_lockobj.acquire(blocking)
@@ -275,6 +299,8 @@ class AgentManager(threading.Thread):
                          body['version'],
                          body['ip-address'],
                          body['listen-port'],
+                         u'palette',     # fixme
+                         u'tableau2014',
                          body['uuid'],
                          self.domainid)
         entry.last_connection_time = func.now()
@@ -289,7 +315,8 @@ class AgentManager(threading.Thread):
             self.update_agent_yml(entry.agentid, new_agent.yml_contents)
 
         # Remember the agent pinfo
-        self.update_agent_pinfo(entry.agentid, new_agent.pinfo)
+        if not self.update_agent_pinfo(new_agent, entry.agentid):
+            return False
 
         session.commit()
         return entry
@@ -307,13 +334,28 @@ class AgentManager(threading.Thread):
             entry = AgentYmlEntry(agentid=agentid, key=key, value=value)
             session.add(entry)
 
-    def update_agent_pinfo(self, agentid, pinfo):
+    def update_agent_pinfo(self, new_agent, agentid):
+        pinfo = new_agent.pinfo
+
         session = meta.Session()
         # First delete any old entries for this agent
-        entry = session.query(AgentInfoEntry).\
+        session.query(AgentInfoEntry).\
             filter(AgentInfoEntry.agentid == agentid).delete()
-        entry = session.query(AgentVolumesEntry).\
-            filter(AgentVolumesEntry.agentid == agentid).delete()
+
+        # Set all of the agent volumes to 'inactive'.
+        # Each volume pinfo sent us will later be set to 'active'.
+        session.query(AgentVolumesEntry).\
+            filter(AgentVolumesEntry.agentid == agentid).\
+                   update({"active" : False}, synchronize_session=False)
+
+        parts = new_agent.auth['install-dir'].split(':')
+        if len(parts) != 2:
+            self.log.error("Bad format for install-dir: %s",
+                                                new_agent.auth['install-dir'])
+            return False
+
+        install_dir_vol = parts[0]
+        install_dir_path = parts[1]
 
         for key, value in pinfo.iteritems():
             if key != 'volumes':
@@ -321,8 +363,92 @@ class AgentManager(threading.Thread):
                 session.add(entry)
                 continue
             for volume in value:
-                entry = AgentVolumesEntry.build(entry.agentid, volume)
-                session.add(entry)
+                if 'name' in volume:
+                    name = volume['name']
+                else:
+                    self.log.error("volume missing 'name' in pinfo for " + \
+                        "agentid %d. Will ignore: %s", agentid, str(volume))
+                    continue
+
+                try:
+                    entry = session.query(AgentVolumesEntry).\
+                        filter(AgentVolumesEntry.agentid == agentid).\
+                        filter(AgentVolumesEntry.name == name).\
+                        filter(AgentVolumesEntry.primary_data_loc == False).\
+                        one()
+                    found = True
+                except NoResultFound, e:
+                    found = False
+
+                if not found:
+                    if 'type' in volume:
+                        if volume['type'] == "Fixed":
+                            # Set a default path for new "Fixed" volumes.
+                            # (Only "Fixed" volumes can be used for an archive.)
+                            volume['path'] = AgentConnection.DEFAULT_VOLUME_PATH
+
+                        entry = AgentVolumesEntry.build(agentid, volume)
+                        session.add(entry)
+                else:
+                    # Merge it in to the existing volume entry.
+                    # It should already have archive, archive_limit, etc.
+                    if 'size' in volume:
+                        entry.size = volume['size']
+                    if 'label' in volume:
+                        entry.label = volume['label']
+
+                    if 'vol-type' in volume:
+                        entry.vol_type = volume['vol_type']
+
+                    if 'available-space' in volume:
+                        entry.available_space = volume['available-space']
+
+                    if 'drive-format' in volume:
+                        entry.drive_format = volume['drive-format']
+
+                    entry.active = True  # Note the agent reported it
+                    session.merge(entry)
+
+                if new_agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY \
+                                            and install_dir_vol == entry.name:
+
+                    # Add or merge a volume for primary data dir
+                    pri_data_dir = ntpath.join(install_dir_path,
+                                                    AgentConnection.DATA_DIR)
+
+                    try:
+                        entry = session.query(AgentVolumesEntry).\
+                            filter(AgentVolumesEntry.agentid == agentid).\
+                            filter(AgentVolumesEntry.primary_data_loc == True).\
+                            one()
+                        found = True
+                    except NoResultFound, e:
+                        found = False
+
+                    if not found:
+                        entry = AgentVolumesEntry(agentid=agentid,
+                            name=entry.name,
+                            path=pri_data_dir,
+                            vol_type=entry.vol_type,
+                            drive_format=entry.drive_format,
+                            size=entry.size,
+                            available_space=entry.available_space,
+                            system=entry.system,
+                            archive=entry.archive,
+                            archive_limit=entry.archive_limit,
+                            primary_data_loc=True,
+                            active=True
+                        )
+                        session.add(entry)
+                    else:
+                        entry.path=pri_data_dir
+                        active=True
+
+                        session.merge(entry)
+
+        session.commit()
+
+        return True
 
     def is_tableau_worker(self, ip):
         """Returns True if the passed ip adress (string) is
@@ -366,6 +492,12 @@ class AgentManager(threading.Thread):
             raise ValueError('No agent found with uuid=%s' % (uuid))
 
     def forget(self, agentid):
+        if not agentid:
+            self.log.debug("forget:  Won't try to forget agentid of None")
+            # Can happen if we sent a failed command to the agent
+            # that hasn't been remembered yet.
+            return
+
         session = meta.Session()
         #fixme: add try
         entry = session.query(AgentStatusEntry).\
@@ -592,6 +724,7 @@ class AgentManager(threading.Thread):
 
             if self.server.init_new_agent(agent):
                 self.register(agent, body)
+                self.save_routes(agent) # fixme: check return value?
             else:
                 self.log.error("Bad agent.  Disconnecting.")
                 self._close(conn)
@@ -605,6 +738,43 @@ class AgentManager(threading.Thread):
             traceback.format_exc()
             self.log.error(str(e))
             self.log.error(traceback.format_exc())
+
+    def save_routes(self, agent):
+        lines = ""
+        rows = meta.Session().query(AgentVolumesEntry).\
+            filter(AgentVolumesEntry.agentid == agent.agentid).\
+            all()
+
+        lines = []
+        for volentry in rows:
+            if not volentry.archive:
+                continue
+            lines.append("%s:%s\r\n" % (volentry.name, volentry.path))
+
+        # remove duplicate lines: The primary_data_loc could be
+        # the same as a volume path entered by the user.
+        lines = list(set(lines))
+
+        lines = ''.join(lines)
+
+        if 'install-dir' not in agent.auth:
+            self.log.error("save_routes: agent is missing 'install-dir'")
+            return
+
+        route_path = ntpath.join(agent.auth['install-dir'], "conf", "archive",
+                                                                "routes.txt")
+        try:
+            agent.filemanager.put(route_path, lines)
+        except (exc.HTTPException, httplib.HTTPException,
+                                                    EnvironmentError) as e:
+            self.log.error(\
+                "filemanager.put(%s) on %s failed with: %s",
+                                    agent.displayname, route_path, str(e))
+            return False
+
+        self.log.debug("Saved agent file '%s' with contents: %s",
+                                                    route_path, lines)
+        return True
 
 class ReverseHTTPConnection(HTTPConnection):
 

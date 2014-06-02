@@ -34,26 +34,48 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
     agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False)
 
     name = Column(String)
+    path = Column(String)
     vol_type = Column(String)
     label = Column(String)
     drive_format = Column(String)
 
     size = Column(BigInteger)
-    free = Column(BigInteger)
+    available_space = Column(BigInteger)
 
     system = Column(Boolean)    # The OS/system is installed on this volume
 
     archive = Column(Boolean)
     archive_limit = Column(BigInteger)
 
+    primary_data_loc = Column(Boolean)
+    active = Column(Boolean)
+
+    def todict(self):
+        return {'name': self.name,
+                'path': self.path,
+                'vol_type': self.vol_type,
+                'label': self.label,
+                'drive_format': self.drive_format,
+                'size': self.size,
+                'available_space': self.available_space,
+                'system': self.system,
+                'archive': self.archive,
+                'archive_limit': self.archive_limit,
+                'active': self.active
+                }
+
     @classmethod
     def build(cls, agentid, volume):
 
-        name = None; vol_type = None; label = None; drive_format = None;
-        archive = False; archive_limit = None; size = None; free = None;
+        name = None; path = None; vol_type = None; label = None;
+        drive_format = None; archive = False; archive_limit = None;
+        size = None; available_space = None;
 
         if volume.has_key("name"):
             name = volume['name']
+
+        if volume.has_key('path'):
+            path = volume['path']
 
         if volume.has_key("size"):
             size = volume['size']
@@ -71,14 +93,16 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
         if volume.has_key("drive-format"):
             drive_format = volume['drive-format']
         if volume.has_key('available-space'):
-            free = volume['available-space']
+            available_space = volume['available-space']
 
-        return AgentVolumesEntry(agentid=agentid, name=name,
+        return AgentVolumesEntry(agentid=agentid, name=name, path=path,
             vol_type=vol_type, label=label, drive_format=drive_format,
-            archive=archive, archive_limit=archive_limit, size=size, free=free)
+            archive=archive, archive_limit=archive_limit, size=size, 
+            available_space=available_space, primary_data_loc=False,
+                                                            active=True)
 
     @classmethod
-    def has_free_space(cls, agentid, min_needed):
+    def has_available_space(cls, agentid, min_needed):
         """Searches for a volume on the agent that has
         the requested disk space for archiving.  If found, returns
         the volume entry.  If not, returns False."""
@@ -88,10 +112,21 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
                     filter(AgentVolumesEntry.agentid == agentid).\
                     filter(AgentVolumesEntry.vol_type == "Fixed").\
                     filter(AgentVolumesEntry.archive == True).\
-                    filter(AgentVolumesEntry.free >= min_needed).\
-                    filter(AgentVolumesEntry.size - AgentVolumesEntry.free + \
-                            min_needed < AgentVolumesEntry.archive_limit).\
+                    filter(AgentVolumesEntry.active == True).\
+                    filter(AgentVolumesEntry.available_space >= min_needed).\
+                    filter(AgentVolumesEntry.size - \
+                                AgentVolumesEntry.available_space + 
+                                min_needed < AgentVolumesEntry.archive_limit).\
                     one()   # for now, choosen any one - no particular order.
 
         except NoResultFound, e:
             return False
+
+    @classmethod
+    def get_vol_entry_by_volid(cls, volid):
+        try:
+            return meta.Session.query(AgentVolumesEntry).\
+                filter(AgentVolumesEntry.volid == volid).\
+                one()
+        except NoResultFound, e:
+            return None

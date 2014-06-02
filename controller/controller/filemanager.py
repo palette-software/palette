@@ -14,26 +14,18 @@ class FileManager(object):
     def uri(self, path):
         return '/file?path=' + urllib.quote_plus(path)
 
-    def httpexc(self, res, method='GET', body=None):
-        if body is None:
-            body = res.read()
-        raise exc.HTTPException(res.status, res.reason,
-                                method=method, body=body)
-
     def checkpath(self, path):
         if path.endswith('/') or path.endswith('\\'):
-            raise ArgumentException("'path' may not refer to a directory")
+            raise ValueError("'path' may not refer to a directory")
 
     def get(self, path):
         self.checkpath(path)
         uri = self.uri(path)
-        self.agent.httpconn.request('GET', uri)
-        res = self.agent.httpconn.getresponse()
-        if res.status != httplib.OK:
-            self.httpexc(res)
-        return res.read()
+        self.server.log.debug("FileManager GET %s", uri)
+        return self.agent.http_send('GET', uri)
 
     def save(self, path, target='.'):
+        """Retrieves a remote file and saves it locally."""
         target = os.path.abspath(os.path.expanduser(target))
         self.checkpath(path)
 
@@ -52,10 +44,8 @@ class FileManager(object):
     def put(self, path, data):
         self.checkpath(path)
         uri = self.uri(path)
-        self.agent.httpconn.request('PUT', uri, data)
-        res = self.agent.httpconn.getresponse()
-        if res.status != httplib.OK:
-            self.httpexc(res, method='PUT')
+        self.server.log.debug("FileManager PUT %s: %s", uri, data)
+        return self.agent.http_send('PUT', uri, data)
 
     def sendfile(self, path, source):
         source = os.path.abspath(os.path.expanduser(source))
@@ -71,7 +61,5 @@ class FileManager(object):
     def delete(self, path):
         self.checkpath(path)
         uri = self.uri(path)
-        self.agent.httpconn.request('DELETE', uri)
-        res = self.agent.httpconn.getresponse()
-        if res.status != httplib.OK:
-            self.httpexec(res, method='DELETE')
+        self.server.log.debug("FileManager DELETE %s", uri)
+        return self.agent.http_send('DELETE', uri)
