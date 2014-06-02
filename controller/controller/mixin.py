@@ -13,3 +13,19 @@ class BaseDictMixin(object):
             name = pretty and c.name.replace('_', '-') or c.name
             d[name] = value
         return d
+
+class BaseMixin(object):
+
+    defaults = []
+    
+    @classmethod
+    def populate(cls):
+        session = meta.Session()
+        entry = session.query(cls).first()
+        if entry:
+            return
+        import pdb; pdb.set_trace();
+        for d in cls.defaults:
+            obj = cls(**d)
+            session.add(obj)
+        session.commit()

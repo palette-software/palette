@@ -33,6 +33,7 @@ from alert import Alert
 from config import Config
 from domain import Domain, DomainEntry
 from profile import UserProfile
+from rbac import Role
 from custom_alerts import CustomAlerts
 from custom_states import CustomStates
 from event import EventManager, EventEntry
@@ -2250,6 +2251,7 @@ def main():
 
     server.auth = AuthManager(server)
     UserProfile.populate()
+    Role.populate()
 
     workbook_manager = WorkbookManager(server.domainid)
     workbook_manager.populate()

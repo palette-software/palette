@@ -5,6 +5,8 @@ from sqlalchemy.schema import ForeignKey, Table
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm.exc import NoResultFound
 
+from mixin import BaseMixin
+
 from UserDict import IterableUserDict
 class Dict(IterableUserDict):
 
@@ -60,10 +62,10 @@ role_permissions = Table('role_permissions', meta.Base.metadata,
 # keyword-based constructors unless some other preparation is required.
 
 # http://docs.sqlalchemy.org/en/rel_0_9/orm/relationships.html#self-referential-many-to-many-relationship
-class Role(meta.Base):
+class Role(meta.Base, BaseMixin):
     __tablename__ = 'roles'
 
-    roleid = Column(BigInteger, primary_key=True)
+    roleid = Column(BigInteger, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
 
     # this relationship should not be used directly
@@ -111,6 +113,10 @@ class Role(meta.Base):
             raise ValueError('Invalid ROLE hierarchy')
         self._parents.append(parent)
 
+    defaults = [{'roleid':0, 'name':"No Admin"},
+                {'roleid':1, 'name':"Read-Only Admin"},
+                {'roleid':2, 'name':"Manager Admin"},
+                {'roleid':3, 'name':"Super Admin"}]
 
 class Permission(meta.Base):
     __tablename__ = 'permissions'
