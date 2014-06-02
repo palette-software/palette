@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Boolean, Unicode, BigInteger
+from sqlalchemy import Column, String, Integer, BigInteger, DateTime
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.exc import NoResultFound
@@ -20,7 +20,12 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     email = Column(String)
     hashed_password = Column(String)
     salt = Column(String)
-    roleid = Column(BigInteger, ForeignKey("roles.roleid"))
+    roleid = Column(BigInteger, ForeignKey("roles.roleid"), default=0)
+    licensing_role_id = Column(Integer)
+    admin_level = Column(Integer)
+    publisher_tristate = Column(Integer)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
 
     role = relationship("Role")
 
