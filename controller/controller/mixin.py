@@ -24,7 +24,6 @@ class BaseMixin(object):
         entry = session.query(cls).first()
         if entry:
             return
-        import pdb; pdb.set_trace();
         for d in cls.defaults:
             obj = cls(**d)
             session.add(obj)
