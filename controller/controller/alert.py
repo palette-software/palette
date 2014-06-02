@@ -144,7 +144,7 @@ class Alert(object):
         if body.has_key('error'):
             message += self.indented("Unexpected Error", body['error']) + '\n'
 
-        if body.has_key('info'):
+        if body.has_key('info') and body['info']:
             message += self.indented("Additional information", body['info']) + \
                                                                         '\n'
 
