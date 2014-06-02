@@ -1,20 +1,28 @@
-from sqlalchemy import Column, String, Integer, Boolean, Unicode
+from sqlalchemy import Column, String, Integer, Boolean, Unicode, BigInteger
+from sqlalchemy.schema import ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.orm.exc import NoResultFound
 
 from akiri.framework.ext.sqlalchemy import meta
 
-from rbac import User
 from passwd import tableau_hash
-from mixin import BaseDictMixin
+from mixin import BaseMixin, BaseDictMixin
 
-class UserProfile(User, BaseDictMixin):
+class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     """
     Profile information is added to the 'users' table.
     """
+    __tablename__ = 'users'
+    userid = Column(BigInteger, unique=True, nullable=False, \
+                        autoincrement=True, primary_key=True)
+    name = Column(String, unique=True, nullable=False)
     friendly_name = Column(String)
     email = Column(String)
     hashed_password = Column(String)
     salt = Column(String)
+    roleid = Column(BigInteger, ForeignKey("roles.roleid"))
+
+    role = relationship("Role")
 
     @classmethod
     def get_by_name(cls, name):
@@ -32,14 +40,17 @@ class UserProfile(User, BaseDictMixin):
             return False
         return entry.hashed_password == tableau_hash(password, entry.salt)
 
-    @classmethod
-    def populate(cls):
-        session = meta.Session()
-        entry = session.query(UserProfile).first()
-        if entry:
-            return
-        entry = UserProfile(name='palette', friendly_name='Palette SuperAdmin',
-                            email=None, salt='',
-                            hashed_password=tableau_hash('tableau2014',''))
-        session.add(entry)
-        session.commit()
+    defaults = [{'name':'palette', 'friendly_name':'Palette',
+                 'email': None, 'salt':'', 'roleid':3,
+                 'hashed_password':tableau_hash('tableau2014','')}]
+
+class Role(meta.Base, BaseMixin):
+    __tablename__ = 'roles'
+
+    roleid = Column(BigInteger, primary_key=True, autoincrement=True)
+    name = Column(String, unique=True, nullable=False)
+
+    defaults = [{'roleid':0, 'name':"No Admin"},
+                {'roleid':1, 'name':"Read-Only Admin"},
+                {'roleid':2, 'name':"Manager Admin"},
+                {'roleid':3, 'name':"Super Admin"}]
