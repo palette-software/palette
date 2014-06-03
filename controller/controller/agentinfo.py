@@ -75,7 +75,7 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
         size = None; available_space = None;
 
         if volume.has_key("name"):
-            name = volume['name']
+            name = volume['name'].upper()
 
         if volume.has_key('path'):
             path = volume['path']
