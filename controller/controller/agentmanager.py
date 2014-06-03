@@ -357,7 +357,7 @@ class AgentManager(threading.Thread):
                                                 new_agent.auth['install-dir'])
             return False
 
-        install_dir_vol_name = parts[0]
+        install_dir_vol_name = parts[0].upper()
         install_data_dir = ntpath.join(parts[1], AgentConnection.DATA_DIR)
 
         for key, value in pinfo.iteritems():
@@ -367,7 +367,7 @@ class AgentManager(threading.Thread):
                 continue
             for volume in value:
                 if 'name' in volume:
-                    name = volume['name']
+                    name = volume['name'].upper()
                 else:
                     self.log.error("volume missing 'name' in pinfo for " + \
                         "agentid %d. Will ignore: %s", agentid, str(volume))
@@ -416,7 +416,7 @@ class AgentManager(threading.Thread):
                         # mark it as the "primary_data_loc" volume.
                         if new_agent.agent_type == \
                                 AgentManager.AGENT_TYPE_PRIMARY and \
-                                        install_dir_vol_name == volume['name']:
+                                        install_dir_vol_name == name:
                             entry.primary_data_loc = True
                         else:
                             entry.primary_data_loc = False
