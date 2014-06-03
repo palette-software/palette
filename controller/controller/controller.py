@@ -576,16 +576,28 @@ class CliHandler(socketserver.StreamRequestHandler):
                 phttp_cmd += ' "' + arg + '"'
             else:
                 phttp_cmd += ' ' + arg
-        if aconn:
-            print >> self.wfile, "Sending to displayname '%s' (type: %s):" % \
-                        (aconn.displayname, aconn.agent_type)
-        else:
-            print >> self.wfile, "Sending:",
 
-        print >> self.wfile, phttp_cmd
-        body = server.cli_cmd(phttp_cmd, aconn)
+        try:
+            entry = meta.Session.query(AgentStatusEntry).\
+                filter(AgentStatusEntry.agentid == aconn.agentid).\
+                one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            self.log.err("Source agent not found!  agentid: %d", aconn.agentid)
+            return self.error("Source agent not found in agent table: %d " % \
+                                                                aconn.agentid)
+
+        env = {u'BASIC_USERNAME': entry.username,
+               u'BASIC_PASSWORD': entry.password}
+
+        print >> self.wfile, "Sending to displayname '%s' (type: %s):" % \
+                        (aconn.displayname, aconn.agent_type)
+
+        print >> self.wfile, "    ", phttp_cmd
+
+        body = server.cli_cmd(phttp_cmd, aconn, env=env)
         self.report_status(body)
-    do_phttp.__usage__ = 'phttp GET https://...... local-name'
+
+    do_phttp.__usage__ = 'phttp GET https://vol1/filename vol2:/local-directory'
 
     def do_info(self, cmd):
         """Run pinfo."""
