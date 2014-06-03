@@ -3,6 +3,7 @@ import ntpath
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm.exc import NoResultFound
 
 from akiri.framework.ext.sqlalchemy import meta
 

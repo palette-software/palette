@@ -1224,6 +1224,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not dcheck.set_locs():
             return self.error(dcheck.error_msg)
 
+        self.log.debug("Will backup to target '%s', target_dir '%s'",
+                    dcheck.target_conn.displayname, dcheck.target_dir)
+
         # Example name: 20140127_162225.tsbak
         backup_name = time.strftime("%Y%m%d_%H%M%S") + ".tsbak"
 
@@ -1593,10 +1596,21 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def restore_cmd(self, aconn, target, orig_state):
         """Do a tabadmin restore of the passed target, except
-           the target is in the format:
+           the target is the format:
                 source-displayname:pathname
-            If the pathname is not on the Primary Agent, then copy
-            it to the Primary Agent before doing the tabadmin restore
+            or
+                pathname
+            where pathname is:
+                VOLUME/filename
+            The "VOLUME" is looked up on the volume table and expanded.
+
+            An example target:
+                "Tableau Archive #201:C/20140602_174057.tsbak"
+
+            If the target is not the Primary Agent, then the filename
+            will be copied it to the Primary Agent before doing the
+            tabadmin restore.
+
             Returns a body with the results/status.
         """
 
@@ -1624,10 +1638,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 "[ERROR] May not specify an absolute pathname or disk: " + \
                                                                 source_spec)
         parts = source_spec.split('/')
-        if len(parts) == 0:
+        if len(parts) == 1:
             return self.error(\
-                "[ERROR] restore: Bad target spec:  Missing '/': %s",
-                                                            source_spec)
+                "[ERROR] restore: Bad target spec:  Missing '/': " + \
+                                                                source_spec)
         filename_only = parts[1] #  e.g. "20140531_153629.tsbak"
 
         # Get the vol + dir to use for the restore command to tabadmin.
