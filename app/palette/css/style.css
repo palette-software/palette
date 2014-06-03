@@ -58,6 +58,10 @@ i.tableau {
 .visible {
     display: block !important;
 }
+.btn {
+    background-color: #8D96A3;
+    color: #fff;
+}
 #mainNav {
     background: #333;
     position: fixed;
@@ -856,6 +860,13 @@ ul.processes.visible {
 .dynamic-content .label {
     padding: 0 .25em 0 0;
 }
+.dynamic-content p.heading {
+    width: 80%;
+    font-weight: 500 !important;
+    border-bottom: 3px solid #5F6670;
+    padding: 10px 0 0 0;
+    margin: 0;
+}
 .dynamic-content input {
     width: 80%;
 }
@@ -1536,3 +1547,31 @@ article.event article {
     padding-top: 5px;
 }
 
+div.refresh {
+    height: 37px;
+    background: #CFD0D0;
+    margin: 0 0 3px 0;
+}
+.refresh p, .refresh > span {
+    float: right;
+    height: 37px;
+}
+.refresh p {
+    font-size: 13px;
+    line-height: 37px;
+    text-align: bottom;
+    padding: 0 5px 0 0;
+}
+.refresh > span {
+    cursor: pointer;
+    width: 60px;
+}
+.refresh i {
+    font-size: 19px;
+    line-height: 37px;
+    width: 100%;
+}
+.refresh i.fa-stack-2x {
+    font-size: 26px;
+    color:#fff;
+}

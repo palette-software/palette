@@ -1072,11 +1072,13 @@ class CliHandler(socketserver.StreamRequestHandler):
             if not aconn:
                 self.error('agent not found')
                 return
+            self.ack()
             body = self.server.auth.load(aconn)
         elif action == 'verify':
             if len(cmd.args) != 3:
                 self.usage(self.do_auth.__usage__)
                 return
+            self.ack()
             result = self.server.auth.verify(cmd.args[1], cmd.args[2])
             body = {u'status': result and 'OK' or 'INVALID'}
         else:

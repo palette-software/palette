@@ -7,6 +7,13 @@
 
 <section class="dynamic-content">
   <h1 class="page-title">Users</h1>
+  <div class="refresh">
+    <span class="fa-stack">
+      <i class="fa fa-circle fa-stack-2x"></i>
+      <i class="fa fa-fw fa-stack-1x fa-refresh"></i>
+    </span>
+    <p>Last updated <span id="last-update"></span></p>
+  </div>
   <div id="user-list"></div>
 </section>
 
@@ -18,11 +25,11 @@
       <div>
 	<div class="col2">
 	  <h3>{{friendly-name}}</h3>
-	  <p>Last Visited Jan 1, 1970 at 12:00AM PT</p>
+	  <p>{{visited-info}}</p>
 	</div>
 	<div class="col2">
-	  <p>{{friendly-name}}</p>
-	  <p>Last Visited Jan 1, 1970 at 12:00AM PT</p>
+	  <p>{{tableau-info}}</p>
+	  <p>Palette {{admin-type}}</p>
 	</div>
       </div>
       <i class="fa fa-fw fa-angle-down expand"></i>
@@ -30,16 +37,21 @@
     <div class="description clearfix">
       <div>
 	    <div class="col2">
+          <p class="heading">Tableau User Details</span>
           <article>
-	        <span class="label">Tableau User Name</span>{{name}}</article>
+	        <span class="label">User Name</span>{{name}}
           <article>
-            <span class="label">License Level</span>{{license-level}}
+            <span class="label">License Level</span>{{license-info}}
           </article>
           <article><span class="label">Email</span>
             <span class="editbox" data-href="">{{email}}</span>
           </article>
-          <article><span class="label">Created</span>{{created}}</article>
-          <article><span class="label">Updated</span>{{updated}}</article>
+          <article>
+            <span class="label">Created</span>{{system-created-at}}
+          </article>
+          <article>
+            <span class="label">Last Tableau login</span>{{login-at}}
+          </article>
 	    </div>
 	    <div class="col2">
           <article>
