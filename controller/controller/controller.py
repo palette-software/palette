@@ -1650,7 +1650,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                target, aconn.displayname)
             # target is something like: "C/20140531_153629.tsbak"
             body = server.copy_cmd(target, aconn.displayname,
-                                                        local_fullpathname)
+                                                            backup_dir)
 
             if body.has_key("error"):
                 fmt = "restore: copy backup file '%s' from '%s' failed. " +\
