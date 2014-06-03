@@ -1,6 +1,9 @@
+import ntpath
+
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm.exc import NoResultFound
 
 from akiri.framework.ext.sqlalchemy import meta
 
@@ -11,7 +14,7 @@ class BackupEntry(meta.Base):
     __tablename__ = 'backup'
     DATEFMT = "%I:%M %p PDT on %B %d, %Y"
 
-    key = Column(Integer, unique=True, nullable=False, primary_key=True)
+    backupid = Column(Integer, unique=True, nullable=False, primary_key=True)
     volid = Column(BigInteger, ForeignKey("agent_volumes.volid"))
     name = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
@@ -43,21 +46,49 @@ class BackupManager(object):
         session.add(entry)
         session.commit()
 
-    def remove(self, name, volid):
+    def remove(self, backupid):
         session = meta.Session()
         session.query(BackupEntry).\
-            filter(BackupEntry.volid == volid).\
-            filter(BackupEntry.name == name).\
+            filter(BackupEntry.backupid == backupid).\
             delete()
         session.commit()
 
-    @classmethod
-    def find_by_name(cls, name):
-        entry = meta.Session.query(BackupEntry, AgentStatusEntry).\
-            filter(AgentStatusEntry.domainid == self.domainid).\
-            filter(BackupEntry.name == name).\
-            one()
-        return entry
+    def find_by_name(self, name):
+        sql = \
+            ("SELECT backup.backupid, agent_volumes.volid, " + \
+            "agent_volumes.name, agent_volumes.path, " + \
+            "agent_volumes.agentid FROM " + \
+                                            "agent_volumes, backup WHERE " + \
+            "backup.volid = agent_volumes.volid " + \
+            "AND backup.name = '%s' AND " + \
+            "agent_volumes.volid in " + \
+            "(SELECT agent.agentid FROM agent WHERE agent.domainid = %d)") % \
+            (name, self.domainid)
+
+        result = meta.Session.execute(sql).fetchall()
+        return result
+
+    def get_primary_data_loc_vol_entry(self):
+        try:
+            vol_entry, agent_status_entry = \
+                meta.Session.query(AgentVolumesEntry, AgentStatusEntry).\
+                filter(AgentVolumesEntry.primary_data_loc == True).\
+                filter(AgentVolumesEntry.agentid == AgentStatusEntry.agentid).\
+                filter(AgentStatusEntry.domainid == self.domainid).\
+                one()
+
+            return vol_entry
+
+        except NoResultFound, e:
+            return None
+
+    def primary_data_loc_path(self):
+        vol_entry = self.get_primary_data_loc_vol_entry()
+
+        if not vol_entry:
+            return None
+
+        return ntpath.join(vol_entry.name + ':', vol_entry.path)
 
     @classmethod
     def all(cls, domainid, asc=True):

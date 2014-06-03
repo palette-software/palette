@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, BigInteger, Integer, Boolean
-from sqlalchemy.schema import ForeignKey
+from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
 
@@ -26,6 +26,7 @@ class AgentInfoEntry(meta.Base, BaseDictMixin):
     key = Column(String)
     value = Column(String)
 
+
 class AgentVolumesEntry(meta.Base, BaseDictMixin):
     __tablename__ = "agent_volumes"
 
@@ -49,6 +50,8 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
 
     primary_data_loc = Column(Boolean)
     active = Column(Boolean)
+
+    UniqueConstraint('agentid', 'name')
 
     def todict(self):
         return {'name': self.name,
