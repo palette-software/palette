@@ -354,6 +354,11 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
         backup = cmd.args[0]
 
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found.')
+            return
+
         if not aconn.user_action_lock(blocking=False):
             print >> self.wfile, "FAIL: Busy with another user request."
             return
@@ -1222,10 +1227,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # Example name: 20140127_162225.tsbak
         backup_name = time.strftime("%Y%m%d_%H%M%S") + ".tsbak"
 
-        # aconn is the primary
-        install_dir = aconn.auth['install-dir']
-        backup_path = ntpath.join(install_dir, AgentConnection.DATA_DIR,
-                                                                backup_name)
+        # Get the vol + dir to use for the backup command to tabadmin.
+        backup_dir = self.backup.primary_data_loc_path()
+        if not backup_dir:
+            return self.error("Couldn't find the primary_data_loc in " + \
+                        "the agent_volumes table for the primary agent.")
+
+        backup_path = ntpath.join(backup_dir, backup_name)
 
         backup_vol = backup_path.split(':')[0]
         # e.g.: c:\\Program\ Files\ (x86)\\Palette\\Data\\2014Jan27_162225.tsbak
@@ -1298,32 +1306,30 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # FIXME: tie backup to domain
 
-        try:
-            B, A = self.backup.find_by_name(backup)
-            uuid = A.uuid
-            agentid = A.agentid
-            displayname = A.displayname
-        except sqlalchemy.orm.exc.NoResultFound:
-            return self.error("no backup found with name: %s" % \
-              (backup))
-        except sqlalchemy.orm.exc.MultipleResultsFound:
-            return self.error("multiple backups found with name: %s" % \
-              (backup))
+        result = self.backup.find_by_name(backup)
+        if not result:
+            return self.error("no backup found with name: %s" % (backup))
 
-        aconn = self.agentmanager.agent_conn_by_uuid(uuid)
+        (backupid, volid, vol_name, vol_path, agentid) = result[0]
+
+        agent = AgentStatusEntry.get_agentstatusentry_by_volid(volid)
+
+        aconn = self.agentmanager.agent_conn_by_uuid(agent.uuid)
         if not aconn:
             return self.error("agent not connected: displayname=%s uuid=%s" % \
-              (displayname, uuid))
+              (agent.displayname, agent.uuid))
 
-        install_dir = aconn.auth['install-dir']
-        backup_path = ntpath.join(install_dir, "Data", backup)
+        backup_path = ntpath.join(vol_name + ":", vol_path, backup)
+        self.log.debug("backupdel_cmd: Deleting path '%s' on agent '%s'",
+                                            backup_path, agent.displayname)
+
         body = self.delete_file(aconn, backup_path)
         if not body.has_key('error'):
             try:
-                self.backup.remove(backup, agentid)
+                self.backup.remove(backupid)
             except sqlalchemy.orm.exc.NoResultFound:
                 return self.error("backup not found name=%s agent=%s" % \
-              (backup, displayname))
+              (backup, agent.displayname))
 
         return body
 
@@ -1557,7 +1563,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         source_ip = src.auth['ip-address']
 
         if not target_dir:
-            target_dir = ntpath.join(dst.auth['install-dir'], 'Data')
+            target_dir = self.backup.primary_data_loc_path()
+            if not target_dir:
+                return self.error("copy_cmd: Couldn't find the " + \
+                        "primary_data_loc in the agent_volumes table " + \
+                        "for the primary agent.")
 
         command = '%s GET "https://%s:%s/%s" "%s"' % \
             (Controller.PHTTP_BIN, source_ip, src.auth['listen-port'],
@@ -1620,8 +1630,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                                             source_spec)
         filename_only = parts[1] #  e.g. "20140531_153629.tsbak"
 
-        install_dir = aconn.auth['install-dir']
-        local_fullpathname = ntpath.join(install_dir, "Data", filename_only)
+        # Get the vol + dir to use for the restore command to tabadmin.
+        backup_dir = self.backup.primary_data_loc_path()
+        if not backup_dir:
+            return self.error("restore: Couldn't find the primary_data_loc " + \
+                        "in the agent_volumes table for the primary agent.")
+
+        local_fullpathname = ntpath.join(backup_dir, filename_only)
 
         # Check if the file is on the Primary Agent.
         if source_displayname != aconn.displayname:
@@ -1634,7 +1649,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.debug("restore: Sending copy command: %s, %s", \
                                target, aconn.displayname)
             # target is something like: "C/20140531_153629.tsbak"
-            body = server.copy_cmd(target, aconn.displayname)
+            body = server.copy_cmd(target, aconn.displayname,
+                                                        local_fullpathname)
 
             if body.has_key("error"):
                 fmt = "restore: copy backup file '%s' from '%s' failed. " +\

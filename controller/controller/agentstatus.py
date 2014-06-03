@@ -11,6 +11,8 @@ from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
 from mixin import BaseDictMixin
 
+from agentinfo import AgentVolumesEntry
+
 class AgentStatusEntry(meta.Base, BaseDictMixin):
     __tablename__ = 'agent'
 
@@ -72,3 +74,13 @@ class AgentStatusEntry(meta.Base, BaseDictMixin):
 
         agents_sorted = [entry.uuid for entry in agent_entries]
         return agents_sorted
+
+    @classmethod
+    def get_agentstatusentry_by_volid(cls, volid):
+        vol_entry = AgentVolumesEntry.get_vol_entry_by_volid(volid)
+        if not vol_entry:
+            return False
+
+        return meta.Session.query(AgentStatusEntry).\
+            filter(AgentStatusEntry.agentid == vol_entry.agentid).\
+            one()
