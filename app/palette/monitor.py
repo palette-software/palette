@@ -20,6 +20,7 @@ from controller.domain import Domain
 from controller.custom_states import CustomStates
 
 from page import PalettePage
+from event import EventApplication
 
 __all__ = ["MonitorApplication"]
 
@@ -32,8 +33,9 @@ class MonitorApplication(RESTApplication):
 
         domainname = store.get('palette', 'domainname')
         self.domain = Domain.get_by_name(domainname)
+        self.event = EventApplication(global_conf)
 
-    def handle_monitor(self, eq):
+    def handle_monitor(self, req):
         # Get the state
         main_state = StateManager.get_state_by_domainid(self.domain.domainid)
 
@@ -137,13 +139,20 @@ class MonitorApplication(RESTApplication):
 
         environments = [ { "name": "My Servers", "agents": agents } ]
 
-        return {'state': main_state,
-                'allowable-actions': allowable_actions,
-                'text': text,
-                'color': color,
-                'user-action-in-progress': user_action_in_progress,
-                'environments': environments
-               }
+        monitor_ret = {'state': main_state,
+                       'allowable-actions': allowable_actions,
+                       'text': text,
+                       'color': color,
+                       'user-action-in-progress': user_action_in_progress,
+                       'environments': environments
+                      }
+
+        if not 'event' in req.GET or \
+                    ('event' in req.GET and req.GET['event'] != 'false'):
+            events = self.event.handle_get(req)
+            monitor_ret['events'] = events['events']
+
+        return monitor_ret
 
     def handle(self, req):
         if req.environ['PATH_INFO'] == '/monitor':
