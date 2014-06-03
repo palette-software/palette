@@ -1,5 +1,7 @@
 import ntpath
 
+from sqlalchemy.orm.exc import NoResultFound
+
 from akiri.framework.ext.sqlalchemy import meta
 
 from agentinfo import AgentInfoEntry, AgentVolumesEntry
@@ -51,7 +53,7 @@ class DiskCheck(object):
         # We now know the primary has enough space.
         # Determine the target volume.
         if not self.target_check():
-            return self.error_msg
+            return False
 
         return True
 
@@ -117,7 +119,7 @@ class DiskCheck(object):
 
         agents = self.agentmanager.all_agents()
         for key in agents:
-            if agents[key].displayname == target:
+            if agents[key].displayname == self.target:
                 # FIXME: make sure agent is connected
                 if agents[key].agent_type != \
                                       AgentManager.AGENT_TYPE_PRIMARY:
@@ -126,7 +128,8 @@ class DiskCheck(object):
 
         if not self.target_conn:
             return self.error(\
-                        "agent %s does not exist or is offline" % target)
+                "agent '%s' does not exist or is offline or is a " + \
+                                        "primary agent" % self.target)
 
         # The target agent has been found.
     
@@ -195,27 +198,27 @@ class DiskCheck(object):
             Returns:
                 True - can be used
                 False - can't be used.
-
         """
-        volume_name = volume_name.upper()
+
+        self.volume_name = self.volume_name.upper()
         try:
             entry = meta.Session.query(AgentVolumesEntry).\
                 filter(AgentVolumesEntry.agentid == \
-                                            target_conn.agentid).\
-                filter(AgentVolumesEntry.name == volume_name).\
+                                            self.target_conn.agentid).\
+                filter(AgentVolumesEntry.name == self.volume_name).\
                 one()
         except NoResultFound, e:
                 return self.error(("backup: Volume '%s' not found " + \
-                    "on target '%s'") % (volume_name, target))
+                    "on target '%s'") % (self.volume_name, self.target))
     
         if not entry.archive:
             return self.error(("backup: Volume '%s' on target '%s' " + \
-                "is not an 'archive'") % (volume_name, target))
+                "is not an 'archive'") % (self.volume_name, self.target))
 
         if entry.available_space < self.min_target_disk_needed:
             return self.error(("backup: Volume '%s' on target  " +  \
                 "'%s' does not have the minumum available " + \
-                "space: %d. Has only %d.") % (volume_name, target,
+                "space: %d. Has only %d.") % (self.volume_name, self.target,
                 entry.available_space, self.min_target_disk_needed,
                                             entry.available_space))
 
@@ -225,7 +228,7 @@ class DiskCheck(object):
             return self.error(("backup: Volume '%s' on target " + \
                     "'%s' has a smaller archive-limit (%d) than " + \
                     "would be needed with this backup " + \
-                    "(%d - %d + %d = %d)") % (volume_name, target,
+                    "(%d - %d + %d = %d)") % (self.volume_name, self.target,
                         entry.archive_limit,
                         entry.size - entry.available_space +  \
                                             self.min_target_disk_needed))
@@ -244,7 +247,7 @@ class DiskCheck(object):
         """
 
         vol_entry = AgentVolumesEntry.has_available_space(\
-                        target_conn.agentid, self.min_target_disk_needed)
+                        self.target_conn.agentid, self.min_target_disk_needed)
 
         if not vol_entry:
             return self.error("we_choose_volume: No space on chosen " + \
