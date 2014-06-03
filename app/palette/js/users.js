@@ -8,8 +8,33 @@ function ($, template, common)
             $('#user-list').html(rendered);
             common.bindEvents();
             common.setupDropdowns();
+            $('#last-update').html(data['last-update']);
         });
     }
+
+    function refresh() {
+        $.ajax({
+            type: 'POST',
+            url: '/rest/users',
+            data: {'action': 'refresh'},
+            dataType: 'json',
+            async: false,
+
+            success: function(data) {
+                update(data);
+            },
+            error: function(req, textStatus, errorThrown) {
+                console.log('[ERROR] '+textStatus+': '+errorThrown);
+            }
+        });
+    }
+
+    $().ready(function() {
+        $('.refresh > span').bind('click', function() {
+            refresh();
+        });
+        common.startup();
+    });
 
     $.ajax({
         url: '/rest/users',
@@ -20,6 +45,4 @@ function ($, template, common)
             console.log('[ERROR] '+textStatus+': '+errorThrown);
         }
     });
-
-    common.startup();
 });

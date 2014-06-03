@@ -1,4 +1,6 @@
+from sqlalchemy import DateTime
 from akiri.framework.ext.sqlalchemy import meta
+from util import DATEFMT
 
 class BaseDictMixin(object):
 
@@ -10,7 +12,11 @@ class BaseDictMixin(object):
             if c.name in exclude:
                 continue
             value = getattr(self, c.name)
-            if not isinstance(value, (int, long)):
+            if value is None:
+                continue
+            if isinstance(c.type, DateTime):
+                value = value.strftime(DATEFMT)
+            elif not isinstance(value, (int, long)):
                 value = str(value)
             name = pretty and c.name.replace('_', '-') or c.name
             d[name] = value

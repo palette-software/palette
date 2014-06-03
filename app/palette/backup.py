@@ -21,6 +21,7 @@ from controller.backup import BackupEntry, BackupManager
 from controller.agentinfo import AgentInfoEntry, AgentVolumesEntry
 from controller.agentstatus import AgentStatusEntry
 from controller.domain import Domain
+from controller.util import DATEFMT
 
 from page import PalettePage
 
@@ -29,7 +30,6 @@ __all__ = ["BackupApplication"]
 class BackupApplication(RESTApplication):
 
     NAME = 'backup'
-    DATEFMT = "%I:%M %p PDT on %B %d, %Y"
 
     def __init__(self, global_conf):
         super(BackupApplication, self).__init__(global_conf)
@@ -141,7 +141,7 @@ class BackupApplication(RESTApplication):
             # FIXME: convert TIMEZONE
             tomorrow = datetime.date.today() + datetime.timedelta(days=1)
             midnight = datetime.datetime.combine(tomorrow, datetime.time(0,0))
-            scheduled = midnight.strftime(self.DATEFMT)
+            scheduled = midnight.strftime(DATEFMT)
 
             options = [{'item': 'Palette Cloud Storage'},
                        {'item': 'On-Premise Storage'}]

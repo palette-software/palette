@@ -21,11 +21,13 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     hashed_password = Column(String)
     salt = Column(String)
     roleid = Column(BigInteger, ForeignKey("roles.roleid"), default=0)
+    login_at = Column(DateTime)
     licensing_role_id = Column(Integer)
-    admin_level = Column(Integer)
+    user_admin_level = Column(Integer)
+    system_admin_level = Column(Integer)
     publisher_tristate = Column(Integer)
-    created_at = Column(DateTime)
-    updated_at = Column(DateTime)
+    system_created_at = Column(DateTime)
+    timestamp = Column(DateTime)
 
     role = relationship("Role")
 
@@ -68,3 +70,45 @@ class Role(meta.Base, BaseMixin):
                 {'roleid':1, 'name':"Read-Only Admin"},
                 {'roleid':2, 'name':"Manager Admin"},
                 {'roleid':3, 'name':"Super Admin"}]
+
+class License(object):
+    UNLICENSED = 3
+    INTERACTOR = 2
+    VIEWER = 1
+
+    @classmethod
+    def str(cls, n):
+        if n == License.UNLICENSED:
+            return 'Unlicensed'
+        if n == License.INTERACTOR:
+            return 'Interactor'
+        if n == License.VIEWER:
+            return 'Viewer'
+        return 'Unknown('+str(n)+')'
+
+class Publisher(object):
+    DENY = 0
+    IMPLICIT = 1
+    GRANTED = 2
+
+    @classmethod
+    def str(cls, n):
+        if n == Publisher.DENY:
+            return 'Deny'
+        if n == Publisher.IMPLICIT:
+            return 'Allow (Implicit)'
+        if n == Publisher.GRANTED:
+            return 'Allow (Granted)'
+        return 'Unknown('+str(n)+')'
+
+class Admin(object):
+
+    @classmethod
+    def str(cls, user, system):
+        if user == 5 and system == 0:
+            return 'Site Admin'
+        if user == 0 and system == 10:
+            return 'System Admin'
+        if user == 0 and system == 0:
+            return 'No Admin'
+        return 'Unknown('+str(user)+','+str(system)+')'
