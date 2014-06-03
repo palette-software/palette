@@ -112,7 +112,6 @@ class BackupApplication(RESTApplication):
 
         return agent_entry.displayname
 
-
     def get_last_backup(self):
         last_db = meta.Session.query(BackupEntry).\
             order_by(BackupEntry.creation_time.desc()).\

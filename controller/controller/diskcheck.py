@@ -117,7 +117,7 @@ class DiskCheck(object):
 
         agents = self.agentmanager.all_agents()
         for key in agents:
-            if agents[key].displayname == target:
+            if agents[key].displayname == self.target:
                 # FIXME: make sure agent is connected
                 if agents[key].agent_type != \
                                       AgentManager.AGENT_TYPE_PRIMARY:
@@ -126,7 +126,7 @@ class DiskCheck(object):
 
         if not self.target_conn:
             return self.error(\
-                        "agent %s does not exist or is offline" % target)
+                        "agent %s does not exist or is offline" % self.target)
 
         # The target agent has been found.
     
@@ -206,16 +206,16 @@ class DiskCheck(object):
                 one()
         except NoResultFound, e:
                 return self.error(("backup: Volume '%s' not found " + \
-                    "on target '%s'") % (volume_name, target))
+                    "on target '%s'") % (volume_name, self.target))
     
         if not entry.archive:
             return self.error(("backup: Volume '%s' on target '%s' " + \
-                "is not an 'archive'") % (volume_name, target))
+                "is not an 'archive'") % (volume_name, self.target))
 
         if entry.available_space < self.min_target_disk_needed:
             return self.error(("backup: Volume '%s' on target  " +  \
                 "'%s' does not have the minumum available " + \
-                "space: %d. Has only %d.") % (volume_name, target,
+                "space: %d. Has only %d.") % (volume_name, self.target,
                 entry.available_space, self.min_target_disk_needed,
                                             entry.available_space))
 
@@ -225,7 +225,7 @@ class DiskCheck(object):
             return self.error(("backup: Volume '%s' on target " + \
                     "'%s' has a smaller archive-limit (%d) than " + \
                     "would be needed with this backup " + \
-                    "(%d - %d + %d = %d)") % (volume_name, target,
+                    "(%d - %d + %d = %d)") % (volume_name, self.target,
                         entry.archive_limit,
                         entry.size - entry.available_space +  \
                                             self.min_target_disk_needed))
