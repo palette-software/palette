@@ -54,10 +54,8 @@
       <ul class="processes">
 	{{#details}}
 	<li>
-	  <a>
-	    <i class="fa fa-fw fa-circle {{status}}"></i>
-	    {{name}} ({{pid}})
-	  </a>
+	  <i class="fa fa-fw fa-circle {{status}}"></i>
+	  {{name}} ({{pid}})
 	</li>
 	{{/details}}
       </ul>
