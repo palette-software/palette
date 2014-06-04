@@ -14,7 +14,7 @@
   {{#servers}}
   <article class="event">
     <div class="summary clearfix">
-      <i class="fa fa-fw fa-user"></i>
+      <i class="fa fa-fw fa-laptop"></i>
       <div>
 	<div class="col2">
 	  <h3>{{displayname}}</h3>
