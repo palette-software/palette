@@ -37,6 +37,36 @@
   };
 </script>
 
+<script id="server-list-template" type="x-tmpl-mustache">
+  {{#environments}}
+  <h2>{{name}}</h2>
+  <ul class="server-list">
+    {{#agents}}
+    <li>
+      <a>
+        <i class="fa fa-fw fa-hdd-o {{color}}"></i>
+	    <div>
+          <h5>{{displayname}}</h5>
+          <span class="hostname">{{hostname}}</span>
+          <span class="address">{{ip_address}}</span>
+	    </div>
+      </a>
+      <ul class="processes">
+	{{#details}}
+	<li>
+	  <a>
+	    <i class="fa fa-fw fa-circle {{status}}"></i>
+	    {{name}} ({{pid}})
+	  </a>
+	</li>
+	{{/details}}
+      </ul>
+    </li>
+    {{/agents}}
+  </ul>
+  {{/environments}}
+</script>
+
 <script id="editbox-view" type="x-tmpl-mustache">
   <span>{{value}}</span>
   <i class="fa fa-fw fa-pencil"></i>
@@ -57,6 +87,10 @@
 <div class="container">
 
 <%include file="side-bar.mako" />
+
+<section class="secondary-side-bar servers">
+  <div id="server-list"></div>
+</section>
 
 ${next.body()}
 </div>

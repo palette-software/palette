@@ -5,12 +5,5 @@
 <title>Palette - Support Ticket</title>
 </%block>
 
-<section class="row">
-  <section class="collumns col-sm-12 col-lg-6">
-  </section>
-  <section class="collumns col-sm-12 col-lg-6">
-  </section>
-</section>
-
-<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/common.js">
+<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/ticket.js">
 </script>

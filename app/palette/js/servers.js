@@ -20,5 +20,5 @@ function ($, template, common)
         }
     });
 
-    common.startup();
+    common.startMonitor();
 });

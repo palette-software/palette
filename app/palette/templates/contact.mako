@@ -14,5 +14,5 @@
   </section>
 </section>
 
-<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/common.js">
+<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/contact.js">
 </script>

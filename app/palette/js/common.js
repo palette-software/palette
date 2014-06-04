@@ -3,14 +3,26 @@
  * templates and should be named accordingly.
  */
 
-define(['jquery', 'topic'],
-function ($, topic)
+define(['jquery', 'topic', 'template'],
+function ($, topic, template)
 {
+    var server_list_template = $('#server-list-template').html();
+    template.parse(server_list_template);
 
-    function clearmenu() {
-	    $('.main-side-bar, .secondary-side-bar, .dynamic-content').removeClass('open');
-	    $('.main-side-bar, .secondary-side-bar, .dynamic-content').removeClass('collapsed');
-	    $('#mainNav .container > i').removeClass('open');
+    var event_list_template = $('#event-list-template').html();
+    template.parse(event_list_template);
+
+    var lastid = 0; /* last event id */
+
+     /*
+     * bindStatus()
+     * Make the clicking on the status box show the server list.
+     */
+    function bindStatus() {
+        $('.main-side-bar .status').off('click');
+        $('.main-side-bar .status').bind('click', function() {
+            $('.secondary-side-bar, .dynamic-content, .secondary-side-bar.servers').toggleClass('servers-visible');
+        });
     }
 
     /*
@@ -19,6 +31,7 @@ function ($, topic)
      * NOTE: Must be run after the AJAX request which populates the list.
      */
     function bindEvents() {
+        $('.event > div.summary').off('click');
         $('.event > div.summary').bind('click', function() {
             $(this).parent().toggleClass('open');
             $(this).find('i.expand').toggleClass("fa-angle-up fa-angle-down");
@@ -26,211 +39,11 @@ function ($, topic)
     }
 
     /*
-     * setupEvents()
-     * Initialize the static page elements related to event handling.
+     * setupHeaderMenus
+     * Enable the popup menus in the navigation bar.
      */
-    function setupEvents()
+    function setupHeaderMenus()
     {
-        $('#toggle-event-filters').bind('click', function() {
-            $(this).toggleClass('open');
-            $('.top-zone').find('.btn-group').toggleClass('visible');
-        });
-
-        $(function(){
-            $('.dynamic-content').bind('click', function() {
-                var viewport = $(window).width();
-                var dynamicClosed = $(this).hasClass('closed');
-                if (viewport <= 960 && dynamicClosed != true) {
-                    clearmenu();
-                    $('.secondary-side-bar, .dynamic-content').toggleClass('closed');
-                    $('#toggle-events').toggleClass('active');
-                }
-            }); 
-        });
-
-        $(function(){
-            $('.secondary-side-bar').bind('click', function() {
-                var viewport = $(window).width();
-                var dynamicClosed = $(this).hasClass('closed');
-                if (viewport <= 960 && dynamicClosed == true) {
-                    clearmenu();
-                    $('.secondary-side-bar, .dynamic-content').toggleClass('closed');
-                    $('#toggle-events').toggleClass('active');
-                }
-            }); 
-        });
-
-        $(function(){
-            $('#toggle-events').bind('click', function() {
-                clearmenu();
-                $('.secondary-side-bar, .dynamic-content').toggleClass('closed');
-                $(this).toggleClass('active');
-            }); 
-        });
-    }
-
-    /*
-     * setupDialogs()
-     * Connect dialogs to their relevant click handlers.
-     */
-    function setupDialogs()
-    {
-        $('a.popup-link').bind('click', function() {
-            var popupLink = $(this).hasClass('inactive');
-            if (popupLink == false) {
-                $('article.popup').removeClass('visible');
-                var popTarget = $(this).attr('name');
-                $('article.popup#'+popTarget).addClass('visible');
-            }
-        });
-    }
-
-    /*
-     * setupDropdowns()
-     * Enable the select-like elements created with the dropdown class.
-     */
-    function setupDropdowns() {
-        $('.dropdown-menu li').bind('click', function(event) {
-            event.preventDefault();
-            var a = $(this).find('a');
-            var div =  $(this).parent().siblings().find('div')
-            var href = a.attr('href');
-            if (!href || href == '#') {
-                div.text(a.text());
-                return;
-            }
-            data = customDataAttributes(a);
-            $.ajax({
-                type: 'POST',
-                url: href,
-                data: data,
-                dataType: 'json',
-                async: false,
-            
-                success: function(data) {
-                    div.text(a.text());
-                },
-                error: function(req, textStatus, errorThrown) {
-                    alert(textStatus + ": " + errorThrown);
-                }
-            });
-        });
-    }
-
-    /*
-     * setupConfigure
-     * Enable the configure expansion item on main sidebar.
-     */
-    function setupCategories() {
-        $('.expand').parent().bind('click', function(event) {
-            event.preventDefault();
-            if ($('.expand', this).hasClass('fa-angle-down')) {
-                $('.expand', this).removeClass('fa-angle-down');
-                $('.expand', this).addClass('fa-angle-up');
-                $(this).parent().find('ul').addClass('visible');
-            } else {
-                $('.expand', this).removeClass('fa-angle-up');
-                $('.expand', this).addClass('fa-angle-down');
-                $(this).parent().find('ul').removeClass('visible');
-            }                
-        });
-    }
-
-    /*
-     * customDataAttributes
-     * Return the HTML5 custom data attributes for a selector or domNode.
-     */
-    function customDataAttributes(obj) {
-        if (obj instanceof $) {
-            obj = obj.get(0);
-        }
-        var d = {}
-        for (var i=0, attrs=obj.attributes, l=attrs.length; i<l; i++){
-            var name = attrs.item(i).nodeName;
-            if (!name.match('^data-')) {
-                continue;
-            }
-            d[name.substring(5)] = attrs.item(i).nodeValue;
-        }
-        return d;
-    }
-
-    /* MONITOR TIMER */
-    var interval = 1000; //ms - FIXME: make configurable from the backend.
-    var current = null;
-
-    function update(data)
-    {
-        var state = data['state']
-        var json = JSON.stringify(data);
-        
-        /*
-         * Broadcast the state change, if applicable.
-         * NOTE: this method may lead to false positive, which is OK.
-         */
-        if (json != current) {
-            topic.publish('state', data);
-            current = json;
-        }
-
-        var text = 'ERROR';
-        if (data.hasOwnProperty('text') && data['text'] != 'none') {
-            text = data['text'];
-        }
-        $('#status-text').html(text);
-
-        var color = 'red';
-        if (data.hasOwnProperty('color') && data['color'] != 'none') {
-            color = data['color'];
-        }
-        var src = '/app/module/palette/images/status-'+color+'-light.png';
-        $('#status-image').attr('src', src);
-        //$('#status-text').attr("class", color);
-    }
-
-    function poll() {
-        $.ajax({
-            url: '/rest/monitor',
-            success: function(data) {
-                update(data);
-            },
-            error: function(req, textStatus, errorThrown)
-            {
-                var data = {}
-                data['text'] = textStatus;
-                update(data);
-            },
-            complete: function() {
-                setTimeout(poll, interval);
-            }
-        });
-    }
-
-    function startup() {
-
-        /* MOBILE TITLE */
-        $(function(){
-            var pageTitle = $('title').text();
-            pageTitle = pageTitle.replace('Palette - ', '');
-        
-            $('.mobile-title').text(pageTitle);
-        });
-
-        $('.popup-close, article.popup .shade').bind('click', function() {
-            $('article.popup').removeClass('visible');
-        });
-
-        /* SERVER LIST */
-        $('.server-list li a').bind('click', function() {
-            $(this).toggleClass('visible');
-            $(this).parent().find('ul.processes').toggleClass('visible');
-        });
-
-        $('#mainNav .container > i').bind('click', function() {
-            $('.main-side-bar, .secondary-side-bar, .dynamic-content').toggleClass('open');
-	        $(this).toggleClass('open');
-        });
-
         /* HEADER POPUP MENUS */
         var viewport = $(window).width();
 
@@ -265,13 +78,213 @@ function ($, topic)
                 }           
             } 
         });
+    }
 
-        setupEvents();
-        /* FIXME: run after AJAX */
+    /*
+     * setupDialogs()
+     * Connect dialogs to their relevant click handlers.
+     */
+    function setupDialogs()
+    {
+        $('a.popup-link').bind('click', function() {
+            var popupLink = $(this).hasClass('inactive');
+            if (popupLink == false) {
+                $('article.popup').removeClass('visible');
+                var popTarget = $(this).attr('name');
+                $('article.popup#'+popTarget).addClass('visible');
+            }
+        });
+
+        $('.popup-close, article.popup .shade').bind('click', function() {
+            $('article.popup').removeClass('visible');
+        });
+    }
+
+    /*
+     * setupDropdowns()
+     * Enable the select-like elements created with the dropdown class.
+     */
+    function setupDropdowns() {
+        $('.dropdown-menu li').off('click');
+        $('.dropdown-menu li').bind('click', function(event) {
+            event.preventDefault();
+            var a = $(this).find('a');
+            var div =  $(this).parent().siblings().find('div')
+            var href = a.attr('href');
+            if (!href || href == '#') {
+                div.text(a.text());
+                return;
+            }
+            data = customDataAttributes(a);
+            $.ajax({
+                type: 'POST',
+                url: href,
+                data: data,
+                dataType: 'json',
+                async: false,
+            
+                success: function(data) {
+                    div.text(a.text());
+                },
+                error: function(req, textStatus, errorThrown) {
+                    alert(textStatus + ": " + errorThrown);
+                }
+            });
+        });
+    }
+
+    /*
+     * setupConfigure
+     * Enable the configure expansion item on main sidebar.
+     */
+    function setupCategories() {
+        $('.expand').parent().off('click');
+        $('.expand').parent().bind('click', function(event) {
+            event.preventDefault();
+            if ($('.expand', this).hasClass('fa-angle-down')) {
+                $('.expand', this).removeClass('fa-angle-down');
+                $('.expand', this).addClass('fa-angle-up');
+                $(this).parent().find('ul').addClass('visible');
+            } else {
+                $('.expand', this).removeClass('fa-angle-up');
+                $('.expand', this).addClass('fa-angle-down');
+                $(this).parent().find('ul').removeClass('visible');
+            }                
+        });
+    }
+
+    /*
+     * setupServerList
+     * Make the individual servers in the server list visible toggle.
+     */
+    function setupServerList() {
+        $('.server-list li a').off('click');
+        $('.server-list li a').bind('click', function() {
+            $(this).toggleClass('visible');
+            $(this).parent().find('ul.processes').toggleClass('visible');
+        });
+    }
+
+
+    /*
+     * customDataAttributes
+     * Return the HTML5 custom data attributes for a selector or domNode.
+     */
+    function customDataAttributes(obj) {
+        if (obj instanceof $) {
+            obj = obj.get(0);
+        }
+        var d = {}
+        for (var i=0, attrs=obj.attributes, l=attrs.length; i<l; i++){
+            var name = attrs.item(i).nodeName;
+            if (!name.match('^data-')) {
+                continue;
+            }
+            d[name.substring(5)] = attrs.item(i).nodeValue;
+        }
+        return d;
+    }
+
+    /*
+     * updateEvents
+     */
+    function updateEvents(data) {
+        $('a.alert.errors span').html(data['red']);
+        $('a.alert.warnings span').html(data['yellow']);
+
+        var events = data['events'];
+        if (events == null || events.length == 0) {
+            return;
+        }
+        var last = events[0];
+        if (last == null) {
+            return;
+        }
+        if (!last.hasOwnProperty('eventid')) {
+            return;
+        }
+        lastid = last['eventid'];
+
+        var html = $('#event-list').html();
+        var rendered = template.render(event_list_template, data);
+        html = rendered + '\n' + html;
+        $('#event-list').html(html);
+
         bindEvents();
-        
-        setupCategories();
+    }
 
+    /* Code run automatically when 'common' is included */
+    $().ready(function() {        
+
+        /*
+        $('#mainNav .container > i').bind('click', function() {
+            $('.main-side-bar, .secondary-side-bar, .dynamic-content').toggleClass('open');
+	        $(this).toggleClass('open');
+        });
+        */
+        setupHeaderMenus();
+        setupCategories();
+        setupDropdowns();
+        bindStatus();
+    });
+
+
+    /* MONITOR TIMER */
+    var interval = 1000; //ms - FIXME: make configurable from the backend.
+    var current = null;
+
+    function update(data)
+    {
+        var state = data['state']
+        var json = JSON.stringify(data);
+        
+        /*
+         * Broadcast the state change, if applicable.
+         * NOTE: this method may lead to false positives, which is OK.
+         */
+        if (json == current) {
+            return;
+        }
+         
+        topic.publish('state', data);
+        current = json;
+
+        var text = data['text'] != null ? data['text'] : 'ERROR';
+        $('#status-text').html(text);
+
+        var color = data['color'] != null ? data['color'] : 'red';
+        var src = '/app/module/palette/images/status-'+color+'-light.png';
+        $('#status-image').attr('src', src);
+
+        updateEvents(data);
+
+        var rendered = template.render(server_list_template, data);
+        $('#server-list').html(rendered);
+        setupServerList();
+    }
+
+    function poll() {
+        var start = lastid + 1;
+        var url = '/rest/monitor?order=desc&start='+start;
+
+        $.ajax({
+            url: url,
+            success: function(data) {
+                update(data);
+            },
+            error: function(req, textStatus, errorThrown)
+            {
+                var data = {}
+                data['text'] = textStatus;
+                update(data);
+            },
+            complete: function() {
+                setTimeout(poll, interval);
+            }
+        });
+    }
+
+    function startMonitor() {
         /* 
          * Start a timer that periodically polls the status every
          * 'interval' milliseconds
@@ -280,9 +293,10 @@ function ($, topic)
     }
 
     return {'state': current,
-            'startup': startup,
+            'startMonitor': startMonitor,
             'bindEvents': bindEvents,
             'setupDialogs': setupDialogs,
-            'setupDropdowns' : setupDropdowns
+            'setupDropdowns' : setupDropdowns,
+            'setupServerList' : setupServerList
            };
 });

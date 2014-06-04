@@ -1,5 +1,4 @@
-require(['jquery', 'topic', 'template', 'common',
-         'event', 'bootstrap', 'domReady!'],
+require(['jquery', 'topic', 'template', 'common', 'bootstrap', 'domReady!'],
 function (jquery, topic, template, common)
 {
     var actions = {'start': start,
@@ -10,6 +9,8 @@ function (jquery, topic, template, common)
                      'archive-backup-template': null};
 
     var allowed = [];
+
+    /* FIXME: get rid of domReady and use $.ready() */
 
     function disableAll() {
         /* FIXME - do this with a class */
@@ -176,12 +177,10 @@ function (jquery, topic, template, common)
 
     bind('#restore', restore);
 
-    common.setupDialogs();
-    common.setupDropdowns();
-
     topic.subscribe('state', function(message, data) {
         updateState(data);
     });
 
-    common.startup();
+    common.startMonitor();
+    common.setupDialogs();
 });
