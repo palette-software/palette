@@ -600,10 +600,10 @@ class AgentManager(threading.Thread):
                 uuid, self.agents[uuid].auth['hostname'], reason)
 
             if gen_event:
-                self.server.event.gen(EventControl.AGENT_DISCONNECT,
+                self.server.event_control.gen(EventControl.AGENT_DISCONNECT,
                     dict({ 'error': reason,
-                      'info': "\nAgent: %s\nAgent type: %s\nAgent uuid %s" %
-                        (agent.displayname, agent.agent_type, uuid) }.items() +
+                      'info': "\nAgent type: %s\nAgent uuid %s" %
+                        (agent.displayname, uuid) }.items() +
                                             agent.__dict__.items()))
 
             self.forget(agent.agentid)
