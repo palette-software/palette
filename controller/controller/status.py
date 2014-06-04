@@ -13,7 +13,7 @@ from akiri.framework.ext.sqlalchemy import meta
 from state import StateManager
 from agentmanager import AgentManager
 from agentstatus import AgentStatusEntry
-from custom_alerts import CustomAlerts
+from event_control import EventControl
 
 class StatusEntry(meta.Base):
     __tablename__ = 'status'
@@ -116,7 +116,7 @@ class StatusMonitor(threading.Thread):
             filter(StatusEntry.name == 'Status').\
             one().status
 
-    def set_main_state(self, status):
+    def set_main_state(self, status, aconn):
         main_state = self.stateman.get_state()
         if status not in \
             (StatusEntry.STATUS_RUNNING, StatusEntry.STATUS_STOPPED,
@@ -130,11 +130,14 @@ class StatusMonitor(threading.Thread):
             if status == StatusEntry.STATUS_RUNNING:
                 # StateManager calls the state "STARTED"; Tableau calls
                 # it "RUNNING".
-                self.server.alert.send(CustomAlerts.INIT_STATE_STARTED)
+                self.server.event_control.gen(EventControl.INIT_STATE_STARTED,
+                                                                aconn.__dict__)
             elif status == StatusEntry.STATUS_STOPPED:
-                self.server.alert.send(CustomAlerts.INIT_STATE_STOPPED)
+                self.server.event_control.gen(EventControl.INIT_STATE_STOPPED,
+                                                                aconn.__dict__)
             elif status == StatusEntry.STATUS_DEGRADED:
-                self.server.alert.send(CustomAlerts.INIT_STATE_DEGRADED)
+                self.server.event_control.gen(EventControl.INIT_STATE_DEGRADED,
+                                                                aconn.__dict__)
             return
 
         # If the main state was DEGRADED but status isn't DEGRADED any more,
@@ -146,9 +149,11 @@ class StatusMonitor(threading.Thread):
                 # fixme: should we have a unique alert for the transition
                 # from DEGRADED to RUNNING instead of this standard
                 # "started" alert?
-                self.server.alert.send(CustomAlerts.STATE_STARTED)
+                self.server.event_control.gen(EventControl.STATE_STARTED,
+                                                                aconn.__dict__)
             elif status == StateManager.STATUS_STOPPED:
-                self.server.alert.send(CustomAlerts.STATE_STOPPED)
+                self.server.event_control.gen(EventControl.STATE_STOPPED,
+                                                                aconn.__dict__)
             else:
                 self.log.error("Unexpected transition from DEGRADED to: %s",
                                                                     status)
@@ -159,17 +164,20 @@ class StatusMonitor(threading.Thread):
                                         status == StatusEntry.STATUS_RUNNING:
             self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateManager.STATE_STARTED)
-            self.server.alert.send(CustomAlerts.STATE_STARTED)
+            self.server.event_control.gen(EventControl.STATE_STARTED,
+                                                            aconn.__dict__)
         elif main_state == StateManager.STATE_STARTED and \
                                         status == StatusEntry.STATUS_STOPPED:
             self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateManager.STATE_STOPPED)
-            self.server.alert.send(CustomAlerts.STATE_STOPPED)
+            self.server.event_control.gen(EventControl.STATE_STOPPED,
+                                                                aconn.__dict__)
         elif status == StatusEntry.STATUS_DEGRADED and \
                                     main_state != StatusEntry.STATUS_DEGRADED:
             self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateManager.STATE_DEGRADED)
-            self.server.alert.send(CustomAlerts.STATE_DEGRADED)
+            self.server.event_control.gen(EventControl.STATE_DEGRADED,
+                                                            aconn.__dict__)
 
     def run(self):
         while True:
@@ -302,7 +310,7 @@ class StatusMonitor(threading.Thread):
 
         session.commit()
 
-        self.set_main_state(system_status)
+        self.set_main_state(system_status, aconn)
         self.log.debug("Logging main status: %s", system_status)
 
         session.commit()
