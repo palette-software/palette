@@ -38,7 +38,7 @@ class DiskCheck(object):
         available.
             Returns:
                     True on success
-                    Fail on error.  Also sets self.error to the
+                    Fail on error.  Also sets self.error_msg to the
                     error message.
         """
         if not AgentInfoEntry.TABLEAU_DATA_DIR_KEY in self.aconn.pinfo:
@@ -48,7 +48,7 @@ class DiskCheck(object):
 
         # Check primary agent for disk availability
         if not self.primary_check():
-            return self.error_msg
+            return False
 
         # We now know the primary has enough space.
         # Determine the target volume.
@@ -112,7 +112,11 @@ class DiskCheck(object):
 
     def set_target(self):
         """We were passed a target.  Look for the target
-        in active agent connections and set the volume."""
+        in active agent connections and set the volume.
+        Returns:
+            True    no error
+            False   error
+        """
 
         # target_conn is the destination agent - if applicable.
         self.target_conn = None
@@ -140,9 +144,14 @@ class DiskCheck(object):
             return self.we_choose_volume()
 
     def we_choose_target_and_vol(self):
-        # We weren't passed a specific target to copy the backup to.
-        # Get the current order of agents, according to the database
-        # column "display_order".
+        """We weren't passed a specific target to copy the backup to.
+           Get the current order of agents, according to the database
+           column "display_order.
+
+           Returns:
+                True - no error
+                False - errror
+         """
         agent_keys_sorted = \
             AgentStatusEntry.display_order_by_domainid(self.server.domainid)
 
@@ -196,8 +205,8 @@ class DiskCheck(object):
         """We were also passed the volume name to use.  Check to
         see if it can be used.
             Returns:
-                True - can be used
-                False - can't be used.
+                True - no error
+                False - error
         """
 
         self.volume_name = self.volume_name.upper()
