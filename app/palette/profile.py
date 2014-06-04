@@ -34,8 +34,6 @@ class ProfileApplication(PaletteRESTHandler):
         path_info = self.base_path_info(req)
         if path_info == '':
             return self.handle_profile(req)
-        if path_info == 'email':
-            return self.handle_email(req);
         raise exc.HTTPNotFound()
 
     def handle_profile_POST(self, req):
@@ -67,21 +65,3 @@ class ProfileApplication(PaletteRESTHandler):
             return self.handle_profile_GET(req)
         raise exc.HTTPMethodNotAllowed()
 
-    def handle_email_POST(self, req):
-        if 'value' not in req.POST:
-            raise exc.HTTPBadRequest()
-        profile = self.get(req);
-        profile.email = req.POST['value']
-        meta.Session.commit()
-        return {}
-
-    def handle_email_GET(self, req):
-        profile = self.get(req)
-        return {'value': profile.email and profile.email or ''}
-
-    def handle_email(self, req):
-        if req.method == 'POST':
-            return self.handle_email_POST(req)
-        if req.method == 'GET':
-            return self.handle_email_GET(req)
-        raise exc.HTTPMethodNotAllowed()
