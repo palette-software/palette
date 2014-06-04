@@ -3,4 +3,3 @@ function (common)
 {
     common.startMonitor();
 });
-
