@@ -1,5 +1,5 @@
-require(['jquery', 'template', 'common', 'bootstrap'],
-function ($, template, common)
+require(['jquery', 'template', 'common', 'EditBox', 'bootstrap'],
+function ($, template, common, EditBox)
 {
     function update(data) {
         $().ready(function() {
@@ -8,6 +8,7 @@ function ($, template, common)
             $('#user-list').html(rendered);
             common.bindEvents();
             common.setupDropdowns();
+            EditBox.setup();
             $('#last-update').html(data['last-update']);
         });
     }

@@ -44,7 +44,10 @@
             <span class="label">License Level</span>{{license-info}}
           </article>
           <article><span class="label">Email</span>
-            <span class="editbox" data-href="">{{email}}</span>
+            <span class="editbox" 
+                  data-name="{{name}}" data-href="/rest/users/email">
+              {{email}}
+            </span>
           </article>
           <article>
             <span class="label">Created</span>{{system-created-at}}

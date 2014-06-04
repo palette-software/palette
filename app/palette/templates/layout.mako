@@ -37,6 +37,17 @@
   };
 </script>
 
+<script id="editbox-view" type="x-tmpl-mustache">
+  <span>{{value}}</span>
+  <i class="fa fa-fw fa-pencil"></i>
+</script>
+
+<script id="editbox-edit" type="x-tmpl-mustache">
+  <input value="{{value}}" />
+  <i class="fa fa-fw fa-check ok"></i>
+  <i class="fa fa-fw fa-times cancel"></i>
+</script>
+
 </head>
 <body>
 

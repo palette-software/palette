@@ -61,7 +61,9 @@ class UserApplication(PaletteRESTHandler):
                 return self.handle_POST(req)
             raise exc.HTTPMethodNotAllowed()
         if path_info == 'admin':
-            return self.handle_admin(req);
+            return self.handle_admin(req)
+        if path_info == 'email':
+            return self.handle_email(req)
         raise exc.HTTPNotFound()
 
     def handle_GET(self, req):
@@ -100,6 +102,17 @@ class UserApplication(PaletteRESTHandler):
         if not user:
             raise exc.HTTPGone()
         user.roleid = int(req.POST['roleid'])
+        meta.Session.commit()
+        return {}
+
+    def handle_email(self, req):
+        if req.method != 'POST':
+            raise exc.HTTPMethodNotAllowed()
+        # FIXME: test authorization
+        if 'name' not in req.POST or 'value' not in req.POST:
+            raise exc.HTTPBadRequest()
+        profile = UserProfile.get_by_name(req.POST['name'])
+        profile.email = req.POST['value']
         meta.Session.commit()
         return {}
 
