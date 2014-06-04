@@ -9,7 +9,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from controller.domain import Domain
 from controller.event import EventEntry
-from controller.custom_states import CustomStates
+from controller.state_control import StateControl
 
 __all__ = ["EventApplication"]
 
@@ -117,11 +117,11 @@ class EventApplication(RESTApplication):
 
         # Count the number of red, yellow and green events.
         red_count = len(meta.Session.query(EventEntry).\
-                    filter(EventEntry.color == CustomStates.COLOR_RED).all())
+                    filter(EventEntry.color == StateControl.COLOR_RED).all())
         yellow_count = len(meta.Session.query(EventEntry).\
-                    filter(EventEntry.color == CustomStates.COLOR_YELLOW).all())
+                    filter(EventEntry.color == StateControl.COLOR_YELLOW).all())
         green_count = len(meta.Session.query(EventEntry).\
-                    filter(EventEntry.color == CustomStates.COLOR_GREEN).all())
+                    filter(EventEntry.color == StateControl.COLOR_GREEN).all())
 
         # Get the list of all event_types found.
         query = meta.Session.query(EventEntry).\

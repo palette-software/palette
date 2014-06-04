@@ -30,13 +30,13 @@ from diskcheck import DiskCheck
 from state import StateManager
 from system import SystemManager
 from status import StatusMonitor, StatusEntry
-from alert import Alert
 from config import Config
 from domain import Domain, DomainEntry
 from profile import UserProfile, Role
-from custom_alerts import CustomAlerts
-from custom_states import CustomStates
-from event import EventManager, EventEntry
+from state_control import StateControl
+from alert_email import AlertEmail
+from event import EventManager
+from event_control import EventControl, EventControlManager
 from extracts import ExtractsEntry
 from workbooks import WorkbookEntry, WorkbookManager
 from s3 import S3
@@ -45,8 +45,6 @@ from version import VERSION
 
 global server # fixme
 global log # fixme
-
-GB = 1024*1024*1024
 
 class CommandException(Exception):
     def __init__(self, errmsg):
@@ -320,7 +318,8 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         log.debug("-----------------Starting Backup-------------------")
 
-        server.alert.send(CustomAlerts.BACKUP_STARTED)
+        server.event_control.gen(EventControl.BACKUP_STARTED,
+                                                            aconn.__dict__)
 
         self.ack()
 
@@ -328,9 +327,11 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.print_client("%s", str(body))
         if not body.has_key('error'):
-            server.alert.send(CustomAlerts.BACKUP_FINISHED, body)
+            server.event_control.gen(EventControl.BACKUP_FINISHED,
+                        dict(body.items() + aconn.__dict__.items()))
         else:
-            server.alert.send(CustomAlerts.BACKUP_FAILED, body)
+            server.event_control.gen(EventControl.BACKUP_FAILED,
+                        dict(body.items() + aconn.__dict__.items()))
 
         if reported_status == StatusEntry.STATUS_RUNNING:
             stateman.update(StateManager.STATE_STARTED)
@@ -440,7 +441,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         #FIXME: refactor do_backup() into do_backup() and backup()
         log.debug("------------Starting Backup for Restore--------------")
 
-        server.alert.send(CustomAlerts.BACKUP_BEFORE_RESTORE_STARTED)
+        server.event_control.gen(EventControl.BACKUP_BEFORE_RESTORE_STARTED,
+                                                            aconn.__dict__)
 
         self.ack()
 
@@ -448,10 +450,13 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = server.backup_cmd(aconn)
 
         if not body.has_key('error'):
-            server.alert.send(CustomAlerts.BACKUP_BEFORE_RESTORE_FINISHED, body)
+            server.event_control.gen(\
+                EventControl.BACKUP_BEFORE_RESTORE_FINISHED,
+                            dict(body.items() + aconn.__dict__.items()))
             backup_success = True
         else:
-            server.alert.send(CustomAlerts.BACKUP_BEFORE_RESTORE_FAILED, body)
+            server.event_control.gen(EventControl.BACKUP_BEFORE_RESTORE_FAILED,
+                           dict(body.items() + aconn.__dict__.items()))
             backup_success = False
 
         if not backup_success:
@@ -472,9 +477,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         if not body.has_key('error'):
             # Restore finished successfully.  The main state has.
             # already been set.
-            server.alert.send(CustomAlerts.RESTORE_FINISHED, body)
+            server.event_control.gen(EventControl.RESTORE_FINISHED,
+                        dict(body.items() + aconn.__dict__.items()))
         else:
-            server.alert.send(CustomAlerts.RESTORE_FAILED, body)
+            server.event_control.gen(EventControl.RESTORE_FAILED,
+                        dict(body.items() + aconn.__dict__.items()))
 
         self.print_client(str(body))
 
@@ -732,11 +739,13 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         if exit_status:
             # The "tableau start" failed.  Go back to "STOPPED" state.
-            server.alert.send(CustomAlerts.TABLEAU_START_FAILED, body)
+            server.event_control.gen(EventControl.TABLEAU_START_FAILED,
+                        dict(body.items() + aconn.__dict__.items()))
             stateman.update(StateManager.STATE_STOPPED)
+            server.event_control.gen(EventControl.STATE_STOPPED, aconn.__dict__)
         else:
             stateman.update(StateManager.STATE_STARTED)
-            server.alert.send(CustomAlerts.STATE_STARTED)
+            server.event_control.gen(EventControl.STATE_STARTED, aconn.__dict__)
 
         # STARTED is set by the status monitor since it really knows the status.
         self.print_client(str(body))
@@ -789,16 +798,19 @@ class CliHandler(socketserver.StreamRequestHandler):
         log.debug("------------Starting Backup for Stop---------------")
 
         stateman.update(StateManager.STATE_STARTED_BACKUP_STOP)
-        server.alert.send(CustomAlerts.BACKUP_BEFORE_STOP_STARTED)
+        server.event_control.gen(EventControl.BACKUP_BEFORE_STOP_STARTED,
+                                                            aconn.__dict__)
 
         self.ack()
 
         body = server.backup_cmd(aconn)
 
         if not body.has_key('error'):
-            server.alert.send(CustomAlerts.BACKUP_BEFORE_STOP_FINISHED, body)
+            server.event_control.gen(EventControl.BACKUP_BEFORE_STOP_FINISHED,
+                        dict(body.items() + aconn.__dict__.items()))
         else:
-            server.alert.send(CustomAlerts.BACKUP_BEFORE_STOP_FAILED, body)
+            server.event_control.gen(EventControl.BACKUP_BEFORE_STOP_FAILED,
+                        dict(body.items() + aconn.__dict__.items()))
             # FIXME: return JSON
             self.print_client("Backup failed.  Will not attempt stop.")
             aconn.user_action_unlock()
@@ -828,7 +840,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # This will be corrected by the 'tabadmin status -v' processing
         # later.
         stateman.update(StateManager.STATE_STOPPED)
-        server.alert.send(CustomAlerts.STATE_STOPPED)
+        server.event_control.gen(EventControl.STATE_STOPPED, aconn.__dict__)
 
         # fixme: check & report status to see if it really stopped?
         self.print_client(str(body))
@@ -1133,7 +1145,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # FIXME: Do we want to send alerts?
-        #server.alert.send(CustomAlerts.BACKUP_STARTED)
+        #server.event_control.gen(EventControl.BACKUP_STARTED)
         self.ack()
 
         body = server.ziplogs_cmd(aconn)
@@ -1141,11 +1153,13 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.print_client("%s", str(body))
         if not body.has_key('error'):
             # FIXME: Do we want to send alerts?
-            #server.alert.send(CustomAlerts.ZIPLOGS_FINISHED, body)
+            #server.event_control.gen(EventControl.ZIPLOGS_FINISHED, 
+            #                    dict(body.items() + aconn.__dict__.items()))
             pass
         else:
             # FIXME: Do we want to send alerts?
-            #server.alert.send(CustomAlerts.ZIPLOGS_FAILED, body)
+            #server.event_control.gen(EventControl.ZIPLOGS_FAILED,
+            #                    dict(body.items() + aconn.__dict__.items()))
             pass
 
         stateman.update(main_state)
@@ -1238,8 +1252,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not dcheck.set_locs():
             return self.error(dcheck.error_msg)
 
-        self.log.debug("Will backup to target '%s', target_dir '%s'",
-                    dcheck.target_conn.displayname, dcheck.target_dir)
+        if dcheck.target_conn:
+            self.log.debug("Backup will copy to target '%s', target_dir '%s'",
+                        dcheck.target_conn.displayname, dcheck.target_dir)
+        else:
+            self.log.debug("Backup will stay on the primary.")
 
         # Example name: 20140127_162225.tsbak
         backup_name = time.strftime("%Y%m%d_%H%M%S") + ".tsbak"
@@ -1433,7 +1450,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.error(\
                 "_send_cli: command '%s' failed with httplib.HTTPException: %s",
                                                         cli_command, str(e))
-            self.remove_agent(aconn, CustomAlerts.AGENT_COMM_LOST) # bad agent
+            self.remove_agent(aconn, EventControl.AGENT_COMM_LOST) # bad agent
             return self.error("_send_cli: '%s' command failed with: %s" %
                             (cli_command, str(e)))
         finally:
@@ -1691,7 +1708,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 return body
 
         # The restore file is now on the Primary Agent.
-        server.alert.send(CustomAlerts.RESTORE_STARTED)
+        server.event_control.gen(EventControl.RESTORE_STARTED, aconn.__dict__)
 
         reported_status = statusmon.get_reported_status()
 
@@ -1709,7 +1726,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 stateman.update(orig_state)
                 return stop_body
 
-            server.alert.send(CustomAlerts.STATE_STOPPED)
+            server.event_control.gen(EventControl.STATE_STOPPED, aconn.__dict__)
 
         # 'tabadmin restore ...' starts tableau as part of the
         # restore procedure.
@@ -1748,7 +1765,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if restore_success:
             stateman.update(StateManager.STATE_STARTED)
-            server.alert.send(CustomAlerts.STATE_STARTED)
+            server.event_control.gen(EventControl.STATE_STARTED, aconn.__dict__)
         else:
             # On a successful restore, tableau starts itself.
             # fixme: eventually control when tableau is started and
@@ -1771,6 +1788,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             else:
                 # The "tableau start" succeeded
                 stateman.update(StateManager.STATE_STARTED)
+                server.event_control.gen(EventControl.STATE_STARTED, aconn.__dict__)
 
         return restore_body
 
@@ -1832,7 +1850,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                                             str(res.reason))
                 if res.status != httplib.OK:
                     self.remove_agent(aconn,
-                                 CustomAlerts.AGENT_RETURNED_INVALID_STATUS)
+                                 EventControl.AGENT_RETURNED_INVALID_STATUS)
                     return self.httperror(res, agent=aconn.displayname, uri=uri)
 
 #                debug for testing agent disconnects
@@ -1852,7 +1870,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.debug("body = " + str(body))
                 if not body.has_key('run-status'):
                     self.remove_agent(aconn,
-                                     CustomAlerts.AGENT_RETURNED_INVALID_STATUS)
+                                     EventControl.AGENT_RETURNED_INVALID_STATUS)
                     return self.error(\
                         "GET %s command reply was missing 'run-status'!  " + \
                         "Will not retry." % (uri), body)
@@ -1912,20 +1930,24 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if body.has_key("error"):
             if action == "start":
-                server.alert.send(\
-                    CustomAlerts.MAINT_START_FAILED, {'error': body['error']})
+                server.event_control.gen(\
+                    EventControl.MAINT_START_FAILED,
+                            dict({'error': body['error']}.items() +  \
+                                                 aconn.__dict__.items()))
             else:
-                server.alert.send(\
-                    CustomAlerts.MAINT_STOP_FAILED, {'error': body['error']})
+                server.event_control.gen(\
+                    EventControl.MAINT_STOP_FAILED,
+                            dict({'error': body['error']}.items() +  \
+                                                 aconn.__dict__.items()))
             return body
 
         if not send_alert:
             return body
 
         if action == 'start':
-            server.alert.send(CustomAlerts.MAINT_ONLINE)
+            server.event_control.gen(EventControl.MAINT_ONLINE, aconn.__dict__)
         else:
-            server.alert.send(CustomAlerts.MAINT_OFFLINE)
+            server.event_control.gen(EventControl.MAINT_OFFLINE, aconn.__dict__)
 
         return body
 
@@ -2126,16 +2148,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # Put into a known state
             body = self.maint("stop", aconn=aconn, send_alert=False)
             if body.has_key("error"):
-                server.alert.send(\
-                   CustomAlerts.MAINT_STOP_FAILED, body)
+                server.event_control.gen(\
+                   EventControl.MAINT_STOP_FAILED,
+                            dict(body.items() + aconn.__dict__.items()))
         body = self.archive(aconn, "stop")
         if body.has_key("error"):
-            server.alert.send(CustomAlerts.ARCHIVE_STOP_FAILED, body)
-
+            server.event_control.gen(EventControl.ARCHIVE_STOP_FAILED,
+                            dict(body.items() + aconn.__dict__.items()))
         # Get ready.
         body = self.archive(aconn, "start")
         if body.has_key("error"):
-            server.alert.send(CustomAlerts.ARCHIVE_START_FAILED, body)
+            server.event_control.gen(EventControl.ARCHIVE_START_FAILED,
+                            dict(body.items() + aconn.__dict__.items()))
 
         # If tableau is stopped, turn on the maintenance server
         if aconn.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
@@ -2145,7 +2169,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if main_state == StateManager.STATE_STOPPED:
             body = self.maint("start", aconn=aconn, send_alert=False)
             if body.has_key("error"):
-                server.alert.send(CustomAlerts.MAINT_START_FAILED, body)
+                server.event_control.gen(EventControl.MAINT_START_FAILED,
+                            dict(body.items() + aconn.__dict__.items()))
 
         return True
 
@@ -2250,11 +2275,14 @@ def main():
     server.domainid = server.domain.id_by_name(server.domainname)
 
     server.event = EventManager(server.domainid)
-    server.alert = Alert(server)
+
+    server.alert_email = AlertEmail(server)
+    EventControl.populate()
+    server.event_control = EventControlManager(server)
+
     server.system = SystemManager(server.domainid)
 
-    custom_states = CustomStates()
-    custom_states.populate()
+    StateControl.populate()
 
     server.auth = AuthManager(server)
     Role.populate()

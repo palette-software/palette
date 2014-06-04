@@ -1,14 +1,14 @@
 import smtplib
 from email.mime.text import MIMEText
-from custom_alerts import CustomAlerts
 
 from mako.template import Template
 
-class Alert(object):
+from event_control import EventControl
+
+class AlertEmail(object):
 
     def __init__(self, server):
         self.config = server.config
-        self.event = server.event
         self.log = server.log
         self.enabled = self.config.getboolean('alert', 'enabled', default=False)
         self.to_email = self.config.get('alert', 'to_email',
@@ -18,8 +18,6 @@ class Alert(object):
         self.smtp_server = self.config.get('alert', 'smtp_server',
                                     default="localhost")
         self.smtp_port = self.config.getint("alert", "smtp_port", default=25)
-        self.custom_alerts = CustomAlerts()
-        self.custom_alerts.populate()
 
         DEFAULT_ALERT_LEVEL = 1
         self.alert_level = self.config.getint("alert", "alert_level",
@@ -30,35 +28,36 @@ class Alert(object):
                                                 default=DEFAULT_MAX_SUBJECT_LEN)
 
         if self.alert_level < 1:
-            self.log.err("Invalid alert level: %d, setting to %d",
+            self.log.error("Invalid alert level: %d, setting to %d",
                                     self.alert_level, DEFAULT_ALERT_LEVEL)
             self.alert_level = DEFAULT_ALERT_LEVEL
 
-    def send(self, key, data={}):
+    def send(self, event_entry, data):
         """Send an alert.
             Arguments:
                 key:    The key to look up.
-
-                data:   A Dictionary:
-                        Used for both the subject and
-                        message body (from the db).
+                data:   A Dictionary with the event information.
         """
 
-        alert_entry = self.custom_alerts.get_alert(key)
-        if alert_entry:
-            subject = alert_entry.subject
-            message = alert_entry.message
-        else:
-            self.log.err("No such alert key: %s. data: %s\n", key, str(data))
-            return
 
-        # Use the data dict it for template substitution.
-        try:
-            subject = subject % data
-        except KeyError as e:
-            subject = "Template subject conversion failure: " + str(e) + \
-                "subject: " + subject + \
-                ", data: " + str(data)
+        subject = event_entry.subject
+        if subject.find("%") == -1:
+            # If no substitution is specified in the subject template,
+            # use a default one that adds the level:
+            subject = "Severity level: %s. %s" % \
+                (EventControl.level_strings[event_entry.level],
+                                                event_entry.subject)
+
+        else:
+            # Use the data dict it for template substitution.
+            try:
+                subject = subject % data
+            except KeyError as e:
+                subject = "Template subject conversion failure: " + str(e) + \
+                    "subject: " + subject + \
+                    ", data: " + str(data)
+
+        message = event_entry.email_message
         if message:
             mako_template = Template(message)
             try:
@@ -68,14 +67,10 @@ class Alert(object):
                     str(e) + "\ntemplate: " + message + \
                 "\ndata: " + str(data)
         else:
-           message = self.make_message(subject, data)
-
-        # Log the event to the database
-        self.event.add(subject, message, alert_entry.level, alert_entry.icon, \
-                                alert_entry.color, alert_entry.alert_type)
+           message = self.make_default_message(event_entry, subject, data)
 
         if not message:
-            # If no data was sent, use the subject as the message.
+            # message is empty, set it to be the subject
             message = subject
 
         if not self.enabled:
@@ -99,7 +94,9 @@ class Alert(object):
             mail_server.sendmail(self.from_email, [self.to_email], msg_str)
             mail_server.quit()
         except (smtplib.SMTPException, EnvironmentError) as e:
-            self.log.error("Email send failed, text: %s, exception: %s, server: %s, port: %d",
+            self.log.error(\
+                "Email send failed, text: %s, exception: %s, server: %s," + \
+                " port: %d",
                 message, e, self.smtp_server, self.smtp_port)
             return
 
@@ -108,10 +105,10 @@ class Alert(object):
 
         return
 
-    def make_message(self, subject, body):
-        """Given the subject and body, return a formatted message, according to
-        the alert level.  The higher the alert level, the more details
-        the user will receive.
+    def make_default_message(self, event_entry, subject, data):
+        """Given the event entry, subject (string)and data (dictionary),
+        return a formatted message, according to the alert level.  The higher
+        the alert level, the more details the user will receive.
             alert level 1:
                 Only 'stderr'.
 
@@ -123,46 +120,51 @@ class Alert(object):
 
             Arguments:
                 subject  The subject for the alert message.
-                body     The 'body' dictionary which is a response
+                data     The 'data' dictionary which is a response
                          from the agent or well-known key-value pairs (see below)
         """
 
-        if isinstance(body, str) or isinstance(body, unicode):
-            return subject + '\n\n' + body
-
-        message = subject + '\n\n'
 
         if self.alert_level < 1:   # too minimal, not even errors included.
-            return message
+            return subject
         elif self.alert_level >= 3:
             # Include every key we get, even keys we may not know about:
-            for key in sorted(body.keys()):
-                message += self.indented(key, body[key], always_include=True)
+            for key in sorted(data.keys()):
+                message += self.indented(key, data[key], always_include=True)
             return message
 
-        # Reasonable alerts levels here: 1 and 2.
-        if body.has_key('error'):
-            message += self.indented("Unexpected Error", body['error']) + '\n'
+        # Typical alert levels here: 1 and 2.
+        message = ""
+        message += "Event: " + subject + "\n"
+        message += "Severity level: %s" % \
+                        EventControl.level_strings[event_entry.level] + '\n'
 
-        if body.has_key('info') and body['info']:
-            message += self.indented("Additional information", body['info']) + \
-                                                                        '\n'
+        if 'displayname' in data:
+            message += "Agent: %s" % data['displayname'] + '\n'
+        if 'type' in data:
+            message += "Agent type: %s" % data['type'] + '\n'
+        if data.has_key('error'):
+            message += self.indented("Issue", data['error']) + '\n'
 
-        # Include stderr, unless it is a duplicate of body['error']
-        if body.has_key('stderr'):
-            if not body.has_key('error') or (body['stderr'] != body['error']):
-                message += self.indented('Error', body['stderr'])
+        if data.has_key('info') and data['info']:
+            message += self.indented("Additional information",
+                                                    data['info']) + '\n'
 
-        # And include stdout
-        if body.has_key('stdout'):
-            message += self.indented("Output", body['stdout'])
+        # Include stderr, unless it is a duplicate of data['error']
+        if data.has_key('stderr'):
+            if not data.has_key('error') or (data['stderr'] != data['error']):
+                message += self.indented('Error', data['stderr'])
+
+        # Include stdout
+        if data.has_key('stdout'):
+            message += self.indented("Output", data['stdout'])
 
         if self.alert_level == 2:
             # Add a bit more for level 2.
-            if body.has_key("xid"):
-                message += "XID: %d\n" % body['xid']
-            if body.has_key("exit-status"):
-                message += "Exit status: %d\n" % body['exit-status']
+            if data.has_key("xid"):
+                message += "XID: %d\n" % data['xid']
+            if data.has_key("exit-status"):
+                message += "Exit status: %d\n" % data['exit-status']
 
         return message
 
