@@ -92,8 +92,8 @@
     <div class="summary clearfix">
       <i class="fa fa-fw fa-copy {{color}}"></i>
       <div>
-	<h3>{{name}}</h3>
-	<p>{{summary}}</p>
+	    <h3>{{name}}</h3>
+	    <p>{{summary}}</p>
       </div>
       <i class="fa fa-fw fa-angle-down expand"></i>
     </div>

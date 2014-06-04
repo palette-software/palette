@@ -5,8 +5,10 @@ function (jquery, template, common)
     template.parse(t);
 
     function update(data) {
-        var rendered = template.render(t, data);
-        $('#yml-list').html(rendered);
+        $().ready(function() {
+            var rendered = template.render(t, data);
+            $('#yml-list').html(rendered);
+        });
     }
 
     jquery.ajax({
@@ -19,5 +21,5 @@ function (jquery, template, common)
         },
     });
 
-    common.startup();
+    common.startMonitor();
 });

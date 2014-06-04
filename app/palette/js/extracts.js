@@ -1,20 +1,22 @@
-require(['jquery', 'template', 'common', 'bootstrap', 'domReady!'],
-function (jquery, template, common)
+require(['jquery', 'template', 'common', 'bootstrap'],
+function ($, template, common)
 {
     var t = $('#extract-list-template').html();
     template.parse(t);
     
-    jquery.ajax({
+    $.ajax({
         url: '/rest/extracts',
         success: function(data) {
-            var rendered = template.render(t, data);
-            jquery('#extract-list').html(rendered);
-            common.bindEvents(); /* extracts have the '.event' class */
+            $().ready(function() {
+                var rendered = template.render(t, data);
+                $('#extract-list').html(rendered);
+                common.bindEvents(); /* extracts have the '.event' class */
+            });
         },
         error: function(req, textStatus, errorThrown) {
             console.log('[extract] ' + textStatus + ': ' + errorThrown);
         },
     });
 
-    common.startup();
+    common.startMonitor();
 });
