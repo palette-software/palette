@@ -190,7 +190,7 @@ class DiskCheck(object):
                 return True
 
         # No suitable target was found so leave the backup on the primary.
-        return False
+        return True
 
     def set_volume(self):
         """We were also passed the volume name to use.  Check to

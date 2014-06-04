@@ -2174,9 +2174,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return True
 
-    def remove_agent(self, aconn, reason="", send_alert=True):
+    def remove_agent(self, aconn, reason="", gen_event=True):
         manager = self.agentmanager
-        manager.remove_agent(aconn, reason=reason, send_alert=send_alert)
+        manager.remove_agent(aconn, reason=reason, gen_event=gen_event)
         # FIXME: At the least, we need to add the domain to the check
         #        for a primary; better, however, would be to store the
         #        uuid of the status with the status and riff off uuid.
