@@ -16,8 +16,7 @@ import httplib
 from agentstatus import AgentStatusEntry
 from agentinfo import AgentYmlEntry, AgentInfoEntry, AgentVolumesEntry
 from state import StateManager
-from alert import Alert
-from custom_alerts import CustomAlerts
+from event_control import EventControl
 from filemanager import FileManager
 from firewall import Firewall
 from odbc import ODBC
@@ -170,13 +169,21 @@ class AgentManager(threading.Thread):
         for key in self.agents.keys():
             agent = self.agents[key]
             if agent.uuid == body['uuid']:
-                self.log.info("Agent already connected with name '%s': will remove it and use the new connection.", body['uuid'])
-                self.remove_agent(agent, "An agent is already connected named '%s': will remove it and use the new connection." % body['uuid'], send_alert=False)
+                self.log.info("Agent already connected with name '%s': " + \
+                    "will remove it and use the new connection.", body['uuid'])
+                self.remove_agent(agent, ("An agent is already connected " + \
+                    "named '%s': will remove it and use the new " + \
+                        "connection.") % (body['uuid']), gen_event=False)
                 break
             elif new_agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
                         agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-                    self.log.info("A primary agent is already connected: will remove it and keep the new primary agent connection.")
-                    self.remove_agent(agent, "A primary agent is already connected: will remove it and keep the new primary agent connection.", send_alert=False)
+                    self.log.info("A primary agent is already connected: " + \
+                        "Will remove it and keep the new primary agent " + \
+                        "connection.")
+                    self.remove_agent(agent,
+                            "A primary agent is already connected: Will " + \
+                            "remove it and keep the new primary agent " + \
+                            "connection.", gen_event=False)
 
         # Remember the new agent
         entry = self.remember(new_agent, body)
@@ -575,13 +582,13 @@ class AgentManager(threading.Thread):
 
         return None
 
-    def remove_agent(self, agent, reason="", send_alert=True):
+    def remove_agent(self, agent, reason="", gen_event=True):
         """Remove an agent.
             Args:
                 agent:       The agent to remove.
                 reason:      An optional message, describing why.
-                send_alert:  True or False.  If True, sends an alert.
-                             If False does not send an alert.
+                gen_event:   True or False.  If True, generates an event.
+                             If False does not generate an event.
         """
         if reason == "":
             reason = "Agent communication failure"
@@ -592,11 +599,12 @@ class AgentManager(threading.Thread):
             self.log.debug("Removing agent with uuid %s, name %s, reason: %s",\
                 uuid, self.agents[uuid].auth['hostname'], reason)
 
-            if send_alert:
-                self.server.alert.send(CustomAlerts.AGENT_DISCONNECT,
-                    { 'error': reason,
-                      'info': "\nAgent: %s\nAgent type: %s\nAgent uuid %s" %
-                        (agent.displayname, agent.agent_type, uuid) } )
+            if gen_event:
+                self.server.event_control.gen(EventControl.AGENT_DISCONNECT,
+                    dict({ 'error': reason,
+                      'info': "\nAgent type: %s\nAgent uuid %s" %
+                        (agent.displayname, uuid) }.items() +
+                                            agent.__dict__.items()))
 
             self.forget(agent.agentid)
             self.log.debug("remove_agent: closing agent socket.")

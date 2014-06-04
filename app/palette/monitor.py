@@ -17,7 +17,7 @@ from controller.agentstatus import AgentStatusEntry
 from controller.agentmanager import AgentManager
 from controller.agentinfo import AgentVolumesEntry
 from controller.domain import Domain
-from controller.custom_states import CustomStates
+from controller.state_control import StateControl
 
 from page import PalettePage
 from event import EventApplication
@@ -39,18 +39,18 @@ class MonitorApplication(RESTApplication):
         # Get the state
         main_state = StateManager.get_state_by_domainid(self.domain.domainid)
 
-        custom_state_entry = CustomStates.get_custom_state_entry(main_state)
-        if not custom_state_entry:
+        state_control_entry = StateControl.get_state_control_entry(main_state)
+        if not state_control_entry:
             print "UNKNOWN STATE!  State:", main_state
             # fixme: stop everything?  Log this somewhere?
             return
 
         # Convert the space-sparated string to a list, e.g.
         # "start stop reset" --> ["start", "stop", "reset"]
-        allowable_actions = custom_state_entry.allowable_actions.split(' ')
+        allowable_actions = state_control_entry.allowable_actions.split(' ')
 
-        text = custom_state_entry.text
-        color = custom_state_entry.color
+        text = state_control_entry.text
+        color = state_control_entry.color
 
         if main_state in (StateManager.STATE_STOPPED,
                 StateManager.STATE_STARTED, StateManager.STATE_DEGRADED,
