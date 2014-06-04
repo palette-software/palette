@@ -93,8 +93,8 @@ class DiskCheck(object):
             return self.error(\
                 ("Cannot backup due to shortage of disk space on " + \
                 "primary host '%s': %d needed, but only %d available." ) % \
-                    self.aconn.displayname, min_primary_disk_needed,
-                                                        primary_available)
+                    (self.aconn.displayname, min_primary_disk_needed,
+                                                        primary_available))
 
         self.log.debug(\
             "primary_check: primary has enough space.  Need %d and have %d",
