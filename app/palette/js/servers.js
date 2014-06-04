@@ -3,9 +3,9 @@ function ($, template, common)
 {
     function update(data) {
         $().ready(function() {
-            var t = $('#server-list-template').html();
+            var t = $('#server-detail-template').html();
             var rendered = template.render(t, data);
-            $('#server-list').html(rendered);
+            $('#server-detail').html(rendered);
             common.bindEvents();
         });
     }
@@ -20,5 +20,5 @@ function ($, template, common)
         }
     });
 
-    common.startup();
+    common.startMonitor();
 });

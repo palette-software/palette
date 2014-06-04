@@ -11,12 +11,9 @@ function (jquery, topic, template, common)
     function update(data) {
         jquery('a.alert.errors span').html(data['red']);
         jquery('a.alert.warnings span').html(data['yellow']);
-        if (!data.hasOwnProperty('events')) {
-            console.log('/rest/events response did not contain "events"');
-            return;
-        }
+
         var events = data['events'];
-        if (events.length == 0) {
+        if (events == null || events.length == 0) {
             return;
         }
         var last = events[0];

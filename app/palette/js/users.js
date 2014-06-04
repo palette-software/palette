@@ -30,12 +30,7 @@ function ($, template, common, EditBox)
         });
     }
 
-    $().ready(function() {
-        $('.refresh > span').bind('click', function() {
-            refresh();
-        });
-        common.startup();
-    });
+    common.startMonitor();
 
     $.ajax({
         url: '/rest/users',
@@ -46,4 +41,11 @@ function ($, template, common, EditBox)
             console.log('[ERROR] '+textStatus+': '+errorThrown);
         }
     });
+
+    $().ready(function() {
+        $('.refresh > span').bind('click', function() {
+            refresh();
+        });
+    });
+
 });

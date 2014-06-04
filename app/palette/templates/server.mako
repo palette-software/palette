@@ -7,10 +7,10 @@
 
 <section class="dynamic-content">
   <h1 class="page-title">Servers</h1>
-  <div id="server-list"></div>
+  <div id="server-detail"></div>
 </section>
 
-<script id="server-list-template" type="x-tmpl-mustache">
+<script id="server-detail-template" type="x-tmpl-mustache">
   {{#servers}}
   <article class="event">
     <div class="summary clearfix">
