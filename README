@@ -16,7 +16,7 @@ Packaging:
         which you can ignore.
 
 Configuration:
-    Contoller:
+    Controller:
         - Configuration file used: /etc/controller.ini
         - Logging:
             * /var/log/palette/controller.log
