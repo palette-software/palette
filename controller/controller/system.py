@@ -4,9 +4,9 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 
 from akiri.framework.ext.sqlalchemy import meta
-from mixin import BaseDictMixin
+from mixin import BaseMixin, BaseDictMixin
 
-class SystemEntry(meta.Base, BaseDictMixin):
+class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'system'
 
     domainid = Column(BigInteger, ForeignKey("domain.domainid"), primary_key=True)
@@ -15,6 +15,10 @@ class SystemEntry(meta.Base, BaseDictMixin):
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(),
                                onupdate=func.current_timestamp())
+
+    defaults = [{'name':'disk-watermark-low', 'value':str(50)},
+                {'name':'disk-watermark-low', 'value':str(80)}]
+                
 
 class SystemManager(object):
 
