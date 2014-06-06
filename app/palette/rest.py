@@ -12,7 +12,7 @@ class PaletteRESTHandler(RESTApplication):
         super(PaletteRESTHandler, self).__init__(global_conf)
 
         domainname = store.get('palette', 'domainname')
-        self.domain = Domain.get_by_name(domainname)
+        self.domain = Domain.get_by_name(domainname) # FIXME: add to __get__
         self.system = SystemManager(self.domain.domainid)
         self.telnet = Telnet(self)
 

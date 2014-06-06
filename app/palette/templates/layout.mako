@@ -52,9 +52,15 @@
 	    </div>
       </a>
       <ul class="processes">
+	{{#volumes}}
+	<li>
+	  <i class="fa fa-fw fa-circle {{color}}"></i>
+	  Storage {{name}}: {{value}}
+	</li>
+	{{/volumes}}
 	{{#details}}
 	<li>
-	  <i class="fa fa-fw fa-circle {{status}}"></i>
+	  <i class="fa fa-fw fa-circle {{color}}"></i>
 	  {{name}} ({{pid}})
 	</li>
 	{{/details}}

@@ -6,7 +6,6 @@ from sqlalchemy.orm.exc import NoResultFound
 from webob import exc
 import sys
 
-from akiri.framework.api import RESTApplication, DialogPage
 from akiri.framework.config import store
 
 from akiri.framework.ext.sqlalchemy import meta
@@ -18,22 +17,53 @@ from controller.agentmanager import AgentManager
 from controller.agentinfo import AgentVolumesEntry
 from controller.domain import Domain
 from controller.state_control import StateControl
+from controller.util import sizestr
 
 from page import PalettePage
 from event import EventApplication
+from rest import PaletteRESTHandler
 
 __all__ = ["MonitorApplication"]
 
-class MonitorApplication(RESTApplication):
+class MonitorApplication(PaletteRESTHandler):
 
     NAME = 'monitor'
 
     def __init__(self, global_conf):
         super(MonitorApplication, self).__init__(global_conf)
-
-        domainname = store.get('palette', 'domainname')
-        self.domain = Domain.get_by_name(domainname)
         self.event = EventApplication(global_conf)
+
+    def disk_watermark(self, name):
+        """ Threshold for the disk indicator. (low|high) """
+        try:
+            v = self.system.get('disk-watermark-'+name)
+        except ValueError:
+            return 100
+        return int(v)
+
+    def disk_color(self, used, size, low, high):
+        if used > high * size:
+            return 'red'
+        if used > low * size:
+            return 'yellow'
+        return 'green'
+
+    def volume_info(self, agentid):
+        (low,high) = self.disk_watermark('low'), self.disk_watermark('high')
+
+        volumes = []
+        L = meta.Session.query(AgentVolumesEntry).\
+            filter(AgentVolumesEntry.agentid == agentid).\
+            order_by(AgentVolumesEntry.name).\
+            all()
+        for v in L:
+            if not v.size or v.available_space is None:
+                continue
+            used = v.size - v.available_space
+            value = '%s used of %s' % (sizestr(used), sizestr(v.size))
+            color = self.disk_color(used, v.size, low, high)
+            volumes.append({'name': v.name, 'value': value, 'color': color})
+        return volumes
 
     def handle_monitor(self, req):
         # Get the state
@@ -128,13 +158,7 @@ class MonitorApplication(RESTApplication):
                 # For now, only primaries and workers have details
                 agent['details'] = []
 
-            # Add in disk space information
-            volume_entries = meta.Session.query(AgentVolumesEntry).\
-                filter(AgentVolumesEntry.agentid == entry.agentid).\
-                order_by(AgentVolumesEntry.name).\
-                all()
-
-            agent['volumes'] = [x.todict() for x in volume_entries]
+            agent['volumes'] = self.volume_info(entry.agentid)
             agents.append(agent)
 
         environments = [ { "name": "My Servers", "agents": agents } ]
