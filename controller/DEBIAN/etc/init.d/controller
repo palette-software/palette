@@ -1,0 +1,77 @@
+#!/bin/sh
+#
+# Palette controller
+
+### BEGIN INIT INFO
+# Provides: palette_controller
+# Required-Start: postgresql
+# Required-Stop: postgresql
+# Should-Start:
+# Should-Stop:
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: Palette controller
+# Description: Palette controller
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+NAME=controller
+EXEC=/usr/bin/${NAME}
+CONFIG=/etc/${NAME}.ini
+PIDFILE=/var/run/${NAME}.pid
+DAEMON=/usr/bin/daemon
+
+start() {
+    log_daemon_msg "Starting Palette controller" "controller"
+    $DAEMON --name=$NAME --respawn --pidfile $PIDFILE $EXEC $CONFIG
+    RETVAL=$?
+    log_end_msg $RETVAL
+    return $RETVAL
+}
+
+stop() {
+    log_daemon_msg "Stopping Palette controller" "controller"
+    $DAEMON --name=$NAME --stop
+    RETVAL=$?
+    log_end_msg $RETVAL
+    return $RETVAL
+}
+
+restart() {
+    log_daemon_msg "Restarting Palette controller" "controller"
+    $DAEMON --name=$NAME --restart
+    RETVAL=$?
+    log_end_msg $RETVAL
+    return $RETVAL
+}
+
+status() {
+    $DAEMON --name=$NAME --running -v
+}
+
+case "$1" in
+    start)
+        $1
+        ;;
+    stop)
+        $1
+        ;;
+    status)
+        $1
+        ;;
+    restart)
+        $1
+        ;;
+    reload)
+        restart
+        ;;
+    force-reload)
+        restart
+        ;;
+    *)
+        log_action_msg "Usage: /etc/init.d/cron {start|stop|status|restart|reload|force-reload}"
+        exit 1
+        ;;
+esac
+exit $?
