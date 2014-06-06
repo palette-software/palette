@@ -14,12 +14,16 @@
 	    <span>Extracts</span>
 	  </a>
     </li>
-    <li ${obj.active=='manage' and 'class="active"' or ''}>
+%if obj.active=='manage':
+    <li class="has-side-bar active">
+%else:
+    <li class="has-side-bar">
+%endif
       <a href="/manage"><i class="fa fa-fw fa-wrench"></i>
 	    <span>Manage Tableau</span>
 	  </a>
     </li>
-    <li class="category Phidden-tiny">
+    <li class="category">
       <a href="/configure/yml">
         <i class="fa fa-fw fa-cog"></i>
         <span>Configure</span>

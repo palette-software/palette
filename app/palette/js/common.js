@@ -21,7 +21,7 @@ function ($, topic, template)
     function bindStatus() {
         $('.main-side-bar .status').off('click');
         $('.main-side-bar .status').bind('click', function() {
-            $('.secondary-side-bar, .dynamic-content, .secondary-side-bar.servers').toggleClass('servers-visible');
+            $('.main-side-bar li.active, .secondary-side-bar, .dynamic-content, .secondary-side-bar.servers').toggleClass('servers-visible');
         });
     }
 
