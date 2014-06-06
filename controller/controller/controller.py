@@ -57,8 +57,13 @@ class Command(object):
         self.name = None
         self.args = []
 
+        try: 
+            tokens = shlex.split(line)
+        except ValueError, e:
+             raise CommandException(str(e))
+
         doing_dict = True
-        for token in shlex.split(line):
+        for token in tokens:
             if doing_dict:
                 if token.startswith("/"):
                     token = token[1:]
