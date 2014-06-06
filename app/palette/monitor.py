@@ -115,12 +115,11 @@ class MonitorApplication(PaletteRESTHandler):
             if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
                                                             entry.connected():
                 primary = entry
-                agent['color'] = color
+
+            if entry.connected():
+                agent['color'] = 'green'
             else:
-                if entry.connected():
-                    agent['color'] = 'green'
-                else:
-                    agent['color'] = 'red'
+                agent['color'] = 'red'
 
             if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY or \
                         entry.agent_type == AgentManager.AGENT_TYPE_WORKER:
