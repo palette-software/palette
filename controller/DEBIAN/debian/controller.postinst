@@ -19,6 +19,7 @@ sudo -u postgres createdb paldb 2>&1 | echo
 
 mkdir -p /var/log/palette
 
-start controller
+update-rc.d controller defaults
+service controller start
 
 exit 0

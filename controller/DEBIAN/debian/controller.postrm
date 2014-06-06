@@ -1,0 +1,5 @@
+#!/bin/sh
+
+update-rc.d controller remove
+
+exit 0
