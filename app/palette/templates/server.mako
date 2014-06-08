@@ -17,12 +17,17 @@
       <i class="fa fa-fw fa-laptop"></i>
       <div>
         <div class="col2">
-          <h3>{{displayname}}</h3>
+          <h3>
+	        <span class="editbox displayname"
+		          data-id="{{agentid}}" data-href="/rest/servers/displayname">
+              {{displayname}}
+            </span>
+	      </h3>
           <p>FQDN ({{ip-address}})</p>
         </div>
         <div class="col2">
           <p>
-            <span class="editbox domain" data-href="/rest/environment">
+            <span class="editbox environment" data-href="/rest/environment">
               {{environment}}
             </span>
           </p>
