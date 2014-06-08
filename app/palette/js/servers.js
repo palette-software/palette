@@ -1,5 +1,5 @@
-require(['jquery', 'template', 'common'],
-function ($, template, common)
+require(['jquery', 'template', 'common', 'EditBox'],
+function ($, template, common, EditBox)
 {
     function update(data) {
         $().ready(function() {
@@ -7,6 +7,9 @@ function ($, template, common)
             var rendered = template.render(t, data);
             $('#server-detail').html(rendered);
             common.bindEvents();
+            EditBox.bind('.editbox.domain', function(value) {
+                $('.editbox.domain >span').html(value);
+            });
         });
     }
 

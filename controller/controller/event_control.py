@@ -381,7 +381,7 @@ class EventControlManager(object):
         self.alert_email = server.alert_email
         self.indented = self.alert_email.indented
         self.log = server.log
-        self.domainid = server.domainid
+        self.domainid = server.domain.domainid
         self.event = server.event
 
     def get_event_control_entry(self, key):

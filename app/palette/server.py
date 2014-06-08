@@ -10,7 +10,8 @@ class ServerApplication(PaletteRESTHandler):
 
     def handle(self, req):
         L = meta.Session.query(AgentStatusEntry).all()
-        return {'servers': [x.todict(pretty=True) for x in L]}
+        return {'servers': [x.todict(pretty=True) for x in L],
+                'environment' : self.environment.name}
 
 class ServerConfig(PalettePage):
     TEMPLATE = "server.mako"

@@ -1452,7 +1452,7 @@ article.event.open {
 article.event:hover {
     background-color: #e1e1e1;
 }
-article.event .summary i {
+article.event .summary > i {
     float: left;
     width: 60px;
     display: block;

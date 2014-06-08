@@ -44,7 +44,7 @@
             <span class="label">License Level</span>{{license-info}}
           </article>
           <article><span class="label">Email</span>
-            <span class="editbox" 
+            <span class="editbox email" 
                   data-name="{{name}}" data-href="/rest/users/email">
               {{email}}
             </span>

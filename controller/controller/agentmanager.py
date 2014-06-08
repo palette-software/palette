@@ -111,7 +111,7 @@ class AgentManager(threading.Thread):
         self.server = server
         self.config = self.server.config
         self.log = self.server.log
-        self.domainid = self.server.domainid
+        self.domainid = self.server.domain.domainid
         self.daemon = True
         self.lockobj = threading.RLock()
         self.new_primary_event = threading.Event() # a primary connected

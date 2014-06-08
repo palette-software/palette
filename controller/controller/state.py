@@ -39,7 +39,7 @@ class StateManager(object):
         self.system = self.server.system
         self.config = self.server.config
         self.log = self.server.log
-        self.domainid = self.server.domainid
+        self.domainid = self.server.domain.domainid
 
     def update(self, state):
         if state == "RUNNING":
