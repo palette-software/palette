@@ -16,8 +16,8 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
     modification_time = Column(DateTime, server_default=func.now(),
                                onupdate=func.current_timestamp())
 
-    defaults = [{'name':'disk-watermark-low', 'value':str(50)},
-                {'name':'disk-watermark-low', 'value':str(80)}]
+    defaults = [{'domainid':1, 'key':'disk-watermark-low', 'value':str(50)},
+                {'domainid':1, 'key':'disk-watermark-high', 'value':str(80)}]
                 
 class SystemManager(object):
 
