@@ -7,8 +7,9 @@ function ($, template, common, EditBox)
             var rendered = template.render(t, data);
             $('#server-detail').html(rendered);
             common.bindEvents();
-            EditBox.bind('.editbox.domain', function(value) {
-                $('.editbox.domain >span').html(value);
+            EditBox.bind('.editbox.displayname');
+            EditBox.bind('.editbox.environment', function(value) {
+                $('.editbox.environment >span').html(value);
             });
         });
     }

@@ -10,6 +10,7 @@ function($, template) {
         this.callback = callback;
         var value = $(node).html();
         this.value = $.trim(value);
+        this.id = $(node).attr('data-id');
         this.name = $(node).attr('data-name');
         this.href = $(node).attr('data-href');
 
@@ -42,6 +43,9 @@ function($, template) {
         {
             var value = $('input', this.node).val();
             var data = {'value':value}
+            if (this.id != null) {
+                data['id'] = this.id;
+            }
             if (this.name != null) {
                 data['name'] = this.name;
             }

@@ -1,4 +1,5 @@
 import socket
+from webob import exc
 
 from akiri.framework.api import RESTApplication
 from akiri.framework.config import store
@@ -6,6 +7,16 @@ from akiri.framework.config import store
 from controller.domain import Domain
 from controller.environment import Environment
 from controller.system import SystemManager
+
+def required_parameters(*params):
+    def wrapper(f):
+        def realf(self, req):
+            for p in params:
+                if p not in req.POST:
+                    raise exc.HTTPBadRequest("'" + p + "' missing")
+            return f(self, req)
+        return realf
+    return wrapper
 
 class PaletteRESTHandler(RESTApplication):
 

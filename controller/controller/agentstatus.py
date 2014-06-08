@@ -65,6 +65,15 @@ class AgentStatusEntry(meta.Base, BaseDictMixin):
             return False # not connected
 
     @classmethod
+    def get_by_id(cls, agentid):
+        try:
+            entry = meta.Session.query(AgentStatusEntry).\
+                filter(AgentStatusEntry.agentid == agentid).one()
+        except NoResultFound:
+            return None
+        return entry
+
+    @classmethod
     def display_order_by_domainid(cls, domainid):
         """Returns a list of agent uuids, sorted by display_order."""
         agent_entries = meta.Session.query(AgentStatusEntry).\
