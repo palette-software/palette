@@ -19,7 +19,6 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
     defaults = [{'name':'disk-watermark-low', 'value':str(50)},
                 {'name':'disk-watermark-low', 'value':str(80)}]
                 
-
 class SystemManager(object):
 
     # Keys
@@ -50,3 +49,7 @@ class SystemManager(object):
     def get(self, key):
         entry = self.entry(key)
         return entry.value
+
+    @classmethod
+    def populate(cls):
+        SystemEntry.populate()

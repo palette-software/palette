@@ -4,17 +4,25 @@ from akiri.framework.api import RESTApplication
 from akiri.framework.config import store
 
 from controller.domain import Domain
+from controller.environment import Environment
 from controller.system import SystemManager
 
 class PaletteRESTHandler(RESTApplication):
 
     def __init__(self, global_conf):
         super(PaletteRESTHandler, self).__init__(global_conf)
-
-        domainname = store.get('palette', 'domainname')
-        self.domain = Domain.get_by_name(domainname) # FIXME: add to __get__
-        self.system = SystemManager(self.domain.domainid)
         self.telnet = Telnet(self)
+
+    def __getattr__(self, name):
+        if name == 'domainname':
+            return store.get('palette', 'domainname')
+        if name == 'domain':
+            return Domain.get_by_name(self.domainname)
+        if name == 'environment':
+            return Environment.get()
+        if name == 'system':
+            return SystemManager(self.domain.domainid)
+        raise AttributeError(name)
 
     def base_path_info(self, req):
         # REST handlers return the handle path prefix too, strip it.

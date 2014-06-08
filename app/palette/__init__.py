@@ -6,6 +6,7 @@ import akiri.framework.ext.sqlalchemy
 import auth
 import monitor
 import backup
+import environment
 import manage
 import event
 import extracts

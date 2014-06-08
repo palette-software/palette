@@ -43,7 +43,7 @@ class StatusMonitor(threading.Thread):
         self.config = self.server.config
         self.manager = manager
         self.log = logger.get(self.LOGGER_NAME)
-        self.domainid = self.server.domainid
+        self.domainid = self.server.domain.domainid
 
         self.status_request_interval = self.config.getint('status', \
                                         'status_request_interval', default=10)

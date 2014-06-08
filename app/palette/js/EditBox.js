@@ -4,9 +4,10 @@ function($, template) {
     var EDIT = 'EDIT';
     var VIEW = 'VIEW';
 
-    function EditBox(node) {
+    function EditBox(node, callback) {
         this.state = VIEW;
         this.node = node
+        this.callback = callback;
         var value = $(node).html();
         this.value = $.trim(value);
         this.name = $(node).attr('data-name');
@@ -27,10 +28,12 @@ function($, template) {
             $(node).html(html);
             $('input', node).focus();
             this.state = EDIT;
-            $('.ok', this.node).bind('click', function() {
+            $('.ok', this.node).bind('click', function(event) {
+                event.stopPropagation();
                 $(this).parent().data().ok();
             });
-            $('.cancel', this.node).bind('click', function() {
+            $('.cancel', this.node).bind('click', function(event) {
+                event.stopPropagation();
                 $(this).parent().data().cancel();
             });
         }
@@ -42,6 +45,7 @@ function($, template) {
             if (this.name != null) {
                 data['name'] = this.name;
             }
+            var success;
 
             if (this.href) {
                 $.ajax({
@@ -52,20 +56,35 @@ function($, template) {
                     async: false,
             
                     success: function(data) {
-                        this.value = value;
+                        success = true;
                     },
                     error: function(req, textStatus, errorThrown) {
                         alert('[ERROR] ' + textStatus + ": " + errorThrown);
+                        sucess = false;
                     }
                 });
             } else {
+                success = true;
+            }
+
+            if (success) {
                 this.value = value;
+            } else {
+                value = this.value;
             }
 
             var html = template.render(this.view_template, {'value': value});
             $(node).html(html);
             this.state = VIEW;
-            $('i', this.node).bind('click', function() {
+
+            if (success) {
+                if (this.callback) {
+                    this.callback(value);
+                }
+            }
+
+            $('i', this.node).bind('click', function(event) {
+                event.stopPropagation();
                 $(this).parent().data().edit();
             });
         }
@@ -76,22 +95,32 @@ function($, template) {
             var html = template.render(this.view_template, data);
             $(node).html(html);
             this.state = VIEW;
-            $('i', this.node).bind('click', function() {
+            $('i', this.node).bind('click', function(event) {
+                event.stopPropagation();
                 $(this).parent().data().edit();
             });
         }
 
-        $('i', this.node).bind('click', function() {
+        $('i', this.node).bind('click', function(event) {
+            event.stopPropagation();
             $(this).parent().data().edit();
         });
     }
 
-    EditBox.setup = function()
-    {
-        $('.editbox').each(function() {
-            var editbox = new EditBox($(this).get(0));
+    EditBox.bind = function (selector, callback) {
+        var array = [];
+        $(selector).each(function() {
+            var editbox = new EditBox($(this).get(0), callback);
             $(this).data(editbox);
+            array.push(editbox);
         });
+        if (array.length == 0) return null;
+        return array.length > 1 ? array : array[0];
+    }
+
+    EditBox.setup = function(callback)
+    {
+        EditBox.bind('.editbox', callback);
     }
 
     return EditBox;

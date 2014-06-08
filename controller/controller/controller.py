@@ -31,7 +31,8 @@ from state import StateManager
 from system import SystemManager
 from status import StatusMonitor, StatusEntry
 from config import Config
-from domain import Domain, DomainEntry
+from domain import Domain
+from environment import Environment
 from profile import UserProfile, Role
 from state_control import StateControl
 from alert_email import AlertEmail
@@ -104,13 +105,13 @@ class Command(object):
         if 'domainid' in opts and not 'domainname' in opts:
             pass
         else:
-            query = meta.Session.query(DomainEntry)
+            query = meta.Session.query(Domain)
             if 'domainid' in opts:
                 query = \
-                  query.filter(DomainEntry.domainid == opts['domainid'])
+                  query.filter(Domain.domainid == opts['domainid'])
             if 'domainname' in opts:
                 query = \
-                  query.filter(DomainEntry.domainname == opts['domainname'])
+                  query.filter(Domain.name == opts['domainname'])
             try:
                 entry = query.one()
                 opts['domainid'] = entry.domainid
@@ -527,7 +528,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def list_backups(self):
         s = ''
-        for backup in BackupManager.all(self.server.domainid):
+        for backup in BackupManager.all(self.server.domain.domainid):
             s += str(backup.todict()) + '\n'
         self.print_client(s)
 
@@ -2273,19 +2274,20 @@ def main():
     server.cli_get_status_interval = \
       config.getint('controller', 'cli_get_status_interval', default=10)
 
-    server.domainname = config.get('palette', 'domainname')
-    server.domain = Domain()
-    # FIXME: Pre-production hack: add domain if necessary
-    server.domain.add(server.domainname)
-    server.domainid = server.domain.id_by_name(server.domainname)
+    Domain.populate()
+    domainname = config.get('palette', 'domainname')
+    server.domain = Domain.get_by_name(domainname)
+    Environment.populate()
+    server.environment = Environment.get()
 
-    server.event = EventManager(server.domainid)
+    server.event = EventManager(server.domain.domainid)
 
     server.alert_email = AlertEmail(server)
     EventControl.populate()
     server.event_control = EventControlManager(server)
 
-    server.system = SystemManager(server.domainid)
+    server.system = SystemManager(server.domain.domainid)
+    SystemManager.populate()
 
     StateControl.populate()
 
@@ -2293,10 +2295,10 @@ def main():
     Role.populate()
     UserProfile.populate()
 
-    workbook_manager = WorkbookManager(server.domainid)
+    workbook_manager = WorkbookManager(server.domain.domainid)
     workbook_manager.populate()
 
-    server.backup = BackupManager(server.domainid)
+    server.backup = BackupManager(server.domain.domainid)
 
     manager = AgentManager(server)
     server.agentmanager = manager
