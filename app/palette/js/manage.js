@@ -1,5 +1,5 @@
-require(['jquery', 'topic', 'template', 'common', 'bootstrap', 'domReady!'],
-function (jquery, topic, template, common)
+require(['jquery', 'topic', 'template', 'common', 'bootstrap'],
+function ($, topic, template, common)
 {
     var actions = {'start': start,
                    'stop': stop,
@@ -10,8 +10,6 @@ function (jquery, topic, template, common)
 
     var allowed = [];
 
-    /* FIXME: get rid of domReady and use $.ready() */
-
     function disableAll() {
         /* FIXME - do this with a class */
         for (var action in actions) {
@@ -20,7 +18,7 @@ function (jquery, topic, template, common)
     }
 
     function managePOST(action) {
-        jquery.ajax({
+        $.ajax({
             type: 'POST',
             url: '/rest/manage',
             data: {'action': action},
@@ -43,7 +41,7 @@ function (jquery, topic, template, common)
     }
 
     function backup() {
-        jquery.ajax({
+        $.ajax({
             type: 'POST',
             url: '/rest/backup',
             data: {'action': 'backup'},
@@ -58,10 +56,10 @@ function (jquery, topic, template, common)
     }
 
     function restore() {
-        var ts = jquery('#restore-timestamp').html();
-        var filename = jquery('#restore-filename').val();
+        var ts = $('#restore-timestamp').html();
+        var filename = $('#restore-filename').val();
 
-        jquery.ajax({
+        $.ajax({
             type: 'POST',
             url: '/rest/backup',
             data: {'action': 'restore',
@@ -84,7 +82,7 @@ function (jquery, topic, template, common)
         
         allowed = data['allowable-actions'];
         for (var action in actions) {
-            if (jquery.inArray(action, allowed) >= 0) {
+            if ($.inArray(action, allowed) >= 0) {
                 $('#'+action).removeClass('inactive');
             } else {
                 $('#'+action).addClass('inactive');
@@ -112,37 +110,39 @@ function (jquery, topic, template, common)
             var t = templates[name+'-template'];
             if (t == null) continue;
             rendered = template.render(t, d);
-            jquery('#'+name).html(rendered);
+            $('#'+name).html(rendered);
         }
 
         common.setupDropdowns();
 
-        jquery('li.backup a').bind('click', function(event) {
+        $('li.backup a').bind('click', function(event) {
             event.preventDefault();
-            var ts = jquery('span.timestamp', this).text();
-            var filename = jquery('span.filename', this).text();
+            var ts = $('span.timestamp', this).text();
+            var filename = $('span.filename', this).text();
 
             var popupLink = $(this).hasClass('inactive');
             if (popupLink == false) {
-                jquery('article.popup').removeClass('visible');
-                jquery('#restore-timestamp').html(ts);
-                jquery('#restore-filename').val(filename);
-                jquery('article.popup#restore-dialog').addClass('visible');
+                $('article.popup').removeClass('visible');
+                $('#restore-timestamp').html(ts);
+                $('#restore-filename').val(filename);
+                $('article.popup#restore-dialog').addClass('visible');
             }
         });
 
-        if (jquery.inArray('restore', allowed) >= 0) {
-            jquery('li.backup a').removeClass('inactive');
+        if ($.inArray('restore', allowed) >= 0) {
+            $('li.backup a').removeClass('inactive');
         }
 
-        jquery('#next-backup').html(data['next']);
+        $('#next-backup').html(data['next']);
     }
 
     function updateBackups() {
-        jquery.ajax({
+        $.ajax({
             url: '/rest/backup',
             success: function(data) {
-                updateBackupSuccess(data);
+                $().ready(function() {
+                    updateBackupSuccess(data);
+                });
             },
             error: function(req, textStatus, errorThrown) {
                 console.log('[backup] ' + textStatus + ': ' + errorThrown);
@@ -151,36 +151,38 @@ function (jquery, topic, template, common)
     }
 
     function bind(id, f) {
-        jquery(id+'-ok').bind('click', function(event) {
+        $(id+'-ok').bind('click', function(event) {
             event.stopPropagation();
             event.preventDefault();
-            if (jquery(this).hasClass('inactive')) {
+            if ($(this).hasClass('inactive')) {
                 return;
             }
             disableAll();
             f();
-            jquery('article.popup').removeClass('visible');
+            $('article.popup').removeClass('visible');
         });
     }
-
-    /* parse all page templates */
-    for (var name in templates) {
-        var t = $('#'+name).html();
-        template.parse(t);
-        templates[name] = t;
-    }
-
-    /* bind basic actions */
-    for (var key in actions) {
-        bind('#'+key, actions[key]);
-    }
-
-    bind('#restore', restore);
 
     topic.subscribe('state', function(message, data) {
         updateState(data);
     });
 
-    common.startMonitor();
-    common.setupDialogs();
+    $().ready(function() {
+        common.startMonitor();
+
+        /* parse all page templates */
+        for (var name in templates) {
+            var t = $('#'+name).html();
+            template.parse(t);
+            templates[name] = t;
+        }
+
+        /* bind basic actions */
+        for (var key in actions) {
+            bind('#'+key, actions[key]);
+        }
+
+        bind('#restore', restore);
+        common.setupDialogs();
+    });
 });

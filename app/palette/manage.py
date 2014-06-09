@@ -15,42 +15,21 @@ from controller.agentstatus import AgentStatusEntry
 from controller.domain import Domain
 
 from page import PalettePage
+from rest import PaletteRESTHandler, required_parameters
 
-class ManageApplication(RESTApplication):
+class ManageApplication(PaletteRESTHandler):
 
     NAME = 'manage'
 
-    def __init__(self, global_conf):
-        super(ManageApplication, self).__init__(global_conf)
-
-        domainname = store.get('palette', 'domainname')
-        self.domain = Domain.get_by_name(domainname)
-        self.telnet_port = store.getint("palette", "telnet_port", default=9000)
-        self.telnet_hostname = store.get("palette", "telnet_hostname", default="localhost")
-
-    def send_cmd(self, cmd):
-        # Start and stop commands are always sent to the primary.
-        preamble = "/domainid=%d /type=primary" % (self.domain.domainid)
-        conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        conn.connect((self.telnet_hostname, self.telnet_port))
-        conn.send(preamble + ' ' + cmd + '\n')
-        print "sent", preamble + ' ' + cmd
-        data = conn.recv(3).strip()
-        print "got", data
-        if data != 'OK':
-            # fix me: do something
-            print "Bad result back from the controller."
-        conn.close()
-
     def handle_start(self, req):
-
-        self.send_cmd("start")
+        self.telnet.send_cmd("start")
         return {}
 
     def handle_stop(self, req):
-        self.send_cmd("stop")
+        self.telnet.send_cmd("stop")
         return {}
 
+    @required_parameters('action')
     def handle(self, req):
         if req.method != "POST":
             raise exc.HTTPMethodNotAllowed()
