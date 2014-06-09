@@ -161,7 +161,7 @@
   </button>
   <ul class="dropdown-menu" role="menu">
     {{#options}}
-    <li><a href="#">{{item}}</a></li>
+    <li><a data-value="{{item}}" href="/rest/backup/location">{{item}}</a></li>
     {{/options}}
   </ul>
 </script>
