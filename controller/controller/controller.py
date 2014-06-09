@@ -9,6 +9,7 @@ import socket
 import json
 import time
 import copy
+import re
 
 import exc
 from request import *
@@ -28,7 +29,7 @@ from auth import AuthManager
 from backup import BackupManager
 from diskcheck import DiskCheck
 from state import StateManager
-from system import SystemManager
+from system import SystemManager, LicenseEntry
 from status import StatusMonitor, StatusEntry
 from config import Config
 from domain import Domain
@@ -615,7 +616,7 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_info(self, cmd):
         """Run pinfo."""
         if len(cmd.args):
-            self.error(self.do_info.__usage__)
+            self.usage(self.do_info.__usage__)
             return
 
         aconn = self.get_aconn(cmd.dict)
@@ -625,8 +626,39 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
         body = server.info(aconn)
-        self.report_status(body)
+        self.print_client(str(body))
     do_info.__usage__ = 'info\n'
+
+    def do_license(self, cmd):
+        """Run license check."""
+        if len(cmd.args):
+            self.usage(self.do_info.__usage__)
+            return
+
+        aconn = self.get_aconn(cmd.dict)
+        if not aconn:
+            self.error('agent not found')
+            return
+
+        self.ack()
+        body = server.license(aconn)
+
+        if not 'exit-status' in body or body['exit-status'] != 0:
+            self.print_client(str(body))
+            return
+        if not 'stdout' in body:
+            self.print_client(str(body))
+            return
+
+        output = body['stdout']
+
+        m = re.match('Named-user licensing capacity: (?P<interactors>\d+) interactors, (?P<viewers>\d+) viewers$', output)
+        if not m:
+            self.print_client(str(body))
+            return
+
+        self.print_client(str(m.groupdict()))
+    do_license.__usage__ = 'license\n'
 
     def do_firewall(self, cmd):
         """Enable, disable or report the status of a port on an
@@ -666,7 +698,6 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.print_client(str(body))
         return
-
     do_firewall.__usage__ = 'firewall [ enable | disable | status ] port\n'
 
     def do_ping(self, cmd):
@@ -1914,6 +1945,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def info(self, aconn):
         return self.cli_cmd(Controller.PINFO_BIN, aconn)
+
+    def license(self, aconn):
+        return self.cli_cmd('tabadmin license', aconn)
 
     def maint(self, action, port=-1, aconn=None, send_alert=True):
         if action not in ("start", "stop"):
