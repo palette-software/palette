@@ -1407,14 +1407,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def status_cmd(self, aconn):
         return self.cli_cmd('tabadmin status -v', aconn)
 
-    def cli_cmd(self, command, aconn, env=None):
+    def cli_cmd(self, command, aconn, env=None, immediate=False):
         """ 1) Sends the command (a string)
             2) Waits for status/completion.  Saves the body from the status.
             3) Sends cleanup.
             4) Returns body from the status.
         """
 
-        body = self._send_cli(command, aconn, env=env)
+        body = self._send_cli(command, aconn, env=env, immediate=immediate)
 
         if body.has_key('error'):
             return body
@@ -1447,7 +1447,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return cli_body
 
-    def _send_cli(self, cli_command, aconn, env=None):
+    def _send_cli(self, cli_command, aconn, env=None, immediate=False):
         """Send a "cli" command to an Agent.
             Returns a body with the results.
             Called without the connection lock."""
@@ -1456,7 +1456,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn.lock()
 
-        req = CliStartRequest(cli_command, env=env)
+        req = CliStartRequest(cli_command, env=env, immediate=immediate)
 
         headers = {"Content-Type": "application/json"}
 
@@ -1944,7 +1944,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     return self.error("GET %s failed with: %s" % (uri, str(e)))
 
     def info(self, aconn):
-        return self.cli_cmd(Controller.PINFO_BIN, aconn)
+        return self.cli_cmd(Controller.PINFO_BIN, aconn, immediate=True)
 
     def license(self, aconn):
         return self.cli_cmd('tabadmin license', aconn)
