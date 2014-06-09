@@ -55,6 +55,11 @@
 	  <article>
 	    <span class="label">Select Archive Locations</span>
 	  </article>
+      {{#volumes}}
+      <article><input type="checkbox" data-id="{{volid}}" {{checkbox-state}}/>
+        {{name}}: {{size-readable}} ({{available-readable}} Unused)
+      </article>
+      {{/volumes}}
 	</div>
       </div>
     </div>
