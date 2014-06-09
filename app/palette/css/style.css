@@ -878,7 +878,7 @@ ul.processes.visible {
     padding: 10px 0 0 0;
     margin: 0;
 }
-.dynamic-content input {
+.dynamic-content input[type="text"] {
     width: 50%;
 }
 .btn-default:hover, .btn-default:focus, .btn-default:active, .btn-default.active, .open .dropdown-toggle.btn-default {
