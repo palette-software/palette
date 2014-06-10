@@ -66,6 +66,7 @@ class MonitorApplication(PaletteRESTHandler):
         return volumes
 
     def handle_monitor(self, req):
+        # FIXME: state should be per-env
         # Get the state
         main_state = StateManager.get_state_by_domainid(self.domain.domainid)
 
@@ -91,7 +92,7 @@ class MonitorApplication(PaletteRESTHandler):
             user_action_in_progress = True
 
         agent_entries = meta.Session.query(Agent).\
-            filter(Agent.domainid == self.domain.domainid).\
+            filter(Agent.envid == self.environment.envid).\
             order_by(Agent.display_order).\
             all()
 
