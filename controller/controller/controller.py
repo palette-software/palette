@@ -1913,7 +1913,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     return self.error("GET %s failed with: %s" % (uri, str(e)))
 
     def info(self, aconn):
-        return self.cli_cmd(Controller.PINFO_BIN, aconn, immediate=True)
+        body = self.cli_cmd(Controller.PINFO_BIN, aconn, immediate=True)
+        # FIXME: add a function to test cli success (cli_success?)
+        if not 'exit-status' in body or body['exit-status'] != 0:
+            return body;
+        self.agentmanager.update_agent_pinfo(aconn)
+        return body
+        
 
     def license(self, aconn):
         return self.cli_cmd('tabadmin license', aconn)
