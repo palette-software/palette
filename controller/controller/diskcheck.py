@@ -5,7 +5,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
 
 from agentinfo import AgentInfoEntry, AgentVolumesEntry
-from agentstatus import AgentStatusEntry
+from agent import Agent
 from agentmanager import AgentManager
 
 class DiskCheck(object):
@@ -153,7 +153,7 @@ class DiskCheck(object):
                 False - errror
          """
         domainid = self.server.domain.domainid
-        agent_keys_sorted = AgentStatusEntry.display_order_by_domainid(domainid)
+        agent_keys_sorted = Agent.display_order_by_domainid(domainid)
 
         agents = self.agentmanager.all_agents()
         for key in agent_keys_sorted:

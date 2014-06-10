@@ -7,7 +7,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from akiri.framework.ext.sqlalchemy import meta
 
-from agentstatus import AgentStatusEntry
+from agent import Agent
 from agentinfo import AgentVolumesEntry
 
 class BackupEntry(meta.Base):
@@ -71,10 +71,10 @@ class BackupManager(object):
     def get_primary_data_loc_vol_entry(self):
         try:
             vol_entry, agent_status_entry = \
-                meta.Session.query(AgentVolumesEntry, AgentStatusEntry).\
+                meta.Session.query(AgentVolumesEntry, Agent).\
                 filter(AgentVolumesEntry.primary_data_loc == True).\
-                filter(AgentVolumesEntry.agentid == AgentStatusEntry.agentid).\
-                filter(AgentStatusEntry.domainid == self.domainid).\
+                filter(AgentVolumesEntry.agentid == Agent.agentid).\
+                filter(Agent.domainid == self.domainid).\
                 one()
 
             return vol_entry

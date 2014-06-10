@@ -13,7 +13,7 @@ import ntpath
 import exc
 import httplib
 
-from agentstatus import AgentStatusEntry
+from agent import Agent
 from agentinfo import AgentYmlEntry, AgentInfoEntry, AgentVolumesEntry
 from state import StateManager
 from event_control import EventControl
@@ -27,7 +27,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 # The Controller's Agent Manager.
 # Communicates with the Agent.
-# fixme: maybe combine with the AgentStatusEntry class.
+# fixme: maybe combine with the Agent class.
 class AgentConnection(object):
 
     TABLEAU_DATA_DIR = ntpath.join("ProgramData", "Tableau", "Tableau Server")
@@ -143,10 +143,10 @@ class AgentManager(threading.Thread):
 
         session = meta.Session()
 
-        session.query(AgentStatusEntry).\
-            filter(or_(AgentStatusEntry.last_connection_time > \
-                           AgentStatusEntry.last_disconnect_time, \
-                           AgentStatusEntry.last_disconnect_time == None)).\
+        session.query(Agent).\
+            filter(or_(Agent.last_connection_time > \
+                           Agent.last_disconnect_time, \
+                           Agent.last_disconnect_time == None)).\
                            update({"last_disconnect_time" : func.now()}, \
                                       synchronize_session=False)
         session.commit()
@@ -226,8 +226,8 @@ class AgentManager(threading.Thread):
         """
         session = meta.Session()
 
-        rows = session.query(AgentStatusEntry).\
-            filter(AgentStatusEntry.agent_type != \
+        rows = session.query(Agent).\
+            filter(Agent.agent_type != \
                                         AgentManager.AGENT_TYPE_PRIMARY).\
             all()
 
@@ -271,9 +271,9 @@ class AgentManager(threading.Thread):
         session = meta.Session()
 
         # Count how many of this agent type exist.
-        rows = session.query(AgentStatusEntry).\
-            filter(AgentStatusEntry.domainid == self.domainid).\
-            filter(AgentStatusEntry.agent_type == new_agent.agent_type).\
+        rows = session.query(Agent).\
+            filter(Agent.domainid == self.domainid).\
+            filter(Agent.agent_type == new_agent.agent_type).\
             all()
 
         # The new agent will be the next one.
@@ -293,9 +293,9 @@ class AgentManager(threading.Thread):
 
         # fixme: check for the presence of all these entries.
         try:
-            entry = session.query(AgentStatusEntry).\
-                filter(AgentStatusEntry.domainid == self.domainid).\
-                filter(AgentStatusEntry.uuid == body['uuid']).\
+            entry = session.query(Agent).\
+                filter(Agent.domainid == self.domainid).\
+                filter(Agent.uuid == body['uuid']).\
                 one()
             found = True
         except NoResultFound, e:
@@ -304,7 +304,7 @@ class AgentManager(threading.Thread):
         if not found or entry.displayname == None or entry.displayname == "":
             (displayname, display_order) = self.calc_new_displayname(new_agent)
 
-        entry = AgentStatusEntry(body['hostname'],
+        entry = Agent(body['hostname'],
                          new_agent.agent_type,
                          body['version'],
                          body['ip-address'],
@@ -498,8 +498,8 @@ class AgentManager(threading.Thread):
     def set_displayname(self, aconn, uuid, displayname):
         session = meta.Session()
         try:
-            entry = session.query(AgentStatusEntry).\
-                filter(AgentStatusEntry.uuid == uuid).one()
+            entry = session.query(Agent).\
+                filter(Agent.uuid == uuid).one()
             entry.displayname = displayname
             session.commit()
             if aconn:
@@ -516,8 +516,8 @@ class AgentManager(threading.Thread):
 
         session = meta.Session()
         #fixme: add try
-        entry = session.query(AgentStatusEntry).\
-            filter(AgentStatusEntry.agentid == agentid).\
+        entry = session.query(Agent).\
+            filter(Agent.agentid == agentid).\
             one()
         entry.last_disconnect_time = func.now()
         session.commit()

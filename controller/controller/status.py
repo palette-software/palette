@@ -12,7 +12,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from state import StateManager
 from agentmanager import AgentManager
-from agentstatus import AgentStatusEntry
+from agent import Agent
 from event_control import EventControl
 
 class StatusEntry(meta.Base):
@@ -77,8 +77,8 @@ class StatusMonitor(threading.Thread):
         # This may do it:
         #
         # subq = session.query(StatusEntry).\
-        #   join(AgentStatusEntry).\
-        #   filter(AgentStatusEntry.domainid == self.domainid).\
+        #   join(Agent).\
+        #   filter(Agent.domainid == self.domainid).\
         #   subquery()
         #
         # session.query(StatusEntry).\
@@ -104,15 +104,15 @@ class StatusMonitor(threading.Thread):
 
     def get_all_status(self):
         return meta.Session().query(StatusEntry).\
-            join(AgentStatusEntry).\
-            filter(AgentStatusEntry.domainid == self.domainid).\
+            join(Agent).\
+            filter(Agent.domainid == self.domainid).\
             all()
 
     def get_reported_status(self):
         return meta.Session().query(StatusEntry).\
-            join(AgentStatusEntry).\
-            filter(AgentStatusEntry.domainid == self.domainid).\
-            filter(AgentStatusEntry.agent_type == 'primary').\
+            join(Agent).\
+            filter(Agent.domainid == self.domainid).\
+            filter(Agent.agent_type == 'primary').\
             filter(StatusEntry.name == 'Status').\
             one().status
 
@@ -228,14 +228,14 @@ class StatusMonitor(threading.Thread):
         session = meta.Session()
 
         try:
-            entry = session.query(AgentStatusEntry).\
-              filter(AgentStatusEntry.hostname == host).\
+            entry = session.query(Agent).\
+              filter(Agent.hostname == host).\
               one()
             agentid = entry.agentid;
         except NoResultFound, e:
             try:
-                entry = session.query(AgentStatusEntry).\
-                  filter(AgentStatusEntry.ip_address == host).\
+                entry = session.query(Agent).\
+                  filter(Agent.ip_address == host).\
                   one()
                 agentid = entry.agentid;
             except NoResultFound, e:

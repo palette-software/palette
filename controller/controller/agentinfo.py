@@ -53,7 +53,7 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
     primary_data_loc = Column(Boolean)
     active = Column(Boolean)
 
-    agent = relationship('AgentStatusEntry', backref='volumes')
+    agent = relationship('Agent', backref='volumes')
     UniqueConstraint('agentid', 'name')
 
     def todict(self, pretty=False):

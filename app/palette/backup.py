@@ -15,7 +15,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from controller.backup import BackupEntry, BackupManager
 from controller.agentinfo import AgentInfoEntry, AgentVolumesEntry
-from controller.agentstatus import AgentStatusEntry
+from controller.agent import Agent
 from controller.domain import Domain
 from controller.util import DATEFMT
 
@@ -76,8 +76,8 @@ class BackupApplication(PaletteRESTHandler):
     def get_displayname_by_volid(self, volid):
         try:
             agent_entry, vol_entry = meta.Session.query(\
-                AgentStatusEntry, AgentVolumesEntry).\
-                filter(AgentStatusEntry.agentid == AgentVolumesEntry.agentid).\
+                Agent, AgentVolumesEntry).\
+                filter(Agenty.agentid == AgentVolumesEntry.agentid).\
                 filter(AgentVolumesEntry.volid == volid).\
                 one()
         except NoResultFound, e:

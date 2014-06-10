@@ -23,7 +23,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 from akiri.framework.ext.sqlalchemy import meta
 
 from agentmanager import AgentManager, AgentConnection
-from agentstatus import AgentStatusEntry
+from agent import Agent
 from agentinfo import AgentInfoEntry, AgentVolumesEntry
 from auth import AuthManager
 from backup import BackupManager
@@ -134,17 +134,17 @@ class Command(object):
         # passed, and there is a (unique) primary in the database
         # for this domain, then use it.
         #
-        # FIXME: TBD: should this be farmed out to the AgentStatusEntry class
+        # FIXME: TBD: should this be farmed out to the Agent class
         #             or AgentConnection class?
         if 'uuid' in opts and not 'displayname' in opts \
           and not 'hostname' in opts and not 'type' in opts:
             pass
         elif not 'uuid' in opts and not 'displayname' in opts \
           and not 'hostname' in opts and not 'type' in opts:
-            query = meta.Session.query(AgentStatusEntry)
-            query = query.filter(AgentStatusEntry.domainid == \
+            query = meta.Session.query(Agent)
+            query = query.filter(Agent.domainid == \
               opts['domainid'])
-            query = query.filter(AgentStatusEntry.agent_type == \
+            query = query.filter(Agent.agent_type == \
                 'primary')
             try:
                 entry = query.one()
@@ -154,20 +154,20 @@ class Command(object):
             except sqlalchemy.orm.exc.MultipleResultsFound:
                  opts['uuid'] = None
         else:
-            query = meta.Session.query(AgentStatusEntry)
-            query = query.filter(AgentStatusEntry.domainid == \
+            query = meta.Session.query(Agent)
+            query = query.filter(Agent.domainid == \
               opts['domainid'])
             if 'uuid' in opts:
-                query = query.filter(AgentStatusEntry.uuid == \
+                query = query.filter(Agent.uuid == \
                   opts['uuid'])
             if 'displayname' in opts:
-                query = query.filter(AgentStatusEntry.displayname == \
+                query = query.filter(Agent.displayname == \
                   opts['displayname'])
             if 'hostname' in opts:
-                query = query.filter(AgentStatusEntry.hostname == \
+                query = query.filter(Agent.hostname == \
                   opts['hostname'])
             if 'type' in opts:
-                query = query.filter(AgentStatusEntry.agent_type == \
+                query = query.filter(Agent.agent_type == \
                   opts['type'])
             try:
                 entry = query.one()
@@ -592,8 +592,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                 phttp_cmd += ' ' + arg
 
         try:
-            entry = meta.Session.query(AgentStatusEntry).\
-                filter(AgentStatusEntry.agentid == aconn.agentid).\
+            entry = meta.Session.query(Agent).\
+                filter(Agent.agentid == aconn.agentid).\
                 one()
         except sqlalchemy.orm.exc.NoResultFound:
             self.log.err("Source agent not found!  agentid: %d", aconn.agentid)
@@ -1383,7 +1383,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         (backupid, volid, vol_name, vol_path, agentid) = result[0]
 
-        agent = AgentStatusEntry.get_agentstatusentry_by_volid(volid)
+        agent = Agent.get_agentstatusentry_by_volid(volid)
 
         aconn = self.agentmanager.agent_conn_by_uuid(agent.uuid)
         if not aconn:
@@ -1645,8 +1645,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
              source_path, target_dir)
 
         try:
-            entry = meta.Session.query(AgentStatusEntry).\
-                filter(AgentStatusEntry.agentid == src.agentid).\
+            entry = meta.Session.query(Agent).\
+                filter(Agent.agentid == src.agentid).\
                 one()
         except sqlalchemy.orm.exc.NoResultFound:
             self.log.err("Source agent not found!  agentid: %d", src.agentid)
