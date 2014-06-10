@@ -31,10 +31,10 @@ class Agent(meta.Base, BaseDictMixin):
     password = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
-      server_onupdate=func.current_timestamp())
+                                   server_onupdate=func.current_timestamp())
     last_connection_time = Column(DateTime, server_default=func.now())
     last_disconnect_time = Column(DateTime)
-    UniqueConstraint('domainid', 'displayname')
+    UniqueConstraint('envid', 'displayname')
 
     def connected(self):
         if not self.last_disconnect_time or \
