@@ -112,6 +112,7 @@ class AgentManager(threading.Thread):
         self.config = self.server.config
         self.log = self.server.log
         self.domainid = self.server.domain.domainid
+        self.envid = self.server.environment.envid
         self.daemon = True
         self.lockobj = threading.RLock()
         self.new_primary_event = threading.Event() # a primary connected
@@ -291,30 +292,24 @@ class AgentManager(threading.Thread):
     def remember(self, new_agent, body):
         session = meta.Session()
 
-        # fixme: check for the presence of all these entries.
-        try:
-            entry = session.query(Agent).\
-                filter(Agent.domainid == self.domainid).\
-                filter(Agent.uuid == body['uuid']).\
-                one()
-            found = True
-        except NoResultFound, e:
-            found = False
+        uuid = body['uuid']
+        entry = Agent.get_by_uuid(self.envid, uuid)
 
-        if not found or entry.displayname == None or entry.displayname == "":
-            (displayname, display_order) = self.calc_new_displayname(new_agent)
+        if entry is None:
+            entry = Agent(envid=self.envid,
+                          uuid=body['uuid'],
+                          hostname=body['hostname'],
+                          agent_type=new_agent.agent_type,
+                          version=body['version'],
+                          ip_address=body['ip-address'],
+                          listen_port=body['listen-port'],
+                          username=u'palette',# fixme
+                          password=u'tableau2014')
 
-        entry = Agent(body['hostname'],
-                         new_agent.agent_type,
-                         body['version'],
-                         body['ip-address'],
-                         body['listen-port'],
-                         u'palette',     # fixme
-                         u'tableau2014',
-                         body['uuid'],
-                         self.domainid)
         entry.last_connection_time = func.now()
-        if not found:
+
+        if entry.displayname is None or entry.displayname == "":
+            (displayname, display_order) = self.calc_new_displayname(new_agent)
             entry.displayname = displayname
             entry.display_order = display_order
 
