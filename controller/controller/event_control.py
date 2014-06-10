@@ -1,4 +1,7 @@
 from mako.template import Template
+from mako import exceptions
+import mako.runtime
+mako.runtime.UNDEFINED="*UNDEFINED*"
 
 from sqlalchemy import Column, Integer, BigInteger, String, Boolean
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
@@ -430,22 +433,26 @@ class EventControlManager(object):
             self.log.error("No such event key: %s. data: %s\n", key, str(data))
             return
 
+        if 'exit-status' in data:
+            data['exit_status'] = data['exit-status']
+
         # Use the data dict for template substitution.
         try:
             subject = subject % data
-        except KeyError as e:
+        except (ValueError, KeyError) as e:
             subject = "Template subject conversion failure: " + str(e) + \
                 "subject: " + subject + \
                 ", data: " + str(data)
         if event_description:
-            mako_template = Template(event_description)
             try:
+                mako_template = Template(event_description)
                 event_description = mako_template.render(**data)
-            except NameError as e:
+            except:
                 event_description = \
                     "Mako template message conversion failure: " + \
-                    str(e) + "\ntemplate: " + event_description + \
-                "\ndata: " + str(data)
+                        exceptions.text_error_template().render() + \
+                            "\ntemplate: " + event_description + \
+                            "\ndata: " + str(data)
         else:
            event_description = self.make_default_description(data)
 
