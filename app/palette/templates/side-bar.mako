@@ -6,13 +6,9 @@
   </section>
   <ul class="actions">
     <li ${obj.active=='home' and 'class="active"' or ''}>
-      <a href="/"><i class="fa fa-fw fa-home"></i><span>Home</span>
-	  </a>
-    </li>
-    <li ${obj.active=='extracts' and 'class="active"' or ''}>
-      <a href="/extracts"><i class="fa fa-fw fa-copy"></i>
-	    <span>Extracts</span>
-	  </a>
+      <a href="/">
+	<i class="fa fa-fw fa-copy"></i><span>Events</span>
+      </a>
     </li>
 %if obj.active=='manage':
     <li class="has-side-bar active">
