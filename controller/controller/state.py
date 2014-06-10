@@ -39,7 +39,7 @@ class StateManager(object):
         self.system = self.server.system
         self.config = self.server.config
         self.log = self.server.log
-        self.domainid = self.server.domain.domainid
+        self.envid = self.server.environment.envid
 
     def update(self, state):
         if state == "RUNNING":
@@ -51,11 +51,11 @@ class StateManager(object):
         self.system.save(SystemManager.SYSTEM_KEY_STATE, state)
 
     def get_state(self):
-        return StateManager.get_state_by_domainid(self.domainid)
+        return StateManager.get_state_by_envid(self.envid)
 
     @classmethod
-    def get_state_by_domainid(cls, domainid):
+    def get_state_by_envid(cls, envid):
         try:
-            return SystemManager(domainid).get(SystemManager.SYSTEM_KEY_STATE)
+            return SystemManager(envid).get(SystemManager.SYSTEM_KEY_STATE)
         except ValueError, e:
             return StateManager.STATE_DISCONNECTED
