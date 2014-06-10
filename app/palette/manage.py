@@ -11,7 +11,7 @@ from sqlalchemy.schema import ForeignKey
 
 from akiri.framework.ext.sqlalchemy import meta
 
-from controller.agentstatus import AgentStatusEntry
+from controller.agent import Agent
 from controller.domain import Domain
 
 from page import PalettePage
@@ -51,9 +51,9 @@ class ManageAdvancedDialog(DialogPage):
         domainname = store.get('palette', 'domainname')
         self.domain = Domain.get_by_name(domainname)
 
-        self.agents = meta.Session.query(AgentStatusEntry).\
-          filter(AgentStatusEntry.domainid == self.domain.domainid).\
-          order_by(AgentStatusEntry.last_connection_time.desc()).\
+        self.agents = meta.Session.query(Agent).\
+          filter(Agent.domainid == self.domain.domainid).\
+          order_by(Agent.last_connection_time.desc()).\
           all()
         for agent in self.agents:
             if agent.connected():

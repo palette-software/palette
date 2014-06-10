@@ -5,7 +5,7 @@ from akiri.framework.ext.sqlalchemy import meta
 from page import PalettePage
 from rest import PaletteRESTHandler, required_parameters
 
-from controller.agentstatus import AgentStatusEntry
+from controller.agent import Agent
 from controller.agentinfo import AgentVolumesEntry
 from controller.util import sizestr
 
@@ -38,7 +38,7 @@ class ServerApplication(PaletteRESTHandler):
 
     def handle_GET(self, req):
         exclude = ['username', 'password']
-        L = meta.Session.query(AgentStatusEntry).all()
+        L = meta.Session.query(Agent).all()
 
         servers = []
         for server in L:
@@ -51,7 +51,7 @@ class ServerApplication(PaletteRESTHandler):
 
     @required_parameters('id', 'value')
     def handle_displayname(self, req):
-        entry = AgentStatusEntry.get_by_id(req.POST['id'])
+        entry = Agent.get_by_id(req.POST['id'])
         if entry is None:
             raise exc.HTTPNotFound()
         entry.displayname = req.POST['value']

@@ -12,7 +12,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from controller.status import StatusEntry
 from controller.state import StateManager
-from controller.agentstatus import AgentStatusEntry
+from controller.agent import Agent
 from controller.agentmanager import AgentManager
 from controller.agentinfo import AgentVolumesEntry
 from controller.domain import Domain
@@ -90,9 +90,9 @@ class MonitorApplication(PaletteRESTHandler):
         else:
             user_action_in_progress = True
 
-        agent_entries = meta.Session.query(AgentStatusEntry).\
-            filter(AgentStatusEntry.domainid == self.domain.domainid).\
-            order_by(AgentStatusEntry.display_order).\
+        agent_entries = meta.Session.query(Agent).\
+            filter(Agent.domainid == self.domain.domainid).\
+            order_by(Agent.display_order).\
             all()
 
         primary = None
