@@ -1,5 +1,4 @@
-from sqlalchemy import Column, String, BigInteger, DateTime, func, text
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import Column, String, Integer, BigInteger, DateTime, func
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 
@@ -16,8 +15,8 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
     modification_time = Column(DateTime, server_default=func.now(),
                                onupdate=func.current_timestamp())
 
-    defaults = [{'name':'disk-watermark-low', 'value':str(50)},
-                {'name':'disk-watermark-low', 'value':str(80)}]
+    defaults = [{'domainid':1, 'key':'disk-watermark-low', 'value':str(50)},
+                {'domainid':1, 'key':'disk-watermark-high', 'value':str(80)}]
                 
 class SystemManager(object):
 
@@ -53,3 +52,23 @@ class SystemManager(object):
     @classmethod
     def populate(cls):
         SystemEntry.populate()
+
+class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
+    __tablename__ = 'license'
+
+    licenseid = Column(BigInteger, primary_key=True)
+    agentid = Column(BigInteger, ForeignKey("agent.agentid"))
+    interactors = Column(Integer, nullable=False)
+    viewers = Column(Integer, nullable=False)
+    creation_time = Column(DateTime, server_default=func.now())
+    modification_time = Column(DateTime, server_default=func.now(),
+                               onupdate=func.current_timestamp())
+
+    @classmethod
+    def save(cls, agentid, interactors, viewers):
+        session = meta.Session()
+        entry = SystemEntry(agentid=agentid,
+                            interactor=interactors,
+                            viewers=viewers)
+        session.merge(entry)
+        session.commit()
