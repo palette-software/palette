@@ -4,8 +4,8 @@
     <span id="toggle-main-menu" class="fi-list"></span>
     <ul class="nav">
       <li class="more">
-        <a href="/support/ticket"><i class="fa fa-medkit"></i>
-	  <span>Need Help?</span>
+        <a href="/support/ticket"><i class="fa fa-question-circle"></i>
+	  <span>Help</span>
 	</a>
         <ul>
           <li>
