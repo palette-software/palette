@@ -55,7 +55,9 @@ class CommandException(Exception):
 
 class Command(object):
 
-    def __init__(self, line):
+    def __init__(self, server, line):
+        # FIXME: temporary hack to get domainid and envid
+        self.server = server
         self.dict = {}
         self.name = None
         self.args = []
@@ -84,43 +86,17 @@ class Command(object):
             else:
                 self.args.append(token.strip())
 
+        # This fills in any missing information in the opts dict.
         self.sanity()
 
     def sanity(self):
         opts = self.dict
 
-        # FIXME: If we are passed no domain info but are passed a uuid,
-        #        then get the domain from the agent table rather than
-        #        exercise the 'only one domain in the database' hack.
-
-        # A domainid is required. Validate passed domain information
-        # against the database for existence and uniqueness.
-        #
-        # As an optimization, if only a domainid id is passed, with
-        # no other domain information, accept it and use it.
-        #
-        # As a hack to aid development, if no domain information is
-        # passed, and there is only one domain in the database, then
-        # use it.
-        #
-        # FIXME: TBD: should this be farmed out to the Domain class?
-        if 'domainid' in opts and not 'domainname' in opts:
-            pass
-        else:
-            query = meta.Session.query(Domain)
-            if 'domainid' in opts:
-                query = \
-                  query.filter(Domain.domainid == opts['domainid'])
-            if 'domainname' in opts:
-                query = \
-                  query.filter(Domain.name == opts['domainname'])
-            try:
-                entry = query.one()
-                opts['domainid'] = entry.domainid
-            except sqlalchemy.orm.exc.NoResultFound:
-                 raise CommandException("no matching domain found")
-            except sqlalchemy.orm.exc.MultipleResultsFound:
-                 raise CommandException("domain must be unique")
+        # FIXME: domain/env HACK
+        if not 'domainid' in opts:
+            opts['domainid'] = self.server.domain.domainid
+        if not 'envid' in opts:
+            opts['envid'] = self.server.environment.envid
 
         # Not all commands require an agent, but most do. For simplicity,
         # we require a uuid entry in the command dict, even if the
@@ -135,18 +111,14 @@ class Command(object):
         # passed, and there is a (unique) primary in the database
         # for this domain, then use it.
         #
-        # FIXME: TBD: should this be farmed out to the Agent class
-        #             or AgentConnection class?
         if 'uuid' in opts and not 'displayname' in opts \
           and not 'hostname' in opts and not 'type' in opts:
             pass
         elif not 'uuid' in opts and not 'displayname' in opts \
           and not 'hostname' in opts and not 'type' in opts:
             query = meta.Session.query(Agent)
-            query = query.filter(Agent.domainid == \
-              opts['domainid'])
-            query = query.filter(Agent.agent_type == \
-                'primary')
+            query = query.filter(Agent.envid == opts['envid'])
+            query = query.filter(Agent.agent_type == 'primary')
             try:
                 entry = query.one()
                 opts['uuid'] = entry.uuid
@@ -156,20 +128,16 @@ class Command(object):
                  opts['uuid'] = None
         else:
             query = meta.Session.query(Agent)
-            query = query.filter(Agent.domainid == \
-              opts['domainid'])
+            query = query.filter(Agent.envid == opts['envid'])
             if 'uuid' in opts:
-                query = query.filter(Agent.uuid == \
-                  opts['uuid'])
+                query = query.filter(Agent.uuid == opts['uuid'])
             if 'displayname' in opts:
-                query = query.filter(Agent.displayname == \
-                  opts['displayname'])
+                query = query.filter(\
+                    Agent.displayname == opts['displayname'])
             if 'hostname' in opts:
-                query = query.filter(Agent.hostname == \
-                  opts['hostname'])
+                query = query.filter(Agent.hostname == opts['hostname'])
             if 'type' in opts:
-                query = query.filter(Agent.agent_type == \
-                  opts['type'])
+                query = query.filter(Agent.agent_type == opts['type'])
             try:
                 entry = query.one()
                 opts['uuid'] = entry.uuid
@@ -530,6 +498,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def list_backups(self):
         s = ''
+        # FIXME: per environment
         for backup in BackupManager.all(self.server.domain.domainid):
             s += str(backup.todict()) + '\n'
         self.print_client(s)
@@ -1258,7 +1227,6 @@ class CliHandler(socketserver.StreamRequestHandler):
         # FIXME: This method is a temporary hack while we
         #        clean up the telnet commands
         # FIXME: TBD: Should this be farmed out to another class?
-
         aconn = None
 
         if opts.has_key('uuid'): # should never fail
@@ -1287,7 +1255,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             if not data: break
 
             try:
-                cmd = Command(data)
+                cmd = Command(self.server, data)
             except CommandException, e:
                 self.error(str(e))
                 continue
@@ -1494,8 +1462,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         headers = {"Content-Type": "application/json"}
 
+        displayname = aconn.displayname and aconn.displayname or aconn.uuid
         self.log.debug("about to send the cli command to '%s', type '%s' xid: %d, command: %s",
-                aconn.displayname, aconn.agent_type, req.xid, cli_command)
+                displayname, aconn.agent_type, req.xid, cli_command)
         try:
             aconn.httpconn.request('POST', '/cli', req.send_body, headers)
             self.log.debug('sent cli command.')
@@ -2158,13 +2127,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """
 
         TABLEAU_INSTALL_DIR="tableau-install-dir"
-        YML_CONFIG_FILE_PART=ntpath.join("data", "tabsvc", "config",
-                                                            "workgroup.yml")
-
-        # The info() command requires a displayname (for debug output).
-        # Temporarily use the hostname until the real value can be pulled
-        # from the database (or otherwise assigned).
-        aconn.displayname = aconn.auth['hostname'] + '*'
+        YML_CONFIG_FILE_PART=ntpath.join("data", "tabsvc",
+                                         "config", "workgroup.yml")
 
         body = self.info(aconn)
         if body.has_key("error"):

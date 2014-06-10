@@ -8,15 +8,16 @@ from mixin import BaseMixin, BaseDictMixin
 class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'system'
 
-    domainid = Column(BigInteger, ForeignKey("domain.domainid"), primary_key=True)
+    envid = Column(BigInteger, ForeignKey("environment.envid"),
+                   primary_key=True)
     key = Column(String, unique=True, nullable=False, primary_key=True)
     value = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(),
                                onupdate=func.current_timestamp())
 
-    defaults = [{'domainid':1, 'key':'disk-watermark-low', 'value':str(50)},
-                {'domainid':1, 'key':'disk-watermark-high', 'value':str(80)}]
+    defaults = [{'envid':1, 'key':'disk-watermark-low', 'value':str(50)},
+                {'envid':1, 'key':'disk-watermark-high', 'value':str(80)}]
                 
 class SystemManager(object):
 
@@ -25,20 +26,20 @@ class SystemManager(object):
     SYSTEM_KEY_EVENT_SUMMARY_FORMAT = "event-summary-format"
     SYSTEM_KEY_ARCHIVE_BACKUP_LOCATION = "archive-backup-location"
 
-    def __init__(self, domainid):
-        self.domainid = domainid
+    def __init__(self, envid):
+        self.envid = envid
 
     def save(self, key, value):
         session = meta.Session()
 
-        entry = SystemEntry(domainid=self.domainid, key=key, value=value)
+        entry = SystemEntry(envid=self.envid, key=key, value=value)
         session.merge(entry)
         session.commit()
 
     def entry(self, key):
         try:
             entry = meta.Session.query(SystemEntry).\
-                filter(SystemEntry.domainid == self.domainid).\
+                filter(SystemEntry.envid == self.envid).\
                 filter(SystemEntry.key == key).\
                 one()
         except NoResultFound, e:

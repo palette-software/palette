@@ -41,6 +41,7 @@ class AgentConnection(object):
         self.auth = {}          # Used by the controller
         self.agentid = None
         self.uuid = None
+        self.displayname = None
         self.tableau_install_dir = None
         self.agent_type = None
         self.yml_contents = None    # only valid if agent is a primary
@@ -152,16 +153,21 @@ class AgentManager(threading.Thread):
                                       synchronize_session=False)
         session.commit()
 
-    def register(self, new_agent, body):
+    # must be called with the agentmanager lock held
+    def find_by_uuid(self, uuid):
+        for key in self.agents.keys():
+            agent = self.agents[key]
+            if agent.uuid == uuid:
+                return agent
+        return None
+
+    def register(self, new_agent, body, entry=None):
         """Called with the agent object and body /auth dictionary that
            was sent from the agent in json."""
 
-        # The agent initialization succeeded.
-        new_agent.initting = False
-
         self.lock()
         self.log.debug("new agent: name %s, uuid %s", \
-          body['hostname'], body['uuid'])
+                           body['hostname'], body['uuid'])
 
         new_agent_type = new_agent.agent_type
         # Don't allow two primary agents to be connected and
@@ -186,18 +192,23 @@ class AgentManager(threading.Thread):
                             "remove it and keep the new primary agent " + \
                             "connection.", gen_event=False)
 
-        # Remember the new agent
-        entry = self.remember(new_agent, body)
-        if entry:
-            new_agent.agentid = entry.agentid
-            new_agent.uuid = entry.uuid
-            new_agent.displayname = entry.displayname
-        else:
-            # FIXME: handle this as an error
-            self.log.error("Bad agent.  Will not remember it: %s",
-                                                        str(new_agent.auth))
-            self.unlock()
+        if entry is None:
+            entry = Agent.get_by_uuid(self.envid, uuid) # SHOULD NOT FAIL
+
+        if entry.displayname is None or entry.displayname == "":
+            (displayname, display_order) = self.calc_new_displayname(new_agent)
+            entry.displayname = displayname
+            entry.display_order = display_order
+
+        # Remember the yml contents
+        if new_agent.yml_contents:
+            self.update_agent_yml(entry.agentid, new_agent.yml_contents)
+
+        # Remember the agent pinfo
+        if not self.update_agent_pinfo(new_agent, entry.agentid):
             return False
+
+        meta.Session.commit()
 
         self.agents[new_agent.uuid] = new_agent
 
@@ -273,7 +284,7 @@ class AgentManager(threading.Thread):
 
         # Count how many of this agent type exist.
         rows = session.query(Agent).\
-            filter(Agent.domainid == self.domainid).\
+            filter(Agent.envid == self.envid).\
             filter(Agent.agent_type == new_agent.agent_type).\
             all()
 
@@ -307,22 +318,7 @@ class AgentManager(threading.Thread):
                           password=u'tableau2014')
 
         entry.last_connection_time = func.now()
-
-        if entry.displayname is None or entry.displayname == "":
-            (displayname, display_order) = self.calc_new_displayname(new_agent)
-            entry.displayname = displayname
-            entry.display_order = display_order
-
         entry = session.merge(entry)
-        session.commit()
-        # Remember the yml contents
-        if new_agent.yml_contents:
-            self.update_agent_yml(entry.agentid, new_agent.yml_contents)
-
-        # Remember the agent pinfo
-        if not self.update_agent_pinfo(new_agent, entry.agentid):
-            return False
-
         session.commit()
         return entry
 
@@ -655,7 +651,7 @@ class AgentManager(threading.Thread):
                 self.log.debug("Accept failed.")
                 continue
 
-            tobj = threading.Thread(target=self.new_agent_connection,
+            tobj = threading.Thread(target=self.handle_agent_connection,
                                  args=(conn, addr))
             # Spawn a thread to handle the new agent connection
             tobj.start()
@@ -680,12 +676,12 @@ class AgentManager(threading.Thread):
         self.log.error("Couldn't find agent with fd: %d", fd)
 
     # thread function: spawned on a new connection from an agent.
-    def new_agent_connection(self, conn, addr):
+    def handle_agent_connection(self, conn, addr):
         if self.ssl:
             conn.settimeout(self.ssl_handshake_timeout)
             try:
                 ssl_sock = ssl.wrap_socket(conn, server_side=True,
-                                                       certfile=self.cert_file)
+                                           certfile=self.cert_file)
                 conn = ssl_sock
             except (ssl.SSLError, socket.error), e:
                 self.log.info("Exception with ssl wrap: %s", str(e))
@@ -698,23 +694,16 @@ class AgentManager(threading.Thread):
         conn.settimeout(self.socket_timeout)
 
         try:
-            agent = AgentConnection(self.server, conn, addr)
+            aconn = AgentConnection(self.server, conn, addr)
 
             # sleep for 100ms to prevent:
             #  'An existing connection was forcibly closed by the remote host'
             # on the Windows client when the agent tries to connect.
             time.sleep(.1);
 
-            httpconn = ReverseHTTPConnection(conn)
-
-            # Send the 'auth 'command.
-            httpconn.request('POST', '/auth')
-
-            res = httpconn.getresponse()
-            print >> sys.stderr, 'command: auth: ' + str(res.status) + ' ' + str(res.reason)
-            # Get the auth reply.
-            self.log.debug("new_agent_connection: about to read.")
-            body_json = res.read()
+            aconn.httpconn = ReverseHTTPConnection(conn)
+            # FIXME: why is this a POST?
+            body_json = aconn.http_send('POST', '/auth')
             if body_json:
                 body = json.loads(body_json)
                 self.log.debug("body = " + str(body))
@@ -731,15 +720,27 @@ class AgentManager(threading.Thread):
                     self._close(conn)
                     return
 
-            agent.httpconn = httpconn
-            agent.auth = body
+            aconn.auth = body
+            uuid = aconn.auth['uuid']
 
-            if self.server.init_new_agent(agent) and self.register(agent, body):
-                self.save_routes(agent) # fixme: check return value?
-            else:
+            self.lock()
+            entry = self.remember(aconn, body)
+            aconn.agentid = entry.agentid
+            aconn.uuid = uuid
+            self.unlock()
+
+            if not self.server.init_new_agent(aconn):
                 self.log.error("Bad agent.  Disconnecting.")
                 self._close(conn)
                 return
+
+            if not self.register(aconn, body, entry=entry):
+                self.log.error("Bad agent.  Disconnecting.")
+                self._close(conn)
+                return
+
+            self.save_routes(aconn) # fixme: check return value?
+            aconn.initting = False
 
         except socket.error, e:
             self.log.debug("Socket error: " + str(e))
@@ -817,7 +818,7 @@ class AgentHealthMonitor(threading.Thread):
         while True:
             if len(self.manager.agents) == 0:
                 # no agents to check on
-                self.log.debug("no agents to ping")
+                # self.log.debug("no agents to ping")
                 time.sleep(self.ping_interval)
                 continue
 
