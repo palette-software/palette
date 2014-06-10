@@ -200,12 +200,15 @@ class AgentManager(threading.Thread):
             entry.displayname = displayname
             entry.display_order = display_order
 
+        if entry.agent_type is None:
+            entry.agent_type = new_agent_type
+
         # Remember the yml contents
         if new_agent.yml_contents:
             self.update_agent_yml(entry.agentid, new_agent.yml_contents)
 
         # Remember the agent pinfo
-        if not self.update_agent_pinfo(new_agent, entry.agentid):
+        if not self.update_agent_pinfo(new_agent):
             return False
 
         meta.Session.commit()
@@ -335,8 +338,9 @@ class AgentManager(threading.Thread):
             entry = AgentYmlEntry(agentid=agentid, key=key, value=value)
             session.add(entry)
 
-    def update_agent_pinfo(self, new_agent, agentid):
-        pinfo = new_agent.pinfo
+    def update_agent_pinfo(self, aconn):
+        pinfo = aconn.pinfo
+        agentid = aconn.agentid
 
         session = meta.Session()
         # First delete any old entries for this agent
@@ -349,10 +353,10 @@ class AgentManager(threading.Thread):
             filter(AgentVolumesEntry.agentid == agentid).\
                    update({"active" : False}, synchronize_session=False)
 
-        parts = new_agent.auth['install-dir'].split(':')
+        parts = aconn.auth['install-dir'].split(':')
         if len(parts) != 2:
             self.log.error("Bad format for install-dir: %s",
-                                                new_agent.auth['install-dir'])
+                           aconn.auth['install-dir'])
             return False
 
         install_dir_vol_name = parts[0].upper()
@@ -412,16 +416,16 @@ class AgentManager(threading.Thread):
 
                         # If it is the primary agent and install volume,
                         # mark it as the "primary_data_loc" volume.
-                        if new_agent.agent_type == \
+                        if aconn.agent_type == \
                                 AgentManager.AGENT_TYPE_PRIMARY and \
-                                        install_dir_vol_name == name:
+                                install_dir_vol_name == name:
                             entry.primary_data_loc = True
                         else:
                             entry.primary_data_loc = False
 
                         session.add(entry)
 
-            if new_agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
+            if aconn.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
                 continue
 
         session.commit()
@@ -432,12 +436,12 @@ class AgentManager(threading.Thread):
         # one since 1) we use it for backups and 2) We need to
         # know how much available disk space is used on the backup
         # volume.
-        if new_agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
+        if aconn.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
                 not self.primary_data_vol_exists(agentid, install_dir_vol_name):
             self.log.error("pinfo for the primary did not include" + \
-                " the install dir volume.  " + \
-                "agentid: %d, install_dir_vol_name: %s",
-                                            agentid, install_dir_vol_name)
+                               " the install dir volume.  " + \
+                               "agentid: %d, install_dir_vol_name: %s",
+                           agentid, install_dir_vol_name)
             return False
 
         return True
