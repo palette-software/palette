@@ -1,8 +1,10 @@
 from sqlalchemy import Column, String, BigInteger, Integer, Boolean
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
 
+from util import sizestr
 from mixin import BaseDictMixin
 
 class AgentYmlEntry(meta.Base, BaseDictMixin):
@@ -51,21 +53,20 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
     primary_data_loc = Column(Boolean)
     active = Column(Boolean)
 
+    agent = relationship('AgentStatusEntry', backref='volumes')
     UniqueConstraint('agentid', 'name')
 
-    def todict(self):
-        return {'name': self.name,
-                'path': self.path,
-                'vol_type': self.vol_type,
-                'label': self.label,
-                'drive_format': self.drive_format,
-                'size': self.size,
-                'available_space': self.available_space,
-                'system': self.system,
-                'archive': self.archive,
-                'archive_limit': self.archive_limit,
-                'active': self.active
-                }
+    def todict(self, pretty=False):
+        d = super(AgentVolumesEntry, self).todict(pretty=pretty)
+        if not self.size is None and not self.available_space is None:
+            d['used'] = self.size - self.available_space
+        if not pretty:
+            return d
+        if 'size' in d: d['size-readable'] = sizestr(d['size'])
+        if 'available-space' in d:
+            d['available-readable'] = sizestr(d['available-space'])
+        if 'used' in d: d['used-readable'] = sizestr(d['used'])
+        return d
 
     @classmethod
     def build(cls, agentid, volume):
@@ -133,3 +134,4 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
                 one()
         except NoResultFound, e:
             return None
+    get_by_id = get_vol_entry_by_volid

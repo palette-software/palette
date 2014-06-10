@@ -152,8 +152,8 @@ class DiskCheck(object):
                 True - no error
                 False - errror
          """
-        agent_keys_sorted = \
-            AgentStatusEntry.display_order_by_domainid(self.server.domainid)
+        domainid = self.server.domain.domainid
+        agent_keys_sorted = AgentStatusEntry.display_order_by_domainid(domainid)
 
         agents = self.agentmanager.all_agents()
         for key in agent_keys_sorted:
