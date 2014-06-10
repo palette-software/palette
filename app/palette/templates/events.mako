@@ -21,15 +21,6 @@
         </ul>
       </div>
       <div class="btn-group">
-        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Sites</div><span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu" role="menu">
-          <li><a href="#">All Sites</a></li>
-          <li><a href="#">Finance</a></li>
-          <li><a href="#">Marketing</a></li>
-        </ul>
-      </div>
-      <div class="btn-group">
         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Types</div><span class="caret"></span>
         </button>
         <ul class="dropdown-menu" role="menu">
@@ -40,6 +31,39 @@
           <li><a href="#">System</a></li>
         </ul>
       </div>
+      <div class="btn-group">
+        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Sites</div><span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" role="menu">
+          <li><a href="#">All Sites</a></li>
+          <li><a href="#">Finance</a></li>
+          <li><a href="#">Marketing</a></li>
+        </ul>
+      </div>
+
+      <div class="btn-group">
+        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Publishers</div><span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" role="menu">
+          <li><a href="#">All Publishers</a></li>
+          <li><a href="#">John Abdo</a></li>
+          <li><a href="#">Matthew Laue</a></li>
+        </ul>
+      </div>
+      <div class="btn-group">
+        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Projects</div><span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" role="menu">
+          <li><a href="#">All Projects</a></li>
+          <li><a href="#">Quarterly Reports</a></li>
+          <li><a href="#">Annual Reports</a></li>
+        </ul>
+      </div>
+
+     <div class="col-xs-4">
+        <input class="form-control" type="text" placeholder="Workbook" style="margin-top:10px;">
+     </div>
+      
     </section>
   </section>
 </section>
