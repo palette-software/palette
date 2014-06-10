@@ -2292,10 +2292,12 @@ def main():
     # database configuration
     url = config.get("database", "url")
     echo = config.getboolean("database", "echo", default=False)
+    max_overflow = config.getint("database", "max_overflow", default=10)
 
     # engine is once per single application process.
     # see http://docs.sqlalchemy.org/en/rel_0_9/core/connections.html
-    meta.engine = sqlalchemy.create_engine(url, echo=echo)
+    meta.engine = sqlalchemy.create_engine(url, echo=echo,
+                                           max_overflow=max_overflow)
     # Create the table definition ONCE, before all the other threads start.
     meta.Base.metadata.create_all(bind=meta.engine)
     meta.Session = scoped_session(sessionmaker(bind=meta.engine))
