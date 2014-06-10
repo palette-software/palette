@@ -66,9 +66,8 @@ class MonitorApplication(PaletteRESTHandler):
         return volumes
 
     def handle_monitor(self, req):
-        # FIXME: state should be per-env
         # Get the state
-        main_state = StateManager.get_state_by_domainid(self.domain.domainid)
+        main_state = StateManager.get_state_by_envid(self.environment.envid)
 
         state_control_entry = StateControl.get_state_control_entry(main_state)
         if not state_control_entry:
