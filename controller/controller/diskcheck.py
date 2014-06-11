@@ -4,20 +4,20 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from akiri.framework.ext.sqlalchemy import meta
 
-from agentinfo import AgentInfoEntry, AgentVolumesEntry
+from agentinfo import AgentVolumesEntry
 from agent import Agent
 from agentmanager import AgentManager
 
 class DiskCheck(object):
     """Checks the target and volume for backups."""
 
-    def __init__(self, server, aconn, target=None, volume_name=None):
+    def __init__(self, server, agent, target=None, volume_name=None):
         # inputs
         self.server = server
         self.agentmanager = server.agentmanager
         self.log = server.log
 
-        self.aconn = aconn
+        self.agent = agent
         self.target = target
         self.volume_name = volume_name
         self.error_msg = None
@@ -26,8 +26,7 @@ class DiskCheck(object):
         self.target_conn = None
         self.target_dir = ""
         self.vol_entry = None
-        self.min_target_disk_needed = .3 * \
-                        aconn.pinfo[AgentInfoEntry.TABLEAU_DATA_SIZE_KEY]
+        self.min_target_disk_needed = .3 * agent.tableau_data_size
 
     def error(self, msg):
         self.error_msg = msg
@@ -41,10 +40,9 @@ class DiskCheck(object):
                     Fail on error.  Also sets self.error_msg to the
                     error message.
         """
-        if not AgentInfoEntry.TABLEAU_DATA_DIR_KEY in self.aconn.pinfo:
+        if not self.agent.table_data_dir:
             return self.error(\
-                    "Missing '%s' in pinfo.  Cannot proceed with backup." % \
-                                    AgentInfoEntry.TABLEAU_DATA_DIR_KEY)
+                "Missing 'tableau_data_dir' in pinfo.  Cannot proceed.")
 
         # Check primary agent for disk availability
         if not self.primary_check():
@@ -64,28 +62,27 @@ class DiskCheck(object):
             False: primary does NOT have enough disk space
         """
 
-        min_primary_disk_needed = \
-            self.aconn.pinfo[AgentInfoEntry.TABLEAU_DATA_SIZE_KEY] * 2
+        min_primary_disk_needed = self.agent.tableau_data_size
 
         # e.g. "C:"
-        primary_data_volume = \
-            self.aconn.pinfo[AgentInfoEntry.TABLEAU_DATA_DIR_KEY].split(':')[0]
+        tableau_data_dir = self.agent.tableau_data_dir
+        primary_data_volume = self.agent.tableau_data_dir.split(':')[0]
 
-        volume_l = [vol for vol in self.aconn.pinfo['volumes'] \
-                                        if vol['name'] == primary_data_volume]
+        volume_l = [vol for vol in self.agent.connection.pinfo['volumes'] \
+                        if vol['name'] == primary_data_volume]
 
         if not volume_l:
             return self.error(\
                 ("Missing volume/disk available information from pinfo for " + \
                 "'%s' volume '%s'") % \
-                                (self.aconn.displayname, primary_data_volume))
+                    (self.agent.displayname, primary_data_volume))
 
         primary_volume = volume_l[0]
 
         if not "available-space" in primary_volume:
             return self.error(("Missing 'available-space' value from " + \
                             "pinfo for '%s' primary volume '%s'") % \
-                                (self.aconn.displayname, primary_data_volume))
+                                (self.agent.displayname, primary_data_volume))
 
         primary_available = primary_volume['available-space']
 
@@ -93,12 +90,13 @@ class DiskCheck(object):
             return self.error(\
                 ("Cannot backup due to shortage of disk space on " + \
                 "primary host '%s': %d needed, but only %d available." ) % \
-                    (self.aconn.displayname, min_primary_disk_needed,
-                                                        primary_available))
+                    (self.agent.displayname,
+                     min_primary_disk_needed,
+                     primary_available))
 
         self.log.debug(\
             "primary_check: primary has enough space.  Need %d and have %d",
-                                    min_primary_disk_needed, primary_available)
+            min_primary_disk_needed, primary_available)
 
         return True
 
@@ -152,6 +150,7 @@ class DiskCheck(object):
                 True - no error
                 False - errror
          """
+        # FIXME: use envid
         domainid = self.server.domain.domainid
         agent_keys_sorted = Agent.display_order_by_domainid(domainid)
 

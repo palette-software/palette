@@ -24,7 +24,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from agentmanager import AgentManager, AgentConnection
 from agent import Agent
-from agentinfo import AgentInfoEntry, AgentVolumesEntry
+from agentinfo import AgentVolumesEntry
 from auth import AuthManager
 from backup import BackupManager
 from diskcheck import DiskCheck
@@ -588,13 +588,13 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.usage(self.do_info.__usage__)
             return
 
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
+        agent = self.get_agent(cmd.dict)
+        if not agent:
             self.error('agent not found')
             return
 
         self.ack()
-        body = server.info(aconn)
+        body = server.info(agent)
         self.print_client(str(body))
     do_info.__usage__ = 'info\n'
 
@@ -1189,6 +1189,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
 
+    # DEPRECATED
     def get_aconn(self, opts):
         # FIXME: This method is a temporary hack while we
         #        clean up the telnet commands
@@ -1207,6 +1208,30 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error("No agent specified")
 
         return aconn
+
+    def get_agent(self, opts):
+        agent = None
+
+        if opts.has_key('uuid'): # should never fail
+            uuid = opts['uuid'] # may be None
+            if uuid:
+                agent = self.server.agentmanager.agent_by_uuid(uuid)
+                if not agent:
+                    self.error("No connected agent with uuid=%s" % (uuid))
+            else:
+                self.error("No agent specified")
+        else: # should never happen
+            self.error("No agent specified")
+
+        return agent
+
+    # DEPRECATED
+    def get_aconn(self, opts):
+        # FIXME: This method is a temporary hack while we
+        #        clean up the telnet commands
+        # FIXME: TBD: Should this be farmed out to another class?
+        agent = self.get_agent(opts)
+        return agent and agent.connector or None
 
     def handle(self):
         while True:
@@ -1835,9 +1860,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             # If the agent is initializing, then "agent_connected"
             # will not know about it yet.
+            # FIXME: use agent here instead of aconn.uuid
             if not aconn.initting and \
-                    not self.agentmanager.agent_connected(aconn):
-                self.log.info("Agent '%s' (type: '%s', uuid %s) " + \
+                    not self.agentmanager.agent_connected(aconn.uuid):
+                self.log.warning("Agent '%s' (type: '%s', uuid %s) " + \
                         "disconnected before finishing: %s",
                            aconn.displayname, aconn.agent_type, aconn.uuid, uri)
                 return self.error(("Agent '%s' (type: '%s', uuid %s) " + \
@@ -1912,12 +1938,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                             "agent. Unexpected error: " + str(e))    # bad agent
                     return self.error("GET %s failed with: %s" % (uri, str(e)))
 
-    def info(self, aconn):
+    def info(self, agent):
+        aconn = agent.connection
         body = self.cli_cmd(Controller.PINFO_BIN, aconn, immediate=True)
         # FIXME: add a function to test cli success (cli_success?)
         if not 'exit-status' in body or body['exit-status'] != 0:
             return body;
-        self.agentmanager.update_agent_pinfo(aconn)
+        self.agentmanager.update_agent_pinfo(agent)
         return body
         
 
@@ -2089,7 +2116,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             d['agent'] = agent
         return d;
 
-    def init_new_agent(self, aconn):
+    def init_new_agent(self, agent):
         """Agent-related configuration on agent connect.
             Args:
                 aconn: agent connection
@@ -2102,7 +2129,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         YML_CONFIG_FILE_PART=ntpath.join("data", "tabsvc",
                                          "config", "workgroup.yml")
 
-        body = self.info(aconn)
+        aconn = agent.connection
+
+        body = self.info(agent)
         if body.has_key("error"):
             self.log.error("Couldn't run info command on %s: %s",
                             aconn.displayname, body['error'])
