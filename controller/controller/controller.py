@@ -1958,9 +1958,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # FIXME: add a function to test cli success (cli_success?)
         if not 'exit-status' in body or body['exit-status'] != 0:
             return body;
-        self.agentmanager.update_agent_pinfo(agent)
+        json_str = body['stdout']
+        try:
+            pinfo = json.loads(json_str)
+        except ValueError, e:
+            self.log.error("Bad json from pinfo. Error: %s, json: %s", \
+                               str(e), json_str)
+            return body
+        if pinfo is None:
+            self.log.error("Bad pinfo output: %s", json_str)
+            return body
+        self.agentmanager.update_agent_pinfo(agent, pinfo)
         return body
-        
 
     def license(self, aconn):
         return self.cli_cmd('tabadmin license', aconn)
@@ -2145,65 +2154,54 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn = agent.connection
 
-        body = self.info(agent)
-        if body.has_key("error"):
+        d = self.info(agent)
+        if d.has_key("error"):
             self.log.error("Couldn't run info command on %s: %s",
-                            aconn.displayname, body['error'])
+                            aconn.displayname, d['error'])
             return False
-        else:
-            pinfo_json = body['stdout']
+
+        self.log.debug("info returned from %s: %s", aconn.displayname, str(d))
+        if TABLEAU_INSTALL_DIR in d:
+            agent.tableau_install_dir = d
+            # FIXME
+            agent.agent_type = aconn.agent_type \
+                = AgentManager.AGENT_TYPE_PRIMARY
+
+            if agent.tableau_install_dir.find(':') == -1:
+                self.log.error("agent %s is missing ':': %s for %s",
+                               aconn.displayname, TABLEAU_INSTALL_DIR,
+                               agent.tableau_install_dir)
+                return False
+
+            yml_config_file = ntpath.join(
+                aconn.get_tableau_data_dir(), YML_CONFIG_FILE_PART)
+
             try:
-                pinfo_dict = json.loads(pinfo_json)
-            except ValueError, e:
-                self.log.error("Bad json from pinfo. Error: %s, json: %s", \
-                                                        str(e), pinfo_json)
+                aconn.yml_contents = aconn.filemanager.get(yml_config_file)
+            except (exc.HTTPException, httplib.HTTPException, EnvironmentError) as e:
+                self.log.error(\
+                    "filemanager.get(%s) on %s failed with: %s",
+                    yml_config_file, aconn.displayname, str(e))
                 return False
-            if pinfo_dict == None:
-                self.log.error("Bad pinfo output: %s", pinfo_json)
-                return False
-            aconn.pinfo = pinfo_dict
-            self.log.debug("info returned from %s: %s", aconn.displayname, \
-                                                                aconn.pinfo)
-            if aconn.pinfo.has_key(TABLEAU_INSTALL_DIR):
-                aconn.tableau_install_dir = aconn.pinfo[TABLEAU_INSTALL_DIR]
-                aconn.agent_type = AgentManager.AGENT_TYPE_PRIMARY
-
-                if aconn.tableau_install_dir.find(':') == -1:
-                    self.log.error("agent %s is missing ':': %s for %s",
-                        aconn.displayname, TABLEAU_INSTALL_DIR,
-                                                aconn.tableau_install_dir)
-                    return False
-
-                yml_config_file = ntpath.join(
-                            aconn.get_tableau_data_dir(), YML_CONFIG_FILE_PART)
-
-                try:
-                    aconn.yml_contents = aconn.filemanager.get(yml_config_file)
-                except (exc.HTTPException, httplib.HTTPException,
-                                                        EnvironmentError) as e:
-                    self.log.error(\
-                        "filemanager.get(%s) on %s failed with: %s",
-                        yml_config_file, aconn.displayname, str(e))
-                    return False
-                else:
-                    self.log.debug("Retrieved '%s' from %s.",
-                                            yml_config_file, aconn.displayname)
-
             else:
-                if server.agentmanager.is_tableau_worker(\
-                                                    aconn.auth['ip-address']):
-                    aconn.agent_type = AgentManager.AGENT_TYPE_WORKER
-                else:
-                    aconn.agent_type = AgentManager.AGENT_TYPE_ARCHIVE
+                self.log.debug("Retrieved '%s' from %s.",
+                               yml_config_file, agent.displayname)
+
+        else:
+            if server.agentmanager.is_tableau_worker(agent.ip_address):
+                aconn.agent_type = AgentManager.AGENT_TYPE_WORKER
+            else:
+                aconn.agent_type = AgentManager.AGENT_TYPE_ARCHIVE
 
         # Cleanup.
-        if aconn.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+        if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             # Put into a known state
             body = self.maint("stop", aconn=aconn, send_alert=False)
             if body.has_key("error"):
                 server.event_control.gen(\
                    EventControl.MAINT_STOP_FAILED,
-                            dict(body.items() + aconn.__dict__.items()))
+                            dict(d.items() + aconn.__dict__.items()))
+
         body = self.archive(aconn, "stop")
         if body.has_key("error"):
             server.event_control.gen(EventControl.ARCHIVE_STOP_FAILED,
@@ -2215,7 +2213,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                             dict(body.items() + aconn.__dict__.items()))
 
         # If tableau is stopped, turn on the maintenance server
-        if aconn.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
+        if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
             return True
 
         main_state = server.stateman.get_state()
