@@ -189,12 +189,6 @@ class AgentManager(threading.Thread):
             agent.displayname = displayname
             agent.display_order = display_order
 
-        # Remember the yml contents
-        if agent.connection.yml_contents:
-            self.update_agent_yml(agent.agentid, agent.connection.yml_contents)
-
-        meta.Session.commit()
-
         self.agents[agent.uuid] = agent
 
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
@@ -213,6 +207,8 @@ class AgentManager(threading.Thread):
             self.new_primary_event.set()
 
         self.unlock()
+
+        meta.Session.commit()
         return True
 
     def set_agent_types(self):
@@ -308,18 +304,22 @@ class AgentManager(threading.Thread):
         session.commit()
         return entry
 
-    def update_agent_yml(self, agentid, yml_contents):
+    def update_agent_yml(self, agentid, yml):
         """update the agent_yml table with this agent's yml contents."""
         session = meta.Session()
         # First delete any old entries for this agent
         entry = session.query(AgentYmlEntry).\
             filter(AgentYmlEntry.agentid == agentid).delete()
 
+        d = {}
         # This the first line ('---')
-        for line in yml_contents.strip().split('\n')[1:]:
+        for line in yml.strip().split('\n')[1:]:
             key, value = line.split(":", 1)
+            value = value.strip()
             entry = AgentYmlEntry(agentid=agentid, key=key, value=value)
             session.add(entry)
+            d[key] = value
+        return d
 
     def update_agent_pinfo(self, agent, pinfo):
         agentid = agent.agentid
@@ -599,7 +599,7 @@ class AgentManager(threading.Thread):
 
             self.forget(agent.agentid)
             self.log.debug("remove_agent: closing agent socket.")
-            if self._close(agent.socket):
+            if self._close(agent.connection.socket):
                 self.log.debug("remove_agent: close agent socket succeeded.")
             else:
                 self.log.debug("remove_agent: close agent socket failed")
