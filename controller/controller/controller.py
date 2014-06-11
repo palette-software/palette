@@ -2114,21 +2114,19 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 False: The agent responded incorrectly.
         """
 
-        TABLEAU_INSTALL_DIR="tableau-install-dir"
         YML_CONFIG_FILE_PART=ntpath.join("data", "tabsvc",
                                          "config", "workgroup.yml")
 
         aconn = agent.connection
 
-        d = self.info(agent)
-        if d.has_key("error"):
+        body = self.info(agent)
+        if body.has_key("error"):
             self.log.error("Couldn't run info command on %s: %s",
-                            aconn.displayname, d['error'])
+                            aconn.displayname, body['error'])
             return False
 
-        self.log.debug("info returned from %s: %s", aconn.displayname, str(d))
-        if TABLEAU_INSTALL_DIR in d:
-            agent.tableau_install_dir = d
+        self.log.debug("info returned from %s: %s", aconn.displayname, str(body))
+        if agent.tableau_install_dir:
             # FIXME
             agent.agent_type = aconn.agent_type \
                 = AgentManager.AGENT_TYPE_PRIMARY
@@ -2139,8 +2137,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                agent.tableau_install_dir)
                 return False
 
-            yml_config_file = ntpath.join(
-                aconn.get_tableau_data_dir(), YML_CONFIG_FILE_PART)
+            yml_config_file = ntpath.join(agent.tableau_data_dir,
+                                          YML_CONFIG_FILE_PART)
 
             try:
                 aconn.yml_contents = aconn.filemanager.get(yml_config_file)

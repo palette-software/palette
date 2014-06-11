@@ -34,6 +34,7 @@ class Agent(meta.Base, BaseDictMixin):
     installed_memory = Column(BigInteger)
     processor_type = Column(String)
     processor_count = Column(Integer)
+    tableau_install_dir = Column(String)
     tableau_data_dir = Column(String)
     tableau_data_size = Column(BigInteger)
     creation_time = Column(DateTime, server_default=func.now())
