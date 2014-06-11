@@ -45,7 +45,6 @@ class AgentConnection(object):
         self.tableau_install_dir = None
         self.agent_type = None
         self.yml_contents = None    # only valid if agent is a primary
-        self.pinfo = {}  # from pinfo
         self.initting = True
 
         # Each agent connection has its own lock to allow only
@@ -201,11 +200,6 @@ class AgentManager(threading.Thread):
         if agent.connection.yml_contents:
             self.update_agent_yml(agent.agentid, agent.connection.yml_contents)
 
-        # Remember the agent pinfo
-        if not self.update_agent_pinfo(agent):
-            self.unlock()
-            return False
-
         meta.Session.commit()
 
         self.agents[agent.uuid] = agent
@@ -334,13 +328,10 @@ class AgentManager(threading.Thread):
             entry = AgentYmlEntry(agentid=agentid, key=key, value=value)
             session.add(entry)
 
-    def update_agent_pinfo(self, agent, pinfo=None):
-        if pinfo is None:
-            pinfo = agent.connection.pinfo
+    def update_agent_pinfo(self, agent, pinfo):
         agentid = agent.agentid
 
         session = meta.Session()
-
         # Set all of the agent volumes to 'inactive'.
         # Each volume pinfo sent us will later be set to 'active'.
         session.query(AgentVolumesEntry).\
@@ -359,7 +350,7 @@ class AgentManager(threading.Thread):
 
         # FIXME: make automagic based on self.__table__.columns
         if 'fqdn' in pinfo:
-            agent.os_version = pinfo['fqdn']
+            agent.fqdn = pinfo['fqdn']
         if 'os-version' in pinfo:
             agent.os_version = pinfo['os-version']
         if 'installed-memory' in pinfo:
