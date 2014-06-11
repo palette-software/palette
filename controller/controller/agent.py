@@ -33,7 +33,7 @@ class Agent(meta.Base, BaseDictMixin):
     os_version = Column(String)
     installed_memory = Column(BigInteger)
     processor_type = Column(String)
-    processor_core = Column(Integer)
+    processor_count = Column(Integer)
     tableau_data_dir = Column(String)
     tableau_data_size = Column(BigInteger)
     creation_time = Column(DateTime, server_default=func.now())

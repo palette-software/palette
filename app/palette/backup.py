@@ -14,7 +14,7 @@ from akiri.framework.config import store
 from akiri.framework.ext.sqlalchemy import meta
 
 from controller.backup import BackupEntry, BackupManager
-from controller.agentinfo import AgentInfoEntry, AgentVolumesEntry
+from controller.agentinfo import AgentVolumesEntry
 from controller.agent import Agent
 from controller.domain import Domain
 from controller.util import DATEFMT
