@@ -161,7 +161,7 @@ class AgentManager(threading.Thread):
                 return agent
         return None
 
-    def register(self, new_agent, body, entry=None):
+    def register(self, agent, body):
         """Called with the agent object and body /auth dictionary that
            was sent from the agent in json."""
 
@@ -169,51 +169,46 @@ class AgentManager(threading.Thread):
         self.log.debug("new agent: name %s, uuid %s", \
                            body['hostname'], body['uuid'])
 
-        new_agent_type = new_agent.agent_type
+        new_agent_type = agent.agent_type
         # Don't allow two primary agents to be connected and
         # don't allow two agents with the same name to be connected.
         # Keep the newest one.
-        for key in self.agents.keys():
-            agent = self.agents[key]
-            if agent.uuid == body['uuid']:
+        for key in self.agents:
+            a = self.agents[key]
+            if a.uuid == body['uuid']:
                 self.log.info("Agent already connected with name '%s': " + \
                     "will remove it and use the new connection.", body['uuid'])
-                self.remove_agent(agent, ("An agent is already connected " + \
+                self.remove_agent(a, ("An agent is already connected " + \
                     "named '%s': will remove it and use the new " + \
                         "connection.") % (body['uuid']), gen_event=False)
                 break
             elif new_agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
-                        agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+                        a.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
                     self.log.info("A primary agent is already connected: " + \
                         "Will remove it and keep the new primary agent " + \
                         "connection.")
-                    self.remove_agent(agent,
+                    self.remove_agent(a,
                             "A primary agent is already connected: Will " + \
                             "remove it and keep the new primary agent " + \
                             "connection.", gen_event=False)
 
-        if entry is None:
-            entry = Agent.get_by_uuid(self.envid, uuid) # SHOULD NOT FAIL
-
-        if entry.displayname is None or entry.displayname == "":
-            (displayname, display_order) = self.calc_new_displayname(new_agent)
-            entry.displayname = displayname
-            entry.display_order = display_order
-
-        if entry.agent_type is None:
-            entry.agent_type = new_agent_type
+        if agent.displayname is None or agent.displayname == "":
+            (displayname, display_order) = self.calc_new_displayname(agent.connection)
+            agent.displayname = displayname
+            agent.display_order = display_order
 
         # Remember the yml contents
-        if new_agent.yml_contents:
-            self.update_agent_yml(entry.agentid, new_agent.yml_contents)
+        if agent.connection.yml_contents:
+            self.update_agent_yml(agent.agentid, agent.connection.yml_contents)
 
         # Remember the agent pinfo
-        if not self.update_agent_pinfo(new_agent):
+        if not self.update_agent_pinfo(agent.connection):
+            self.unlock()
             return False
 
         meta.Session.commit()
 
-        self.agents[new_agent.uuid] = new_agent
+        self.agents[agent.uuid] = agent
 
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("register: Initializing state entries on connect")
@@ -303,7 +298,8 @@ class AgentManager(threading.Thread):
                                                             new_agent.agent_type)
         return ("INVALID AGENT TYPE: %s" % new_agent.agent_type, 0)
 
-    def remember(self, new_agent, body):
+    # FIXME: get/create ?
+    def remember(self, aconn, body):
         session = meta.Session()
 
         uuid = body['uuid']
@@ -313,7 +309,7 @@ class AgentManager(threading.Thread):
             entry = Agent(envid=self.envid,
                           uuid=body['uuid'],
                           hostname=body['hostname'],
-                          agent_type=new_agent.agent_type,
+                          agent_type=aconn.agent_type,
                           version=body['version'],
                           ip_address=body['ip-address'],
                           listen_port=body['listen-port'],
@@ -538,7 +534,7 @@ class AgentManager(threading.Thread):
 
         for key in self.agents:
             if self.agents[key].agent_type == agent_type:
-                return self.agents[key]
+                return self.agents[key].connection
 
         return None
 
@@ -550,7 +546,7 @@ class AgentManager(threading.Thread):
 
         for key in self.agents:
             if self.agents[key].displayname == target:
-                return self.agents[key]
+                return self.agents[key].connection
 
         return None
 
@@ -561,8 +557,8 @@ class AgentManager(threading.Thread):
         Return an instance of it, or None if none match."""
 
         for key in self.agents:
-            if self.agents[key].auth['hostname'] == target:
-                return self.agents[key]
+            if self.agents[key].connection.auth['hostname'] == target:
+                return self.agents[key].connection
 
         return None
 
@@ -572,8 +568,8 @@ class AgentManager(threading.Thread):
         """
 
         for key in self.agents:
-            if self.agents[key].auth['uuid'] == target:
-                return self.agents[key]
+            if self.agents[key].connection.auth['uuid'] == target:
+                return self.agents[key].connection
 
         return None
 
@@ -592,7 +588,7 @@ class AgentManager(threading.Thread):
         uuid = agent.uuid
         if self.agents.has_key(uuid):
             self.log.debug("Removing agent with uuid %s, name %s, reason: %s",\
-                uuid, self.agents[uuid].auth['hostname'], reason)
+                uuid, self.agents[uuid].connection.auth['hostname'], reason)
 
             if gen_event:
                 self.server.event_control.gen(EventControl.AGENT_DISCONNECT,
@@ -671,7 +667,7 @@ class AgentManager(threading.Thread):
         for key in self.agents:
             agent = self.agents[key]
             self.log.debug("agent fileno to close: %d", agent.socket.fileno())
-            if agent.socket.fileno() == fd:
+            if agent.connection.socket.fileno() == fd:
                 self.log.debug("Agent closed connection for: %s", key)
                 agent.socket.close()
                 del self.agents[key]
@@ -727,18 +723,20 @@ class AgentManager(threading.Thread):
             aconn.auth = body
             uuid = aconn.auth['uuid']
 
-            self.lock()
-            entry = self.remember(aconn, body)
-            aconn.agentid = entry.agentid
+            agent = self.remember(aconn, body)
+            agent.connection = aconn
+            aconn.agentid = agent.agentid
             aconn.uuid = uuid
-            self.unlock()
 
             if not self.server.init_new_agent(aconn):
                 self.log.error("Bad agent.  Disconnecting.")
                 self._close(conn)
                 return
 
-            if not self.register(aconn, body, entry=entry):
+            if agent.agent_type is None:
+                agent.agent_type = aconn.agent_type
+
+            if not self.register(agent, body):
                 self.log.error("Bad agent.  Disconnecting.")
                 self._close(conn)
                 return
@@ -755,10 +753,10 @@ class AgentManager(threading.Thread):
             self.log.error(str(e))
             self.log.error(traceback.format_exc())
 
-    def save_routes(self, agent):
+    def save_routes(self, aconn):
         lines = ""
         rows = meta.Session().query(AgentVolumesEntry).\
-            filter(AgentVolumesEntry.agentid == agent.agentid).\
+            filter(AgentVolumesEntry.aconnid == aconn.agentid).\
             all()
 
         lines = []
@@ -773,19 +771,19 @@ class AgentManager(threading.Thread):
 
         lines = ''.join(lines)
 
-        if 'install-dir' not in agent.auth:
+        if 'install-dir' not in aconn.auth:
             self.log.error("save_routes: agent is missing 'install-dir'")
             return
 
-        route_path = ntpath.join(agent.auth['install-dir'], "conf", "archive",
+        route_path = ntpath.join(aconn.auth['install-dir'], "conf", "archive",
                                                                 "routes.txt")
         try:
-            agent.filemanager.put(route_path, lines)
+            aconn.filemanager.put(route_path, lines)
         except (exc.HTTPException, httplib.HTTPException,
                                                     EnvironmentError) as e:
             self.log.error(\
                 "filemanager.put(%s) on %s failed with: %s",
-                                    agent.displayname, route_path, str(e))
+                                    aconn.displayname, route_path, str(e))
             return False
 
         self.log.debug("Saved agent file '%s' with contents: %s",
@@ -843,7 +841,7 @@ class AgentHealthMonitor(threading.Thread):
                         (agent.displayname, agent.agent_type, key))
 
                 # fixme: add a timeout ?
-                body = self.server.ping(agent)
+                body = self.server.ping(agent.connection)
                 if body.has_key('error'):
                     self.log.info("Ping: Agent '%s', type '%s', uuid %s did not respond to ping.  Removing." %
                         (agent.displayname, agent.agent_type, key))
