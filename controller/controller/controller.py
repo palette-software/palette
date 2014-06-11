@@ -9,7 +9,6 @@ import socket
 import json
 import time
 import copy
-import re
 
 import exc
 from request import *
@@ -604,30 +603,34 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.usage(self.do_info.__usage__)
             return
 
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
+        agent = self.get_agent(cmd.dict)
+        if not agent:
             self.error('agent not found')
             return
 
         self.ack()
-        body = server.license(aconn)
-
-        if not 'exit-status' in body or body['exit-status'] != 0:
-            self.print_client(str(body))
-            return
-        if not 'stdout' in body:
-            self.print_client(str(body))
-            return
-
-        output = body['stdout']
-
-        m = re.match('Named-user licensing capacity: (?P<interactors>\d+) interactors, (?P<viewers>\d+) viewers$', output)
-        if not m:
-            self.print_client(str(body))
-            return
-
-        self.print_client(str(m.groupdict()))
+        d = server.license(agent)
+        self.print_client(str(d))
     do_license.__usage__ = 'license\n'
+
+    def do_yml(self, cmd):
+        if len(cmd.args):
+            self.usage(self.do_info.__usage__)
+            return
+
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            self.error('agent not found')
+            return
+
+        if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
+            self.error('agent not primary')
+            return
+
+        self.ack()
+        body = server.yml(agent)
+        self.print_client("%s", str(body))
+    do_yml.__usage__ = 'yml\n'
 
     def do_firewall(self, cmd):
         """Enable, disable or report the status of a port on an
@@ -1937,8 +1940,32 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.agentmanager.update_agent_pinfo(agent, pinfo)
         return body
 
-    def license(self, aconn):
-        return self.cli_cmd('tabadmin license', aconn)
+    def license(self, agent):
+        body = self.cli_cmd('tabadmin license', agent.connection)
+
+        if not 'exit-status' in body or body['exit-status'] != 0:
+            return body
+        if not 'stdout' in body:
+            return body
+
+        output = body['stdout']
+        d = LicenseEntry.parse(output)
+        LicenseEntry.save(agentid=agent.agentid, **d)
+        return d
+
+    def yml(self, agent):
+        path = ntpath.join(agent.tableau_data_dir, "data", "tabsvc",
+                           "config", "workgroup.yml")
+        try:
+            yml = agent.connection.filemanager.get(path)
+        except (exc.HTTPException, httplib.HTTPException,
+                EnvironmentError) as e:
+            self.error("filemanager.get(%s) on %s failed with: %s",
+                       path, agent.displayname, str(e))
+            return
+
+        body = self.agentmanager.update_agent_yml(agent.agentid, yml)
+        return body
 
     def maint(self, action, port=-1, aconn=None, send_alert=True):
         if action not in ("start", "stop"):
@@ -2127,7 +2154,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         self.log.debug("info returned from %s: %s", aconn.displayname, str(body))
         if agent.tableau_install_dir:
-            # FIXME
+            # FIXME: don't duplicate the data
             agent.agent_type = aconn.agent_type \
                 = AgentManager.AGENT_TYPE_PRIMARY
 
@@ -2136,21 +2163,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                aconn.displayname, TABLEAU_INSTALL_DIR,
                                agent.tableau_install_dir)
                 return False
-
-            yml_config_file = ntpath.join(agent.tableau_data_dir,
-                                          YML_CONFIG_FILE_PART)
-
-            try:
-                aconn.yml_contents = aconn.filemanager.get(yml_config_file)
-            except (exc.HTTPException, httplib.HTTPException, EnvironmentError) as e:
-                self.log.error(\
-                    "filemanager.get(%s) on %s failed with: %s",
-                    yml_config_file, aconn.displayname, str(e))
-                return False
-            else:
-                self.log.debug("Retrieved '%s' from %s.",
-                               yml_config_file, agent.displayname)
-
+            self.yml(agent)
         else:
             if server.agentmanager.is_tableau_worker(agent.ip_address):
                 aconn.agent_type = AgentManager.AGENT_TYPE_WORKER
