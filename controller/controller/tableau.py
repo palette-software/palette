@@ -15,8 +15,8 @@ from agentmanager import AgentManager
 from agent import Agent
 from event_control import EventControl
 
-class StatusEntry(meta.Base):
-    __tablename__ = 'status'
+class TableauProcess(meta.Base):
+    __tablename__ = 'tableau_processes'
 
     ###Possible status as reported by "tabadmin status [...]"
     STATUS_RUNNING="RUNNING"
@@ -33,12 +33,12 @@ class StatusEntry(meta.Base):
       server_onupdate=func.current_timestamp())
     UniqueConstraint('agentid', 'name')
 
-class StatusMonitor(threading.Thread):
+class TableauStatusMonitor(threading.Thread):
 
     LOGGER_NAME = "status"
 
     def __init__(self, server, manager):
-        super(StatusMonitor, self).__init__()
+        super(TableauStatusMonitor, self).__init__()
         self.server = server
         self.config = self.server.config
         self.manager = manager
@@ -76,16 +76,16 @@ class StatusMonitor(threading.Thread):
         #
         # This may do it:
         #
-        # subq = session.query(StatusEntry).\
+        # subq = session.query(TableauProcess).\
         #   join(Agent).\
         #   filter(Agent.domainid == self.domainid).\
         #   subquery()
         #
-        # session.query(StatusEntry).\
-        #   filter(StatusEntry.agentid,in_(subq)).\
+        # session.query(TableauProcess).\
+        #   filter(TableauProcess.agentid,in_(subq)).\
         #   delete()
 
-        meta.Session.query(StatusEntry).delete()
+        meta.Session.query(TableauProcess).delete()
 
         # Intentionally don't commit here.  We want the existing
         # rows to be available until the new rows are inserted and
@@ -99,43 +99,43 @@ class StatusMonitor(threading.Thread):
         """
 
         session = meta.Session()
-        entry = StatusEntry(agentid=agentid, name=name, pid=pid, status=status)
+        entry = TableauProcess(agentid=agentid, name=name, pid=pid, status=status)
         session.add(entry)
 
     def get_all_status(self):
-        return meta.Session().query(StatusEntry).\
+        return meta.Session().query(TableauProcess).\
             join(Agent).\
             filter(Agent.domainid == self.domainid).\
             all()
 
     def get_reported_status(self):
-        return meta.Session().query(StatusEntry).\
+        return meta.Session().query(TableauProcess).\
             join(Agent).\
             filter(Agent.domainid == self.domainid).\
             filter(Agent.agent_type == 'primary').\
-            filter(StatusEntry.name == 'Status').\
+            filter(TableauProcess.name == 'Status').\
             one().status
 
     def set_main_state(self, status, aconn):
         main_state = self.stateman.get_state()
         if status not in \
-            (StatusEntry.STATUS_RUNNING, StatusEntry.STATUS_STOPPED,
-                                                StatusEntry.STATUS_DEGRADED):
+            (TableauProcess.STATUS_RUNNING, TableauProcess.STATUS_STOPPED,
+                                                TableauProcess.STATUS_DEGRADED):
             self.log.error("Unknown reported status from tableau: %s. " + \
                                         "main_state: %s", status, main_state)
             return  # fixme: do something more drastic than return?
 
         if main_state == StateManager.STATE_PENDING:
             self.stateman.update(status)
-            if status == StatusEntry.STATUS_RUNNING:
+            if status == TableauProcess.STATUS_RUNNING:
                 # StateManager calls the state "STARTED"; Tableau calls
                 # it "RUNNING".
                 self.server.event_control.gen(EventControl.INIT_STATE_STARTED,
                                                                 aconn.__dict__)
-            elif status == StatusEntry.STATUS_STOPPED:
+            elif status == TableauProcess.STATUS_STOPPED:
                 self.server.event_control.gen(EventControl.INIT_STATE_STOPPED,
                                                                 aconn.__dict__)
-            elif status == StatusEntry.STATUS_DEGRADED:
+            elif status == TableauProcess.STATUS_DEGRADED:
                 self.server.event_control.gen(EventControl.INIT_STATE_DEGRADED,
                                                                 aconn.__dict__)
             return
@@ -143,17 +143,17 @@ class StatusMonitor(threading.Thread):
         # If the main state was DEGRADED but status isn't DEGRADED any more,
         # update the main state.
         if main_state == StateManager.STATE_DEGRADED and \
-                                status != StatusEntry.STATUS_DEGRADED:
+                                status != TableauProcess.STATUS_DEGRADED:
             self.stateman.update(status)
-            if status == StatusEntry.STATUS_RUNNING:
+            if status == TableauProcess.STATUS_RUNNING:
                 # fixme: should we have a unique alert for the transition
                 # from DEGRADED to RUNNING instead of this standard
                 # "started" alert?
                 self.server.event_control.gen(EventControl.STATE_STARTED,
-                                                                aconn.__dict__)
+                                              aconn.__dict__)
             elif status == StateManager.STATUS_STOPPED:
                 self.server.event_control.gen(EventControl.STATE_STOPPED,
-                                                                aconn.__dict__)
+                                              aconn.__dict__)
             else:
                 self.log.error("Unexpected transition from DEGRADED to: %s",
                                                                     status)
@@ -161,19 +161,19 @@ class StatusMonitor(threading.Thread):
 
         # If the main state is wrong, correct it.
         if main_state == StateManager.STATE_STOPPED and \
-                                        status == StatusEntry.STATUS_RUNNING:
+                                        status == TableauProcess.STATUS_RUNNING:
             self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateManager.STATE_STARTED)
             self.server.event_control.gen(EventControl.STATE_STARTED,
-                                                            aconn.__dict__)
+                                          aconn.__dict__)
         elif main_state == StateManager.STATE_STARTED and \
-                                        status == StatusEntry.STATUS_STOPPED:
+                status == TableauProcess.STATUS_STOPPED:
             self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateManager.STATE_STOPPED)
             self.server.event_control.gen(EventControl.STATE_STOPPED,
-                                                                aconn.__dict__)
-        elif status == StatusEntry.STATUS_DEGRADED and \
-                                    main_state != StatusEntry.STATUS_DEGRADED:
+                                          aconn.__dict__)
+        elif status == TableauProcess.STATUS_DEGRADED and \
+                main_state != TableauProcess.STATUS_DEGRADED:
             self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateManager.STATE_DEGRADED)
             self.server.event_control.gen(EventControl.STATE_DEGRADED,
