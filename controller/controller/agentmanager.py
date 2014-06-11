@@ -14,7 +14,7 @@ import exc
 import httplib
 
 from agent import Agent
-from agentinfo import AgentYmlEntry, AgentInfoEntry, AgentVolumesEntry
+from agentinfo import AgentYmlEntry, AgentVolumesEntry
 from state import StateManager
 from event_control import EventControl
 from filemanager import FileManager
@@ -202,7 +202,7 @@ class AgentManager(threading.Thread):
             self.update_agent_yml(agent.agentid, agent.connection.yml_contents)
 
         # Remember the agent pinfo
-        if not self.update_agent_pinfo(agent.connection):
+        if not self.update_agent_pinfo(agent):
             self.unlock()
             return False
 
@@ -334,14 +334,12 @@ class AgentManager(threading.Thread):
             entry = AgentYmlEntry(agentid=agentid, key=key, value=value)
             session.add(entry)
 
-    def update_agent_pinfo(self, aconn):
-        pinfo = aconn.pinfo
-        agentid = aconn.agentid
+    def update_agent_pinfo(self, agent, pinfo=None):
+        if pinfo is None:
+            pinfo = agent.connection.pinfo
+        agentid = agent.agentid
 
         session = meta.Session()
-        # First delete any old entries for this agent
-        session.query(AgentInfoEntry).\
-            filter(AgentInfoEntry.agentid == agentid).delete()
 
         # Set all of the agent volumes to 'inactive'.
         # Each volume pinfo sent us will later be set to 'active'.
@@ -349,6 +347,7 @@ class AgentManager(threading.Thread):
             filter(AgentVolumesEntry.agentid == agentid).\
                    update({"active" : False}, synchronize_session=False)
 
+        aconn = agent.connection
         parts = aconn.auth['install-dir'].split(':')
         if len(parts) != 2:
             self.log.error("Bad format for install-dir: %s",
@@ -358,12 +357,24 @@ class AgentManager(threading.Thread):
         install_dir_vol_name = parts[0].upper()
         install_data_dir = ntpath.join(parts[1], AgentConnection.DATA_DIR)
 
-        for key, value in pinfo.iteritems():
-            if key != 'volumes':
-                entry = AgentInfoEntry(agentid=agentid, key=key, value=value)
-                session.add(entry)
-                continue
-            for volume in value:
+        # FIXME: make automagic based on self.__table__.columns
+        if 'fqdn' in pinfo:
+            agent.os_version = pinfo['fqdn']
+        if 'os-version' in pinfo:
+            agent.os_version = pinfo['os-version']
+        if 'installed-memory' in pinfo:
+            agent.installed_memory = pinfo['installed-memory']
+        if 'processor-type' in pinfo:
+            agent.processor_type = pinfo['processor-type']
+        if 'processor-count' in pinfo:
+            agent.processor_count = pinfo['processor-count']
+        if 'tableau-data-dir' in pinfo:
+            agent.tableau_data_dir = pinfo['tableau-data-dir']
+        if 'tableau-data-size' in pinfo:
+            agent.tableau_data_size = pinfo['tableau-data-size']
+
+        if 'volumes' in pinfo:
+            for volume in pinfo['volumes']:
                 if 'name' in volume:
                     name = volume['name'].upper()
                 else:
@@ -420,9 +431,6 @@ class AgentManager(threading.Thread):
                             entry.primary_data_loc = False
 
                         session.add(entry)
-
-            if aconn.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
-                continue
 
         session.commit()
 
@@ -517,13 +525,13 @@ class AgentManager(threading.Thread):
     def all_agents(self):
         return self.agents
 
-    def agent_connected(self, aconn):
+    def agent_connected(self, uuid):
         """Check to see if the passed agent is still connected.
         Returns:
             True if still conencted.
             False if not connected.
         """
-        return aconn in self.agents.values()
+        return uuid in self.agents
 
     def agent_conn_by_type(self, agent_type):
         """Returns an instance of a connected agent of the requested type,
@@ -562,16 +570,22 @@ class AgentManager(threading.Thread):
 
         return None
 
-    def agent_conn_by_uuid(self, target):
+    def agent_by_uuid(self, uuid):
         """Search for agents with the given uuid.
             Return an instance of it, or None if none match.
         """
-
         for key in self.agents:
-            if self.agents[key].connection.auth['uuid'] == target:
-                return self.agents[key].connection
-
+            if self.agents[key].uuid == uuid:
+                return self.agents[key]
         return None
+
+    # DEPRECATED
+    def agent_conn_by_uuid(self, uuid):
+        """Search for agents with the given uuid.
+            Return an instance of it, or None if none match.
+        """
+        agent = self.agent_by_uuid(uuid)
+        return agent and agent.connection or None
 
     def remove_agent(self, agent, reason="", gen_event=True):
         """Remove an agent.
@@ -728,7 +742,7 @@ class AgentManager(threading.Thread):
             aconn.agentid = agent.agentid
             aconn.uuid = uuid
 
-            if not self.server.init_new_agent(aconn):
+            if not self.server.init_new_agent(agent):
                 self.log.error("Bad agent.  Disconnecting.")
                 self._close(conn)
                 return
@@ -756,7 +770,7 @@ class AgentManager(threading.Thread):
     def save_routes(self, aconn):
         lines = ""
         rows = meta.Session().query(AgentVolumesEntry).\
-            filter(AgentVolumesEntry.aconnid == aconn.agentid).\
+            filter(AgentVolumesEntry.agentid == aconn.agentid).\
             all()
 
         lines = []
