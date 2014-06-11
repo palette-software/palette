@@ -42,7 +42,6 @@ class AgentConnection(object):
         self.agentid = None
         self.uuid = None
         self.displayname = None
-        self.tableau_install_dir = None
         self.agent_type = None
         self.yml_contents = None    # only valid if agent is a primary
         self.initting = True
@@ -58,12 +57,6 @@ class AgentConnection(object):
         self.filemanager = FileManager(self)
         self.odbc = ODBC(self)
         self.firewall = Firewall(self)
-
-    def get_tableau_data_dir(self):
-        if not self.tableau_install_dir:
-            return None
-        volume = self.tableau_install_dir.split(':')[0]
-        return ntpath.join(volume + ':\\', AgentConnection.TABLEAU_DATA_DIR)
 
     def httpexc(self, res, method='GET', body=None):
         if body is None:
@@ -359,6 +352,8 @@ class AgentManager(threading.Thread):
             agent.processor_type = pinfo['processor-type']
         if 'processor-count' in pinfo:
             agent.processor_count = pinfo['processor-count']
+        if 'tableau-install-dir' in pinfo:
+            agent.tableau_install_dir = pinfo['tableau-install-dir']
         if 'tableau-data-dir' in pinfo:
             agent.tableau_data_dir = pinfo['tableau-data-dir']
         if 'tableau-data-size' in pinfo:
