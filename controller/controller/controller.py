@@ -491,7 +491,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # FIXME: print the agent state too.
         s = ''
         for key in agents:
-            d = copy.copy(agents[key].auth)
+            d = copy.copy(agents[key].connection.auth)
             d['displayname'] = agents[key].displayname
             s += str(d) + '\n'
         self.print_client(s)
