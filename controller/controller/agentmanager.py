@@ -307,6 +307,8 @@ class AgentManager(threading.Thread):
     def update_agent_yml(self, agentid, yml):
         """update the agent_yml table with this agent's yml contents."""
         session = meta.Session()
+
+        # FIXME: do an update instead of a delete all
         # First delete any old entries for this agent
         entry = session.query(AgentYmlEntry).\
             filter(AgentYmlEntry.agentid == agentid).delete()
