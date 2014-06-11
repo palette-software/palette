@@ -30,7 +30,7 @@ from backup import BackupManager
 from diskcheck import DiskCheck
 from state import StateManager
 from system import SystemManager, LicenseEntry
-from status import StatusMonitor, StatusEntry
+from tableau import TableauStatusMonitor, TableauProcess
 from config import Config
 from domain import Domain
 from environment import Environment
@@ -280,9 +280,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         reported_status = statusmon.get_reported_status()
         # The reported status from tableau needs to be running or stopped
         # to do a backup.
-        if reported_status == StatusEntry.STATUS_RUNNING:
+        if reported_status == TableauProcess.STATUS_RUNNING:
             stateman.update(StateManager.STATE_STARTED_BACKUP)
-        elif reported_status == StatusEntry.STATUS_STOPPED:
+        elif reported_status == TableauProcess.STATUS_STOPPED:
             stateman.update(StateManager.STATE_STOPPED_BACKUP)
         else:
             print >> self.wfile, "FAIL: Can't backup - reported status is:", \
@@ -309,9 +309,9 @@ class CliHandler(socketserver.StreamRequestHandler):
             server.event_control.gen(EventControl.BACKUP_FAILED,
                         dict(body.items() + aconn.__dict__.items()))
 
-        if reported_status == StatusEntry.STATUS_RUNNING:
+        if reported_status == TableauProcess.STATUS_RUNNING:
             stateman.update(StateManager.STATE_STARTED)
-        elif reported_status == StatusEntry.STATUS_STOPPED:
+        elif reported_status == TableauProcess.STATUS_STOPPED:
             stateman.update(StateManager.STATE_STOPPED)
 
         # Get the latest status from tabadmin
@@ -400,9 +400,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         # The reported status from tableau needs to be running or stopped
         # to do a backup.  If it is, set our state to
         # STATE_*_BACKUP_RESTORE.
-        if reported_status == StatusEntry.STATUS_RUNNING:
+        if reported_status == TableauProcess.STATUS_RUNNING:
             stateman.update(StateManager.STATE_STARTED_BACKUP_RESTORE)
-        elif reported_status == StatusEntry.STATUS_STOPPED:
+        elif reported_status == TableauProcess.STATUS_STOPPED:
             stateman.update(StateManager.STATE_STOPPED_BACKUP_RESTORE)
         else:
             print >> self.wfile, \
@@ -750,7 +750,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         reported_status = statusmon.get_reported_status()
-        if reported_status != StatusEntry.STATUS_STOPPED:
+        if reported_status != TableauProcess.STATUS_STOPPED:
             print >> self.wfile, "FAIL: Can't start - reported status is:", \
                                                               reported_status
             log.debug("Can't start - reported status is: %s",  reported_status)
@@ -828,7 +828,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         reported_status = statusmon.get_reported_status()
-        if reported_status != StatusEntry.STATUS_RUNNING:
+        if reported_status != TableauProcess.STATUS_RUNNING:
             print >> self.wfile, "FAIL: Can't start - reported status is:", \
                                                               reported_status
             log.debug("Can't start - reported status is: %s",  reported_status)
@@ -1223,26 +1223,6 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
 
-    # DEPRECATED
-    def get_aconn(self, opts):
-        # FIXME: This method is a temporary hack while we
-        #        clean up the telnet commands
-        # FIXME: TBD: Should this be farmed out to another class?
-        aconn = None
-
-        if opts.has_key('uuid'): # should never fail
-            uuid = opts['uuid'] # may be None
-            if uuid:
-                aconn = self.server.agentmanager.agent_conn_by_uuid(uuid)
-                if not aconn:
-                    self.error("No connected agent with uuid=%s" % (uuid))
-            else:
-                self.error("No agent specified")
-        else: # should never happen
-            self.error("No agent specified")
-
-        return aconn
-
     def get_agent(self, opts):
         agent = None
 
@@ -1265,7 +1245,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         #        clean up the telnet commands
         # FIXME: TBD: Should this be farmed out to another class?
         agent = self.get_agent(opts)
-        return agent and agent.connector or None
+        return agent and agent.connection or None
 
     def handle(self):
         while True:
@@ -1777,7 +1757,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         reported_status = statusmon.get_reported_status()
 
-        if reported_status == StatusEntry.STATUS_RUNNING:
+        if reported_status == TableauProcess.STATUS_RUNNING:
             # Restore can run only when tableau is stopped.
             stateman.update(StateManager.STATE_STOPPING_RESTORE)
             log.debug("------------Stopping Tableau for restore-------------")
@@ -2377,7 +2357,7 @@ def main():
 
     # Need to instantiate to initialize state and status tables,
     # even if we don't run the status thread.
-    statusmon = StatusMonitor(server, manager)
+    statusmon = TableauStatusMonitor(server, manager)
     server.statusmon = statusmon
 
     server.sched = Sched(server)
