@@ -77,7 +77,7 @@ class BackupApplication(PaletteRESTHandler):
         try:
             agent_entry, vol_entry = meta.Session.query(\
                 Agent, AgentVolumesEntry).\
-                filter(Agenty.agentid == AgentVolumesEntry.agentid).\
+                filter(Agent.agentid == AgentVolumesEntry.agentid).\
                 filter(AgentVolumesEntry.volid == volid).\
                 one()
         except NoResultFound, e:
