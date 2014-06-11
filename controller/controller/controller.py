@@ -2,13 +2,11 @@
 
 import sys
 import os
-import shlex
 import SocketServer as socketserver
 import socket
 
 import json
 import time
-import copy
 
 import exc
 from request import *
@@ -21,7 +19,7 @@ import sqlalchemy
 from sqlalchemy.orm import sessionmaker, scoped_session
 from akiri.framework.ext.sqlalchemy import meta
 
-from agentmanager import AgentManager, AgentConnection
+from agentmanager import AgentManager
 from agent import Agent
 from agentinfo import AgentVolumesEntry
 from auth import AuthManager
@@ -41,1207 +39,11 @@ from event_control import EventControl, EventControlManager
 from extracts import ExtractsEntry
 from workbooks import WorkbookEntry, WorkbookManager
 from s3 import S3
+from clihandler import CliHandler
 
 from version import VERSION
 
-global server # fixme
 global log # fixme
-
-class CommandException(Exception):
-    def __init__(self, errmsg):
-        Exception.__init__(self, errmsg)
-
-class Command(object):
-
-    def __init__(self, server, line):
-        # FIXME: temporary hack to get domainid and envid
-        self.server = server
-        self.dict = {}
-        self.name = None
-        self.args = []
-
-        try: 
-            tokens = shlex.split(line)
-        except ValueError, e:
-             raise CommandException(str(e))
-
-        doing_dict = True
-        for token in tokens:
-            if doing_dict:
-                if token.startswith("/"):
-                    token = token[1:]
-                    L = token.split("=", 1)
-                    if len(L) > 1:
-                        key = L[0].strip()
-                        value = L[1].strip()
-                    else:
-                        key = token.strip()
-                        value = None
-                    self.dict[key] = value
-                else:
-                    self.name = token
-                    doing_dict = False
-            else:
-                self.args.append(token.strip())
-
-        # This fills in any missing information in the opts dict.
-        self.sanity()
-
-    def sanity(self):
-        opts = self.dict
-
-        # FIXME: domain/env HACK
-        if not 'domainid' in opts:
-            opts['domainid'] = self.server.domain.domainid
-        if not 'envid' in opts:
-            opts['envid'] = self.server.environment.envid
-
-        # Not all commands require an agent, but most do. For simplicity,
-        # we require a uuid entry in the command dict, even if the
-        # value of that entry is None. Validate passed agent
-        # information, if any, against the database for existence
-        # and uniqueness within the domain.
-        #
-        # As an optimization, if only a uuid is passed, with
-        # no other agent information, accept it and use it.
-        #
-        # As a hack to aid development, if no agent information is
-        # passed, and there is a (unique) primary in the database
-        # for this domain, then use it.
-        #
-        if 'uuid' in opts and not 'displayname' in opts \
-          and not 'hostname' in opts and not 'type' in opts:
-            pass
-        elif not 'uuid' in opts and not 'displayname' in opts \
-          and not 'hostname' in opts and not 'type' in opts:
-            query = meta.Session.query(Agent)
-            query = query.filter(Agent.envid == opts['envid'])
-            query = query.filter(Agent.agent_type == 'primary')
-            try:
-                entry = query.one()
-                opts['uuid'] = entry.uuid
-            except sqlalchemy.orm.exc.NoResultFound:
-                 opts['uuid'] = None
-            except sqlalchemy.orm.exc.MultipleResultsFound:
-                 opts['uuid'] = None
-        else:
-            query = meta.Session.query(Agent)
-            query = query.filter(Agent.envid == opts['envid'])
-            if 'uuid' in opts:
-                query = query.filter(Agent.uuid == opts['uuid'])
-            if 'displayname' in opts:
-                query = query.filter(\
-                    Agent.displayname == opts['displayname'])
-            if 'hostname' in opts:
-                query = query.filter(Agent.hostname == opts['hostname'])
-            if 'type' in opts:
-                query = query.filter(Agent.agent_type == opts['type'])
-            try:
-                entry = query.one()
-                opts['uuid'] = entry.uuid
-            except sqlalchemy.orm.exc.NoResultFound:
-                 raise CommandException("no matching agent found")
-            except sqlalchemy.orm.exc.MultipleResultsFound:
-                 raise CommandException("agent must be unique")
-
-class CliHandler(socketserver.StreamRequestHandler):
-
-    def finish(self):
-        """Overrides the StreamRequestHandler's finish().
-           Handles exceptions more gracefully and
-           makes sure telnet clients are closed.
-        """
-
-        if not self.wfile.closed:
-            try:
-                self.wfile.flush()
-            except socket.error:
-                # An final socket error may have occurred here, such as
-                # the local error ECONNABORTED.
-                pass
-
-        try:
-            self.wfile.close()
-        except socket.error:
-            pass
-
-        self.rfile.close()
-
-    def ack(self):
-        """ Acknowledge a submitted command before performing it. """
-        print >> self.wfile, "OK"
-
-    def error(self, msg, *args):
-        if args:
-            msg = msg % args
-        self.print_client('[ERROR] ' + msg)
-
-    def usage(self, msg):
-        self.error('usage: '+msg)
-
-    def print_client(self, fmt, *args):
-        """
-            Try to write fmt % args to self.wfile, which is
-            the telnet client.
-            If this fails, due to a telnet client already disconnected,
-            send it to stdout.
-
-            Why we need this method:
-                If a print to ">> self.wfile" fails, and we didn't catch
-                the exception, the do_*() method terminates, which is
-                not good.  This method handles it by sending a failed
-                print to ">> self.wfile" to sys.stdout.  Instead, we
-                might want to just drop the bytes since the client has
-                disconnected and doesn't really care.
-        """
-
-        line = fmt % args
-        if not line.endswith('\n'):
-            line += '\n'
-        try:
-            print  >> self.wfile, line
-        except EnvironmentError:
-            pass
-#            line += '[TELNET] ' + line
-#            sys.stdout.write(line)
-
-    def do_help(self, cmd):
-        print >> self.wfile, 'Optional prepended domain args:'
-        print >> self.wfile, '    /domainid=id /domainname=name'
-        print >> self.wfile, 'Optional prepended agent args:'
-        print >> self.wfile, '    /displayname=name /hostname=name ' + \
-                                                    '/uuid=uuid /type=type'
-        for name, m in inspect.getmembers(self, predicate=inspect.ismethod):
-            if name.startswith("do_"):
-                name = name[3:].replace('_', '-')
-                print >> self.wfile, '  ' + name
-                if m.__doc__:
-                    print >> self.wfile, '    ' + m.__doc__
-                if hasattr(m, '__usage__'):
-                    print >> self.wfile, '    usage: ' + m.__usage__
-        print >> self.wfile
-
-    def do_status(self, cmd):
-        if len(cmd.args):
-            self.error("'status' does not have an argument.")
-            self.usage(self.do_status.__usage__)
-            return
-
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
-            self.error('agent not found')
-            return
-
-        self.ack()
-        body = server.cli_cmd("tabadmin status -v", aconn)
-        self.print_client(str(body))
-    do_status.__usage__ = 'status'
-
-    def do_backup(self, cmd):
-        """Perform a Tableau backup and potentially migrate."""
-
-        target = None
-        volume_name = None
-
-        if len(cmd.args) > 2:
-            self.usage(self.do_backup.__usage__)
-            return
-        elif len(cmd.args) == 1:
-            target = cmd.args[0]
-        elif len(cmd.args) == 2:
-            target = cmd.args[0]
-            volume_name = cmd.args[1]
-
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
-            self.error('agent not found.')
-            return
-
-        # lock to ensure against two simultaneous user actions
-        if not aconn.user_action_lock(blocking=False):
-            print >> self.wfile, "FAIL: Busy with another user request."
-            return
-
-        # Check to see if we're in a state to backup
-        stateman = self.server.stateman
-        main_state = stateman.get_state()
-
-        # Backups can be done when Tableau is either started or stopped.
-        if main_state not in \
-                        (StateManager.STATE_STARTED, StateManager.STATE_STOPPED):
-            print >> self.wfile, "FAIL: Can't backup - main state is:", \
-                                                                  main_state
-            log.debug("Can't backup - main state is: %s",  main_state)
-            aconn.user_action_unlock()
-            return
-
-        reported_status = statusmon.get_reported_status()
-        # The reported status from tableau needs to be running or stopped
-        # to do a backup.
-        if reported_status == TableauProcess.STATUS_RUNNING:
-            stateman.update(StateManager.STATE_STARTED_BACKUP)
-        elif reported_status == TableauProcess.STATUS_STOPPED:
-            stateman.update(StateManager.STATE_STOPPED_BACKUP)
-        else:
-            print >> self.wfile, "FAIL: Can't backup - reported status is:", \
-                                                              reported_status
-            log.debug("Can't backup - reported status is:", \
-                                                            reported_status)
-            aconn.user_action_unlock()
-            return
-
-        log.debug("-----------------Starting Backup-------------------")
-
-        server.event_control.gen(EventControl.BACKUP_STARTED,
-                                                            aconn.__dict__)
-
-        self.ack()
-
-        body = server.backup_cmd(aconn, target, volume_name)
-
-        self.print_client("%s", str(body))
-        if not body.has_key('error'):
-            server.event_control.gen(EventControl.BACKUP_FINISHED,
-                        dict(body.items() + aconn.__dict__.items()))
-        else:
-            server.event_control.gen(EventControl.BACKUP_FAILED,
-                        dict(body.items() + aconn.__dict__.items()))
-
-        if reported_status == TableauProcess.STATUS_RUNNING:
-            stateman.update(StateManager.STATE_STARTED)
-        elif reported_status == TableauProcess.STATUS_STOPPED:
-            stateman.update(StateManager.STATE_STOPPED)
-
-        # Get the latest status from tabadmin
-        statusmon.check_status_with_connection(aconn)
-        # Don't unlock to allow the status thread to ALSO do
-        # 'tabadmin status -v' until at least we finish with ours.
-        aconn.user_action_unlock()
-
-    do_backup.__usage__ = 'backup [target-displayname [volume-name]]'
-
-    def do_backupdel(self, cmd):
-        """Delete a Tableau backup."""
-
-        target = None
-        if len(cmd.args) != 1:
-            self.usage(self.do_backup.__usage__)
-            return
-        backup = cmd.args[0]
-
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
-            self.error('agent not found.')
-            return
-
-        if not aconn.user_action_lock(blocking=False):
-            print >> self.wfile, "FAIL: Busy with another user request."
-            return
-
-        stateman = self.server.stateman
-        main_state = stateman.get_state()
-        if main_state == StateManager.STATE_STARTED:
-            stateman.update(StateManager.STATE_STARTED_BACKUPDEL)
-        elif main_state == StateManager.STATE_STOPPED:
-            stateman.update(StateManager.STATE_STOPPED_BACKUPDEL)
-        else:
-            print >> self.wfile, "FAIL: Main state is %s." % (main_state)
-            aconn.user_action_unlock()
-            return
-
-        self.ack()
-        body = server.backupdel_cmd(backup)
-        self.print_client("%s", str(body))
-
-        stateman.update(main_state)
-
-        aconn.user_action_unlock()
-    do_backupdel.__usage__ = 'backupdel backup-name'
-
-    def do_restore(self, cmd):
-        """Restore.  If the file/path we are restoring from is on a different
-        machine than the Primary Agent, then get the file/path to the
-        Primary Agent first."""
-
-        if len(cmd.args) != 1:
-            self.usage(self.do_restore.__usage__)
-            return
-
-        target = cmd.args[0]
-
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
-            self.error('agent not found')
-            return
-
-        # lock to ensure against two simultaneous user actions
-        if not aconn.user_action_lock(blocking=False):
-            print >> self.wfile, "FAIL: Busy with another user request."
-            return
-
-        # Check to see if we're in a state to restore
-        stateman = self.server.stateman
-        main_state = stateman.get_state()
-
-        # Backups can be done when Tableau is either started or stopped.
-        if main_state not in \
-                        (StateManager.STATE_STARTED, StateManager.STATE_STOPPED):
-            print >> self.wfile,\
-                "FAIL: Can't backup before restore - main state is:", \
-                                                                  main_state
-            log.debug("Can't backup before restore - main state is: %s",
-                                                                    main_state)
-            aconn.user_action_unlock()
-            return
-
-        reported_status = statusmon.get_reported_status()
-        # The reported status from tableau needs to be running or stopped
-        # to do a backup.  If it is, set our state to
-        # STATE_*_BACKUP_RESTORE.
-        if reported_status == TableauProcess.STATUS_RUNNING:
-            stateman.update(StateManager.STATE_STARTED_BACKUP_RESTORE)
-        elif reported_status == TableauProcess.STATUS_STOPPED:
-            stateman.update(StateManager.STATE_STOPPED_BACKUP_RESTORE)
-        else:
-            print >> self.wfile, \
-                "FAIL: Can't backup before restore - reported status is:", \
-                                                              reported_status
-            log.debug("Can't backup before restore - reported status is:", \
-                                                            reported_status)
-            aconn.user_action_unlock()
-            return
-
-        # Do a backup before we try to do a restore.
-        #FIXME: refactor do_backup() into do_backup() and backup()
-        log.debug("------------Starting Backup for Restore--------------")
-
-        server.event_control.gen(EventControl.BACKUP_BEFORE_RESTORE_STARTED,
-                                                            aconn.__dict__)
-
-        self.ack()
-
-        # No alerts or state updates are done in backup_cmd().
-        body = server.backup_cmd(aconn)
-
-        if not body.has_key('error'):
-            server.event_control.gen(\
-                EventControl.BACKUP_BEFORE_RESTORE_FINISHED,
-                            dict(body.items() + aconn.__dict__.items()))
-            backup_success = True
-        else:
-            server.event_control.gen(EventControl.BACKUP_BEFORE_RESTORE_FAILED,
-                           dict(body.items() + aconn.__dict__.items()))
-            backup_success = False
-
-        if not backup_success:
-            self.print_client("Backup failed.  Aborting restore.")
-            stateman.update(main_state)
-            aconn.user_action_unlock()
-            return
-
-        log.debug("-----------------Starting Restore-------------------")
-
-        # restore_cmd() updates the state correctly depending on the
-        # success of backup, copy, stop, restore, etc.
-        body = server.restore_cmd(aconn, target, main_state)
-
-        # The final RESTORE_FINISHED/RESTORE_FAILED alert is sent only here and
-        # not in restore_cmd().  Intermediate alerts like RESTORE_STARTED
-        # are sent in restore_cmd().
-        if not body.has_key('error'):
-            # Restore finished successfully.  The main state has.
-            # already been set.
-            server.event_control.gen(EventControl.RESTORE_FINISHED,
-                        dict(body.items() + aconn.__dict__.items()))
-        else:
-            server.event_control.gen(EventControl.RESTORE_FAILED,
-                        dict(body.items() + aconn.__dict__.items()))
-
-        self.print_client(str(body))
-
-        # Get the latest status from tabadmin
-        statusmon.check_status_with_connection(aconn)
-        # Don't unlock to allow the status thread to ALSO do
-        # 'tabadmin status -v' until at least we finish with ours.
-        aconn.user_action_unlock()
-
-    do_restore.__usage__ = 'restore [source:pathname]'
-
-    def do_copy(self, cmd):
-        """Copy a file from one agent to another."""
-
-        if len(cmd.args) != 2:
-            self.error(self.do_copy.__usage__)
-            return
-
-        body = server.copy_cmd(cmd.args[0], cmd.args[1])
-        self.report_status(body)
-    do_copy.__usage__ = 'copy source-agent-name:filename dest-agent-name'
-
-    # FIXME: print status too
-    def list_agents(self):
-        agents = self.server.agentmanager.all_agents()
-
-        if len(agents) == 0:
-            self.print_client('{}')
-            return
-
-        # FIXME: print the agent state too.
-        s = ''
-        for key in agents:
-            d = copy.copy(agents[key].connection.auth)
-            d['displayname'] = agents[key].displayname
-            s += str(d) + '\n'
-        self.print_client(s)
-
-    def list_backups(self):
-        s = ''
-        # FIXME: per environment
-        for backup in BackupManager.all(self.server.domain.domainid):
-            s += str(backup.todict()) + '\n'
-        self.print_client(s)
-
-    def do_list(self, cmd):
-        """List information about all connected agents."""
-
-        f = None
-        if len(cmd.args) == 0:
-            f = self.list_agents
-        elif len(cmd.args) == 1:
-            if cmd.args[0].lower() == 'agents':
-                f = self.list_agents
-            elif cmd.args[0].lower() == 'backups':
-                f = self.list_backups
-        if f is None:
-            self.usage(self.do_list.__usage__)
-            return
-
-        self.ack()
-        f()
-    do_list.__usage__ = 'list [agents|backups]'
-
-    def do_cli(self, cmd):
-        if len(cmd.args) < 1:
-            return self.error(self.do_cli.__usage__)
-            return
-
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
-            self.error('agent not found')
-            return
-
-        self.ack()
-
-        cli_command = cmd.args[0]
-        for arg in cmd.args[1:]:
-            if ' ' in arg:
-                cli_command += ' "' + arg + '" '
-            else:
-                cli_command += ' ' + arg
-        body = server.cli_cmd(cli_command, aconn)
-        self.report_status(body)
-    do_cli.__usage__ = 'cli <command> [args...]'
-
-    def do_phttp(self, cmd):
-        if len(cmd.args) < 2:
-            self.error(self.do_phttp.__usage__)
-            return
-
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
-            self.error('agent not found')
-            return
-
-        phttp_cmd = Controller.PHTTP_BIN
-        for arg in cmd.args:
-            if ' ' in arg:
-                phttp_cmd += ' "' + arg + '"'
-            else:
-                phttp_cmd += ' ' + arg
-
-        try:
-            entry = meta.Session.query(Agent).\
-                filter(Agent.agentid == aconn.agentid).\
-                one()
-        except sqlalchemy.orm.exc.NoResultFound:
-            self.log.err("Source agent not found!  agentid: %d", aconn.agentid)
-            return self.error("Source agent not found in agent table: %d " % \
-                                                                aconn.agentid)
-
-        env = {u'BASIC_USERNAME': entry.username,
-               u'BASIC_PASSWORD': entry.password}
-
-        print >> self.wfile, "Sending to displayname '%s' (type: %s):" % \
-                        (aconn.displayname, aconn.agent_type)
-
-        print >> self.wfile, "    ", phttp_cmd
-
-        body = server.cli_cmd(phttp_cmd, aconn, env=env)
-        self.report_status(body)
-
-    do_phttp.__usage__ = 'phttp GET https://vol1/filename vol2:/local-directory'
-
-    def do_info(self, cmd):
-        """Run pinfo."""
-        if len(cmd.args):
-            self.usage(self.do_info.__usage__)
-            return
-
-        agent = self.get_agent(cmd.dict)
-        if not agent:
-            self.error('agent not found')
-            return
-
-        self.ack()
-        body = server.info(agent)
-        self.print_client(str(body))
-    do_info.__usage__ = 'info\n'
-
-    def do_license(self, cmd):
-        """Run license check."""
-        if len(cmd.args):
-            self.usage(self.do_info.__usage__)
-            return
-
-        agent = self.get_agent(cmd.dict)
-        if not agent:
-            self.error('agent not found')
-            return
-
-        self.ack()
-        d = server.license(agent)
-        self.print_client(str(d))
-    do_license.__usage__ = 'license\n'
-
-    def do_yml(self, cmd):
-        if len(cmd.args):
-            self.usage(self.do_info.__usage__)
-            return
-
-        agent = self.get_agent(cmd.dict)
-        if not agent:
-            self.error('agent not found')
-            return
-
-        if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
-            self.error('agent not primary')
-            return
-
-        self.ack()
-        body = server.yml(agent)
-        self.print_client("%s", str(body))
-    do_yml.__usage__ = 'yml\n'
-
-    def do_firewall(self, cmd):
-        """Enable, disable or report the status of a port on an
-           agent firewall.."""
-        if len(cmd.args) == 1:
-            if cmd.args[0] != "status":
-                self.usage(self.do_firewall.__usage__)
-                return
-        elif len(cmd.args) == 2:
-            if cmd.args[0] not in ("enable", "disable"):
-                self.usage(self.do_firewall.__usage__)
-                return
-        else:
-            self.usage(self.do_firewall.__usage__)
-            return
-
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
-            self.error('agent not found')
-            return
-
-        if  cmd.args[0] != "status":
-            try:
-                port = int(cmd.args[1])
-            except ValueError, e:
-                self.error("firewall: Invalid port: " + cmd.args[1])
-                return
-
-        self.ack()
-
-        if cmd.args[0] == "status":
-            body = aconn.firewall.status()
-        elif cmd.args[0] == "enable":
-            body = aconn.firewall.enable(port)
-        elif cmd.args[0] == "disable":
-            body = aconn.firewall.disable(port)
-
-        self.print_client(str(body))
-        return
-    do_firewall.__usage__ = 'firewall [ enable | disable | status ] port\n'
-
-    def do_ping(self, cmd):
-        """Ping an agent"""
-        if len(cmd.args):
-            self.error(self.do_ping.__usage__)
-            return
-
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
-            self.error('agent not found')
-            return
-
-        print >> self.wfile, "Sending ping to displayname '%s' (type: %s)." % \
-          (aconn.displayname, aconn.agent_type)
-
-        body = server.ping(aconn)
-        self.report_status(body)
-
-    do_ping.__usage__ = 'ping'
-
-    def do_start(self, cmd):
-        if len(cmd.args) != 0:
-            print >> self.wfile, '[ERROR] usage: start'
-            return
-
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
-            self.error('agent not found')
-            return
-
-        # lock to ensure against two simultaneous user actions
-        if not aconn.user_action_lock(blocking=False):
-            print >> self.wfile, "FAIL: Busy with another user request."
-            return
-
-        # Check to see if we're in a state to start
-        stateman = self.server.stateman
-        main_state = stateman.get_state()
-
-        # Start can be done only when Tableau is stopped.
-        if main_state != StateManager.STATE_STOPPED:
-            print >> self.wfile, "FAIL: Can't start - main state is:", \
-                                                                  main_state
-            log.debug("Can't start - main state is: %s",  main_state)
-            aconn.user_action_unlock()
-            return
-
-        reported_status = statusmon.get_reported_status()
-        if reported_status != TableauProcess.STATUS_STOPPED:
-            print >> self.wfile, "FAIL: Can't start - reported status is:", \
-                                                              reported_status
-            log.debug("Can't start - reported status is: %s",  reported_status)
-            aconn.user_action_unlock()
-            return
-
-        stateman.update(StateManager.STATE_STARTING)
-
-        log.debug("-----------------Starting Tableau-------------------")
-        # fixme: Reply with "OK" only after the agent received the command?
-        self.ack()
-
-        # Stop the maintenance web server and relinquish the web
-        # server port before tabadmin start tries to listen on the web
-        # server port.
-        maint_body = server.maint("stop")
-        if maint_body.has_key("error"):
-            self.print_client("maint stop failed: " + str(maint_body))
-            # let it continue ?
-
-        body = server.cli_cmd('tabadmin start', aconn)
-        if body.has_key("exit-status"):
-            exit_status = body['exit-status']
-        else:
-            exit_status = 1 # if no 'exit-status' then consider it failed.
-
-        if exit_status:
-            # The "tableau start" failed.  Go back to "STOPPED" state.
-            server.event_control.gen(EventControl.TABLEAU_START_FAILED,
-                        dict(body.items() + aconn.__dict__.items()))
-            stateman.update(StateManager.STATE_STOPPED)
-            server.event_control.gen(EventControl.STATE_STOPPED, aconn.__dict__)
-        else:
-            stateman.update(StateManager.STATE_STARTED)
-            server.event_control.gen(EventControl.STATE_STARTED, aconn.__dict__)
-
-        # STARTED is set by the status monitor since it really knows the status.
-        self.print_client(str(body))
-
-        # Get the latest status from tabadmin
-        statusmon.check_status_with_connection(aconn)
-
-        aconn.user_action_unlock()
-
-    def do_stop(self, cmd):
-        if len(cmd.args) > 1:
-            self.error(self.do_stop.__usage__)
-            return
-
-        backup_first = True
-        if len(cmd.args) == 1:
-            if cmd.args[0] == "no-backup" or cmd.args[0] == "nobackup":
-                backup_first = False
-            else:
-                self.error(self.do_stop.__usage__)
-
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
-            self.error('agent not found')
-            return
-
-        # lock to ensure against two simultaneous user actions
-        if not aconn.user_action_lock(blocking=False):
-            print >> self.wfile, "FAIL: Busy with another user request."
-            return
-
-        # Check to see if we're in a state to stop
-        stateman = self.server.stateman
-        main_state = stateman.get_state()
-
-        # Stop can be done only if tableau is started
-        if main_state != StateManager.STATE_STARTED:
-            self.error("can't stop - main state is: " + main_state)
-            aconn.user_action_unlock()
-            return
-
-        reported_status = statusmon.get_reported_status()
-        if reported_status != TableauProcess.STATUS_RUNNING:
-            print >> self.wfile, "FAIL: Can't start - reported status is:", \
-                                                              reported_status
-            log.debug("Can't start - reported status is: %s",  reported_status)
-            aconn.user_action_unlock()
-            return
-
-        log.debug("------------Starting Backup for Stop---------------")
-
-        stateman.update(StateManager.STATE_STARTED_BACKUP_STOP)
-        server.event_control.gen(EventControl.BACKUP_BEFORE_STOP_STARTED,
-                                                            aconn.__dict__)
-
-        self.ack()
-
-        body = server.backup_cmd(aconn)
-
-        if not body.has_key('error'):
-            server.event_control.gen(EventControl.BACKUP_BEFORE_STOP_FINISHED,
-                        dict(body.items() + aconn.__dict__.items()))
-        else:
-            server.event_control.gen(EventControl.BACKUP_BEFORE_STOP_FAILED,
-                        dict(body.items() + aconn.__dict__.items()))
-            # FIXME: return JSON
-            self.print_client("Backup failed.  Will not attempt stop.")
-            aconn.user_action_unlock()
-            return
-
-        # Note: Make sure to set the state in the database before
-        # we report "OK" back to the client since "OK" to the UI client
-        # results in an immediate check of the state.
-        stateman.update(StateManager.STATE_STOPPING)
-
-        if not backup_first:
-            # The ack was sent earlier only if a backup was attempted.
-            self.ack()
-
-        log.debug("-----------------Stopping Tableau-------------------")
-        # fixme: Reply with "OK" only after the agent received the command?
-
-        body = server.cli_cmd('tabadmin stop', aconn)
-        if not body.has_key("error"):
-            # Start the maintenance server only after Tableau has stopped
-            # and reqlinquished the web server port.
-            maint_body = server.maint("start")
-            if maint_body.has_key("error"):
-                self.print_client("maint start failed: " + str(maint_body))
-
-        # We set the state to stop, even though the stop failed.
-        # This will be corrected by the 'tabadmin status -v' processing
-        # later.
-        stateman.update(StateManager.STATE_STOPPED)
-        server.event_control.gen(EventControl.STATE_STOPPED, aconn.__dict__)
-
-        # fixme: check & report status to see if it really stopped?
-        self.print_client(str(body))
-
-        # Get the latest status from tabadmin which sets the main state.
-        statusmon.check_status_with_connection(aconn)
-
-        # If the 'stop' had failed, set the status to what we just
-        # got back from 'tabadmin status ...'
-        if body.has_key('error'):
-            reported_status = statusmon.get_reported_status()
-            stateman.update(reported_status)
-
-        aconn.user_action_unlock()
-    do_stop.__usage__ = 'stop [no-backup|nobackup]'
-
-    def report_status(self, body):
-        """Passed an HTTP body and prints info about it back to the user."""
-
-        if body.has_key('error'):
-            self.print_client(body['error'])
-            self.print_client('body: %s', body)
-            return
-
-        if body.has_key("run-status"):
-            self.print_client('run-status: %s', body['run-status'])
-
-        if body.has_key("exit-status"):
-            self.print_client('exit-status: %d', body['exit-status'])
-
-        if body.has_key('stdout'):
-            self.print_client(body['stdout'])
-
-        if body.has_key('stderr'):
-            if len(body['stderr']):
-                self.print_client('stderr: %s', body['stderr'])
-
-    def do_maint(self, cmd):
-        """Start or Stop the maintenance webserver on the agent."""
-
-        if len(cmd.args) < 1 or len(cmd.args) > 2:
-            self.usage(self.do_maint.__usage__)
-            return
-
-        action = cmd.args[0].lower()
-        if action != "start" and action != "stop":
-            self.usage(self.do_maint.__usage__)
-            return
-
-        port = -1
-        if len(cmd.args) == 2:
-            try:
-                port = int(cmd.args[1])
-            except ValueError, e:
-                self.error("invalid port '%s', number required.", cmd.args[1])
-                return;
-
-        self.ack()
-
-        body = server.maint(action, port)
-        self.print_client(str(body))
-    do_maint.__usage__ = 'maint [start|stop]'
-
-    def do_archive(self, cmd):
-        """Start or Stop the archive HTTPS server on the agent."""
-        if len(cmd.args) < 1 or len(cmd.args) > 2:
-            self.usage(self.do_archive.__usage__)
-            return
-
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
-            self.error('agent not found')
-            return
-
-        action = cmd.args[0].lower()
-        if action != "start" and action != "stop":
-            self.usage(self.do_archive.__usage__)
-            return
-
-        port = -1
-        if len(cmd.args) == 2:
-            try:
-                port = int(cmd.args[1])
-            except ValueError, e:
-                self.error("invalid port '%s', number required.", cmd.args[1])
-                return;
-
-        self.ack()
-
-        body = server.archive(aconn, action, port)
-        self.print_client(str(body))
-    do_archive.__usage__ = 'archive [start|stop] [port]'
-
-    do_maint.__usage__ = 'maint [start|stop]'
-
-    def do_displayname(self, cmd):
-        """Set the display name for an agent"""
-        if len(cmd.args) != 1:
-            self.usage(self.do_displayname.__usage__)
-            return
-
-        new_displayname = cmd.args[0]
-        uuid = cmd.dict['uuid']
-
-        # Note: aconn will be None if agent is not connected, which is OK
-        aconn = self.server.agentmanager.agent_conn_by_uuid(uuid)
-
-        try:
-            server.displayname_cmd(aconn, uuid, new_displayname)
-            self.ack()
-        except ValueError, e:
-            self.error(str(e))
-
-        body = {}
-        self.print_client(str(body))
-    do_displayname.__usage__ = 'displayname new-displayname'
-
-    def do_file(self, cmd):
-        """Manipulate a particular file on the agent."""
-
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
-            self.error('agent not found')
-            return
-
-        if len(cmd.args) < 2 or len(cmd.args) > 3:
-            self.usage(self.do_file.__usage__)
-            return
-
-        method = cmd.args[0].upper()
-        path = cmd.args[1]
-
-        try:
-            if method == 'GET':
-                if len(cmd.args) != 3:
-                    self.usage(self.do_file.__usage__)
-                    return
-                self.ack()
-                body = aconn.filemanager.save(path, cmd.args[2])
-            elif method == 'PUT':
-                if len(cmd.args) != 3:
-                    self.usage(self.do_file.__usage__)
-                    return
-                self.ack()
-                body = aconn.filemanager.sendfile(path, cmd.args[2])
-            elif method == 'DELETE':
-                if len(cmd.args) != 2:
-                    self.usage(self.do_file.__usage__)
-                    return
-                self.ack()
-                aconn.filemanager.delete(path)
-                body = {}
-            elif method == "REALPUT":
-                self.ack()
-                body = aconn.filemanager.put(path, cmd.args[2])
-            else:
-                self.usage(self.do_file.__usage__)
-                return
-        except exc.HTTPException, e:
-            body = {'error': 'HTTP Failure',
-                 'status-code': e.status,
-                 'reason-phrase': e.reason,
-                 }
-            if e.method:
-                body['method'] = e.method
-            if e.body:
-                body['body'] = e.body
-
-        self.print_client(str(body))
-    do_file.__usage__ = '[GET|PUT|DELETE] <path> [source-or-target]'
-
-    def do_s3(self, cmd):
-        """Send a file to or receive a file from an S3 bucket"""
-
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
-            self.error('agent not found')
-            return
-
-        if len(cmd.args) != 3 or len(cmd.args) > 4:
-            self.usage(self.do_s3.__usage__)
-            return
-
-        action = cmd.args[0].upper()
-        name = cmd.args[1]
-        keypath = cmd.args[2]
-
-        entry = S3.get_by_name(name)
-        if not entry:
-            self.error("s3 instance '" + name + "' not found.")
-            return
-
-        if 'install-dir' not in aconn.auth:
-            self.error("agent connection is missing 'install-dir'")
-            return
-        install_dir = aconn.auth['install-dir']
-        data_dir = ntpath.join(install_dir, 'data')
-
-        self.ack()
-
-        resource = os.path.basename(keypath)
-        token = entry.get_token(resource)
-
-        command = Controller.PS3_BIN+' %s %s "%s"' % \
-            (action, entry.bucket, keypath)
-
-
-        env = {u'ACCESS_KEY': token.credentials.access_key,
-               u'SECRET_KEY': token.credentials.secret_key,
-               u'SESSION': token.credentials.session_token,
-               u'REGION_ENDPOINT': entry.region,
-               u'PWD': data_dir}
-
-        # Send command to the agent
-        body = server.cli_cmd(command, aconn, env=env)
-
-        body[u'env'] = env
-        body[u'resource'] = resource
-
-        self.print_client(str(body))
-    do_s3.__usage__ = '[GET|PUT] <bucket> <key-or-path>'
-
-    def do_sql(self, cmd):
-        """Run a SQL statement against the Tableau database."""
-
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
-            self.error('agent not found')
-            return
-
-        # FIXME: check for primary agent
-
-        if len(cmd.args) != 1:
-            self.usage(self.do_sql.__usage__)
-            return
-
-        stmt = cmd.args[0]
-        self.ack()
-
-        body = aconn.odbc.execute(stmt)
-        self.print_client(str(body))
-    do_sql.__usage__ = '<statement>'
-
-    def do_auth(self, cmd):
-        """Work with the Tableau user data."""
-
-        if len(cmd.args) < 1:
-            self.usage(self.do_auth.__usage__)
-            return
-
-        action = cmd.args[0].lower()
-
-        if action == 'import':
-            if len(cmd.args) != 1:
-                self.usage(self.do_auth.__usage__)
-                return
-            aconn = self.get_aconn(cmd.dict)
-            if not aconn:
-                self.error('agent not found')
-                return
-            self.ack()
-            body = self.server.auth.load(aconn)
-        elif action == 'verify':
-            if len(cmd.args) != 3:
-                self.usage(self.do_auth.__usage__)
-                return
-            self.ack()
-            result = self.server.auth.verify(cmd.args[1], cmd.args[2])
-            body = {u'status': result and 'OK' or 'INVALID'}
-        else:
-            self.usage(self.do_auth.__usage__)
-            return
-        self.print_client(str(body))
-    do_auth.__usage__ = "[import|verify] <username> <password>"
-
-    def do_ziplogs(self, cmd):
-        """Run 'tabadmin ziplogs'."""
-
-        target = None
-        if len(cmd.args) != 0:
-            self.usage(self.do_backup.__usage__)
-            return
-
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
-            self.error('agent not found.')
-            return
-
-        if not aconn.user_action_lock(blocking=False):
-            print >> self.wfile, "FAIL: Busy with another user request."
-            return
-
-        stateman = self.server.stateman
-        main_state = stateman.get_state()
-        if main_state == StateManager.STATE_STARTED:
-            stateman.update(StateManager.STATE_STARTED_ZIPLOGS)
-        elif main_state == StateManager.STATE_STOPPED:
-            stateman.update(StateManager.STATE_STOPPED_ZIPLOGS)
-        else:
-            print >> self.wfile, "FAIL: Main state is %s." % (main_state)
-            aconn.user_action_unlock()
-            return
-
-        # FIXME: Do we want to send alerts?
-        #server.event_control.gen(EventControl.BACKUP_STARTED)
-        self.ack()
-
-        body = server.ziplogs_cmd(aconn)
-
-        self.print_client("%s", str(body))
-        if not body.has_key('error'):
-            # FIXME: Do we want to send alerts?
-            #server.event_control.gen(EventControl.ZIPLOGS_FINISHED, 
-            #                    dict(body.items() + aconn.__dict__.items()))
-            pass
-        else:
-            # FIXME: Do we want to send alerts?
-            #server.event_control.gen(EventControl.ZIPLOGS_FAILED,
-            #                    dict(body.items() + aconn.__dict__.items()))
-            pass
-
-        stateman.update(main_state)
-
-        aconn.user_action_unlock();
-    do_ziplogs.__usage__ = 'ziplogs'
-
-    def do_nop(self, cmd):
-        """usage: nop"""
-
-        print >> self.wfile, "dict:"
-        for key in cmd.dict:
-            print >> self.wfile, "\t%s = %s" % (key, cmd.dict[key])
-
-        print >> self.wfile, "command:"
-        print >> self.wfile, "\t%s" % (cmd.name)
-
-        print >> self.wfile, "args:"
-        for arg in cmd.args:
-            print >> self.wfile, "\t%s" % (arg)
-
-        self.ack()
-
-    def get_agent(self, opts):
-        agent = None
-
-        if opts.has_key('uuid'): # should never fail
-            uuid = opts['uuid'] # may be None
-            if uuid:
-                agent = self.server.agentmanager.agent_by_uuid(uuid)
-                if not agent:
-                    self.error("No connected agent with uuid=%s" % (uuid))
-            else:
-                self.error("No agent specified")
-        else: # should never happen
-            self.error("No agent specified")
-
-        return agent
-
-    # DEPRECATED
-    def get_aconn(self, opts):
-        # FIXME: This method is a temporary hack while we
-        #        clean up the telnet commands
-        # FIXME: TBD: Should this be farmed out to another class?
-        agent = self.get_agent(opts)
-        return agent and agent.connection or None
-
-    def handle(self):
-        while True:
-            try:
-                data = self.rfile.readline().strip()
-            except socket.error as e:
-                self.error(\
-                    "CliHandler: telnet client socket failure/disconnect: " + \
-                                                                        str(e))
-                break
-
-            if not data: break
-
-            try:
-                cmd = Command(self.server, data)
-            except CommandException, e:
-                self.error(str(e))
-                continue
-
-            if not hasattr(self, 'do_'+cmd.name):
-                self.error('invalid command: %s', cmd.name)
-                continue
-
-            # <command> /displayname=X /type=primary, /uuid=Y, /hostname=Z [args]
-            f = getattr(self, 'do_'+cmd.name)
-            f(cmd)
-
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
@@ -1659,8 +461,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             Returns a body with the results/status.
         """
 
-        stateman = server.stateman
-
         # Note: In a restore context, 'target' is the source of the backup,
         #       while in a backup context 'target' is the destination.
 
@@ -1674,19 +474,19 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             source_displayname = parts[0]   #.e.g "Tableau Archive #201"
             source_spec = parts[1]          # e.g. "C/20140531_153629.tsbak"
         else:
-            stateman.update(orig_state)
+            self.stateman.update(orig_state)
             return self.error('Invalid target: ' + target)
 
         if os.path.isabs(source_spec):
-            stateman.update(orig_state)
+            self.stateman.update(orig_state)
             return self.error(\
-                "[ERROR] May not specify an absolute pathname or disk: " + \
-                                                                source_spec)
+                "May not specify an absolute pathname or disk: " + \
+                    source_spec)
         parts = source_spec.split('/')
         if len(parts) == 1:
-            return self.error(\
-                "[ERROR] restore: Bad target spec:  Missing '/': " + \
-                                                                source_spec)
+            # FIXME
+            return self.error( \
+                "restore: Bad target spec:  Missing '/': " + source_spec)
         filename_only = parts[1] #  e.g. "20140531_153629.tsbak"
 
         # Get the vol + dir to use for the restore command to tabadmin.
@@ -1708,8 +508,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.debug("restore: Sending copy command: %s, %s", \
                                target, aconn.displayname)
             # target is something like: "C/20140531_153629.tsbak"
-            body = server.copy_cmd(target, aconn.displayname,
-                                                            backup_dir)
+            body = self.copy_cmd(target, aconn.displayname, backup_dir)
 
             if body.has_key("error"):
                 fmt = "restore: copy backup file '%s' from '%s' failed. " +\
@@ -1718,17 +517,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                source_spec,
                                source_displayname,
                                body['error'])
-                stateman.update(orig_state)
+                self.stateman.update(orig_state)
                 return body
 
         # The restore file is now on the Primary Agent.
-        server.event_control.gen(EventControl.RESTORE_STARTED, aconn.__dict__)
+        self.event_control.gen(EventControl.RESTORE_STARTED, aconn.__dict__)
 
-        reported_status = statusmon.get_reported_status()
+        reported_status = self.statusmon.get_reported_status()
 
         if reported_status == TableauProcess.STATUS_RUNNING:
             # Restore can run only when tableau is stopped.
-            stateman.update(StateManager.STATE_STOPPING_RESTORE)
+            self.stateman.update(StateManager.STATE_STOPPING_RESTORE)
             log.debug("------------Stopping Tableau for restore-------------")
             stop_body = self.cli_cmd("tabadmin stop", aconn)
             if stop_body.has_key('error'):
@@ -1737,23 +536,23 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     # If the file was copied to the Primary, delete
                     # the temporary backup file we copied to the Primary.
                     self.delete_file(aconn, local_fullpathname)
-                stateman.update(orig_state)
+                self.stateman.update(orig_state)
                 return stop_body
 
-            server.event_control.gen(EventControl.STATE_STOPPED, aconn.__dict__)
+            self.event_control.gen(EventControl.STATE_STOPPED, aconn.__dict__)
 
         # 'tabadmin restore ...' starts tableau as part of the
         # restore procedure.
         # fixme: Maybe the maintenance web server wasn't running?
         maint_msg = ""
-        maint_body = server.maint("stop", aconn=aconn)
+        maint_body = self.maint("stop", aconn=aconn)
         if maint_body.has_key("error"):
             self.log.info("Restore: maint stop failed: " + maint_body['error'])
             # continue on, not a fatal error...
             maint_msg = "Restore: maint stop failed.  Error was: %s" \
                                                     % maint_body['error']
 
-        stateman.update(StateManager.STATE_STARTING_RESTORE)
+        self.stateman.update(StateManager.STATE_STARTING_RESTORE)
         try:
             cmd = 'tabadmin restore \\\"%s\\\"' % local_fullpathname
             self.log.debug("restore sending command: %s", cmd)
@@ -1778,8 +577,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.delete_file(aconn, local_fullpathname)
 
         if restore_success:
-            stateman.update(StateManager.STATE_STARTED)
-            server.event_control.gen(EventControl.STATE_STARTED, aconn.__dict__)
+            self.stateman.update(StateManager.STATE_STARTED)
+            self.event_control.gen(EventControl.STATE_STARTED, aconn.__dict__)
         else:
             # On a successful restore, tableau starts itself.
             # fixme: eventually control when tableau is started and
@@ -1798,11 +597,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     restore_body['info'] = msg
 
                  # The "tableau start" failed.  Go back to the "STOPPED" state.
-                stateman.update(StateManager.STATE_STOPPED)
+                self.stateman.update(StateManager.STATE_STOPPED)
             else:
                 # The "tableau start" succeeded
-                stateman.update(StateManager.STATE_STARTED)
-                server.event_control.gen(EventControl.STATE_STARTED, aconn.__dict__)
+                self.stateman.update(StateManager.STATE_STARTED)
+                self.event_control.gen( \
+                    EventControl.STATE_STARTED, aconn.__dict__)
 
         return restore_body
 
@@ -1988,12 +788,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if body.has_key("error"):
             if action == "start":
-                server.event_control.gen(\
+                self.event_control.gen(\
                     EventControl.MAINT_START_FAILED,
                             dict({'error': body['error']}.items() +  \
                                                  aconn.__dict__.items()))
             else:
-                server.event_control.gen(\
+                self.event_control.gen(\
                     EventControl.MAINT_STOP_FAILED,
                             dict({'error': body['error']}.items() +  \
                                                  aconn.__dict__.items()))
@@ -2003,9 +803,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return body
 
         if action == 'start':
-            server.event_control.gen(EventControl.MAINT_ONLINE, aconn.__dict__)
+            self.event_control.gen(EventControl.MAINT_ONLINE, aconn.__dict__)
         else:
-            server.event_control.gen(EventControl.MAINT_OFFLINE, aconn.__dict__)
+            self.event_control.gen(EventControl.MAINT_OFFLINE, aconn.__dict__)
 
         return body
 
@@ -2165,7 +965,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 return False
             self.yml(agent)
         else:
-            if server.agentmanager.is_tableau_worker(agent.ip_address):
+            if self.agentmanager.is_tableau_worker(agent.ip_address):
                 aconn.agent_type = AgentManager.AGENT_TYPE_WORKER
             else:
                 aconn.agent_type = AgentManager.AGENT_TYPE_ARCHIVE
@@ -2175,29 +975,29 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # Put into a known state
             body = self.maint("stop", aconn=aconn, send_alert=False)
             if body.has_key("error"):
-                server.event_control.gen(\
+                self.event_control.gen(\
                    EventControl.MAINT_STOP_FAILED,
                             dict(d.items() + aconn.__dict__.items()))
 
         body = self.archive(aconn, "stop")
         if body.has_key("error"):
-            server.event_control.gen(EventControl.ARCHIVE_STOP_FAILED,
-                            dict(body.items() + aconn.__dict__.items()))
+            self.event_control.gen(EventControl.ARCHIVE_STOP_FAILED,
+                                   dict(body.items() + aconn.__dict__.items()))
         # Get ready.
         body = self.archive(aconn, "start")
         if body.has_key("error"):
-            server.event_control.gen(EventControl.ARCHIVE_START_FAILED,
+            self.event_control.gen(EventControl.ARCHIVE_START_FAILED,
                             dict(body.items() + aconn.__dict__.items()))
 
         # If tableau is stopped, turn on the maintenance server
         if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
             return True
 
-        main_state = server.stateman.get_state()
+        main_state = self.stateman.get_state()
         if main_state == StateManager.STATE_STOPPED:
             body = self.maint("start", aconn=aconn, send_alert=False)
             if body.has_key("error"):
-                server.event_control.gen(EventControl.MAINT_START_FAILED,
+                self.event_control.gen(EventControl.MAINT_START_FAILED,
                             dict(body.items() + aconn.__dict__.items()))
 
         return True
@@ -2210,7 +1010,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         #        uuid of the status with the status and riff off uuid.
         if not manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY):
             session = meta.Session()
-            statusmon.remove_all_status()
+            self.statusmon.remove_all_status()
             session.commit()
 
 import logging
@@ -2254,10 +1054,6 @@ class StreamLogger(object):
 def main():
     import argparse
     import logger
-
-    global server   # fixme
-    global log      # fixme
-    global statusmon # fixme
 
     parser = argparse.ArgumentParser(description='Palette Controller')
     parser.add_argument('config', nargs='?', default=None)
