@@ -91,6 +91,9 @@ class EventControl(meta.Base, BaseMixin):
     TABLEAU_USER_TABLE="TABLEAU-USER-TABLE"
     TABLEAU_SYSTEM_TABLE="TABLEAU-SYSTEM-TABLE"
 
+    SCHEDULED_JOB_SUCCEEDED="SCHEDULE-JOB-SUCCEEDED"
+    SCHEDULED_JOB_FAILED="SCHEDULE-JOB-FAILED"
+
     # levels
     LEVEL_ERROR="E"
     LEVEL_WARNING="W"
@@ -110,6 +113,7 @@ class EventControl(meta.Base, BaseMixin):
     TYPE_STATUS="status"
     TYPE_AGENT="agent"
     TYPE_TABLEAU="tableau"
+    TYPE_SCHED="sched"
 
     # fixme: Init the event_control table elsewhere.
     defaults = [
@@ -373,6 +377,20 @@ class EventControl(meta.Base, BaseMixin):
                 'level': LEVEL_ERROR,
                 'event_type': TYPE_TABLEAU,
                 'subject': 'Tableau System Table',
+                'send_email': True,
+                'color': 'red'},
+
+            {'key': SCHEDULED_JOB_SUCCEEDED,
+                'level': LEVEL_INFO,
+                'event_type': TYPE_SCHED,
+                'subject': 'Scheduled job succeeded',
+                'send_email': True,
+                'color': 'green'},
+
+            {'key': SCHEDULED_JOB_FAILED,
+                'level': LEVEL_ERROR,
+                'event_type': TYPE_SCHED,
+                'subject': 'Scheduled job failed',
                 'send_email': True,
                 'color': 'red'},
         ]
