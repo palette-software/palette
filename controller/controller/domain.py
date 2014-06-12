@@ -1,5 +1,4 @@
 from sqlalchemy import Column, String, BigInteger, DateTime, func
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
 from akiri.framework.ext.sqlalchemy import meta
