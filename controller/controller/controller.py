@@ -736,10 +736,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return body
         self.agentmanager.update_agent_pinfo(agent, pinfo)
         return body
+<<<<<<< HEAD
 
     def license(self, agent):
         body = self.cli_cmd('tabadmin license', agent.connection)
 
+=======
+
+    def license(self, agent):
+        body = self.cli_cmd('tabadmin license', agent.connection)
+
+>>>>>>> ec90d977804c8a310d0b7f38e5814dfc2c85b74d
         if not 'exit-status' in body or body['exit-status'] != 0:
             return body
         if not 'stdout' in body:
