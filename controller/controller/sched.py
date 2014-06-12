@@ -37,8 +37,8 @@ class Sched(object):
                                                 default="/var/palette/sched")
 
         self.command_info = {'telnet_hostname': self.telnet_hostname,
-                        'telnet_port': self.telnet_port,
-                        'domainid': server.domain.domainid,
+                        'telnet_port': str(self.telnet_port),
+                        'domainid': str(server.domain.domainid),
                         'sched_dir': self.sched_dir}
 
         sqlalchemy_job_store = SQLAlchemyJobStore(engine=meta.engine)
@@ -152,9 +152,11 @@ class Sched(object):
             server.log.error("sched job_function: No such command: %s", path)
             return
 
-        cmd = [ path, '-h', command_info['telnet_hostname'], '-p',
-                str(command_info['telnet_port']),
-                '-d', command_info['domainid']]
+        cmd = [ path,
+                '-h', command_info['telnet_hostname'],
+                '-p', command_info['telnet_port'],
+                '-d', command_info['domainid']
+               ]
 
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE, close_fds=True)
