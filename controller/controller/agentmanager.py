@@ -14,7 +14,7 @@ import exc
 import httplib
 
 from agent import Agent
-from agentinfo import AgentYmlEntry, AgentInfoEntry, AgentVolumesEntry
+from agentinfo import AgentYmlEntry, AgentVolumesEntry
 from state import StateManager
 from event_control import EventControl
 from filemanager import FileManager
@@ -41,10 +41,9 @@ class AgentConnection(object):
         self.auth = {}          # Used by the controller
         self.agentid = None
         self.uuid = None
-        self.tableau_install_dir = None
+        self.displayname = None
         self.agent_type = None
         self.yml_contents = None    # only valid if agent is a primary
-        self.pinfo = {}  # from pinfo
         self.initting = True
 
         # Each agent connection has its own lock to allow only
@@ -58,12 +57,6 @@ class AgentConnection(object):
         self.filemanager = FileManager(self)
         self.odbc = ODBC(self)
         self.firewall = Firewall(self)
-
-    def get_tableau_data_dir(self):
-        if not self.tableau_install_dir:
-            return None
-        volume = self.tableau_install_dir.split(':')[0]
-        return ntpath.join(volume + ':\\', AgentConnection.TABLEAU_DATA_DIR)
 
     def httpexc(self, res, method='GET', body=None):
         if body is None:
@@ -112,6 +105,7 @@ class AgentManager(threading.Thread):
         self.config = self.server.config
         self.log = self.server.log
         self.domainid = self.server.domain.domainid
+        self.envid = self.server.environment.envid
         self.daemon = True
         self.lockobj = threading.RLock()
         self.new_primary_event = threading.Event() # a primary connected
@@ -151,54 +145,51 @@ class AgentManager(threading.Thread):
                                       synchronize_session=False)
         session.commit()
 
-    def register(self, new_agent, body):
+    # must be called with the agentmanager lock held
+    def find_by_uuid(self, uuid):
+        for key in self.agents.keys():
+            agent = self.agents[key]
+            if agent.uuid == uuid:
+                return agent
+        return None
+
+    def register(self, agent, body):
         """Called with the agent object and body /auth dictionary that
            was sent from the agent in json."""
 
-        # The agent initialization succeeded.
-        new_agent.initting = False
-
         self.lock()
         self.log.debug("new agent: name %s, uuid %s", \
-          body['hostname'], body['uuid'])
+                           body['hostname'], body['uuid'])
 
-        new_agent_type = new_agent.agent_type
+        new_agent_type = agent.agent_type
         # Don't allow two primary agents to be connected and
         # don't allow two agents with the same name to be connected.
         # Keep the newest one.
-        for key in self.agents.keys():
-            agent = self.agents[key]
-            if agent.uuid == body['uuid']:
+        for key in self.agents:
+            a = self.agents[key]
+            if a.uuid == body['uuid']:
                 self.log.info("Agent already connected with name '%s': " + \
                     "will remove it and use the new connection.", body['uuid'])
-                self.remove_agent(agent, ("An agent is already connected " + \
+                self.remove_agent(a, ("An agent is already connected " + \
                     "named '%s': will remove it and use the new " + \
                         "connection.") % (body['uuid']), gen_event=False)
                 break
             elif new_agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
-                        agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+                        a.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
                     self.log.info("A primary agent is already connected: " + \
                         "Will remove it and keep the new primary agent " + \
                         "connection.")
-                    self.remove_agent(agent,
+                    self.remove_agent(a,
                             "A primary agent is already connected: Will " + \
                             "remove it and keep the new primary agent " + \
                             "connection.", gen_event=False)
 
-        # Remember the new agent
-        entry = self.remember(new_agent, body)
-        if entry:
-            new_agent.agentid = entry.agentid
-            new_agent.uuid = entry.uuid
-            new_agent.displayname = entry.displayname
-        else:
-            # FIXME: handle this as an error
-            self.log.error("Bad agent.  Will not remember it: %s",
-                                                        str(new_agent.auth))
-            self.unlock()
-            return False
+        if agent.displayname is None or agent.displayname == "":
+            (displayname, display_order) = self.calc_new_displayname(agent.connection)
+            agent.displayname = displayname
+            agent.display_order = display_order
 
-        self.agents[new_agent.uuid] = new_agent
+        self.agents[agent.uuid] = agent
 
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("register: Initializing state entries on connect")
@@ -216,6 +207,8 @@ class AgentManager(threading.Thread):
             self.new_primary_event.set()
 
         self.unlock()
+
+        meta.Session.commit()
         return True
 
     def set_agent_types(self):
@@ -272,7 +265,7 @@ class AgentManager(threading.Thread):
 
         # Count how many of this agent type exist.
         rows = session.query(Agent).\
-            filter(Agent.domainid == self.domainid).\
+            filter(Agent.envid == self.envid).\
             filter(Agent.agent_type == new_agent.agent_type).\
             all()
 
@@ -288,91 +281,88 @@ class AgentManager(threading.Thread):
                                                             new_agent.agent_type)
         return ("INVALID AGENT TYPE: %s" % new_agent.agent_type, 0)
 
-    def remember(self, new_agent, body):
+    # FIXME: get/create ?
+    def remember(self, aconn, body):
         session = meta.Session()
 
-        # fixme: check for the presence of all these entries.
-        try:
-            entry = session.query(Agent).\
-                filter(Agent.domainid == self.domainid).\
-                filter(Agent.uuid == body['uuid']).\
-                one()
-            found = True
-        except NoResultFound, e:
-            found = False
+        uuid = body['uuid']
+        entry = Agent.get_by_uuid(self.envid, uuid)
 
-        if not found or entry.displayname == None or entry.displayname == "":
-            (displayname, display_order) = self.calc_new_displayname(new_agent)
+        if entry is None:
+            entry = Agent(envid=self.envid,
+                          uuid=body['uuid'],
+                          hostname=body['hostname'],
+                          agent_type=aconn.agent_type,
+                          version=body['version'],
+                          ip_address=body['ip-address'],
+                          listen_port=body['listen-port'],
+                          username=u'palette',# fixme
+                          password=u'tableau2014')
 
-        entry = Agent(body['hostname'],
-                         new_agent.agent_type,
-                         body['version'],
-                         body['ip-address'],
-                         body['listen-port'],
-                         u'palette',     # fixme
-                         u'tableau2014',
-                         body['uuid'],
-                         self.domainid)
         entry.last_connection_time = func.now()
-        if not found:
-            entry.displayname = displayname
-            entry.display_order = display_order
-
         entry = session.merge(entry)
-        session.commit()
-        # Remember the yml contents
-        if new_agent.yml_contents:
-            self.update_agent_yml(entry.agentid, new_agent.yml_contents)
-
-        # Remember the agent pinfo
-        if not self.update_agent_pinfo(new_agent, entry.agentid):
-            return False
-
         session.commit()
         return entry
 
-    def update_agent_yml(self, agentid, yml_contents):
+    def update_agent_yml(self, agentid, yml):
         """update the agent_yml table with this agent's yml contents."""
         session = meta.Session()
+
+        # FIXME: do an update instead of a delete all
         # First delete any old entries for this agent
         entry = session.query(AgentYmlEntry).\
             filter(AgentYmlEntry.agentid == agentid).delete()
 
+        d = {}
         # This the first line ('---')
-        for line in yml_contents.strip().split('\n')[1:]:
+        for line in yml.strip().split('\n')[1:]:
             key, value = line.split(":", 1)
+            value = value.strip()
             entry = AgentYmlEntry(agentid=agentid, key=key, value=value)
             session.add(entry)
+            d[key] = value
+        return d
 
-    def update_agent_pinfo(self, new_agent, agentid):
-        pinfo = new_agent.pinfo
+    def update_agent_pinfo(self, agent, pinfo):
+        agentid = agent.agentid
 
         session = meta.Session()
-        # First delete any old entries for this agent
-        session.query(AgentInfoEntry).\
-            filter(AgentInfoEntry.agentid == agentid).delete()
-
         # Set all of the agent volumes to 'inactive'.
         # Each volume pinfo sent us will later be set to 'active'.
         session.query(AgentVolumesEntry).\
             filter(AgentVolumesEntry.agentid == agentid).\
                    update({"active" : False}, synchronize_session=False)
 
-        parts = new_agent.auth['install-dir'].split(':')
+        aconn = agent.connection
+        parts = aconn.auth['install-dir'].split(':')
         if len(parts) != 2:
             self.log.error("Bad format for install-dir: %s",
-                                                new_agent.auth['install-dir'])
+                           aconn.auth['install-dir'])
             return False
 
         install_dir_vol_name = parts[0].upper()
         install_data_dir = ntpath.join(parts[1], AgentConnection.DATA_DIR)
 
-        for key, value in pinfo.iteritems():
-            if key != 'volumes':
-                entry = AgentInfoEntry(agentid=agentid, key=key, value=value)
-                session.add(entry)
-                continue
-            for volume in value:
+        # FIXME: make automagic based on self.__table__.columns
+        if 'fqdn' in pinfo:
+            agent.fqdn = pinfo['fqdn']
+        if 'os-version' in pinfo:
+            agent.os_version = pinfo['os-version']
+        if 'installed-memory' in pinfo:
+            agent.installed_memory = pinfo['installed-memory']
+        if 'processor-type' in pinfo:
+            agent.processor_type = pinfo['processor-type']
+        if 'processor-count' in pinfo:
+            agent.processor_count = pinfo['processor-count']
+        if 'tableau-install-dir' in pinfo:
+            agent.tableau_install_dir = pinfo['tableau-install-dir']
+        if 'tableau-data-dir' in pinfo:
+            agent.tableau_data_dir = pinfo['tableau-data-dir']
+        if 'tableau-data-size' in pinfo:
+            agent.tableau_data_size = pinfo['tableau-data-size']
+
+        if 'volumes' in pinfo:
+            for volume in pinfo['volumes']:
                 if 'name' in volume:
                     name = volume['name'].upper()
                 else:
@@ -421,17 +411,14 @@ class AgentManager(threading.Thread):
 
                         # If it is the primary agent and install volume,
                         # mark it as the "primary_data_loc" volume.
-                        if new_agent.agent_type == \
+                        if aconn.agent_type == \
                                 AgentManager.AGENT_TYPE_PRIMARY and \
-                                        install_dir_vol_name == name:
+                                install_dir_vol_name == name:
                             entry.primary_data_loc = True
                         else:
                             entry.primary_data_loc = False
 
                         session.add(entry)
-
-            if new_agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
-                continue
 
         session.commit()
 
@@ -441,12 +428,12 @@ class AgentManager(threading.Thread):
         # one since 1) we use it for backups and 2) We need to
         # know how much available disk space is used on the backup
         # volume.
-        if new_agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
+        if aconn.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
                 not self.primary_data_vol_exists(agentid, install_dir_vol_name):
             self.log.error("pinfo for the primary did not include" + \
-                " the install dir volume.  " + \
-                "agentid: %d, install_dir_vol_name: %s",
-                                            agentid, install_dir_vol_name)
+                               " the install dir volume.  " + \
+                               "agentid: %d, install_dir_vol_name: %s",
+                           agentid, install_dir_vol_name)
             return False
 
         return True
@@ -526,13 +513,13 @@ class AgentManager(threading.Thread):
     def all_agents(self):
         return self.agents
 
-    def agent_connected(self, aconn):
+    def agent_connected(self, uuid):
         """Check to see if the passed agent is still connected.
         Returns:
             True if still conencted.
             False if not connected.
         """
-        return aconn in self.agents.values()
+        return uuid in self.agents
 
     def agent_conn_by_type(self, agent_type):
         """Returns an instance of a connected agent of the requested type,
@@ -543,7 +530,7 @@ class AgentManager(threading.Thread):
 
         for key in self.agents:
             if self.agents[key].agent_type == agent_type:
-                return self.agents[key]
+                return self.agents[key].connection
 
         return None
 
@@ -555,7 +542,7 @@ class AgentManager(threading.Thread):
 
         for key in self.agents:
             if self.agents[key].displayname == target:
-                return self.agents[key]
+                return self.agents[key].connection
 
         return None
 
@@ -566,21 +553,27 @@ class AgentManager(threading.Thread):
         Return an instance of it, or None if none match."""
 
         for key in self.agents:
-            if self.agents[key].auth['hostname'] == target:
-                return self.agents[key]
+            if self.agents[key].connection.auth['hostname'] == target:
+                return self.agents[key].connection
 
         return None
 
-    def agent_conn_by_uuid(self, target):
+    def agent_by_uuid(self, uuid):
         """Search for agents with the given uuid.
             Return an instance of it, or None if none match.
         """
-
         for key in self.agents:
-            if self.agents[key].auth['uuid'] == target:
+            if self.agents[key].uuid == uuid:
                 return self.agents[key]
-
         return None
+
+    # DEPRECATED
+    def agent_conn_by_uuid(self, uuid):
+        """Search for agents with the given uuid.
+            Return an instance of it, or None if none match.
+        """
+        agent = self.agent_by_uuid(uuid)
+        return agent and agent.connection or None
 
     def remove_agent(self, agent, reason="", gen_event=True):
         """Remove an agent.
@@ -597,7 +590,7 @@ class AgentManager(threading.Thread):
         uuid = agent.uuid
         if self.agents.has_key(uuid):
             self.log.debug("Removing agent with uuid %s, name %s, reason: %s",\
-                uuid, self.agents[uuid].auth['hostname'], reason)
+                uuid, self.agents[uuid].connection.auth['hostname'], reason)
 
             if gen_event:
                 self.server.event_control.gen(EventControl.AGENT_DISCONNECT,
@@ -608,7 +601,7 @@ class AgentManager(threading.Thread):
 
             self.forget(agent.agentid)
             self.log.debug("remove_agent: closing agent socket.")
-            if self._close(agent.socket):
+            if self._close(agent.connection.socket):
                 self.log.debug("remove_agent: close agent socket succeeded.")
             else:
                 self.log.debug("remove_agent: close agent socket failed")
@@ -660,7 +653,7 @@ class AgentManager(threading.Thread):
                 self.log.debug("Accept failed.")
                 continue
 
-            tobj = threading.Thread(target=self.new_agent_connection,
+            tobj = threading.Thread(target=self.handle_agent_connection,
                                  args=(conn, addr))
             # Spawn a thread to handle the new agent connection
             tobj.start()
@@ -676,7 +669,7 @@ class AgentManager(threading.Thread):
         for key in self.agents:
             agent = self.agents[key]
             self.log.debug("agent fileno to close: %d", agent.socket.fileno())
-            if agent.socket.fileno() == fd:
+            if agent.connection.socket.fileno() == fd:
                 self.log.debug("Agent closed connection for: %s", key)
                 agent.socket.close()
                 del self.agents[key]
@@ -685,12 +678,12 @@ class AgentManager(threading.Thread):
         self.log.error("Couldn't find agent with fd: %d", fd)
 
     # thread function: spawned on a new connection from an agent.
-    def new_agent_connection(self, conn, addr):
+    def handle_agent_connection(self, conn, addr):
         if self.ssl:
             conn.settimeout(self.ssl_handshake_timeout)
             try:
                 ssl_sock = ssl.wrap_socket(conn, server_side=True,
-                                                       certfile=self.cert_file)
+                                           certfile=self.cert_file)
                 conn = ssl_sock
             except (ssl.SSLError, socket.error), e:
                 self.log.info("Exception with ssl wrap: %s", str(e))
@@ -703,23 +696,16 @@ class AgentManager(threading.Thread):
         conn.settimeout(self.socket_timeout)
 
         try:
-            agent = AgentConnection(self.server, conn, addr)
+            aconn = AgentConnection(self.server, conn, addr)
 
             # sleep for 100ms to prevent:
             #  'An existing connection was forcibly closed by the remote host'
             # on the Windows client when the agent tries to connect.
             time.sleep(.1);
 
-            httpconn = ReverseHTTPConnection(conn)
-
-            # Send the 'auth 'command.
-            httpconn.request('POST', '/auth')
-
-            res = httpconn.getresponse()
-            print >> sys.stderr, 'command: auth: ' + str(res.status) + ' ' + str(res.reason)
-            # Get the auth reply.
-            self.log.debug("new_agent_connection: about to read.")
-            body_json = res.read()
+            aconn.httpconn = ReverseHTTPConnection(conn)
+            # FIXME: why is this a POST?
+            body_json = aconn.http_send('POST', '/auth')
             if body_json:
                 body = json.loads(body_json)
                 self.log.debug("body = " + str(body))
@@ -736,15 +722,29 @@ class AgentManager(threading.Thread):
                     self._close(conn)
                     return
 
-            agent.httpconn = httpconn
-            agent.auth = body
+            aconn.auth = body
+            uuid = aconn.auth['uuid']
 
-            if self.server.init_new_agent(agent) and self.register(agent, body):
-                self.save_routes(agent) # fixme: check return value?
-            else:
+            agent = self.remember(aconn, body)
+            agent.connection = aconn
+            aconn.agentid = agent.agentid
+            aconn.uuid = uuid
+
+            if not self.server.init_new_agent(agent):
                 self.log.error("Bad agent.  Disconnecting.")
                 self._close(conn)
                 return
+
+            if agent.agent_type is None:
+                agent.agent_type = aconn.agent_type
+
+            if not self.register(agent, body):
+                self.log.error("Bad agent.  Disconnecting.")
+                self._close(conn)
+                return
+
+            self.save_routes(aconn) # fixme: check return value?
+            aconn.initting = False
 
         except socket.error, e:
             self.log.debug("Socket error: " + str(e))
@@ -755,10 +755,10 @@ class AgentManager(threading.Thread):
             self.log.error(str(e))
             self.log.error(traceback.format_exc())
 
-    def save_routes(self, agent):
+    def save_routes(self, aconn):
         lines = ""
         rows = meta.Session().query(AgentVolumesEntry).\
-            filter(AgentVolumesEntry.agentid == agent.agentid).\
+            filter(AgentVolumesEntry.agentid == aconn.agentid).\
             all()
 
         lines = []
@@ -773,19 +773,19 @@ class AgentManager(threading.Thread):
 
         lines = ''.join(lines)
 
-        if 'install-dir' not in agent.auth:
+        if 'install-dir' not in aconn.auth:
             self.log.error("save_routes: agent is missing 'install-dir'")
             return
 
-        route_path = ntpath.join(agent.auth['install-dir'], "conf", "archive",
+        route_path = ntpath.join(aconn.auth['install-dir'], "conf", "archive",
                                                                 "routes.txt")
         try:
-            agent.filemanager.put(route_path, lines)
+            aconn.filemanager.put(route_path, lines)
         except (exc.HTTPException, httplib.HTTPException,
                                                     EnvironmentError) as e:
             self.log.error(\
                 "filemanager.put(%s) on %s failed with: %s",
-                                    agent.displayname, route_path, str(e))
+                                    aconn.displayname, route_path, str(e))
             return False
 
         self.log.debug("Saved agent file '%s' with contents: %s",
@@ -822,7 +822,7 @@ class AgentHealthMonitor(threading.Thread):
         while True:
             if len(self.manager.agents) == 0:
                 # no agents to check on
-                self.log.debug("no agents to ping")
+                # self.log.debug("no agents to ping")
                 time.sleep(self.ping_interval)
                 continue
 
@@ -843,7 +843,7 @@ class AgentHealthMonitor(threading.Thread):
                         (agent.displayname, agent.agent_type, key))
 
                 # fixme: add a timeout ?
-                body = self.server.ping(agent)
+                body = self.server.ping(agent.connection)
                 if body.has_key('error'):
                     self.log.info("Ping: Agent '%s', type '%s', uuid %s did not respond to ping.  Removing." %
                         (agent.displayname, agent.agent_type, key))

@@ -17,45 +17,36 @@ class Agent(meta.Base, BaseDictMixin):
     __tablename__ = 'agent'
 
     agentid = Column(BigInteger, unique=True, nullable=False, \
-      autoincrement=True, primary_key=True)
-    domainid = Column(BigInteger, ForeignKey("domain.domainid"))
+                         autoincrement=True, primary_key=True)
+    envid = Column(BigInteger, ForeignKey("environment.envid"))
     uuid = Column(String, unique=True, index=True)
     displayname = Column(String)
     display_order = Column(Integer)
     hostname = Column(String)
+    fqdn = Column(String)
     agent_type = Column(String)
     version = Column(String)
     ip_address = Column(String)
     listen_port = Column(Integer)
     username = Column(String)
     password = Column(String)
+    os_version = Column(String)
+    installed_memory = Column(BigInteger)
+    processor_type = Column(String)
+    processor_count = Column(Integer)
+    tableau_install_dir = Column(String)
+    tableau_data_dir = Column(String)
+    tableau_data_size = Column(BigInteger)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
-      server_onupdate=func.current_timestamp())
+                                   server_onupdate=func.current_timestamp())
     last_connection_time = Column(DateTime, server_default=func.now())
     last_disconnect_time = Column(DateTime)
-    UniqueConstraint('domainid', 'displayname')
+    UniqueConstraint('envid', 'displayname')
 
-    def __init__(self, hostname, agent_type, version, ip_address, listen_port,
-                                            username, password, uuid, domainid):
-        try:
-            # FIXME: shouldn't this be a merge?
-            entry = meta.Session.query(Agent).\
-                filter(Agent.uuid == uuid).one()
-            agentid = entry.agentid
-        except NoResultFound, e:
-            agentid = None
-
-        self.agentid = agentid
-        self.hostname = hostname
-        self.agent_type = agent_type
-        self.version = version
-        self.ip_address = ip_address
-        self.listen_port = listen_port
-        self.username = username
-        self.password = password
-        self.uuid = uuid
-        self.domainid = domainid
+    def __init__(self, *args, **kwargs):
+        super(Agent, self).__init__(*args, **kwargs)
+        self.connection = None
 
     def connected(self):
         if not self.last_disconnect_time or \
@@ -69,6 +60,16 @@ class Agent(meta.Base, BaseDictMixin):
         try:
             entry = meta.Session.query(Agent).\
                 filter(Agent.agentid == agentid).one()
+        except NoResultFound:
+            return None
+        return entry
+
+    @classmethod
+    def get_by_uuid(cls, envid, uuid):
+        try:
+            entry = meta.Session.query(Agent).\
+                filter(Agent.envid == envid).\
+                filter(Agent.uuid == uuid).one()
         except NoResultFound:
             return None
         return entry
