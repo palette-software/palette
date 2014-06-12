@@ -1,12 +1,7 @@
 import os
 import time
 import subprocess
-
-# fixme: need to add the current directory to PYTHONPATH due to the
-# way apscheduler imports.
-curdir = os.path.dirname(os.path.abspath(__file__))
 import sys
-sys.path.append(curdir)
 
 from apscheduler.scheduler import Scheduler
 from apscheduler.jobstores.sqlalchemy_store import SQLAlchemyJobStore
