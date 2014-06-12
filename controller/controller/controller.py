@@ -42,6 +42,7 @@ from event_control import EventControl, EventControlManager
 from extracts import ExtractsEntry
 from workbooks import WorkbookEntry, WorkbookManager
 from s3 import S3
+from sched import Sched
 
 from version import VERSION
 
@@ -202,7 +203,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def ack(self):
         """ Acknowledge a submitted command before performing it. """
-        print >> self.wfile, "OK"
+        self.print_client("OK\n")
 
     def error(self, msg, *args):
         if args:
@@ -229,8 +230,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         """
 
         line = fmt % args
-        if not line.endswith('\n'):
-            line += '\n'
+#        if not line.endswith('\n'):
+#            line += '\n'
         try:
             print  >> self.wfile, line
         except EnvironmentError:
@@ -659,6 +660,39 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.print_client(str(m.groupdict()))
     do_license.__usage__ = 'license\n'
+
+    def do_sched(self, cmd):
+        """Manipulate scheduler."""
+        if not len(cmd.args):
+            self.usage(self.do_sched.__usage__)
+            return
+
+        if len(cmd.args) == 1 and cmd.args[0] == 'status':
+            self.ack()
+            body = server.sched.status()
+        elif len(cmd.args) >= 1 and cmd.args[0][:3] == 'del':
+            self.ack()
+            body = server.sched.delete(cmd.args[1:])
+        elif len(cmd.args) == 7 and cmd.args[0] == 'add':
+            args = cmd.args[1:]
+            body = server.sched.add(args[0], args[1], args[2], args[3],
+                                                        args[4], args[5])
+            if not 'error' in body:
+                self.ack()
+        else:
+            self.usage(self.do_sched.__usage__)
+            return
+
+        if 'error' in body:
+            self.error(str(body))
+        else:
+            self.print_client(str(body))
+        return
+
+    do_sched.__usage__ = \
+                'sched [status | delete job-name [job-name ...] | ' + \
+                                'add min hour dom mon dow command ]\n' + \
+                'Note: dow uses 0 for Monday while cron dow uses 0 for Sunday'
 
     def do_firewall(self, cmd):
         """Enable, disable or report the status of a port on an
@@ -2346,6 +2380,9 @@ def main():
     # even if we don't run the status thread.
     statusmon = StatusMonitor(server, manager)
     server.statusmon = statusmon
+
+    server.sched = Sched(server)
+    server.sched.populate()
 
     if not args.nostatus:
         log.debug("Starting status monitor.")

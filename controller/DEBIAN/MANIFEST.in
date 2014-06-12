@@ -4,3 +4,8 @@ include etc/ssl/certs/*
 include etc/init.d/*
 include etc/postfix/*
 include controller/*
+include controller/apscheduler/*
+include controller/apscheduler/jobstores/*
+include controller/apscheduler/triggers/*
+include controller/apscheduler/triggers/cron/*
+include var/palette/sched/*

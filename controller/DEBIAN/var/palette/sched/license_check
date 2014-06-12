@@ -1,0 +1,9 @@
+#!/bin/bash
+
+#fixme: implement
+
+echo starting license_check at `date`
+sleep 5
+echo ENDING license_check at `date`
+
+exit 0
