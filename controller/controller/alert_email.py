@@ -2,6 +2,9 @@ import smtplib
 from email.mime.text import MIMEText
 
 from mako.template import Template
+from mako import exceptions
+import mako.runtime
+mako.runtime.UNDEFINED="*UNDEFINED*"
 
 from event_control import EventControl
 
@@ -52,20 +55,21 @@ class AlertEmail(object):
             # Use the data dict it for template substitution.
             try:
                 subject = subject % data
-            except KeyError as e:
+            except (ValueError, KeyError) as e:
                 subject = "Template subject conversion failure: " + str(e) + \
                     "subject: " + subject + \
                     ", data: " + str(data)
 
         message = event_entry.email_message
         if message:
-            mako_template = Template(message)
             try:
+                mako_template = Template(message)
                 message = mako_template.render(**data)
-            except NameError as e:
+            except:
                 message = "Mako template message conversion failure: " + \
-                    str(e) + "\ntemplate: " + message + \
-                "\ndata: " + str(data)
+                    exceptions.text_error_template().render() + \
+                    "\ntemplate: " + message + \
+                        "\ndata: " + str(data)
         else:
            message = self.make_default_message(event_entry, subject, data)
 
@@ -141,8 +145,8 @@ class AlertEmail(object):
 
         if 'displayname' in data:
             message += "Agent: %s" % data['displayname'] + '\n'
-        if 'type' in data:
-            message += "Agent type: %s" % data['type'] + '\n'
+        if 'agent_type' in data:
+            message += "Agent type: %s" % data['agent_type'] + '\n'
         if data.has_key('error'):
             message += self.indented("Issue", data['error']) + '\n'
 
