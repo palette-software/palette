@@ -7,6 +7,7 @@ from akiri.framework.ext.sqlalchemy import meta
 from util import sizestr
 from mixin import BaseDictMixin
 
+# FIXME: move these classes to agent.py
 class AgentYmlEntry(meta.Base, BaseDictMixin):
     __tablename__ = "agent_yml"
 
@@ -15,19 +16,6 @@ class AgentYmlEntry(meta.Base, BaseDictMixin):
     agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False)
     key = Column(String)
     value = Column(String)
-
-class AgentInfoEntry(meta.Base, BaseDictMixin):
-    __tablename__ = "agent_info"
-
-    TABLEAU_DATA_DIR_KEY = "tableau-data-dir"
-    TABLEAU_DATA_SIZE_KEY = "tableau-data-size"
-
-    infoid = Column(Integer, unique=True, nullable=False, primary_key=True)
-
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False)
-    key = Column(String)
-    value = Column(String)
-
 
 class AgentVolumesEntry(meta.Base, BaseDictMixin):
     __tablename__ = "agent_volumes"

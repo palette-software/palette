@@ -2,3 +2,6 @@ etc/controller.ini		/etc
 etc/ssl/certs/palette_cert.pem	/etc/ssl/certs
 etc/init.d/controller	/etc/init.d
 bin/controller			/usr/bin
+var/palette/sched/backup    /var/palette/sched
+var/palette/sched/info    /var/palette/sched
+var/palette/sched/license_check    /var/palette/sched
