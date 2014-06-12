@@ -9,7 +9,7 @@
     </section>
   </section>
   <section class="row">
-    <section class="col-xs-12">
+    <section class="col-xs-12 nowrap">
       <div class="btn-group">
         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Status</div><span class="caret"></span>
         </button>
@@ -60,10 +60,12 @@
         </ul>
       </div>
 
-     <div class="col-xs-4">
-        <input class="form-control" type="text" placeholder="Workbook" style="margin-top:10px;">
-     </div>
-      
+      <!-- TODO: Add back in Alpha 2 or later
+      <div class="col-xs-4">
+         <input class="form-control" type="text" placeholder="Workbook" style="margin-top:10px;">
+      </div>
+      -->
+
     </section>
   </section>
 </section>
