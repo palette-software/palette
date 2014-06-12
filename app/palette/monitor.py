@@ -10,7 +10,7 @@ from akiri.framework.config import store
 
 from akiri.framework.ext.sqlalchemy import meta
 
-from controller.status import StatusEntry
+from controller.tableau import TableauProcess
 from controller.state import StateManager
 from controller.agent import Agent
 from controller.agentmanager import AgentManager
@@ -67,7 +67,7 @@ class MonitorApplication(PaletteRESTHandler):
 
     def handle_monitor(self, req):
         # Get the state
-        main_state = StateManager.get_state_by_domainid(self.domain.domainid)
+        main_state = StateManager.get_state_by_envid(self.environment.envid)
 
         state_control_entry = StateControl.get_state_control_entry(main_state)
         if not state_control_entry:
@@ -91,7 +91,7 @@ class MonitorApplication(PaletteRESTHandler):
             user_action_in_progress = True
 
         agent_entries = meta.Session.query(Agent).\
-            filter(Agent.domainid == self.domain.domainid).\
+            filter(Agent.envid == self.environment.envid).\
             order_by(Agent.display_order).\
             all()
 
@@ -125,9 +125,9 @@ class MonitorApplication(PaletteRESTHandler):
                         entry.agent_type == AgentManager.AGENT_TYPE_WORKER:
 
                 # Add tableau processes for this agent
-                status_entries = meta.Session.query(StatusEntry).\
-                    filter(StatusEntry.agentid == entry.agentid).\
-                    order_by(StatusEntry.name).\
+                status_entries = meta.Session.query(TableauProcess).\
+                    filter(TableauProcess.agentid == entry.agentid).\
+                    order_by(TableauProcess.name).\
                     all()
 
                 tableau_procs = []

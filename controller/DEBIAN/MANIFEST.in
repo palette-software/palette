@@ -4,3 +4,4 @@ include etc/ssl/certs/*
 include etc/init.d/*
 include etc/postfix/*
 include controller/*
+include var/palette/sched/*

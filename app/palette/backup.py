@@ -14,7 +14,7 @@ from akiri.framework.config import store
 from akiri.framework.ext.sqlalchemy import meta
 
 from controller.backup import BackupEntry, BackupManager
-from controller.agentinfo import AgentInfoEntry, AgentVolumesEntry
+from controller.agentinfo import AgentVolumesEntry
 from controller.agent import Agent
 from controller.domain import Domain
 from controller.util import DATEFMT
@@ -77,7 +77,7 @@ class BackupApplication(PaletteRESTHandler):
         try:
             agent_entry, vol_entry = meta.Session.query(\
                 Agent, AgentVolumesEntry).\
-                filter(Agenty.agentid == AgentVolumesEntry.agentid).\
+                filter(Agent.agentid == AgentVolumesEntry.agentid).\
                 filter(AgentVolumesEntry.volid == volid).\
                 one()
         except NoResultFound, e:
