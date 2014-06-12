@@ -12,7 +12,6 @@ import exc
 from request import *
 
 import httplib
-import inspect
 import ntpath
 
 import sqlalchemy
