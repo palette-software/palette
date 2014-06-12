@@ -1,4 +1,5 @@
 import copy
+import inspect
 import shlex
 import SocketServer as socketserver
 
@@ -6,6 +7,16 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from agent import Agent
 from agentmanager import AgentManager
+from system import SystemEntry
+
+def usage(msg):
+    def wrapper(f):
+        def realf(*args, **kwargs):
+            return f(*args, **kwargs)
+        realf.__name__ = f.__name__
+        realf.__usage__ = msg
+        return realf
+    return wrapper
 
 class CommandException(Exception):
     def __init__(self, errmsg):
@@ -136,7 +147,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             msg = msg % args
         self.print_client('[ERROR] ' + msg)
 
-    def usage(self, msg):
+    def print_usage(self, msg):
         self.error('usage: '+msg)
 
     def print_client(self, fmt, *args):
@@ -181,10 +192,11 @@ class CliHandler(socketserver.StreamRequestHandler):
                     print >> self.wfile, '    usage: ' + m.__usage__
         print >> self.wfile
 
+    @usage('status')
     def do_status(self, cmd):
         if len(cmd.args):
             self.error("'status' does not have an argument.")
-            self.usage(self.do_status.__usage__)
+            self.print_usage(self.do_status.__usage__)
             return
 
         aconn = self.get_aconn(cmd.dict)
@@ -195,8 +207,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
         body = self.server.cli_cmd("tabadmin status -v", aconn)
         self.print_client(str(body))
-    do_status.__usage__ = 'status'
 
+    @usage('backup [target-displayname [volume-name]]')
     def do_backup(self, cmd):
         """Perform a Tableau backup and potentially migrate."""
 
@@ -204,7 +216,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         volume_name = None
 
         if len(cmd.args) > 2:
-            self.usage(self.do_backup.__usage__)
+            self.print_usage(self.do_backup.__usage__)
             return
         elif len(cmd.args) == 1:
             target = cmd.args[0]
@@ -279,14 +291,13 @@ class CliHandler(socketserver.StreamRequestHandler):
         # 'tabadmin status -v' until at least we finish with ours.
         aconn.user_action_unlock()
 
-    do_backup.__usage__ = 'backup [target-displayname [volume-name]]'
-
+    @usage('backupdel backup-name')
     def do_backupdel(self, cmd):
         """Delete a Tableau backup."""
 
         target = None
         if len(cmd.args) != 1:
-            self.usage(self.do_backup.__usage__)
+            self.print_usage(self.do_backup.__usage__)
             return
         backup = cmd.args[0]
 
@@ -317,15 +328,15 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(main_state)
 
         aconn.user_action_unlock()
-    do_backupdel.__usage__ = 'backupdel backup-name'
 
+    @usage('restore [source:pathname]')
     def do_restore(self, cmd):
         """Restore.  If the file/path we are restoring from is on a different
         machine than the Primary Agent, then get the file/path to the
         Primary Agent first."""
 
         if len(cmd.args) != 1:
-            self.usage(self.do_restore.__usage__)
+            self.print_usage(self.do_restore.__usage__)
             return
 
         target = cmd.args[0]
@@ -429,8 +440,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         # 'tabadmin status -v' until at least we finish with ours.
         aconn.user_action_unlock()
 
-    do_restore.__usage__ = 'restore [source:pathname]'
 
+    @usage('copy source-agent-name:filename dest-agent-name')
     def do_copy(self, cmd):
         """Copy a file from one agent to another."""
 
@@ -440,7 +451,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         body = self.server.copy_cmd(cmd.args[0], cmd.args[1])
         self.report_status(body)
-    do_copy.__usage__ = 'copy source-agent-name:filename dest-agent-name'
+
 
     # FIXME: print status too
     def list_agents(self):
@@ -458,6 +469,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             s += str(d) + '\n'
         self.print_client(s)
 
+
     def list_backups(self):
         s = ''
         # FIXME: per environment
@@ -465,6 +477,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             s += str(backup.todict()) + '\n'
         self.print_client(s)
 
+    @usage('list [agents|backups]')
     def do_list(self, cmd):
         """List information about all connected agents."""
 
@@ -477,13 +490,13 @@ class CliHandler(socketserver.StreamRequestHandler):
             elif cmd.args[0].lower() == 'backups':
                 f = self.list_backups
         if f is None:
-            self.usage(self.do_list.__usage__)
+            self.print_usage(self.do_list.__usage__)
             return
 
         self.ack()
         f()
-    do_list.__usage__ = 'list [agents|backups]'
 
+    @usage('cli <command> [args...]')
     def do_cli(self, cmd):
         if len(cmd.args) < 1:
             return self.error(self.do_cli.__usage__)
@@ -504,8 +517,9 @@ class CliHandler(socketserver.StreamRequestHandler):
                 cli_command += ' ' + arg
         body = self.server.cli_cmd(cli_command, aconn)
         self.report_status(body)
-    do_cli.__usage__ = 'cli <command> [args...]'
 
+
+    @usage('phttp GET https://vol1/filename vol2:/local-directory')
     def do_phttp(self, cmd):
         if len(cmd.args) < 2:
             self.error(self.do_phttp.__usage__)
@@ -530,24 +544,18 @@ class CliHandler(socketserver.StreamRequestHandler):
         except sqlalchemy.orm.exc.NoResultFound:
             return self.error("Source agent not found in agent table: %d " % \
                                                                 aconn.agentid)
-
         env = {u'BASIC_USERNAME': entry.username,
                u'BASIC_PASSWORD': entry.password}
-
-        print >> self.wfile, "Sending to displayname '%s' (type: %s):" % \
-                        (aconn.displayname, aconn.agent_type)
-
-        print >> self.wfile, "    ", phttp_cmd
 
         body = self.server.cli_cmd(phttp_cmd, aconn, env=env)
         self.report_status(body)
 
-    do_phttp.__usage__ = 'phttp GET https://vol1/filename vol2:/local-directory'
 
+    @usage('info')
     def do_info(self, cmd):
         """Run pinfo."""
         if len(cmd.args):
-            self.usage(self.do_info.__usage__)
+            self.print_usage(self.do_info.__usage__)
             return
 
         agent = self.get_agent(cmd.dict)
@@ -558,12 +566,12 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
         body = self.server.info(agent)
         self.print_client(str(body))
-    do_info.__usage__ = 'info\n'
 
+    @usage('license')
     def do_license(self, cmd):
         """Run license check."""
         if len(cmd.args):
-            self.usage(self.do_info.__usage__)
+            self.print_usage(self.do_info.__usage__)
             return
 
         agent = self.get_agent(cmd.dict)
@@ -574,11 +582,12 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
         d = self.server.license(agent)
         self.print_client(str(d))
-    do_license.__usage__ = 'license\n'
 
+
+    @usage('yml')
     def do_yml(self, cmd):
         if len(cmd.args):
-            self.usage(self.do_info.__usage__)
+            self.print_usage(self.do_info.__usage__)
             return
 
         agent = self.get_agent(cmd.dict)
@@ -593,21 +602,22 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
         body = self.server.yml(agent)
         self.print_client("%s", str(body))
-    do_yml.__usage__ = 'yml\n'
 
+
+    @usage('firewall [ enable | disable | status ] port')
     def do_firewall(self, cmd):
         """Enable, disable or report the status of a port on an
            agent firewall.."""
         if len(cmd.args) == 1:
             if cmd.args[0] != "status":
-                self.usage(self.do_firewall.__usage__)
+                self.print_usage(self.do_firewall.__usage__)
                 return
         elif len(cmd.args) == 2:
             if cmd.args[0] not in ("enable", "disable"):
-                self.usage(self.do_firewall.__usage__)
+                self.print_usage(self.do_firewall.__usage__)
                 return
         else:
-            self.usage(self.do_firewall.__usage__)
+            self.print_usage(self.do_firewall.__usage__)
             return
 
         aconn = self.get_aconn(cmd.dict)
@@ -633,12 +643,12 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.print_client(str(body))
         return
-    do_firewall.__usage__ = 'firewall [ enable | disable | status ] port\n'
 
+    @usage('ping')
     def do_ping(self, cmd):
         """Ping an agent"""
         if len(cmd.args):
-            self.error(self.do_ping.__usage__)
+            self.usage(self.do_ping.__usage__)
             return
 
         aconn = self.get_aconn(cmd.dict)
@@ -652,11 +662,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = self.server.ping(aconn)
         self.report_status(body)
 
-    do_ping.__usage__ = 'ping'
 
+    @usage('start')
     def do_start(self, cmd):
         if len(cmd.args) != 0:
-            print >> self.wfile, '[ERROR] usage: start'
+            self.usage(self.do_start.__usage__)
             return
 
         aconn = self.get_aconn(cmd.dict)
@@ -666,7 +676,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # lock to ensure against two simultaneous user actions
         if not aconn.user_action_lock(blocking=False):
-            print >> self.wfile, "FAIL: Busy with another user request."
+            self.error('busy with another user request.')
             return
 
         # Check to see if we're in a state to start
@@ -675,17 +685,13 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # Start can be done only when Tableau is stopped.
         if main_state != StateManager.STATE_STOPPED:
-            print >> self.wfile, "FAIL: Can't start - main state is:", \
-                                                                  main_state
-            self.server.log.debug("Can't start - main state is: %s",  main_state)
+            self.error("Can't start - main state is: " + main_state)
             aconn.user_action_unlock()
             return
 
         reported_status = statusmon.get_reported_status()
         if reported_status != TableauProcess.STATUS_STOPPED:
-            print >> self.wfile, "FAIL: Can't start - reported status is:", \
-                                                              reported_status
-            self.server.log.debug("Can't start - reported status is: %s",  reported_status)
+            self.error("Can't start - reported status is: " + reported_status)
             aconn.user_action_unlock()
             return
 
@@ -730,6 +736,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         aconn.user_action_unlock()
 
+    @usage('stop [no-backup|nobackup]')
     def do_stop(self, cmd):
         if len(cmd.args) > 1:
             self.error(self.do_stop.__usage__)
@@ -773,9 +780,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.server.log.debug("------------Starting Backup for Stop---------------")
 
         stateman.update(StateManager.STATE_STARTED_BACKUP_STOP)
-        self.server.event_control.gen(EventControl.BACKUP_BEFORE_STOP_STARTED,
-                                                            aconn.__dict__)
-
+        self.server.event_control.gen( \
+            EventControl.BACKUP_BEFORE_STOP_STARTED, aconn.__dict__)
         self.ack()
 
         body = self.server.backup_cmd(aconn)
@@ -833,7 +839,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             stateman.update(reported_status)
 
         aconn.user_action_unlock()
-    do_stop.__usage__ = 'stop [no-backup|nobackup]'
+
 
     def report_status(self, body):
         """Passed an HTTP body and prints info about it back to the user."""
@@ -856,16 +862,17 @@ class CliHandler(socketserver.StreamRequestHandler):
             if len(body['stderr']):
                 self.print_client('stderr: %s', body['stderr'])
 
+    @usage('maint [start|stop]')
     def do_maint(self, cmd):
         """Start or Stop the maintenance webserver on the agent."""
 
         if len(cmd.args) < 1 or len(cmd.args) > 2:
-            self.usage(self.do_maint.__usage__)
+            self.print_usage(self.do_maint.__usage__)
             return
 
         action = cmd.args[0].lower()
         if action != "start" and action != "stop":
-            self.usage(self.do_maint.__usage__)
+            self.print_usage(self.do_maint.__usage__)
             return
 
         port = -1
@@ -880,12 +887,13 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         body = self.server.maint(action, port)
         self.print_client(str(body))
-    do_maint.__usage__ = 'maint [start|stop]'
 
+
+    @usage('archive [start|stop] [port]')
     def do_archive(self, cmd):
         """Start or Stop the archive HTTPS server on the agent."""
         if len(cmd.args) < 1 or len(cmd.args) > 2:
-            self.usage(self.do_archive.__usage__)
+            self.print_usage(self.do_archive.__usage__)
             return
 
         aconn = self.get_aconn(cmd.dict)
@@ -895,7 +903,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         action = cmd.args[0].lower()
         if action != "start" and action != "stop":
-            self.usage(self.do_archive.__usage__)
+            self.print_usage(self.do_archive.__usage__)
             return
 
         port = -1
@@ -910,14 +918,13 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         body = self.server.archive(aconn, action, port)
         self.print_client(str(body))
-    do_archive.__usage__ = 'archive [start|stop] [port]'
 
-    do_maint.__usage__ = 'maint [start|stop]'
 
+    @usage('displayname new-displayname')
     def do_displayname(self, cmd):
         """Set the display name for an agent"""
         if len(cmd.args) != 1:
-            self.usage(self.do_displayname.__usage__)
+            self.print_usage(self.do_displayname.__usage__)
             return
 
         new_displayname = cmd.args[0]
@@ -934,8 +941,9 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         body = {}
         self.print_client(str(body))
-    do_displayname.__usage__ = 'displayname new-displayname'
 
+
+    @usage('file [GET|PUT|DELETE] <path> [source-or-target]')
     def do_file(self, cmd):
         """Manipulate a particular file on the agent."""
 
@@ -945,7 +953,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         if len(cmd.args) < 2 or len(cmd.args) > 3:
-            self.usage(self.do_file.__usage__)
+            self.print_usage(self.do_file.__usage__)
             return
 
         method = cmd.args[0].upper()
@@ -954,19 +962,19 @@ class CliHandler(socketserver.StreamRequestHandler):
         try:
             if method == 'GET':
                 if len(cmd.args) != 3:
-                    self.usage(self.do_file.__usage__)
+                    self.print_usage(self.do_file.__usage__)
                     return
                 self.ack()
                 body = aconn.filemanager.save(path, cmd.args[2])
             elif method == 'PUT':
                 if len(cmd.args) != 3:
-                    self.usage(self.do_file.__usage__)
+                    self.print_usage(self.do_file.__usage__)
                     return
                 self.ack()
                 body = aconn.filemanager.sendfile(path, cmd.args[2])
             elif method == 'DELETE':
                 if len(cmd.args) != 2:
-                    self.usage(self.do_file.__usage__)
+                    self.print_usage(self.do_file.__usage__)
                     return
                 self.ack()
                 aconn.filemanager.delete(path)
@@ -975,7 +983,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                 self.ack()
                 body = aconn.filemanager.put(path, cmd.args[2])
             else:
-                self.usage(self.do_file.__usage__)
+                self.print_usage(self.do_file.__usage__)
                 return
         except exc.HTTPException, e:
             body = {'error': 'HTTP Failure',
@@ -988,8 +996,9 @@ class CliHandler(socketserver.StreamRequestHandler):
                 body['body'] = e.body
 
         self.print_client(str(body))
-    do_file.__usage__ = '[GET|PUT|DELETE] <path> [source-or-target]'
 
+
+    @usage('s3 [GET|PUT] <bucket> <key-or-path>')
     def do_s3(self, cmd):
         """Send a file to or receive a file from an S3 bucket"""
 
@@ -999,7 +1008,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         if len(cmd.args) != 3 or len(cmd.args) > 4:
-            self.usage(self.do_s3.__usage__)
+            self.print_usage(self.do_s3.__usage__)
             return
 
         action = cmd.args[0].upper()
@@ -1039,8 +1048,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         body[u'resource'] = resource
 
         self.print_client(str(body))
-    do_s3.__usage__ = '[GET|PUT] <bucket> <key-or-path>'
 
+
+    @usage('sql <statement>')
     def do_sql(self, cmd):
         """Run a SQL statement against the Tableau database."""
 
@@ -1052,7 +1062,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # FIXME: check for primary agent
 
         if len(cmd.args) != 1:
-            self.usage(self.do_sql.__usage__)
+            self.print_usage(self.do_sql.__usage__)
             return
 
         stmt = cmd.args[0]
@@ -1060,20 +1070,21 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         body = aconn.odbc.execute(stmt)
         self.print_client(str(body))
-    do_sql.__usage__ = '<statement>'
 
+
+    @usage('auth [import|verify] <username> <password>')
     def do_auth(self, cmd):
         """Work with the Tableau user data."""
 
         if len(cmd.args) < 1:
-            self.usage(self.do_auth.__usage__)
+            self.print_usage(self.do_auth.__usage__)
             return
 
         action = cmd.args[0].lower()
 
         if action == 'import':
             if len(cmd.args) != 1:
-                self.usage(self.do_auth.__usage__)
+                self.print_usage(self.do_auth.__usage__)
                 return
             aconn = self.get_aconn(cmd.dict)
             if not aconn:
@@ -1083,23 +1094,84 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = self.server.auth.load(aconn)
         elif action == 'verify':
             if len(cmd.args) != 3:
-                self.usage(self.do_auth.__usage__)
+                self.print_usage(self.do_auth.__usage__)
                 return
             self.ack()
             result = self.server.auth.verify(cmd.args[1], cmd.args[2])
             body = {u'status': result and 'OK' or 'INVALID'}
         else:
-            self.usage(self.do_auth.__usage__)
+            self.print_usage(self.do_auth.__usage__)
             return
         self.print_client(str(body))
-    do_auth.__usage__ = "[import|verify] <username> <password>"
 
+
+    @usage('system <SET|GET|DELETE> <key> [value]')
+    def do_system(self, cmd):
+        """ Set or Delete a 'system' table entry for the current environment."""
+        value = None
+        body = {}
+
+        if len(cmd.args) < 1:
+            self.print_usage(self.do_system.__usage__)
+            return
+
+        action = cmd.args[0].upper()
+        if action == 'SET':
+            if len(cmd.args) != 3:
+                self.print_usage(self.do_system.__usage__)
+                return
+            value = cmd.args[2]
+        elif action == 'GET':
+            if len(cmd.args) != 2:
+                self.print_usage(self.do_system.__usage__)
+                return
+        elif action == 'DELETE':
+            if len(cmd.args) != 2:
+                self.print_usage(self.do_system.__usage__)
+                return
+        else:
+            self.print_usage(self.do_system.__usage__)
+            return
+
+        self.ack()
+
+        key = cmd.args[1]
+
+        entry = None
+        try:
+            entry = self.server.system.entry(key)
+        except ValueError:
+            pass
+
+        session = meta.Session()
+        if action == 'SET':
+            if entry:
+                entry.value = value
+            else:
+                entry = SystemEntry(envid=self.server.environment.envid,
+                                    key=key, value=value)
+                session.add(entry)
+            body['status'] = 'OK'
+        elif action == 'GET':
+            if not entry:
+                body['error'] = 'Key not found'
+            else:
+                body['key'] = entry.key
+                body['value'] = entry.value
+        elif action == 'DELETE':
+            if entry:
+                session.delete(entry)
+            body['status'] = 'OK'
+        session.commit()
+        return self.print_client(str(body))
+
+    @usage('ziplogs')
     def do_ziplogs(self, cmd):
         """Run 'tabadmin ziplogs'."""
 
         target = None
         if len(cmd.args) != 0:
-            self.usage(self.do_backup.__usage__)
+            self.print_usage(self.do_backup.__usage__)
             return
 
         aconn = self.get_aconn(cmd.dict)
@@ -1141,13 +1213,10 @@ class CliHandler(socketserver.StreamRequestHandler):
             pass
 
         stateman.update(main_state)
-
         aconn.user_action_unlock();
-    do_ziplogs.__usage__ = 'ziplogs'
 
+    @usage('nop')
     def do_nop(self, cmd):
-        """usage: nop"""
-
         print >> self.wfile, "dict:"
         for key in cmd.dict:
             print >> self.wfile, "\t%s = %s" % (key, cmd.dict[key])
