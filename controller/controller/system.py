@@ -1,4 +1,7 @@
-from sqlalchemy import Column, String, Integer, BigInteger, DateTime, func
+import re
+
+from sqlalchemy import Column, String, Integer, BigInteger, DateTime, Boolean
+from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 
@@ -8,15 +11,16 @@ from mixin import BaseMixin, BaseDictMixin
 class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'system'
 
-    domainid = Column(BigInteger, ForeignKey("domain.domainid"), primary_key=True)
+    envid = Column(BigInteger, ForeignKey("environment.envid"),
+                   primary_key=True)
     key = Column(String, unique=True, nullable=False, primary_key=True)
     value = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(),
                                onupdate=func.current_timestamp())
 
-    defaults = [{'domainid':1, 'key':'disk-watermark-low', 'value':str(50)},
-                {'domainid':1, 'key':'disk-watermark-high', 'value':str(80)}]
+    defaults = [{'envid':1, 'key':'disk-watermark-low', 'value':str(50)},
+                {'envid':1, 'key':'disk-watermark-high', 'value':str(80)}]
                 
 class SystemManager(object):
 
@@ -25,20 +29,20 @@ class SystemManager(object):
     SYSTEM_KEY_EVENT_SUMMARY_FORMAT = "event-summary-format"
     SYSTEM_KEY_ARCHIVE_BACKUP_LOCATION = "archive-backup-location"
 
-    def __init__(self, domainid):
-        self.domainid = domainid
+    def __init__(self, envid):
+        self.envid = envid
 
     def save(self, key, value):
         session = meta.Session()
 
-        entry = SystemEntry(domainid=self.domainid, key=key, value=value)
+        entry = SystemEntry(envid=self.envid, key=key, value=value)
         session.merge(entry)
         session.commit()
 
     def entry(self, key):
         try:
             entry = meta.Session.query(SystemEntry).\
-                filter(SystemEntry.domainid == self.domainid).\
+                filter(SystemEntry.envid == self.envid).\
                 filter(SystemEntry.key == key).\
                 one()
         except NoResultFound, e:
@@ -57,18 +61,53 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'license'
 
     licenseid = Column(BigInteger, primary_key=True)
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"))
+    agentid = Column(BigInteger, ForeignKey("agent.agentid"),
+                     nullable=False, unique=True)
     interactors = Column(Integer, nullable=False)
     viewers = Column(Integer, nullable=False)
+    notified = Column(Boolean, nullable=False, default=False)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(),
                                onupdate=func.current_timestamp())
 
     @classmethod
-    def save(cls, agentid, interactors, viewers):
+    def get_by_agentid(cls, agentid):
+        try:
+            entry = meta.Session.query(LicenseEntry).\
+                filter(LicenseEntry.agentid == agentid).\
+                one()
+        except NoResultFound, e:
+            return None
+        return entry
+
+    @classmethod
+    def save(cls, agentid, interactors=None, viewers=None):
         session = meta.Session()
-        entry = SystemEntry(agentid=agentid,
-                            interactor=interactors,
-                            viewers=viewers)
+        entry = cls.get_by_agentid(agentid)
+        if not entry:
+            entry = LicenseEntry(agentid=agentid)
+
+        entry.interactors = interactors
+        entry.viewers = viewers
+
+        # If the entry is valid, reset the notification field.
+        if entry.valid():
+            entry.notified = False
+
         session.merge(entry)
         session.commit()
+        return entry
+
+    @classmethod
+    def parse(cls, output):
+        pattern = '(?P<interactors>\d+) interactors, (?P<viewers>\d+) viewers'
+        m = re.search(pattern, output)
+        if not m:
+            return {}
+        return m.groupdict()
+
+    def invalid(self):
+        return self.interactors == 0 and self.viewers == 0
+
+    def valid(self):
+        return not self.invalid()
