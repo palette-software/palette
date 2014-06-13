@@ -9,7 +9,7 @@
     </section>
   </section>
   <section class="row">
-    <section class="col-xs-12 nowrap">
+    <section class="col-xs-12 event-dropdowns">
       <div class="btn-group">
         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Status</div><span class="caret"></span>
         </button>
