@@ -8,8 +8,8 @@ class CommHandler(object):
 
         parser = argparse.ArgumentParser(description="backup")
         parser.add_argument('--hostname', dest='hostname', default='localhost')
-        parser.add_argument('--port', dest='port', default=9000)
-        parser.add_argument('--envid', dest='envid', default=1)
+        parser.add_argument('--port', dest='port', type=int, default=9000)
+        parser.add_argument('--envid', dest='envid', type=int, default=1)
 
         args = parser.parse_args()
 
@@ -17,7 +17,7 @@ class CommHandler(object):
         self.port = args.port
         self.envid = args.envid
 
-        self.preamble = "/envid=%s /type=primary" % (self.envid)
+        self.preamble = "/envid=%d /type=primary" % (self.envid)
 
     def send_cmd(self, cmd, sync=False):
 
