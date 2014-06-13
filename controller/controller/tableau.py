@@ -120,7 +120,7 @@ class TableauStatusMonitor(threading.Thread):
         except NoResultFound, e:
             return StatusEntry.STATUS_UNKNOWN
 
-    def set_main_state(self, status, aconn):
+    def set_main_state(self, status, agent):
         main_state = self.stateman.get_state()
         if status not in \
             (TableauProcess.STATUS_RUNNING, TableauProcess.STATUS_STOPPED,
@@ -135,13 +135,13 @@ class TableauStatusMonitor(threading.Thread):
                 # StateManager calls the state "STARTED"; Tableau calls
                 # it "RUNNING".
                 self.server.event_control.gen(EventControl.INIT_STATE_STARTED,
-                                                                aconn.__dict__)
+                                                                agent.__dict__)
             elif status == TableauProcess.STATUS_STOPPED:
                 self.server.event_control.gen(EventControl.INIT_STATE_STOPPED,
-                                                                aconn.__dict__)
+                                                                agent.__dict__)
             elif status == TableauProcess.STATUS_DEGRADED:
                 self.server.event_control.gen(EventControl.INIT_STATE_DEGRADED,
-                                                                aconn.__dict__)
+                                                                agent.__dict__)
             return
 
         # If the main state was DEGRADED but status isn't DEGRADED any more,
@@ -154,10 +154,10 @@ class TableauStatusMonitor(threading.Thread):
                 # from DEGRADED to RUNNING instead of this standard
                 # "started" alert?
                 self.server.event_control.gen(EventControl.STATE_STARTED,
-                                              aconn.__dict__)
+                                              agent.__dict__)
             elif status == StateManager.STATUS_STOPPED:
                 self.server.event_control.gen(EventControl.STATE_STOPPED,
-                                              aconn.__dict__)
+                                              agent.__dict__)
             else:
                 self.log.error("Unexpected transition from DEGRADED to: %s",
                                                                     status)
@@ -169,19 +169,19 @@ class TableauStatusMonitor(threading.Thread):
             self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateManager.STATE_STARTED)
             self.server.event_control.gen(EventControl.STATE_STARTED,
-                                          aconn.__dict__)
+                                          agent.__dict__)
         elif main_state == StateManager.STATE_STARTED and \
                 status == TableauProcess.STATUS_STOPPED:
             self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateManager.STATE_STOPPED)
             self.server.event_control.gen(EventControl.STATE_STOPPED,
-                                          aconn.__dict__)
+                                          agent.__dict__)
         elif status == TableauProcess.STATUS_DEGRADED and \
                 main_state != TableauProcess.STATUS_DEGRADED:
             self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateManager.STATE_DEGRADED)
             self.server.event_control.gen(EventControl.STATE_DEGRADED,
-                                                            aconn.__dict__)
+                                                            agent.__dict__)
 
     def run(self):
         while True:
@@ -197,7 +197,13 @@ class TableauStatusMonitor(threading.Thread):
     def check_status(self):
 
         # FIXME: Tie agent to domain.
-        aconn = self.manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
+        agent = self.manager.agent_by_type(AgentManager.AGENT_TYPE_PRIMARY)
+        if not agent:
+            self.log.debug(\
+                        "status thread: No primary agent is connected.")
+            return
+
+        aconn = agent.connection
         if not aconn:
             session = meta.Session()
             self.log.debug(\
@@ -218,7 +224,7 @@ class TableauStatusMonitor(threading.Thread):
         # until the 'tabadmin status -v' is finished.
         aconn.user_action_unlock()
 
-        self.check_status_with_connection(aconn)
+        self.check_status_with_connection(agent)
 
     def get_agent_id_from_host(self, host):
         # FIXME: As an optimization, look in the acon list before looking
@@ -253,10 +259,10 @@ class TableauStatusMonitor(threading.Thread):
 
         return agentid
 
-    def check_status_with_connection(self, aconn):
-        agentid = aconn.agentid
+    def check_status_with_connection(self, agent):
+        agentid = agent.agentid
 
-        body = self.server.status_cmd(aconn)
+        body = self.server.status_cmd(agent)
         if not body.has_key('stdout'):
             # fixme: Probably update the status table to say something's wrong.
             self.log.error(\
@@ -315,7 +321,7 @@ class TableauStatusMonitor(threading.Thread):
 
         session.commit()
 
-        self.set_main_state(system_status, aconn)
+        self.set_main_state(system_status, agent)
         self.log.debug("Logging main status: %s", system_status)
 
         session.commit()

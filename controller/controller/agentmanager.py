@@ -50,13 +50,12 @@ class AgentConnection(object):
         # one thread to send/recv  on the agent socket at a time.
         self.lockobj = threading.RLock()
 
-        # A lock for to allow only one user action (backup/restore/etc.)
+        # A lock to allow only one user action (backup/restore/etc.)
         # at a time.
         self.user_action_lockobj = threading.Lock()
 
         self.filemanager = FileManager(self)
         self.odbc = ODBC(self)
-        self.firewall = Firewall(self)
 
     def httpexc(self, res, method='GET', body=None):
         if body is None:
@@ -154,8 +153,15 @@ class AgentManager(threading.Thread):
         return None
 
     def register(self, agent, body):
-        """Called with the agent object and body /auth dictionary that
-           was sent from the agent in json."""
+        """
+           - Checks agent uuid and type against already connected agents.
+           - Calculates a displayname and order if it is a new agent.
+           - Adds the agent to the connected agents dictionary.
+           - Expunges agent from db session
+
+           Called with the agent object and body /auth dictionary that
+           was sent from the agent in json.
+       """
 
         self.lock()
         self.log.debug("new agent: name %s, uuid %s", \
@@ -189,6 +195,7 @@ class AgentManager(threading.Thread):
             agent.displayname = displayname
             agent.display_order = display_order
 
+        self.log.debug("stuff is %s, name: %s", str(agent.connection), agent.displayname)
         self.agents[agent.uuid] = agent
 
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
@@ -285,6 +292,7 @@ class AgentManager(threading.Thread):
 
     # FIXME: get/create ?
     def remember(self, aconn, body):
+        """Stores the agent information in the database."""
         session = meta.Session()
 
         uuid = body['uuid']
@@ -530,6 +538,17 @@ class AgentManager(threading.Thread):
         """
         return uuid in self.agents
 
+    def agent_by_type(self, agent_type):
+        """Returns an instance of an agent of the requested type.
+
+        Returns None if no agents of that type are connected."""
+
+        for key in self.agents:
+            if self.agents[key].agent_type == agent_type:
+                return self.agents[key]
+
+        return None
+
     def agent_conn_by_type(self, agent_type):
         """Returns an instance of a connected agent of the requested type,
         or a list of instances if more than one agent of that type
@@ -736,6 +755,7 @@ class AgentManager(threading.Thread):
 
             agent = self.remember(aconn, body)
             agent.connection = aconn
+            agent.firewall = Firewall(agent, self.server)
             aconn.agentid = agent.agentid
             aconn.uuid = uuid
 
@@ -855,7 +875,7 @@ class AgentHealthMonitor(threading.Thread):
                         (agent.displayname, agent.agent_type, key))
 
                 # fixme: add a timeout ?
-                body = self.server.ping(agent.connection)
+                body = self.server.ping(agent)
                 if body.has_key('error'):
                     self.log.info("Ping: Agent '%s', type '%s', uuid %s did not respond to ping.  Removing." %
                         (agent.displayname, agent.agent_type, key))

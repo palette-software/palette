@@ -84,8 +84,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         backup_vol = backup_path.split(':')[0]
         # e.g.: c:\\Program\ Files\ (x86)\\Palette\\Data\\2014Jan27_162225.tsbak
         cmd = 'tabadmin backup \\\"%s\\\"' % backup_path
-        aconn = agent.connection
-        body = self.cli_cmd(cmd, aconn)
+        body = self.cli_cmd(cmd, agent)
         if body.has_key('error'):
             return body
 
@@ -96,7 +95,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if dcheck.target_conn:
             backup_vol_entry = dcheck.vol_entry
             # Copy the backup to a non-primary agent
-            source_path = "%s:%s/%s" % (aconn.displayname, backup_vol,
+            source_path = "%s:%s/%s" % (agent.displayname, backup_vol,
                                                                 backup_name)
             copy_body = self.copy_cmd(source_path,
                         dcheck.target_conn.displayname, dcheck.target_dir)
@@ -115,7 +114,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             else:
                 # The copy succeeded.
                 # Remove the backup file from the primary
-                remove_body = self.delete_file(aconn, backup_path)
+                remove_body = self.delete_file(agent, backup_path)
 
                 body['info'] += \
                     "Backup file copied to '%s'" % \
@@ -136,7 +135,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # Backup remains on the primary.  Dig out the volid for it.
             try:
                 vol_entry = meta.Session.query(AgentVolumesEntry).\
-                    filter(AgentVolumesEntry.agentid == aconn.agentid).\
+                    filter(AgentVolumesEntry.agentid == agent.agentid).\
                     filter(AgentVolumesEntry.primary_data_loc == True).\
                     one()
             except sqlalchemy.orm.exc.NoResultFound:
@@ -170,7 +169,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.log.debug("backupdel_cmd: Deleting path '%s' on agent '%s'",
                                             backup_path, agent.displayname)
 
-        body = self.delete_file(aconn, backup_path)
+        body = self.delete_file(agent, backup_path)
         if not body.has_key('error'):
             try:
                 self.backup.remove(backupid)
@@ -180,17 +179,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return body
 
-    def status_cmd(self, aconn):
-        return self.cli_cmd('tabadmin status -v', aconn)
+    def status_cmd(self, agent):
+        return self.cli_cmd('tabadmin status -v', agent)
 
-    def cli_cmd(self, command, aconn, env=None, immediate=False):
+    def cli_cmd(self, command, agent, env=None, immediate=False):
         """ 1) Sends the command (a string)
             2) Waits for status/completion.  Saves the body from the status.
             3) Sends cleanup.
             4) Returns body from the status.
         """
 
-        body = self._send_cli(command, aconn, env=env, immediate=immediate)
+        body = self._send_cli(command, agent, env=env, immediate=immediate)
 
         if body.has_key('error'):
             return body
@@ -203,7 +202,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if body['run-status'] == 'finished':
             return body
 
-        cli_body = self._get_cli_status(body['xid'], aconn, command)
+        cli_body = self._get_cli_status(body['xid'], agent, command)
 
         if not cli_body.has_key("stdout"):
             self.log.error(\
@@ -213,7 +212,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 "Missing 'stdout' in agent reply for command '%s'" % command,
                                                                     cli_body)
 
-        cleanup_body = self._send_cleanup(body['xid'], aconn, command)
+        cleanup_body = self._send_cleanup(body['xid'], agent, command)
 
         if cli_body.has_key("error"):
             return cli_body
@@ -223,22 +222,23 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return cli_body
 
-    def _send_cli(self, cli_command, aconn, env=None, immediate=False):
+    def _send_cli(self, cli_command, agent, env=None, immediate=False):
         """Send a "cli" command to an Agent.
             Returns a body with the results.
             Called without the connection lock."""
 
         self.log.debug("_send_cli")
 
+        aconn = agent.connection
         aconn.lock()
 
         req = CliStartRequest(cli_command, env=env, immediate=immediate)
 
         headers = {"Content-Type": "application/json"}
 
-        displayname = aconn.displayname and aconn.displayname or aconn.uuid
+        displayname = agent.displayname and agent.displayname or agent.uuid
         self.log.debug("about to send the cli command to '%s', type '%s' xid: %d, command: %s",
-                displayname, aconn.agent_type, req.xid, cli_command)
+                displayname, agent.agent_type, req.xid, cli_command)
         try:
             aconn.httpconn.request('POST', '/cli', req.send_body, headers)
             self.log.debug('sent cli command.')
@@ -255,16 +255,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.error("_send_cli: command: '%s', %d %s : %s",
                                cli_command, res.status, res.reason, body_json)
                 reason = "Command sent to agent failed. Error: " + str(e)
-                self.remove_agent(aconn, reason)
+                self.remove_agent(agent, reason)
                 return self.httperror(aconn, res, method="POST",
-                                      agent=aconn.displayname,
+                                      agent=agent.displayname,
                                       uri=uri, body=body_json)
 
         except (httplib.HTTPException, EnvironmentError) as e:
             self.log.error(\
                 "_send_cli: command '%s' failed with httplib.HTTPException: %s",
                                                         cli_command, str(e))
-            self.remove_agent(aconn, EventControl.AGENT_COMM_LOST) # bad agent
+            self.remove_agent(agent, EventControl.AGENT_COMM_LOST) # bad agent
             return self.error("_send_cli: '%s' command failed with: %s" %
                             (cli_command, str(e)))
         finally:
@@ -289,7 +289,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return body
 
-    def _send_cleanup(self, xid, aconn, orig_cli_command):
+    def _send_cleanup(self, xid, agent, orig_cli_command):
         """Send a "cleanup" command to an Agent.
             On success, returns the body of the reply.
             On failure, throws an exception.
@@ -299,6 +299,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             Called without the connection lock."""
 
         self.log.debug("_send_cleanup")
+        aconn = agent.connection
         aconn.lock()
         self.log.debug("_send_cleanup got lock")
 
@@ -320,9 +321,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                res.status, res.reason, body_json)
                 alert = "Command to agent failed with status: " + \
                                                             str(res.status)
-                self.remove_agent(aconn, alert)
+                self.remove_agent(agent, alert)
                 return self.httperror(aconn, res, method="POST",
-                                      agent=aconn.displayname,
+                                      agent=agent.displayname,
                                       uri=uri, body=body_json)
 
             self.log.debug("headers: " + str(res.getheaders()))
@@ -332,7 +333,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # bad agent
             self.log.error("_send_cleanup: POST %s for '%s' failed with: %s",
                            uri, orig_cli_command, str(e))
-            self.remove_agent(aconn, "Command to agent failed. " \
+            self.remove_agent(agent, "Command to agent failed. " \
                                   + "Error: " + str(e))
             return self.error("'%s' failed for command '%s' with: %s" % \
                                   (uri, orig_cli_command, str(e)))
@@ -400,7 +401,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # Enable the firewall port on the source host.
         self.log.debug("Enabling firewall port %d on src host '%s'", \
                                     src.listen_port, src.displayname)
-        fw_body = src.connection.firewall.enable(src.listen_port)
+        fw_body = src.firewall.enable(src.listen_port)
         if fw_body.has_key("error"):
             self.log.error(\
                 "firewall enable port %d on src host %s failed with: %s",
@@ -435,10 +436,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.log.debug("agent username: %s, password: %s", entry.username,
                                                             entry.password)
         # Send command to destination agent
-        copy_body = self.cli_cmd(command, dst.connection, env=env)
+        copy_body = self.cli_cmd(command, dst, env=env)
         return copy_body
 
-    def restore_cmd(self, aconn, target, orig_state):
+    def restore_cmd(self, agent, target, orig_state):
         """Do a tabadmin restore of the passed target, except
            the target is the format:
                 source-displayname:pathname
@@ -465,7 +466,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # Without a ':', assume the backup is still on the primary.
         parts = target.split(':')
         if len(parts) == 1:
-            source_displayname = aconn.displayname
+            source_displayname = agent.displayname
             source_spec = parts[0]
         elif len(parts) == 2:
             source_displayname = parts[0]   #.e.g "Tableau Archive #201"
@@ -495,7 +496,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         local_fullpathname = ntpath.join(backup_dir, filename_only)
 
         # Check if the file is on the Primary Agent.
-        if source_displayname != aconn.displayname:
+        if source_displayname != agent.displayname:
             # The file isn't on the Primary agent:
             # We need to copy the file to the Primary.
 
@@ -503,9 +504,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             #   source-agent-name:/filename
             #   dest-agent-displayname
             self.log.debug("restore: Sending copy command: %s, %s", \
-                               target, aconn.displayname)
+                               target, agent.displayname)
             # target is something like: "C/20140531_153629.tsbak"
-            body = self.copy_cmd(target, aconn.displayname, backup_dir)
+            body = self.copy_cmd(target, agent.displayname, backup_dir)
 
             if body.has_key("error"):
                 fmt = "restore: copy backup file '%s' from '%s' failed. " +\
@@ -518,7 +519,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 return body
 
         # The restore file is now on the Primary Agent.
-        self.event_control.gen(EventControl.RESTORE_STARTED, aconn.__dict__)
+        self.event_control.gen(EventControl.RESTORE_STARTED, agent.__dict__)
 
         reported_status = self.statusmon.get_reported_status()
 
@@ -526,23 +527,23 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # Restore can run only when tableau is stopped.
             self.stateman.update(StateManager.STATE_STOPPING_RESTORE)
             self.log.debug("------------Stopping Tableau for restore-------------")
-            stop_body = self.cli_cmd("tabadmin stop", aconn)
+            stop_body = self.cli_cmd("tabadmin stop", agent)
             if stop_body.has_key('error'):
                 self.log.info("Restore: tabadmin stop failed")
-                if source_displayname != aconn.displayname:
+                if source_displayname != agent.displayname:
                     # If the file was copied to the Primary, delete
                     # the temporary backup file we copied to the Primary.
-                    self.delete_file(aconn, local_fullpathname)
+                    self.delete_file(agent, local_fullpathname)
                 self.stateman.update(orig_state)
                 return stop_body
 
-            self.event_control.gen(EventControl.STATE_STOPPED, aconn.__dict__)
+            self.event_control.gen(EventControl.STATE_STOPPED, agent.__dict__)
 
         # 'tabadmin restore ...' starts tableau as part of the
         # restore procedure.
         # fixme: Maybe the maintenance web server wasn't running?
         maint_msg = ""
-        maint_body = self.maint("stop", aconn=aconn)
+        maint_body = self.maint("stop", agent=agent)
         if maint_body.has_key("error"):
             self.log.info("Restore: maint stop failed: " + maint_body['error'])
             # continue on, not a fatal error...
@@ -553,7 +554,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         try:
             cmd = 'tabadmin restore \\\"%s\\\"' % local_fullpathname
             self.log.debug("restore sending command: %s", cmd)
-            restore_body = self.cli_cmd(cmd, aconn)
+            restore_body = self.cli_cmd(cmd, agent)
         except httplib.HTTPException, e:
             restore_body = { "error": "HTTP Exception: " + str(e) }
 
@@ -568,21 +569,21 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # fixme: Do we need to add restore information to the database?
         # fixme: check status before cleanup? Or cleanup anyway?
 
-        if source_displayname != aconn.displayname:
+        if source_displayname != agent.displayname:
             # If the file was copied to the Primary, delete
             # the temporary backup file we copied to the Primary.
-            self.delete_file(aconn, local_fullpathname)
+            self.delete_file(agent, local_fullpathname)
 
         if restore_success:
             self.stateman.update(StateManager.STATE_STARTED)
-            self.event_control.gen(EventControl.STATE_STARTED, aconn.__dict__)
+            self.event_control.gen(EventControl.STATE_STARTED, agent.__dict__)
         else:
             # On a successful restore, tableau starts itself.
             # fixme: eventually control when tableau is started and
             # stopped, rather than have tableau automatically start
             # during the restore.  (Tableau does not support this currently.)
             self.log.info("Restore: starting tableau after failed restore.")
-            start_body = self.cli_cmd("tabadmin start", aconn)
+            start_body = self.cli_cmd("tabadmin start", agent)
             if start_body.has_key('error'):
                 self.log.info(\
                     "Restore: 'tabadmin start' failed after failed restore.")
@@ -599,21 +600,21 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 # The "tableau start" succeeded
                 self.stateman.update(StateManager.STATE_STARTED)
                 self.event_control.gen( \
-                    EventControl.STATE_STARTED, aconn.__dict__)
+                    EventControl.STATE_STARTED, agent.__dict__)
 
         return restore_body
 
-    def delete_file(self, aconn, source_fullpathname):
+    def delete_file(self, agent, source_fullpathname):
         """Delete a file, check the error, and return the body result."""
         self.log.debug("Removing file '%s'", source_fullpathname)
         cmd = 'CMD /C DEL \\\"%s\\\"' % source_fullpathname
-        remove_body = self.cli_cmd(cmd, aconn)
+        remove_body = self.cli_cmd(cmd, agent)
         if remove_body.has_key('error'):
             self.log.info('DEL of "%s" failed.', source_fullpathname)
             # fixme: report somewhere the DEL failed.
         return remove_body
 
-    def _get_cli_status(self, xid, aconn, orig_cli_command):
+    def _get_cli_status(self, xid, agent, orig_cli_command):
         """Gets status on the command and xid.  Returns:
             Body in json with status/results.
 
@@ -634,6 +635,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         uri = self.CLI_URI + "?xid=" + str(xid)
         headers = {"Content-Type": "application/json"}
 
+        aconn = agent.connection
         while True:
             self.log.debug("about to get status of cli command '%s', xid %d",
                            orig_cli_command, xid)
@@ -642,13 +644,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # will not know about it yet.
             # FIXME: use agent here instead of aconn.uuid
             if not aconn.initting and \
-                    not self.agentmanager.agent_connected(aconn.uuid):
+                    not self.agentmanager.agent_connected(agent.uuid):
                 self.log.warning("Agent '%s' (type: '%s', uuid %s) " + \
                         "disconnected before finishing: %s",
-                           aconn.displayname, aconn.agent_type, aconn.uuid, uri)
+                           agent.displayname, agent.agent_type, agent.uuid, uri)
                 return self.error(("Agent '%s' (type: '%s', uuid %s) " + \
                     "disconnected before finishing: %s") %
-                        (aconn.displayname, aconn.agent_type, aconn.uuid, uri))
+                        (agent.displayname, agent.agent_type, agent.uuid, uri))
 
             aconn.lock()
             self.log.debug("Sending GET " + uri)
@@ -661,9 +663,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.debug("status: " + str(res.status) + ' ' + \
                                                             str(res.reason))
                 if res.status != httplib.OK:
-                    self.remove_agent(aconn,
+                    self.remove_agent(agent,
                                  EventControl.AGENT_RETURNED_INVALID_STATUS)
-                    return self.httperror(res, agent=aconn.displayname, uri=uri)
+                    return self.httperror(res, agent=agent.displayname, uri=uri)
 
 #                debug for testing agent disconnects
 #                print "sleeping"
@@ -681,7 +683,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
                 self.log.debug("body = " + str(body))
                 if not body.has_key('run-status'):
-                    self.remove_agent(aconn,
+                    self.remove_agent(agent,
                                      EventControl.AGENT_RETURNED_INVALID_STATUS)
                     return self.error(\
                         "GET %s command reply was missing 'run-status'!  " + \
@@ -701,26 +703,26 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     time.sleep(self.cli_get_status_interval)
                     continue
                 else:
-                    self.remove_agent(aconn,
+                    self.remove_agent(agent,
                         "Communication failure with agent:  " + \
                         "Unknown run-status returned from agent: %s" % \
                                             body['run-status'])    # bad agent
                     return self.error("Unknown run-status: %s.  Will not " + \
                                             "retry." % body['run-status'], body)
             except httplib.HTTPException, e:
-                    self.remove_agent(aconn,
+                    self.remove_agent(agent,
                         "HTTP communication failure with agent: " + \
                                                         str(e))    # bad agent
                     return self.error("GET %s failed with HTTPException: %s" \
                                                                 % (uri, str(e)))
             except EnvironmentError, e:
-                    self.remove_agent(aconn, "Communication failure with " + \
+                    self.remove_agent(agent, "Communication failure with " + \
                             "agent. Unexpected error: " + str(e))    # bad agent
                     return self.error("GET %s failed with: %s" % (uri, str(e)))
 
     def info(self, agent):
         aconn = agent.connection
-        body = self.cli_cmd(Controller.PINFO_BIN, aconn, immediate=True)
+        body = self.cli_cmd(Controller.PINFO_BIN, agent, immediate=True)
         # FIXME: add a function to test cli success (cli_success?)
         if not 'exit-status' in body or body['exit-status'] != 0:
             return body;
@@ -739,7 +741,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return pinfo
 
     def license(self, agent):
-        body = self.cli_cmd('tabadmin license', agent.connection)
+        body = self.cli_cmd('tabadmin license', agent)
 
         if not 'exit-status' in body or body['exit-status'] != 0:
             return body
@@ -765,7 +767,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         body = self.agentmanager.update_agent_yml(agent.agentid, yml)
         return body
 
-    def maint(self, action, port=-1, aconn=None, send_alert=True):
+    def maint(self, action, port=-1, agent=None, send_alert=True):
         if action not in ("start", "stop"):
             self.log.error("Invalid maint action: %s", action)
             return self.error("Bad maint action: %s" % action)
@@ -773,55 +775,57 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         manager = self.agentmanager
 
         # FIXME: Tie agent to domain
-        if not aconn:
-            aconn = manager.agent_conn_by_type(AgentManager.AGENT_TYPE_PRIMARY)
-            if not aconn:
+        if not agent:
+            agent = manager.agent_by_type(AgentManager.AGENT_TYPE_PRIMARY)
+            if not agent:
+                return self.error("maint: no primary agent is known.")
+
+            elif not agent.connection:
                 return self.error("maint: no primary agent is connected.")
 
         send_body = {"action": action}
         if port > 0:
             send_body["port"] = port
 
-        body = self.send_immediate(aconn, "POST", "/maint", send_body)
+        body = self.send_immediate(agent, "POST", "/maint", send_body)
 
         if body.has_key("error"):
             if action == "start":
                 self.event_control.gen(\
                     EventControl.MAINT_START_FAILED,
                             dict({'error': body['error']}.items() +  \
-                                                 aconn.__dict__.items()))
+                                                 agent.__dict__.items()))
             else:
                 self.event_control.gen(\
                     EventControl.MAINT_STOP_FAILED,
                             dict({'error': body['error']}.items() +  \
-                                                 aconn.__dict__.items()))
+                                                 agent.__dict__.items()))
             return body
 
         if not send_alert:
             return body
 
         if action == 'start':
-            self.event_control.gen(EventControl.MAINT_ONLINE, aconn.__dict__)
+            self.event_control.gen(EventControl.MAINT_ONLINE, agent.__dict__)
         else:
-            self.event_control.gen(EventControl.MAINT_OFFLINE, aconn.__dict__)
+            self.event_control.gen(EventControl.MAINT_OFFLINE, agent.__dict__)
 
         return body
 
-    def archive(self, aconn, action, port=-1):
+    def archive(self, agent, action, port=-1):
         send_body = {"action": action}
         if port > 0:
             send_body["port"] = port
 
-        return self.send_immediate(aconn, "POST", "/archive", send_body)
+        return self.send_immediate(agent, "POST", "/archive", send_body)
 
-    def ping(self, aconn):
+    def ping(self, agent):
 
-        return self.send_immediate(aconn, "POST", "/ping")
+        return self.send_immediate(agent, "POST", "/ping")
 
-
-    def send_immediate(self, aconn, method, uri, send_body=""):
+    def send_immediate(self, agent, method, uri, send_body=""):
         """Sends the request specified by:
-                aconn:      agent connection to send to.
+                agent:      agent to send to.
                 method:     POST, PUT, GET, etc.
                 uri:        '/maint', 'firewall', etc.
                 send_body:  Body to send in the request.
@@ -839,8 +843,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.log.debug(\
             "about to send an immediate command to '%s', type '%s', " + \
                 "method '%s', uri '%s', body '%s'",
-                    aconn.displayname, aconn.agent_type, method, uri, send_body)
+                    agent.displayname, agent.agent_type, method, uri, send_body)
 
+        aconn = agent.connection
         aconn.lock()
         body = {}
         try:
@@ -853,13 +858,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.error(\
                     "immediate command to %s failed with status %d: %s " + \
                     "%s, body: %s:",
-                            aconn.displayname, res.status, method, uri, rawbody)
-                self.remove_agent(aconn,\
+                            agent.displayname, res.status, method, uri, rawbody)
+                self.remove_agent(agent,\
                     ("Communication failure with agent. " +\
                     "Immediate command to %s, status returned: " +\
                     "%d: %s %s, body: %s") % \
-                        (aconn.displayname, res.status, method, uri, rawbody))
-                return self.httperror(res, agent=aconn.displayname,
+                        (agent.displayname, res.status, method, uri, rawbody))
+                return self.httperror(res, agent=agent.displayname,
                                       method=method, uri=uri, body=rawbody)
             elif rawbody:
                 body = json.loads(rawbody)
@@ -872,7 +877,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         except (httplib.HTTPException, EnvironmentError) as e:
             self.log.error("Agent send_immediate command %s %s failed: %s",
                                         method, uri, str(e))    # bad agent
-            self.remove_agent(aconn, \
+            self.remove_agent(agent, \
                     "Agent send_immediate command %s %s failed: %s" % \
                                         (method, uri, str(e)))    # bad agent
             return self.error("send_immediate for method %s, uri %s failed: %s" % \
@@ -890,15 +895,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         self.agentmanager.set_displayname(aconn, uuid, displayname)
 
-    def ziplogs_cmd(self, aconn, target=None):
+    def ziplogs_cmd(self, agent, target=None):
         """Run tabadmin ziplogs'."""
 
+        aconn = agent.connection
         ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
         install_dir = aconn.auth['install-dir']
         ziplog_path = ntpath.join(install_dir, "Data", ziplog_name)
 
         cmd = 'tabadmin ziplogs -l -n -a \\\"%s\\\"' % ziplog_path
-        body = self.cli_cmd(cmd, aconn)
+        body = self.cli_cmd(cmd, agent)
         body[u'info'] = u'tabadmin ziplogs -l -n -a ziplog_name'
         return body
 
@@ -979,21 +985,21 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # Cleanup.
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             # Put into a known state
-            body = self.maint("stop", aconn=aconn, send_alert=False)
+            body = self.maint("stop", agent=agent, send_alert=False)
             if body.has_key("error"):
                 self.event_control.gen(\
                    EventControl.MAINT_STOP_FAILED,
-                            dict(d.items() + aconn.__dict__.items()))
+                            dict(d.items() + agent.__dict__.items()))
 
-        body = self.archive(aconn, "stop")
+        body = self.archive(agent, "stop")
         if body.has_key("error"):
             self.event_control.gen(EventControl.ARCHIVE_STOP_FAILED,
-                                   dict(body.items() + aconn.__dict__.items()))
+                                   dict(body.items() + agent.__dict__.items()))
         # Get ready.
-        body = self.archive(aconn, "start")
+        body = self.archive(agent, "start")
         if body.has_key("error"):
             self.event_control.gen(EventControl.ARCHIVE_START_FAILED,
-                            dict(body.items() + aconn.__dict__.items()))
+                            dict(body.items() + agent.__dict__.items()))
 
         # If tableau is stopped, turn on the maintenance server
         if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
@@ -1001,16 +1007,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         main_state = self.stateman.get_state()
         if main_state == StateManager.STATE_STOPPED:
-            body = self.maint("start", aconn=aconn, send_alert=False)
+            body = self.maint("start", agent=agent, send_alert=False)
             if body.has_key("error"):
                 self.event_control.gen(EventControl.MAINT_START_FAILED,
-                            dict(body.items() + aconn.__dict__.items()))
+                            dict(body.items() + agent.__dict__.items()))
 
         return True
 
-    def remove_agent(self, aconn, reason="", gen_event=True):
+    def remove_agent(self, agent, reason="", gen_event=True):
         manager = self.agentmanager
-        manager.remove_agent(aconn, reason=reason, gen_event=gen_event)
+        manager.remove_agent(agent, reason=reason, gen_event=gen_event)
         # FIXME: At the least, we need to add the domain to the check
         #        for a primary; better, however, would be to store the
         #        uuid of the status with the status and riff off uuid.
