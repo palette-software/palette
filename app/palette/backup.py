@@ -120,7 +120,7 @@ class BackupApplication(PaletteRESTHandler):
             'config': [{'name': 'archive-backup',
                         'options': options,
                         'value': options[1]['item']}],
-            'backups': {'type': 'Production Backups', 'items': L},
+            'backups': {'type': 'Restore From', 'items': L},
             'next': scheduled
             }
 
