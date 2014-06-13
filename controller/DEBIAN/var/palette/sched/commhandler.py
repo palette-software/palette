@@ -17,7 +17,7 @@ class CommHandler(object):
         self.port = args.port
         self.envid = args.envid
 
-        self.preamble = "/envid=%d /type=primary" % (self.envid)
+        self.preamble = "/envid=%s /type=primary" % (self.envid)
 
     def send_cmd(self, cmd, sync=False):
 
