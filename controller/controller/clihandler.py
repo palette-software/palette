@@ -8,6 +8,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from agent import Agent
 from agentmanager import AgentManager
+from backup import BackupManager
 from event_control import EventControl
 from system import SystemEntry
 from state import StateManager
@@ -526,7 +527,6 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = self.server.cli_cmd(cli_command, aconn)
         self.report_status(body)
 
-
     @usage('phttp GET https://vol1/filename vol2:/local-directory')
     def do_phttp(self, cmd):
         if len(cmd.args) < 2:
@@ -557,7 +557,6 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         body = self.server.cli_cmd(phttp_cmd, aconn, env=env)
         self.report_status(body)
-
 
     @usage('info')
     def do_info(self, cmd):
@@ -591,7 +590,6 @@ class CliHandler(socketserver.StreamRequestHandler):
         d = self.server.license(agent)
         self.print_client(str(d))
 
-
     @usage('yml')
     def do_yml(self, cmd):
         if len(cmd.args):
@@ -611,14 +609,13 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = self.server.yml(agent)
         self.print_client("%s", str(body))
 
-
     @usage('sched [status | delete job-name [job-name ...] | ' + \
                'add min hour dom mon dow command ]\n' + \
                'Note: dow uses 0 for Monday while cron dow uses 0 for Sunday')
     def do_sched(self, cmd):
         """Manipulate scheduler."""
         if not len(cmd.args):
-            self.usage(self.do_sched.__usage__)
+            self.print_usage(self.do_sched.__usage__)
             return
 
         if len(cmd.args) == 1 and cmd.args[0] == 'status':
@@ -634,7 +631,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             if not 'error' in body:
                 self.ack()
         else:
-            self.usage(self.do_sched.__usage__)
+            self.print_usage(self.do_sched.__usage__)
             return
 
         if 'error' in body:
@@ -642,7 +639,6 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             self.print_client(str(body))
         return
-
 
     @usage('firewall [ enable | disable | status ] port')
     def do_firewall(self, cmd):
@@ -687,8 +683,8 @@ class CliHandler(socketserver.StreamRequestHandler):
     @usage('ping')
     def do_ping(self, cmd):
         """Ping an agent"""
-        if len(cmd.args):
-            self.usage(self.do_ping.__usage__)
+        if not len(cmd.args):
+            self.print_usage(self.do_ping.__usage__)
             return
 
         aconn = self.get_aconn(cmd.dict)
@@ -702,11 +698,10 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = self.server.ping(aconn)
         self.report_status(body)
 
-
     @usage('start')
     def do_start(self, cmd):
         if len(cmd.args) != 0:
-            self.usage(self.do_start.__usage__)
+            self.print_usage(self.do_start.__usage__)
             return
 
         aconn = self.get_aconn(cmd.dict)

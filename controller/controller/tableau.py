@@ -22,6 +22,7 @@ class TableauProcess(meta.Base):
     STATUS_RUNNING="RUNNING"
     STATUS_STOPPED="STOPPED"
     STATUS_DEGRADED="DEGRADED"
+    STATUS_UNKNOWN="UNKNOWN"
 
     name = Column(String, nullable=False, primary_key=True)
     agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False,\
@@ -109,12 +110,15 @@ class TableauStatusMonitor(threading.Thread):
             all()
 
     def get_reported_status(self):
-        return meta.Session().query(TableauProcess).\
-            join(Agent).\
-            filter(Agent.envid == self.envid).\
-            filter(Agent.agent_type == 'primary').\
-            filter(TableauProcess.name == 'Status').\
-            one().status
+        try:
+            return meta.Session().query(TableauProcess).\
+                join(Agent).\
+                filter(Agent.envid == self.envid).\
+                filter(Agent.agent_type == 'primary').\
+                filter(TableauProcess.name == 'Status').\
+                one().status
+        except NoResultFound, e:
+            return StatusEntry.STATUS_UNKNOWN
 
     def set_main_state(self, status, aconn):
         main_state = self.stateman.get_state()
@@ -265,7 +269,8 @@ class TableauStatusMonitor(threading.Thread):
         session = meta.Session()
 
         self.remove_all_status()
-        session.commit()
+        # Do not commit until after the table is added to.
+        # Otherwise, the table could be empty temporarily.
 
         system_status = None;
         for line in lines:
