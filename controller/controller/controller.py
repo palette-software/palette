@@ -399,16 +399,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # Enable the firewall port on the source host.
         self.log.debug("Enabling firewall port %d on src host '%s'", \
-                                    src.auth['listen-port'], src.displayname)
-        fw_body = src.firewall.enable(src.auth['listen-port'])
+                                    src.listen_port, src.displayname)
+        fw_body = src.connection.firewall.enable(src.listen_port)
         if fw_body.has_key("error"):
             self.log.error(\
                 "firewall enable port %d on src host %s failed with: %s",
-                        src.auth['listen-port'], src.displayname, 
-                                                        fw_body['error'])
+                    src.listen_port, src.displayname, fw_body['error'])
             return fw_body
 
-        source_ip = src.auth['ip-address']
+        source_ip = src.ip_address
 
         if not target_dir:
             target_dir = self.backup.primary_data_loc_path()
@@ -418,7 +417,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                         "for the primary agent.")
 
         command = '%s GET "https://%s:%s/%s" "%s"' % \
-            (Controller.PHTTP_BIN, source_ip, src.auth['listen-port'],
+            (Controller.PHTTP_BIN, source_ip, src.listen_port,
              source_path, target_dir)
 
         try:
@@ -436,7 +435,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.log.debug("agent username: %s, password: %s", entry.username,
                                                             entry.password)
         # Send command to destination agent
-        copy_body = self.cli_cmd(command, dst, env=env)
+        copy_body = self.cli_cmd(command, dst.connection, env=env)
         return copy_body
 
     def restore_cmd(self, aconn, target, orig_state):
@@ -974,7 +973,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # Note: Don't call this before update_agent_pinfo()
         # (needed for agent.tableau_data_dir).
-        self.yml(agent)
+        if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+            self.yml(agent)
 
         # Cleanup.
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
