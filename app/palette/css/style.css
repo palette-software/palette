@@ -1586,3 +1586,8 @@ div.refresh {
     font-size: 26px;
     color:#fff;
 }
+
+.event-dropdowns {
+    height: 67px;
+    overflow: hidden;
+}
