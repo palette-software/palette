@@ -91,7 +91,7 @@ class EventControl(meta.Base, BaseMixin):
     TABLEAU_USER_TABLE="TABLEAU-USER-TABLE"
     TABLEAU_SYSTEM_TABLE="TABLEAU-SYSTEM-TABLE"
 
-    SCHEDULED_JOB_SUCCEEDED="SCHEDULE-JOB-SUCCEEDED"
+    SCHEDULED_JOB_STARTED="SCHEDULE-JOB-STARTED"
     SCHEDULED_JOB_FAILED="SCHEDULE-JOB-FAILED"
 
     # levels
@@ -380,10 +380,10 @@ class EventControl(meta.Base, BaseMixin):
                 'send_email': True,
                 'color': 'red'},
 
-            {'key': SCHEDULED_JOB_SUCCEEDED,
+            {'key': SCHEDULED_JOB_STARTED,
                 'level': LEVEL_INFO,
                 'event_type': TYPE_SCHED,
-                'subject': 'Scheduled job succeeded',
+                'subject': 'Scheduled job started',
                 'send_email': True,
                 'color': 'green'},
 
