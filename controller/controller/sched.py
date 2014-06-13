@@ -134,7 +134,7 @@ class Sched(object):
             server.log.error("listener: Scheduled job failed: %s",
                                                                 event.job.name)
         else:
-            server.log.debug("listener: Scheduled job succeeded: %s",
+            server.log.debug("listener: Scheduled job started successfully: %s",
                                                                 event.job.name)
 
     @classmethod
@@ -167,7 +167,7 @@ class Sched(object):
                     'stderr': stderr,
                     'info': 'Command: ' + command })
         else:
-            server.event_control.gen(EventControl.SCHEDULED_JOB_SUCCEEDED,
+            server.event_control.gen(EventControl.SCHEDULED_JOB_STARTED,
                 {'stdout': stdout,
                     'stderr': stderr,
                     'info': 'Command: ' + command })
