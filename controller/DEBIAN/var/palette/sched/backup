@@ -1,33 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env python
+import sys
 
-echo starting backup at `date`
-exit 0
+from commhandler import CommHandler
 
-# Set defaults
-TELNET_HOST="localhost"
-TELNET_PORT=9000
-
-while getopts "h:p:" opt; do
-    case "$opt" in
-    h)
-        TELNET_HOST=$OPTARG
-        ;;
-    p)
-        TELNET_PORT=$OPTARG
-        ;;
-    *)
-        echo "Usage: $0 [-h telnet-host] [-p telnet-port]"
-        exit 1
-    esac
-done
-
-echo telnet host: $TELNET_HOST
-echo telnet port: $TELNET_PORT
-
-telnet $TELNET_HOST $TELNET_PORT <<XYZZY
-backup
-XYZZY
-
-echo ENDING backup at `date`
-
-exit 0
+if __name__ == "__main__":
+    comm = CommHandler()
+    comm.send_cmd("backup")
+    sys.exit(0)

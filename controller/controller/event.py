@@ -11,7 +11,7 @@ class EventEntry(meta.Base):
     eventid = Column(BigInteger, unique=True, nullable=False, \
                                    autoincrement=True, primary_key=True)
 
-    domainid = Column(BigInteger, ForeignKey("domain.domainid"))
+    envid = Column(BigInteger, ForeignKey("environment.envid"))
     title = Column(String)
     summary = Column(String)
     description = Column(String)
@@ -24,14 +24,14 @@ class EventEntry(meta.Base):
 class EventManager(object):
     DATEFMT = "%I:%M %p PDT on %B %d, %Y"
     
-    def __init__(self, domainid):
-        self.domainid = domainid
+    def __init__(self, envid):
+        self.envid = envid
 
     def add(self, title, description, level, icon, color, event_type):
         summary = time.strftime(self.DATEFMT)
 
         session = meta.Session()
-        entry = EventEntry(domainid=self.domainid, title=title,
+        entry = EventEntry(envid=self.envid, title=title,
             description=description, level=level, icon=icon, color=color,
                                     event_type=event_type, summary=summary)
         session.add(entry)

@@ -2,12 +2,16 @@ import copy
 import inspect
 import shlex
 import SocketServer as socketserver
+import socket
 
 from akiri.framework.ext.sqlalchemy import meta
 
 from agent import Agent
 from agentmanager import AgentManager
+from event_control import EventControl
 from system import SystemEntry
+from state import StateManager
+from tableau import TableauProcess
 
 def usage(msg):
     def wrapper(f):
@@ -224,10 +228,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             target = cmd.args[0]
             volume_name = cmd.args[1]
 
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
-            self.error('agent not found.')
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            self.error('agent not found')
             return
+
+        aconn = agent.connection
 
         # lock to ensure against two simultaneous user actions
         if not aconn.user_action_lock(blocking=False):
@@ -247,7 +253,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return
 
-        reported_status = statusmon.get_reported_status()
+        reported_status = self.server.statusmon.get_reported_status()
         # The reported status from tableau needs to be running or stopped
         # to do a backup.
         if reported_status == TableauProcess.STATUS_RUNNING:
@@ -270,7 +276,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
 
-        body = self.server.backup_cmd(aconn, target, volume_name)
+        body = self.server.backup_cmd(agent, target, volume_name)
 
         self.print_client("%s", str(body))
         if not body.has_key('error'):
@@ -286,7 +292,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             stateman.update(StateManager.STATE_STOPPED)
 
         # Get the latest status from tabadmin
-        statusmon.check_status_with_connection(aconn)
+        self.server.statusmon.check_status_with_connection(aconn)
         # Don't unlock to allow the status thread to ALSO do
         # 'tabadmin status -v' until at least we finish with ours.
         aconn.user_action_unlock()
@@ -341,10 +347,12 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         target = cmd.args[0]
 
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
+        agent = self.get_agent(cmd.dict)
+        if not agent:
             self.error('agent not found')
             return
+
+        aconn = agent.connection
 
         # lock to ensure against two simultaneous user actions
         if not aconn.user_action_lock(blocking=False):
@@ -366,7 +374,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return
 
-        reported_status = statusmon.get_reported_status()
+        reported_status = self.server.statusmon.get_reported_status()
         # The reported status from tableau needs to be running or stopped
         # to do a backup.  If it is, set our state to
         # STATE_*_BACKUP_RESTORE.
@@ -393,7 +401,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
 
         # No alerts or state updates are done in backup_cmd().
-        body = self.server.backup_cmd(aconn)
+        body = self.server.backup_cmd(agent)
 
         if not body.has_key('error'):
             self.server.event_control.gen(\
@@ -435,7 +443,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.print_client(str(body))
 
         # Get the latest status from tabadmin
-        statusmon.check_status_with_connection(aconn)
+        self.server.statusmon.check_status_with_connection(aconn)
         # Don't unlock to allow the status thread to ALSO do
         # 'tabadmin status -v' until at least we finish with ours.
         aconn.user_action_unlock()
@@ -615,13 +623,13 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         if len(cmd.args) == 1 and cmd.args[0] == 'status':
             self.ack()
-            body = server.sched.status()
+            body = self.server.sched.status()
         elif len(cmd.args) >= 1 and cmd.args[0][:3] == 'del':
             self.ack()
-            body = server.sched.delete(cmd.args[1:])
+            body = self.server.sched.delete(cmd.args[1:])
         elif len(cmd.args) == 7 and cmd.args[0] == 'add':
             args = cmd.args[1:]
-            body = server.sched.add(args[0], args[1], args[2], args[3],
+            body = self.server.sched.add(args[0], args[1], args[2], args[3],
                                                         args[4], args[5])
             if not 'error' in body:
                 self.ack()
@@ -721,7 +729,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return
 
-        reported_status = statusmon.get_reported_status()
+        reported_status = self.server.statusmon.get_reported_status()
         if reported_status != TableauProcess.STATUS_STOPPED:
             self.error("Can't start - reported status is: " + reported_status)
             aconn.user_action_unlock()
@@ -764,7 +772,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.print_client(str(body))
 
         # Get the latest status from tabadmin
-        statusmon.check_status_with_connection(aconn)
+        self.server.statusmon.check_status_with_connection(aconn)
 
         aconn.user_action_unlock()
 
@@ -781,10 +789,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             else:
                 self.error(self.do_stop.__usage__)
 
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
+        agent = self.get_agent(cmd.dict)
+        if not agent:
             self.error('agent not found')
             return
+
+        aconn = agent.connection
 
         # lock to ensure against two simultaneous user actions
         if not aconn.user_action_lock(blocking=False):
@@ -801,7 +811,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return
 
-        reported_status = statusmon.get_reported_status()
+        reported_status = self.server.statusmon.get_reported_status()
         if reported_status != TableauProcess.STATUS_RUNNING:
             print >> self.wfile, "FAIL: Can't start - reported status is:", \
                                                               reported_status
@@ -816,7 +826,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             EventControl.BACKUP_BEFORE_STOP_STARTED, aconn.__dict__)
         self.ack()
 
-        body = self.server.backup_cmd(aconn)
+        body = self.server.backup_cmd(agent)
 
         if not body.has_key('error'):
             self.server.event_control.gen( \
@@ -862,12 +872,12 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.print_client(str(body))
 
         # Get the latest status from tabadmin which sets the main state.
-        statusmon.check_status_with_connection(aconn)
+        self.server.statusmon.check_status_with_connection(aconn)
 
         # If the 'stop' had failed, set the status to what we just
         # got back from 'tabadmin status ...'
         if body.has_key('error'):
-            reported_status = statusmon.get_reported_status()
+            reported_status = self.server.statusmon.get_reported_status()
             stateman.update(reported_status)
 
         aconn.user_action_unlock()

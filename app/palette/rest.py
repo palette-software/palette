@@ -23,6 +23,7 @@ class PaletteRESTHandler(RESTApplication):
     def __init__(self, global_conf):
         super(PaletteRESTHandler, self).__init__(global_conf)
         self.telnet = Telnet(self)
+        self.envid = Environment.get().envid
 
     def __getattr__(self, name):
         if name == 'domainname':
@@ -32,7 +33,7 @@ class PaletteRESTHandler(RESTApplication):
         if name == 'environment':
             return Environment.get()
         if name == 'system':
-            return SystemManager(self.domain.domainid)
+            return SystemManager(self.envid)
         raise AttributeError(name)
 
     def base_path_info(self, req):
@@ -63,6 +64,7 @@ class Telnet(object):
         s.flush()
         data = s.readline().strip()
         if data != 'OK':
+            print "bad result:", data
             raise RuntimeError(data)
         if sync:
             data = s.readline()

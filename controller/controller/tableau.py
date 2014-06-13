@@ -43,7 +43,7 @@ class TableauStatusMonitor(threading.Thread):
         self.config = self.server.config
         self.manager = manager
         self.log = logger.get(self.LOGGER_NAME)
-        self.domainid = self.server.domain.domainid
+        self.envid = self.server.environment.envid
 
         self.status_request_interval = self.config.getint('status', \
                                         'status_request_interval', default=10)
@@ -105,13 +105,13 @@ class TableauStatusMonitor(threading.Thread):
     def get_all_status(self):
         return meta.Session().query(TableauProcess).\
             join(Agent).\
-            filter(Agent.domainid == self.domainid).\
+            filter(Agent.envid == self.envid).\
             all()
 
     def get_reported_status(self):
         return meta.Session().query(TableauProcess).\
             join(Agent).\
-            filter(Agent.domainid == self.domainid).\
+            filter(Agent.envid == self.envid).\
             filter(Agent.agent_type == 'primary').\
             filter(TableauProcess.name == 'Status').\
             one().status

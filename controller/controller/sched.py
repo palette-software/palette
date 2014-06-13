@@ -33,7 +33,7 @@ class Sched(object):
 
         self.command_info = {'telnet_hostname': self.telnet_hostname,
                         'telnet_port': str(self.telnet_port),
-                        'domainid': str(server.domain.domainid),
+                        'envid': str(server.environment.envid),
                         'sched_dir': self.sched_dir}
 
         sqlalchemy_job_store = SQLAlchemyJobStore(engine=meta.engine)
@@ -148,9 +148,9 @@ class Sched(object):
             return
 
         cmd = [ path,
-                '-h', command_info['telnet_hostname'],
-                '-p', command_info['telnet_port'],
-                '-d', command_info['domainid']
+                '--hostname', command_info['telnet_hostname'],
+                '--port', command_info['telnet_port'],
+                '--envid', command_info['envid']
                ]
 
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE,

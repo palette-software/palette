@@ -7,7 +7,7 @@ from akiri.framework.config import store
 
 from akiri.framework.ext.sqlalchemy import meta
 
-from controller.domain import Domain
+from controller.environment import Environment
 from controller.event import EventEntry
 from controller.state_control import StateControl
 
@@ -20,8 +20,7 @@ class EventApplication(RESTApplication):
     def __init__(self, global_conf):
         super(EventApplication, self).__init__(global_conf)
 
-        domainname = store.get('palette', 'domainname')
-        self.domainid = Domain.get_by_name(domainname).domainid
+        self.envid = Environment.get().envid
 
     def handle_get(self, req):
         # Event retrieval accepts:
@@ -139,7 +138,7 @@ class EventApplication(RESTApplication):
 #        print "start:", start, ", end:", end, ", low:",low, ", high:", high,
 #        print ", order:", order
         query = meta.Session.query(EventEntry).\
-            filter(EventEntry.domainid == self.domainid)
+            filter(EventEntry.envid == self.envid)
 
         if type(start) == int or type(end) == int:
             # select based on an event-id
