@@ -75,10 +75,10 @@ class Agent(meta.Base, BaseDictMixin):
         return entry
 
     @classmethod
-    def display_order_by_domainid(cls, domainid):
+    def display_order_by_envid(cls, envid):
         """Returns a list of agent uuids, sorted by display_order."""
         agent_entries = meta.Session.query(Agent).\
-            filter(Agent.domainid == domainid).\
+            filter(Agent.envid == envid).\
             order_by(Agent.display_order).\
             all()
 

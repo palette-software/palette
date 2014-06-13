@@ -12,7 +12,7 @@ from sqlalchemy.schema import ForeignKey
 from akiri.framework.ext.sqlalchemy import meta
 
 from controller.agent import Agent
-from controller.domain import Domain
+from controller.environment import Environment
 
 from page import PalettePage
 from rest import PaletteRESTHandler, required_parameters
@@ -48,11 +48,10 @@ class ManageAdvancedDialog(DialogPage):
     def __init__(self, global_conf):
         super(ManageAdvancedDialog, self).__init__(global_conf)
 
-        domainname = store.get('palette', 'domainname')
         self.domain = Domain.get_by_name(domainname)
 
         self.agents = meta.Session.query(Agent).\
-          filter(Agent.domainid == self.domain.domainid).\
+          filter(Agent.envid == Environment.get().envid).\
           order_by(Agent.last_connection_time.desc()).\
           all()
         for agent in self.agents:

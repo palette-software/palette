@@ -40,7 +40,7 @@ class DiskCheck(object):
                     Fail on error.  Also sets self.error_msg to the
                     error message.
         """
-        if not self.agent.table_data_dir:
+        if not self.agent.tableau_data_dir:
             return self.error(\
                 "Missing 'tableau_data_dir' in pinfo.  Cannot proceed.")
 
@@ -68,8 +68,10 @@ class DiskCheck(object):
         tableau_data_dir = self.agent.tableau_data_dir
         primary_data_volume = self.agent.tableau_data_dir.split(':')[0]
 
-        volume_l = [vol for vol in self.agent.connection.pinfo['volumes'] \
-                        if vol['name'] == primary_data_volume]
+        volumes = \
+            AgentVolumesEntry.get_vol_entries_by_agentid(self.agent.agentid)
+
+        volume_l = [vol for vol in volumes if vol.name == primary_data_volume]
 
         if not volume_l:
             return self.error(\
@@ -79,12 +81,7 @@ class DiskCheck(object):
 
         primary_volume = volume_l[0]
 
-        if not "available-space" in primary_volume:
-            return self.error(("Missing 'available-space' value from " + \
-                            "pinfo for '%s' primary volume '%s'") % \
-                                (self.agent.displayname, primary_data_volume))
-
-        primary_available = primary_volume['available-space']
+        primary_available = primary_volume.available_space
 
         if primary_available < min_primary_disk_needed:
             return self.error(\
@@ -150,9 +147,8 @@ class DiskCheck(object):
                 True - no error
                 False - errror
          """
-        # FIXME: use envid
-        domainid = self.server.domain.domainid
-        agent_keys_sorted = Agent.display_order_by_domainid(domainid)
+        envid = self.server.environment.envid
+        agent_keys_sorted = Agent.display_order_by_envid(envid)
 
         agents = self.agentmanager.all_agents()
         for key in agent_keys_sorted:

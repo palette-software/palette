@@ -52,7 +52,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     PS3_BIN = "ps3.exe"
     CLI_URI = "/cli"
 
-    def backup_cmd(self, aconn, target=None, volume_name=None):
+    def backup_cmd(self, agent, target=None, volume_name=None):
         """Perform a backup - not including any necessary migration."""
 
         if volume_name and not target:
@@ -60,7 +60,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 "volume_name can be specified only when target is specified.")
 
         # Disk space check.
-        dcheck = DiskCheck(self, aconn, target, volume_name)
+        dcheck = DiskCheck(self, agent, target, volume_name)
         if not dcheck.set_locs():
             return self.error(dcheck.error_msg)
 
@@ -84,6 +84,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         backup_vol = backup_path.split(':')[0]
         # e.g.: c:\\Program\ Files\ (x86)\\Palette\\Data\\2014Jan27_162225.tsbak
         cmd = 'tabadmin backup \\\"%s\\\"' % backup_path
+        aconn = agent.connection
         body = self.cli_cmd(cmd, aconn)
         if body.has_key('error'):
             return body
@@ -525,7 +526,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if reported_status == TableauProcess.STATUS_RUNNING:
             # Restore can run only when tableau is stopped.
             self.stateman.update(StateManager.STATE_STOPPING_RESTORE)
-            log.debug("------------Stopping Tableau for restore-------------")
+            self.log.debug("------------Stopping Tableau for restore-------------")
             stop_body = self.cli_cmd("tabadmin stop", aconn)
             if stop_body.has_key('error'):
                 self.log.info("Restore: tabadmin stop failed")
@@ -734,9 +735,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if pinfo is None:
             self.log.error("Bad pinfo output: %s", json_str)
             return body
-        self.agentmanager.update_agent_pinfo(agent, pinfo)
-        return body
-
+        #Note: Can't call this until we know the type of agent.
+        #self.agentmanager.update_agent_pinfo(agent, pinfo)
+        return pinfo
 
     def license(self, agent):
         body = self.cli_cmd('tabadmin license', agent.connection)
@@ -939,34 +940,41 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 False: The agent responded incorrectly.
         """
 
+        TABLEAU_INSTALL_DIR="tableau-install-dir"
         YML_CONFIG_FILE_PART=ntpath.join("data", "tabsvc",
                                          "config", "workgroup.yml")
 
         aconn = agent.connection
 
-        body = self.info(agent)
-        if body.has_key("error"):
+        pinfo = self.info(agent)
+        if pinfo.has_key("error"):
             self.log.error("Couldn't run info command on %s: %s",
-                            aconn.displayname, body['error'])
+                            aconn.displayname, pinfo['error'])
             return False
 
-        self.log.debug("info returned from %s: %s", aconn.displayname, str(body))
-        if agent.tableau_install_dir:
+        self.log.debug("info returned from %s: %s", aconn.displayname, str(pinfo))
+        if TABLEAU_INSTALL_DIR in pinfo:
             # FIXME: don't duplicate the data
             agent.agent_type = aconn.agent_type \
                 = AgentManager.AGENT_TYPE_PRIMARY
 
-            if agent.tableau_install_dir.find(':') == -1:
+            if pinfo[TABLEAU_INSTALL_DIR].find(':') == -1:
                 self.log.error("agent %s is missing ':': %s for %s",
                                aconn.displayname, TABLEAU_INSTALL_DIR,
                                agent.tableau_install_dir)
                 return False
-            self.yml(agent)
         else:
             if self.agentmanager.is_tableau_worker(agent.ip_address):
                 aconn.agent_type = AgentManager.AGENT_TYPE_WORKER
             else:
                 aconn.agent_type = AgentManager.AGENT_TYPE_ARCHIVE
+
+        # This saves everthing from pinfo including volume info.
+        self.agentmanager.update_agent_pinfo(agent, pinfo)
+
+        # Note: Don't call this before update_agent_pinfo()
+        # (needed for agent.tableau_data_dir).
+        self.yml(agent)
 
         # Cleanup.
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
@@ -1082,7 +1090,8 @@ def main():
                                            max_overflow=max_overflow)
     # Create the table definition ONCE, before all the other threads start.
     meta.Base.metadata.create_all(bind=meta.engine)
-    meta.Session = scoped_session(sessionmaker(bind=meta.engine))
+    meta.Session = scoped_session(sessionmaker(bind=meta.engine,
+                                               expire_on_commit=False))
 
     log.debug("Starting agent listener.")
 

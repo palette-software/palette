@@ -208,7 +208,9 @@ class AgentManager(threading.Thread):
 
         self.unlock()
 
-        meta.Session.commit()
+        session = meta.Session()
+        session.commit()
+        session.expunge(agent)
         return True
 
     def set_agent_types(self):
@@ -324,6 +326,13 @@ class AgentManager(threading.Thread):
         return d
 
     def update_agent_pinfo(self, agent, pinfo):
+        """Note: DO not call this method unless the agent_type
+           is known and has been set."""
+
+        if not agent.agent_type:
+            self.log.error("Unknown agent type for agent: %s",
+                                                    agent.displayname)
+           
         agentid = agent.agentid
 
         session = meta.Session()
@@ -370,7 +379,7 @@ class AgentManager(threading.Thread):
                         "agentid %d. Will ignore: %s", agentid, str(volume))
                     continue
 
-                # Check to see if the volume alread exists.
+                # Check to see if the volume already exists.
                 try:
                     entry = session.query(AgentVolumesEntry).\
                         filter(AgentVolumesEntry.agentid == agentid).\
@@ -742,6 +751,9 @@ class AgentManager(threading.Thread):
                 self.log.error("Bad agent.  Disconnecting.")
                 self._close(conn)
                 return
+
+            #fixme: not a great place to do this
+            aconn.displayname = agent.displayname
 
             self.save_routes(aconn) # fixme: check return value?
             aconn.initting = False

@@ -108,7 +108,7 @@ class BackupApplication(PaletteRESTHandler):
 
     def handle_GET(self, req):
         L = [x.todict(pretty=True) for x \
-                 in BackupManager.all(self.domain.domainid, asc=False)]
+                 in BackupManager.all(self.environment.envid, asc=False)]
         # FIXME: convert TIMEZONE
         tomorrow = datetime.date.today() + datetime.timedelta(days=1)
         midnight = datetime.datetime.combine(tomorrow, datetime.time(0,0))

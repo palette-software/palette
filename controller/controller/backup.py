@@ -37,8 +37,8 @@ class BackupEntry(meta.Base):
 
 class BackupManager(object):
 
-    def __init__(self, domainid):
-        self.domainid = domainid
+    def __init__(self, envid):
+        self.envid = envid
 
     def add(self, name, volid):
         session = meta.Session()
@@ -62,8 +62,8 @@ class BackupManager(object):
             "backup.volid = agent_volumes.volid " + \
             "AND backup.name = '%s' AND " + \
             "agent_volumes.volid in " + \
-            "(SELECT agent.agentid FROM agent WHERE agent.domainid = %d)") % \
-            (name, self.domainid)
+            "(SELECT agent.agentid FROM agent WHERE agent.envid = %d)") % \
+            (name, self.envid)
 
         result = meta.Session.execute(sql).fetchall()
         return result
@@ -74,7 +74,7 @@ class BackupManager(object):
                 meta.Session.query(AgentVolumesEntry, Agent).\
                 filter(AgentVolumesEntry.primary_data_loc == True).\
                 filter(AgentVolumesEntry.agentid == Agent.agentid).\
-                filter(Agent.domainid == self.domainid).\
+                filter(Agent.envid == self.envid).\
                 one()
 
             return vol_entry
@@ -91,15 +91,15 @@ class BackupManager(object):
         return ntpath.join(vol_entry.name + ':', vol_entry.path)
 
     @classmethod
-    def all(cls, domainid, asc=True):
+    def all(cls, envid, asc=True):
         """
         fixme: finish this.
         sql = \
             "SELECT backup agent_volumes FROM backup, agent_volumes " + \
             "WHERE backup.volid = agent_volumes.volid AND " + \
             "agent_volumes.agentid IN " + \
-            "(SELECT agent.agentid FROM agent WHERE agent.domainid = %d) " + \
-            "ORDER BY backup.creation_time " % (domainid)
+            "(SELECT agent.agentid FROM agent WHERE agent.envid = %d) " + \
+            "ORDER BY backup.creation_time " % (envid)
 
         if asc:
             sql += "ASC"
