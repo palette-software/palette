@@ -736,8 +736,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if pinfo is None:
             self.log.error("Bad pinfo output: %s", json_str)
             return body
-        #Note: Can't call this until we know the type of agent.
-        #self.agentmanager.update_agent_pinfo(agent, pinfo)
+
+        # When we are called from init_new_agent(), we don't know
+        # the agent_type yet and update_agent_pinfo() needs to
+        # know the agent type for the volume table values.
+        # When we are called by do_info() we will know the agent type.
+        if agent.agent_type:
+            self.agentmanager.update_agent_pinfo(agent, pinfo)
         return pinfo
 
     def license(self, agent):
