@@ -108,19 +108,22 @@ class Sched(object):
 
         if len(self.sched.get_jobs()):
             server.log.debug("sched populate: already jobs")
+            # return - commented out.  For now, always set default jobs.
 
+        # For now, remove all jobs and add them back.
         for job in jobs:
             server.log.debug("sched populate: unscheduling %s", job.name)
             self.sched.unschedule_job(job)
 
         server.log.debug("sched populate: adding jobs")
 
-        """
-        print self.sched.add_cron_job(\
-            Sched.job_function, name='backup'
-                args=['backup', self.command_info],
-                                    second="*/20", jobstore=self.JOBSTORE)
+        # Backup every night at 12:00.
+        self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
+            name='backup',
+            args=['backup', self.command_info],
+            hour=0, minute=0)
 
+        """
         print self.sched.add_cron_job(\
             Sched.job_function, name='license_check',
                 args=['license_check', self.command_info],
