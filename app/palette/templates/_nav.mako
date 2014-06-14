@@ -23,7 +23,8 @@
       <li class="more">
         <a id="profile-link" href="/profile">
           <i class="fa fa-user"></i> 
-          <span>${req.remote_user.friendly_name}</span>
+          <span>${req.remote_user.friendly_name}
+          (${req.remote_user.role.name})</span>
         </a>
         <ul>
           <li>
