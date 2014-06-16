@@ -158,12 +158,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         (backupid, volid, vol_name, vol_path, agentid) = result[0]
 
-        agent = Agent.get_agentstatusentry_by_volid(volid)
+        agent_db = Agent.get_agentstatusentry_by_volid(volid)
 
-        aconn = self.agentmanager.agent_conn_by_uuid(agent.uuid)
-        if not aconn:
+        agent = self.agentmanager.agent_by_uuid(agent_db.uuid)
+        if not agent:
             return self.error("agent not connected: displayname=%s uuid=%s" % \
-              (agent.displayname, agent.uuid))
+              (agent_db.displayname, agent_db.uuid))
 
         backup_path = ntpath.join(vol_name + ":", vol_path, backup)
         self.log.debug("backupdel_cmd: Deleting path '%s' on agent '%s'",
