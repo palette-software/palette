@@ -275,7 +275,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.server.log.debug("-----------------Starting Backup-------------------")
 
         self.server.event_control.gen(EventControl.BACKUP_STARTED,
-                                                            agent.__dict__)
+                                      agent.__dict__)
 
         self.ack()
 
@@ -337,6 +337,23 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(main_state)
 
         aconn.user_action_unlock()
+
+    @usage('extract IMPORT')
+    def do_extract(self, cmd):
+        """Import extracts from the background_jobs table in Tableau"""
+
+        # Reserved for later expansion
+        if len(cmd.args) != 1 or cmd.args[0].upper() != 'IMPORT':
+            self.print_usage(self.do_extract.__usage__)
+            return
+
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            self.error('agent not found')
+            return
+
+        body = self.server.extract.load(agent)
+        self.print_client("%s", str(body))
 
     @usage('restore [source:pathname]')
     def do_restore(self, cmd):
@@ -1139,12 +1156,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             if len(cmd.args) != 1:
                 self.print_usage(self.do_auth.__usage__)
                 return
-            aconn = self.get_aconn(cmd.dict)
-            if not aconn:
+            agent = self.get_agent(cmd.dict)
+            if not agent:
                 self.error('agent not found')
                 return
             self.ack()
-            body = self.server.auth.load(aconn)
+            body = self.server.auth.load(agent)
         elif action == 'verify':
             if len(cmd.args) != 3:
                 self.print_usage(self.do_auth.__usage__)

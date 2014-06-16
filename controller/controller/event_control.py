@@ -94,6 +94,10 @@ class EventControl(meta.Base, BaseMixin):
     SCHEDULED_JOB_STARTED="SCHEDULE-JOB-STARTED"
     SCHEDULED_JOB_FAILED="SCHEDULE-JOB-FAILED"
 
+    #
+    EXTRACT_OK="EXTRACT-OK"
+    EXTRACT_FAILED="EXTRACT-FAILED"
+
     # levels
     LEVEL_ERROR="E"
     LEVEL_WARNING="W"
@@ -114,6 +118,7 @@ class EventControl(meta.Base, BaseMixin):
     TYPE_AGENT="agent"
     TYPE_TABLEAU="tableau"
     TYPE_SCHED="sched"
+    TYPE_EXTRACT="extract"
 
     # fixme: Init the event_control table elsewhere.
     defaults = [
@@ -391,6 +396,19 @@ class EventControl(meta.Base, BaseMixin):
                 'level': LEVEL_ERROR,
                 'event_type': TYPE_SCHED,
                 'subject': 'Scheduled job failed',
+                'send_email': True,
+                'color': 'red'},
+            {'key': EXTRACT_OK,
+                'level': LEVEL_INFO,
+                'event_type': TYPE_EXTRACT,
+                'subject': "Extract '%(title)s' completed successfully",
+                'send_email': False,
+                'color': 'green'},
+            {'key': EXTRACT_FAILED,
+                'level': LEVEL_ERROR,
+                'event_type': TYPE_EXTRACT,
+                'subject': "Extract '%(title)s' failed",
+                'description': '%(notes)s',
                 'send_email': True,
                 'color': 'red'},
         ]

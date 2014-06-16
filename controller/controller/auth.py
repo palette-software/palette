@@ -14,7 +14,7 @@ class AuthManager(object):
     def __init__(self, server):
         self.server = server
 
-    def load(self, aconn):
+    def load(self, agent):
         stmt = \
             'SELECT system_users.name, system_users.email, ' +\
             ' system_users.hashed_password, system_users.salt, ' +\
@@ -28,7 +28,7 @@ class AuthManager(object):
 
         excludes = ['guest', '_system']
 
-        data = aconn.odbc.execute(stmt)
+        data = agent.odbc.execute(stmt)
 
         if 'error' in data:
             return data

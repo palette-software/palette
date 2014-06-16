@@ -35,7 +35,7 @@ from state_control import StateControl
 from alert_email import AlertEmail
 from event import EventManager
 from event_control import EventControl, EventControlManager
-from extracts import ExtractsEntry
+from extracts import ExtractManager
 from workbooks import WorkbookEntry, WorkbookManager
 from s3 import S3
 from sched import Sched
@@ -1130,6 +1130,8 @@ def main():
     StateControl.populate()
 
     server.auth = AuthManager(server)
+    server.extract = ExtractManager(server)
+
     Role.populate()
     UserProfile.populate()
 
