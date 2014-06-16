@@ -4,6 +4,8 @@ import shlex
 import SocketServer as socketserver
 import socket
 
+import sqlalchemy
+
 from akiri.framework.ext.sqlalchemy import meta
 
 from agent import Agent
