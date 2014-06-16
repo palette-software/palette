@@ -6,6 +6,7 @@ import platform
 
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
+from sqlalchemy.orm import reconstructor
 from sqlalchemy.orm.exc import NoResultFound
 
 from akiri.framework.ext.sqlalchemy import meta
@@ -46,7 +47,14 @@ class Agent(meta.Base, BaseDictMixin):
 
     def __init__(self, *args, **kwargs):
         super(Agent, self).__init__(*args, **kwargs)
+        self.reconstruct()
+
+    @reconstructor
+    def reconstruct(self):
+        self.server = None
         self.connection = None
+        self.odbc = None
+        self.firewall = None
 
     def connected(self):
         if not self.last_disconnect_time or \
