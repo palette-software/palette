@@ -128,6 +128,11 @@ class Sched(object):
             args=['yml', self.command_info],
             minute="*/5")
 
+        self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
+            name='info_all',
+            args=['info_all', self.command_info],
+            minute="1,6,11,16,21,26,31,36,41,46,51,56")
+
         """
         print self.sched.add_cron_job(\
             Sched.job_function, name='license_check',
