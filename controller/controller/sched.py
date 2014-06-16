@@ -123,6 +123,11 @@ class Sched(object):
             args=['backup', self.command_info],
             hour=0, minute=0)
 
+        self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
+            name='yml',
+            args=['yml', self.command_info],
+            second="*/5")
+
         """
         print self.sched.add_cron_job(\
             Sched.job_function, name='license_check',
