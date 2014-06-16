@@ -569,21 +569,41 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = self.server.cli_cmd(phttp_cmd, agent, env=env)
         self.report_status(body)
 
-    @usage('info')
+    @usage('info [all]')
     def do_info(self, cmd):
         """Run pinfo."""
-        if len(cmd.args):
+        if len(cmd.args) == 1:
+            if cmd.args[0] != 'all':
+                self.print_usage(self.do_info.__usage__)
+                return
+        elif len(cmd.args) > 2:
             self.print_usage(self.do_info.__usage__)
             return
 
-        agent = self.get_agent(cmd.dict)
-        if not agent:
-            self.error('agent not found')
+        if not len(cmd.args):
+            agent = self.get_agent(cmd.dict)
+            if not agent:
+                self.error('agent not found')
+                return
+
+            self.ack()
+            body = self.server.info(agent)
+            self.print_client(str(body))
             return
 
         self.ack()
-        body = self.server.info(agent)
-        self.print_client(str(body))
+
+        agents = self.server.agentmanager.all_agents()
+        if len(agents) == 0:
+            self.print_client("{}")
+            return
+
+        pinfos = []
+        for uuid, agent in agents.iteritems():
+            body = self.server.info(agent)
+            pinfos.append(body)
+
+        self.print_client(str(pinfos))
 
     @usage('license')
     def do_license(self, cmd):
