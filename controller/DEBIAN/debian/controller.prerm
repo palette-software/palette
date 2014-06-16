@@ -1,8 +1,8 @@
 #!/bin/sh
 cmd=controller
 
-if [ -f /etc/init/$cmd.conf ]; then
-    /sbin/stop $cmd | echo
+if [ -x /etc/init.d/$cmd ]; then
+    /etc/init.d/$cmd stop
 fi
 
 pyclean -p controller
