@@ -126,7 +126,7 @@ class Sched(object):
         self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
             name='yml',
             args=['yml', self.command_info],
-            second="*/5")
+            minute="*/5")
 
         """
         print self.sched.add_cron_job(\
