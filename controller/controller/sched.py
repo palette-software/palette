@@ -133,13 +133,10 @@ class Sched(object):
             args=['info_all', self.command_info],
             minute="1,6,11,16,21,26,31,36,41,46,51,56")
 
-        """
-        print self.sched.add_cron_job(\
-            Sched.job_function, name='license_check',
-                args=['license_check', self.command_info],
-                max_runs=5,
-                                    second="*/5", jobstore=self.JOBSTORE)
-        """
+        self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
+            name='license_check',
+            args=['license_check', self.command_info],
+            minute="4")
 
     @classmethod
     def listener(cls, event):

@@ -755,7 +755,22 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         output = body['stdout']
         d = LicenseEntry.parse(output)
-        LicenseEntry.save(agentid=agent.agentid, **d)
+        entry = LicenseEntry.save(agentid=agent.agentid, **d)
+        if not entry:
+            return entry
+
+        if not entry.valid and not entry.notified:
+            # Generate an event
+            self.event_control.gen(\
+                EventControl.LICENSE_INVALID,
+                    dict({'error':
+                            "interactors: %s, viewers: %s" % \
+                            (entry.interactors, entry.viewers)}.items() + \
+                                agent.__dict__.items()))
+
+            entry.notified = True
+            LicenseEntry.update(entry)
+
         return d
 
     def yml(self, agent):
