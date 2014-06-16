@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env python
+import sys
 
-#fixme: implement
+from commhandler import CommHandler
 
-echo starting license_check at `date`
-sleep 5
-echo ENDING license_check at `date`
-
-exit 0
+if __name__ == "__main__":
+    comm = CommHandler()
+    comm.send_cmd("license")
+    sys.exit(0)

@@ -99,6 +99,14 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
         return entry
 
     @classmethod
+    def update(cls, entry):
+        session = meta.Session()
+        session.merge(entry)
+        session.commit()
+
+        return entry
+
+    @classmethod
     def parse(cls, output):
         pattern = '(?P<interactors>\d+) interactors, (?P<viewers>\d+) viewers'
         m = re.search(pattern, output)
