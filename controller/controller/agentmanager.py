@@ -330,6 +330,7 @@ class AgentManager(threading.Thread):
             entry = AgentYmlEntry(agentid=agentid, key=key, value=value)
             session.add(entry)
             d[key] = value
+        session.commit()
         return d
 
     def update_agent_pinfo(self, agent, pinfo):
