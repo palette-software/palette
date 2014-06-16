@@ -55,7 +55,6 @@ class AgentConnection(object):
         self.user_action_lockobj = threading.Lock()
 
         self.filemanager = FileManager(self)
-        self.odbc = ODBC(self)
 
     def httpexc(self, res, method='GET', body=None):
         if body is None:
@@ -755,7 +754,9 @@ class AgentManager(threading.Thread):
 
             agent = self.remember(aconn, body)
             agent.connection = aconn
+            agent.server = self.server
             agent.firewall = Firewall(agent, self.server)
+            agent.odbc = ODBC(agent)
             aconn.agentid = agent.agentid
             aconn.uuid = uuid
 

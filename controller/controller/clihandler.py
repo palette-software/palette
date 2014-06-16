@@ -1085,8 +1085,8 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_sql(self, cmd):
         """Run a SQL statement against the Tableau database."""
 
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
+        agent = self.get_agent(cmd.dict)
+        if not agent:
             self.error('agent not found')
             return
 
@@ -1099,7 +1099,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         stmt = cmd.args[0]
         self.ack()
 
-        body = aconn.odbc.execute(stmt)
+        body = agent.odbc.execute(stmt)
         self.print_client(str(body))
 
 

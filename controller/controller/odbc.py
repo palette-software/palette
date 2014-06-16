@@ -11,8 +11,10 @@ class ODBC(object):
     PASSWD = ''
 
     def __init__(self, agent):
-        self.server = agent.server
         self.agent = agent
+        self.server = agent.server
+        if self.server is None:
+            raise RuntimeError("agent.server is None")
 
     def connection(self):
         s = 'DRIVER=' + self.DRIVER +'; '
