@@ -12,6 +12,7 @@ from agent import Agent
 from agentmanager import AgentManager
 from backup import BackupManager
 from event_control import EventControl
+from s3 import S3
 from system import SystemEntry
 from state import StateManager
 from tableau import TableauProcess
