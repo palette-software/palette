@@ -235,6 +235,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         req = CliStartRequest(cli_command, env=env, immediate=immediate)
 
         headers = {"Content-Type": "application/json"}
+        uri = self.CLI_URI
 
         displayname = agent.displayname and agent.displayname or agent.uuid
         self.log.debug("about to send the cli command to '%s', type '%s' xid: %d, command: %s",
@@ -254,10 +255,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             if res.status != httplib.OK:
                 self.log.error("_send_cli: command: '%s', %d %s : %s",
                                cli_command, res.status, res.reason, body_json)
-                reason = "Command sent to agent failed. Error: " + str(e)
+                reason = "Command sent to agent failed. Error: " + res.reason
                 self.remove_agent(agent, reason)
-                return self.httperror(aconn, res, method="POST",
-                                      agent=agent.displayname,
+                return self.httperror(res, method="POST",
+                                      displayname=agent.displayname,
                                       uri=uri, body=body_json)
 
         except (httplib.HTTPException, EnvironmentError) as e:
@@ -322,8 +323,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 alert = "Command to agent failed with status: " + \
                                                             str(res.status)
                 self.remove_agent(agent, alert)
-                return self.httperror(aconn, res, method="POST",
-                                      agent=agent.displayname,
+                return self.httperror(res, method="POST",
+                                      displayname=agent.displayname,
                                       uri=uri, body=body_json)
 
             self.log.debug("headers: " + str(res.getheaders()))
@@ -665,7 +666,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 if res.status != httplib.OK:
                     self.remove_agent(agent,
                                  EventControl.AGENT_RETURNED_INVALID_STATUS)
-                    return self.httperror(res, agent=agent.displayname, uri=uri)
+                    return self.httperror(res,
+                                          displayname=agent.displayname,
+                                          uri=uri)
 
 #                debug for testing agent disconnects
 #                print "sleeping"
@@ -884,8 +887,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     "Immediate command to %s, status returned: " +\
                     "%d: %s %s, body: %s") % \
                         (agent.displayname, res.status, method, uri, rawbody))
-                return self.httperror(res, agent=agent.displayname,
-                                      method=method, uri=uri, body=rawbody)
+                return self.httperror(res, method=method,
+                                      displayname=agent.displayname,
+                                      uri=uri, body=rawbody)
             elif rawbody:
                 body = json.loads(rawbody)
                 self.log.debug("send_immediate for %s %s reply: %s",
@@ -937,7 +941,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return return_dict
 
     def httperror(self, res, error='HTTP failure',
-                  agent=None, method='GET', uri=None, body=None):
+                  displayname=None, method='GET', uri=None, body=None):
         """Returns a dict representing a non-OK HTTP response."""
         if body is None:
             body = res.read()
@@ -952,8 +956,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             d['uri'] = uri
         if body:
             d['body'] = body
-        if agent:
-            d['agent'] = agent
+        if displayname:
+            d['agent'] = displayname
         return d;
 
     def init_new_agent(self, agent):
