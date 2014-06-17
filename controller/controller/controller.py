@@ -926,6 +926,38 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         cmd = 'tabadmin ziplogs -l -n -a \\\"%s\\\"' % ziplog_path
         body = self.cli_cmd(cmd, agent)
         body[u'info'] = u'tabadmin ziplogs -l -n -a ziplog_name'
+
+        if 'error' in body:
+            self.event_control.gen(\
+                EventControl.ZIPLOGS_FAILED,
+                        dict(body.items() + agent.__dict__.items()))
+        return body
+
+    def cleanup_cmd(self, agent, target=None):
+        """Run tabadmin cleanup'."""
+
+        aconn = agent.connection
+        ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
+        install_dir = aconn.auth['install-dir']
+        ziplog_path = ntpath.join(install_dir, "Data", ziplog_name)
+
+        body = self.cli_cmd('tabadmin cleanup', agent)
+        body[u'info'] = u'tabadmin cleanup'
+        # 'tabadmin cleanup' returns an exit status of 1 but sends
+        # the error to stdout instead of stderr.
+        #
+        if 'exit-status' in body and body['exit-status'] != 0 and \
+                            'stderr' in body and not body['stderr']:
+            if 'error' in body and not body['error'] or \
+                                                not 'error' in body:
+                if 'stdout' in body:
+                    body['error'] = body['stdout']
+
+        if 'error' in body:
+            self.event_control.gen(\
+                EventControl.CLEANUP_FAILED,
+                        dict(body.items() + agent.__dict__.items()))
+
         return body
 
     def error(self, msg, return_dict={}):
@@ -1009,7 +1041,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             if body.has_key("error"):
                 self.event_control.gen(\
                    EventControl.MAINT_STOP_FAILED,
-                            dict(d.items() + agent.__dict__.items()))
+                            dict(body.items() + agent.__dict__.items()))
 
         body = self.archive(agent, "stop")
         if body.has_key("error"):

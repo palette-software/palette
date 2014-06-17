@@ -83,7 +83,7 @@ class Sched(object):
         return body
 
     def job_to_dict(self, job):
-        return {'name': job.name, 'runs': job.runs, 'trigger': job.trigger}
+        return {'name': job.name, 'runs': job.runs, 'trigger': str(job.trigger)}
 
     def add(self, minute, hour, dom, month, dow, command):
         path = os.path.join(self.command_info['sched_dir'], command)
@@ -91,10 +91,10 @@ class Sched(object):
             return { 'error': "No such sched command script: " + command}
 
         try:
-            job = self.sched.add_cron_job(\
-                Sched.job_function, name=command,
+            job = self.sched.add_cron_job(
+                Sched.job_function, jobstore=self.JOBSTORE,
+                    name=command,
                     args=[command, self.command_info],
-                    jobstore=self.JOBSTORE,
                     minute=minute, hour=hour, day=dom, month=month,
                                                                 day_of_week=dow)
         except:
@@ -163,8 +163,15 @@ class Sched(object):
                 '--envid', command_info['envid']
                ]
 
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+        try:
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE, close_fds=True)
+        except Exception as e:
+            server.event_control.gen(\
+                EventControl.SCHEDULED_JOB_FAILED,
+                { 'error': "Could not start job '%s': %s" % \
+                                                    (cmd, e.__doc__) })
+            return
 
         stdout, stderr = process.communicate()
 
@@ -177,10 +184,11 @@ class Sched(object):
                     'stderr': stderr,
                     'info': 'Command: ' + command })
         else:
+            """
             server.event_control.gen(EventControl.SCHEDULED_JOB_STARTED,
                 {'stdout': stdout,
                     'stderr': stderr,
-                    'info': 'Command: ' + command })
+                    'info': 'Command: ' + command })"""
 
         return
 

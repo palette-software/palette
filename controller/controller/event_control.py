@@ -98,6 +98,9 @@ class EventControl(meta.Base, BaseMixin):
     EXTRACT_OK="EXTRACT-OK"
     EXTRACT_FAILED="EXTRACT-FAILED"
 
+    ZIPLOGS_FAILED="ZIPLOGS-FAILED"
+    CLEANUP_FAILED="CLEANUP-FAILED"
+
     # levels
     LEVEL_ERROR="E"
     LEVEL_WARNING="W"
@@ -408,7 +411,21 @@ class EventControl(meta.Base, BaseMixin):
                 'level': LEVEL_ERROR,
                 'event_type': TYPE_EXTRACT,
                 'subject': "Extract '%(title)s' failed",
-                'description': '%(notes)s',
+                'event_description': '%(notes)s',
+                'send_email': True,
+                'color': 'red'},
+
+            {'key': ZIPLOGS_FAILED,
+                'level': LEVEL_ERROR,
+                'event_type': TYPE_TABLEAU,
+                'subject': 'ziplogs failed',
+                'send_email': True,
+                'color': 'red'},
+
+            {'key': CLEANUP_FAILED,
+                'level': LEVEL_ERROR,
+                'event_type': TYPE_TABLEAU,
+                'subject': 'tabadmin cleanup failed',
                 'send_email': True,
                 'color': 'red'},
         ]
