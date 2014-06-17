@@ -1105,7 +1105,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         resource = os.path.basename(keypath)
         token = entry.get_token(resource)
 
-        command = Controller.PS3_BIN+' %s %s "%s"' % \
+        command = self.server.PS3_BIN+' %s %s "%s"' % \
             (action, entry.bucket, keypath)
 
 
