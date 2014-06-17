@@ -5,5 +5,20 @@ from commhandler import CommHandler
 
 if __name__ == "__main__":
     comm = CommHandler()
-    comm.send_cmd("backup")
+    if not comm.send_cmd("ziplogs", sync=True, close=False, verbose=True):
+        print "ziplogs failed with:", comm.error
+        sys.exit(1)
+    print "ziplogs reply:", comm.data
+
+    if not comm.send_cmd("backup", sync=True, close=False, verbose=True):
+        print "backup failed with:", comm.error
+        sys.exit(1)
+    print "backup reply:", comm.data
+
+    if not comm.send_cmd("cleanup", sync=True, close=True, verbose=True):
+        print "cleanup failed with:", comm.error
+        print "cleanup data:", comm.data
+        sys.exit(1)
+    print "cleanup reply:", comm.data
+
     sys.exit(0)

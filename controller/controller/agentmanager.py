@@ -52,7 +52,7 @@ class AgentConnection(object):
 
         # A lock to allow only one user action (backup/restore/etc.)
         # at a time.
-        self.user_action_lockobj = threading.Lock()
+        self.user_action_lockobj = threading.RLock()
 
         self.filemanager = FileManager(self)
 

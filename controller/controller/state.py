@@ -30,6 +30,9 @@ class StateManager(object):
     STATE_STARTED_BACKUPDEL="STARTED-BACKUPDEL"
     STATE_STARTED_ZIPLOGS="STARTED-ZIPLOGS"
 
+    STATE_STARTED_CLEANUP="STARTED-CLEANUP"
+    STATE_STOPPED_CLEANUP="STOPPED-CLEANUP"
+
     STATE_DEGRADED="DEGRADED"       # reported from tabadmin
 
     STATE_UNKNOWN="UNKNOWN"        # no primary ever connected to the controller

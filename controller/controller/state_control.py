@@ -94,12 +94,17 @@ class StateControl(meta.Base, BaseMixin):
         {'state': StateManager.STATE_STOPPED_BACKUPDEL,
             'text': "Deleting a backup.  Tableau is stopped.",
             'allowable_actions': ACTION_NONE,
-            'color': COLOR_RED},
+            'color': COLOR_GREEN},
 
         {'state': StateManager.STATE_STOPPED_ZIPLOGS,
             'text': "Running ziplogs.  Tableau is stopped.",
             'allowable_actions': ACTION_NONE,
-            'color': COLOR_RED},
+            'color': COLOR_GREEN},
+
+        {'state': StateManager.STATE_STOPPED_CLEANUP,
+            'text': "Running 'tabadmin cleanup'.  Tableau is stopped.",
+            'allowable_actions': ACTION_NONE,
+            'color': COLOR_GREEN},
 
         {'state': StateManager.STATE_STARTING,
             'text': "Starting Tableau.",
@@ -145,6 +150,11 @@ class StateControl(meta.Base, BaseMixin):
 
         {'state': StateManager.STATE_STARTED_ZIPLOGS,
             'text': "Running ziplogs.  Tableau is running.",
+            'allowable_actions': ACTION_NONE,
+            'color': COLOR_GREEN},
+
+        {'state': StateManager.STATE_STARTED_CLEANUP,
+            'text': "Running 'tabadmin cleanup'.  Tableau is running.",
             'allowable_actions': ACTION_NONE,
             'color': COLOR_GREEN},
 
