@@ -55,9 +55,21 @@
 	{{#volumes}}
 	<li>
 	  <i class="fa fa-fw fa-circle {{color}}"></i>
-	  Storage {{name}}: {{value}}
+	  Storage: {{name}} {{value}}
 	</li>
 	{{/volumes}}
+	{{#license}}
+	<li>
+	  <i class="fa fa-fw fa-circle {{color}}"></i>
+	  License: Tableau
+	</li>
+	{{/license}}
+	{{#ports}}
+	<li>
+	   <i class="fa fa-fw fa-circle {{color}}"></i>
+	   Port: {{name}} ({{num}})
+	</li>
+	{{/ports}}
 	{{#details}}
 	<li>
 	  <i class="fa fa-fw fa-circle {{color}}"></i>

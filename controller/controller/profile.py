@@ -63,13 +63,18 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
 class Role(meta.Base, BaseMixin):
     __tablename__ = 'roles'
 
+    NO_ADMIN = 0
+    READONLY_ADMIN = 1
+    MANAGER_ADMIN = 2
+    SUPER_ADMIN = 3
+
     roleid = Column(BigInteger, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
 
-    defaults = [{'roleid':0, 'name':"No Admin"},
-                {'roleid':1, 'name':"Read-Only Admin"},
-                {'roleid':2, 'name':"Manager Admin"},
-                {'roleid':3, 'name':"Super Admin"}]
+    defaults = [{'roleid':NO_ADMIN, 'name':"No Admin"},
+                {'roleid':READONLY_ADMIN, 'name':"Read-Only Admin"},
+                {'roleid':MANAGER_ADMIN, 'name':"Manager Admin"},
+                {'roleid':SUPER_ADMIN, 'name':"Super Admin"}]
 
 class License(object):
     UNLICENSED = 3
