@@ -18,6 +18,7 @@ from controller.agentinfo import AgentVolumesEntry
 from controller.domain import Domain
 from controller.state_control import StateControl
 from controller.util import sizestr
+from controller.system import LicenseEntry
 
 from page import PalettePage
 from event import EventApplication
@@ -64,6 +65,23 @@ class MonitorApplication(PaletteRESTHandler):
             color = self.disk_color(used, v.size, low, high)
             volumes.append({'name': v.name, 'value': value, 'color': color})
         return volumes
+
+    def firewall_info(self, agentid):
+        ports = [{'name':'HTTP', 'num':80, 'color':'green'},
+                 {'name':'HTTPS', 'num':443, 'color':'green'},
+                 {'name':'Palette Agent', 'num':8889, 'color':'green'},
+                 {'name':'MSSQL Server', 'num':1433, 'color':'green'}
+                 ]
+        return ports
+
+    def license_info(self, agentid):
+        entry = LicenseEntry.get_by_agentid(agentid)
+        if entry is None:
+            return {'value':'unknown', 'color':'yellow'}
+        if entry.valid():
+            return {'value':'valid', 'color':'green'}
+        else:
+            return {'value':'invalid', 'color':'red'}
 
     def handle_monitor(self, req):
         # Get the state
@@ -112,12 +130,15 @@ class MonitorApplication(PaletteRESTHandler):
             agent['last_connnection_time'] = \
                                     str(entry.last_connection_time)[:19]
             agent['last_disconnect_time'] = str(entry.last_disconnect_time)[:19]
-            if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
-                                                            entry.connected():
+            if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY \
+                    and entry.connected():
                 primary = entry
+                agent['license'] = self.license_info(entry.agentid)
 
             if entry.connected():
                 agent['color'] = 'green'
+                agent['volumes'] = self.volume_info(entry.agentid)
+                agent['ports'] = self.firewall_info(entry.agentid)
             else:
                 agent['color'] = 'red'
 
@@ -157,7 +178,6 @@ class MonitorApplication(PaletteRESTHandler):
                 # For now, only primaries and workers have details
                 agent['details'] = []
 
-            agent['volumes'] = self.volume_info(entry.agentid)
             agents.append(agent)
 
         environments = [ { "name": "My Servers", "agents": agents } ]
