@@ -23,7 +23,7 @@
               {{displayname}}
             </span>
 	      </h3>
-          <p>FQDN ({{ip-address}})</p>
+          <p>{{fqdn}} ({{ip-address}})</p>
         </div>
         <div class="col2">
           <p>
@@ -39,16 +39,25 @@
     <div class="description clearfix">
       <div>
         <div class="col2">
-          <article><span class="label">Server Type</span>{{server-type}}</article>
+          <article>
+	    <span class="label">Server Type</span>{{agent-type}}
+	  </article>
           <br/>
           <article>
             <span class="label">Hostname</span>{{hostname}}
           </article>
           <article><span class="label">IP Address</span>{{ip-address}}</article>
           <article><span class="label">Environment</span>{{environment}}</article>
-          <article><span class="label">OS</span>{{os}}</article>
-	  <article><span class="label">RAM</span>{{ram-mb}}</article>
-	  <article><span class="label">CPU Cores</span>{{cpu-cores}}</article>
+          <article><span class="label">OS</span>{{os-version}}</article>
+	  <article>
+	    <span class="label">RAM</span>{{installed-memory-readable}}
+	  </article>
+	  <article>
+	    <span class="label">CPU Cores</span>{{processor-count}}
+	  </article>
+	  <article>
+	    <span class="label">CPU Type</span>{{processor-type}}
+	  </article>
 	  <br/>
 	</div>
 	<div class="col2">

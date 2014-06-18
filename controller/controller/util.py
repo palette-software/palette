@@ -2,7 +2,7 @@ DATEFMT = "%I:%M %p PDT on %B %d, %Y"
 SIZEFMT = "%(value).1f%(symbol)s"
 SYMBOLS = ['B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
 
-def sizestr(n):
+def sizestr(n, fmt=SIZEFMT):
     n = int(n)
     if n < 0:
         raise ValueError('n < 0')
@@ -12,5 +12,5 @@ def sizestr(n):
     for symbol in reversed(SYMBOLS[1:]):
         if n >= prefix[symbol]:
             value = float(n) / prefix[symbol]
-            return SIZEFMT % locals()
-    return SIZEFMT % dict(symbol=SYMBOLS[0], value=n)
+            return fmt % locals()
+    return fmt % dict(symbol=SYMBOLS[0], value=n)
