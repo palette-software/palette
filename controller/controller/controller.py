@@ -49,6 +49,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     PHTTP_BIN = "phttp.exe"
     PINFO_BIN = "pinfo.exe"
     PS3_BIN = "ps3.exe"
+    PGCS_BIN = "pgcs.exe"
     CLI_URI = "/cli"
 
     def backup_cmd(self, agent, target=None, volume_name=None):
