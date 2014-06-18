@@ -793,7 +793,6 @@ ul.processes.visible {
 }
 .dynamic-content .top-zone {
     width: 100%;
-    height: 120px;
 }
 .dynamic-content .top-zone .row {
     height: auto !important;
@@ -840,15 +839,12 @@ ul.processes.visible {
     padding-right: 45px;
 }
 .dynamic-content .top-zone .btn-group {
-    float: left;
     display: inline-block;
     margin:10px 0 25px 10px;
+    white-space: nowrap;
 }
 .dynamic-content .top-zone .btn-group:first-of-type {
     margin-left: 0;
-}
-.dynamic-content .bottom-zone {
-    padding-top: 20px;
 }
 .dynamic-content label {
     text-align: left;
@@ -1582,8 +1578,6 @@ div.refresh {
     font-size: 26px;
     color:#fff;
 }
-
 .event-dropdowns {
     height: 67px;
-    overflow: hidden;
 }
