@@ -128,11 +128,6 @@ class MonitorApplication(PaletteRESTHandler):
 
         text = state_control_entry.text
 
-        if main_state == StateManager.STATE_STOPPED:
-            warning = text
-        else:
-            warning = ""
-
         # The overall color starts at the state_control color.
         # It can get worse (e.g. green to yellow or red) , but not better
         # (e.g. red to yellow or green).
@@ -178,11 +173,6 @@ class MonitorApplication(PaletteRESTHandler):
             agent['last-disconnect-time'] = \
                 entry.last_disconnect_time.strftime(DATEFMT)
 
-            if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY \
-                    and entry.connected():
-                primary = entry
-                agent['license'] = self.license_info(entry.agentid)
-
             if entry.connected():
                 if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
                     agent['license'] = self.license_info(entry.agentid)
@@ -210,12 +200,7 @@ class MonitorApplication(PaletteRESTHandler):
                                     main_state == StateManager.STATE_STOPPED:
                 agent_color_num = Colors.RED_NUM
                 agent['warnings'] = [{'color':'red',
-                                      'message': 'Agent stopped'}]
-
-            # Override: Tableau stopped --> primary agent is red
-            if main_state == StateManager.STATE_STOPPED and \
-                        entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-                agent_color_num = Colors.RED_NUM
+                                      'message': 'Tableau stopped'}]
 
             if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY or \
                         entry.agent_type == AgentManager.AGENT_TYPE_WORKER:
@@ -266,9 +251,6 @@ class MonitorApplication(PaletteRESTHandler):
                        'user-action-in-progress': user_action_in_progress,
                        'environments': environments
                       }
-
-        if warning:
-            monitor_ret['warning'] = warning
 
         if not 'event' in req.GET or \
                     ('event' in req.GET and req.GET['event'] != 'false'):
