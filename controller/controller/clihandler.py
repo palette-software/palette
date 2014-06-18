@@ -359,6 +359,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error('agent not found')
             return
 
+        self.ack()
         body = self.server.extract.load(agent)
         self.print_client("%s", json.dumps(body))
 
@@ -600,7 +601,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         agents = self.server.agentmanager.all_agents()
         if len(agents) == 0:
-            self.json.dumps({})
+            json.dumps({})
             return
 
         pinfos = []

@@ -137,6 +137,12 @@ class Sched(object):
             args=['info_all', self.command_info],
             minute="1,6,11,16,21,26,31,36,41,46,51,56")
 
+        # extracts every 5 minutes
+        self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
+            name='extract',
+            args=['extract', self.command_info],
+            minute="2,7,12,17,22,27,32,37,42,47,52,57")
+
         # license_check every hour
         self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
             name='license_check',
