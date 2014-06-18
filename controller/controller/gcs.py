@@ -17,11 +17,6 @@ class GCS(meta.Base):
     access_key = Column(String)
     secret = Column(String)
 
-    def get_token(self, resource):
-        c = boto.connect_gs(gs_access_key_id=str(self.access_key),
-                             gs_secret_access_key=str(self.secret))
-        return c.get_federation_token(resource, policy=POLICY)
-
     @classmethod
     def get_by_name(cls, name):
         try:
