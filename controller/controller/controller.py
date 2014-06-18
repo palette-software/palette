@@ -1037,6 +1037,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # (needed for agent.tableau_data_dir).
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.yml(agent)
+            self.auth.load(agent)
 
         # Cleanup.
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
