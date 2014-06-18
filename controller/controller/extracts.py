@@ -8,6 +8,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
 from event_control import EventControl
 from mixin import BaseDictMixin
+from util import utc2local
 
 class ExtractEntry(meta.Base, BaseDictMixin):
     __tablename__ = "extracts"
@@ -37,9 +38,9 @@ class ExtractManager(object):
 
         session = meta.Session()
 
-        last = self.last_completed_at()
-        if not last is None:
-            stmt += " AND completed_at > '" + last + "'"
+        lastid = self.lastid()
+        if not lastid is None:
+            stmt += " AND id > '" + lastid + "'"
 
         data = agent.odbc.execute(stmt)
 
@@ -48,8 +49,8 @@ class ExtractManager(object):
 
         FMT = "%Y-%m-%d %H:%M:%SZ"
         for row in data['']:
-            started_at = datetime.strptime(row[3], FMT)
-            completed_at = datetime.strptime(row[4], FMT)
+            started_at = utc2local(datetime.strptime(row[3], FMT))
+            completed_at = utc2local(datetime.strptime(row[4], FMT))
             entry = ExtractEntry(extractid=row[0],
                                  agentid=agent.agentid,
                                  finish_code=row[1],
@@ -75,11 +76,11 @@ class ExtractManager(object):
         return {u'status': 'OK',
                 u'count': len(data[''])}
 
-    def last_completed_at(self):
+    def lastid(self):
         entry = meta.Session.query(ExtractEntry).\
-            order_by(ExtractEntry.completed_at.desc()).first()
+            order_by(ExtractEntry.extractid.desc()).first()
         if entry:
-                return str(entry.completed_at)
+                return str(entry.extractid)
         return None
 
     def eventgen(self, key, data, timestamp=None):
