@@ -449,7 +449,7 @@ class EventControlManager(object):
 
         return entry
 
-    def gen(self, key, data={}):
+    def gen(self, key, data={}, timestamp=None):
         """Generate an event.
             Arguments:
                 key:    The key to look up.
@@ -511,7 +511,8 @@ class EventControlManager(object):
 
         # Log the event to the database
         self.event.add(subject, event_description, event_entry.level,
-                event_entry.icon, event_entry.color, event_entry.event_type)
+                       event_entry.icon, event_entry.color, 
+                       event_entry.event_type, timestamp=timestamp)
 
         if event_entry.send_email:
             self.alert_email.send(event_entry, data)

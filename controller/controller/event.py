@@ -27,12 +27,16 @@ class EventManager(object):
     def __init__(self, envid):
         self.envid = envid
 
-    def add(self, title, description, level, icon, color, event_type):
-        summary = time.strftime(self.DATEFMT)
+    def add(self, title, description, level, icon, color, event_type,
+            timestamp=None):
+        if timestamp is None:
+            summary = time.strftime(self.DATEFMT)
+        else:
+            summary = timestamp
 
         session = meta.Session()
         entry = EventEntry(envid=self.envid, title=title,
-            description=description, level=level, icon=icon, color=color,
-                                    event_type=event_type, summary=summary)
+                           description=description, level=level, icon=icon,
+                           color=color, event_type=event_type, summary=summary)
         session.add(entry)
         session.commit()
