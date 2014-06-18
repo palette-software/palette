@@ -126,9 +126,7 @@ function ($, topic, template)
                 success: function(data) {
                     div.text(a.text());
                 },
-                error: function(req, textStatus, errorThrown) {
-                    alert(textStatus + ": " + errorThrown);
-                }
+                error: common.ajaxError,
             });
         });
     }
@@ -249,7 +247,7 @@ function ($, topic, template)
         topic.publish('state', data);
         current = json;
 
-        var text = data['text'] != null ? data['text'] : 'ERROR';
+        var text = data['text'] != null ? data['text'] : 'SERVER ERROR';
         $('#status-text').html(text);
 
         var color = data['color'] != null ? data['color'] : 'red';
@@ -275,7 +273,8 @@ function ($, topic, template)
             error: function(req, textStatus, errorThrown)
             {
                 var data = {}
-                data['text'] = textStatus;
+                data['text'] = 'Browser Disconnected';
+                data['color'] = 'yellow';
                 update(data);
             },
             complete: function() {
@@ -292,11 +291,20 @@ function ($, topic, template)
         poll();
     }
 
+    /*
+     * ajaxError
+     * Common routine for displaying AJAX error messages.
+     */
+    function ajaxError(jqXHR, textStatus, errorThrown) {
+        alert(this.url + ': ' + jqXHR.status + " (" + errorThrown + ")");
+    }
+
     return {'state': current,
             'startMonitor': startMonitor,
+            'ajaxError': ajaxError,
             'bindEvents': bindEvents,
             'setupDialogs': setupDialogs,
             'setupDropdowns' : setupDropdowns,
             'setupServerList' : setupServerList
-           };
+           };x
 });

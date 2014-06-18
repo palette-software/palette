@@ -11,9 +11,7 @@ function (jquery, template, common)
             jquery('#workbook-list').html(rendered);
             common.bindEvents(); /* workbooks have '.event' class */
         },
-        error: function(req, textStatus, errorThrown) {
-            console.log('[workbook] ' + textStatus + ': ' + errorThrown);
-        },
+        error: common.ajaxError,
     });
 
     common.startup();

@@ -26,9 +26,7 @@ function ($, topic, template, common)
             async: false,
             
             success: function(data) {},
-            error: function(req, textStatus, errorThrown) {
-                alert(textStatus);
-            }
+            error: common.ajaxError,
         });
     }
 
@@ -49,9 +47,7 @@ function ($, topic, template, common)
             async: false,
             
             success: function(data) {},
-            error: function(req, textStatus, errorThrown) {
-                alert(textStatus + ': ' + errorThrown);
-            }
+            error: common.ajaxError,
         });
     }
 
@@ -68,9 +64,7 @@ function ($, topic, template, common)
             async: false,
             
             success: function(data) {},
-            error: function(req, textStatus, errorThrown) {
-                alert(textStatus);
-            }
+            error: common.ajaxError,
         });
     }
 
@@ -144,9 +138,7 @@ function ($, topic, template, common)
                     updateBackupSuccess(data);
                 });
             },
-            error: function(req, textStatus, errorThrown) {
-                console.log('[backup] ' + textStatus + ': ' + errorThrown);
-            },
+            error: common.ajaxError,
         });
     }
 

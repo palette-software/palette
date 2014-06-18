@@ -24,9 +24,7 @@ function ($, template, common, EditBox)
             success: function(data) {
                 update(data);
             },
-            error: function(req, textStatus, errorThrown) {
-                console.log('[ERROR] '+textStatus+': '+errorThrown);
-            }
+            error: common.ajaxError,
         });
     }
 
@@ -37,9 +35,7 @@ function ($, template, common, EditBox)
         success: function(data) {
             update(data);
         },
-        error: function(req, textStatus, errorThrown) {
-            console.log('[ERROR] '+textStatus+': '+errorThrown);
-        }
+        error: common.ajaxError,
     });
 
     $().ready(function() {
