@@ -76,6 +76,12 @@
 	  {{name}} ({{pid}})
 	</li>
 	{{/details}}
+	{{#warnings}}
+	<li>
+	  <i class="fa fa-fw fa-circle {{color}}"></i>
+	  {{message}}
+	</li>
+	{{/warnings}}
       </ul>
     </li>
     {{/agents}}

@@ -17,7 +17,7 @@ from controller.agentmanager import AgentManager
 from controller.agentinfo import AgentVolumesEntry
 from controller.domain import Domain
 from controller.state_control import StateControl
-from controller.util import sizestr
+from controller.util import sizestr, DATEFMT
 from controller.system import LicenseEntry
 
 from page import PalettePage
@@ -125,11 +125,14 @@ class MonitorApplication(PaletteRESTHandler):
             agent['version'] = entry.version
             agent['ip_address'] = entry.ip_address
             agent['listen_port'] = entry.listen_port
-            agent['creation_time'] = str(entry.creation_time)[:19]
-            agent['modification_time'] = str(entry.modification_time)[:19]
-            agent['last_connnection_time'] = \
-                                    str(entry.last_connection_time)[:19]
-            agent['last_disconnect_time'] = str(entry.last_disconnect_time)[:19]
+            agent['creation-time'] = entry.creation_time.strftime(DATEFMT)
+            agent['modification_time'] = \
+                entry.modification_time.strftime(DATEFMT)
+            agent['last-connnection-time'] = \
+                entry.last_connection_time.strftime(DATEFMT)
+            agent['last-disconnect-time'] = \
+                entry.last_disconnect_time.strftime(DATEFMT)
+
             if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY \
                     and entry.connected():
                 primary = entry
@@ -141,10 +144,14 @@ class MonitorApplication(PaletteRESTHandler):
                 agent['ports'] = self.firewall_info(entry.agentid)
             else:
                 agent['color'] = 'red'
+                msg = 'Disconnected ' + agent['last-disconnect-time']
+                agent['warnings'] = [{'color':'red', 'message': msg}]
 
             if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
                                     main_state == StateManager.STATE_STOPPED:
                 agent['color'] = 'red'
+                agent['warnings'] = [{'color':'red',
+                                      'message': 'Agent stopped'}]
 
             if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY or \
                         entry.agent_type == AgentManager.AGENT_TYPE_WORKER:
