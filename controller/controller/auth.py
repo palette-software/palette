@@ -68,8 +68,12 @@ class AuthManager(object):
 
         session.commit()
 
-        return {u'status': 'OK',
+        ret_dict = {u'status': 'OK',
                 u'count': len(data[''])}
+
+        self.server.log.debug("auth load returning: %s", str(ret_dict))
+
+        return ret_dict
 
     def verify(self, name, password):
         return UserProfile.verify(name, password)
