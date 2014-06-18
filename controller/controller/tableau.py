@@ -120,7 +120,7 @@ class TableauStatusMonitor(threading.Thread):
         except NoResultFound, e:
             return StatusEntry.STATUS_UNKNOWN
 
-    def set_main_state(self, status, agent):
+    def set_main_state(self, status, agent, body):
         main_state = self.stateman.get_state()
         if status not in \
             (TableauProcess.STATUS_RUNNING, TableauProcess.STATUS_STOPPED,
@@ -141,7 +141,7 @@ class TableauStatusMonitor(threading.Thread):
                                                                 agent.__dict__)
             elif status == TableauProcess.STATUS_DEGRADED:
                 self.server.event_control.gen(EventControl.INIT_STATE_DEGRADED,
-                                                                agent.__dict__)
+                                    dict(body.items() + agent.__dict__.items()))
             return
 
         # If the main state was DEGRADED but status isn't DEGRADED any more,
@@ -181,7 +181,7 @@ class TableauStatusMonitor(threading.Thread):
             self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateManager.STATE_DEGRADED)
             self.server.event_control.gen(EventControl.STATE_DEGRADED,
-                                                            agent.__dict__)
+                            dict(body.items() + agent.__dict__.items()))
 
     def run(self):
         while True:
@@ -269,8 +269,8 @@ class TableauStatusMonitor(threading.Thread):
                     "No output received for status monitor. body:" + str(body))
             return
 
-        body = body['stdout']
-        lines = string.split(body, '\n')
+        stdout = body['stdout']
+        lines = string.split(stdout, '\n')
 
         session = meta.Session()
 
@@ -321,7 +321,7 @@ class TableauStatusMonitor(threading.Thread):
 
         session.commit()
 
-        self.set_main_state(system_status, agent)
+        self.set_main_state(system_status, agent, body)
         self.log.debug("Logging main status: %s", system_status)
 
         session.commit()

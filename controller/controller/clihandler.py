@@ -605,7 +605,13 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         pinfos = []
-        for uuid, agent in agents.iteritems():
+        for key in agents.keys():
+            try:
+                agent = agents[key]
+            except:
+                # This agent is now gone
+                continue
+
             body = self.server.info(agent)
             pinfos.append(body)
 
