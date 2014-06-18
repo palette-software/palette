@@ -62,9 +62,11 @@ class ExtractManager(object):
 
             body = dict(agent.__dict__.items() + entry.todict().items())
             if entry.finish_code == 0:
-                self.eventgen(EventControl.EXTRACT_OK, body)
+                self.eventgen(EventControl.EXTRACT_OK, body,
+                              timestamp=completed_at)
             else:
-                self.eventgen(EventControl.EXTRACT_FAILED, body)
+                self.eventgen(EventControl.EXTRACT_FAILED, body,
+                              timestamp=completed_at)
 
             session.add(entry)
 
@@ -80,5 +82,5 @@ class ExtractManager(object):
                 return str(entry.completed_at)
         return None
 
-    def eventgen(self, key, data):
-        return self.server.event_control.gen(key, data)
+    def eventgen(self, key, data, timestamp=None):
+        return self.server.event_control.gen(key, data, timestamp=timestamp)
