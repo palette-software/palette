@@ -1,18 +1,20 @@
-require(['jquery', 'template', 'common', 'bootstrap', 'domReady!'],
-function (jquery, template, common)
+require(['jquery', 'template', 'common', 'bootstrap'],
+function ($, template, common)
 {
     var t = $('#workbook-list-template').html();
     template.parse(t);
     
-    jquery.ajax({
+    $.ajax({
         url: '/rest/workbooks',
         success: function(data) {
-            var rendered = template.render(t, data);
-            jquery('#workbook-list').html(rendered);
-            common.bindEvents(); /* workbooks have '.event' class */
+            $().ready(function() {
+               var rendered = template.render(t, data);
+               $('#workbook-list').html(rendered);
+               common.bindEvents(); /* workbooks have '.event' class */
+            });
         },
         error: common.ajaxError,
     });
 
-    common.startup();
+    common.startMonitor();
 });
