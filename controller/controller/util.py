@@ -1,4 +1,4 @@
-DATEFMT = "%I:%M %p PDT on %B %d, %Y"
+DATEFMT = "%I:%M %p PDT on %b %d, %Y"
 SIZEFMT = "%(value).1f%(symbol)s"
 SYMBOLS = ['B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
 
