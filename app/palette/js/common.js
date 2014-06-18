@@ -265,7 +265,7 @@ function ($, topic, template)
 
     function poll() {
         var start = lastid + 1;
-        var url = '/rest/monitor?order=desc&start='+start;
+        var url = '/rest/monitor?order=desc&start='+start+'&high=50';
 
         $.ajax({
             url: url,
