@@ -297,6 +297,7 @@ function ($, topic, template)
      */
     function ajaxError(jqXHR, textStatus, errorThrown) {
         alert(this.url + ': ' + jqXHR.status + " (" + errorThrown + ")");
+        location.reload();
     }
 
     return {'state': current,

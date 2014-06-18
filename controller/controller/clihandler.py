@@ -838,7 +838,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         main_state = stateman.get_state()
 
         # Stop can be done only if tableau is started
-        if main_state != StateManager.STATE_STARTED:
+        if main_state not in \
+                (StateManager.STATE_STARTED, StateManager.STATE_DEGRADED):
             self.error("can't stop - main state is: " + main_state)
             aconn.user_action_unlock()
             return
