@@ -306,5 +306,5 @@ function ($, topic, template)
             'setupDialogs': setupDialogs,
             'setupDropdowns' : setupDropdowns,
             'setupServerList' : setupServerList
-           };x
+           };
 });
