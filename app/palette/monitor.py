@@ -142,6 +142,10 @@ class MonitorApplication(PaletteRESTHandler):
             else:
                 agent['color'] = 'red'
 
+            if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
+                                    main_state == StateManager.STATE_STOPPED:
+                agent['color'] = 'red'
+
             if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY or \
                         entry.agent_type == AgentManager.AGENT_TYPE_WORKER:
 
