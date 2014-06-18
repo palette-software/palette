@@ -37,7 +37,6 @@ from event import EventManager
 from event_control import EventControl, EventControlManager
 from extracts import ExtractManager
 from workbooks import WorkbookEntry, WorkbookManager
-from s3 import S3
 from sched import Sched
 from clihandler import CliHandler
 from version import VERSION
@@ -50,6 +49,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     PHTTP_BIN = "phttp.exe"
     PINFO_BIN = "pinfo.exe"
     PS3_BIN = "ps3.exe"
+    PGCS_BIN = "pgcs.exe"
     CLI_URI = "/cli"
 
     def backup_cmd(self, agent, target=None, volume_name=None):
