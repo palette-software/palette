@@ -11,8 +11,8 @@ Architecture: all
 Depends:
  ${python:Depends}, ${misc:Depends},
  python-docutils, python-sphinx, postgresql,
- python-sqlalchemy, python-psycopg2, python-boto, telnet,
- daemon,
+ python-sqlalchemy, python-psycopg2, python-boto,
+ telnet, daemon, postfix,
  akiri.framework (>= 0.3),
  python-apscheduler
 Description: Palette Controller and Web App
