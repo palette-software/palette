@@ -170,8 +170,9 @@ class MonitorApplication(PaletteRESTHandler):
                 entry.modification_time.strftime(DATEFMT)
             agent['last-connnection-time'] = \
                 entry.last_connection_time.strftime(DATEFMT)
-            agent['last-disconnect-time'] = \
-                entry.last_disconnect_time.strftime(DATEFMT)
+            if entry.last_disconnect_time:
+                agent['last-disconnect-time'] = \
+                    entry.last_disconnect_time.strftime(DATEFMT)
 
             if entry.connected():
                 if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
@@ -193,7 +194,9 @@ class MonitorApplication(PaletteRESTHandler):
                     agent_color_num = firewall_lowest_color
             else:
                 agent_color_num = Colors.RED_NUM
-                msg = 'Disconnected ' + agent['last-disconnect-time']
+                msg = 'Disconnected'
+                if 'last-disconnect-time' in agent:
+                    msg = msg + ' ' + agent['last-disconnect-time']
                 agent['warnings'] = [{'color':'red', 'message': msg}]
 
             if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
