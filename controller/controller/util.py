@@ -1,3 +1,5 @@
+from dateutil import tz
+
 DATEFMT = "%I:%M %p PDT on %b %d, %Y"
 SIZEFMT = "%(value).1f%(symbol)s"
 SYMBOLS = ['B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
@@ -14,3 +16,7 @@ def sizestr(n, fmt=SIZEFMT):
             value = float(n) / prefix[symbol]
             return fmt % locals()
     return fmt % dict(symbol=SYMBOLS[0], value=n)
+
+def utc2local(t):
+    t = t.replace(tzinfo=tz.tzutc())
+    return t.astimezone(tz.tzlocal())

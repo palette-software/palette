@@ -11,7 +11,7 @@ Architecture: all
 Depends:
  ${python:Depends}, ${misc:Depends},
  python-docutils, python-sphinx, postgresql,
- python-sqlalchemy, python-psycopg2, python-boto,
+ python-sqlalchemy, python-psycopg2, python-boto, python-dateutil,
  telnet, daemon, postfix,
  akiri.framework (>= 0.3),
  python-apscheduler
