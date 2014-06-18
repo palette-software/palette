@@ -37,7 +37,6 @@ from event import EventManager
 from event_control import EventControl, EventControlManager
 from extracts import ExtractManager
 from workbooks import WorkbookEntry, WorkbookManager
-from s3 import S3
 from sched import Sched
 from clihandler import CliHandler
 from version import VERSION
