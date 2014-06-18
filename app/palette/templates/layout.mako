@@ -44,7 +44,7 @@
     {{#agents}}
     <li>
       <a>
-        <i class="fa fa-fw fa-hdd-o {{color}}"></i>
+        <i class="fa fa-fw fa-laptop {{color}}"></i>
 	    <div>
           <h5>{{displayname}}</h5>
           <span class="hostname">{{hostname}}</span>
