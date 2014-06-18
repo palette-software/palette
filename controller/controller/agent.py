@@ -13,6 +13,7 @@ from akiri.framework.ext.sqlalchemy import meta
 from mixin import BaseDictMixin
 
 from agentinfo import AgentVolumesEntry
+from util import sizestr
 
 class Agent(meta.Base, BaseDictMixin):
     __tablename__ = 'agent'
@@ -102,3 +103,11 @@ class Agent(meta.Base, BaseDictMixin):
         return meta.Session.query(Agent).\
             filter(Agent.agentid == vol_entry.agentid).\
             one()
+
+    def todict(self, pretty=False, exclude=[]):
+        d = super(Agent, self).todict(pretty=pretty, exclude=exclude)
+        if pretty:
+            fmt = "%(value).0f%(symbol)s"
+            d['installed-memory-readable'] = \
+                sizestr(self.installed_memory, fmt=fmt)
+        return d
