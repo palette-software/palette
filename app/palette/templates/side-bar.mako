@@ -21,8 +21,23 @@
     </li>
     <li class="category">
       <a href="/configure/yml">
+        <i class="fa fa-fw fa-gears"></i>
+        <span>Integration</span>
+	<i class="fa fa-fw fa-angle-${obj.expanded and 'up' or 'down'} expand"></i>
+      </a>
+      <ul ${obj.expanded and 'class="visible"' or ''}>
+	<li ${obj.active=='splunk' and 'class="active"' or ''}>
+	  <a href="/configure/splunk">
+            <i class="fa fa-fw fa-arrows-alt"></i>
+            <span>Splunk</span>
+	  </a>
+	</li>
+      </ul>
+    </li>
+    <li class="category">
+      <a href="/configure/yml">
         <i class="fa fa-fw fa-cog"></i>
-        <span>Configure</span>
+        <span>Configuration</span>
 	<i class="fa fa-fw fa-angle-${obj.expanded and 'up' or 'down'} expand"></i>
       </a>
       <ul ${obj.expanded and 'class="visible"' or ''}>
@@ -46,5 +61,6 @@
 	    </li>
       </ul>
     </li>
+
   </ul>
 </section>

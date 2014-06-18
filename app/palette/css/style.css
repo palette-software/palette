@@ -20,7 +20,7 @@ p {
     color: #5F6670;
     font-weight: 300 !important;
 }
-a {
+a, a:hover {
     color: #697078;
 }
 a img {
@@ -1581,3 +1581,8 @@ div.refresh {
 .event-dropdowns {
     height: 67px;
 }
+
+#splunk-info {
+    margin-top: 20px;
+}
+

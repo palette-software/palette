@@ -1,5 +1,5 @@
-require(['common', 'domReady!'],
+require(['common'],
 function(common)
 {
-    common.startup();
+    common.startMonitor();
 });
