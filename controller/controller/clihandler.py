@@ -16,6 +16,7 @@ from agent import Agent
 from agentmanager import AgentManager
 from backup import BackupManager
 from event_control import EventControl
+from gcs import GCS
 from s3 import S3
 from system import SystemEntry
 from state import StateManager
@@ -1106,12 +1107,73 @@ class CliHandler(socketserver.StreamRequestHandler):
         command = self.server.PS3_BIN+' %s %s "%s"' % \
             (action, entry.bucket, keypath)
 
-
         env = {u'ACCESS_KEY': token.credentials.access_key,
                u'SECRET_KEY': token.credentials.secret_key,
                u'SESSION': token.credentials.session_token,
                u'REGION_ENDPOINT': entry.region,
                u'PWD': data_dir}
+
+        # Send command to the agent
+        body = self.server.cli_cmd(command, agent, env=env)
+
+        body[u'env'] = env
+        body[u'resource'] = resource
+
+        self.print_client("%s", json.dumps(body))
+
+    @usage('gcs [GET|PUT] <bucket> <key-or-path>')
+    def do_gcs(self, cmd):
+        """Send a file to or receive a file from a GCP bucket"""
+
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            self.error('agent not found')
+            return
+
+        aconn = agent.connection
+        if len(cmd.args) != 3 or len(cmd.args) > 4:
+            self.print_usage(self.do_s3.__usage__)
+            return
+
+        action = cmd.args[0].upper()
+        name = cmd.args[1]
+        keypath = cmd.args[2]
+
+        entry = GCS.get_by_name(name)
+        if not entry:
+            self.error("gcs instance '" + name + "' not found.")
+            return
+
+        if 'install-dir' not in aconn.auth:
+            self.error("agent connection is missing 'install-dir'")
+            return
+        install_dir = aconn.auth['install-dir']
+        data_dir = ntpath.join(install_dir, 'data')
+
+        self.ack()
+
+        resource = os.path.basename(keypath)
+
+        command = self.server.PGCS_BIN+' %s %s "%s"' % \
+            (action, entry.bucket, keypath)
+
+        # FIXME: We don't really want to send our real keys and
+        #        secrets to the agents, but while boto.connect_gs
+        #        can replace boto.connect_s3, there is no GCS
+        #        equivalent for boto.connect_sts, so we may need
+        #        to move away from boto to get GCS temporary tokens.
+        env = {u'ACCESS_KEY': entry.access_key,
+               u'SECRET_KEY': entry.secret,
+               u'PWD': data_dir}
+
+        # FIXME: Remove this section when PGCS_BIN is implemented.
+        if True:
+            print 'GCS transaction BEGIN'
+            print command
+            print env
+            print 'GCS transaction END'
+            self.print_client('{"warning": "PGCS_BIN unimplemented"}')
+            return
 
         # Send command to the agent
         body = self.server.cli_cmd(command, agent, env=env)
