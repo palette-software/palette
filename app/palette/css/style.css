@@ -1099,7 +1099,7 @@ label.checkbox-label {
     display: inline-block;
     margin: 4px 15px 0 0;
 }
-label.error {
+p.error, label.error {
     width: 100%;
     font-size: 12px;
     text-align: center;
@@ -1107,11 +1107,7 @@ label.error {
     color: #E52C22;
 }
 p.error {
-    width: 100%;
-    font-size: 12px;
-    text-align: center;
-    margin: -8px 0 25px 0;
-    color: #E52C22;
+    margin-top: 5px;
 }
 .checkbox, .radio {
     padding: 0;

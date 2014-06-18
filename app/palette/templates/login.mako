@@ -44,9 +44,6 @@
             </button>
           </section>
         </section>
-        <p class="text-center text-small">
-          <a href="/forgot">I forgot my username and/or password</a>
-        </p>
         %if 'AUTH_ERROR' in req.environ:
         <section class="hidden" id="auth-error"></section>
         %endif
