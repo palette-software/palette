@@ -12,8 +12,8 @@ function ($, template, common, EditBox)
             dataType: 'json',
             async: false,
             success: function(data) {},
-            error: function(req, textStatus, errorThrown) {
-                console.log('[ERROR] '+textStatus+': '+errorThrown);
+            error: function(jqXHR, textStatus, errorThrown) {
+                common.ajaxError(jqXHR, textStatus, errorThrown);
                 $(node).prop("checked", !value);
             }
         });
@@ -38,9 +38,7 @@ function ($, template, common, EditBox)
         success: function(data) {
             update(data);
         },
-        error: function(req, textStatus, errorThrown) {
-            console.log('[ERROR] '+textStatus+': '+errorThrown);
-        }
+        error: common.ajaxError,
     });
 
     common.startMonitor();

@@ -16,9 +16,7 @@ function (jquery, template, common)
         success: function(data) {
             update(data);
         },
-        error: function(req, textStatus, errorThrown) {
-            console.log('[ERROR] '+textStatus+': '+errorThrown);
-        },
+        error: common.ajaxError,
     });
 
     common.startMonitor();

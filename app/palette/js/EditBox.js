@@ -62,8 +62,9 @@ function($, template) {
                     success: function(data) {
                         success = true;
                     },
-                    error: function(req, textStatus, errorThrown) {
-                        alert('[ERROR] ' + textStatus + ": " + errorThrown);
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        alert(this.url + ": " +
+                              jqXHR.status + " (" + errorThrown + ")");
                         sucess = false;
                     }
                 });
