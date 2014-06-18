@@ -64,9 +64,9 @@ class Telnet(object):
         s.flush()
         data = s.readline().strip()
         if data != 'OK':
-            print "bad result:", data
-            raise RuntimeError(data)
-        if sync:
+            print "bad result for cmd '%s': %s" % (cmd, data)
+            raise exc.HTTPServiceUnavailable
+        elif sync:
             data = s.readline()
         conn.close()
         return sync and data or None
