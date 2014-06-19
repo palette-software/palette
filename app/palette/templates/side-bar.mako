@@ -15,7 +15,7 @@
       %else:
       <li class="has-side-bar">
         %endif
-      <a href="/activity"><i class="fa fa-fw fa-copy"></i>
+      <a href="/activity"><i class="fa fa-fw fa-book"></i>
         <span>Workbook Archive</span>
       </a>
     %if obj.active=='manage':
