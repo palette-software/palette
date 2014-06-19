@@ -147,7 +147,7 @@ class Sched(object):
         self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
             name='license_check',
             args=['license_check', self.command_info],
-            minute="4")
+            minute="4,9,14,19,24,29,34,39,44,49,54,59")
 
     @classmethod
     def listener(cls, event):
