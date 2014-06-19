@@ -192,12 +192,21 @@ class EventApplication(RESTApplication):
                 # Add a break at each line
                 description += line + "<br />" + "\n"
 
+            # FIXME: really use the database table
+            if not entry.icon:
+                if entry.color == 'green':
+                    icon = 'fa-check-circle'
+                elif entry.color == 'red':
+                    icon = 'fa-times-circle'
+                else:
+                    icon = 'fa-exclamation-circle'
+
             events.append({  "eventid": entry.eventid,
                              "title": entry.title,
                              "summary": entry.summary,
                              "description": description,
                              "level": entry.level,
-                             "icon": entry.icon,
+                             "icon": icon,
                              "color": entry.color,
                              "event-type": entry.event_type,
                              "date": str(entry.creation_time)[:19]
