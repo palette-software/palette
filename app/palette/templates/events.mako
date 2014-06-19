@@ -77,7 +77,7 @@
   {{#events}}
   <article class="event">
     <div class="summary clearfix">
-      <i class="fa fa-fw fa-hdd-o {{color}}"></i>
+      <i class="fa fa-fw {{icon}} {{color}}"></i>
       <div>
 	<h3>{{title}}</h3>
 	<p>{{summary}}</p>
