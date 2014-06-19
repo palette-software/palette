@@ -10,6 +10,14 @@
         <i class="fa fa-fw fa-copy"></i><span>Events</span>
       </a>
     </li>
+    %if obj.active=='activity':
+    <li class="has-side-bar active">
+      %else:
+      <li class="has-side-bar">
+        %endif
+      <a href="/activity"><i class="fa fa-fw fa-copy"></i>
+        <span>Workbook Archive</span>
+      </a>
     %if obj.active=='manage':
     <li class="has-side-bar active">
       %else:
