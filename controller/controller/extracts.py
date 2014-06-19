@@ -8,7 +8,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
 from event_control import EventControl
 from mixin import BaseDictMixin
-from util import utc2local
+from util import utc2local, DATEFMT
 
 class ExtractEntry(meta.Base, BaseDictMixin):
     __tablename__ = "extracts"
@@ -64,10 +64,10 @@ class ExtractManager(object):
             body = dict(agent.__dict__.items() + entry.todict().items())
             if entry.finish_code == 0:
                 self.eventgen(EventControl.EXTRACT_OK, body,
-                              timestamp=completed_at)
+                              timestamp=completed_at.strftime(DATEFMT))
             else:
                 self.eventgen(EventControl.EXTRACT_FAILED, body,
-                              timestamp=completed_at)
+                              timestamp=completed_at.strftime(DATEFMT))
 
             session.add(entry)
 
