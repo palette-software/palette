@@ -149,11 +149,11 @@ class Sched(object):
             args=['auth_import', self.command_info],
             minute="3/10")
 
-        # license_check every hour
+        # license_check every 5 minutes
         self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
             name='license_check',
             args=['license_check', self.command_info],
-            minute="4,9,14,19,24,29,34,39,44,49,54,59")
+            minute="4/5")
 
     @classmethod
     def listener(cls, event):
