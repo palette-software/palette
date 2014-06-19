@@ -56,13 +56,13 @@ class MonitorApplication(PaletteRESTHandler):
         try:
             v = self.system.get('disk-watermark-'+name)
         except ValueError:
-            return 100
-        return int(v)
+            return float(100)
+        return float(v)
 
     def disk_color(self, used, size, low, high):
-        if used > high * size:
+        if used > high / 100 * size:
             return 'red'
-        if used > low * size:
+        if used > low / 100 * size:
             return 'yellow'
         return 'green'
 
