@@ -129,25 +129,31 @@ class Sched(object):
         self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
             name='yml',
             args=['yml', self.command_info],
-            minute="*/5")
+            minute="0/5")
 
         # info_all/pinfo every 5 minutes
         self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
             name='info_all',
             args=['info_all', self.command_info],
-            minute="1,6,11,16,21,26,31,36,41,46,51,56")
+            minute="1/5")
 
         # extracts every 5 minutes
         self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
             name='extract',
             args=['extract', self.command_info],
-            minute="2,7,12,17,22,27,32,37,42,47,52,57")
+            minute="2/5")
 
-        # license_check every hour
+        # auth_import every 10 minutes
+        self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
+            name='auth_import',
+            args=['auth_import', self.command_info],
+            minute="3/10")
+
+        # license_check every 5 minutes
         self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
             name='license_check',
             args=['license_check', self.command_info],
-            minute="4,9,14,19,24,29,34,39,44,49,54,59")
+            minute="4/5")
 
     @classmethod
     def listener(cls, event):
