@@ -2,7 +2,7 @@ from dateutil import tz
 
 DATEFMT = "%I:%M %p PDT on %b %d, %Y"
 SIZEFMT = "%(value).1f%(symbol)s"
-SYMBOLS = ['B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
+SYMBOLS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
 
 def sizestr(n, fmt=SIZEFMT):
     n = int(n)
