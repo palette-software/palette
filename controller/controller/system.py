@@ -115,6 +115,12 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
         return m.groupdict()
 
     def invalid(self):
+        if self.interactors is None:
+            return False
+        self.interactors = int(self.interactors)
+        if self.viewers is None:
+            return False
+        self.viewers = int(self.viewers)
         return self.interactors == 0 and self.viewers == 0
 
     def valid(self):
