@@ -758,11 +758,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         output = body['stdout']
         d = LicenseEntry.parse(output)
+
         entry = LicenseEntry.save(agentid=agent.agentid, **d)
         if not entry:
             return entry
 
-        if not entry.valid() and not entry.notified:
+        if entry.invalid() and not entry.notified:
             # Generate an event
             self.event_control.gen(\
                 EventControl.LICENSE_INVALID,
