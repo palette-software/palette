@@ -762,7 +762,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not entry:
             return entry
 
-        if not entry.valid and not entry.notified:
+        if not entry.valid() and not entry.notified:
             # Generate an event
             self.event_control.gen(\
                 EventControl.LICENSE_INVALID,
