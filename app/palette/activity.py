@@ -1,7 +1,7 @@
 from page import PalettePage
 
 class Activity(PalettePage):
-    TEMPLATE = 'activity.mako'
+    TEMPLATE = 'workbook.mako'
     active = 'activity'
 
 def make_activity(global_conf):

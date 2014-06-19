@@ -1586,3 +1586,6 @@ div.refresh {
     margin-top: 20px;
 }
 
+#workbook-list ul {
+    padding-left: 0;
+}

@@ -13,7 +13,9 @@
   </section>
   <h5 class="sub">Project</h5>
   <div class="btn-group">
-    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Projects</div><span class="caret"></span>
+    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+      <div>All Projects</div>
+      <span class="caret"></span>
     </button>
     <ul class="dropdown-menu" role="menu">
       <li><a href="#">All Projects</a></li>
@@ -33,7 +35,7 @@
   </div>
 </section>
 
-<section class="dynamic-content">
+<section class="dynamic-content with-secondary-sidebar">
   <section class="top-zone">
     <section class="row">
       <section class="col-xs-12">
@@ -64,17 +66,22 @@
 <script id="workbook-list-template" type="x-tmpl-mustache">
   {{#workbooks}}
   <article class="event">
-    <i class="fa fa-fw fa-book {{color}}"></i>
-    <h3>{{name}}</h3>
-    <p>{{summary}}</p>
-    <div>
+    <div class="summary clearfix">
+      <i class="fa fa-fw fa-book {{color}}"></i>
+      <div>
+        <h3>{{name}}</h3>
+        <p>{{summary}}</p>
+      </div>
+      <i class="fa fa-fw fa-angle-down expand"></i>
+    </div>
+    <div class="description">
       <ul>
-         {{#updates}}
-         <li>
-	       <a href="#">{{timestamp}}</a> by {{name}}
-           <a class="edit" href="#"><i class="fa fa-fw fa-pencil"></i></a>
-	     </li>
-         {{/updates}}
+        {{#updates}}
+        <li>
+          <a href="#">{{timestamp}}</a> by {{name}}
+          <a class="edit" href="#"><i class="fa fa-fw fa-pencil"></i></a>
+        </li>
+        {{/updates}}
       </ul>
     </div>
   </article>
@@ -83,3 +90,5 @@
 
 <script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/workbook.js">
 </script>
+
+
