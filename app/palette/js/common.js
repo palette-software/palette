@@ -126,7 +126,7 @@ function ($, topic, template)
                 success: function(data) {
                     div.text(a.text());
                 },
-                error: common.ajaxError,
+                error: ajaxError,
             });
         });
     }
