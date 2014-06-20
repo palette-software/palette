@@ -1,6 +1,10 @@
 import smtplib
 from email.mime.text import MIMEText
 
+from akiri.framework.ext.sqlalchemy import meta
+
+from profile import UserProfile
+
 from mako.template import Template
 from mako import exceptions
 import mako.runtime
@@ -14,8 +18,6 @@ class AlertEmail(object):
         self.config = server.config
         self.log = server.log
         self.enabled = self.config.getboolean('alert', 'enabled', default=False)
-        self.to_email = self.config.get('alert', 'to_email',
-                                   default="nobody@nowhere.nohow")
         self.from_email = self.config.get('alert', 'from_email',
                                      default="alerts@palette-software.com")
         self.smtp_server = self.config.get('alert', 'smtp_server',
@@ -34,6 +36,17 @@ class AlertEmail(object):
             self.log.error("Invalid alert level: %d, setting to %d",
                                     self.alert_level, DEFAULT_ALERT_LEVEL)
             self.alert_level = DEFAULT_ALERT_LEVEL
+
+    def non_admin_emails(self):
+        """Return a list of non-admins that have an email address."""
+
+        session = meta.Session()
+        rows = session.query(UserProfile).\
+            filter(UserProfile.roleid > 0).\
+            filter(UserProfile.email != "").\
+            all()
+
+        return [entry.email for entry in rows]
 
     def send(self, event_entry, data):
         """Send an alert.
@@ -83,6 +96,13 @@ class AlertEmail(object):
                                                             subject, message)
             return
 
+        to_emails = self.non_admin_emails()
+        if not to_emails:
+            self.log.debug(\
+                "No non-admin users exist with email addresses.  " + \
+                "Not sending: Subject: %s, Message: %s", subject, message)
+            return
+
         msg = MIMEText(message)
 
         if len(subject) > self.max_subject_len:
@@ -90,12 +110,12 @@ class AlertEmail(object):
 
         msg['Subject'] = "Palette Alert: " + subject
         msg['From'] = self.from_email
-        msg['To'] = self.to_email
+        msg['To'] = ', '.join(to_emails)
         msg_str = msg.as_string()
 
         try:
             mail_server = smtplib.SMTP(self.smtp_server, self.smtp_port)
-            mail_server.sendmail(self.from_email, [self.to_email], msg_str)
+            mail_server.sendmail(self.from_email, to_emails, msg_str)
             mail_server.quit()
         except (smtplib.SMTPException, EnvironmentError) as e:
             self.log.error(\
