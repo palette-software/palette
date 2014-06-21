@@ -118,7 +118,7 @@ class TableauStatusMonitor(threading.Thread):
                 filter(TableauProcess.name == 'Status').\
                 one().status
         except NoResultFound, e:
-            return StatusEntry.STATUS_UNKNOWN
+            return TableauProcess.STATUS_UNKNOWN
 
     def set_main_state(self, status, agent, body):
         main_state = self.stateman.get_state()

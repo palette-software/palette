@@ -149,6 +149,7 @@ class AlertEmail(object):
         """
 
 
+        message = ""
         if self.alert_level < 1:   # too minimal, not even errors included.
             return subject
         elif self.alert_level >= 3:
@@ -158,7 +159,6 @@ class AlertEmail(object):
             return message
 
         # Typical alert levels here: 1 and 2.
-        message = ""
         message += "Event: " + subject + "\n"
         message += "Severity level: %s" % \
                         EventControl.level_strings[event_entry.level] + '\n'
