@@ -16,6 +16,7 @@ from controller.agent import Agent
 from controller.agentmanager import AgentManager
 from controller.agentinfo import AgentVolumesEntry
 from controller.domain import Domain
+from controller.firewall_manager import FirewallEntry, FirewallManager
 from controller.state_control import StateControl
 from controller.util import sizestr, DATEFMT
 from controller.system import LicenseEntry
@@ -84,11 +85,20 @@ class MonitorApplication(PaletteRESTHandler):
         return volumes
 
     def firewall_info(self, agentid):
-        ports = [{'name':'HTTP', 'num':80, 'color':'green'},
-                 {'name':'HTTPS', 'num':443, 'color':'green'},
-                 {'name':'Palette Agent', 'num':8889, 'color':'green'},
-                 {'name':'MSSQL Server', 'num':1433, 'color':'green'}
-                 ]
+        ports = []
+
+        rows = meta.Session.query(FirewallEntry).\
+            filter(FirewallEntry.agentid == agentid).\
+            all()
+
+        for entry in rows:
+            fw_dict = {'name': entry.name,
+                        'num': entry.port,
+                        'color': entry.color
+            }
+            ports.append(fw_dict)
+
+        ports = sorted(ports, key=lambda port: port['num'])
         return ports
 
     def license_info(self, agentid):

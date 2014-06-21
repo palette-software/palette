@@ -101,6 +101,8 @@ class EventControl(meta.Base, BaseMixin):
     ZIPLOGS_FAILED="ZIPLOGS-FAILED"
     CLEANUP_FAILED="CLEANUP-FAILED"
 
+    FIREWALL_OPEN_FAILED="FIREWALL-OPEN-FAILED"
+
     # levels
     LEVEL_ERROR="E"
     LEVEL_WARNING="W"
@@ -428,6 +430,13 @@ class EventControl(meta.Base, BaseMixin):
                 'subject': 'tabadmin cleanup failed',
                 'send_email': True,
                 'color': 'red'},
+
+            {'key': FIREWALL_OPEN_FAILED,
+                'level': LEVEL_ERROR,
+                'event_type': TYPE_AGENT,
+                'subject': 'firewall open failed',
+                'send_email': True,
+                'color': 'red'}
         ]
 
 class EventControlManager(object):
