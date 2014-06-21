@@ -24,6 +24,7 @@ from agentinfo import AgentVolumesEntry
 from auth import AuthManager
 from backup import BackupManager
 from diskcheck import DiskCheck
+from firewall_manager import FirewallManager
 from state import StateManager
 from system import SystemManager, LicenseEntry
 from tableau import TableauStatusMonitor, TableauProcess
@@ -407,6 +408,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.error(\
                 "firewall enable port %d on src host %s failed with: %s",
                     src.listen_port, src.displayname, fw_body['error'])
+            self.event_control.gen(\
+                EventControl.FIREWALL_OPEN_FAILED,
+                    dict({
+                        'error': body['error'], 
+                        'info': "Port %d" % src.listen_port}.items() + \
+                                                    agent.__dict__.items()))
             return fw_body
 
         source_ip = src.ip_address
@@ -1040,6 +1047,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.yml(agent)
             self.auth.load(agent)
 
+        self.firewall_manager.do_firewall_ports(agent)
+
         # Cleanup.
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             # Put into a known state
@@ -1192,6 +1201,8 @@ def main():
     workbook_manager.populate()
 
     server.backup = BackupManager(server.domain.domainid)
+
+    server.firewall_manager = FirewallManager(server)
 
     manager = AgentManager(server)
     server.agentmanager = manager
