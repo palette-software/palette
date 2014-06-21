@@ -255,7 +255,7 @@ class DiskCheck(object):
 
         if not vol_entry:
             return self.error("we_choose_volume: No space on chosen " + \
-                            "target '%s'" % agents[key].displayname)
+                            "target '%s'" % self.target_connt.displayname)
 
         self.target_dir = ntpath.join(vol_entry.name + ":", 
                                                         vol_entry.path)

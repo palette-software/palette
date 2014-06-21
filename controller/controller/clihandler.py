@@ -11,6 +11,7 @@ import ntpath
 import sqlalchemy
 
 from akiri.framework.ext.sqlalchemy import meta
+import exc
 
 from agent import Agent
 from agentmanager import AgentManager
@@ -562,7 +563,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error('agent not found')
             return
 
-        phttp_cmd = Controller.PHTTP_BIN
+        phttp_cmd = "phttp.exe"
         for arg in cmd.args:
             if ' ' in arg:
                 phttp_cmd += ' "' + arg + '"'

@@ -196,8 +196,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return body
 
         if not body.has_key('run-status'):
-            return self.error("_send_cli (%s) body response missing 'run-status: '" % \
-                (command, str(e)))
+            return self.error("_send_cli (%s) body response missing 'run-status': %s" % \
+                (command, str(body)))
 
         # It is possible for the command to finish immediately.
         if body['run-status'] == 'finished':
@@ -411,7 +411,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.event_control.gen(\
                 EventControl.FIREWALL_OPEN_FAILED,
                     dict({
-                        'error': body['error'], 
+                        'error': fw_body['error'],
                         'info': "Port %d" % src.listen_port}.items() + \
                                                     agent.__dict__.items()))
             return fw_body
@@ -1124,7 +1124,7 @@ class StreamLogger(object):
             self.writeln(line)
 
     def close(self):
-        flush(self)
+        self.flush(self)
 
     def flush(self):
         self.writeln(self.buf)

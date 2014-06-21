@@ -22,7 +22,7 @@ class WorkbookManager(object):
 
     def add(self, title, name, summary, color):
         session = meta.Session()
-        entry = workbookEntry(domainid=self.domainid, name=name,
+        entry = WorkbookEntry(domainid=self.domainid, name=name,
                                             summary=summary, color=color)
         session.add(entry)
         session.commit()
@@ -94,7 +94,7 @@ class WorkbookUpdatesManager(object):
 
     def add(self, workbookid, name, timestamp, url):
         session = meta.Session()
-        entry = workbookEntry(domainid=self.domainid, name=name,
+        entry = WorkbookEntry(domainid=self.domainid, name=name,
                                         timestamp=timestamp, url=url)
         session.add(entry)
         session.commit()

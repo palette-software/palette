@@ -8,7 +8,7 @@ from mixin import BaseMixin
 class Environment(meta.Base, BaseMixin):
     __tablename__ = 'environment'
 
-    envid =  Column(BigInteger, unique=True, nullable=False, \
+    envid = Column(BigInteger, unique=True, nullable=False, \
                         autoincrement=True, primary_key=True)
     domainid = Column(BigInteger, ForeignKey("domain.domainid"))
     name = Column(String, unique=True, nullable=False, index=True)
