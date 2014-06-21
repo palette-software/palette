@@ -1,6 +1,7 @@
 from webob import exc
 
 from akiri.framework.ext.sqlalchemy import meta
+from akiri.environment import Environment
 from rest import PaletteRESTHandler
 
 class EnvironmentApplication(PaletteRESTHandler):
