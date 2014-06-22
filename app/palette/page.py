@@ -1,4 +1,8 @@
+from webob import exc
+
 from akiri.framework.api import Page
+
+from controller.profile import Role
 
 class PalettePageMixin(object):
     # The active page on the mainNav
@@ -9,4 +13,10 @@ class PalettePageMixin(object):
     integration = False
 
 class PalettePage(Page, PalettePageMixin):
-    pass;
+    required_role = None
+
+    def render(self, req, obj=None):
+        if not self.required_role is None:
+            if req.remote_user.roleid < self.required_role:
+                raise exc.HTTPForbidden
+        return super(PalettePage, self).render(req, obj=obj)

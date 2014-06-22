@@ -3,10 +3,11 @@ from webob import exc
 from akiri.framework.ext.sqlalchemy import meta
 
 from page import PalettePage
-from rest import PaletteRESTHandler, required_parameters
+from rest import PaletteRESTHandler, required_parameters, required_role
 
 from controller.agent import Agent
 from controller.agentinfo import AgentVolumesEntry
+from controller.profile import Role
 from controller.util import sizestr
 
 class ServerApplication(PaletteRESTHandler):
@@ -49,6 +50,7 @@ class ServerApplication(PaletteRESTHandler):
         return {'servers': servers,
                 'environment' : self.environment.name}
 
+    @required_role(Role.MANAGER_ADMIN)
     @required_parameters('id', 'value')
     def handle_displayname(self, req):
         entry = Agent.get_by_id(req.POST['id'])
@@ -58,6 +60,7 @@ class ServerApplication(PaletteRESTHandler):
         meta.Session.commit()
         return {}
 
+    @required_role(Role.MANAGER_ADMIN)
     @required_parameters('id', 'value')
     def handle_archive(self, req):
         entry = AgentVolumesEntry.get_by_id(req.POST['id'])
@@ -71,6 +74,7 @@ class ServerConfig(PalettePage):
     TEMPLATE = "server.mako"
     active = 'servers'
     expanded = True
+    required_role = Role.READONLY_ADMIN
 
 def make_servers(global_conf):
     return ServerConfig(global_conf)
