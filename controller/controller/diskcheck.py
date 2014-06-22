@@ -121,7 +121,6 @@ class DiskCheck(object):
         # target_entry is the destination gcs entry - if applicable
         self.target_gcs_entry = self.server.gcs.get_by_name(self.target)
         if self.target_gcs_entry:
-            print "got gcs entry:", self.target_gcs_entry
             return self.target_gcs_entry
 
         agents = self.agentmanager.all_agents()
@@ -166,7 +165,6 @@ class DiskCheck(object):
             # Fixme: Choosing the first gcs entry, arbitrarily, even if there
             # is more than one.
             self.target_gcs_entry = gcs_rows[0]
-            print "got gcs at least one entry:", self.target_gcs_entry
             return self.target_gcs_entry
 
         envid = self.server.environment.envid
