@@ -299,14 +299,33 @@ class AgentManager(threading.Thread):
 
         if entry is None:
             entry = Agent(envid=self.envid,
-                          uuid=body['uuid'],
-                          hostname=body['hostname'],
-                          agent_type=aconn.agent_type,
                           version=body['version'],
+                          os_version=body['os-version'],
+                          processor_type=body['processor-type'],
+                          processor_count=body['processor-count'],
+                          installed_memory=body['installed-memory'],
+                          hostname=body['hostname'],
+                          fqdn=body['fqdn'],
                           ip_address=body['ip-address'],
                           listen_port=body['listen-port'],
+                          uuid=body['uuid'],
+                          agent_type=aconn.agent_type,
                           username=u'palette',# fixme
                           password=u'tableau2014')
+        else:
+              entry.version=body['version']
+              entry.os_version=body['os-version']
+              entry.processor_type=body['processor-type']
+              entry.processor_count=body['processor-count']
+              entry.installed_memory=body['installed-memory']
+              entry.hostname=body['hostname']
+              entry.fqdn=body['fqdn']
+              entry.ip_address=body['ip-address']
+              entry.listen_port=body['listen-port']
+              entry.uuid=body['uuid']
+              entry.agent_type=aconn.agent_type
+              entry.username=u'palette'# fixme
+              entry.password=u'tableau2014'
 
         entry.last_connection_time = func.now()
         entry = session.merge(entry)
@@ -361,16 +380,8 @@ class AgentManager(threading.Thread):
         install_data_dir = ntpath.join(parts[1], AgentConnection.DATA_DIR)
 
         # FIXME: make automagic based on self.__table__.columns
-        if 'fqdn' in pinfo:
-            agent.fqdn = pinfo['fqdn']
-        if 'os-version' in pinfo:
-            agent.os_version = pinfo['os-version']
-        if 'installed-memory' in pinfo:
-            agent.installed_memory = pinfo['installed-memory']
-        if 'processor-type' in pinfo:
-            agent.processor_type = pinfo['processor-type']
-        if 'processor-count' in pinfo:
-            agent.processor_count = pinfo['processor-count']
+        # Below are the only ones really needed as the others come
+        # from 'auth' and are unrealted to tableau.
         if 'tableau-install-dir' in pinfo:
             agent.tableau_install_dir = pinfo['tableau-install-dir']
         if 'tableau-data-dir' in pinfo:
@@ -742,8 +753,19 @@ class AgentManager(threading.Thread):
                 self.log.debug("done.")
 
             # Inspect the reply to make sure it has all the required values.
-            required = ['hostname', 'ip-address', \
-                            'version', 'listen-port', 'uuid', 'install-dir']
+            required = [    'version',      # original
+                            'os-version',
+                            'processor-type',
+                            'processor-count',
+                            'installed-memory',
+                            'hostname',     # original
+                            'fqdn',
+                            'ip-address',   # original
+                            'listen-port',  # original
+                            'uuid',         # original
+                            'install-dir'   # original
+                        ]
+
             for item in required:
                 if not body.has_key(item):
                     self.log.error("Missing '%s' from agent" % item)
