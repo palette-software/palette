@@ -18,18 +18,26 @@
       <div>
         <div class="col2">
           <h3>
+%if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
 	        <span class="editbox displayname"
 		          data-id="{{agentid}}" data-href="/rest/servers/displayname">
               {{displayname}}
             </span>
+%else:
+            {{displayname}}
+%endif
 	      </h3>
           <p>{{fqdn}} ({{ip-address}})</p>
         </div>
         <div class="col2">
           <p>
+%if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
             <span class="editbox environment" data-href="/rest/environment">
               {{environment}}
             </span>
+%else:
+            {{environment}}
+%endif
           </p>
           <p>Connection Status {{connection-status}}</p>
         </div>
@@ -65,7 +73,10 @@
 	    <span class="label">Select Archive Locations</span>
 	  </article>
       {{#volumes}}
-      <article><input type="checkbox" data-id="{{volid}}" {{checkbox-state}}/>
+      <article>
+        <input type="checkbox" data-id="{{volid}}" {{checkbox-state}}
+           ${req.remote_user.roleid < req.remote_user.role.MANAGER_ADMIN \
+                                      and 'disabled' or ''} />
         {{name}}: {{size-readable}} ({{available-readable}} Unused)
       </article>
       {{/volumes}}

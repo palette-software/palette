@@ -19,8 +19,9 @@ from controller.agent import Agent
 from controller.domain import Domain
 from controller.util import DATEFMT
 from controller.gcs import GCS
+from controller.profile import Role
 
-from rest import PaletteRESTHandler, required_parameters
+from rest import PaletteRESTHandler, required_parameters, required_role
 
 __all__ = ["BackupApplication"]
 
@@ -28,11 +29,13 @@ class BackupApplication(PaletteRESTHandler):
 
     NAME = 'backup'
 
+    @required_role(Role.MANAGER_ADMIN)
     def handle_backup(self):
         self.telnet.send_cmd("backup")
         now = time.strftime('%A, %B %d at %I:%M %p')
         return {'last': now }
 
+    @required_role(Role.MANAGER_ADMIN)
     def handle_restore(self, req):
         if not 'filename' in req.POST:
             print >> sys.stderr, "Missing filename.  Ignoring backup request."
@@ -125,12 +128,14 @@ class BackupApplication(PaletteRESTHandler):
             return self.handle_restore(req)
         raise exc.HTTPBadRequest()
 
+    @required_role(Role.MANAGER_ADMIN)
     @required_parameters('value')
     def handle_archive_POST(self, req):
         self.system.save('archive-location', req.POST['value'])
         meta.Session.commit()
         return {}
 
+    @required_role(Role.READONLY_ADMIN)
     def handle_GET(self, req):
         L = [x.todict(pretty=True) for x \
                  in BackupManager.all(self.environment.envid, asc=False)]

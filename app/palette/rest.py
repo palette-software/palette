@@ -7,6 +7,7 @@ from akiri.framework.config import store
 from controller.domain import Domain
 from controller.environment import Environment
 from controller.system import SystemManager
+from controller.profile import UserProfile, Role
 
 def required_parameters(*params):
     def wrapper(f):
@@ -14,6 +15,22 @@ def required_parameters(*params):
             for p in params:
                 if p not in req.POST:
                     raise exc.HTTPBadRequest("'" + p + "' missing")
+            return f(self, req)
+        return realf
+    return wrapper
+
+def required_role(name):
+    def wrapper(f):
+        def realf(self, req):
+            if isinstance(name, basestring):
+                role = Role.get_by_name(name).roleid
+            else:
+                role = Role.get_by_roleid(name)
+            # FIXME: this should have to happen here.
+            if isinstance(req.remote_user, basestring):
+                req.remote_user = UserProfile.get_by_name(req.remote_user)
+            if req.remote_user.roleid < role.roleid:
+                raise exc.HTTPForbidden("The '"+role.name+"' role is required.")
             return f(self, req)
         return realf
     return wrapper
