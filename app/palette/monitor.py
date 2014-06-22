@@ -17,6 +17,7 @@ from controller.agentmanager import AgentManager
 from controller.agentinfo import AgentVolumesEntry
 from controller.domain import Domain
 from controller.firewall_manager import FirewallEntry, FirewallManager
+from controller.profile import UserProfile, Role
 from controller.state_control import StateControl
 from controller.util import sizestr, DATEFMT
 from controller.system import LicenseEntry
@@ -132,9 +133,15 @@ class MonitorApplication(PaletteRESTHandler):
             # fixme: stop everything?  Log this somewhere?
             return
 
-        # Convert the space-sparated string to a list, e.g.
-        # "start stop reset" --> ["start", "stop", "reset"]
-        allowable_actions = state_control_entry.allowable_actions.split(' ')
+        # FIXME: hack
+        if isinstance(req.remote_user, basestring):
+            req.remote_user = UserProfile.get_by_name(req.remote_user)
+        if req.remote_user.roleid >= Role.MANAGER_ADMIN:
+            # Convert the space-sparated string to a list, e.g.
+            # "start stop reset" --> ["start", "stop", "reset"]
+            allowable_actions = state_control_entry.allowable_actions.split(' ')
+        else:
+            allowable_actions = []
 
         text = state_control_entry.text
 

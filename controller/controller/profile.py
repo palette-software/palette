@@ -71,6 +71,22 @@ class Role(meta.Base, BaseMixin):
     roleid = Column(BigInteger, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
 
+    @classmethod
+    def get_by_name(cls, name):
+        try:
+            entry = meta.Session.query(Role).filter(Role.name == name).one()
+        except NoResultFound, e:
+            entry = None
+        return entry
+
+    @classmethod
+    def get_by_roleid(cls, roleid):
+        try:
+            entry = meta.Session.query(Role).filter(Role.roleid == roleid).one()
+        except NoResultFound, e:
+            entry = None
+        return entry
+
     defaults = [{'roleid':NO_ADMIN, 'name':"No Admin"},
                 {'roleid':READONLY_ADMIN, 'name':"Read-Only Admin"},
                 {'roleid':MANAGER_ADMIN, 'name':"Manager Admin"},
