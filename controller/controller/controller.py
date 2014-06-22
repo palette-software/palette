@@ -38,6 +38,10 @@ from event import EventManager
 from event_control import EventControl, EventControlManager
 from extracts import ExtractManager
 from workbooks import WorkbookEntry, WorkbookManager
+
+from gcs import GCS
+from s3 import S3
+
 from sched import Sched
 from clihandler import CliHandler
 from version import VERSION
@@ -65,9 +69,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not dcheck.set_locs():
             return self.error(dcheck.error_msg)
 
-        if dcheck.target_conn:
+        if dcheck.target_gcs_entry:
+            self.log.debug("Backup will copy to gcs named '%s'",
+                                                dcheck.target_gcs_entry.name)
+        elif dcheck.target_agent:
             self.log.debug("Backup will copy to target '%s', target_dir '%s'",
-                        dcheck.target_conn.displayname, dcheck.target_dir)
+                        dcheck.target_agent.displayname, dcheck.target_dir)
         else:
             self.log.debug("Backup will stay on the primary.")
 
@@ -92,20 +99,36 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         body['info'] = ""
 
         backup_vol_entry = None
-        # If the target is not the primary, copy the backup to the target.
-        if dcheck.target_conn:
+        # If the target is not the primary, copy the backup to the target
+        # or gcs.
+        stored_off_primary = False
+        if dcheck.target_gcs_entry:
+            data_dir = self.backup.primary_data_loc_path()
+            gcs_body = self.gcs_cmd(agent, "PUT",
+                            dcheck.target_gcs_entry, backup_name)
+            if 'error' in gcs_body:
+                body['info'] = 'gcs copy to %s failed: %s' % \
+                            (dcheck.target_gcs_entry.name, gcs_body['error'])
+            else:
+                body['info'] = "Backup file copied to GCS name '%s'" % \
+                                                dcheck.target_gcs_entry.name
+                # Backup was copied to gcs
+                self.backup.add(backup_name,
+                                    gcsid=dcheck.target_gcs_entry.gcsid)
+                stored_off_primary = True
+        elif dcheck.target_agent:
             backup_vol_entry = dcheck.vol_entry
             # Copy the backup to a non-primary agent
             source_path = "%s:%s/%s" % (agent.displayname, backup_vol,
                                                                 backup_name)
             copy_body = self.copy_cmd(source_path,
-                        dcheck.target_conn.displayname, dcheck.target_dir)
+                        dcheck.target_agent.displayname, dcheck.target_dir)
 
             if copy_body.has_key('error'):
                 msg = (u"Copy of backup file '%s' to agent '%s:%s' failed. "+\
                     "Will leave the backup file on the primary agent. " + \
                     "Error was: %s") \
-                    % (backup_name, dcheck.target_conn.displayname, 
+                    % (backup_name, dcheck.target_agent.displayname, 
                                     dcheck.target_dir, copy_body['error'])
                 self.log.info(msg)
                 body['info'] += msg
@@ -115,24 +138,24 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             else:
                 # The copy succeeded.
                 # Remove the backup file from the primary
-                remove_body = self.delete_file(agent, backup_path)
 
                 body['info'] += \
                     "Backup file copied to '%s'" % \
-                                        dcheck.target_conn.displayname
+                                        dcheck.target_agent.displayname
 
-                # Check if the DEL worked.
-                if remove_body.has_key('error'):
-                    body['info'] += \
-                        ("\nDEL of backup file failed after copy. "+\
-                            "file: '%s'. Error was: %s") \
-                            % (backup_path, remove_body['error'])
+                self.backup.add(backup_name, volid=backup_vol_entry.volid)
+                stored_off_primary = True
 
-        # Save backup filename and volid to the db.
-        if backup_vol_entry:
-            # Backup was copied to a target
-            self.backup.add(backup_name, backup_vol_entry.volid)
-        else:
+        if stored_off_primary:
+            remove_body = self.delete_file(agent, backup_path)
+            # Check if the DEL worked.
+            if remove_body.has_key('error'):
+                body['info'] += \
+                    ("\nDEL of backup file failed after copy. "+\
+                        "file: '%s'. Error was: %s") \
+                        % (backup_path, remove_body['error'])
+
+        if not stored_off_primary:
             # Backup remains on the primary.  Dig out the volid for it.
             try:
                 vol_entry = meta.Session.query(AgentVolumesEntry).\
@@ -144,36 +167,55 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                         "backup information cannot be saved to the database."
                 return body
 
-            self.backup.add(backup_name, vol_entry.volid)
+            self.backup.add(backup_name, volid=vol_entry.volid)
 
         return body
+
+    def gcs_cmd(self, agent, action, gcs_entry, path):
+
+        data_dir = self.backup.primary_data_loc_path()
+        if not data_dir:
+            return self.error("gcs_cmd: Couldn't find the " + \
+                        "primary_data_loc in the agent_volumes table " + \
+                        "for the primary agent.")
+
+        env = {u'ACCESS_KEY': gcs_entry.access_key,
+               u'SECRET_KEY': gcs_entry.secret,
+               u'PWD': data_dir}
+
+        gcs_command = self.PGCS_BIN+' %s %s "%s"' % \
+                                     (action, gcs_entry.bucket, path)
+
+        # Send the gcs command to the agent
+        return self.cli_cmd(gcs_command, agent, env=env)
 
     def backupdel_cmd(self, backup):
         """Delete a Tableau backup."""
 
         # FIXME: tie backup to domain
 
-        result = self.backup.find_by_name(backup)
-        if not result:
+        entry = self.backup.find_by_name(backup)
+        if not entry:
             return self.error("no backup found with name: %s" % (backup))
 
-        (backupid, volid, vol_name, vol_path, agentid) = result[0]
+        if not entry.volid:
+            return self.error("Can delete only backups on primary and agents.")
 
-        agent_db = Agent.get_agentstatusentry_by_volid(volid)
+        agent_db = Agent.get_agentstatusentry_by_volid(entry.volid)
 
         agent = self.agentmanager.agent_by_uuid(agent_db.uuid)
         if not agent:
             return self.error("agent not connected: displayname=%s uuid=%s" % \
               (agent_db.displayname, agent_db.uuid))
 
-        backup_path = ntpath.join(vol_name + ":", vol_path, backup)
+        backup_path = ntpath.join(entry.vol_name + ":", entry.vol_path, backup)
         self.log.debug("backupdel_cmd: Deleting path '%s' on agent '%s'",
                                             backup_path, agent.displayname)
 
         body = self.delete_file(agent, backup_path)
         if not body.has_key('error'):
             try:
-                self.backup.remove(backupid)
+                self.backup.remove(entry.backupid)
             except sqlalchemy.orm.exc.NoResultFound:
                 return self.error("backup not found name=%s agent=%s" % \
               (backup, agent.displayname))
@@ -450,7 +492,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def restore_cmd(self, agent, target, orig_state):
         """Do a tabadmin restore of the passed target, except
            the target is the format:
-                source-displayname:pathname
+                source-displayname-or-gcsname:pathname
             or
                 pathname
             where pathname is:
@@ -474,11 +516,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # Without a ':', assume the backup is still on the primary.
         parts = target.split(':')
         if len(parts) == 1:
-            source_displayname = agent.displayname
+            source_name = agent.displayname
             source_spec = parts[0]
         elif len(parts) == 2:
-            source_displayname = parts[0]   #.e.g "Tableau Archive #201"
+            source_name = parts[0]          #.e.g "Tableau Archive #201"
             source_spec = parts[1]          # e.g. "C/20140531_153629.tsbak"
+                                     # or for gcs: "20140531_153629.tsbak"
         else:
             self.stateman.update(orig_state)
             return self.error('Invalid target: ' + target)
@@ -488,12 +531,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error(\
                 "May not specify an absolute pathname or disk: " + \
                     source_spec)
-        parts = source_spec.split('/')
-        if len(parts) == 1:
-            # FIXME
-            return self.error( \
-                "restore: Bad target spec:  Missing '/': " + source_spec)
-        filename_only = parts[1] #  e.g. "20140531_153629.tsbak"
 
         # Get the vol + dir to use for the restore command to tabadmin.
         backup_dir = self.backup.primary_data_loc_path()
@@ -501,30 +538,57 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("restore: Couldn't find the primary_data_loc " + \
                         "in the agent_volumes table for the primary agent.")
 
+        #  e.g. "20140531_153629.tsbak"
+        filename_only = os.path.basename(source_spec)
         local_fullpathname = ntpath.join(backup_dir, filename_only)
 
         # Check if the file is on the Primary Agent.
-        if source_displayname != agent.displayname:
+        if source_name != agent.displayname:
             # The file isn't on the Primary agent:
             # We need to copy the file to the Primary.
 
-            # copy_cmd arguments:
-            #   source-agent-name:/filename
-            #   dest-agent-displayname
-            self.log.debug("restore: Sending copy command: %s, %s", \
+            # First check to see if the source_name is a gcs name.
+            gcs_entry = self.gcs.get_by_name(source_name)
+            if gcs_entry:
+                self.log.debug("restore: Sending gcs command: %s, %s", \
                                target, agent.displayname)
-            # target is something like: "C/20140531_153629.tsbak"
-            body = self.copy_cmd(target, agent.displayname, backup_dir)
 
-            if body.has_key("error"):
-                fmt = "restore: copy backup file '%s' from '%s' failed. " +\
-                    "Error was: %s"
-                self.log.debug(fmt,
+                body = self.gcs_cmd(agent, "GET", gcs_entry, source_spec)
+                if 'error' in body:
+                    fmt = "restore: gcs GET backup file '%s' " + \
+                        "from gcs file '%s' failed. Error was: %s"
+                    self.log.debug(fmt,
                                source_spec,
-                               source_displayname,
+                               source_name,
                                body['error'])
-                self.stateman.update(orig_state)
-                return body
+                    self.stateman.update(orig_state)
+                    return body
+
+            else:
+                # It's not on gcs, so copy it from another agent.
+                parts = source_spec.split('/')
+                if len(parts) == 1:
+                    # FIXME
+                    return self.error(\
+                        "restore: Bad target spec:  Missing '/': " + \
+                                                            source_spec)
+                # copy_cmd arguments:
+                #   source-agent-name:/filename
+                #   dest-agent-displayname
+                self.log.debug("restore: Sending copy command: %s, %s", \
+                                   target, agent.displayname)
+                # target is something like: "C/20140531_153629.tsbak"
+                body = self.copy_cmd(target, agent.displayname, backup_dir)
+
+                if body.has_key("error"):
+                    fmt = "restore: copy backup file '%s' from '%s' failed. " +\
+                        "Error was: %s"
+                    self.log.debug(fmt,
+                                   source_spec,
+                                   source_name,
+                                   body['error'])
+                    self.stateman.update(orig_state)
+                    return body
 
         # The restore file is now on the Primary Agent.
         self.event_control.gen(EventControl.RESTORE_STARTED, agent.__dict__)
@@ -538,7 +602,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             stop_body = self.cli_cmd("tabadmin stop", agent)
             if stop_body.has_key('error'):
                 self.log.info("Restore: tabadmin stop failed")
-                if source_displayname != agent.displayname:
+                if source_name != agent.displayname:
                     # If the file was copied to the Primary, delete
                     # the temporary backup file we copied to the Primary.
                     self.delete_file(agent, local_fullpathname)
@@ -577,7 +641,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # fixme: Do we need to add restore information to the database?
         # fixme: check status before cleanup? Or cleanup anyway?
 
-        if source_displayname != agent.displayname:
+        if source_name != agent.displayname:
             # If the file was copied to the Primary, delete
             # the temporary backup file we copied to the Primary.
             self.delete_file(agent, local_fullpathname)
@@ -932,8 +996,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn = agent.connection
         ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
-        install_dir = aconn.auth['install-dir']
-        ziplog_path = ntpath.join(install_dir, "Data", ziplog_name)
+        ziplog_path = self.backup.primary_data_loc_path()
 
         cmd = 'tabadmin ziplogs -l -n -a \\\"%s\\\"' % ziplog_path
         body = self.cli_cmd(cmd, agent)
@@ -950,8 +1013,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn = agent.connection
         ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
-        install_dir = aconn.auth['install-dir']
-        ziplog_path = ntpath.join(install_dir, "Data", ziplog_name)
+        data_dir = self.backup.primary_data_loc_path()
+        ziplog_path = ntpath.join(data_dir, ziplog_name)
 
         body = self.cli_cmd('tabadmin cleanup', agent)
         body[u'info'] = u'tabadmin cleanup'
@@ -1180,13 +1243,13 @@ def main():
     Environment.populate()
     server.environment = Environment.get()
 
-    server.event = EventManager(server.domain.domainid)
+    server.event = EventManager(server.environment.envid)
 
     server.alert_email = AlertEmail(server)
     EventControl.populate()
     server.event_control = EventControlManager(server)
 
-    server.system = SystemManager(server.domain.domainid)
+    server.system = SystemManager(server.environment.envid)
     SystemManager.populate()
 
     StateControl.populate()
@@ -1197,10 +1260,13 @@ def main():
     Role.populate()
     UserProfile.populate()
 
-    workbook_manager = WorkbookManager(server.domain.domainid)
+    workbook_manager = WorkbookManager(server.environment.envid)
     workbook_manager.populate()
 
-    server.backup = BackupManager(server.domain.domainid)
+    server.backup = BackupManager(server.environment.envid)
+
+    server.gcs = GCS(server.environment.envid)
+    server.s3 = S3(server.environment.envid)
 
     server.firewall_manager = FirewallManager(server)
 
