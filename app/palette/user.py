@@ -9,7 +9,7 @@ from controller.auth import AuthManager
 from controller.util import DATEFMT
 
 from page import PalettePage
-from rest import PaletteRESTHandler
+from rest import PaletteRESTHandler, required_parameters, required_role
 
 class UserApplication(PaletteRESTHandler):
     NAME = 'users'
@@ -84,8 +84,10 @@ class UserApplication(PaletteRESTHandler):
                 'last-update': self.last_user_import()}
 
     # refresh request
+    @required_role(Role.MANAGER_ADMIN)
+    @required_parameters('action')
     def handle_POST(self, req):
-        if 'action' not in req.POST or req.POST['action'].lower() != 'refresh':
+        if req.POST['action'].lower() != 'refresh':
             raise exc.HTTPBadRequest()
         try:
             self.telnet.send_cmd('auth import', sync=True)
@@ -93,11 +95,11 @@ class UserApplication(PaletteRESTHandler):
             pass
         return self.handle_GET(req)
 
+    @required_role(Role.SUPER_ADMIN)
+    @required_parameters('userid', 'roleid')
     def handle_admin(self, req):
         if req.method != 'POST':
             raise exc.HTTPMethodNotAllowed()
-        if 'userid' not in req.POST or 'roleid' not in req.POST:
-            raise exc.HTTPBadRequest()
         user = UserProfile.get(int(req.POST['userid']))
         if not user:
             raise exc.HTTPGone()
@@ -105,12 +107,12 @@ class UserApplication(PaletteRESTHandler):
         meta.Session.commit()
         return {}
 
+    @required_role(Role.MANAGER_ADMIN)
+    @required_parameters('name', 'value')
     def handle_email(self, req):
         if req.method != 'POST':
             raise exc.HTTPMethodNotAllowed()
         # FIXME: test authorization
-        if 'name' not in req.POST or 'value' not in req.POST:
-            raise exc.HTTPBadRequest()
         profile = UserProfile.get_by_name(req.POST['name'])
         profile.email = req.POST['value']
         meta.Session.commit()
@@ -120,6 +122,7 @@ class UserConfig(PalettePage):
     TEMPLATE = "user.mako"
     active = 'users'
     expanded = True
+    required_role = Role.READONLY_ADMIN
 
 def make_users(global_conf):
     return UserConfig(global_conf)

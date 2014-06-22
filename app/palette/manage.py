@@ -2,7 +2,7 @@ import socket
 
 from webob import exc
 
-from akiri.framework.api import RESTApplication, DialogPage
+from akiri.framework.api import RESTApplication
 from akiri.framework.config import store
 
 import sqlalchemy
@@ -13,18 +13,21 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from controller.agent import Agent
 from controller.environment import Environment
+from controller.profile import Role
 
 from page import PalettePage
-from rest import PaletteRESTHandler, required_parameters
+from rest import PaletteRESTHandler, required_parameters, required_role
 
 class ManageApplication(PaletteRESTHandler):
 
     NAME = 'manage'
 
+    @required_role(Role.MANAGER_ADMIN)
     def handle_start(self, req):
         self.telnet.send_cmd("start")
         return {}
 
+    @required_role(Role.MANAGER_ADMIN)
     def handle_stop(self, req):
         self.telnet.send_cmd("stop")
         return {}
@@ -40,31 +43,11 @@ class ManageApplication(PaletteRESTHandler):
             return self.handle_stop(req)
         raise exc.HTTPBadRequest()
 
-class ManageAdvancedDialog(DialogPage):
-
-    NAME = "manage"
-    TEMPLATE = "manage.mako"
-
-    def __init__(self, global_conf):
-        super(ManageAdvancedDialog, self).__init__(global_conf)
-
-        self.domain = Domain.get_by_name(domainname)
-
-        self.agents = meta.Session.query(Agent).\
-          filter(Agent.envid == Environment.get().envid).\
-          order_by(Agent.last_connection_time.desc()).\
-          all()
-        for agent in self.agents:
-            if agent.connected():
-                agent.last_connection_time_str = str(agent.last_connection_time)[:19] # Cut off fraction
-                agent.last_disconnect_time_str = "-"
-            else:
-                agent.last_connection_time_str = str(agent.last_connection_time)[:19] # Cut off fraction
-                agent.last_disconnect_time_str = str(agent.last_disconnect_time)[:19] # Cut off fraction
 
 class Manage(PalettePage):
     TEMPLATE = 'manage.mako'
     active = 'manage'
+    required_role = Role.READONLY_ADMIN
 
 def make_manage(global_conf):
     return Manage(global_conf)
