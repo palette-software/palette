@@ -319,7 +319,6 @@ class TableauStatusMonitor(threading.Thread):
                 host = parts[0].strip().replace(':','')
                 agentid = self.get_agent_id_from_host(host)
 
-        session.commit()
 
         self.set_main_state(system_status, agent, body)
         self.log.debug("Logging main status: %s", system_status)

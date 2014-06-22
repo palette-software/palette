@@ -7,6 +7,7 @@ from akiri.framework.ext.sqlalchemy import meta
 from agentinfo import AgentVolumesEntry
 from agent import Agent
 from agentmanager import AgentManager
+from gcs import GCS
 
 class DiskCheck(object):
     """Checks the target and volume for backups."""
@@ -23,7 +24,8 @@ class DiskCheck(object):
         self.error_msg = None
 
         # outputs
-        self.target_conn = None
+        self.target_gcs_entry = None
+        self.target_agent = None
         self.target_dir = ""
         self.vol_entry = None
         self.min_target_disk_needed = .3 * agent.tableau_data_size
@@ -113,8 +115,14 @@ class DiskCheck(object):
             False   error
         """
 
-        # target_conn is the destination agent - if applicable.
-        self.target_conn = None
+        # target_agent is the destination agent - if applicable.
+        self.target_agent = None
+
+        # target_entry is the destination gcs entry - if applicable
+        self.target_gcs_entry = self.server.gcs.get_by_name(self.target)
+        if self.target_gcs_entry:
+            print "got gcs entry:", self.target_gcs_entry
+            return self.target_gcs_entry
 
         agents = self.agentmanager.all_agents()
         for key in agents:
@@ -122,13 +130,13 @@ class DiskCheck(object):
                 # FIXME: make sure agent is connected
                 if agents[key].agent_type != \
                                       AgentManager.AGENT_TYPE_PRIMARY:
-                    self.target_conn = agents[key]
+                    self.target_agent = agents[key]
                 break
 
-        if not self.target_conn:
+        if not self.target_agent:
             return self.error(\
-                "agent '%s' does not exist or is offline or is a " + \
-                                        "primary agent" % self.target)
+                ("agent '%s' does not exist or is offline or is a " + \
+                                        "primary agent") % self.target)
 
         # The target agent has been found.
     
@@ -147,6 +155,20 @@ class DiskCheck(object):
                 True - no error
                 False - errror
          """
+
+        self.target_agent = None
+        self.vol_entry = None
+
+        # Check for a gcs entry first.
+        gcs_rows = self.server.gcs.get_all()
+
+        if gcs_rows:
+            # Fixme: Choosing the first gcs entry, arbitrarily, even if there
+            # is more than one.
+            self.target_gcs_entry = gcs_rows[0]
+            print "got gcs at least one entry:", self.target_gcs_entry
+            return self.target_gcs_entry
+
         envid = self.server.environment.envid
         agent_keys_sorted = Agent.display_order_by_envid(envid)
 
@@ -176,7 +198,7 @@ class DiskCheck(object):
                     continue # Not enough available space on this target
 
                 self.vol_entry = vol_entry
-                self.target_conn = agents[key]
+                self.target_agent = agents[key]
                 self.target_dir = ntpath.join(vol_entry.name + ":/",
                                                             vol_entry.path)
 
@@ -208,7 +230,7 @@ class DiskCheck(object):
         try:
             entry = meta.Session.query(AgentVolumesEntry).\
                 filter(AgentVolumesEntry.agentid == \
-                                            self.target_conn.agentid).\
+                                            self.target_agent.agentid).\
                 filter(AgentVolumesEntry.name == self.volume_name).\
                 one()
         except NoResultFound, e:
@@ -251,11 +273,11 @@ class DiskCheck(object):
         """
 
         vol_entry = AgentVolumesEntry.has_available_space(\
-                        self.target_conn.agentid, self.min_target_disk_needed)
+                        self.target_agent.agentid, self.min_target_disk_needed)
 
         if not vol_entry:
             return self.error("we_choose_volume: No space on chosen " + \
-                            "target '%s'" % self.target_connt.displayname)
+                            "target '%s'" % self.target_agent.displayname)
 
         self.target_dir = ntpath.join(vol_entry.name + ":", 
                                                         vol_entry.path)

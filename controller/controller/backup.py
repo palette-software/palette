@@ -15,8 +15,11 @@ class BackupEntry(meta.Base):
     DATEFMT = "%I:%M %p PDT on %B %d, %Y"
 
     backupid = Column(Integer, unique=True, nullable=False, primary_key=True)
-    volid = Column(BigInteger, ForeignKey("agent_volumes.volid"))
+    envid = Column(BigInteger, ForeignKey("environment.envid"))
     name = Column(String)
+    gcsid = Column(BigInteger, ForeignKey("gcs.gcsid"))
+    s3id = Column(BigInteger, ForeignKey("s3.s3id"))
+    volid = Column(BigInteger, ForeignKey("agent_volumes.volid"))
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
       server_onupdate=func.current_timestamp())
@@ -24,8 +27,10 @@ class BackupEntry(meta.Base):
 
     # FIXME: make this a mixin
     def todict(self, pretty=False):
-        d = {'volid': self.volid,
-             'name': self.name}
+        d = { 'gcsid': self.gcsid,
+              's3id': self.s3id,
+              'volid': self.volid,
+              'name': self.name}
         if pretty:
             d['creation-time'] = self.creation_time.strftime(self.DATEFMT)
             d['modification-time'] = self.modification_time.strftime(self.DATEFMT)
@@ -40,33 +45,25 @@ class BackupManager(object):
     def __init__(self, envid):
         self.envid = envid
 
-    def add(self, name, volid):
+    def add(self, name, gcsid=None, s3id=None, volid=None):
         session = meta.Session()
-        entry = BackupEntry(name=name, volid=volid)
+        entry = BackupEntry(name=name, envid=self.envid,
+                                    gcsid=gcsid, s3id=s3id, volid=volid)
         session.add(entry)
         session.commit()
 
     def remove(self, backupid):
         session = meta.Session()
         session.query(BackupEntry).\
+            filter(BackupEntry.envid == self.envid).\
             filter(BackupEntry.backupid == backupid).\
             delete()
         session.commit()
 
     def find_by_name(self, name):
-        sql = \
-            ("SELECT backup.backupid, agent_volumes.volid, " + \
-            "agent_volumes.name, agent_volumes.path, " + \
-            "agent_volumes.agentid FROM " + \
-                                            "agent_volumes, backup WHERE " + \
-            "backup.volid = agent_volumes.volid " + \
-            "AND backup.name = '%s' AND " + \
-            "agent_volumes.volid in " + \
-            "(SELECT agent.agentid FROM agent WHERE agent.envid = %d)") % \
-            (name, self.envid)
-
-        result = meta.Session.execute(sql).fetchall()
-        return result
+        return meta.Session.query(BackupEntry).\
+            filter(BackupEntry.envid == self.envid).\
+            filter(BackupEntry.name == name).all()
 
     def get_primary_data_loc_vol_entry(self):
         try:

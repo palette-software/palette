@@ -222,7 +222,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = self.server.cli_cmd("tabadmin status -v", agent)
         self.print_client("%s", str(body))
 
-    @usage('backup [target-displayname [volume-name]]')
+    @usage('backup [ [target-displayname [volume-name]] | [gcs-name] ]')
     def do_backup(self, cmd):
         """Perform a Tableau backup and potentially migrate."""
 
@@ -274,7 +274,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             #FIXME
             print >> self.wfile, "FAIL: Can't backup - reported status is:", \
                                                               reported_status
-            self.server.log.debug("Can't backup - reported status is:", \
+            self.server.log.debug("Can't backup - reported status is: %s", \
                                                             reported_status)
             aconn.user_action_unlock()
             return
@@ -415,8 +415,9 @@ class CliHandler(socketserver.StreamRequestHandler):
             print >> self.wfile, \
                 "FAIL: Can't backup before restore - reported status is:", \
                                                               reported_status
-            self.server.log.debug("Can't backup before restore - reported status is:", \
-                                                            reported_status)
+            self.server.log.debug(\
+                "Can't backup before restore - reported status is: %s", \
+                                                    reported_status)
             aconn.user_action_unlock()
             return
 
@@ -563,7 +564,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error('agent not found')
             return
 
-        phttp_cmd = "phttp.exe"
+        phttp_cmd = self.server.PHTTP_BIN
         for arg in cmd.args:
             if ' ' in arg:
                 phttp_cmd += ' "' + arg + '"'
@@ -1097,16 +1098,16 @@ class CliHandler(socketserver.StreamRequestHandler):
         name = cmd.args[1]
         keypath = cmd.args[2]
 
-        entry = S3.get_by_name(name)
+        entry = self.server.s3.get_by_name(name)
         if not entry:
             self.error("s3 instance '" + name + "' not found.")
             return
 
-        if 'install-dir' not in aconn.auth:
-            self.error("agent connection is missing 'install-dir'")
+        data_dir = self.server.backup.primary_data_loc_path()
+
+        if not data_dir:
+            self.error("Missing primary-data_loc in the agent_volumes table")
             return
-        install_dir = aconn.auth['install-dir']
-        data_dir = ntpath.join(install_dir, 'data')
 
         self.ack()
 
@@ -1141,23 +1142,23 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         aconn = agent.connection
         if len(cmd.args) != 3 or len(cmd.args) > 4:
-            self.print_usage(self.do_s3.__usage__)
+            self.print_usage(self.do_gcs.__usage__)
             return
 
         action = cmd.args[0].upper()
         name = cmd.args[1]
         keypath = cmd.args[2]
 
-        entry = GCS.get_by_name(name)
+        entry = self.server.gcs.get_by_name(name)
         if not entry:
             self.error("gcs instance '" + name + "' not found.")
             return
 
-        if 'install-dir' not in aconn.auth:
-            self.error("agent connection is missing 'install-dir'")
+        data_dir = self.server.backup.primary_data_loc_path()
+
+        if not data_dir:
+            self.error("Missing primary-data_loc in the agent_volumes table")
             return
-        install_dir = aconn.auth['install-dir']
-        data_dir = ntpath.join(install_dir, 'data')
 
         self.ack()
 
@@ -1174,15 +1175,6 @@ class CliHandler(socketserver.StreamRequestHandler):
         env = {u'ACCESS_KEY': entry.access_key,
                u'SECRET_KEY': entry.secret,
                u'PWD': data_dir}
-
-        # FIXME: Remove this section when PGCS_BIN is implemented.
-        if True:
-            print 'GCS transaction BEGIN'
-            print command
-            print env
-            print 'GCS transaction END'
-            self.print_client('{"warning": "PGCS_BIN unimplemented"}')
-            return
 
         # Send command to the agent
         body = self.server.cli_cmd(command, agent, env=env)
@@ -1458,6 +1450,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                 break
 
             if not data: break
+
+            self.server.log.debug("telnet command: '%s'", data)
 
             try:
                 cmd = Command(self.server, data)

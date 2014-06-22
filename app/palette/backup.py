@@ -18,6 +18,7 @@ from controller.agentinfo import AgentVolumesEntry
 from controller.agent import Agent
 from controller.domain import Domain
 from controller.util import DATEFMT
+from controller.gcs import GCS
 
 from rest import PaletteRESTHandler, required_parameters
 
@@ -44,6 +45,30 @@ class BackupApplication(PaletteRESTHandler):
             print >> sys.stderr, "Backup not found:", filename
             return {}
 
+        if backup_entry.volid:
+            return self.handle_restore_from_vol(backup_entry)
+        elif backup_entry.gcsid:
+            return self.handle_restore_from_gcs(backup_entry)
+        else:
+            print >> sys.stderr, \
+                "Error: Don't yet support backup from S3."
+            return {}
+
+    def handle_restore_from_gcs(self, backup_entry):
+        gcs_entry = GCS.get_by_gcsid_envid(backup_entry.gcsid,
+                                                    self.environment.envid)
+        if not gcs_entry:
+            print >> sys.stderr, \
+                "Error: gcsid entry from backup not found for gcsid", \
+                                                    backup_entry.gcsid
+            return {}
+
+        self.telnet.send_cmd('restore "%s:%s"' % 
+                                (gcs_entry.name, backup_entry.name))
+        return {}
+
+    def handle_restore_from_vol(self, backup_entry):
+        """The backup is on a volume (not gcs or S3)."""
         displayname = self.get_displayname_by_volid(backup_entry.volid)
         if not displayname:
             print >> sys.stderr, \
