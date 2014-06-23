@@ -12,8 +12,6 @@ function ($, topic, template)
     var event_list_template = $('#event-list-template').html();
     template.parse(event_list_template);
 
-    var lastid = 0; /* last event id */
-
      /*
      * bindStatus()
      * Make the clicking on the status box show the server list.
@@ -201,7 +199,7 @@ function ($, topic, template)
         if (!last.hasOwnProperty('eventid')) {
             return;
         }
-        lastid = last['eventid'];
+        eventFilter.lastid = last['eventid'];
 
         var html = $('#event-list').html();
         var rendered = template.render(event_list_template, data);
@@ -261,9 +259,28 @@ function ($, topic, template)
         setupServerList();
     }
 
+    /*
+     * EventFilter
+     * pseudo-class for maintaining the selected events
+     */
+    var eventFilter = {
+        limit: 100,
+        lastid: 0,
+        /* selectors */
+        status: 0,
+        type: 0,
+        site: 0,
+        publisher: 0,
+        project: 0,
+
+        queryString: function () {
+            var start = this.lastid + 1;
+            return 'order=desc&start='+start+'&high=50';
+        }
+    }
+
     function poll() {
-        var start = lastid + 1;
-        var url = '/rest/monitor?order=desc&start='+start+'&high=50';
+        var url = '/rest/monitor?'+eventFilter.queryString();
 
         $.ajax({
             url: url,
@@ -298,7 +315,7 @@ function ($, topic, template)
     function ajaxError(jqXHR, textStatus, errorThrown) {
         alert(this.url + ': ' + jqXHR.status + " (" + errorThrown + ")");
         location.reload();
-    }
+    }        
 
     return {'state': current,
             'startMonitor': startMonitor,

@@ -19,8 +19,8 @@ class AuthManager(object):
             'SELECT system_users.name, system_users.email, ' +\
             ' system_users.hashed_password, system_users.salt, ' +\
             ' system_users.friendly_name, system_users.admin_level, ' +\
-            ' system_users.created_at, ' +\
-            ' users.login_at, '+\
+            ' system_users.created_at, system_users.id, ' +\
+            ' users.id, users.login_at, '+\
             ' users.licensing_role_id, users.admin_level, ' +\
             ' users.publisher_tristate ' +\
             'FROM system_users JOIN users ' +\
@@ -52,10 +52,12 @@ class AuthManager(object):
             entry.friendly_name=L[4]
             entry.system_admin_level=L[5]
             entry.system_created_at=L[6]
-            entry.login_at=L[7]
-            entry.licensing_role_id=L[8]
-            entry.user_admin_level=L[9]
-            entry.publisher_tristate=L[10]
+            entry.system_users_id = L[7]
+            entry.users_id = L[8]
+            entry.login_at=L[9]
+            entry.licensing_role_id=L[10]
+            entry.user_admin_level=L[11]
+            entry.publisher_tristate=L[12]
             session.merge(entry)
 
         # delete entries no longer found in the Tableau database.
