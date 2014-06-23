@@ -30,7 +30,7 @@ class BackupApplication(PaletteRESTHandler):
     NAME = 'backup'
 
     @required_role(Role.MANAGER_ADMIN)
-    def handle_backup(self):
+    def handle_backup(self, req):
         self.telnet.send_cmd("backup")
         now = time.strftime('%A, %B %d at %I:%M %p')
         return {'last': now }
@@ -123,7 +123,7 @@ class BackupApplication(PaletteRESTHandler):
     def handle_POST(self, req):
         action = req.POST['action'].lower()
         if action == 'backup':
-            return self.handle_backup()
+            return self.handle_backup(req)
         elif action == 'restore':
             return self.handle_restore(req)
         raise exc.HTTPBadRequest()
