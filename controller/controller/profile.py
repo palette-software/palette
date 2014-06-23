@@ -21,6 +21,8 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     hashed_password = Column(String)
     salt = Column(String)
     roleid = Column(BigInteger, ForeignKey("roles.roleid"), default=0)
+    system_users_id = Column(Integer)
+    users_id = Column(Integer)
     login_at = Column(DateTime)
     licensing_role_id = Column(Integer)
     user_admin_level = Column(Integer)
