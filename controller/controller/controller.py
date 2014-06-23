@@ -569,6 +569,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 parts = source_spec.split('/')
                 if len(parts) == 1:
                     # FIXME
+                    self.stateman.update(orig_state)
                     return self.error(\
                         "restore: Bad target spec:  Missing '/': " + \
                                                             source_spec)
