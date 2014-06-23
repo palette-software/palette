@@ -23,6 +23,7 @@ class ExtractEntry(meta.Base, BaseDictMixin):
     title = Column(String)
     subtitle = Column(String)
     site_id = Column(Integer)
+    system_users_id = Column(Integer)
 
 
 class ExtractManager(object):
@@ -31,16 +32,18 @@ class ExtractManager(object):
         self.server = server
 
     def load(self, agent):
-        stmt = "SELECT id, finish_code, notes, started_at, completed_at, " +\
-            "title, subtitle, site_id " +\
-            "FROM background_jobs " +\
+        stmt = "SELECT background_jobs.id, finish_code, notes, " +\
+            "started_at, completed_at, title, subtitle, " +\
+            "background_jobs.site_id, owner_id " +\
+            "FROM background_jobs LEFT OUTER JOIN workbooks " +\
+            "ON background_jobs.title = workbooks.name " +\
             "WHERE job_name = 'Refresh Extracts' AND progress = 100"
 
         session = meta.Session()
 
         lastid = self.lastid()
         if not lastid is None:
-            stmt += " AND id > '" + lastid + "'"
+            stmt += " AND background_jobs.id > '" + lastid + "'"
 
         data = agent.odbc.execute(stmt)
 
@@ -59,7 +62,8 @@ class ExtractManager(object):
                                  completed_at=completed_at,
                                  title=row[5],
                                  subtitle=row[6],
-                                 site_id=row[7])
+                                 site_id=row[7],
+                                 system_users_id=row[8])
 
             body = dict(agent.__dict__.items() + entry.todict().items())
             if entry.finish_code == 0:
