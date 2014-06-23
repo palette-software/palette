@@ -422,6 +422,10 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error(ERROR_BUSY)
             return
 
+        # Before we do anything, do a license check, which automatically
+        # sends an event if appropriate.
+        ###self.server.license(agent)
+
         # Check to see if we're in a state to restore
         stateman = self.server.stateman
         main_state = stateman.get_state()
@@ -458,11 +462,14 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Do a backup before we try to do a restore.
         #FIXME: refactor do_backup() into do_backup() and backup()
         self.server.log.debug("------------Starting Backup for Restore--------------")
-
         self.server.event_control.gen( \
             EventControl.BACKUP_BEFORE_RESTORE_STARTED, agent.__dict__)
 
         self.ack()
+
+        # Before we do anything, do a license check, which automatically
+        # sends an event if appropriate.
+        ###self.server.license(agent)
 
         # No alerts or state updates are done in backup_cmd().
         body = self.server.backup_cmd(agent)
@@ -888,11 +895,14 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         self.server.log.debug("------------Starting Backup for Stop---------------")
-
         stateman.update(StateManager.STATE_STARTED_BACKUP_STOP)
         self.server.event_control.gen( \
             EventControl.BACKUP_BEFORE_STOP_STARTED, agent.__dict__)
         self.ack()
+
+        # Before we do anything, do a license check, which automatically
+        # sends an event if appropriate.
+        self.server.license(agent)
 
         body = self.server.backup_cmd(agent)
 
