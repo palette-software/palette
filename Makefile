@@ -17,3 +17,8 @@ install:
 	cd app; python setup.py clean; python setup.py build; python setup.py install
 	cd controller; python setup.py clean; python setup.py build; python setup.py install
 .PHONY: install
+
+package_install:
+	sudo dpkg -i controller/DEBIAN/controller_0.2_all.deb
+	sudo dpkg -i app/DEBIAN/palette_0.2_all.deb
+
