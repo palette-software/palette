@@ -48,13 +48,26 @@ class AlertEmail(object):
 
         return [entry.email for entry in rows]
 
+    def publisher_emails(self, data):
+        """Return a list of publisher_emails that have an email address."""
+
+        if not 'system_users_id' in data:
+            return []
+
+        session = meta.Session()
+        rows = session.query(UserProfile).\
+            filter(UserProfile.system_users_id == data['system_users_id']).\
+            filter(UserProfile.email != "").\
+            all()
+
+        return [entry.email for entry in rows]
+
     def send(self, event_entry, data):
         """Send an alert.
             Arguments:
                 key:    The key to look up.
                 data:   A Dictionary with the event information.
         """
-
 
         subject = event_entry.subject
         if subject.find("%") == -1:
@@ -96,7 +109,13 @@ class AlertEmail(object):
                                                             subject, message)
             return
 
-        to_emails = self.non_admin_emails()
+        if event_entry.key == EventControl.EXTRACT_OK:
+            to_emails = self.publisher_emails(data)
+        elif event_entry.key == EventControl.EXTRACT_FAILED:
+            to_emails = self.non_admin_emails() + self.publisher_emails(data)
+        else:
+            to_emails = self.non_admin_emails()
+
         if not to_emails:
             self.log.debug(\
                 "No non-admin users exist with email addresses.  " + \
