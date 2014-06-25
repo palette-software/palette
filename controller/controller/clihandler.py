@@ -24,6 +24,10 @@ from s3 import S3
 from system import SystemEntry
 from state import StateManager
 from tableau import TableauProcess
+from sites import Site
+from projects import Project
+from data_connections import DataConnection
+from http_requests import HTTPRequestEntry
 
 from cli_errors import *
 
@@ -1260,6 +1264,34 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
         self.report_status(body)
 
+    @usage('sync')
+    def do_sync(self, cmd):
+        """Synchronize Tableau tables."""
+
+        if len(cmd.args) != 0:
+            self.print_usage(self.do_sync.__usage__)
+            return
+
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            self.error('agent not found')
+            return
+        self.ack()
+
+        d = {}
+        body = Site.load(agent)
+        d['sites'] = body['count']
+
+        body = Project.load(agent)
+        d['projects'] = body['count']
+
+        body = HTTPRequestEntry.load(agent)
+        d['http-requests'] = body['count']
+
+        body = DataConnection.load(agent)
+        d['data-connections'] = body['count']
+
+        self.print_client("%s", json.dumps(d))
 
     @usage('system <SET|GET|DELETE> <key> [value]')
     def do_system(self, cmd):

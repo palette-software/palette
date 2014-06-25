@@ -41,9 +41,9 @@ class ExtractManager(object):
 
         session = meta.Session()
 
-        lastid = self.lastid()
+        lastid = self.get_lastid()
         if not lastid is None:
-            stmt += " AND background_jobs.id > '" + lastid + "'"
+            stmt += " AND background_jobs.id > " + lastid
 
         data = agent.odbc.execute(stmt)
 
@@ -80,7 +80,7 @@ class ExtractManager(object):
         return {u'status': 'OK',
                 u'count': len(data[''])}
 
-    def lastid(self):
+    def get_lastid(self):
         entry = meta.Session.query(ExtractEntry).\
             order_by(ExtractEntry.extractid.desc()).first()
         if entry:

@@ -46,7 +46,7 @@ class AuthManager(object):
 
             entry = UserProfile.get_by_name(name)
             if not entry:
-                entry =  UserProfile(name=name, email=L[1])
+                entry = UserProfile(name=name, email=L[1])
             entry.hashed_password = L[2]
             entry.salt = L[3]
             entry.friendly_name=L[4]
@@ -70,12 +70,9 @@ class AuthManager(object):
 
         session.commit()
 
-        ret_dict = {u'status': 'OK',
-                u'count': len(data[''])}
-
-        self.server.log.debug("auth load returning: %s", str(ret_dict))
-
-        return ret_dict
+        d = {u'status': 'OK', u'count': len(data[''])}
+        self.server.log.debug("auth load returning: %s", str(d))
+        return d
 
     def verify(self, name, password):
         return UserProfile.verify(name, password)
