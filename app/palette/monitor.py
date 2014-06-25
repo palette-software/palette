@@ -21,6 +21,10 @@ from controller.profile import UserProfile, Role
 from controller.state_control import StateControl
 from controller.util import sizestr, DATEFMT
 from controller.system import LicenseEntry
+from controller.sites import Site
+from controller.projects import Project
+from controller.extracts import ExtractManager
+from controller.event_control import EventControl
 
 from page import PalettePage
 from event import EventApplication
@@ -52,6 +56,35 @@ class MonitorApplication(PaletteRESTHandler):
     def __init__(self, global_conf):
         super(MonitorApplication, self).__init__(global_conf)
         self.event = EventApplication(global_conf)
+
+    def config(self):
+        statuses = [{'item':'All Status', 'id':0}] + \
+            [{'item':EventControl.level_strings[x], 'id':x} \
+                 for x in EventControl.level_strings]
+        types = [{'item':'All Types', 'id':0}] + \
+            [{'item':x, 'id':x} for x in EventControl.types()]
+        sites = [{'item':'All Sites', 'id':0}] + \
+            [{'item':x.name, 'id':x.siteid} for x in Site.all()]
+        projects = [{'item':'All Projects', 'id':0}] + \
+            [{'item':x.name, 'id':x.projectid} for x in Project.all()]
+        publishers = [{'item':'All Publishers', 'id':0}] + \
+            [{'item':x.name, 'id':x.system_users_id} \
+                 for x in ExtractManager.publishers()]
+        return [{'name':'statuses',
+                 'value':statuses[0]['item'], 
+                 'options':statuses},
+                {'name':'types',
+                 'value':types[0]['item'],
+                 'options':types},
+                {'name':'sites',
+                 'value':sites[0]['item'],
+                 'options':sites},
+                {'name':'publishers',
+                 'value':publishers[0]['item'],
+                 'options':publishers},
+                {'name':'projects',
+                 'value':projects[0]['item'],
+                 'options':projects}]
 
     def disk_watermark(self, name):
         """ Threshold for the disk indicator. (low|high) """
@@ -269,7 +302,8 @@ class MonitorApplication(PaletteRESTHandler):
                        'text': text,
                        'color': Colors.color_to_str[color_num],
                        'user-action-in-progress': user_action_in_progress,
-                       'environments': environments
+                       'environments': environments,
+                       'config': self.config()
                       }
 
         if not 'event' in req.GET or \

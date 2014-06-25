@@ -10,56 +10,11 @@
   </section>
   <section class="row">
     <section class="col-xs-12 event-dropdowns">
-      <div class="btn-group">
-        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Status</div><span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu" role="menu">
-          <li><a href="#">All Statuses</a></li>
-          <li><a href="#">Success</a></li>
-          <li><a href="#">Warning</a></li>
-          <li><a href="#">Error</a></li>
-        </ul>
-      </div>
-      <div class="btn-group">
-        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Types</div><span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu" role="menu">
-          <li><a href="#">All Types</a></li>
-          <li><a href="#">Application</a></li>
-          <li><a href="#">Communication</a></li>
-          <li><a href="#">Extract</a></li>
-          <li><a href="#">System</a></li>
-        </ul>
-      </div>
-      <div class="btn-group">
-        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Sites</div><span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu" role="menu">
-          <li><a href="#">All Sites</a></li>
-          <li><a href="#">Finance</a></li>
-          <li><a href="#">Marketing</a></li>
-        </ul>
-      </div>
-
-      <div class="btn-group">
-        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Publishers</div><span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu" role="menu">
-          <li><a href="#">All Publishers</a></li>
-          <li><a href="#">John Abdo</a></li>
-          <li><a href="#">Matthew Laue</a></li>
-        </ul>
-      </div>
-      <div class="btn-group">
-        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Projects</div><span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu" role="menu">
-          <li><a href="#">All Projects</a></li>
-          <li><a href="#">Quarterly Reports</a></li>
-          <li><a href="#">Annual Reports</a></li>
-        </ul>
-      </div>
-
+      <div id="statuses-dropdown" class="btn-group"></div>
+      <div id="types-dropdown" class="btn-group"></div>
+      <div id="sites-dropdown" class="btn-group"></div>
+      <div id="publishers-dropdown" class="btn-group"></div>
+      <div id="projects-dropdown" class="btn-group"></div>
       <!-- TODO: Add back in Alpha 2 or later
       <div class="col-xs-4">
          <input class="form-control" type="text" placeholder="Workbook" style="margin-top:10px;">
@@ -87,4 +42,14 @@
     <div class="description">{{{description}}}</div>
   </article>
   {{/events}}
+</script>
+
+<script id="event-dropdown-template" type="x-tmpl-mustache">
+  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>{{value}}</div><span class="caret"></span>
+  </button>
+  <ul class="dropdown-menu" role="menu">
+    {{#options}}
+    <li><a data-id="{{id}}">{{item}}</a></li>
+    {{/options}}
+  </ul>
 </script>

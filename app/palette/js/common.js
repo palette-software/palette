@@ -12,6 +12,9 @@ function ($, topic, template)
     var event_list_template = $('#event-list-template').html();
     template.parse(event_list_template);
 
+    var event_dropdown_template = $('#event-dropdown-template').html();
+    template.parse(event_dropdown_template);
+
      /*
      * bindStatus()
      * Make the clicking on the status box show the server list.
@@ -206,6 +209,13 @@ function ($, topic, template)
         html = rendered + '\n' + html;
         $('#event-list').html(html);
 
+        for (var i in data['config']) {
+            var d = data['config'][i];
+            rendered = template.render(event_dropdown_template, d);
+            $('#'+d['name']+'-dropdown').html(rendered);
+        }
+
+        setupDropdowns();
         bindEvents();
     }
 
@@ -220,7 +230,6 @@ function ($, topic, template)
         */
         setupHeaderMenus();
         setupCategories();
-        setupDropdowns();
         bindStatus();
     });
 
