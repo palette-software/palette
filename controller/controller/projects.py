@@ -28,6 +28,10 @@ class Project(meta.Base):
         return entry
 
     @classmethod
+    def all(cls):
+        return meta.Session.query(Project).order_by(Project.name).all()
+
+    @classmethod
     def load(cls, agent):
         stmt = \
             'SELECT id, name, owner_id, created_at, updated_at, ' +\

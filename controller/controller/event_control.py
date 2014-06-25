@@ -125,6 +125,14 @@ class EventControl(meta.Base, BaseMixin):
     TYPE_SCHED="sched"
     TYPE_EXTRACT="extract"
 
+    @classmethod
+    def types(cls):
+        L = []
+        for t in cls.__dict__:
+            if t.startswith('TYPE_'):
+                L.append(getattr(cls, t))
+        return L
+
     # fixme: Init the event_control table elsewhere.
     defaults = [
             {'key': INIT_STATE_STARTED,

@@ -6,7 +6,9 @@ from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm.exc import NoResultFound
 
 from akiri.framework.ext.sqlalchemy import meta
+
 from event_control import EventControl
+from profile import UserProfile
 from mixin import BaseDictMixin
 from util import utc2local, DATEFMT
 
@@ -89,3 +91,11 @@ class ExtractManager(object):
 
     def eventgen(self, key, data, timestamp=None):
         return self.server.event_control.gen(key, data, timestamp=timestamp)
+
+    @classmethod
+    def publishers(cls):
+        query = meta.Session.query(UserProfile).\
+            join(ExtractEntry,
+                 UserProfile.system_users_id == ExtractEntry.system_users_id)
+        return query.all()
+            
