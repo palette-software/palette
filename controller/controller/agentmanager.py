@@ -772,6 +772,18 @@ class AgentManager(threading.Thread):
                     self._close(conn)
                     return
 
+            if self.server.domain.license_key:
+                if not body.has_key('license-key'):
+                    self.log.error("Agent missing required 'license-key'")
+                    self._close(conn)
+                    return
+                key = body['license-key'].strip()
+                if key != self.server.domain.license_key:
+                    self.log.error("Agent license is incorrect '%s' != '%s'",\
+                                       key, self.server.domain.license_key)
+                    self._close(conn)
+                    return
+
             aconn.auth = body
             uuid = aconn.auth['uuid']
 
@@ -875,7 +887,7 @@ class AgentHealthMonitor(threading.Thread):
 
         self.log.debug("Starting agent health monitor.")
 
-        while True:
+        while self.server.ping:
             if len(self.manager.agents) == 0:
                 # no agents to check on
                 # self.log.debug("no agents to ping")
