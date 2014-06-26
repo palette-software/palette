@@ -33,6 +33,9 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
 
     role = relationship("Role")
 
+    def __str__(self):
+        return self.name
+
     @classmethod
     def get(cls, userid):
         try:
