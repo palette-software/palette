@@ -1201,6 +1201,7 @@ def main():
     parser = argparse.ArgumentParser(description='Palette Controller')
     parser.add_argument('config', nargs='?', default=None)
     parser.add_argument('--nostatus', action='store_true', default=False)
+    parser.add_argument('--noping', action='store_true', default=False)
     args = parser.parse_args()
 
     config = Config(args.config)
@@ -1290,6 +1291,7 @@ def main():
         statusmon.start()
 
     server.stateman = StateManager(server)
+    server.ping = not args.noping
 
     server.serve_forever()
 

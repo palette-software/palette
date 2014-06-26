@@ -1274,7 +1274,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         agent = self.get_agent(cmd.dict)
         if not agent:
-            self.error('agent not found')
+            self.error(ERROR_AGENT_NOT_FOUND)
             return
         self.ack()
 
