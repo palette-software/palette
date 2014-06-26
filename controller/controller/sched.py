@@ -147,7 +147,13 @@ class Sched(object):
         self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
             name='auth_import',
             args=['auth_import', self.command_info],
-            minute="3/10")
+            minute="2/10")
+
+        # sync tables every 5 minutes
+        self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
+            name='sync',
+            args=['sync', self.command_info],
+            minute="3/5")
 
         # license_check every 5 minutes
         self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
