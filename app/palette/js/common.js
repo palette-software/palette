@@ -105,15 +105,17 @@ function ($, topic, template)
      * setupDropdowns()
      * Enable the select-like elements created with the dropdown class.
      */
-    function setupDropdowns() {
+    function setupDropdowns(f) {
         $('.dropdown-menu li').off('click');
         $('.dropdown-menu li').bind('click', function(event) {
             event.preventDefault();
             var a = $(this).find('a');
             var div =  $(this).parent().siblings().find('div')
             var href = a.attr('href');
+            var id = a.attr('data-id');
             if (!href || href == '#') {
                 div.text(a.text());
+                if (id != null) div.attr('data-id', id);
                 return;
             }
             data = customDataAttributes(a);
@@ -126,6 +128,7 @@ function ($, topic, template)
             
                 success: function(data) {
                     div.text(a.text());
+                    if (id != null) div.attr('data-id', id);
                 },
                 error: ajaxError,
             });
@@ -192,22 +195,18 @@ function ($, topic, template)
         $('a.alert.warnings span').html(data['yellow']);
 
         var events = data['events'];
-        if (events == null || events.length == 0) {
-            return;
-        }
-        var last = events[0];
-        if (last == null) {
-            return;
-        }
-        if (!last.hasOwnProperty('eventid')) {
-            return;
-        }
-        eventFilter.lastid = last['eventid'];
+        if (events == null || events.length == 0) return;
+        eventFilter.lastid = events[0]['eventid'];
 
-        var html = $('#event-list').html();
         var rendered = template.render(event_list_template, data);
-        html = rendered + '\n' + html;
-        $('#event-list').html(html);
+        if (eventFilter.changed) {
+            $('#event-list').html(rendered);
+            eventFilter.changed = false;
+            console.log('cleared');
+        } else {
+            var html = rendered + '\n' + $('#event-list').html();
+            $('#event-list').html(html);
+        }            
 
         for (var i in data['config']) {
             var d = data['config'][i];
@@ -269,22 +268,41 @@ function ($, topic, template)
     }
 
     /*
+     * ddDataId
+     * Get the data-id of the current selection in a particular dropdown.
+     */
+    function ddDataId(name) {
+        var selector = "#"+name+'-dropdown > button > div';
+        return $(selector).attr('data-id');
+    }
+
+    /*
      * EventFilter
      * pseudo-class for maintaining the selected events
      */
     var eventFilter = {
         limit: 100,
         lastid: 0,
-        /* selectors */
-        status: 0,
-        type: 0,
-        site: 0,
-        publisher: 0,
-        project: 0,
+        selectors: {'status':0, 'type':0, 'site':0, 
+                    'publisher':0, 'project':0},
+        changed: false,
 
         queryString: function () {
             var start = this.lastid + 1;
-            return 'order=desc&start='+start+'&high=50';
+            var qs = 'order=desc';
+            for (var key in this.selectors) {
+                var value = ddDataId(key);
+                if (typeof(value) == 'undefined') {
+                    continue;
+                } else if (value != this.selectors[key]) {
+                    this.selectors[key] = value;
+                    this.changed = true;
+                }
+                qs += '&'+key+'='+value;
+            }
+            if (this.changed) this.lastid = 0;
+            var start = this.lastid + 1;
+            return qs + '&start='+start+'&high='+this.limit;
         }
     }
 
