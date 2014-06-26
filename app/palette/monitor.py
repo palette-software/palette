@@ -57,34 +57,71 @@ class MonitorApplication(PaletteRESTHandler):
         super(MonitorApplication, self).__init__(global_conf)
         self.event = EventApplication(global_conf)
 
-    def config(self):
-        statuses = [{'item':'All Status', 'id':0}] + \
+    def getindex(self, req, name):
+        try:
+            return int(req.GET[name])
+        except:
+            pass
+        return 0
+
+    def status_options(self, req):
+        c = 'status' in req.GET and req.GET['status'] or '0'
+        L = [{'item':'All Status', 'id':0}] + \
             [{'item':EventControl.level_strings[x], 'id':x} \
                  for x in EventControl.level_strings]
-        types = [{'item':'All Types', 'id':0}] + \
-            [{'item':x, 'id':x} for x in EventControl.types()]
-        sites = [{'item':'All Sites', 'id':0}] + \
+        value = (c == '0') and L[0]['item'] or EventControl.level_strings[c]
+        return {'name':'status', 'value':value, 'id':c, 'options':L}
+
+    def type_options(self, req):
+        c = 'type' in req.GET and req.GET['type'] or '0'
+        L = [{'item':'All Types', 'id':0}]
+
+        d = {'name':'type'}
+        for t in EventControl.types():
+            if t == c:
+                d['value'] = d['id'] = t
+            L.append({'item':t, 'id':t})
+        if 'id' not in d:
+            d['value'] = L[0]['item']
+            d['id'] = 0
+        d['options'] = L
+        return d
+    
+    def site_options(self, req):
+        index = self.getindex(req, 'site')
+        L = [{'item':'All Sites', 'id':0}] + \
             [{'item':x.name, 'id':x.siteid} for x in Site.all()]
-        projects = [{'item':'All Projects', 'id':0}] + \
+        if index >= len(L):
+            index = 0
+        return {'name':'site',
+                'value':L[index]['item'], 'id':L[index]['id'], 
+                'options':L}
+
+    def project_options(self, req):
+        index = self.getindex(req, 'project')
+        L = [{'item':'All Projects', 'id':0}] + \
             [{'item':x.name, 'id':x.projectid} for x in Project.all()]
-        publishers = [{'item':'All Publishers', 'id':0}] + \
-            [{'item':x.name, 'id':x.system_users_id} \
-                 for x in ExtractManager.publishers()]
-        return [{'name':'statuses',
-                 'value':statuses[0]['item'], 
-                 'options':statuses},
-                {'name':'types',
-                 'value':types[0]['item'],
-                 'options':types},
-                {'name':'sites',
-                 'value':sites[0]['item'],
-                 'options':sites},
-                {'name':'publishers',
-                 'value':publishers[0]['item'],
-                 'options':publishers},
-                {'name':'projects',
-                 'value':projects[0]['item'],
-                 'options':projects}]
+        if index >= len(L):
+            index = 0
+        return {'name':'project',
+                'value':L[index]['item'], 'id':L[index]['id'], 
+                'options':L}
+
+    def publisher_options(self, req):
+        sysid = self.getindex(req, 'publisher')
+        publishers = ExtractManager.publishers()
+        L = [{'item':'All Publishers', 'id':0}]
+        d = {'name':'publisher'}
+        for p in ExtractManager.publishers():
+            if p.system_users_id == sysid:
+                d['value'] = p.name
+                d['id'] = p.system_users_id
+            L.append({'item':p.name, 'id':p.system_users_id})
+        if not 'id' in d:
+            d['value'] = L[0]['item']
+            d['id'] = L[0]['id']
+        d['options'] = L
+        return d
 
     def disk_watermark(self, name):
         """ Threshold for the disk indicator. (low|high) """
@@ -297,13 +334,19 @@ class MonitorApplication(PaletteRESTHandler):
 
         environments = [ { "name": "My Servers", "agents": agents } ]
 
+        config = [self.status_options(req),
+                  self.type_options(req),
+                  self.site_options(req),
+                  self.publisher_options(req),
+                  self.project_options(req)]
+
         monitor_ret = {'state': main_state,
                        'allowable-actions': allowable_actions,
                        'text': text,
                        'color': Colors.color_to_str[color_num],
                        'user-action-in-progress': user_action_in_progress,
                        'environments': environments,
-                       'config': self.config()
+                       'config': config
                       }
 
         if not 'event' in req.GET or \

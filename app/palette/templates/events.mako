@@ -10,11 +10,11 @@
   </section>
   <section class="row">
     <section class="col-xs-12 event-dropdowns">
-      <div id="statuses-dropdown" class="btn-group"></div>
-      <div id="types-dropdown" class="btn-group"></div>
-      <div id="sites-dropdown" class="btn-group"></div>
-      <div id="publishers-dropdown" class="btn-group"></div>
-      <div id="projects-dropdown" class="btn-group"></div>
+      <div id="status-dropdown" class="btn-group"></div>
+      <div id="type-dropdown" class="btn-group"></div>
+      <div id="site-dropdown" class="btn-group"></div>
+      <div id="publisher-dropdown" class="btn-group"></div>
+      <div id="project-dropdown" class="btn-group"></div>
       <!-- TODO: Add back in Alpha 2 or later
       <div class="col-xs-4">
          <input class="form-control" type="text" placeholder="Workbook" style="margin-top:10px;">
@@ -45,7 +45,7 @@
 </script>
 
 <script id="event-dropdown-template" type="x-tmpl-mustache">
-  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>{{value}}</div><span class="caret"></span>
+  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div data-id="{{id}}">{{value}}</div><span class="caret"></span>
   </button>
   <ul class="dropdown-menu" role="menu">
     {{#options}}
