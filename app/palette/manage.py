@@ -22,14 +22,31 @@ class ManageApplication(PaletteRESTHandler):
 
     NAME = 'manage'
 
+    # This method also implicity checks for missing parameters.
+    def getbool(self, req, name):
+        try:
+            s = req.POST[name].lower()
+            if s == 'true' or s == '1':
+                return True
+            if s == 'false' or s == '0':
+                return False
+        except:
+            pass
+        raise exc.HTTPBadRequest("Invalid or missing parameter '"+name+"'")
+
     @required_role(Role.MANAGER_ADMIN)
     def handle_start(self, req):
-        self.telnet.send_cmd("start")
+        self.telnet.send_cmd('start')
         return {}
 
     @required_role(Role.MANAGER_ADMIN)
-    def handle_stop(self, req):
-        self.telnet.send_cmd("stop")
+    def handle_stop(self, req):        
+        cmd = 'stop'
+        if not self.getbool(req, 'backup'):
+            cmd = cmd + ' nobackup'
+        if not self.getbool(req, 'license'):
+            cmd = cmd + ' nolicense'
+        self.telnet.send_cmd(cmd)
         return {}
 
     @required_parameters('action')
