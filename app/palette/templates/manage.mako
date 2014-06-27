@@ -73,14 +73,14 @@
       <section class="col-xs-12">
         <ul class="checkbox">
           <li>
-            <input type="checkbox" checked/>
+            <input name="license" type="checkbox" checked/>
             <label class="checkbox">
               <span></span>
               Confirm license validity
             </label>
           </li>
           <li>
-            <input type="checkbox" checked/>
+            <input name="backup" type="checkbox" checked/>
             <label class="checkbox">
               <span></span>
               Backup rollback protection

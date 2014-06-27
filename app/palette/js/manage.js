@@ -17,11 +17,11 @@ function ($, topic, template, common)
         }
     }
 
-    function managePOST(action) {
+    function start() {
         $.ajax({
             type: 'POST',
             url: '/rest/manage',
-            data: {'action': action},
+            data: {'action': 'start'},
             dataType: 'json',
             async: false,
             
@@ -30,12 +30,23 @@ function ($, topic, template, common)
         });
     }
 
-    function start() {
-        managePOST('start');
-    }
-
     function stop() {
-        managePOST('stop');
+        data = {'action': 'stop'}
+        $('#popupStop input[type=checkbox]').each(
+            function(index, item){
+                data[item.name] = item.checked;
+            }
+        );
+        $.ajax({
+            type: 'POST',
+            url: '/rest/manage',
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function(data) {},
+            error: common.ajaxError,
+        });
     }
 
     function backup() {
