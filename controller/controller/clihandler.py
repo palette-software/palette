@@ -852,16 +852,18 @@ class CliHandler(socketserver.StreamRequestHandler):
         # STARTED is set by the status monitor since it really knows the status.
         self.report_status(body)
 
-    @usage('stop [no-backup|nobackup]')
+    @usage('stop [no-backup|nobackup] [no-license|nolicense]')
     def do_stop(self, cmd):
-        if len(cmd.args) > 1:
-            self.error(ERROR_USAGE, self.do_stop.__usage__)
-            return
 
         backup_first = True
-        if len(cmd.args) == 1:
-            if cmd.args[0] == "no-backup" or cmd.args[0] == "nobackup":
+        license_check = True
+
+        for arg in cmd.args:
+            arg = arg.lower()
+            if arg == "no-backup" or arg == "nobackup":
                 backup_first = False
+            elif arg == "no-license" or arg == "nolicense":
+                license_check = False
             else:
                 self.error(ERROR_USAGE, self.do_stop.__usage__)
 
@@ -898,15 +900,19 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return
 
+        self.ack()
+        # FIXME: wrap the backup in a function and check backup_first
+        # if backup_first: ...
         self.server.log.debug("------------Starting Backup for Stop---------------")
         stateman.update(StateManager.STATE_STARTED_BACKUP_STOP)
         self.server.event_control.gen( \
             EventControl.BACKUP_BEFORE_STOP_STARTED, agent.__dict__)
-        self.ack()
 
         # Before we do anything, do a license check, which automatically
         # sends an event if appropriate.
-        self.server.license(agent)
+        if license_check:
+            # FIXME: check the result and abort on failure.
+            self.server.license(agent)
 
         body = self.server.backup_cmd(agent)
 
@@ -933,9 +939,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # results in an immediate check of the state.
         stateman.update(StateManager.STATE_STOPPING)
 
-        if not backup_first:
-            # The ack was sent earlier only if a backup was attempted.
-            self.ack()
+        # FIXME: end backup
 
         self.server.log.debug("-----------------Stopping Tableau-------------------")
         # fixme: Reply with "OK" only after the agent received the command?
