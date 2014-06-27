@@ -18,8 +18,14 @@
               <i class="fa fa-fw fa-book"></i> Tableau Docs
             </a>
           </li>
+          <li>
+            <a href="/support/about">
+              <i class="fa fa-fw fa-info-circle"></i> About Palette
+            </a>
+          </li>
         </ul>
       </li>
+
       <li class="more">
         <a id="profile-link" href="/profile">
           <i class="fa fa-user"></i> 
