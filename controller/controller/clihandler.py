@@ -183,6 +183,18 @@ class CliHandler(socketserver.StreamRequestHandler):
         text = "ERROR %d %s" % (errnum, msg)
         self.print_client(text)
 
+    def success(self, body):
+        if 'error' in body:
+            return False
+        else:
+            return True
+
+    def failed(self, body):
+        if 'error' in body:
+            return True
+        else:
+            return False
+
     def print_usage(self, msg):
         self.error(ERROR_USAGE, 'usage: '+msg)
 
@@ -219,7 +231,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 #            sys.stdout.write(line)
 
     def report_status(self, body):
-        if not 'error' in body:
+        if self.success(body):
             body['status'] = CliHandler.STATUS_OK
         else:
             body['status'] = CliHandler.STATUS_ERROR
@@ -324,7 +336,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         body = self.server.backup_cmd(agent, target, volume_name)
 
-        if not body.has_key('error'):
+        if self.success(body):
             self.server.event_control.gen(EventControl.BACKUP_FINISHED,
                         dict(body.items() + agent.__dict__.items()))
         else:
@@ -478,7 +490,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # No alerts or state updates are done in backup_cmd().
         body = self.server.backup_cmd(agent)
 
-        if not body.has_key('error'):
+        if self.success(body):
             self.server.event_control.gen(\
                 EventControl.BACKUP_BEFORE_RESTORE_FINISHED,
                 dict(body.items() + agent.__dict__.items()))
@@ -501,7 +513,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # The final RESTORE_FINISHED/RESTORE_FAILED alert is sent only here and
         # not in restore_cmd().  Intermediate alerts like RESTORE_STARTED
         # are sent in restore_cmd().
-        if not body.has_key('error'):
+        if self.success(body):
             # Restore finished successfully.  The main state has.
             # already been set.
             self.server.event_control.gen( \
@@ -711,13 +723,13 @@ class CliHandler(socketserver.StreamRequestHandler):
             args = cmd.args[1:]
             body = self.server.sched.add(args[0], args[1], args[2], args[3],
                                                         args[4], args[5])
-            if not 'error' in body:
+            if self.success(body):
                 self.ack()
         else:
             self.print_usage(self.do_sched.__usage__)
             return
 
-        if 'error' in body:
+        if self.failed(body):
             self.error(ERROR_COMMAND_FAILED, str(body))
         else:
             self.report_status(body)
@@ -916,7 +928,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         body = self.server.backup_cmd(agent)
 
-        if not body.has_key('error'):
+        if self.success(body):
             self.server.event_control.gen( \
                 EventControl.BACKUP_BEFORE_STOP_FINISHED,
                 dict(body.items() + agent.__dict__.items()))
@@ -945,11 +957,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: Reply with "OK" only after the agent received the command?
 
         body = self.server.cli_cmd('tabadmin stop', agent)
-        if not body.has_key("error"):
+        if self.success(body):
             # Start the maintenance server only after Tableau has stopped
             # and reqlinquished the web server port.
             maint_body = self.server.maint("start")
-            if maint_body.has_key("error"):
+            if self.failed(maint_body):
                 msg = "maint start failed: " + str(maint_body)
                 if not 'info' in body:
                     body['info'] = msg
@@ -968,7 +980,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # If the 'stop' had failed, set the status to what we just
         # got back from 'tabadmin status ...'
-        if body.has_key('error'):
+        if self.failed(body):
             reported_status = self.server.statusmon.get_reported_status()
             stateman.update(reported_status)
 
@@ -1397,7 +1409,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         aconn.user_action_unlock();
 
         self.report_status(body)
-        if not body.has_key('error'):
+        if self.success(body):
             # FIXME: Do we want to send alerts?
             #server.event_control.gen(EventControl.ZIPLOGS_FINISHED, 
             #                    dict(body.items() + agent.__dict__.items()))
@@ -1448,7 +1460,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         aconn.user_action_unlock();
 
         self.report_status(body)
-        if not body.has_key('error'):
+        if self.success(body):
             # FIXME: Do we want to send alerts?
             #server.event_control.gen(EventControl.CLEANUP_FINISHED,
             #                    dict(body.items() + agent.__dict__.items()))
