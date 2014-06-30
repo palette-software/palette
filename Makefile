@@ -18,7 +18,22 @@ install:
 	cd controller; python setup.py clean; python setup.py build; python setup.py install
 .PHONY: install
 
+#
+# This rule will install using the debian packages
+#
 package_install:
-	sudo dpkg -i controller/DEBIAN/controller_0.2_all.deb
-	sudo dpkg -i app/DEBIAN/palette_0.2_all.deb
+	gdebi -n controller/DEBIAN/controller_0.2_all.deb
+	gdebi -n app/DEBIAN/palette_0.2_all.deb
 
+#
+# This rule will setup development pre-requisites
+#
+development:
+	apt-get install debhelper
+	apt-get install gdebi
+	wget https://www.akirisolutions.com/download/framework/akiri.framework_0.3.1_all.deb
+	gdebi -n akiri.framework_0.3.1_all.deb
+	wget https://www.akirisolutions.com/download/framework/akiri.framework-sqlalchemy_0.1_all.deb
+	gdebi -n akiri.framework-sqlalchemy_0.1_all.deb
+	wget https://www.akirisolutions.com/download/framework/python-apscheduler_2.1.2-1ubuntu1_all.deb
+	gdebi -n python-apscheduler_2.1.2-1ubuntu1_all.deb
