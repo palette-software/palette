@@ -438,10 +438,6 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error(ERROR_BUSY)
             return
 
-        # Before we do anything, do a license check, which automatically
-        # sends an event if appropriate.
-        ###self.server.license(agent)
-
         # Check to see if we're in a state to restore
         stateman = self.server.stateman
         main_state = stateman.get_state()
@@ -485,7 +481,12 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # Before we do anything, do a license check, which automatically
         # sends an event if appropriate.
-        ###self.server.license(agent)
+        license_body = self.server.license(agent)
+        if self.failed(license_body):
+            stateman.update(main_state)
+            self.report_status(license_body)
+            aconn.user_action_unlock()
+            return
 
         # No alerts or state updates are done in backup_cmd().
         body = self.server.backup_cmd(agent)
@@ -923,8 +924,12 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Before we do anything, do a license check, which automatically
         # sends an event if appropriate.
         if license_check:
-            # FIXME: check the result and abort on failure.
-            self.server.license(agent)
+            license_body = self.server.license(agent)
+            if self.failed(license_body):
+                stateman.update(main_state)
+                self.report_status(license_body)
+                aconn.user_action_unlock()
+                return
 
         body = self.server.backup_cmd(agent)
 
