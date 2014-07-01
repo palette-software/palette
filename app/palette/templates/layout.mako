@@ -16,6 +16,7 @@
 <link href='//fonts.googleapis.com/css?family=Roboto:300,500' rel='stylesheet' type='text/css'>
 <link rel="stylesheet" type="text/css" href="/app/module/palette/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/app/module/palette/css/font-awesome.min.css">
+<link rel="stylesheet" type="text/css" href="/app/module/palette/fonts/fonts.css">
 <link rel="stylesheet" type="text/css" href="/app/module/palette/css/style.css" media="screen">
 </%block>
 
