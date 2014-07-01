@@ -12,7 +12,7 @@ class EventEntry(meta.Base):
                                    autoincrement=True, primary_key=True)
 
     envid = Column(BigInteger, ForeignKey("environment.envid"))
-    key = Column(String, unique=True, nullable=False)
+    key = Column(String, nullable=False)
     title = Column(String)
     summary = Column(String)
     description = Column(String)
