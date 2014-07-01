@@ -14,7 +14,8 @@ all:
 	echo "DATE='"$(DATE)"'" >> $(PACKAGE)-$(VERSION)/controller/version.py
 	cd $(PACKAGE)-$(VERSION) && python setup.py sdist --dist-dir=../
 	mv $(PACKAGE)-$(VERSION).tar.gz $(PACKAGE)_$(VERSION).orig.tar.gz
-	../../scripts/genchangelog.sh $(PACKAGE) $(VERSION) >debian/changelog
+	../../scripts/genchangelog.sh $(PACKAGE) $(VERSION) >\
+		$(PACKAGE)-$(VERSION)/debian/changelog
 	cd $(PACKAGE)-$(VERSION) && dpkg-buildpackage -i -I -rfakeroot -uc -us
 .PHONY: all
 
