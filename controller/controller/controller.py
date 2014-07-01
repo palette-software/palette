@@ -833,19 +833,23 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         entry = LicenseEntry.save(agentid=agent.agentid, **d)
         if not entry:
-            return entry
+            return self.error("Could not save license entry: %s" % str(d))
 
-        if entry.invalid() and not entry.notified:
-            # Generate an event
-            self.event_control.gen(\
-                EventControl.LICENSE_INVALID,
-                    dict({'error':
-                            "interactors: %s, viewers: %s" % \
-                            (entry.interactors, entry.viewers)}.items() + \
-                                agent.__dict__.items()))
+        if entry.invalid():
+            if not entry.notified:
+                # Generate an event
+                self.event_control.gen(\
+                    EventControl.LICENSE_INVALID,
+                        dict({'error':
+                                "interactors: %s, viewers: %s" % \
+                                (entry.interactors, entry.viewers)}.items() + \
+                                    agent.__dict__.items()))
 
-            entry.notified = True
-            LicenseEntry.update(entry)
+                entry.notified = True
+                LicenseEntry.update(entry)
+            return self.error(\
+                "License invalid on '%s': interactors: %s, viewers: %s" % \
+                    (agent.displayname, entry.interactors, entry.viewers))
 
         return d
 
@@ -856,9 +860,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             yml = agent.connection.filemanager.get(path)
         except (exc.HTTPException, httplib.HTTPException,
                 EnvironmentError) as e:
-            self.error("filemanager.get(%s) on %s failed with: %s",
+            return self.error("filemanager.get(%s) on %s failed with: %s",
                        path, agent.displayname, str(e))
-            return
 
         body = self.agentmanager.update_agent_yml(agent.agentid, yml)
         return body

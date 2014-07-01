@@ -48,6 +48,12 @@ class Site(meta.Base):
             'FROM sites'
 
         data = agent.odbc.execute(stmt)
+        if 'error' in data:
+            return data
+        if '' not in data:
+            data['error'] = "Missing '' key in query response."
+            return data
+
         ids = []
 
         session = meta.Session()
