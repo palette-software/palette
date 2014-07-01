@@ -52,8 +52,10 @@ class HTTPRequestEntry(meta.Base):
             stmt += "WHERE id > " + lastid
 
         data = agent.odbc.execute(stmt)
-        if 'error' in data or '' not in data:
+        if 'error' in data:
             return data
+        if '' not in data:
+            data['error'] = "Missing '' key in query response."
 
         for row in data['']:
             entry = HTTPRequestEntry(reqid=row[0],

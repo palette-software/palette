@@ -1295,24 +1295,40 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         agent = self.get_agent(cmd.dict)
         if not agent:
-            self.error(ERROR_AGENT_NOT_FOUND)
             return
         self.ack()
 
+        error_msg = ""
         d = {}
         body = Site.load(agent)
-        d['sites'] = body['count']
+        if self.failed(body):
+            error_msg += "Site load failure: " + body['error']
+        else:
+            d['sites'] = body['count']
 
         body = Project.load(agent)
-        d['projects'] = body['count']
+        if self.failed(body):
+            error_msg += "Project load failure: " + body['error']
+        else:
+            d['projects'] = body['count']
 
         body = HTTPRequestEntry.load(agent)
-        d['http-requests'] = body['count']
+        if self.failed(body):
+            error_msg += "HTTPRequest load failure: " + body['error']
+        else:
+            d['http-requests'] = body['count']
 
         body = DataConnection.load(agent)
-        d['data-connections'] = body['count']
+        if self.failed(body):
+            error_msg += "DataConnection load failure: " + body['error']
+        else:
+            d['data-connections'] = body['count']
 
-        self.print_client("%s", json.dumps(d))
+        if error_msg:
+            d['error'] = error_msg
+            self.error(ERROR_COMMAND_FAILED, str(d))
+        else:
+            self.print_client("%s", json.dumps(d))
 
     @usage('system <SET|GET|DELETE> <key> [value]')
     def do_system(self, cmd):

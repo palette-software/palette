@@ -39,6 +39,11 @@ class Project(meta.Base):
             'FROM projects'
 
         data = agent.odbc.execute(stmt)
+        if 'error' in data:
+            return data
+        if '' not in data:
+            data['error'] = "Missing '' key in query response."
+
         ids = []
 
         session = meta.Session()
