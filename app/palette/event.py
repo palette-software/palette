@@ -22,7 +22,7 @@ class EventApplication(RESTApplication):
 
         self.envid = Environment.get().envid
 
-    def handle_get(self, req):
+    def handle_get(self, req, publisher=None):
         # Event retrieval accepts:
         #   What should be selected from the event table:
         #       start: eventid or a date/time.  Requirement: start <= end
@@ -112,7 +112,7 @@ class EventApplication(RESTApplication):
                                         (start, type(start), end, (type(end)))
                 raise exc.HTTPBadRequest()
 
-        events = self.event_query(start, end, low, high, order)
+        events = self.event_query(start, end, low, high, order, publisher)
 
         # Count the number of red, yellow and green events.
         red_count = len(meta.Session.query(EventEntry).\
@@ -134,11 +134,14 @@ class EventApplication(RESTApplication):
                  'red': red_count, 'yellow': yellow_count, 'green': green_count,
                  'events': events }
 
-    def event_query(self, start, end, low, high, order):
+    def event_query(self, start, end, low, high, order, publisher):
 #        print "start:", start, ", end:", end, ", low:",low, ", high:", high,
 #        print ", order:", order
         query = meta.Session.query(EventEntry).\
             filter(EventEntry.envid == self.envid)
+
+        if publisher:
+            query = query.filter(publisher == EventEntry.userid)
 
         if type(start) == int or type(end) == int:
             # select based on an event-id
