@@ -8,7 +8,7 @@
 <section class="dynamic-content">
   <h1 class="page-title">About Palette</h1>
 
-  <h2>Version Alpha 1 - April 30, 2014</h2>
+  <h2>Version ${obj.version}</h2>
   <div class="about-text">
      <p>&copy; 2014 Palette Software</p>
      <p>License Key <p>

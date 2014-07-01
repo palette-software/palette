@@ -44,7 +44,7 @@ from s3 import S3
 
 from sched import Sched
 from clihandler import CliHandler
-from version import VERSION
+from util import version
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
@@ -1211,7 +1211,7 @@ def main():
     # loglevel is entirely controlled by the INI file.
     logger.make_loggers(config)
     log = logger.get(Controller.LOGGER_NAME)
-    log.info("Controller version: %s", VERSION)
+    log.info("Controller version: %s", version())
 
     # Log stderr to the log file too.
     # NOTE: stdout is not logged so that PDB will work.

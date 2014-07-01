@@ -12,6 +12,7 @@
 *debhelper*
 tags
 TAGS
+changelog
 dist
 build
 .idea/
