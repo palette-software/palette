@@ -69,10 +69,10 @@ class ExtractManager(object):
 
             body = dict(agent.__dict__.items() + entry.todict().items())
             if entry.finish_code == 0:
-                self.eventgen(EventControl.EXTRACT_OK, body,
+                self.eventgen(EventControl.EXTRACT_OK, body, userid,
                               timestamp=completed_at.strftime(DATEFMT))
             else:
-                self.eventgen(EventControl.EXTRACT_FAILED, body,
+                self.eventgen(EventControl.EXTRACT_FAILED, body, userid,
                               timestamp=completed_at.strftime(DATEFMT))
 
             session.add(entry)
@@ -89,8 +89,9 @@ class ExtractManager(object):
                 return str(entry.extractid)
         return None
 
-    def eventgen(self, key, data, timestamp=None):
-        return self.server.event_control.gen(key, data, timestamp=timestamp)
+    def eventgen(self, key, data, userid, timestamp=None):
+        return self.server.event_control.gen(key, data, userid=userid,
+                                                        timestamp=timestamp)
 
     @classmethod
     def publishers(cls):
@@ -98,4 +99,3 @@ class ExtractManager(object):
             join(ExtractEntry,
                  UserProfile.system_users_id == ExtractEntry.system_users_id)
         return query.all()
-            

@@ -2,6 +2,7 @@ import smtplib
 from email.mime.text import MIMEText
 
 from akiri.framework.ext.sqlalchemy import meta
+from sqlalchemy.orm.exc import NoResultFound
 
 from profile import UserProfile
 
@@ -37,8 +38,8 @@ class AlertEmail(object):
                                     self.alert_level, DEFAULT_ALERT_LEVEL)
             self.alert_level = DEFAULT_ALERT_LEVEL
 
-    def non_admin_emails(self):
-        """Return a list of non-admins that have an email address."""
+    def admin_emails(self):
+        """Return a list of admins that have an email address."""
 
         session = meta.Session()
         rows = session.query(UserProfile).\
@@ -48,19 +49,23 @@ class AlertEmail(object):
 
         return [entry.email for entry in rows]
 
-    def publisher_emails(self, data):
-        """Return a list of publisher_emails that have an email address."""
+    def publisher_email(self, data):
+        """Return a list with the publisher_email for the user
+           if it exists and has an email address."""
 
         if not 'system_users_id' in data:
             return []
 
         session = meta.Session()
-        rows = session.query(UserProfile).\
-            filter(UserProfile.system_users_id == data['system_users_id']).\
-            filter(UserProfile.email != "").\
-            all()
+        try:
+            entry = session.query(UserProfile).\
+                filter(UserProfile.system_users_id == data['system_users_id']).\
+                filter(UserProfile.email != "").\
+                one()
+        except NoResultfound, e:
+            return []
 
-        return [entry.email for entry in rows]
+        return [entry.email]
 
     def send(self, event_entry, data):
         """Send an alert.
@@ -110,11 +115,11 @@ class AlertEmail(object):
             return
 
         if event_entry.key == EventControl.EXTRACT_OK:
-            to_emails = self.publisher_emails(data)
+            to_emails = self.publisher_email(data)
         elif event_entry.key == EventControl.EXTRACT_FAILED:
-            to_emails = self.non_admin_emails() + self.publisher_emails(data)
+            to_emails = self.admin_emails() + self.publisher_email(data)
         else:
-            to_emails = self.non_admin_emails()
+            to_emails = self.admin_emails()
 
         if not to_emails:
             self.log.debug(\
