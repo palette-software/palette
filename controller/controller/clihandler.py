@@ -24,10 +24,6 @@ from s3 import S3
 from system import SystemEntry
 from state import StateManager
 from tableau import TableauProcess
-from sites import Site
-from projects import Project
-from data_connections import DataConnection
-from http_requests import HTTPRequestEntry
 
 from cli_errors import *
 
@@ -1298,37 +1294,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
         self.ack()
 
-        error_msg = ""
-        d = {}
-        body = Site.load(agent)
-        if self.failed(body):
-            error_msg += "Site load failure: " + body['error']
-        else:
-            d['sites'] = body['count']
+        body = self.server.sync_cmd(agent)
 
-        body = Project.load(agent)
         if self.failed(body):
-            error_msg += "Project load failure: " + body['error']
+            self.error(ERROR_COMMAND_FAILED, str(body))
         else:
-            d['projects'] = body['count']
-
-        body = HTTPRequestEntry.load(agent)
-        if self.failed(body):
-            error_msg += "HTTPRequest load failure: " + body['error']
-        else:
-            d['http-requests'] = body['count']
-
-        body = DataConnection.load(agent)
-        if self.failed(body):
-            error_msg += "DataConnection load failure: " + body['error']
-        else:
-            d['data-connections'] = body['count']
-
-        if error_msg:
-            d['error'] = error_msg
-            self.error(ERROR_COMMAND_FAILED, str(d))
-        else:
-            self.print_client("%s", json.dumps(d))
+            self.print_client("%s", json.dumps(body))
 
     @usage('system <SET|GET|DELETE> <key> [value]')
     def do_system(self, cmd):
