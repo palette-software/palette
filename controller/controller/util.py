@@ -1,3 +1,4 @@
+import subprocess
 from dateutil import tz
 
 DATEFMT = "%I:%M %p PDT on %b %d, %Y"
@@ -20,3 +21,31 @@ def sizestr(n, fmt=SIZEFMT):
 def utc2local(t):
     t = t.replace(tzinfo=tz.tzutc())
     return t.astimezone(tz.tzlocal())
+
+def version():
+    try:
+        from version import VERSION
+        return VERSION
+    except ImportError:
+        pass
+    cmd = 'git rev-parse HEAD 2>/dev/null'
+    try:
+        head = subprocess.check_output(cmd, shell=True).strip()
+    except subprocess.CalledProcessError:
+        return UNKNOWN
+
+    cmd = 'git name-rev --tags --name-only --no-undefined '+head+' 2>/dev/null'
+    try:
+        output = subprocess.check_output(cmd, shell=True)
+        return output.strip()
+    except subprocess.CalledProcessError:
+        pass
+    return head
+
+def builddate():
+    try:
+        from version import DATE
+        return DATE
+    except ImportError:
+        pass
+    return None
