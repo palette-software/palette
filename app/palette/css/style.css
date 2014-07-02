@@ -904,7 +904,7 @@ h1.page-title {
     font-size: 28px;
     display: inline-block;
     line-height: 32px;
-    margin: 35px 0 42px 0;
+    margin: 35px 0 32px 0;
     color: #697078;
     vertical-align: bottom;
     text-transform: uppercase;
@@ -1519,7 +1519,21 @@ div.refresh {
 }
 .about-page h2 {
     margin-top: 50px;
+    margin-bottom: 5px;
 }
 .about-page h2:first-of-type {
     margin-top: 0px;
+}
+.about-page p {
+    margin: 0px;
+}
+.profile-page h2 {
+    margin-top: 50px;
+    margin-bottom: 5px;
+}
+.profile-page h2:first-of-type {
+    margin-top: 0px;
+}
+.profile-page p {
+    margin: 0px;
 }

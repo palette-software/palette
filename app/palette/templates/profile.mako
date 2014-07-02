@@ -5,22 +5,28 @@
 <title>Palette - Profile</title>
 </%block>
 
-<section class="dynamic-content">
+<section class="dynamic-content profile-page">
   <h1 class="page-title">Profile</h1>
-  <label class="profile-page">Tableau Server Display Name</label>
+
+  <h2>Tableau Server Display Name</h2>
   <p>${req.remote_user.friendly_name}</p>
-  <label class="profile-page">Tableau Server Username</label>
+
+  <h2>Tableau Server Username</h2>
   <p>${req.remote_user.name}</p>
-  <label class="profile-page">Email</label>
+
+  <h2>Email</h2>
   <p class="editbox"
      data-name="${req.remote_user.name}" data-href="/rest/users/email">
     ${req.remote_user.email or ''}
   </p>
-  <label class="profile-page">Tableau Server User License</label>
+
+  <h2>Tableau Server User License</h2>
   <p>Interactor</p>
-  <label class="profile-page">Tableau Server Administrator Role</label>
+
+  <h2>Tableau Server Administrator Role</h2>
   <p>System Administrator</p>
-  <label class="profile-page">Tableau Server User Publisher Role</label>
+
+  <h2>Tableau Server User Publisher Role</h2>
   <p>Publisher</p>
 </section>
 
