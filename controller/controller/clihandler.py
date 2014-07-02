@@ -359,7 +359,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         target = None
         if len(cmd.args) != 1:
-            self.print_usage(self.do_backup.__usage__)
+            self.print_usage(self.do_backupdel.__usage__)
             return
         backup = cmd.args[0]
 
@@ -534,9 +534,10 @@ class CliHandler(socketserver.StreamRequestHandler):
         """Copy a file from one agent to another."""
 
         if len(cmd.args) != 2:
-            self.error(ERROR_USAGE, self.do_copy.__usage__)
+            self.print_usage(self.do_copy.__usage__)
             return
 
+        self.ack()
         body = self.server.copy_cmd(cmd.args[0], cmd.args[1])
         self.report_status(body)
 
@@ -586,7 +587,7 @@ class CliHandler(socketserver.StreamRequestHandler):
     @usage('cli <command> [args...]')
     def do_cli(self, cmd):
         if len(cmd.args) < 1:
-            return self.error(ERROR_USAGE, self.do_cli.__usage__)
+            self.print_usage(self.do_cli.__usage__)
             return
 
         agent = self.get_agent(cmd.dict)
@@ -607,12 +608,14 @@ class CliHandler(socketserver.StreamRequestHandler):
     @usage('phttp GET https://vol1/filename vol2:/local-directory')
     def do_phttp(self, cmd):
         if len(cmd.args) < 2:
-            self.error(ERROR_USAGE, self.do_phttp.__usage__)
+            self.print_usage(self.do_phttp.__usage__)
             return
 
         agent = self.get_agent(cmd.dict)
         if not agent:
             return
+
+        self.ack()
 
         phttp_cmd = self.server.PHTTP_BIN
         for arg in cmd.args:
@@ -672,7 +675,7 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_license(self, cmd):
         """Run license check."""
         if len(cmd.args):
-            self.print_usage(self.do_info.__usage__)
+            self.print_usage(self.do_license.__usage__)
             return
 
         agent = self.get_agent(cmd.dict)
@@ -686,7 +689,7 @@ class CliHandler(socketserver.StreamRequestHandler):
     @usage('yml')
     def do_yml(self, cmd):
         if len(cmd.args):
-            self.print_usage(self.do_info.__usage__)
+            self.print_usage(self.do_yml.__usage__)
             return
 
         agent = self.get_agent(cmd.dict)
@@ -874,7 +877,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             elif arg == "no-license" or arg == "nolicense":
                 license_check = False
             else:
-                self.error(ERROR_USAGE, self.do_stop.__usage__)
+                self.print_usage(self.do_stop.__usage__)
+                return
 
         agent = self.get_agent(cmd.dict)
         if not agent:
