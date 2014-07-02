@@ -351,11 +351,44 @@ class MonitorApplication(PaletteRESTHandler):
 
         if not 'event' in req.GET or \
                     ('event' in req.GET and req.GET['event'] != 'false'):
+            event_status = "0"
+            event_type = "0"
+            event_site = 0
+            event_publisher = 0
+            event_project = 0
+
+            if 'status' in req.GET:
+                event_status = req.GET['status']
+            if 'type' in req.GET:
+                event_type = req.GET['type']
+            if 'site' in req.GET:
+                if req.GET['site'].isdigit():
+                    event_site = int(req.GET['site'])
+                else:
+                    print "Invalid event site:", req.GET['site']
+
+            if 'publisher' in req.GET:
+                if req.GET['publisher'].isdigit():
+                    event_publisher = int(req.GET['publisher'])
+                else:
+                    print "Invalid event publisher:", req.GET['publisher']
+
             if req.remote_user.roleid == Role.NO_ADMIN:
-                events = self.event.handle_get(req,
-                                publisher=req.remote_user.system_users_id)
-            else:
-                events = self.event.handle_get(req)
+                event_publisher = req.remote_user.system_users_id
+
+            if 'project' in req.GET:
+                if req.GET['project'].isdigit():
+                    event_project = int(req.GET['project'])
+                else:
+                    print "Invalid event project:", req.GET['project']
+
+            events = self.event.handle_get(req,
+                event_status=event_status,
+                event_type=event_type,
+                event_site=event_site,
+                event_publisher=event_publisher,
+                event_project=event_project)
+
             monitor_ret['events'] = events['events']
 
         return monitor_ret
