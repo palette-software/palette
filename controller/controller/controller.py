@@ -213,7 +213,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("agent not connected: displayname=%s uuid=%s" % \
               (agent_db.displayname, agent_db.uuid))
 
-        backup_path = ntpath.join(entry.vol_name + ":", entry.vol_path, backup)
+        vol_entry = AgentVolumesEntry.get_vol_entry_by_volid(entry.volid)
+        if not vol_entry:
+            return self.error("Missing volume id: %d!", entry.volid)
+
+        backup_path = ntpath.join(vol_entry.name + ":", vol_entry.path, backup)
         self.log.debug("backupdel_cmd: Deleting path '%s' on agent '%s'",
                                             backup_path, agent.displayname)
 
