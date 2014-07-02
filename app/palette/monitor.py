@@ -351,7 +351,11 @@ class MonitorApplication(PaletteRESTHandler):
 
         if not 'event' in req.GET or \
                     ('event' in req.GET and req.GET['event'] != 'false'):
-            events = self.event.handle_get(req)
+            if req.remote_user.roleid == Role.NO_ADMIN:
+                events = self.event.handle_get(req,
+                                publisher=req.remote_user.system_users_id)
+            else:
+                events = self.event.handle_get(req)
             monitor_ret['events'] = events['events']
 
         return monitor_ret

@@ -24,10 +24,6 @@ from s3 import S3
 from system import SystemEntry
 from state import StateManager
 from tableau import TableauProcess
-from sites import Site
-from projects import Project
-from data_connections import DataConnection
-from http_requests import HTTPRequestEntry
 
 from cli_errors import *
 
@@ -914,13 +910,6 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         self.ack()
-        # FIXME: wrap the backup in a function and check backup_first
-        # if backup_first: ...
-        self.server.log.debug("------------Starting Backup for Stop---------------")
-        stateman.update(StateManager.STATE_STARTED_BACKUP_STOP)
-        self.server.event_control.gen( \
-            EventControl.BACKUP_BEFORE_STOP_STARTED, agent.__dict__)
-
         # Before we do anything, do a license check, which automatically
         # sends an event if appropriate.
         if license_check:
@@ -931,25 +920,32 @@ class CliHandler(socketserver.StreamRequestHandler):
                 aconn.user_action_unlock()
                 return
 
-        body = self.server.backup_cmd(agent)
+        if backup_first:
+            self.server.log.debug(\
+                        "------------Starting Backup for Stop---------------")
+            stateman.update(StateManager.STATE_STARTED_BACKUP_STOP)
+            self.server.event_control.gen( \
+                EventControl.BACKUP_BEFORE_STOP_STARTED, agent.__dict__)
 
-        if self.success(body):
-            self.server.event_control.gen( \
-                EventControl.BACKUP_BEFORE_STOP_FINISHED,
-                dict(body.items() + agent.__dict__.items()))
-        else:
-            self.server.event_control.gen( \
-                EventControl.BACKUP_BEFORE_STOP_FAILED,
-                dict(body.items() + agent.__dict__.items()))
-            # Backup failed.  Will not attempt stop
-            msg = 'Backup failed.  Will not attempt stop'
-            if 'info' in body:
-                body['info'] += '\n' + msg
+            body = self.server.backup_cmd(agent)
+
+            if self.success(body):
+                self.server.event_control.gen( \
+                    EventControl.BACKUP_BEFORE_STOP_FINISHED,
+                    dict(body.items() + agent.__dict__.items()))
             else:
-                body['info'] = msg
-            self.report_status(body)
-            aconn.user_action_unlock()
-            return
+                self.server.event_control.gen( \
+                    EventControl.BACKUP_BEFORE_STOP_FAILED,
+                    dict(body.items() + agent.__dict__.items()))
+                # Backup failed.  Will not attempt stop
+                msg = 'Backup failed.  Will not attempt stop'
+                if 'info' in body:
+                    body['info'] += '\n' + msg
+                else:
+                    body['info'] = msg
+                self.report_status(body)
+                aconn.user_action_unlock()
+                return
 
         # Note: Make sure to set the state in the database before
         # we report "OK" back to the client since "OK" to the UI client
@@ -1298,37 +1294,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
         self.ack()
 
-        error_msg = ""
-        d = {}
-        body = Site.load(agent)
-        if self.failed(body):
-            error_msg += "Site load failure: " + body['error']
-        else:
-            d['sites'] = body['count']
+        body = self.server.sync_cmd(agent)
 
-        body = Project.load(agent)
         if self.failed(body):
-            error_msg += "Project load failure: " + body['error']
+            self.error(ERROR_COMMAND_FAILED, str(body))
         else:
-            d['projects'] = body['count']
-
-        body = HTTPRequestEntry.load(agent)
-        if self.failed(body):
-            error_msg += "HTTPRequest load failure: " + body['error']
-        else:
-            d['http-requests'] = body['count']
-
-        body = DataConnection.load(agent)
-        if self.failed(body):
-            error_msg += "DataConnection load failure: " + body['error']
-        else:
-            d['data-connections'] = body['count']
-
-        if error_msg:
-            d['error'] = error_msg
-            self.error(ERROR_COMMAND_FAILED, str(d))
-        else:
-            self.print_client("%s", json.dumps(d))
+            self.print_client("%s", json.dumps(body))
 
     @usage('system <SET|GET|DELETE> <key> [value]')
     def do_system(self, cmd):

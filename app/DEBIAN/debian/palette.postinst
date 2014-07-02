@@ -20,7 +20,7 @@ chmod 610 /etc/ssl/private/ssl-cert-palette-software.key
 # port 80/http site is used only to redirect to 443/https
 /usr/sbin/a2dissite 000-default
 
-/usr/sbin/a2ensite palette-software palette-software-ssl
+/usr/sbin/a2ensite palette-software.conf palette-software-ssl.conf
 
 mkdir -p /var/log/palette
 mkdir -p /opt/palette/plugins
