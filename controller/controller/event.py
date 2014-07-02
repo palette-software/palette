@@ -21,6 +21,8 @@ class EventEntry(meta.Base):
     color = Column(String)
     event_type = Column(String)
     userid = Column(Integer)
+    siteid = Column(Integer)
+    projectid = Column(Integer)
     creation_time = Column(DateTime, server_default=func.now())
 
 class EventManager(object):
@@ -30,7 +32,7 @@ class EventManager(object):
         self.envid = envid
 
     def add(self, key, title, description, level, icon, color, event_type,
-            userid=None, timestamp=None):
+            userid=None, siteid=None, projectid=None, timestamp=None):
         if timestamp is None:
             summary = time.strftime(self.DATEFMT)
         else:
