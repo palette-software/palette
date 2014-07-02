@@ -61,9 +61,14 @@ class BackupManager(object):
         session.commit()
 
     def find_by_name(self, name):
-        return meta.Session.query(BackupEntry).\
-            filter(BackupEntry.envid == self.envid).\
-            filter(BackupEntry.name == name).all()
+        try:
+            return meta.Session.query(BackupEntry).\
+                filter(BackupEntry.envid == self.envid).\
+                filter(BackupEntry.name == name).\
+                one()
+
+        except NoResultFound, e:
+            return None
 
     def get_primary_data_loc_vol_entry(self):
         try:
