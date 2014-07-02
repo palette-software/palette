@@ -887,7 +887,7 @@ class AgentHealthMonitor(threading.Thread):
 
         self.log.debug("Starting agent health monitor.")
 
-        while self.server.ping:
+        while not self.server.noping:
             if len(self.manager.agents) == 0:
                 # no agents to check on
                 # self.log.debug("no agents to ping")

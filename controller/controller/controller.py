@@ -1336,7 +1336,7 @@ def main():
         statusmon.start()
 
     server.stateman = StateManager(server)
-    server.ping = not args.noping
+    server.noping = not args.noping
 
     server.serve_forever()
 
