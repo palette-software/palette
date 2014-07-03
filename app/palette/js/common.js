@@ -195,8 +195,7 @@ function ($, topic, template)
         $('a.alert.warnings span').html(data['yellow']);
 
         var events = data['events'];
-        if (events == null || events.length == 0) return;
-        eventFilter.lastid = events[0]['eventid'];
+        if (events.length > 0) eventFilter.lastid = events[0]['eventid'];
 
         var rendered = template.render(event_list_template, data);
         if (eventFilter.changed) {
@@ -246,7 +245,7 @@ function ($, topic, template)
          * Broadcast the state change, if applicable.
          * NOTE: this method may lead to false positives, which is OK.
          */
-        if (json == current) {
+        if (json == current && !eventFilter.changed) {
             return;
         }
          
