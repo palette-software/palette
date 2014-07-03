@@ -22,8 +22,8 @@ install:
 # This rule will install using the debian packages
 #
 package_install:
-	gdebi -n controller/DEBIAN/controller_0.2_all.deb
-	gdebi -n app/DEBIAN/palette_0.2_all.deb
+	gdebi -n controller/DEBIAN/controller_1.0_all.deb
+	gdebi -n app/DEBIAN/palette_1.0_all.deb
 
 #
 # This rule will setup development pre-requisites
