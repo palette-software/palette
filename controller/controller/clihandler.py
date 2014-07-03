@@ -563,6 +563,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     # FIXME: print status too
     def list_agents(self):
+        session = meta.Session()
         agents = self.server.agentmanager.all_agents()
 
         if len(agents) == 0:
@@ -572,9 +573,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         # FIXME: print the agent state too.
         agent_dict_list = []
         for key in agents:
-            d = copy.copy(agents[key].connection.auth)
-            d['displayname'] = agents[key].displayname
-            agent_dict_list.append(d)
+            agent = session.merge(agents[key])
+            agent_dict_list.append(agent.todict())
         self.report_status({'agents': agent_dict_list})
 
     def list_backups(self):

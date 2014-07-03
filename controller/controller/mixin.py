@@ -2,6 +2,9 @@ from sqlalchemy import DateTime
 from akiri.framework.ext.sqlalchemy import meta
 from util import DATEFMT
 
+import os
+import json
+
 class BaseDictMixin(object):
 
     def todict(self, pretty=False, exclude=[]):
@@ -25,6 +28,7 @@ class BaseDictMixin(object):
 class BaseMixin(object):
 
     defaults = []
+    defaults_filename = None
     
     @classmethod
     def populate(cls):
@@ -32,7 +36,20 @@ class BaseMixin(object):
         entry = session.query(cls).first()
         if entry:
             return
-        for d in cls.defaults:
+        if not cls.defaults_filename is None:
+            rows = cls.populate_from_file(cls.defaults_filename)
+        else:
+            rows = cls.defaults
+        for d in rows:
             obj = cls(**d)
             session.add(obj)
         session.commit()
+
+    @classmethod
+    def populate_from_file(cls, filename):
+        path = os.path.dirname(os.path.realpath(__file__)) + "/" + filename
+  
+        with open(path, "r") as f:
+            rows = json.load(f)
+            return rows['RECORDS']
+
