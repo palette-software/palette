@@ -22,7 +22,9 @@ class EventApplication(RESTApplication):
 
         self.envid = Environment.get().envid
 
-    def handle_get(self, req, publisher=None):
+    def handle_get(self, req, event_status="0", event_type="0",
+                    event_site=0, event_publisher=0, event_project=0):
+
         # Event retrieval accepts:
         #   What should be selected from the event table:
         #       start: eventid or a date/time.  Requirement: start <= end
@@ -112,7 +114,9 @@ class EventApplication(RESTApplication):
                                         (start, type(start), end, (type(end)))
                 raise exc.HTTPBadRequest()
 
-        events = self.event_query(start, end, low, high, order, publisher)
+        events = self.event_query(start, end, low, high, order,
+            event_status, event_type, event_site, event_publisher,
+                                                            event_project)
 
         # Count the number of red, yellow and green events.
         red_count = len(meta.Session.query(EventEntry).\
@@ -134,14 +138,30 @@ class EventApplication(RESTApplication):
                  'red': red_count, 'yellow': yellow_count, 'green': green_count,
                  'events': events }
 
-    def event_query(self, start, end, low, high, order, publisher):
+    def event_query(self, start, end, low, high, order,
+            event_status, event_type, event_site, event_publisher,
+                                                            event_project):
+
 #        print "start:", start, ", end:", end, ", low:",low, ", high:", high,
 #        print ", order:", order
+#        print "event_status:", event_status, "event_type:", event_type, "event_site:", event_site, "event_publisher:", event_publisher, "event_project:", event_project
         query = meta.Session.query(EventEntry).\
             filter(EventEntry.envid == self.envid)
 
-        if publisher:
-            query = query.filter(publisher == EventEntry.userid)
+        if event_status != "0":
+            query = query.filter(EventEntry.level == event_status)
+
+        if event_type != "0":
+            query = query.filter(EventEntry.event_type == event_type)
+
+        if event_site != 0:
+            query = query.filter(EventEntry.siteid == event_site)
+
+        if event_publisher != 0:
+            query = query.filter(EventEntry.userid == event_publisher)
+
+        if event_project != 0:
+            query = query.filter(EventEntry.projectid == event_project)
 
         if type(start) == int or type(end) == int:
             # select based on an event-id
