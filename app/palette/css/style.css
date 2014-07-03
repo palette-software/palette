@@ -105,9 +105,9 @@ article.popup .popup-body {
     margin: 0 auto;
     display: inline-block;
     border-radius: 10px;
-    padding: 25px 45px;
+    padding: 25px 60px;
     width: 90%;
-    max-width: 600px; 
+    max-width: 400px;
     margin:0 auto;
     background-color: #fff;
     position: relative;
@@ -127,7 +127,7 @@ article.popup .shade {
     z-index: 9998;
 }
 article.popup p {
-    font-size: 28px;
+    font-size: 17px;
 }
 
 .secondary-side-bar {
@@ -177,6 +177,7 @@ article.popup p {
 }
 .secondary-side-bar h5.backup-page, .secondary-side-bar h5.logs-page {
     margin-top: 50px;
+    color: #8e96a3;
 }
 .secondary-side-bar h5 i {
     text-align: left;
@@ -273,6 +274,7 @@ article.popup p {
     white-space: nowrap;
     display: block;
     float: left;
+    color:#c9cbcf;
 }
 .secondary-side-bar ul.server-list > li > a {
     height: 100px;
@@ -648,7 +650,8 @@ ul.processes.visible {
 
 .secondary-side-bar ul.processes > li {
     padding: 4px 15px 4px 15px;
-    font-size: 12px;
+    font-size: 13px;
+    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
 }
 .main-side-bar > ul.actions {
     margin: 0;
@@ -891,6 +894,10 @@ ul.processes.visible {
     border-bottom: 2px solid #5F6670;
     padding: 10px 0 0 0;
     margin: 0;
+    font-family: "Proxima Nova Semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 14px;
+    color: #5F6670;
+    text-transform: uppercase;
 }
 .dynamic-content input[type="text"] {
     width: 50%;
@@ -1077,7 +1084,7 @@ label:first-of-type {
     background-color: #a2adbd;
     width: 100%;
     font-weight: 500;
-    padding: 12px 0;
+    padding: 9px 0;
     text-transform: uppercase;
     outline: 0;
     border: 0;
@@ -1152,6 +1159,7 @@ ul.checkbox li label, ul.radio li label {
     font-weight: 300;
     float: left;
     line-height: 28px;
+    font-size: 17px;
 }
 
 ul.checkbox li input[type="checkbox"], ul.radio li input[type="radio"] {
@@ -1161,7 +1169,7 @@ ul.checkbox li input[type="checkbox"], ul.radio li input[type="radio"] {
     float: right;
     position: absolute;
     top: 50%;
-    margin-top: -8px;
+    margin-top: 1px;
     right: 0;
     z-index: 0;
 }
@@ -1179,7 +1187,7 @@ ul.checkbox li label span, ul.radio li label span {
     position: absolute;
     top: 50%;
     pointer-events: none;
-    margin-top: -9px;
+    margin-top: -1px;
     right: 0;
     z-index: 2;
     -webkit-transition: all 0.2s ease-out;
