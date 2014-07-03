@@ -353,7 +353,7 @@ class AgentManager(threading.Thread):
         return d
 
     def update_agent_pinfo(self, agent, pinfo):
-        """Note: DO not call this method unless the agent_type
+        """Note: Do not call this method unless the agent_type
            is known and has been set."""
 
         if not agent.agent_type:
@@ -887,7 +887,7 @@ class AgentHealthMonitor(threading.Thread):
 
         self.log.debug("Starting agent health monitor.")
 
-        while self.server.ping:
+        while not self.server.noping:
             if len(self.manager.agents) == 0:
                 # no agents to check on
                 # self.log.debug("no agents to ping")

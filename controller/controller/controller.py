@@ -213,7 +213,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("agent not connected: displayname=%s uuid=%s" % \
               (agent_db.displayname, agent_db.uuid))
 
-        backup_path = ntpath.join(entry.vol_name + ":", entry.vol_path, backup)
+        vol_entry = AgentVolumesEntry.get_vol_entry_by_volid(entry.volid)
+        if not vol_entry:
+            return self.error("Missing volume id: %d!", entry.volid)
+
+        backup_path = ntpath.join(vol_entry.name + ":", vol_entry.path, backup)
         self.log.debug("backupdel_cmd: Deleting path '%s' on agent '%s'",
                                             backup_path, agent.displayname)
 
@@ -1141,9 +1145,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 return False
         else:
             if self.agentmanager.is_tableau_worker(agent.ip_address):
-                aconn.agent_type = AgentManager.AGENT_TYPE_WORKER
+                agent.agent_type = aconn.agent_type = \
+                                    AgentManager.AGENT_TYPE_WORKER
             else:
-                aconn.agent_type = AgentManager.AGENT_TYPE_ARCHIVE
+                agent.agent_type = aconn.agent_type = \
+                                    AgentManager.AGENT_TYPE_ARCHIVE
 
         # This saves everthing from pinfo including volume info.
         self.agentmanager.update_agent_pinfo(agent, pinfo)
@@ -1336,7 +1342,7 @@ def main():
         statusmon.start()
 
     server.stateman = StateManager(server)
-    server.ping = not args.noping
+    server.noping = not args.noping
 
     server.serve_forever()
 
