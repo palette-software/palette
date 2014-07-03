@@ -353,7 +353,7 @@ class AgentManager(threading.Thread):
         return d
 
     def update_agent_pinfo(self, agent, pinfo):
-        """Note: DO not call this method unless the agent_type
+        """Note: Do not call this method unless the agent_type
            is known and has been set."""
 
         if not agent.agent_type:
