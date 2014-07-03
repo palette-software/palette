@@ -93,7 +93,7 @@ class ExtractManager(object):
 
     def eventgen(self, key, data, userid, siteid, timestamp=None):
         return self.server.event_control.gen(key, data, userid=userid,
-                                                        siteid=site_id,
+                                                        siteid=siteid,
                                                         timestamp=timestamp)
 
     @classmethod
