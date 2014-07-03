@@ -1145,9 +1145,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 return False
         else:
             if self.agentmanager.is_tableau_worker(agent.ip_address):
-                aconn.agent_type = AgentManager.AGENT_TYPE_WORKER
+                agent.agent_type = aconn.agent_type = \
+                                    AgentManager.AGENT_TYPE_WORKER
             else:
-                aconn.agent_type = AgentManager.AGENT_TYPE_ARCHIVE
+                agent.agent_type = aconn.agent_type = \
+                                    AgentManager.AGENT_TYPE_ARCHIVE
 
         # This saves everthing from pinfo including volume info.
         self.agentmanager.update_agent_pinfo(agent, pinfo)
