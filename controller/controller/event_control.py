@@ -7,6 +7,7 @@ from sqlalchemy import Column, Integer, BigInteger, String, Boolean
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
+from profile import UserProfile
 
 from mixin import BaseMixin
 
@@ -507,6 +508,21 @@ class EventControlManager(object):
         if 'exit-status' in data:
             data['exit_status'] = data['exit-status']
 
+        # The userid for extracts is the Tableau "system_users_id".
+        # The userid for other events is the "userid".
+        # (Both in the "users" table.)
+        if not 'username' not in data and userid:
+            if key == "EXTRACT-OK" or key == "EXTRACT-FAILED":
+                user_profile = UserProfile.get_by_system_users_id(userid)
+            else:
+                user_profile = UserProfile.get(userid)
+
+            if user_profile:
+                if user_profile.friendly_name:
+                    data['username'] = user_profile.friendly_name
+                else:
+                    data['username'] = user_profile.name
+
         # Use the data dict for template substitution.
         try:
             subject = subject % data
@@ -541,6 +557,9 @@ class EventControlManager(object):
 
         description = ""
 
+        if data.has_key('username'):
+            description += "Requested by user: %s\n" % data['username']
+            
         if data.has_key('displayname'):
             description += "Agent: %s\n" % data['displayname']
 
