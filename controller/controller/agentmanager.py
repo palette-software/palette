@@ -173,10 +173,10 @@ class AgentManager(threading.Thread):
         for key in self.agents:
             a = self.agents[key]
             if a.uuid == body['uuid']:
-                self.log.info("Agent already connected with name '%s': " + \
+                self.log.info("Agent already connected with uuid '%s': " + \
                     "will remove it and use the new connection.", body['uuid'])
                 self.remove_agent(a, ("An agent is already connected " + \
-                    "named '%s': will remove it and use the new " + \
+                    "with uuid '%s': will remove it and use the new " + \
                         "connection.") % (body['uuid']), gen_event=False)
                 break
             elif new_agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
@@ -194,7 +194,14 @@ class AgentManager(threading.Thread):
             agent.displayname = displayname
             agent.display_order = display_order
 
-        self.log.debug("stuff is %s, name: %s", str(agent.connection), agent.displayname)
+        # If a previously connected agent was removed, above,
+        # in "remove_agent()", the agent's last_disconnect_time was
+        # updated.  Update the "last_connection_time" now to make
+        # sure the connection time is later than the disconnect time
+        # for the agent.
+        agent.last_connection_time = func.now()
+
+        self.log.debug("register agent: %s", agent.displayname)
         self.agents[agent.uuid] = agent
 
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
