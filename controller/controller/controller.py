@@ -1289,6 +1289,7 @@ def main():
     server.log = log
     server.cli_get_status_interval = \
       config.getint('controller', 'cli_get_status_interval', default=10)
+    server.noping = args.noping
 
     Domain.populate()
     domainname = config.get('palette', 'domainname')
@@ -1342,8 +1343,6 @@ def main():
         statusmon.start()
 
     server.stateman = StateManager(server)
-    server.noping = not args.noping
-
     server.serve_forever()
 
 if __name__ == '__main__':
