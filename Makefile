@@ -37,6 +37,4 @@ development:
 	gdebi -n akiri.framework-sqlalchemy_0.1_all.deb
 	wget https://www.akirisolutions.com/download/framework/python-apscheduler_2.1.2-1ubuntu1_all.deb
 	gdebi -n python-apscheduler_2.1.2-1ubuntu1_all.deb
-	apt-get install pip
-	pip install python-dateutil
-	pip install boto
+	apt-get install python-docutils python-sphinx postgresql python-sqlalchemy python-psycopg2 python-boto python-dateutil postfix
