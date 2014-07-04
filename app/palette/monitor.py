@@ -15,7 +15,6 @@ from controller.state import StateManager
 from controller.agent import Agent
 from controller.agentmanager import AgentManager
 from controller.agentinfo import AgentVolumesEntry
-from controller.domain import Domain
 from controller.firewall_manager import FirewallEntry, FirewallManager
 from controller.profile import UserProfile, Role
 from controller.state_control import StateControl
