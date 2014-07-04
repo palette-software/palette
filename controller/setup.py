@@ -10,4 +10,9 @@ setup(name='controller',
       url='http://www.palette-software.com',
       scripts = [],
       data_files = [],
+      include_package_data=True,
+      package_data={
+        '':
+          ['*.json']
+      },
       packages=find_packages())

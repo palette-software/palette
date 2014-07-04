@@ -46,6 +46,15 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
         return entry
 
     @classmethod
+    def get_by_system_users_id(cls, system_users_id):
+        try:
+            entry = meta.Session.query(UserProfile).\
+                    filter(UserProfile.system_users_id == system_users_id).one()
+        except NoResultFound, e:
+            entry = None
+        return entry
+
+    @classmethod
     def get_by_name(cls, name):
         try:
             entry = meta.Session.query(UserProfile).\
