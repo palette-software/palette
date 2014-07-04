@@ -498,7 +498,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         copy_body = self.cli_cmd(command, dst, env=env)
         return copy_body
 
-    def restore_cmd(self, agent, target, orig_state):
+    def restore_cmd(self, agent, target, orig_state, userid=None):
         """Do a tabadmin restore of the passed target, except
            the target is the format:
                 source-displayname-or-gcsname:pathname
@@ -601,7 +601,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     return body
 
         # The restore file is now on the Primary Agent.
-        self.event_control.gen(EventControl.RESTORE_STARTED, agent.__dict__)
+        self.event_control.gen(EventControl.RESTORE_STARTED, agent.__dict__,
+                                                                userid=userid)
 
         reported_status = self.statusmon.get_reported_status()
 

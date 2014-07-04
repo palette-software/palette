@@ -71,9 +71,20 @@ class Telnet(object):
                                   "telnet_hostname",
                                   default="localhost")
 
-    def send_cmd(self, cmd, sync=False):
+    def send_cmd(self, cmd, req=None, sync=False):
         # Start and stop commands are always sent to the primary.
         preamble = "/domainid=%d /type=primary" % (self.app.domain.domainid)
+
+        if req:
+            if isinstance(req.remote_user, basestring):
+                remote_user_profile = UserProfile.get_by_name(req.remote_user)
+            else:
+                remote_user_profile = \
+                                UserProfile.get_by_name(req.remote_user.name)
+
+            userid = remote_user_profile.userid
+            preamble += " /userid=%d" % userid
+
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         conn.connect((self.hostname, self.port))
         s = conn.makefile('w+', 1)
