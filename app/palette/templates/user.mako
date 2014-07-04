@@ -31,7 +31,7 @@
         </div>
         <div class="col2">
           <p>{{tableau-info}}</p>
-          <p>Palette {{admin-type}}</p>
+          <p class="admin-type">Palette {{admin-type}}</p>
         </div>
       </div>
       <i class="fa fa-fw fa-angle-down expand"></i>
