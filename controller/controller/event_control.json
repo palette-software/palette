@@ -446,7 +446,7 @@
 "send_email":"t",
 "subject":"Failed Extract(s) Refresh for Workbook '%(title)s'",
 "event_description":"${notes}",
-"email_message":null,
+"email_message":"Agent: ${displayname}\nWorkbook: ${title}\nDetails: ${notes}",
 "icon":null,
 "color":"red",
 "event_type":"extract"
