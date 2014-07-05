@@ -36,7 +36,7 @@ class ManageApplication(PaletteRESTHandler):
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_start(self, req):
-        self.telnet.send_cmd('start')
+        self.telnet.send_cmd('start', req=req)
         return {}
 
     @required_role(Role.MANAGER_ADMIN)
@@ -46,7 +46,7 @@ class ManageApplication(PaletteRESTHandler):
             cmd = cmd + ' nobackup'
         if not self.getbool(req, 'license'):
             cmd = cmd + ' nolicense'
-        self.telnet.send_cmd(cmd)
+        self.telnet.send_cmd(cmd, req=req)
         return {}
 
     @required_parameters('action')

@@ -19,7 +19,7 @@ setup(name='palette',
 	    ['templates/*', 'data/*',
              'images/*', 'img/*',
              'js/*.js', 'js/templates/*', 'css/*.css', 'js/vendor/*.js',
-             'fonts/svgs/*', 'fonts/*.eot', 'fonts/*.svg', 'fonts/*.tff', 'fonts/*.woff']
+             'fonts/svgs/*', 'fonts/*.eot', 'fonts/*.svg', 'fonts/*.tff', 'fonts/*.woff', 'fonts/*.css', 'fonts/webfonts/*.woff', 'fonts/webfonts/*.ttf']
         },
     data_files = [],
     zip_safe=False,

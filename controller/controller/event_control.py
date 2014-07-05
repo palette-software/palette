@@ -7,6 +7,7 @@ from sqlalchemy import Column, Integer, BigInteger, String, Boolean
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
+from profile import UserProfile
 
 from mixin import BaseMixin
 
@@ -134,319 +135,7 @@ class EventControl(meta.Base, BaseMixin):
                 L.append(getattr(cls, t))
         return L
 
-    # fixme: Init the event_control table elsewhere.
-    defaults = [
-            {'key': INIT_STATE_STARTED,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_STATUS,
-                'subject':
-                        'Controller started.  Initial tableau state: running',
-                'send_email': True,
-                'color': 'green'},
-
-            {'key':INIT_STATE_STOPPED,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_STATUS,
-                'subject':
-                        'Controller started.  Initial tableau state: stopped',
-                'send_email': True,
-                'color': 'green'},
-
-            {'key': INIT_STATE_DEGRADED,
-                'level':LEVEL_INFO,
-                'event_type': TYPE_STATUS,
-                'subject':
-                        'Controller started.  Initial tableau state: degraded',
-                'send_email': True,
-                'color': 'green'},
-
-            {'key': STATE_STARTED,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_STATUS,
-                'subject': 'Tableau server running',
-                'send_email': True,
-                'color': 'green'},
-
-            {'key': STATE_STOPPED,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_STATUS,
-                'subject': 'Tableau server stopped',
-                'send_email': True,
-                'color': 'green'},
-
-            {'key': STATE_DEGRADED,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_STATUS,
-                'subject': 'Tableau server degraded',
-                'send_email': True,
-                'color': 'yellow'},
-
-            {'key': BACKUP_STARTED,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_BACKUP,
-                'subject': 'Backup Started',
-                'send_email': True,
-                'color': 'green'},
-
-            {'key': BACKUP_FINISHED,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_BACKUP,
-                'subject': 'Backup Finished',
-                'send_email': True,
-                'color': 'green'},
-
-            {'key': BACKUP_FAILED,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_BACKUP,
-                'subject': 'Backup Failed',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': BACKUP_BEFORE_STOP_STARTED,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_BACKUP,
-                'subject': 'Backup Before Stop Started',
-                'send_email': True,
-                'color': 'green'},
-
-            {'key': BACKUP_BEFORE_STOP_FINISHED,
-                'level':LEVEL_INFO,
-                'event_type': TYPE_BACKUP,
-                'subject': 'Backup Before Stop Finished',
-                'send_email': True,
-                'color': 'green'},
-
-            {'key': BACKUP_BEFORE_STOP_FAILED,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_BACKUP,
-                'subject': 'Backup Before Stop Failed',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': BACKUP_BEFORE_RESTORE_STARTED,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_RESTORE,
-                'subject': 'Backup Before Restore Started',
-                'send_email': True,
-                'color': 'green'},
-
-            {'key': BACKUP_BEFORE_RESTORE_FINISHED,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_RESTORE,
-                'subject': 'Backup Before Restore Finished',
-                'send_email': True,
-                'color': 'green'},
-
-            {'key': BACKUP_BEFORE_RESTORE_FAILED,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_RESTORE,
-                'subject': 'Backup Before Restore Failed',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': RESTORE_STARTED,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_RESTORE,
-                'subject': 'Restore Started',
-                'send_email': True,
-                'color': 'green'},
-
-            {'key': RESTORE_FINISHED,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_RESTORE,
-                'subject': 'Restore Finished',
-                'send_email': True,
-                'color': 'green'},
-
-            {'key': RESTORE_FAILED,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_RESTORE,
-                'subject': 'Restore Failed',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': TABLEAU_START_FAILED,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_STATUS,
-                'subject': 'Tableau Start Failed',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': MAINT_START_FAILED,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_MAINT_SERVER,
-                'subject': 'Could not start Maintenance Web Server',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': MAINT_STOP_FAILED,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_MAINT_SERVER,
-                'subject': 'Could not stop Maintenance Web Server',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': MAINT_OFFLINE,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_MAINT_SERVER,
-                'subject': 'Maintenance web page is now offline',
-                'send_email': True,
-                'color': 'green'},
-
-            {'key': MAINT_ONLINE,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_MAINT_SERVER,
-                'subject': 'Maintenance web page is now online',
-                'send_email': True,
-                'color': 'green'},
-
-            {'key': ARCHIVE_START_FAILED,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_MAINT_SERVER,
-                'subject': 'Could not start Archive Web Server',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': ARCHIVE_STOP_FAILED,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_MAINT_SERVER,
-                'subject': 'Could not stop Archive Web Server',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': AGENT_COMM_LOST,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_AGENT,
-                'subject': 'Communication lost with agent',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': AGENT_FAILED_STATUS,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_AGENT,
-                'subject': 'Failed status from agent',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': AGENT_RETURNED_INVALID_STATUS,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_AGENT,
-                'subject': 'Agent returned invalid status',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': AGENT_DISCONNECT,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_AGENT,
-                'subject': 'Agent disconnected',
-                'send_email': True,
-                'color': 'red'},
-
-            ###
-            {'key': LICENSE_INVALID,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_TABLEAU,
-                'subject': 'License invalid',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': LICENSE_EXPIRED,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_TABLEAU,
-                'subject': 'License expired',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': LICENSE_RENEWAL,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_TABLEAU,
-                'subject': 'License renewal',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': PERMISSION,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_AGENT,
-                'subject': 'Permission error',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': AGENT_COMMUNICATION,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_AGENT,
-                'subject': 'Agent communication',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': MAINT_WEB,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_MAINT_SERVER,
-                'subject': 'Maintenance web server',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': TABLEAU_USER_TABLE,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_TABLEAU,
-                'subject': 'Tableau User Table',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': TABLEAU_SYSTEM_TABLE,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_TABLEAU,
-                'subject': 'Tableau System Table',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': SCHEDULED_JOB_STARTED,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_SCHED,
-                'subject': 'Scheduled job started',
-                'send_email': True,
-                'color': 'green'},
-
-            {'key': SCHEDULED_JOB_FAILED,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_SCHED,
-                'subject': 'Scheduled job failed',
-                'send_email': True,
-                'color': 'red'},
-            {'key': EXTRACT_OK,
-                'level': LEVEL_INFO,
-                'event_type': TYPE_EXTRACT,
-                'subject': "Extract '%(title)s' completed successfully",
-                'send_email': False,
-                'color': 'green'},
-            {'key': EXTRACT_FAILED,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_EXTRACT,
-                'subject': "Extract '%(title)s' failed",
-                'event_description': '%(notes)s',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': ZIPLOGS_FAILED,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_TABLEAU,
-                'subject': 'ziplogs failed',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': CLEANUP_FAILED,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_TABLEAU,
-                'subject': 'tabadmin cleanup failed',
-                'send_email': True,
-                'color': 'red'},
-
-            {'key': FIREWALL_OPEN_FAILED,
-                'level': LEVEL_ERROR,
-                'event_type': TYPE_AGENT,
-                'subject': 'firewall open failed',
-                'send_email': True,
-                'color': 'red'}
-        ]
+    defaults_filename = 'event_control.json'
 
 class EventControlManager(object):
     DATEFMT = "%I:%M %p PDT on %B %d, %Y"
@@ -507,6 +196,21 @@ class EventControlManager(object):
         if 'exit-status' in data:
             data['exit_status'] = data['exit-status']
 
+        # The userid for extracts is the Tableau "system_users_id".
+        # The userid for other events is the "userid".
+        # (Both in the "users" table.)
+        if not 'username' not in data and userid:
+            if key == "EXTRACT-OK" or key == "EXTRACT-FAILED":
+                user_profile = UserProfile.get_by_system_users_id(userid)
+            else:
+                user_profile = UserProfile.get(userid)
+
+            if user_profile:
+                if user_profile.friendly_name:
+                    data['username'] = user_profile.friendly_name
+                else:
+                    data['username'] = user_profile.name
+
         # Use the data dict for template substitution.
         try:
             subject = subject % data
@@ -540,6 +244,9 @@ class EventControlManager(object):
         """Create a default event message given the incoming dictionary."""
 
         description = ""
+
+        if data.has_key('username'):
+            description += "Requested by user: %s\n" % data['username']
 
         if data.has_key('displayname'):
             description += "Agent: %s\n" % data['displayname']

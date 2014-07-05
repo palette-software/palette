@@ -102,38 +102,60 @@ function ($, topic, template)
     }
 
     /*
+     * ddClick
+     * Click handler for dropdowns : attached to the <li> tag.
+     */
+    function ddClick(event) {
+        event.preventDefault();
+        var parent = $(this).closest('div');
+        var a = $(this).find('a');
+        var div =  $(this).parent().siblings().find('div')
+        var href = a.attr('href');
+        var id = a.attr('data-id');
+
+        success = function(data) {
+            var value = a.text();
+            div.text(value);
+            if (id != null) div.attr('data-id', id);
+            var cb = parent.data('callback');
+            if (cb) cb(parent[0], value);
+        }
+
+        if (!href || href == '#') {
+            success();
+            return;
+        }
+        data = customDataAttributes(a);
+        $.ajax({
+            type: 'POST',
+            url: href,
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: success,
+            error: ajaxError,
+        });
+    }
+
+    /*
      * setupDropdowns()
      * Enable the select-like elements created with the dropdown class.
      */
-    function setupDropdowns(f) {
+    function setupDropdowns() {
         $('.dropdown-menu li').off('click');
-        $('.dropdown-menu li').bind('click', function(event) {
-            event.preventDefault();
-            var a = $(this).find('a');
-            var div =  $(this).parent().siblings().find('div')
-            var href = a.attr('href');
-            var id = a.attr('data-id');
-            if (!href || href == '#') {
-                div.text(a.text());
-                if (id != null) div.attr('data-id', id);
-                return;
-            }
-            data = customDataAttributes(a);
-            $.ajax({
-                type: 'POST',
-                url: href,
-                data: data,
-                dataType: 'json',
-                async: false,
-            
-                success: function(data) {
-                    div.text(a.text());
-                    if (id != null) div.attr('data-id', id);
-                },
-                error: ajaxError,
-            });
-        });
+        $('.dropdown-menu li').bind('click', ddClick);
     }
+
+    /*
+     * setupEventDropdowns()
+     * Enable the Event filters - if present.
+     */
+    function setupEventDropdowns() {
+        $('.dropdown-menu li').off('click');
+        $('.dropdown-menu li').bind('click', ddClick);
+    }
+
 
     /*
      * setupConfigure
@@ -166,6 +188,7 @@ function ($, topic, template)
             $(this).parent().find('ul.processes').toggleClass('visible');
         });
     }
+
 
 
     /*
@@ -201,7 +224,6 @@ function ($, topic, template)
         if (eventFilter.changed) {
             $('#event-list').html(rendered);
             eventFilter.changed = false;
-            console.log('cleared');
         } else {
             var html = rendered + '\n' + $('#event-list').html();
             $('#event-list').html(html);
@@ -213,7 +235,7 @@ function ($, topic, template)
             $('#'+d['name']+'-dropdown').html(rendered);
         }
 
-        setupDropdowns();
+        setupEventDropdowns();
         bindEvents();
     }
 

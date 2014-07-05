@@ -31,7 +31,7 @@ class BackupApplication(PaletteRESTHandler):
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_backup(self, req):
-        self.telnet.send_cmd("backup")
+        self.telnet.send_cmd("backup", req=req)
         now = time.strftime('%A, %B %d at %I:%M %p')
         return {'last': now }
 
@@ -49,15 +49,15 @@ class BackupApplication(PaletteRESTHandler):
             return {}
 
         if backup_entry.volid:
-            return self.handle_restore_from_vol(backup_entry)
+            return self.handle_restore_from_vol(backup_entry, req)
         elif backup_entry.gcsid:
-            return self.handle_restore_from_gcs(backup_entry)
+            return self.handle_restore_from_gcs(backup_entry, req)
         else:
             print >> sys.stderr, \
                 "Error: Don't yet support backup from S3."
             return {}
 
-    def handle_restore_from_gcs(self, backup_entry):
+    def handle_restore_from_gcs(self, backup_entry, req):
         gcs_entry = GCS.get_by_gcsid_envid(backup_entry.gcsid,
                                                     self.environment.envid)
         if not gcs_entry:
@@ -67,10 +67,10 @@ class BackupApplication(PaletteRESTHandler):
             return {}
 
         self.telnet.send_cmd('restore "%s:%s"' % 
-                                (gcs_entry.name, backup_entry.name))
+                                (gcs_entry.name, backup_entry.name), req=req)
         return {}
 
-    def handle_restore_from_vol(self, backup_entry):
+    def handle_restore_from_vol(self, backup_entry, req):
         """The backup is on a volume (not gcs or S3)."""
         displayname = self.get_displayname_by_volid(backup_entry.volid)
         if not displayname:
@@ -87,7 +87,7 @@ class BackupApplication(PaletteRESTHandler):
             return {}
 
         self.telnet.send_cmd('restore "%s:%s/%s"' % \
-                (displayname, vol_entry.name, backup_entry.name))
+                (displayname, vol_entry.name, backup_entry.name), req=req)
 
         return {}
 
