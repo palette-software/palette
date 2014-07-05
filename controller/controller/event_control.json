@@ -483,6 +483,39 @@
 "icon":null,
 "color":"red",
 "event_type":"agent"
+},
+{
+"key":"DISK-USAGE-ABOVE-HIGH-WATERMARK",
+"level":"E",
+"send_email":"t",
+"subject":"Disk usage above high watermark",
+"event_description":null,
+"email_message":null,
+"icon":null,
+"color":"red",
+"event_type":"agent"
+},
+{
+"key":"DISK-USAGE-ABOVE-LOW-WATERMARK",
+"level":"W",
+"send_email":"t",
+"subject":"Disk usage above low watermark",
+"event_description":null,
+"email_message":null,
+"icon":null,
+"color":"yellow",
+"event_type":"agent"
+},
+{
+"key":"DISK-USAGE-OKAY",
+"level":"I",
+"send_email":"t",
+"subject":"Disk usage is now okay",
+"event_description":null,
+"email_message":null,
+"icon":null,
+"color":"green",
+"event_type":"agent"
 }
 ]
 }
