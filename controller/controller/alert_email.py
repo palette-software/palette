@@ -62,7 +62,7 @@ class AlertEmail(object):
                 filter(UserProfile.system_users_id == data['system_users_id']).\
                 filter(UserProfile.email != "").\
                 one()
-        except NoResultfound, e:
+        except NoResultFound, e:
             return []
 
         return [entry.email]
