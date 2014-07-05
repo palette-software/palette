@@ -90,7 +90,7 @@ class UserApplication(PaletteRESTHandler):
         if req.POST['action'].lower() != 'refresh':
             raise exc.HTTPBadRequest()
         try:
-            self.telnet.send_cmd('auth import', sync=True)
+            self.telnet.send_cmd('auth import', req=req, sync=True)
         except RuntimeError:
             pass
         return self.handle_GET(req)

@@ -11,7 +11,9 @@
   <h2>Version ${obj.version}</h2>
   <div>
     <p>&copy; 2014 Palette Software</p>
-    <p>License Key </p>
+%if obj.license_key:
+    <p>License Key: ${obj.license_key}</p>
+%endif
     <p>The use of this product is subject to the terms of the Palette End User Agreement, unless other specified therein.</p>
   </div>
 
