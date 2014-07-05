@@ -15,7 +15,6 @@ from controller.state import StateManager
 from controller.agent import Agent
 from controller.agentmanager import AgentManager
 from controller.agentinfo import AgentVolumesEntry
-from controller.domain import Domain
 from controller.firewall_manager import FirewallEntry, FirewallManager
 from controller.profile import UserProfile, Role
 from controller.state_control import StateControl
@@ -206,14 +205,14 @@ class MonitorApplication(PaletteRESTHandler):
         # FIXME: hack
         if isinstance(req.remote_user, basestring):
             req.remote_user = UserProfile.get_by_name(req.remote_user)
+
+        allowable_actions = []
         if req.remote_user.roleid >= Role.MANAGER_ADMIN:
             # Convert the space-sparated string to a list, e.g.
             # "start stop reset" --> ["start", "stop", "reset"]
-            allowable_actions = state_control_entry.allowable_actions.split(' ')
-        else:
-            allowable_actions = []
-
-        text = state_control_entry.text
+            s = state_control_entry.allowable_actions
+            if s:
+                allowable_actions = s.split(' ')
 
         # The overall color starts at the state_control color.
         # It can get worse (e.g. green to yellow or red) , but not better
@@ -342,7 +341,7 @@ class MonitorApplication(PaletteRESTHandler):
 
         monitor_ret = {'state': main_state,
                        'allowable-actions': allowable_actions,
-                       'text': text,
+                       'text': state_control_entry.text,
                        'color': Colors.color_to_str[color_num],
                        'user-action-in-progress': user_action_in_progress,
                        'environments': environments,
