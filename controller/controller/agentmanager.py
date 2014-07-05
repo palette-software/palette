@@ -30,7 +30,6 @@ from akiri.framework.ext.sqlalchemy import meta
 # fixme: maybe combine with the Agent class.
 class AgentConnection(object):
 
-    TABLEAU_DATA_DIR = ntpath.join("ProgramData", "Tableau", "Tableau Server")
     DATA_DIR = "Data"
 
     def __init__(self, server, conn, addr):
@@ -189,11 +188,6 @@ class AgentManager(threading.Thread):
                             "remove it and keep the new primary agent " + \
                             "connection.", gen_event=False)
 
-        if agent.displayname is None or agent.displayname == "":
-            (displayname, display_order) = self.calc_new_displayname(agent.connection)
-            agent.displayname = displayname
-            agent.display_order = display_order
-
         # If a previously connected agent was removed, above,
         # in "remove_agent()", the agent's last_disconnect_time was
         # updated.  Update the "last_connection_time" now to make
@@ -202,6 +196,7 @@ class AgentManager(threading.Thread):
         agent.last_connection_time = func.now()
 
         self.log.debug("register agent: %s", agent.displayname)
+
         self.agents[agent.uuid] = agent
 
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
@@ -213,7 +208,7 @@ class AgentManager(threading.Thread):
             # worker agents.  For example, a worker may have
             # connected before the primary ever connected with its
             # yml file that tells us the ip addresses of workers.
-            self.set_agent_types()
+            self.set_all_agent_types()
 
             # Tell the status thread to start getting status on
             # the new primary.
@@ -226,7 +221,7 @@ class AgentManager(threading.Thread):
         session.expunge(agent)
         return True
 
-    def set_agent_types(self):
+    def set_all_agent_types(self):
         """Look through the list of agents and reclassify archive agents as
         worker agents if needed.  For example, a worker may have
         connected and set as "archive" before the primary ever connected
@@ -359,8 +354,13 @@ class AgentManager(threading.Thread):
         session.commit()
         return d
 
-    def update_agent_pinfo(self, agent, pinfo):
-        """Note: Do not call this method unless the agent_type
+    def update_agent_pinfo_dirs(self, agent, pinfo):
+        """Update the directory information returned from pinfo.
+           We do not update the volume-related information here,
+           since a disk-usage event requires a displayname and
+           we may not know the displayname yet.
+
+           Note: Do not call this method unless the agent_type
            is known and has been set."""
 
         if not agent.agent_type:
@@ -369,7 +369,39 @@ class AgentManager(threading.Thread):
            
         agentid = agent.agentid
 
+        # FIXME: make automagic based on self.__table__.columns
+        # Below are the only ones really needed as the others come
+        # from 'auth' and are unrelated to tableau.
+        if 'tableau-install-dir' in pinfo:
+            agent.tableau_install_dir = pinfo['tableau-install-dir']
+        if 'tableau-data-dir' in pinfo:
+            agent.tableau_data_dir = pinfo['tableau-data-dir']
+        if 'tableau-data-size' in pinfo:
+            agent.tableau_data_size = pinfo['tableau-data-size']
+
+        return True
+
+    def update_agent_pinfo_vols(self, agent, pinfo):
+        """Update volume-related information from pinfo.
+           Checks the disk-usage of each volume and generates an
+           alert if above a disk watermark.
+           
+           This should be called only after the agent displayname
+           and type are known.."""
+
+        if not agent.displayname:
+            self.log.error("Unknown agent displayname for agent.")
+            return False
+
+        if not agent.agent_type:
+            self.log.error("Unknown agent type for agent: %s",
+                                                    agent.displayname)
+            return False
+
         session = meta.Session()
+
+        agentid = agent.agentid
+
         # Set all of the agent volumes to 'inactive'.
         # Each volume pinfo sent us will later be set to 'active'.
         session.query(AgentVolumesEntry).\
@@ -383,18 +415,12 @@ class AgentManager(threading.Thread):
                            aconn.auth['install-dir'])
             return False
 
+
         install_dir_vol_name = parts[0].upper()
         install_data_dir = ntpath.join(parts[1], AgentConnection.DATA_DIR)
 
-        # FIXME: make automagic based on self.__table__.columns
-        # Below are the only ones really needed as the others come
-        # from 'auth' and are unrealted to tableau.
-        if 'tableau-install-dir' in pinfo:
-            agent.tableau_install_dir = pinfo['tableau-install-dir']
-        if 'tableau-data-dir' in pinfo:
-            agent.tableau_data_dir = pinfo['tableau-data-dir']
-        if 'tableau-data-size' in pinfo:
-            agent.tableau_data_size = pinfo['tableau-data-size']
+        (low_water,high_water) = \
+            self.disk_watermark('low'), self.disk_watermark('high')
 
         if 'volumes' in pinfo:
             for volume in pinfo['volumes']:
@@ -416,7 +442,7 @@ class AgentManager(threading.Thread):
                     found = False
 
                 if found:
-                    # Merge it in to the existing volume entry.
+                    # Merge it into the existing volume entry.
                     # It should already have archive, archive_limit, etc.
                     if 'size' in volume:
                         entry.size = volume['size']
@@ -431,6 +457,27 @@ class AgentManager(threading.Thread):
 
                     if 'drive-format' in volume:
                         entry.drive_format = volume['drive-format']
+
+                    if 'size' in volume and 'available-space' in volume:
+                        usage_color = self.disk_color(\
+                            entry.size - entry.available_space,
+                                            entry.size, low_water, high_water)
+
+                        usage_color = usage_color[0:1]
+
+                        if usage_color != entry.watermark_notified_color:
+                            if (usage_color == 'g' and  \
+                                        entry.watermark_notified_color) or \
+                                                        usage_color != 'g':
+                                # A disk usage event had been generated
+                                # for low usage and now we're back to green.
+                                #   OR
+                                # There is a change in the disk usage
+                                # color, so generate an event.
+                                self.gen_disk_event(agent, usage_color, entry,
+                                    ((entry.size - entry.available_space) / \
+                                                    float(entry.size)) * 100.)
+                                entry.watermark_notified_color = usage_color
 
                     entry.active = True  # Note the agent reported it
                     session.merge(entry)
@@ -452,6 +499,19 @@ class AgentManager(threading.Thread):
                             entry.primary_data_loc = True
                         else:
                             entry.primary_data_loc = False
+
+                        if 'size' in volume and 'available-space' in volume:
+                            usage_color = self.disk_color(\
+                                entry.size - entry.available_space,
+                                        entry.size, low_water, high_water)
+
+                            usage_color = usage_color[0:1]
+
+                            if usage_color != 'g':
+                                self.gen_disk_event(agent, usage_color, entry,
+                                    ((entry.size - entry.available_space) / \
+                                                    float(entry.size)) * 100.)
+                                entry.watermark_notified_color = usage_color
 
                         session.add(entry)
 
@@ -487,6 +547,42 @@ class AgentManager(threading.Thread):
             return True
         except NoResultFound, e:
             return False
+
+    def gen_disk_event(self, agent, usage_color, entry, percent):
+
+        if usage_color == 'g':
+            event = EventControl.DISK_USAGE_OKAY
+        elif usage_color == 'y':
+            event = EventControl.DISK_USAGE_ABOVE_LOW_WATERMARK
+        elif usage_color == 'r':
+            event = EventControl.DISK_USAGE_ABOVE_HIGH_WATERMERK
+        else:
+            self.log.error("gen_disk_event: Invalid usage color: %s",
+                                                                usage_color)
+            return
+
+        msg = ("Volume name: %s\nSize: %d\nUsed: %d\nAvailable: %d\n" + \
+            "Percent used: %2.1f%%\n") % \
+                (entry.name, entry.size, entry.size - entry.available_space,
+                                    entry.available_space, percent)
+
+        self.server.event_control.gen(event,
+                        dict({'info': msg}.items() + agent.__dict__.items()))
+
+    def disk_watermark(self, name):
+        """ Threshold for the disk indicator. (low|high) """
+        try:
+            v = self.server.system.get('disk-watermark-'+name)
+        except ValueError:
+            return float(100)
+        return float(v)
+
+    def disk_color(self, used, size, low, high):
+        if used > high / 100 * size:
+            return 'red'
+        if used > low / 100 * size:
+            return 'yellow'
+        return 'green'
 
     def is_tableau_worker(self, ip):
         """Returns True if the passed ip adress (string) is
@@ -802,16 +898,34 @@ class AgentManager(threading.Thread):
             aconn.agentid = agent.agentid
             aconn.uuid = uuid
 
-            if not self.server.init_new_agent(agent):
-                self.log.error("Bad agent.  Disconnecting.")
+            pinfo = self.server.init_new_agent(agent)
+            if not pinfo:
+                self.log.error("Bad agent with uuid: '%s'.  Disconnecting.",
+                                                                        uuid)
                 self._close(conn)
                 return
 
             if agent.agent_type is None:
                 agent.agent_type = aconn.agent_type
 
+            if agent.displayname is None or agent.displayname == "":
+                (displayname, display_order) = \
+                                self.calc_new_displayname(agent.connection)
+                agent.displayname = displayname
+                agent.display_order = display_order
+
+            # Now that the agent type and displayname are set, we
+            # can update the volume information from pinfo.
+            if not self.update_agent_pinfo_vols(agent, pinfo):
+                self.log.error(\
+                    "Pinfo vols bad for agent with uuid: '%s'.  Disconnecting.",
+                                                                        uuid)
+                self._close(conn)
+                return
+
             if not self.register(agent, body):
-                self.log.error("Bad agent.  Disconnecting.")
+                self.log.error("Bad agent with uuid: %s'.  Disconnecting.",
+                                                                        uuid)
                 self._close(conn)
                 return
 

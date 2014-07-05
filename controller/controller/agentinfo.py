@@ -33,6 +33,10 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
     size = Column(BigInteger)
     available_space = Column(BigInteger)
 
+    # Last notification about disk low or high watermark: "r" (red), "y" (yellow)
+    # or null.
+    watermark_notified_color = Column(String(1))
+
     system = Column(Boolean)    # The OS/system is installed on this volume
 
     archive = Column(Boolean)

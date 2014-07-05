@@ -805,7 +805,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                             "agent. Unexpected error: " + str(e))    # bad agent
                     return self.error("GET %s failed with: %s" % (uri, str(e)))
 
-    def info(self, agent):
+    def get_pinfo(self, agent, update_agent=False):
         aconn = agent.connection
         body = self.cli_cmd(Controller.PINFO_BIN, agent, immediate=True)
         # FIXME: add a function to test cli success (cli_success?)
@@ -823,11 +823,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return body
 
         # When we are called from init_new_agent(), we don't know
-        # the agent_type yet and update_agent_pinfo() needs to
+        # the agent_type yet and update_agent_pinfo_vols() needs to
         # know the agent type for the volume table values.
         # When we are called by do_info() we will know the agent type.
-        if agent.agent_type:
-            self.agentmanager.update_agent_pinfo(agent, pinfo)
+        if update_agent:
+            if agent.agent_type:
+                self.agentmanager.update_agent_pinfo_dirs(agent, pinfo)
+                self.agentmanager.update_agent_pinfo_vols(agent, pinfo)
+            else:
+                self.log.error(\
+                    "get_pinfo: Could not update agent: unknown " + \
+                                    "displayname.  uuid: %s",  agent.uuid)
         return pinfo
 
     def license(self, agent):
@@ -1117,8 +1123,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             Args:
                 aconn: agent connection
             Returns:
-                True:  The agent responded correctly.
-                False: The agent responded incorrectly.
+                pinfo dictionary:  The agent responded correctly.
+                False:  The agent responded incorrectly.
         """
 
         TABLEAU_INSTALL_DIR="tableau-install-dir"
@@ -1127,13 +1133,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn = agent.connection
 
-        pinfo = self.info(agent)
+        pinfo = self.get_pinfo(agent, update_agent=False)
         if pinfo.has_key("error"):
             self.log.error("Couldn't run info command on %s: %s",
                             aconn.displayname, pinfo['error'])
             return False
 
         self.log.debug("info returned from %s: %s", aconn.displayname, str(pinfo))
+        # Set the type of THIS agent.
         if TABLEAU_INSTALL_DIR in pinfo:
             # FIXME: don't duplicate the data
             agent.agent_type = aconn.agent_type \
@@ -1152,10 +1159,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 agent.agent_type = aconn.agent_type = \
                                     AgentManager.AGENT_TYPE_ARCHIVE
 
-        # This saves everthing from pinfo including volume info.
-        self.agentmanager.update_agent_pinfo(agent, pinfo)
+        # This saves directory-related info from pinfo: it
+        # does not save the volume info since we may not
+        # know the displayname yet and the displayname is
+        # needed for a disk-usage event report.
+        self.agentmanager.update_agent_pinfo_dirs(agent, pinfo)
 
-        # Note: Don't call this before update_agent_pinfo()
+        # Note: Don't call this before update_agent_pinfo_dirs()
         # (needed for agent.tableau_data_dir).
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.yml(agent)
@@ -1186,7 +1196,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # If tableau is stopped, turn on the maintenance server
         if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
-            return True
+            return pinfo
 
         main_state = self.stateman.get_state()
         if main_state == StateManager.STATE_STOPPED:
@@ -1195,7 +1205,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.event_control.gen(EventControl.MAINT_START_FAILED,
                             dict(body.items() + agent.__dict__.items()))
 
-        return True
+        return pinfo
 
     def remove_agent(self, agent, reason="", gen_event=True):
         manager = self.agentmanager

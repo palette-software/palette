@@ -667,7 +667,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                 return
 
             self.ack()
-            body = self.server.info(agent)
+            body = self.server.get_pinfo(agent, update_agent=True)
             self.report_status(body)
             return
 
@@ -686,7 +686,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                 # This agent is now gone
                 continue
 
-            body = self.server.info(agent)
+            body = self.server.get_pinfo(agent, update_agent=True)
             pinfos.append(body)
 
         self.report_status({"pinfos": pinfos})
