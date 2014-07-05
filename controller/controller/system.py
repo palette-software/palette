@@ -63,8 +63,8 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
     licenseid = Column(BigInteger, primary_key=True)
     agentid = Column(BigInteger, ForeignKey("agent.agentid"),
                      nullable=False, unique=True)
-    interactors = Column(Integer, nullable=False)
-    viewers = Column(Integer, nullable=False)
+    interactors = Column(Integer)
+    viewers = Column(Integer)
     notified = Column(Boolean, nullable=False, default=False)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(),

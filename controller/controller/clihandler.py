@@ -133,6 +133,10 @@ class Command(object):
             except sqlalchemy.orm.exc.MultipleResultsFound:
                  raise CommandException("agent must be unique")
 
+        if 'userid' in opts:
+            if not opts['userid'].isdigit():
+                 raise CommandException("Invalid userid: must be an integer.")
+
 class CliHandler(socketserver.StreamRequestHandler):
 
     # Valid choices for JSON "status"
@@ -324,9 +328,13 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         self.server.log.debug("-----------------Starting Backup-------------------")
+        if cmd.dict.has_key('userid'):
+            userid = int(cmd.dict['userid'])
+        else:
+            userid = None
 
         self.server.event_control.gen(EventControl.BACKUP_STARTED,
-                                      agent.__dict__)
+                                      agent.__dict__, userid=userid)
 
         self.ack()
 
@@ -334,10 +342,12 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         if self.success(body):
             self.server.event_control.gen(EventControl.BACKUP_FINISHED,
-                        dict(body.items() + agent.__dict__.items()))
+                        dict(body.items() + agent.__dict__.items()),
+                        userid=userid)
         else:
             self.server.event_control.gen(EventControl.BACKUP_FAILED,
-                        dict(body.items() + agent.__dict__.items()))
+                        dict(body.items() + agent.__dict__.items()),
+                        userid=userid)
 
         if reported_status == TableauProcess.STATUS_RUNNING:
             stateman.update(StateManager.STATE_STARTED)
@@ -470,8 +480,14 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Do a backup before we try to do a restore.
         #FIXME: refactor do_backup() into do_backup() and backup()
         self.server.log.debug("------------Starting Backup for Restore--------------")
+        if cmd.dict.has_key('userid'):
+            userid = int(cmd.dict['userid'])
+        else:
+            userid = None
+
         self.server.event_control.gen( \
-            EventControl.BACKUP_BEFORE_RESTORE_STARTED, agent.__dict__)
+            EventControl.BACKUP_BEFORE_RESTORE_STARTED, agent.__dict__,
+            userid=userid)
 
         self.ack()
 
@@ -490,11 +506,13 @@ class CliHandler(socketserver.StreamRequestHandler):
         if self.success(body):
             self.server.event_control.gen(\
                 EventControl.BACKUP_BEFORE_RESTORE_FINISHED,
-                dict(body.items() + agent.__dict__.items()))
+                dict(body.items() + agent.__dict__.items()),
+                userid=userid)
         else:
             self.server.event_control.gen(\
                 EventControl.BACKUP_BEFORE_RESTORE_FAILED,
-                dict(body.items() + agent.__dict__.items()))
+                dict(body.items() + agent.__dict__.items()),
+                userid=userid)
 
             self.report_status(body)
             stateman.update(main_state)
@@ -505,7 +523,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # restore_cmd() updates the state correctly depending on the
         # success of backup, copy, stop, restore, etc.
-        body = self.server.restore_cmd(agent, target, main_state)
+        body = self.server.restore_cmd(agent, target, main_state, userid=userid)
 
         # The final RESTORE_FINISHED/RESTORE_FAILED alert is sent only here and
         # not in restore_cmd().  Intermediate alerts like RESTORE_STARTED
@@ -515,11 +533,13 @@ class CliHandler(socketserver.StreamRequestHandler):
             # already been set.
             self.server.event_control.gen( \
                 EventControl.RESTORE_FINISHED,
-                dict(body.items() + agent.__dict__.items()))
+                dict(body.items() + agent.__dict__.items()),
+                userid=userid)
         else:
             self.server.event_control.gen( \
                 EventControl.RESTORE_FAILED,
-                dict(body.items() + agent.__dict__.items()))
+                dict(body.items() + agent.__dict__.items()),
+                userid=userid)
 
         # Get the latest status from tabadmin
         self.server.statusmon.check_status_with_connection(agent)
@@ -543,6 +563,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     # FIXME: print status too
     def list_agents(self):
+        session = meta.Session()
         agents = self.server.agentmanager.all_agents()
 
         if len(agents) == 0:
@@ -552,9 +573,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         # FIXME: print the agent state too.
         agent_dict_list = []
         for key in agents:
-            d = copy.copy(agents[key].connection.auth)
-            d['displayname'] = agents[key].displayname
-            agent_dict_list.append(d)
+            agent = session.merge(agents[key])
+            agent_dict_list.append(agent.todict())
         self.report_status({'agents': agent_dict_list})
 
     def list_backups(self):
@@ -832,6 +852,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: Reply with "OK" only after the agent received the command?
         self.ack()
 
+        if cmd.dict.has_key('userid'):
+            userid = int(cmd.dict['userid'])
+        else:
+            userid = None
+
         # Stop the maintenance web server and relinquish the web
         # server port before tabadmin start tries to listen on the web
         # server port.
@@ -848,14 +873,17 @@ class CliHandler(socketserver.StreamRequestHandler):
             # The "tableau start" failed.  Go back to "STOPPED" state.
             self.server.event_control.gen( \
                 EventControl.TABLEAU_START_FAILED,
-                dict(body.items() + agent.__dict__.items()))
+                dict(body.items() + agent.__dict__.items()),
+                userid=userid)
             stateman.update(StateManager.STATE_STOPPED)
             self.server.event_control.gen( \
-                EventControl.STATE_STOPPED, agent.__dict__)
+                EventControl.STATE_STOPPED, agent.__dict__,
+                userid=userid)
         else:
             stateman.update(StateManager.STATE_STARTED)
             self.server.event_control.gen( \
-                EventControl.STATE_STARTED, agent.__dict__)
+                EventControl.STATE_STARTED, agent.__dict__,
+                userid=userid)
 
         # Get the latest status from tabadmin
         self.server.statusmon.check_status_with_connection(agent)
@@ -924,23 +952,32 @@ class CliHandler(socketserver.StreamRequestHandler):
                 aconn.user_action_unlock()
                 return
 
+        if cmd.dict.has_key('userid'):
+            userid = int(cmd.dict['userid'])
+        else:
+            userid = None
+
         if backup_first:
             self.server.log.debug(\
                         "------------Starting Backup for Stop---------------")
             stateman.update(StateManager.STATE_STARTED_BACKUP_STOP)
             self.server.event_control.gen( \
-                EventControl.BACKUP_BEFORE_STOP_STARTED, agent.__dict__)
+                EventControl.BACKUP_BEFORE_STOP_STARTED, agent.__dict__,
+                userid=userid)
 
             body = self.server.backup_cmd(agent)
 
             if self.success(body):
                 self.server.event_control.gen( \
                     EventControl.BACKUP_BEFORE_STOP_FINISHED,
-                    dict(body.items() + agent.__dict__.items()))
+                    dict(body.items() + agent.__dict__.items()),
+                    userid=userid)
             else:
                 self.server.event_control.gen( \
                     EventControl.BACKUP_BEFORE_STOP_FAILED,
-                    dict(body.items() + agent.__dict__.items()))
+                    dict(body.items() + agent.__dict__.items()),
+                    userid=userid)
+
                 # Backup failed.  Will not attempt stop
                 msg = 'Backup failed.  Will not attempt stop'
                 if 'info' in body:
@@ -978,7 +1015,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         # later.
         stateman.update(StateManager.STATE_STOPPED)
         self.server.event_control.gen( \
-            EventControl.STATE_STOPPED, agent.__dict__)
+            EventControl.STATE_STOPPED, agent.__dict__,
+            userid=userid)
 
         # Get the latest status from tabadmin which sets the main state.
         self.server.statusmon.check_status_with_connection(agent)
