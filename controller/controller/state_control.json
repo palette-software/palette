@@ -3,25 +3,25 @@
 {
 "state":"DISCONNECTED",
 "text":"Tableau Status Unknown",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"red"
 },
 {
 "state":"PENDING",
 "text":"Retrieving Tableau Status",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"yellow"
 },
 {
 "state":"STOPPING",
 "text":"Tableau Stopping",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"yellow"
 },
 {
 "state":"STOPPING-RESTORE",
 "text":"Tableau Stopping",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"yellow"
 },
 {
@@ -33,49 +33,49 @@
 {
 "state":"STOPPED-RESTORE",
 "text":"Tableau Stopped",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"red"
 },
 {
 "state":"STOPPED-BACKUP",
 "text":"Tableau Stopped",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"red"
 },
 {
 "state":"STOPPED-BACKUP-RESTORE",
 "text":"Tableau Stopped",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"red"
 },
 {
 "state":"STOPPED-BACKUPDEL",
 "text":"Tableau Stopped",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"red"
 },
 {
 "state":"STOPPED-ZIPLOGS",
 "text":"Tableau Stopped",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"red"
 },
 {
 "state":"STOPPED-CLEANUP",
 "text":"Tableau Stopped",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"red"
 },
 {
 "state":"STARTING",
 "text":"Starting Tableau",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"yellow"
 },
 {
 "state":"STARTING-RESTORE",
 "text":"Tableau Stopped",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"red"
 },
 {
@@ -87,37 +87,37 @@
 {
 "state":"STARTED-BACKUP",
 "text":"Tableau Running",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"green"
 },
 {
 "state":"STARTED-BACKUP-RESTORE",
 "text":"Tableau Running",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"green"
 },
 {
 "state":"STARTED-BACKUP-STOP",
 "text":"Tableau Running",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"green"
 },
 {
 "state":"STARTED-BACKUPDEL",
 "text":"Tableau Running",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"green"
 },
 {
 "state":"STARTED-ZIPLOGS",
 "text":"Tableau Running",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"green"
 },
 {
 "state":"STARTED-CLEANUP",
 "text":"Tableau Running",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"green"
 },
 {
@@ -129,7 +129,7 @@
 {
 "state":"UNKNOWN",
 "text":"Please Install Palette Agent",
-"allowable_actions":null,
+"allowable_actions":"",
 "color":"red"
 }
 ]
