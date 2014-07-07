@@ -15,6 +15,7 @@ class StateControl(meta.Base, BaseMixin):
     state = Column(String, unique=True)
     text = Column(String)
     allowable_actions = Column(String)
+    icon = Column(String)
     color = Column(String)  # icon color: e.g. red, green, yellow
 
     # Allowable actions:
