@@ -78,23 +78,27 @@ class FirewallManager(object):
             filter(FirewallEntry.agentid == agent.agentid).\
             all()
 
-        for entry in rows:
-            body = agent.firewall.enable(entry.port)
-            if 'error' in body:
-                self.log.error(\
-                    ("open_firewall_ports failed to open port %d on " +
-                     "host %s, failed with: %s") % (entry.port,
-                             agent.displayname, body['error']))
-                self.server.event_control.gen(\
+        ports = [entry.port for entry in rows]
+        body = agent.firewall.enable(ports)
+        if 'error' in body:
+            self.log.error(\
+                ("open_firewall_ports failed to open ports '%s' on " +
+                     "host %s, failed with: %s") % \
+                            (str(ports), agent.displayname, body['error']))
+            self.server.event_control.gen(\
                     EventControl.FIREWALL_OPEN_FAILED,
                         dict({
                             'error': body['error'], 
-                            'info': "Port %d" % entry.port}.items() + \
+                            'info': "Ports: %s" % str(ports)}.items() + \
                                                     agent.__dict__.items()))
-                entry.color = 'red'
-            else:
-                entry.color = 'green'
-            session.merge(entry)
+            color = 'red'
+        else:
+            color = 'green'
+
+        session.query(FirewallEntry).\
+            filter(FirewallEntry.agentid == agent.agentid).\
+            update({'color': color}, synchronize_session=False)
+
         session.commit()
 
     def do_firewall_ports(self, agent):

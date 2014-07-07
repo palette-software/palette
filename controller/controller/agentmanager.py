@@ -366,7 +366,7 @@ class AgentManager(threading.Thread):
         if not agent.agent_type:
             self.log.error("Unknown agent type for agent: %s",
                                                     agent.displayname)
-           
+
         agentid = agent.agentid
 
         # FIXME: make automagic based on self.__table__.columns
@@ -385,7 +385,7 @@ class AgentManager(threading.Thread):
         """Update volume-related information from pinfo.
            Checks the disk-usage of each volume and generates an
            alert if above a disk watermark.
-           
+
            This should be called only after the agent displayname
            and type are known.."""
 

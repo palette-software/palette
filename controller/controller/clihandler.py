@@ -755,32 +755,33 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.report_status(body)
         return
 
-    @usage('firewall [ enable | disable | status ] port')
+    @usage('firewall { status | { enable | disable } port [port] }')
     def do_firewall(self, cmd):
-        """Enable, disable or report the status of a port on an
-           agent firewall.."""
-        if len(cmd.args) == 1:
+        """Report the status of all ports or enable/disable one or more
+           ports on an agent firewall."""
+
+        if len(cmd.args) == 0:
+                self.print_usage(self.do_firewall.__usage__)
+                return
+        elif len(cmd.args) == 1:
             if cmd.args[0] != "status":
                 self.print_usage(self.do_firewall.__usage__)
                 return
-        elif len(cmd.args) == 2:
-            if cmd.args[0] not in ("enable", "disable"):
+        elif cmd.args[0] not in ("enable", "disable"):
                 self.print_usage(self.do_firewall.__usage__)
                 return
-        else:
-            self.print_usage(self.do_firewall.__usage__)
-            return
 
         agent = self.get_agent(cmd.dict)
         if not agent:
             return
 
         if  cmd.args[0] != "status":
+            ports = []
             try:
-                port = int(cmd.args[1])
+                ports = [int(cmd.args[i]) for i in range(1, len(cmd.args))]
             except ValueError, e:
                 self.error(ERROR_INVALID_PORT,
-                                    "firewall: Invalid port: " + cmd.args[1])
+                                    "firewall: Invalid port: " + str(e))
                 return
 
         self.ack()
@@ -788,9 +789,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         if cmd.args[0] == "status":
             body = agent.firewall.status()
         elif cmd.args[0] == "enable":
-            body = agent.firewall.enable(port)
+            body = agent.firewall.enable(ports)
         elif cmd.args[0] == "disable":
-            body = agent.firewall.disable(port)
+            body = agent.firewall.disable(ports)
 
         self.report_status(body)
         return
