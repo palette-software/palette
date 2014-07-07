@@ -53,14 +53,9 @@ from util import version
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
+    CLI_URI = "/cli"
     LOGGER_NAME = "main"
     allow_reuse_address = True
-
-    PHTTP_BIN = "phttp.exe"
-    PINFO_BIN = "pinfo.exe"
-    PS3_BIN = "ps3.exe"
-    PGCS_BIN = "pgcs.exe"
-    CLI_URI = "/cli"
 
     def backup_cmd(self, agent, target=None, volume_name=None):
         """Perform a backup - not including any necessary migration."""
@@ -188,8 +183,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                u'SECRET_KEY': gcs_entry.secret,
                u'PWD': data_dir}
 
-        gcs_command = self.PGCS_BIN+' %s %s "%s"' % \
-                                     (action, gcs_entry.bucket, path)
+        gcs_command = 'pgcs %s %s "%s"' % (action, gcs_entry.bucket, path)
 
         # Send the gcs command to the agent
         return self.cli_cmd(gcs_command, agent, env=env)
@@ -476,9 +470,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                         "primary_data_loc in the agent_volumes table " + \
                         "for the primary agent.")
 
-        command = '%s GET "https://%s:%s/%s" "%s"' % \
-            (Controller.PHTTP_BIN, source_ip, src.listen_port,
-             source_path, target_dir)
+        command = 'phttp GET "https://%s:%s/%s" "%s"' % \
+            (source_ip, src.listen_port, source_path, target_dir)
 
         try:
             entry = meta.Session.query(Agent).\
@@ -807,7 +800,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def get_pinfo(self, agent, update_agent=False):
         aconn = agent.connection
-        body = self.cli_cmd(Controller.PINFO_BIN, agent, immediate=True)
+        body = self.cli_cmd('pinfo', agent, immediate=True)
         # FIXME: add a function to test cli success (cli_success?)
         if not 'exit-status' in body or body['exit-status'] != 0:
             return body;
