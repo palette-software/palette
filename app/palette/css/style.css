@@ -49,7 +49,6 @@ i.tableau {
     width: 28px;
     margin: 13px 14px 13px 17px !important;
 }
-
 .bold {
     font-weight: bold;
 }
@@ -69,6 +68,15 @@ i.tableau {
 .btn {
     background-color: #8D96A3;
     color: #fff;
+}
+.red {
+    color: #ef5557;
+}
+.yellow {
+    color: #dc994c;
+}
+.green {
+    color: #76e259;
 }
 #mainNav {
     background: #333;
@@ -252,16 +260,6 @@ article.popup p {
 .secondary-side-bar > ul > li > a > i.stopped {
     color: #EF5455;
 }
-.secondary-side-bar ul.server-list > li i.green {
-    color: #75e25a;
-}
-.secondary-side-bar ul.server-list > li i.yellow {
-    color: #dc994c;
-}
-.secondary-side-bar ul.server-list > li i.red {
-    color: #ef5455;
-}
-
 .secondary-side-bar ul > li h5 {
     position: relative;
     margin: 0 0 10px 0;
@@ -470,7 +468,7 @@ ul.dropdown-menu a:hover {
     cursor: pointer;
 }
 
-.main-side-bar .status img {
+.main-side-bar .status img, .main-side-bar .status i {
     position: absolute;
     width: 64px;
     height: 64px;
@@ -481,7 +479,10 @@ ul.dropdown-menu a:hover {
     -ms-transition: all 0.2s ease-in;
     -o-transition: all 0.2s ease-in;
     transition: all 0.2s ease-in;
+    font-size: 64px;
+    color: #f8f8f8;
 }
+
 .main-side-bar .status h2 {
     position: absolute;
     top: 27px;
@@ -1399,15 +1400,6 @@ article.event .summary > i {
 }
 article.event:hover .summary i {
     opacity: 1;
-}
-article.event i.blue {
-    color:#53c3f1;
-}
-article.event i.red {
-    color: #ef5557;
-}
-article.event i.green {
-    color: #76e259;
 }
 article.event i.help {
     float: none;
