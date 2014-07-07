@@ -454,7 +454,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # Enable the firewall port on the source host.
         self.log.debug("Enabling firewall port %d on src host '%s'", \
                                     src.listen_port, src.displayname)
-        fw_body = src.firewall.enable(src.listen_port)
+        fw_body = src.firewall.enable([src.listen_port])
         if fw_body.has_key("error"):
             self.log.error(\
                 "firewall enable port %d on src host %s failed with: %s",

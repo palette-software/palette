@@ -11,12 +11,14 @@ class Firewall(object):
     def status(self):
         return self.server.send_immediate(self.agent, 'GET', self.URI)
 
-    def enable(self, port):
-        d = {'ports': [{'action':'enable', 'num':port}]}
-        body = json.dumps(d)
+    def enable(self, ports):
+        port_commands = [{'action': 'enable', 'num': port} for port in ports]
+        full_command = {'ports': port_commands}
+        body = json.dumps(full_command)
         return self.server.send_immediate(self.agent, 'POST', self.URI, body)
 
-    def disable(self, port):
-        d = {'ports': [{'action':'disable', 'num':port}]}
-        body = json.dumps(d)
+    def disable(self, ports):
+        port_commands = [{'action': 'disable', 'num': port} for port in ports]
+        full_command = {'ports': port_commands}
+        body = json.dumps(full_command)
         return self.server.send_immediate(self.agent, 'POST', self.URI, body)
