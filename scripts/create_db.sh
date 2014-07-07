@@ -15,3 +15,5 @@ GRANT ALL PRIVILEGES ON DATABASE paldb to palette;
 ALTER DATABASE paldb SET TIMEZONE TO 'US/Pacific';
 SET TIMEZONE TO 'US/Pacific';
 EOF
+
+sudo service postgresql restart
