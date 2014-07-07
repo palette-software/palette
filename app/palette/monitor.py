@@ -342,6 +342,7 @@ class MonitorApplication(PaletteRESTHandler):
         monitor_ret = {'state': main_state,
                        'allowable-actions': allowable_actions,
                        'text': state_control_entry.text,
+                       'icon': state_control_entry.icon,
                        'color': Colors.color_to_str[color_num],
                        'user-action-in-progress': user_action_in_progress,
                        'environments': environments,
