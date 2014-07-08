@@ -21,6 +21,7 @@
         <span>Manage Tableau</span>
       </a>
     </li>
+    <!--
     <li class="category">
       <a href="/configure/yml">
         <i class="fa fa-fw fa-gears"></i>
@@ -36,6 +37,7 @@
         </li>
       </ul>
     </li>
+    -->
     <li class="category">
       <a href="/configure/yml">
         <i class="fa fa-fw fa-cog"></i>
