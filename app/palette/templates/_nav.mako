@@ -4,12 +4,12 @@
     <span id="toggle-main-menu" class="fi-list"></span>
     <ul class="nav">
       <li class="more">
-        <a href="/support/ticket"><i class="fa fa-question-circle"></i>
+        <a href="javascript:void(0)" onclick="javascript:showClassicWidget()"><i class="fa fa-question-circle"></i>
 	  <span>Help</span>
 	</a>
         <ul>
           <li>
-            <a href="/support/contact">
+            <a href="javascript:void(0)" onclick="javascript:showClassicWidget()">
               <i class="fa fa-fw fa-mail-forward"></i> Contact Support
             </a>
           </li>
@@ -48,3 +48,5 @@
     </ul>
   </div>
 </nav>
+
+<script src="/app/module/palette/js/contact.js"></script>
