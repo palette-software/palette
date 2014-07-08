@@ -157,6 +157,7 @@ article.popup p {
     overflow-y:scroll;
     padding-bottom: 64px;
     max-width: 600px;
+    white-space: nowrap;
 }
 .secondary-side-bar.servers {
     width: 0px;
