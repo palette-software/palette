@@ -192,7 +192,13 @@ class TableauStatusMonitor(threading.Thread):
             self.log.debug("status-check: new_primary: %s", new_primary)
             if new_primary:
                 self.manager.new_primary_event.clear()
-            self.check_status()
+
+            session = meta.Session()
+            try:
+                self.check_status()
+            finally:
+                session.rollback()
+                meta.Session.remove()
 
     def check_status(self):
 
