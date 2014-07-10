@@ -49,3 +49,12 @@ def builddate():
     except ImportError:
         pass
     return None
+
+def str2bool(s):
+    if not s:
+        return False
+    s = str(s).lower()
+    if s == 'true' or s == '1':
+        return True
+    return False
+    

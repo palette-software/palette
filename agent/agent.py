@@ -1,3 +1,4 @@
+import os
 import sys
 import socket
 import ssl
@@ -5,14 +6,23 @@ import json
 import time
 import argparse
 
+import platform
+import multiprocessing
+
+import ConfigParser as configparser
+
 from SocketServer import TCPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 import urlparse
 
-from agentmanager import AgentManager
-version="0.1"
+from config import Config
+from processmanager import ProcessManager
+import logger
 
-# A Palette Windows Agent.
+from util import version, str2bool
+
+import http
+from http import HTTPRequest, HTTPResponse
 
 # Accepts commands from the Controller and sends replies.
 # The body of the request and response is JSON.
@@ -20,9 +30,7 @@ class AgentHandler(SimpleHTTPRequestHandler):
 
     # Over-written in main()
     agent_hostname = "one"
-    agent_type = AgentManager.AGENT_TYPE_PRIMARY
     agent_ip = "192.168.1.2"
-    agent_ssl = False
 
     get_status_count = 0
 
@@ -43,187 +51,151 @@ class AgentHandler(SimpleHTTPRequestHandler):
         return '%s' % host
     address_string = _bare_address_string
 
+    def memtotal(self):
+        """ Read the MemTotal line from /proc/meminfo """
+        try:
+            with open('/proc/meminfo') as f:
+                for line in f:
+                    tokens = line.split()
+                    if len(tokens) == 3 and tokens[0].lower() == 'memtotal:':
+                        return int(tokens[1]) * 1024
+        except IOError, ValueError:
+            return -1
+        return 0
+
+    def handle_cli(self, req):
+        if req.method == 'POST':
+            try:
+                action = req.json['action'].lower()
+                xid = int(req.json['xid'])
+            except (TypeError, KeyError, TypeError):
+                raise http.HTTPBadRequest()
+            if action == 'start':
+                if not 'cli' in req.json:
+                    raise http.HTTPBadRequest()
+                cmd = req.json['cli']
+                self.server.log.info('CMD['+str(xid)+']: '+cmd)
+                if 'immediate' in req.json:
+                    immediate = req.json['immediate']
+                else:
+                    immediate = False
+                env = 'env' in req.json and req.json['env'] or {}
+                self.server.processmanager.start(xid, cmd, env, immediate)
+                data = self.server.processmanager.getinfo(xid)
+            elif 'action' == 'cleanup':
+                self.server.processmanager.cleanup(xid)
+                data = {'xid', xid}
+            else:
+                raise http.HTTPBadRequest()
+        elif req.method == 'GET':
+            try:
+                xid = int(req.query['xid'][0])
+            except (ValueError, KeyError, TypeError):
+                raise http.HTTPBadRequest()
+            data = self.server.processmanager.getinfo(xid)
+        else:
+            raise http.HTTPBadRequest()
+
+        if 'run-status' in data and data['run-status'] == 'finished':
+            self.server.log.info('JSON: ' + json.dumps(data))
+        else:
+            self.server.log.debug('JSON: ' + json.dumps(data))
+        return data
+
     # The "auth" immediate command reply.
     # Immediate commands methods begin with 'icommand_'.
-    def icommand_auth(self):
-        body_dict = { "domain": "test-domain",
-                "username": "palette-username",
-                "password": "secret",
-                "version": version,
-                "hostname": AgentHandler.agent_hostname,
-                "ip-address": AgentHandler.agent_ip,
-                "listen-port": 12345,
-                "uuid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1",
+    def handle_auth(self, req):
+        d = { "license-key": self.server.license_key,
+              "version": self.server.version,
+              "os-version": platform.platform(),
+              "processor-type": platform.processor(),
+              "processor-count": multiprocessing.cpu_count(),
+              "installed-memory": self.memtotal(),
+              "hostname": socket.gethostname(),
+              "fqdn": socket.getfqdn(),
+              "ip-address": self.server.socket.getsockname()[0],
+              "listen-port": self.server.archive_port,
+              "uuid": self.server.uuid,
+              "install-dir": self.server.install_dir
             }
+        return d
 
-        return body_dict
-
-    def command_cli(self, in_body_dict):
-        """[Pretend to] Start a process for the cli command."""
-
-        if not in_body_dict.has_key('action'):
-            raise HttpException(405)    #fixme (not 405)
-
-        action = in_body_dict['action']
-
-        if action == 'cleanup':
-            return { "xid": in_body_dict["xid"],
-                     "run-status": "running"}
-
-        elif action != 'start':
-            raise HttpException(405)    #fixme (not 405)
-
-        # pretend we started...
-        return { "xid": in_body_dict["xid"],
-                     "run-status": "running"}
-
-    def command_get(self, in_body_dict):
-        """[Pretend to] do the 'get' command."""
-        return self.command_cli(in_body_dict)  # Pretends the same as cli commnand
-
-    def get_status(self, xid):
-        """Return the status of a request with the passed xid."""
-        # For now, return the same status for every request.
-
-        AgentHandler.get_status_count += 1
-        print "count:", AgentHandler.get_status_count
-        if AgentHandler.get_status_count % 2 == 0:
-            # report still running
-            outgoing_body_dict = {
-                "run-status": "running",
-                "xid": xid }
-
-        else:
-            # send finished
-            outgoing_body_dict = {
-                "run-status": "finished",
-                "exit-status": 0,
-                "xid": xid,
-                "stdout": "this is stdout from the command",
-                "stderr": "" }
-
-        return outgoing_body_dict
-
-    # Parses the incoming commmand from the Controller.
-    # Returns the response_code to send.
-    # Sets 'self.response_body' to the body to return.
-    def parse_command(self, method):
-
-        self.response_body = ""
-
-        if self.path[0] != '/':
-            print "Missing '/' in URI:", self.path
-            raise HttpException(404)
-
-        icommand = self.path[1:]
-        print "icommand =", icommand
-
-        if method == 'GET':
-            print 'loc 1'
-            # check for a valid command
-            # Example: "GET /cli?xid=123"
-            parts = urlparse.urlparse(self.path)
-
-            if not parts.path in ["/cli", "/get", "sql", "/no-op"]:
-
-                print "Unknown GET command:", parts.path
-                raise HttpException(404)
-
-            print 'loc 2'
-            print 'query = ', parts.query
-            query_dict = urlparse.parse_qs(parts.query)
-            if query_dict.has_key("xid"):
-                xid = int(query_dict['xid'][0])
-                return self.get_status(xid)
+    def handle_method(self, method):
+        self.server.log.info(method +' ' + self.path)
+        res = None
+        try:
+            req = HTTPRequest(self, method)
+            if req.path == '/auth':
+                res = self.handle_auth(req)
+            elif req.path == '/cli':
+                res = self.handle_cli(req)
             else:
-                print "bad query string:", query
-                raise HttpException(405)    # fixme
-
-        # Immediate commands
-        icommand_function = getattr(self, 'icommand_' + self.path[1:], None)
-        print "icommand_function:", icommand_function
-
-        # It's an "immediate" command:  The complete result is
-        # sent in the reply.
-        if icommand_function:
-            return icommand_function()
-
-        # It is a "Standard" command.  We start the command, but
-        # we won't return the results until later, after the
-        # command has finished.
-        if not self.headers.has_key('Content-length'):
-            print "Missing body in request", self.headers
-            raise HttpException(405)    # fixme - not 405
-
-        content_length = int(self.headers['Content-Length'])
-
-        print "about to read", content_length
-        incoming_json = self.rfile.read(content_length)
-        print "read incoming_json:", incoming_json
-        try:
-            body_dict = json.loads(incoming_json)
-        except:
-            print "Bad json:", incoming_json
-            raise HttpException(405)    # fixme - not 405
-
-        command = self.path[1:]
-
-        command_function = getattr(self, 'command_' + command, None)
-        if command_function:
-            return command_function(body_dict)
-        else:
-            print "Unknown command:", command
-            raise HttpException(404)
-
-    def handle_controller_command(self, method):
-        response_code = 200
-        body_dict = {}
-
-        try:
-            body_dict = self.parse_command(method)
-        except HttpException, e:
-            response_code = e.status_code
-
-        print "response_code:", response_code, "body_dict:", body_dict
-
-        if len(body_dict):
-            response_body = json.dumps(body_dict)
-        else:
-            response_body = ""
-
-        self.send_response(response_code)
-        self.send_header("Content-Length", len(response_body))
-        self.end_headers()
-        self.wfile.write(response_body)
-        print "sent in body reply:", response_body
-        self.close_connection = 0
+                raise http.HTTPNotFound(req.path)
+        except http.HTTPException, e:
+            e.handler = self
+            res = e
+        
+        if res == None:
+            res = http.HTTPNotFound(path)
+        elif isinstance(res, HTTPResponse):
+            pass
+        elif isinstance(res, basestring):
+            s = res
+            res = req.response
+            res.wfile.write(s)
+        else: # Everything else is converted to JSON
+            obj = res
+            res = req.response
+            res.content_type = 'application/json'
+            res.wfile.write(json.dumps(obj))
+        # send it
+        res.flush()
 
     def do_GET(self):
-        print 'GET: '+self.path
-        #time.sleep(10)     # for testing timeout handling in the controller
-        self.handle_controller_command("GET")
-        return None
+        return self.handle_method('GET')
 
     def do_POST(self):
-        print 'POST: '+self.path
-        self.handle_controller_command("POST")
-        return None
+        return self.handle_method('POST')
 
 class Agent(TCPServer):
 
-    def __init__(self, host='localhost', port=0):
-        self.host = host
-        self.port = port and port or AgentManager.PORT
-        print "AGENT connecting to port", self.port
+    LOGGER_NAME = 'main'
+    DEFAULT_SECTION = 'DEFAULT'
+    DEFAULT_LICENSE_KEY = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+
+    def __init__(self, config):
+        self.config = config
+        self.host = config.get('controller', 'host', default='localhost')
+        self.port = config.getint('controller', 'port', default=8888)
+        self.ssl = config.getboolean('controller', 'ssl', default=True)
+
+        self.uuid = config.get(self.DEFAULT_SECTION, 'uuid')
+        self.version = version()
+        self.license_key = config.get(self.DEFAULT_SECTION, 'license-key', 
+                                      default=self.DEFAULT_LICENSE_KEY)
+        self.archive_port = config.get('archive', 'port', default=8889)
+
+        self.install_dir = os.path.abspath(os.path.dirname(__file__))
+        self.xid_dir = config.get(self.DEFAULT_SECTION, 'xid-dir',
+                                  default=None)
+        if not self.xid_dir:
+            self.xid_dir = os.path.join(self.install_dir, 'xid')
+        if not os.path.isdir(self.xid_dir):
+            os.mkdir(self.xid_dir)
+
+        pathenv = config.get(self.DEFAULT_SECTION, 'path', default=None)
+        self.processmanager = ProcessManager(self.xid_dir, pathenv)
 
         # Start the Agent server that uses AgentHandler to handle
         # incoming requests from the Controller.
-        TCPServer.__init__(self, (self.host, self.port), AgentHandler,
-                           bind_and_activate=False)
+        TCPServer.__init__(self, (self.host, self.port),
+                           AgentHandler, bind_and_activate=False)
+
+    def connect(self):
         # Connect to the Controller.
         self.socket.connect((self.host, self.port))
 
-        if AgentHandler.agent_ssl:
+        if self.ssl:
             self.socket = ssl.wrap_socket(self.socket)
 
     def get_request(self):
@@ -234,41 +206,22 @@ class HttpException(Exception):
         self.status_code = status_code
 
 if __name__ == '__main__':
-
-    DEFAULT_CONTROLLER = "localhost"
-    DEFAULT_HOSTNAME = "one"
-    DEFAULT_AGENT_TYPE = AgentManager.AGENT_TYPE_PRIMARY
-    DEFAULT_AGENT_IP = "192.168.1.100"
-    DEFAULT_SSL = False
-
-    parser = argparse.ArgumentParser(description="Palette simulated agent.")
-    parser.add_argument("--hostname", help="agent hostname",
-                                                default=DEFAULT_HOSTNAME)
-    parser.add_argument("--type", help="announce agent as type primary, worker or other", default=DEFAULT_AGENT_TYPE,
-        choices=(AgentManager.AGENT_TYPE_PRIMARY,
-                    AgentManager.AGENT_TYPE_WORKER,
-                    AgentManager.AGENT_TYPE_ARCHIVE))
-    parser.add_argument("--ip", help="announce my local ip address as this", default=DEFAULT_AGENT_IP)
-    parser.add_argument("--ssl", help="connect to the controller with ssl", action="store_true", default=False)
-    parser.add_argument("--controller", help="controller to connect to", default=DEFAULT_CONTROLLER)
-    parser.add_argument("--port", help="controller port to connect to", \
-        type=int,
-        default=AgentManager.PORT)
+    parser = argparse.ArgumentParser(description="Palette Agent.")
+    parser.add_argument('config', nargs='?', default=None)
 
     args = parser.parse_args()
 
-    AgentHandler.agent_hostname = args.hostname
-    AgentHandler.agent_type = args.type
-    AgentHandler.agent_ip = args.ip
-    AgentHandler.agent_ssl = args.ssl
+    config = Config(args.config)
 
-    print "Agent Configuration:"
-    print "\tHostname:", args.hostname
-    print "\ttype:", args.type
-    print "\tip:", args.ip
-    print "\tssl:", args.ssl
-    print "\tcontroller:", args.controller
-    print "\tcontroller port:", args.port
+    # loglevel is entirely controlled by the INI file.
+    logger.make_loggers(config)
+    log = logger.get(Agent.LOGGER_NAME)
 
-    httpd = Agent(host=args.controller, port=args.port)
-    httpd.serve_forever()
+    agent = Agent(config)
+    agent.log = log
+    log.info("Agent version: %s", agent.version)
+
+    agent.connect()
+    log.info("connected to %s:%d%s", agent.host, agent.port, \
+                 agent.ssl and ' [SSL]' or '')
+    agent.serve_forever()
