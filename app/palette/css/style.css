@@ -223,6 +223,7 @@ article.popup p {
     -ms-transition: all 0.1s ease-in;
     -o-transition: all 0.1s ease-in;
     transition: all 0.1s ease-in;
+    cursor: pointer;
 }
 .secondary-side-bar ul > li a:hover {
     background-color: rgba(250, 250, 250, 0.1);
