@@ -10,7 +10,7 @@
         <ul>
           <li>
             <a href="javascript:void(0)" onclick="javascript:showClassicWidget()">
-              <i class="fa fa-fw fa-mail-forward"></i> Contact Support
+              <i class="fa fa-fw fa-envelope"></i> Contact Palette 
             </a>
           </li>
           <li>
