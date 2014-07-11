@@ -55,7 +55,7 @@
         <button class="p-btn popup-close">Cancel</button>
       </section>
       <section class="col-xs-6">
-        <button id="start-ok" class="p-btn">Start</button>
+        <button id="start-ok" class="p-btn">OK</button>
       </section>
     </section>
   </section>
@@ -76,14 +76,14 @@
             <input name="license" type="checkbox" checked/>
             <label class="checkbox">
               <span></span>
-              Confirm license validity
+              Also perform license check 
             </label>
           </li>
           <li>
             <input name="backup" type="checkbox" checked/>
             <label class="checkbox">
               <span></span>
-              Backup rollback protection
+              Also perform safety backup 
             </label>
           </li>
         </ul>
@@ -95,7 +95,7 @@
         <button class="p-btn popup-close">Cancel</button>
       </section>
       <section class="col-xs-6">
-        <button id="stop-ok" class="p-btn">Stop</button>
+        <button id="stop-ok" class="p-btn">OK</button>
       </section>
     </section>
   </section>
@@ -114,7 +114,7 @@
         <button class="p-btn popup-close">Cancel</button>
       </section>
       <section class="col-xs-6">
-        <button id="backup-ok" class="p-btn">Backup</button>
+        <button id="backup-ok" class="p-btn">OK</button>
       </section>
     </section>
   </section>
@@ -133,7 +133,7 @@
         <button class="p-btn popup-close">Cancel</button>
       </section>
       <section class="col-xs-6">
-        <button id="restore-ok" class="p-btn">Restore</button>
+        <button id="restore-ok" class="p-btn">OK</button>
       </section>
     </section>
   </section>
