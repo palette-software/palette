@@ -8,7 +8,6 @@ import time
 import traceback
 from httplib import HTTPConnection
 import json
-import ntpath
 
 import exc
 import httplib
@@ -291,48 +290,6 @@ class AgentManager(threading.Thread):
                                                             new_agent.agent_type)
         return ("INVALID AGENT TYPE: %s" % new_agent.agent_type, 0)
 
-    # FIXME: get/create ?
-    def remember(self, aconn, body):
-        """Stores the agent information in the database."""
-        session = meta.Session()
-
-        uuid = body['uuid']
-        entry = Agent.get_by_uuid(self.envid, uuid)
-
-        if entry is None:
-            entry = Agent(envid=self.envid,
-                          version=body['version'],
-                          os_version=body['os-version'],
-                          processor_type=body['processor-type'],
-                          processor_count=body['processor-count'],
-                          installed_memory=body['installed-memory'],
-                          hostname=body['hostname'],
-                          fqdn=body['fqdn'],
-                          ip_address=body['ip-address'],
-                          listen_port=body['listen-port'],
-                          uuid=body['uuid'],
-                          agent_type=aconn.agent_type,
-                          username=u'palette',# fixme
-                          password=u'tableau2014')
-        else:
-              entry.version=body['version']
-              entry.os_version=body['os-version']
-              entry.processor_type=body['processor-type']
-              entry.processor_count=body['processor-count']
-              entry.installed_memory=body['installed-memory']
-              entry.hostname=body['hostname']
-              entry.fqdn=body['fqdn']
-              entry.ip_address=body['ip-address']
-              entry.listen_port=body['listen-port']
-              entry.uuid=body['uuid']
-              entry.agent_type=aconn.agent_type
-              entry.username=u'palette'# fixme
-              entry.password=u'tableau2014'
-
-        entry.last_connection_time = func.now()
-        entry = session.merge(entry)
-        session.commit()
-        return entry
 
     def update_agent_yml(self, agentid, yml):
         """update the agent_yml table with this agent's yml contents."""
@@ -417,7 +374,7 @@ class AgentManager(threading.Thread):
 
 
         install_dir_vol_name = parts[0].upper()
-        install_data_dir = ntpath.join(parts[1], AgentConnection.DATA_DIR)
+        install_data_dir = agent.path.join(parts[1], AgentConnection.DATA_DIR)
 
         (low_water,high_water) = \
             self.disk_watermark('low'), self.disk_watermark('high')
@@ -856,17 +813,17 @@ class AgentManager(threading.Thread):
                 self.log.debug("done.")
 
             # Inspect the reply to make sure it has all the required values.
-            required = [    'version',      # original
-                            'os-version',
-                            'processor-type',
-                            'processor-count',
-                            'installed-memory',
-                            'hostname',     # original
-                            'fqdn',
-                            'ip-address',   # original
-                            'listen-port',  # original
-                            'uuid',         # original
-                            'install-dir'   # original
+            required = ['version',      # original
+                        'os-version',
+                        'processor-type',
+                        'processor-count',
+                        'installed-memory',
+                        'hostname',     # original
+                        'fqdn',
+                        'ip-address',   # original
+                        'listen-port',  # original
+                        'uuid',         # original
+                        'install-dir'   # original
                         ]
 
             for item in required:
@@ -890,11 +847,13 @@ class AgentManager(threading.Thread):
             aconn.auth = body
             uuid = aconn.auth['uuid']
 
-            agent = self.remember(aconn, body)
+            agent = Agent.build(self.envid, aconn)
             agent.connection = aconn
             agent.server = self.server
             agent.firewall = Firewall(agent, self.server)
             agent.odbc = ODBC(agent)
+
+            # FIXME remove these
             aconn.agentid = agent.agentid
             aconn.uuid = uuid
 
@@ -916,10 +875,11 @@ class AgentManager(threading.Thread):
 
             # Now that the agent type and displayname are set, we
             # can update the volume information from pinfo.
-            if not self.update_agent_pinfo_vols(agent, pinfo):
-                self.log.error(\
-                    "Pinfo vols bad for agent with uuid: '%s'.  Disconnecting.",
-                                                                        uuid)
+            if agent.iswin: # FIXME: do this for non-Windows agents too
+                if not self.update_agent_pinfo_vols(agent, pinfo):
+                    self.log.error(\
+                        "pinfo vols bad for agent with uuid: '%s'.  " \
+                            "Disconnecting.", uuid)
                 self._close(conn)
                 return
 
@@ -932,7 +892,7 @@ class AgentManager(threading.Thread):
             #fixme: not a great place to do this
             aconn.displayname = agent.displayname
 
-            self.save_routes(aconn) # fixme: check return value?
+            self.save_routes(agent) # fixme: check return value?
             aconn.initting = False
 
         except socket.error, e:
@@ -944,7 +904,7 @@ class AgentManager(threading.Thread):
             self.log.error(str(e))
             self.log.error(traceback.format_exc())
 
-    def save_routes(self, aconn):
+    def save_routes(self, agent):
         lines = ""
         rows = meta.Session().query(AgentVolumesEntry).\
             filter(AgentVolumesEntry.agentid == aconn.agentid).\
@@ -965,9 +925,10 @@ class AgentManager(threading.Thread):
         if 'install-dir' not in aconn.auth:
             self.log.error("save_routes: agent is missing 'install-dir'")
             return
-
-        route_path = ntpath.join(aconn.auth['install-dir'], "conf", "archive",
-                                                                "routes.txt")
+        
+        aconn = agent.connection
+        route_path = agent.path.join(aconn.auth['install-dir'],
+                                     "conf", "archive", "routes.txt")
         try:
             aconn.filemanager.put(route_path, lines)
         except (exc.HTTPException, httplib.HTTPException,

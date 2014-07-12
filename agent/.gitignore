@@ -1,2 +1,5 @@
 /*.ini
-xid
+/*.pid
+/data
+/logs
+/xid
