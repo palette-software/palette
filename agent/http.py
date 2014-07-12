@@ -1,6 +1,8 @@
+import os
 import httplib
 import urlparse
 import json
+import shutil
 
 from cStringIO import StringIO
 
@@ -20,12 +22,26 @@ class HTTPRequest(object):
         else:
             self.content_type = 'text/plain'
 
-        self.body = None
+        # Pending data that must still be read?
+        self.needs_flush = False
+
         self.json = {}
         if self.content_length:
-            self.readbody()
-
+            if self.content_type == 'application/json' or \
+                self.content_type == 'text/json':
+                body = self.handler.rfile.read(self.content_length)
+                self.json = json.loads(body)
+            else:
+                self.needs_flush = True
         self.response = HTTPResponse(self)
+
+    def __getattr__(self, name):
+        if name == 'rfile':
+            if not self.needs_flush:
+                return None
+            self.needs_flush = False # caller must read all data
+            return self.handler.rfile
+        raise AttributeError(name)
 
     def parseurl(self):
         parts = urlparse.urlparse(self.handler.path)
@@ -40,12 +56,9 @@ class HTTPRequest(object):
         else:
             self.query = {}
 
-    def readbody(self):
-        self.body = self.handler.rfile.read(self.content_length)
-        if self.content_type == 'application/json' or \
-                self.content_type == 'text/json':
-            self.json = json.loads(self.body)
-
+    def close(self):
+        if self.needs_flush:
+            self.handler.rfile.read()
 
 class HTTPResponse(object):
 
@@ -54,6 +67,7 @@ class HTTPResponse(object):
 
         self.status_code = 200
         self.content_type = 'text/plain'
+        self.content_length = -1
         self.wfile = StringIO()
 
     def __getattr__(self, name):
@@ -61,14 +75,30 @@ class HTTPResponse(object):
             return self.req.handler
         raise AttributeError(name)
 
+    def setfile(self, wfile):
+        self.wfile.close()
+        self.wfile = wfile
+
+    def set_content_length(self):
+        info = os.fstat(self.wfile)
+        self.content_length = info.st_size
+
     def flush(self):
         self.handler.send_response(self.status_code)
         self.handler.send_header('Content-Type', self.content_type)
-        body = self.wfile.getvalue()
-        self.handler.send_header('Content-Length', len(body))
+        body = None
+        if self.content_length == -1:
+            body = self.wfile.getvalue()
+            self.content_length = len(body)
+
+        self.handler.send_header('Content-Length', self.content_length)
         self.handler.end_headers()
-        if body:
+        if not body is None:
             self.handler.wfile.write(body)
+        else:
+            shutil.copyfileobj(self.wfile, self.handler.wfile,
+                               self.content_length)
+        self.wfile.close()
         self.handler.close_connection = 0
         
 
@@ -79,10 +109,16 @@ class HTTPException(StandardError, HTTPResponse):
         if body:
             self.wfile.write(str(body))
 
+class HTTPBadRequest(HTTPException):
+    def __init__(self, body=None):
+        super(HTTPBadRequest, self).__init__(httplib.BAD_REQUEST, body)
+
 class HTTPNotFound(HTTPException):
     def __init__(self, body=None):
         super(HTTPNotFound, self).__init__(httplib.NOT_FOUND, body)
 
-class HTTPBadRequest(HTTPException):
+class HTTPMethodNotAllowed(HTTPException):
     def __init__(self, body=None):
-        super(HTTPBadRequest, self).__init__(httplib.BAD_REQUEST, body)
+        super(HTTPMethodNotAllowed, self). \
+            __init__(httplib.METHOD_NOT_ALLOWED, body)
+

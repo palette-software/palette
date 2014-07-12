@@ -9,6 +9,9 @@ from mixin import BaseDictMixin
 from agentinfo import AgentVolumesEntry
 from util import sizestr
 
+import ntpath
+import posixpath
+
 class Agent(meta.Base, BaseDictMixin):
     __tablename__ = 'agent'
 
@@ -104,4 +107,56 @@ class Agent(meta.Base, BaseDictMixin):
             fmt = "%(value).0f%(symbol)s"
             d['installed-memory-readable'] = \
                 sizestr(self.installed_memory, fmt=fmt)
-        return d
+        return d        
+
+    @classmethod
+    def build(cls, envid, aconn):
+         """Create an agent from a new connection."""
+         body = aconn.auth
+         session = meta.Session()
+
+         uuid = body['uuid']
+         entry = Agent.get_by_uuid(envid, uuid)
+
+         if entry is None:
+             entry = Agent(envid=envid,
+                           version=body['version'],
+                           os_version=body['os-version'],
+                           processor_type=body['processor-type'],
+                           processor_count=body['processor-count'],
+                           installed_memory=body['installed-memory'],
+                           hostname=body['hostname'],
+                           fqdn=body['fqdn'],
+                           ip_address=body['ip-address'],
+                           listen_port=body['listen-port'],
+                           uuid=body['uuid'],
+                           agent_type=aconn.agent_type,
+                           username=u'palette',# fixme
+                           password=u'tableau2014')
+         else:
+             entry.version=body['version']
+             entry.os_version=body['os-version']
+             entry.processor_type=body['processor-type']
+             entry.processor_count=body['processor-count']
+             entry.installed_memory=body['installed-memory']
+             entry.hostname=body['hostname']
+             entry.fqdn=body['fqdn']
+             entry.ip_address=body['ip-address']
+             entry.listen_port=body['listen-port']
+             entry.uuid=body['uuid']
+             entry.agent_type=aconn.agent_type
+             entry.username=u'palette'# fixme
+             entry.password=u'tableau2014'
+
+         entry.last_connection_time = func.now()
+         entry = session.merge(entry)
+         session.commit()
+
+         if 'microsoft' in body['os-version'].lower():
+             entry.iswin = True
+             entry.path = ntpath
+         else:
+             entry.iswin = False
+             entry.path = posixpath
+
+         return entry

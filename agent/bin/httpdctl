@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ -z "$TOPDIR" ]; then
+    export TOPDIR=/home/matt/Projects/palette/server/agent
+fi
+
+if [ -z "$LISTEN_PORT" ]; then
+    export LISTEN_PORT=8889
+fi
+
+if [ -z "$CONF" ]; then
+    export CONF=/home/matt/Projects/palette/server/agent/conf/archive/httpd.conf
+fi
+
+mkdir -p ${TOPDIR}/logs
+
+exec /usr/sbin/apache2 -f ${CONF} -E ${TOPDIR}/logs/startup.log $@

@@ -8,6 +8,7 @@ import argparse
 
 import platform
 import multiprocessing
+import shutil
 
 import ConfigParser as configparser
 
@@ -16,6 +17,7 @@ from SimpleHTTPServer import SimpleHTTPRequestHandler
 import urlparse
 
 from config import Config
+from apache2 import Apache2
 from processmanager import ProcessManager
 import logger
 
@@ -102,8 +104,24 @@ class AgentHandler(SimpleHTTPRequestHandler):
             self.server.log.debug('JSON: ' + json.dumps(data))
         return data
 
+    def handle_archive(self, req):
+        if req.method != 'POST':
+            raise http.HTTPMethodNotAllowed(req.method)
+        if not 'action' in req.json:
+            raise http.HTTPBadRequest()
+        action = req.json['action'].lower()
+        if action == 'start':
+            if 'port' in req.json:
+                self.server.archive.setport(req.json['port'])
+            self.server.archive.start()
+        elif action == 'stop':
+            self.server.archive.stop()
+        else:
+            raise http.HTTPBadRequest()
+        return {'status':'ok', 'port':self.server.archive.port }
+
     # The "auth" immediate command reply.
-    # Immediate commands methods begin with 'icommand_'.
+    # Immediate commands methods begin with 'icommand_'
     def handle_auth(self, req):
         d = { "license-key": self.server.license_key,
               "version": self.server.version,
@@ -120,15 +138,58 @@ class AgentHandler(SimpleHTTPRequestHandler):
             }
         return d
 
+    def handle_file_GET(req):
+        if 'path' not in req.query:
+            raise HTTPBadRequest()
+        path = req.query['path']
+        if not os.path.isfile(path):
+            raise HTTPNotFound(path)
+        res = req.response
+        # FIXME: catch IOError, OSError
+        res.setfile(open(path, 'r'))
+        res.set_content_length()
+        return res
+
+    def handle_file_PUT(req):
+        if 'path' not in req.query:
+            raise HTTPBadRequest()
+        path = req.query['path']
+        # FIXME: catch IOError, OSError
+        with open(path, 'w') as f:
+            shutil.copyfileobj(req.rfile, f)
+        return req.response
+
+    def handle_file_DELETE(req):
+        if 'path' not in req.query:
+            raise HTTPBadRequest()
+        # FIXME: test for OSError
+        os.remove(req.query['path'])
+        return req.response
+
+    def handle_file(self, req):
+        if req.method == 'GET':
+            return self.handle_file_GET(req)
+        if req.method == 'PUT':
+            return self.handle_file_PUT(req)
+        if req.method == 'DELETE':
+            return self.handle_file_DELETE(req)
+        raise HTTPBadRequest()
+
     def handle_method(self, method):
         self.server.log.info(method +' ' + self.path)
         res = None
         try:
             req = HTTPRequest(self, method)
-            if req.path == '/auth':
+            if req.path == '/archive':
+                res = self.handle_archive(req)
+            elif req.path == '/auth':
                 res = self.handle_auth(req)
             elif req.path == '/cli':
                 res = self.handle_cli(req)
+            elif req.path == '/file':
+                res = self.handle_file(req)
+            elif req.path == '/ping':
+                res = req.response
             else:
                 raise http.HTTPNotFound(req.path)
         except http.HTTPException, e:
@@ -148,6 +209,9 @@ class AgentHandler(SimpleHTTPRequestHandler):
             res = req.response
             res.content_type = 'application/json'
             res.wfile.write(json.dumps(obj))
+
+        # terminate the request
+        req.close()
         # send it
         res.flush()
 
@@ -156,6 +220,9 @@ class AgentHandler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         return self.handle_method('POST')
+
+    def do_PUT(self):
+        return self.handle_method('PUT')
 
 class Agent(TCPServer):
 
@@ -185,6 +252,10 @@ class Agent(TCPServer):
 
         pathenv = config.get(self.DEFAULT_SECTION, 'path', default=None)
         self.processmanager = ProcessManager(self.xid_dir, pathenv)
+
+        conf = os.path.join(self.install_dir, 'conf', 'archive', 'httpd.conf')
+        port = config.getint("archive", "port", default=8889);
+        self.archive = Apache2(conf, port)
 
         # Start the Agent server that uses AgentHandler to handle
         # incoming requests from the Controller.

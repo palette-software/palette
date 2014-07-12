@@ -1,0 +1,194 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import shutil
+import mimetypes
+
+class CGIException(Exception):
+    
+    def __init__(self, status, reason, body=''):
+        self.status_code = status
+        self.reason_phrase = reason
+        self.body = body
+
+class BadRequest(CGIException):
+    def __init__(self, body=''):
+        super(BadRequest, self).__init__(400, 'Bad Request', body=body)
+
+class NotFound(CGIException):
+    def __init__(self, body=''):
+        super(NotFound, self).__init__(404, 'Not Found', body=body)
+
+class MethodNotAllowed(CGIException):
+    def __init__(self, body=''):
+        super(MethodNotAllowed, self).__init__(405,
+                                               'Method Not Allowed',
+                                               body=body)
+
+class CGIRequest(object):
+    
+    def __init__(self):
+        # Just assume that cgi-bin is at the same directory level as 'conf'.
+        script = os.environ["SCRIPT_FILENAME"];
+        path = os.path.join(os.path.dirname(script), '..')
+        self.topdir = os.path.abspath(path)
+        os.environ["TOPDIR"] = self.topdir
+        self.environ = os.environ
+
+    def __getattr__(self, name):
+        if name == 'method':
+            return self.environ['REQUEST_METHOD'].upper()
+        elif name == 'uri':
+            return self.environ['REQUEST_URI']
+        raise AttributeError(name)
+
+    def printenv(self):
+        for key in sorted(self.environ):
+            print key + ': ' + self.environ[key]
+        print
+
+class CGIRouter(object):
+    def __init__(self, path=None):
+        self.path = path
+        self.routes = {}
+        if path:
+            self.parse()
+        else:
+            scriptdir = os.path.dirname(os.environ["SCRIPT_FILENAME"])
+            route = os.path.abspath(os.path.join(scriptdir, '..', 'data'))
+            self.routes['/'] = route
+
+    def parse(self):
+        with open(self.path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if len(line) == 0 or line.startswith('#'):
+                    continue
+                L = line.split(':', 1)
+                if len(L) == 1:
+                    key = '/'; value = L[0]
+                else:
+                    key = L[0]; value = L[1]
+                if not key.startswith('/'):
+                    key = '/' + key
+                if not key.endswith('/'):
+                    key = key + '/'
+                self.routes[key] = value
+
+    def get(self, key):
+        if key in self.routes:
+            return self.routes[key]
+        return None
+
+    # WARNING: Unix path only
+    def resolve(self, url):
+        for key in sorted(self.routes, reverse=True):
+            if url.startswith(key):
+                remainder = url[len(key):]
+                if remainder and not remainder.startswith('/'):
+                    remainder = '/' + remainder
+                return self.routes[key] + remainder
+        return None
+
+def handle_directory(path):
+    print 'Content-Type: text/plain'
+    print
+    print path
+    print '-' * len(path)
+
+    dirs = []; files = []
+    for name in os.listdir(path):
+        p = os.path.join(path, name)
+        if os.path.isdir(p):
+            dirs.append(name)
+        elif os.path.isfile(p):
+            files.append(name)
+    if len(files) > 0:
+        print str(len(files)) + ' File(s):'
+        for name in files:
+            print name
+    else:
+        print 'NO FILES'
+    print
+    if len(dirs) > 0:
+        print str(len(dirs)) + ' Directories(s):'
+        for name in dirs:
+            print name
+        print
+    print '-' * len(path)
+
+    
+def handle_file_GET(path):
+    if not os.path.isfile(path):
+        raise NotFound('File not found: ' + path)
+    (mimetype, encoding) = mimetypes.guess_type(path, strict=False)
+    print 'Content-Type: ' + mimetype
+    print
+    with open(path, 'r') as f:
+        shutil.copyfileobj(f, sys.stdout)
+
+
+def handle_file_PUT(path):
+    if 'CONTENT_LENGTH' != req.environ:
+        raise BadRequest("Missing CONTENT_LENGTH in PUT request")
+    length = int(req.environ['CONTENT_LENGTH'])
+
+    with open(path, 'w') as f:
+        shutil.copyfileobj(sys.stdin, f, length)
+    
+    (mimetype, encoding) = mimetypes.guess_type(path, strict=False)
+    print 'Content-Type: ' + mimetype
+    print
+
+
+def handle():
+    req = CGIRequest()
+
+    if 'ROUTES_FILENAME' in req.environ:
+        router_path = req.environ['ROUTES_FILENAME']
+    else:
+        router_path = None
+
+    router = CGIRouter(router_path)
+
+    if req.uri == '/ENV':
+        print 'Content-Type: text/plain\n'
+        return req.printenv()
+
+    path = router.resolve(req.uri)
+    if not path:
+        raise NotFound(req.uri)
+
+    if os.path.isdir(path):
+        if req.method != 'GET':
+            raise MethodNotAllowed(req.method)
+        return handle_directory(path)
+    elif os.path.isfile(path):
+        if req.method == 'GET':
+            return handle_file_GET(path)
+        elif req.method == 'PUT':
+            return handle_file_PUT(path)
+        else:
+            raise MethodNotAllowed(req.method)
+    else:
+        raise BadRequest(req.method + ' ' + req.uri)
+
+if __name__ == '__main__':
+    try:
+        handle()
+    except CGIException, e:
+        status = 'Status: ' + str(e.status_code) + ' ' + e.reason_phrase
+        print status
+        print 'Content-Type: text/plain'
+        print
+        print status
+        if e.body:
+            print e.body
+    except:
+        print 'Status: 500 Internal Server Error'
+        print 'Content-Type: text/plain'
+        print
+        import traceback
+        print traceback.format_exc()
+        
