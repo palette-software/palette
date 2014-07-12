@@ -8,8 +8,6 @@ import socket
 import json
 import traceback
 
-import ntpath
-
 import sqlalchemy
 
 from akiri.framework.ext.sqlalchemy import meta
