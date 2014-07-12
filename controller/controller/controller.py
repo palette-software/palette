@@ -96,12 +96,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         backup_name = time.strftime("%Y%m%d_%H%M%S") + ".tsbak"
 
         # Get the vol + dir to use for the backup command to tabadmin.
-        backup_dir = self.backup.primary_data_loc_path()
+        backup_dir = self.backup.primary_data_loc_path(agent)
         if not backup_dir:
             return self.error("Couldn't find the primary_data_loc in " + \
                         "the agent_volumes table for the primary agent.")
 
-        backup_path = ntpath.join(backup_dir, backup_name)
+        backup_path = agent.path.join(backup_dir, backup_name)
 
         backup_vol = backup_path.split(':')[0]
         # e.g.: c:\\Program\ Files\ (x86)\\Palette\\Data\\2014Jan27_162225.tsbak
@@ -280,9 +280,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not vol_entry:
             return self.error("Missing volume id: %d!", entry.volid)
 
+        # FIXME: use agent.path
         backup_path = ntpath.join(vol_entry.name + ":", vol_entry.path, backup)
         self.log.debug("backupdel_cmd: Deleting path '%s' on agent '%s'",
-                                            backup_path, agent.displayname)
+                       backup_path, agent.displayname)
 
         body = self.delete_file(agent, backup_path)
         if not body.has_key('error'):
@@ -599,8 +600,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 "restore_cmd: Backup has no gcs/s3/volID for backup %s" % \
                                                                 backup_name)
 
-        # Get the "vol:/dir" to use for the restore command to tabadmin.
-        backup_dir = self.backup.primary_data_loc_path()
+        # Get the vol + dir to use for the restore command to tabadmin.
+        backup_dir = self.backup.primary_data_loc_path(agent)
         if not backup_dir:
             return self.error("restore: Couldn't find the primary_data_loc " + \
                         "in the agent_volumes table for the primary agent.")
@@ -625,6 +626,33 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             if source_agent.displayname != primary_agent.displayname:
                 # The file isn't on the Primary agent or cloud storage.
                 # We need to copy the file to the Primary.
+=======
+        #  e.g. "20140531_153629.tsbak"
+        filename_only = os.path.basename(source_spec)
+        local_fullpathname = agent.path.join(backup_dir, filename_only)
+
+        # Check if the file is on the Primary Agent.
+        if source_name != agent.displayname:
+            # The file isn't on the Primary agent:
+            # We need to copy the file to the Primary.
+
+            # First check to see if the source_name is a gcs name.
+            gcs_entry = self.gcs.get_by_name(source_name)
+            if gcs_entry:
+                self.log.debug("restore: Sending gcs command: %s, %s", \
+                               target, agent.displayname)
+
+                body = self.gcs_cmd(agent, "GET", gcs_entry, source_spec)
+                if 'error' in body:
+                    fmt = "restore: gcs GET backup file '%s' " + \
+                        "from gcs file '%s' failed. Error was: %s"
+                    self.log.debug(fmt,
+                               source_spec,
+                               source_name,
+                               body['error'])
+                    self.stateman.update(orig_state)
+                    return body
+>>>>>>> First working check-in of the linux agent.
 
                 # copy_cmd arguments:
                 #   source-agent-name:VOL/filename
@@ -965,8 +993,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.info("get_pinfo: Failing due to UPDATING")
             return {"error": "Cannot run command while UPDATING"}
 
-        path = ntpath.join(agent.tableau_data_dir, "data", "tabsvc",
-                           "config", "workgroup.yml")
+        path = agent.path.join(agent.tableau_data_dir, "data", "tabsvc",
+                               "config", "workgroup.yml")
         try:
             yml = agent.connection.filemanager.get(path)
         except (exc.HTTPException, httplib.HTTPException,
@@ -1165,7 +1193,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         aconn = agent.connection
         ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
         data_dir = self.backup.primary_data_loc_path()
-        ziplog_path = ntpath.join(data_dir, ziplog_name)
+        ziplog_path = agent.path.join(data_dir, ziplog_name)
 
         body = self.cli_cmd('tabadmin cleanup', agent)
         body[u'info'] = u'tabadmin cleanup'
@@ -1224,8 +1252,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """
 
         TABLEAU_INSTALL_DIR="tableau-install-dir"
-        YML_CONFIG_FILE_PART=ntpath.join("data", "tabsvc",
-                                         "config", "workgroup.yml")
+        YML_CONFIG_FILE_PART=agent.path.join("data", "tabsvc",
+                                             "config", "workgroup.yml")
 
         aconn = agent.connection
 
