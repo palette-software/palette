@@ -21,8 +21,9 @@
         <span>Manage Tableau</span>
       </a>
     </li>
+    <!--
     <li class="category">
-      <a href="/configure/yml">
+      <a>
         <i class="fa fa-fw fa-gears"></i>
         <span>Integration</span>
         <i class="fa fa-fw fa-angle-${obj.integration and 'up' or 'down'} expand"></i>
@@ -36,8 +37,9 @@
         </li>
       </ul>
     </li>
+    -->
     <li class="category">
-      <a href="/configure/yml">
+      <a>
         <i class="fa fa-fw fa-cog"></i>
         <span>Configuration</span>
         <i class="fa fa-fw fa-angle-${obj.expanded and 'up' or 'down'} expand"></i>

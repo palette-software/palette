@@ -1555,11 +1555,15 @@ class CliHandler(socketserver.StreamRequestHandler):
 
             self.server.log.debug("telnet command: '%s'", data)
 
+            session = meta.Session()
             try:
                 cmd = Command(self.server, data)
             except CommandException, e:
                 self.error(ERROR_COMMAND_SYNTAX_ERROR, str(e))
                 continue
+            finally:
+                session.rollback()
+                meta.Session.remove()
 
             if not hasattr(self, 'do_'+cmd.name):
                 self.error(ERROR_NO_SUCH_COMMAND,

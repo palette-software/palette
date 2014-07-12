@@ -47,6 +47,8 @@ class ExtractManager(object):
         if not lastid is None:
             stmt += " AND background_jobs.id > " + lastid
 
+        stmt += " ORDER BY background_jobs.id ASC"
+
         data = agent.odbc.execute(stmt)
 
         if 'error' in data or '' not in data:
