@@ -837,6 +837,8 @@ class AgentManager(threading.Thread):
         self.log.debug("New socket accepted.")
         conn.settimeout(self.socket_timeout)
 
+        session = meta.Session()
+
         try:
             aconn = AgentConnection(self.server, conn, addr)
 
@@ -943,6 +945,9 @@ class AgentManager(threading.Thread):
             traceback.format_exc()
             self.log.error(str(e))
             self.log.error(traceback.format_exc())
+        finally:
+            session.rollback()
+            meta.Session.remove()
 
     def save_routes(self, aconn):
         lines = ""
@@ -1015,31 +1020,42 @@ class AgentHealthMonitor(threading.Thread):
                 time.sleep(self.ping_interval)
                 continue
 
-            agents = self.manager.all_agents()
-            self.log.debug("about to ping %d agent(s)", len(agents))
-            for key in agents.keys():
-                self.manager.lock()
-
-                if not agents.has_key(key):
-                    self.log.debug("agent with uuid '%s' is now gone and won't be checked." %
-                        key)
-                    self.manager.unlock()
-                    continue
-                agent = agents[key]
-                self.manager.unlock()
-
-                self.log.debug("Ping: check for agent '%s', type '%s', uuid %s." % \
-                        (agent.displayname, agent.agent_type, key))
-
-                # fixme: add a timeout ?
-                body = self.server.ping(agent)
-                if body.has_key('error'):
-                    self.log.info("Ping: Agent '%s', type '%s', uuid %s did not respond to ping.  Removing." %
-                        (agent.displayname, agent.agent_type, key))
-
-                    self.manager.remove_agent(agent, "Lost contact with an agent")
-                else:
-                    self.log.debug("Ping: Reply from agent '%s', type '%s', uuid %s." %
-                        (agent.displayname, agent.agent_type, key))
+            session = meta.Session()
+            try:
+                self.check()
+            finally:
+                session.rollback()
+                meta.Session.remove()
 
             time.sleep(self.ping_interval)
+
+    def check(self):
+        agents = self.manager.all_agents()
+        self.log.debug("about to ping %d agent(s)", len(agents))
+
+        for key in agents.keys():
+            self.manager.lock()
+            if not agents.has_key(key):
+                self.log.debug(\
+                    "agent with uuid '%s' is now gone and won't be checked." %
+                            key)
+                self.manager.unlock()
+                continue
+            agent = agents[key]
+            self.manager.unlock()
+
+            self.log.debug("Ping: check for agent '%s', type '%s', uuid %s." % \
+                            (agent.displayname, agent.agent_type, key))
+
+            body = self.server.ping(agent)
+            if body.has_key('error'):
+                self.log.info(\
+                    ("Ping: Agent '%s', type '%s', uuid %s did " + \
+                    "not respond to a ping.  Removing.") %
+                    (agent.displayname, agent.agent_type, key))
+
+                self.manager.remove_agent(agent, "Lost contact with an agent")
+            else:
+                self.log.debug(\
+                    "Ping: Reply from agent '%s', type '%s', uuid %s." %
+                                (agent.displayname, agent.agent_type, key))
