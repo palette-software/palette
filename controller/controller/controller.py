@@ -798,7 +798,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                             "agent. Unexpected error: " + str(e))    # bad agent
                     return self.error("GET %s failed with: %s" % (uri, str(e)))
 
+    def updating(self):
+        main_state = self.stateman.get_state()
+        if main_state == StateManager.STATE_UPDATING:
+            return True
+        else:
+            return False
+
     def get_pinfo(self, agent, update_agent=False):
+        if self.updating():
+            self.log.info("get_pinfo: Failing due to UPDATING")
+            return {"error": "Cannot run command while UPDATING"}
+
         aconn = agent.connection
         body = self.cli_cmd('pinfo', agent, immediate=True)
         # FIXME: add a function to test cli success (cli_success?)
@@ -830,6 +841,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return pinfo
 
     def license(self, agent):
+        if self.updating():
+            self.log.info("get_pinfo: Failing due to UPDATING")
+            return {"error": "Cannot run command while UPDATING"}
+
         body = self.cli_cmd('tabadmin license', agent)
 
         if not 'exit-status' in body or body['exit-status'] != 0:
@@ -863,6 +878,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return d
 
     def yml(self, agent):
+        if self.updating():
+            self.log.info("get_pinfo: Failing due to UPDATING")
+            return {"error": "Cannot run command while UPDATING"}
+
         path = ntpath.join(agent.tableau_data_dir, "data", "tabsvc",
                            "config", "workgroup.yml")
         try:
@@ -1169,6 +1188,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.firewall_manager.do_firewall_ports(agent)
 
         # Cleanup.
+        self.config_servers(agent)
+
+        return pinfo
+
+    def config_servers(self, agent):
+        """Configure the maintenance and archive servers."""
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             # Put into a known state
             body = self.maint("stop", agent=agent, send_alert=False)
@@ -1189,7 +1214,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # If tableau is stopped, turn on the maintenance server
         if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
-            return pinfo
+            return
 
         main_state = self.stateman.get_state()
         if main_state == StateManager.STATE_STOPPED:
@@ -1197,8 +1222,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             if body.has_key("error"):
                 self.event_control.gen(EventControl.MAINT_START_FAILED,
                             dict(body.items() + agent.__dict__.items()))
-
-        return pinfo
 
     def remove_agent(self, agent, reason="", gen_event=True):
         manager = self.agentmanager
@@ -1328,6 +1351,8 @@ def main():
 
     server.firewall_manager = FirewallManager(server)
 
+    server.stateman = StateManager(server)
+
     manager = AgentManager(server)
     server.agentmanager = manager
 
@@ -1346,7 +1371,6 @@ def main():
         log.debug("Starting status monitor.")
         statusmon.start()
 
-    server.stateman = StateManager(server)
     server.serve_forever()
 
 if __name__ == '__main__':
