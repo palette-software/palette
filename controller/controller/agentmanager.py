@@ -201,8 +201,7 @@ class AgentManager(threading.Thread):
 
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("register: Initializing state entries on connect")
-            stateman = StateManager(self.server)
-            stateman.update(StateManager.STATE_PENDING)
+            self.server.stateman.update(StateManager.STATE_PENDING)
 
             # Check to see if we need to reclassify archive agents as
             # worker agents.  For example, a worker may have
@@ -753,10 +752,9 @@ class AgentManager(threading.Thread):
             self.log.debug("remove_agent: No such agent with uuid %s", uuid)
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("remove_agent: Initializing state entries on removal")
-            stateman = StateManager(self.server)
-            stateman.update(StateManager.STATE_DISCONNECTED)
+            self.server.stateman.update(StateManager.STATE_DISCONNECTED)
             # Note: We don't update/clear the "reported" state from
-            # a previous agent, so the user will see what was the last
+            # a previous agent, so the user will see the last
             # real state.
 
         self.unlock()
@@ -789,11 +787,25 @@ class AgentManager(threading.Thread):
         asocketmon.start()
 
         while True:
+            if self.server.stateman.get_state() == StateManager.STATE_UPDATING:
+                self.log.debug("AgentManager: UPDATING: Not " + \
+                                    "listening for new agent connections.")
+                time.sleep(10)
+                continue
             try:
                 conn, addr = sock.accept()
             except socket.error as e:
                 self.log.debug("Accept failed.")
                 continue
+
+            if self.server.stateman.get_state() == StateManager.STATE_UPDATING:
+                self.log.debug("AgentManager: UPDATING: Not " + \
+                                    "handling the agent connection.")
+                self._close(conn)
+                continue
+
+            else:
+                self.log.debug("That not be the state: %s", self.server.stateman.get_state())
 
             tobj = threading.Thread(target=self.handle_agent_connection,
                                  args=(conn, addr))
@@ -1033,6 +1045,7 @@ class AgentHealthMonitor(threading.Thread):
         agents = self.manager.all_agents()
         self.log.debug("about to ping %d agent(s)", len(agents))
 
+
         for key in agents.keys():
             self.manager.lock()
             if not agents.has_key(key):
@@ -1044,17 +1057,29 @@ class AgentHealthMonitor(threading.Thread):
             agent = agents[key]
             self.manager.unlock()
 
-            self.log.debug("Ping: check for agent '%s', type '%s', uuid %s." % \
-                            (agent.displayname, agent.agent_type, key))
+
+            self.log.debug(\
+                "Ping: check for agent '%s', type '%s', uuid '%s'." % \
+                                (agent.displayname, agent.agent_type, key))
 
             body = self.server.ping(agent)
             if body.has_key('error'):
-                self.log.info(\
-                    ("Ping: Agent '%s', type '%s', uuid %s did " + \
-                    "not respond to a ping.  Removing.") %
+                if self.server.stateman.get_state() == \
+                                            StateManager.STATE_UPDATING:
+                    self.log.info(\
+                        ("Ping During UPDATE: Agent '%s', type '%s', " + \
+                        "uuid '%s' did  not respond to a ping.  " + \
+                        "Ignoring while UPDATING.") %
                     (agent.displayname, agent.agent_type, key))
 
-                self.manager.remove_agent(agent, "Lost contact with an agent")
+                else:
+                    self.log.info(\
+                        ("Ping: Agent '%s', type '%s', uuid '%s' did " + \
+                        "not respond to a ping.  Removing.") %
+                        (agent.displayname, agent.agent_type, key))
+
+                    self.manager.remove_agent(agent,
+                                                "Lost contact with an agent")
             else:
                 self.log.debug(\
                     "Ping: Reply from agent '%s', type '%s', uuid %s." %

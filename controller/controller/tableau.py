@@ -22,7 +22,7 @@ class TableauProcess(meta.Base):
     STATUS_RUNNING="RUNNING"
     STATUS_STOPPED="STOPPED"
     STATUS_DEGRADED="DEGRADED"
-    STATUS_UNKNOWN="UNKNOWN"
+    STATUS_UNKNOWN="UNKNOWN"    # We set this if we don't know yet.
 
     name = Column(String, nullable=False, primary_key=True)
     agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False,\
@@ -37,6 +37,13 @@ class TableauProcess(meta.Base):
 class TableauStatusMonitor(threading.Thread):
 
     LOGGER_NAME = "status"
+
+    statemap = {
+        TableauProcess.STATUS_RUNNING: StateManager.STATE_STARTED,
+        TableauProcess.STATUS_STOPPED: StateManager.STATE_STOPPED,
+        TableauProcess.STATUS_DEGRADED: StateManager.STATE_DEGRADED,
+        TableauProcess.STATUS_UNKNOWN: StateManager.STATE_UNKNOWN
+    }
 
     def __init__(self, server, manager):
         super(TableauStatusMonitor, self).__init__()
@@ -119,6 +126,17 @@ class TableauStatusMonitor(threading.Thread):
                 one().status
         except NoResultFound, e:
             return TableauProcess.STATUS_UNKNOWN
+
+    def set_main_state_from_tableau_status(self):
+        tableau_status = self.get_reported_status()
+
+        if tableau_status not in self.statemap:
+            self.log.error("set_main_state: Unknown Tableau status: %s",
+                    tableau_status)
+            return
+        else:
+            main_state = self.statemap[tableau_status]
+            self.stateman.update(main_state)
 
     def set_main_state(self, status, agent, body):
         main_state = self.stateman.get_state()
