@@ -23,7 +23,7 @@ from gcs import GCS
 from s3 import S3
 from system import SystemEntry
 from state import StateManager
-from tableau import TableauProcess
+from tableau import TableauStatusMonitor, TableauProcess
 
 from cli_errors import *
 
@@ -270,6 +270,81 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = self.server.cli_cmd("tabadmin status -v", agent)
         self.report_status(body)
 
+    @usage('update [on | off]')
+    def do_update(self, cmd):
+        stateman = self.server.stateman
+
+        if not len(cmd.args):
+            main_state = stateman.get_state()
+            self.ack()
+            self.report_status({"main-state": main_state})
+            return
+        if len(cmd.args) != 1:
+            self.print_usage(self.do_update.__usage__)
+            return
+        if cmd.args[0] not in ('on', 'off'):
+            self.print_usage(self.do_update.__usage__)
+            return
+
+        agent = self.get_agent(cmd.dict, error_on_no_agent=False)
+
+        # Note: an agent doesn't have to be connected to change update mode.
+
+        if agent:
+            aconn = agent.connection
+        else:
+            aconn = None
+
+        # lock to ensure against two simultaneous user actions
+        if aconn and not aconn.user_action_lock(blocking=False):
+            self.error(ERROR_BUSY)
+            return
+
+        # Check to see if we're in a state to update
+        main_state = stateman.get_state()
+
+        if cmd.args[0] == 'on':
+            if main_state not in (StateManager.STATE_STARTED,
+                    StateManager.STATE_STOPPED, StateManager.STATE_DEGRADED,
+                    StateManager.STATE_DISCONNECTED,
+                                                    StateManager.STATE_UNKNOWN):
+
+                self.error(ERROR_BUSY, "FAIL: Can't update - main state is: %s",
+                                                                  main_state)
+                self.server.log.debug("Can't update - main state is: %s",
+                                                                    main_state)
+                if aconn:
+                    aconn.user_action_unlock()
+                return
+
+            stateman.update(StateManager.STATE_UPDATING)
+            if aconn:
+                aconn.user_action_unlock()
+
+            self.ack()
+            self.report_status({})
+            return
+
+        # "update off"
+        if main_state != StateManager.STATE_UPDATING:
+            self.error(ERROR_BUSY, "FAIL: Can't update - main state is: %s",
+                                                              main_state)
+            self.server.log.debug("Can't update - main state is: %s",
+                                                                    main_state)
+
+            if aconn:
+                aconn.user_action_unlock()
+            return
+
+        # Set it back to the real state
+        self.server.statusmon.set_main_state_from_tableau_status()
+
+        if aconn:
+            aconn.user_action_unlock()
+
+        self.ack()
+        self.report_status({})
+
     @usage('backup [ [target-displayname [volume-name]] | [gcs-name] ]')
     def do_backup(self, cmd):
         """Perform a Tableau backup and potentially migrate."""
@@ -301,9 +376,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman = self.server.stateman
         main_state = stateman.get_state()
 
-        # Backups can be done when Tableau is either started or stopped.
-        if main_state not in \
-                        (StateManager.STATE_STARTED, StateManager.STATE_STOPPED):
+        # Backups can be done when Tableau is started, degraded or stopped.
+        if main_state not in (StateManager.STATE_STARTED,
+                    StateManager.STATE_DEGRADED, StateManager.STATE_STOPPED):
             self.error(ERROR_BUSY, "FAIL: Can't backup - main state is: %s",
                                                                   main_state)
             self.server.log.debug("Can't backup - main state is: %s",
@@ -314,7 +389,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         reported_status = self.server.statusmon.get_reported_status()
         # The reported status from tableau needs to be running or stopped
         # to do a backup.
-        if reported_status == TableauProcess.STATUS_RUNNING:
+        if reported_status in (TableauProcess.STATUS_RUNNING,
+                                        TableauProcess.STATUS_DEGRADED):
             stateman.update(StateManager.STATE_STARTED_BACKUP)
         elif reported_status == TableauProcess.STATUS_STOPPED:
             stateman.update(StateManager.STATE_STOPPED_BACKUP)
@@ -384,7 +460,8 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         stateman = self.server.stateman
         main_state = stateman.get_state()
-        if main_state == StateManager.STATE_STARTED:
+        if main_state in (StateManager.STATE_STARTED,
+                                                StateManager.STATE_DEGRADED):
             stateman.update(StateManager.STATE_STARTED_BACKUPDEL)
         elif main_state == StateManager.STATE_STOPPED:
             stateman.update(StateManager.STATE_STOPPED_BACKUPDEL)
@@ -448,9 +525,10 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman = self.server.stateman
         main_state = stateman.get_state()
 
-        # Backups can be done when Tableau is either started or stopped.
-        if main_state not in \
-                        (StateManager.STATE_STARTED, StateManager.STATE_STOPPED):
+        # Backups can be done when Tableau is either started, degraded
+        # or stopped.
+        if main_state not in (StateManager.STATE_STARTED,
+                    StateManager.STATE_DEGRADED, StateManager.STATE_STOPPED):
             self.error(ERROR_WRONG_STATE,
                 "FAIL: Can't backup before restore - main state is:", \
                                                                   main_state)
@@ -463,7 +541,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         # The reported status from tableau needs to be running or stopped
         # to do a backup.  If it is, set our state to
         # STATE_*_BACKUP_RESTORE.
-        if reported_status == TableauProcess.STATUS_RUNNING:
+        if reported_status in (TableauProcess.STATUS_RUNNING,
+                                        TableauProcess.STATUS_DEGRADED):
             stateman.update(StateManager.STATE_STARTED_BACKUP_RESTORE)
         elif reported_status == TableauProcess.STATUS_STOPPED:
             stateman.update(StateManager.STATE_STOPPED_BACKUP_RESTORE)
@@ -933,7 +1012,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         reported_status = self.server.statusmon.get_reported_status()
-        if reported_status != TableauProcess.STATUS_RUNNING:
+        if reported_status not in (TableauProcess.STATUS_RUNNING,
+                                            TableauProcess.STATUS_DEGRADED):
             self.error(ERROR_WRONG_STATE,
                         "FAIL: Can't start - reported status is: %s",
                                                               reported_status)
@@ -1424,7 +1504,8 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         stateman = self.server.stateman
         main_state = stateman.get_state()
-        if main_state == StateManager.STATE_STARTED:
+        if main_state in (StateManager.STATE_STARTED,
+                                                StateManager.STATE_DEGRADED):
             stateman.update(StateManager.STATE_STARTED_ZIPLOGS)
         elif main_state == StateManager.STATE_STOPPED:
             stateman.update(StateManager.STATE_STOPPED_ZIPLOGS)
@@ -1475,7 +1556,8 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         stateman = self.server.stateman
         main_state = stateman.get_state()
-        if main_state == StateManager.STATE_STARTED:
+        if main_state in (StateManager.STATE_STARTED,
+                                        StateManager.STATE_DEGRADED):
             stateman.update(StateManager.STATE_STARTED_CLEANUP)
         elif main_state == StateManager.STATE_STOPPED:
             stateman.update(StateManager.STATE_STOPPED_CLEANUP)
@@ -1516,20 +1598,21 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status(body)
 
-    def get_agent(self, opts):
+    def get_agent(self, opts, error_on_no_agent=True):
         agent = None
 
         if opts.has_key('uuid'): # should never fail
             uuid = opts['uuid'] # may be None
             if uuid:
                 agent = self.server.agentmanager.agent_by_uuid(uuid)
-                if not agent:
+                if not agent and error_on_no_agent:
                     self.error(ERROR_AGENT_NOT_CONNECTED,
                                     "No connected agent with uuid=%s" % (uuid))
-            else:
+            elif error_on_no_agent:
                 self.error(ERROR_AGENT_NOT_SPECIFIED)
         else: # should never happen
-            self.error(ERROR_AGENT_NOT_SPECIFIED)
+            if error_on_no_agent:
+                self.error(ERROR_AGENT_NOT_SPECIFIED)
 
         return agent
 
