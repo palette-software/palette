@@ -35,6 +35,8 @@ class StateManager(object):
 
     STATE_DEGRADED="DEGRADED"       # reported from tabadmin
 
+    STATE_UPDATING="UPDATING"       # agent or controller is updating
+
     STATE_UNKNOWN="UNKNOWN"        # no primary ever connected to the controller
 
     def __init__(self, server):
