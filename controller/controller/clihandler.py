@@ -636,6 +636,10 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_usage(self.do_copy.__usage__)
             return
 
+        if self.server.updating():
+            self.error(ERROR_WRONG_STATE, "Updating")
+            return
+
         self.ack()
         body = self.server.copy_cmd(cmd.args[0], cmd.args[1])
         self.report_status(body)
@@ -714,9 +718,13 @@ class CliHandler(socketserver.StreamRequestHandler):
         if not agent:
             return
 
+        if self.server.updating():
+            self.error(ERROR_WRONG_STATE, "Updating")
+            return
+
         self.ack()
 
-        phttp_cmd = self.server.PHTTP_BIN
+        phttp_cmd = "phttp"
         for arg in cmd.args:
             if ' ' in arg:
                 phttp_cmd += ' "' + arg + '"'
