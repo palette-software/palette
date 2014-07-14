@@ -4,13 +4,13 @@
     <span id="toggle-main-menu" class="fi-list"></span>
     <ul class="nav">
       <li class="more">
-        <a href="javascript:void(0)" onclick="javascript:showClassicWidget()"><i class="fa fa-question-circle"></i>
-	  <span>Help</span>
-	</a>
+        <a class="help"><i class="fa fa-question-circle"></i>
+          <span>Help</span>
+	    </a>
         <ul>
           <li>
-            <a href="javascript:void(0)" onclick="javascript:showClassicWidget()">
-              <i class="fa fa-fw fa-envelope"></i> Contact Palette 
+            <a class="help">
+              <i class="fa fa-fw fa-envelope"></i> Contact Palette
             </a>
           </li>
           <li>
