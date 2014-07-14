@@ -30,8 +30,8 @@
           <p>{{visited-info}}</p>
         </div>
         <div class="col2">
-          <p>{{tableau-info}}</p>
-          <p class="admin-type">Palette {{admin-type}}</p>
+          <div><span class="label">Tableau Role</span><span>{{tableau-info}}</span></div>
+          <div><span class="label">Palette Role</span><span>{{admin-type}}</span></div>
         </div>
       </div>
       <i class="fa fa-fw fa-angle-down expand"></i>
@@ -59,7 +59,7 @@
             <span class="label">Created</span>{{system-created-at}}
           </article>
           <article>
-            <span class="label">Last Tableau login</span>{{login-at}}
+            <span class="label">Last Tableau Login</span>{{login-at}}
           </article>
             </div>
             <div class="col2">
