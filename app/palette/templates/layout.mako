@@ -12,7 +12,8 @@
 
 <%block name="fullstyle">
 <meta charset="utf-8">
-<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+<meta name="viewport" content="width=950,minimal-ui">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link href='//fonts.googleapis.com/css?family=Roboto:300,500' rel='stylesheet' type='text/css'>
 <link rel="stylesheet" type="text/css" href="/app/module/palette/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/app/module/palette/css/font-awesome.min.css">
