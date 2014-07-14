@@ -9,7 +9,7 @@
 	    </a>
         <ul>
           <li>
-            <a class="help">
+            <a class="help" href="javascript:void(0)">
               <i class="fa fa-fw fa-envelope"></i> Contact Palette
             </a>
           </li>
