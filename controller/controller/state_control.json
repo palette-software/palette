@@ -123,7 +123,7 @@
 {
 "state":"DEGRADED",
 "text":"Tableau Partially Degraded",
-"allowable_actions":"stop",
+"allowable_actions":"start backup restore reset restart",
 "color":"red"
 },
 {
