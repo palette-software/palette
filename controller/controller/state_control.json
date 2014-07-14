@@ -131,6 +131,12 @@
 "text":"Please Install Palette Agent",
 "allowable_actions":"",
 "color":"red"
+},
+{
+"state":"UPDATING",
+"text":"Updating Palette Software",
+"allowable_actions":"",
+"color":"yellow"
 }
 ]
 }
