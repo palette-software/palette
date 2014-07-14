@@ -183,6 +183,8 @@ article.popup p {
     padding: 10px 0 0 26px;
     margin: 0 0 5px 0;
     color: #D3D3D3;
+    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+    font-size: 14px;
 }
 .secondary-side-bar h5.backup-page, .secondary-side-bar h5.logs-page {
     margin-top: 50px;
@@ -311,6 +313,8 @@ article.popup p {
     line-height: 32px;
     font-size: 14px;
     color: #D3D3D3;
+    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+    text-transform: uppercase;
 }
 .secondary-side-bar ul.Logs li a.inactive {
     color: #444;

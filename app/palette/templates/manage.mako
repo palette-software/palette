@@ -31,11 +31,6 @@
   <h5 class="backup-page">Next Scheduled Backup</h5>
   <h5 id="next-backup" class="sub"></h5>
 
-  <!--
-  <h5 class="backup-page">Backup Archive Location</h5>
-  <div id="archive-backup" class="btn-group dropdown"></div>
-  -->
-
   <div id="backup-list"></div>
 </section>
 
