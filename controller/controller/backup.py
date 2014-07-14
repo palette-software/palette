@@ -12,7 +12,7 @@ from agentinfo import AgentVolumesEntry
 
 class BackupEntry(meta.Base):
     __tablename__ = 'backup'
-    DATEFMT = "%I:%M %p PDT on %B %d, %Y"
+    DATEFMT = "%I:%M %p PDT on %b %d, %Y"
 
     backupid = Column(Integer, unique=True, nullable=False, primary_key=True)
     envid = Column(BigInteger, ForeignKey("environment.envid"))
