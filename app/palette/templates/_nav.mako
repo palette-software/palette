@@ -30,7 +30,12 @@
         <a id="profile-link" href="/profile">
           <i class="fa fa-user"></i> 
           <span>${req.remote_user.friendly_name}
+%if req.remote_user.roleid > req.remote_user.role.NO_ADMIN:
           (${req.remote_user.role.name})</span>
+%else:
+          </span>
+%endif
+
         </a>
         <ul>
           <li>
