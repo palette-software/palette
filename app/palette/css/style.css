@@ -18,7 +18,7 @@ h1 {
     color: #5f6670;
 }
 h2, h3, h4, h5, h6 {
-    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova regular",Helvetica,Arial,sans-serif;
     color: #5f6670;
     font-size: 23px;
 }
@@ -49,6 +49,7 @@ i.tableau {
     width: 28px;
     margin: 13px 14px 13px 17px !important;
 }
+
 .bold {
     font-weight: bold;
 }
@@ -185,6 +186,7 @@ article.popup p {
     color: #D3D3D3;
     font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
     font-size: 14px;
+    text-transform: none;
 }
 .secondary-side-bar h5.backup-page, .secondary-side-bar h5.logs-page {
     margin-top: 50px;
@@ -314,7 +316,6 @@ article.popup p {
     font-size: 14px;
     color: #D3D3D3;
     font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
-    text-transform: uppercase;
 }
 .secondary-side-bar ul.Logs li a.inactive {
     color: #444;
@@ -485,10 +486,7 @@ ul.dropdown-menu a:hover {
     -ms-transition: all 0.2s ease-in;
     -o-transition: all 0.2s ease-in;
     transition: all 0.2s ease-in;
-    font-size: 64px;
-    color: #f8f8f8;
 }
-
 .main-side-bar .status h2 {
     position: absolute;
     top: 27px;
@@ -657,7 +655,7 @@ ul.processes.visible {
 
 .secondary-side-bar ul.processes > li {
     padding: 4px 15px 4px 15px;
-    font-size: 13px;
+    font-size: 14px;
     font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
 }
 .main-side-bar > ul.actions {
@@ -1166,7 +1164,6 @@ ul.checkbox li label, ul.radio li label {
     font-weight: 300;
     float: left;
     line-height: 28px;
-    font-size: 17px;
 }
 
 ul.checkbox li input[type="checkbox"], ul.radio li input[type="radio"] {
@@ -1176,7 +1173,7 @@ ul.checkbox li input[type="checkbox"], ul.radio li input[type="radio"] {
     float: right;
     position: absolute;
     top: 50%;
-    margin-top: 1px;
+    margin-top: -8px;
     right: 0;
     z-index: 0;
 }
@@ -1194,7 +1191,7 @@ ul.checkbox li label span, ul.radio li label span {
     position: absolute;
     top: 50%;
     pointer-events: none;
-    margin-top: -1px;
+    margin-top: -9px;
     right: 0;
     z-index: 2;
     -webkit-transition: all 0.2s ease-out;
@@ -1334,6 +1331,7 @@ ul.title-area > li > h1 > a {
     padding: 0;
     display: none;
     z-index: 9001;
+    border:0 1px 1px 1px;
 }
 
 #mainNav ul.nav li > ul.visible {
