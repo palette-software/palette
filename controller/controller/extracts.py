@@ -81,7 +81,7 @@ class ExtractManager(object):
 
             if entry.finish_code == 0:
                 duration = datetime.strptime(row[4], FMT) - datetime.strptime(row[3], FMT)
-                body['duration'] = duration.seconds()
+                body['duration'] = duration.seconds
                 duration_hms = to_hhmmss(duration)
                 body['duration_hms'] = duration
 
