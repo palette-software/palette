@@ -142,8 +142,6 @@ class EventControl(meta.Base, BaseMixin):
     defaults_filename = 'event_control.json'
 
 class EventControlManager(object):
-    DATEFMT = "%I:%M %p PDT on %B %d, %Y"
-
     def __init__(self, server):
         self.alert_email = server.alert_email
         self.indented = self.alert_email.indented
