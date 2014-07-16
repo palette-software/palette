@@ -17,9 +17,9 @@ from agent import Agent
 from agentinfo import AgentYmlEntry, AgentVolumesEntry
 from state import StateManager
 from event_control import EventControl
-from filemanager import FileManager
 from firewall import Firewall
 from odbc import ODBC
+from filemanager import FileManager
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
@@ -61,17 +61,24 @@ class AgentConnection(object):
         raise exc.HTTPException(res.status, res.reason,
                                 method=method, body=body)
 
-    def http_send(self, method, uri, body=None):
+    def http_send(self, method, uri, body=None, headers={}):
         # Check to see if state is not PENDING or DISCONNECTED?
         self.lock()
         try:
-            self.httpconn.request(method, uri, body)
+            self.httpconn.request(method, uri, body, headers)
             res = self.httpconn.getresponse()
             if res.status != httplib.OK:
                 self.httpexc(res, method=method)
             return res.read()
         finally:
             self.unlock()
+
+    def http_send_json(self, uri, data, headers={}):
+        if not headers:
+            headers = {}
+        headers['Content-Type'] = 'application/json'
+        body = json.dumps(data)
+        return self.http_send('POST', uri, body=body, headers=headers)
 
     def lock(self):
         self.lockobj.acquire()
@@ -907,8 +914,11 @@ class AgentManager(threading.Thread):
             agent = self.remember(aconn, body)
             agent.connection = aconn
             agent.server = self.server
-            agent.firewall = Firewall(agent, self.server)
+            agent.firewall = Firewall(agent)
             agent.odbc = ODBC(agent)
+            agent.filemanager = FileManager(agent)
+
+            # FIXME: remove redundant info
             aconn.agentid = agent.agentid
             aconn.uuid = uuid
 
@@ -944,9 +954,9 @@ class AgentManager(threading.Thread):
                 return
 
             #fixme: not a great place to do this
-            aconn.displayname = agent.displayname
+            #aconn.displayname = agent.displayname
 
-            self.save_routes(aconn) # fixme: check return value?
+            self.save_routes(agent) # fixme: check return value?
             aconn.initting = False
 
         except socket.error, e:
@@ -961,10 +971,10 @@ class AgentManager(threading.Thread):
             session.rollback()
             meta.Session.remove()
 
-    def save_routes(self, aconn):
+    def save_routes(self, agent):
         lines = ""
         rows = meta.Session().query(AgentVolumesEntry).\
-            filter(AgentVolumesEntry.agentid == aconn.agentid).\
+            filter(AgentVolumesEntry.agentid == agent.agentid).\
             all()
 
         lines = []
@@ -979,23 +989,24 @@ class AgentManager(threading.Thread):
 
         lines = ''.join(lines)
 
-        if 'install-dir' not in aconn.auth:
+        if 'install-dir' not in agent.connection.auth:
             self.log.error("save_routes: agent is missing 'install-dir'")
             return
 
-        route_path = ntpath.join(aconn.auth['install-dir'], "conf", "archive",
-                                                                "routes.txt")
+        route_path = ntpath.join(agent.connection.auth['install-dir'], 
+                                 "conf", "archive", "routes.txt")
         try:
-            aconn.filemanager.put(route_path, lines)
-        except (exc.HTTPException, httplib.HTTPException,
-                                                    EnvironmentError) as e:
+            agent.filemanager.put(route_path, lines)
+        except (exc.HTTPException, \
+                    httplib.HTTPException, \
+                    EnvironmentError) as e:
             self.log.error(\
                 "filemanager.put(%s) on %s failed with: %s",
-                                    aconn.displayname, route_path, str(e))
+                agent.displayname, route_path, str(e))
             return False
 
         self.log.debug("Saved agent file '%s' with contents: %s",
-                                                    route_path, lines)
+                       route_path, lines)
         return True
 
 class ReverseHTTPConnection(HTTPConnection):
