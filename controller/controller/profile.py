@@ -58,7 +58,7 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     def get_by_name(cls, name):
         try:
             entry = meta.Session.query(UserProfile).\
-                            filter(UserProfile.name == name).one()
+                            filter(UserProfile.name == name and UserProfile.userid > 0).one()
         except NoResultFound, e:
             entry = None
         return entry
@@ -70,7 +70,7 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
             return False
         return entry.hashed_password == tableau_hash(password, entry.salt)
 
-    defaults = [{'name':'palette', 'friendly_name':'Palette',
+    defaults = [{'userid':0, 'name':'palette', 'friendly_name':'Palette',
                  'email': None, 'salt':'', 'roleid':3,
                  'hashed_password':tableau_hash('tableau2014','')}]
 
