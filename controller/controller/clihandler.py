@@ -650,6 +650,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         agents = self.server.agentmanager.all_agents()
 
         if len(agents) == 0:
+            # FIXME: report_status here.
             self.print_client('{}')
             return
 
@@ -1202,12 +1203,12 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
 
-    @usage('file [GET|PUT|DELETE] <path> [source-or-target]')
+    @usage('file [GET|PUT|DELETE|SHA256|MOVE|LISTDIR|WRITE] <path> [arg]')
     def do_file(self, cmd):
         """Manipulate a particular file on the agent."""
 
-        aconn = self.get_aconn(cmd.dict)
-        if not aconn:
+        agent = self.get_agent(cmd.dict)
+        if not agent:
             self.error(ERROR_AGENT_NOT_FOUND)
             return
 
@@ -1224,23 +1225,42 @@ class CliHandler(socketserver.StreamRequestHandler):
                     self.print_usage(self.do_file.__usage__)
                     return
                 self.ack()
-                body = aconn.filemanager.save(path, cmd.args[2])
+                body = agent.filemanager.save(path, cmd.args[2])
             elif method == 'PUT':
                 if len(cmd.args) != 3:
                     self.print_usage(self.do_file.__usage__)
                     return
                 self.ack()
-                body = aconn.filemanager.sendfile(path, cmd.args[2])
+                body = agent.filemanager.sendfile(path, cmd.args[2])
             elif method == 'DELETE':
                 if len(cmd.args) != 2:
                     self.print_usage(self.do_file.__usage__)
                     return
                 self.ack()
-                aconn.filemanager.delete(path)
+                agent.filemanager.delete(path)
                 body = {}
-            elif method == "REALPUT":
+            elif method == 'SHA256':
+                if len(cmd.args) != 2:
+                    self.print_usage(self.do_file.__usage__)
+                    return
                 self.ack()
-                body = aconn.filemanager.put(path, cmd.args[2])
+                body = agent.filemanager.sha256(path)
+            elif method == 'MOVE':
+                if len(cmd.args) != 3:
+                    self.print_usage(self.do_file.__usage__)
+                    return
+                self.ack()
+                body = agent.filemanager.move(path, cmd.args[2])
+            elif method == 'LISTDIR':
+                if len(cmd.args) != 2:
+                    self.print_usage(self.do_file.__usage__)
+                    return
+                self.ack()
+                body = agent.filemanager.listdir(path)
+            elif method == "WRITE":
+                self.ack()
+                agent.filemanager.put(path, cmd.args[2])
+                body = {}
             else:
                 self.print_usage(self.do_file.__usage__)
                 return
@@ -1255,6 +1275,16 @@ class CliHandler(socketserver.StreamRequestHandler):
                 body['body'] = e.body
 
         self.report_status(body)
+
+    @usage('hup')
+    def do_hup(self, cmd):
+        """Make an agent restart itself."""
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            return
+
+        agent.connection.http_send_json("/hup", {})
+        self.report_status({})
 
     @usage('s3 [GET|PUT] <bucket> <key-or-path>')
     def do_s3(self, cmd):
