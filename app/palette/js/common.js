@@ -336,7 +336,7 @@ function ($, topic, template)
      * pseudo-class for maintaining the selected events
      */
     var eventFilter = {
-        limit: 100,
+        limit: 25,
         lastid: 0,
         selectors: {'status':0, 'type':0, 'site':0, 
                     'publisher':0, 'project':0},
