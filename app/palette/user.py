@@ -19,7 +19,7 @@ class UserApplication(PaletteRESTHandler):
         return [{'name': x.name, 'id': x.roleid} for x in L]
 
     def users(self):
-        q = meta.Session.query(UserProfile)
+        q = meta.Session.query(UserProfile).filter(UserProfile.userid > 0)
         return q.order_by(UserProfile.friendly_name.asc()).all()
         
     def visited_info(self, d):
