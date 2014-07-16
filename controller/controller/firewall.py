@@ -4,9 +4,9 @@ class Firewall(object):
 
     URI = '/firewall'
 
-    def __init__(self, agent, server):
+    def __init__(self, agent):
         self.agent = agent
-        self.server = server
+        self.server = agent.server
 
     def status(self):
         return self.server.send_immediate(self.agent, 'GET', self.URI)
