@@ -650,8 +650,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         agents = self.server.agentmanager.all_agents()
 
         if len(agents) == 0:
-            # FIXME: report_status here.
-            self.print_client('{}')
+            self.report_status({'agents':[]})
             return
 
         # FIXME: print the agent state too.
