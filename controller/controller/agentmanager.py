@@ -456,8 +456,11 @@ class AgentManager(threading.Thread):
                         entry.vol_type = volume['type']
 
                     if entry.vol_type == "Fixed":
+                        # The volume existed before, but was not "Fixed"
+                        # (maybe a CDROM).  Set reasonable values.
                         if entry.archive_limit == None:
                             entry.archive_limit = entry.size
+                            entry.archive = True
 
                         if not entry.path:
                             if 'path' in volume:
