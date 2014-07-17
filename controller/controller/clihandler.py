@@ -1200,7 +1200,6 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         agent = self.get_agent(cmd.dict)
         if not agent:
-            self.error(ERROR_AGENT_NOT_FOUND)
             return
 
         if len(cmd.args) < 2 or len(cmd.args) > 3:
