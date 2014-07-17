@@ -12,6 +12,14 @@ from profile import UserProfile
 from mixin import BaseDictMixin
 from util import utc2local, DATEFMT
 
+def to_hhmmss(td):
+    seconds = td.seconds
+    hours = seconds // (60*60)
+    seconds %= (60*60)
+    minutes = seconds // 60
+    seconds %= 60
+    return "%02i:%02i:%02i" % (hours, minutes, seconds)
+
 class ExtractEntry(meta.Base, BaseDictMixin):
     __tablename__ = "extracts"
 
@@ -70,6 +78,13 @@ class ExtractManager(object):
                                  system_users_id=row[8])
 
             body = dict(agent.__dict__.items() + entry.todict().items())
+
+            if entry.finish_code == 0:
+                duration = datetime.strptime(row[4], FMT) - datetime.strptime(row[3], FMT)
+                body['duration'] = duration.seconds
+                duration_hms = to_hhmmss(duration)
+                body['duration_hms'] = duration
+
             if entry.finish_code == 0:
                 self.eventgen(EventControl.EXTRACT_OK, body,
                               row[8], row[7],

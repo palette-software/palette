@@ -5,6 +5,8 @@ from sqlalchemy.schema import ForeignKey
 
 from akiri.framework.ext.sqlalchemy import meta
 
+from util import DATEFMT
+
 class EventEntry(meta.Base):
     __tablename__ = "events"
 
@@ -26,15 +28,13 @@ class EventEntry(meta.Base):
     creation_time = Column(DateTime, server_default=func.now())
 
 class EventManager(object):
-    DATEFMT = "%I:%M %p PDT on %B %d, %Y"
-    
     def __init__(self, envid):
         self.envid = envid
 
     def add(self, key, title, description, level, icon, color, event_type,
             userid=None, siteid=None, projectid=None, timestamp=None):
         if timestamp is None:
-            summary = time.strftime(self.DATEFMT)
+            summary = time.strftime(DATEFMT)
         else:
             summary = timestamp
 

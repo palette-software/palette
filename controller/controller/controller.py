@@ -971,8 +971,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             yml = agent.connection.filemanager.get(path)
         except (exc.HTTPException, httplib.HTTPException,
                 EnvironmentError) as e:
-            return self.error("filemanager.get(%s) on %s failed with: %s",
-                       path, agent.displayname, str(e))
+            return self.error("filemanager.get(%s) on %s failed with: %s" % \
+                                  (path, agent.displayname, str(e)))
+
 
         body = self.agentmanager.update_agent_yml(agent.agentid, yml)
         return body

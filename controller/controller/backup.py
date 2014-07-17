@@ -10,9 +10,10 @@ from akiri.framework.ext.sqlalchemy import meta
 from agent import Agent
 from agentinfo import AgentVolumesEntry
 
+from util import DATEFMT
+
 class BackupEntry(meta.Base):
     __tablename__ = 'backup'
-    DATEFMT = "%I:%M %p PDT on %b %d, %Y"
 
     backupid = Column(Integer, unique=True, nullable=False, primary_key=True)
     envid = Column(BigInteger, ForeignKey("environment.envid"))
@@ -32,8 +33,8 @@ class BackupEntry(meta.Base):
               'volid': self.volid,
               'name': self.name}
         if pretty:
-            d['creation-time'] = self.creation_time.strftime(self.DATEFMT)
-            d['modification-time'] = self.modification_time.strftime(self.DATEFMT)
+            d['creation-time'] = self.creation_time.strftime(DATEFMT)
+            d['modification-time'] = self.modification_time.strftime(DATEFMT)
         else:
             d['creation_time'] = str(self.creation_time)
             d['modification_time'] = str(self.modification_time)

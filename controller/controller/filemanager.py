@@ -2,6 +2,7 @@ import os
 import httplib
 import urllib
 import ntpath
+import json
 
 import exc
 
@@ -45,7 +46,22 @@ class FileManager(object):
         self.checkpath(path)
         uri = self.uri(path)
         self.server.log.debug("FileManager PUT %s: %s", uri, data)
-        return self.agent.http_send('PUT', uri, data)
+        return self.agent.connection.http_send('PUT', uri, data)
+
+    def sha256(self, path):
+        data = {'action':'SHA256', 'path':path}
+        body = self.agent.connection.http_send_json('/file', data)
+        return json.loads(body)
+
+    def move(self, src, dst):
+        data = {'action':'MOVE', 'source':src, 'destination':dst}
+        body = self.agent.connection.http_send_json('/file', data)
+        return json.loads(body)
+
+    def listdir(self, path):
+        data = {'action':'LISTDIR', 'path':path}
+        body = self.agent.connection.http_send_json('/file', data)
+        return json.loads(body)
 
     def sendfile(self, path, source):
         source = os.path.abspath(os.path.expanduser(source))

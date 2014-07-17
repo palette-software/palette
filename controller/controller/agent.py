@@ -50,6 +50,7 @@ class Agent(meta.Base, BaseDictMixin):
         self.connection = None
         self.odbc = None
         self.firewall = None
+        self.filemanager = None
 
     def connected(self):
         if not self.last_disconnect_time or \
