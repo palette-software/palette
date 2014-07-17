@@ -18,7 +18,6 @@ from controller.agentinfo import AgentVolumesEntry
 from controller.agent import Agent
 from controller.domain import Domain
 from controller.util import DATEFMT
-from controller.gcs import GCS
 from controller.profile import Role
 
 from rest import PaletteRESTHandler, required_parameters, required_role
@@ -43,75 +42,14 @@ class BackupApplication(PaletteRESTHandler):
 
         filename = req.POST['filename']
 
-        backup_entry = self.get_backup_entry_from_backup_name(filename)
+        backup_entry = BackupManager.find_by_name_envid(filename,
+                                                    self.environment.envid)
         if not backup_entry:
             print >> sys.stderr, "Backup not found:", filename
             return {}
 
-        if backup_entry.volid:
-            return self.handle_restore_from_vol(backup_entry, req)
-        elif backup_entry.gcsid:
-            return self.handle_restore_from_gcs(backup_entry, req)
-        else:
-            print >> sys.stderr, \
-                "Error: Don't yet support backup from S3."
-            return {}
-
-    def handle_restore_from_gcs(self, backup_entry, req):
-        gcs_entry = GCS.get_by_gcsid_envid(backup_entry.gcsid,
-                                                    self.environment.envid)
-        if not gcs_entry:
-            print >> sys.stderr, \
-                "Error: gcsid entry from backup not found for gcsid", \
-                                                    backup_entry.gcsid
-            return {}
-
-        self.telnet.send_cmd('restore "%s:%s"' % 
-                                (gcs_entry.name, backup_entry.name), req=req)
+        self.telnet.send_cmd('restore "%s"' % backup_entry.name, req=req)
         return {}
-
-    def handle_restore_from_vol(self, backup_entry, req):
-        """The backup is on a volume (not gcs or S3)."""
-        displayname = self.get_displayname_by_volid(backup_entry.volid)
-        if not displayname:
-            print >> sys.stderr, \
-                "Error: No displayname for volid=%d uuid=%s" % \
-                                  (backup_entry.volid, backup_entry.uuid)
-            return {}
-
-        vol_entry = AgentVolumesEntry.get_vol_entry_by_volid(backup_entry.volid)
-        if not vol_entry:
-            print >> sys.stderr, \
-                "Error: No vol_entry for volid=%d uuid=%s" % \
-                                  (backup_entry.volid, backup_entry.uuid)
-            return {}
-
-        self.telnet.send_cmd('restore "%s:%s/%s"' % \
-                (displayname, vol_entry.name, backup_entry.name), req=req)
-
-        return {}
-
-    def get_backup_entry_from_backup_name(self, name):
-        try:
-            entry = meta.Session.query(BackupEntry).\
-                filter(BackupEntry.name == name).\
-                one()
-        except NoResultFound, e:
-            return None
-
-        return entry
-
-    def get_displayname_by_volid(self, volid):
-        try:
-            agent_entry, vol_entry = meta.Session.query(\
-                Agent, AgentVolumesEntry).\
-                filter(Agent.agentid == AgentVolumesEntry.agentid).\
-                filter(AgentVolumesEntry.volid == volid).\
-                one()
-        except NoResultFound, e:
-            return None
-
-        return agent_entry.displayname
 
     def get_last_backup(self):
         last_db = meta.Session.query(BackupEntry).\

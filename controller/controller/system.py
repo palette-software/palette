@@ -8,6 +8,8 @@ from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from akiri.framework.ext.sqlalchemy import meta
 from mixin import BaseMixin, BaseDictMixin
 
+from storage import StorageConfig
+
 class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'system'
 
@@ -20,7 +22,17 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
                                onupdate=func.current_timestamp())
 
     defaults = [{'envid':1, 'key':'disk-watermark-low', 'value':str(50)},
-                {'envid':1, 'key':'disk-watermark-high', 'value':str(80)}]
+                {'envid':1, 'key':'disk-watermark-high', 'value':str(80)},
+
+        {'envid':1, 'key':StorageConfig.STORAGE_ENCRYPT, 'value': 'no'},
+        {'envid':1, 'key':StorageConfig.BACKUP_AUTO_RETAIN_COUNT, 
+                                                            'value': '3'},
+        {'envid':1, 'key':StorageConfig.BACKUP_USER_RETAIN_COUNT,
+                                                            'value': '5'},
+        {'envid':1, 'key':StorageConfig.BACKUP_DEST_TYPE, \
+                                                'value': StorageConfig.VOL}
+        # Note: No default volid set.
+    ]
                 
 class SystemManager(object):
 

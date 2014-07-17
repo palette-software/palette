@@ -23,7 +23,7 @@ from agent import Agent
 from agentinfo import AgentVolumesEntry
 from auth import AuthManager
 from backup import BackupManager
-from diskcheck import DiskCheck
+from diskcheck import DiskCheck, DiskException
 from firewall_manager import FirewallManager
 from state import StateManager
 from system import SystemManager, LicenseEntry
@@ -37,6 +37,7 @@ from alert_email import AlertEmail
 from event import EventManager
 from event_control import EventControl, EventControlManager
 from extracts import ExtractManager
+from storage import StorageConfig
 from workbooks import WorkbookEntry, WorkbookManager
 
 from sites import Site
@@ -57,27 +58,40 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     LOGGER_NAME = "main"
     allow_reuse_address = True
 
-    def backup_cmd(self, agent, target=None, volume_name=None):
+    def backup_cmd(self, agent):
         """Perform a backup - not including any necessary migration."""
 
-        if volume_name and not target:
-            return self.error(\
-                "volume_name can be specified only when target is specified.")
-
         # Disk space check.
-        dcheck = DiskCheck(self, agent, target, volume_name)
-        if not dcheck.set_locs():
-            return self.error(dcheck.error_msg)
+        try:
+            dcheck = DiskCheck(self, agent)
+        except DiskException, e:
+            return self.error(str(e))
 
-        if dcheck.target_gcs_entry:
+        gcsid = None
+        s3id = None
+
+        if dcheck.target_type == StorageConfig.GCS:
             self.log.debug("Backup will copy to gcs named '%s'",
-                                                dcheck.target_gcs_entry.name)
-        elif dcheck.target_agent:
-            self.log.debug("Backup will copy to target '%s', target_dir '%s'",
+                                                dcheck.target_entry.name)
+            storage_cmd = self.gcs_cmd
+            gcsid = dcheck.target_entry.gcsid
+        elif dcheck.target_type == StorageConfig.S3:
+            self.log.debug("Backup will copy to s3 named '%s'",
+                                                dcheck.target_entry.name)
+            storage_cmd = self.s3_cmd
+            s3id = dcheck.target_entry.s3id
+        elif dcheck.target_type == StorageConfig.VOL:
+            if dcheck.target_entry.primary_data_loc:
+                self.log.debug("Backup will stay on the primary.")
+            else:
+                self.log.debug(\
+                    "Backup will copy to target '%s', target_dir '%s'",
                         dcheck.target_agent.displayname, dcheck.target_dir)
         else:
-            self.log.debug("Backup will stay on the primary.")
-
+            self.log.error("backup_cmd: Invalid target_type: %s",
+                dcheck.target_type)
+            return self.error("backup_cmd: Invalid target_type: %s",
+                                                        dcheck.target_type)
         # Example name: 20140127_162225.tsbak
         backup_name = time.strftime("%Y%m%d_%H%M%S") + ".tsbak"
 
@@ -97,31 +111,30 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return body
 
         body['info'] = ""
+        backup_copied = False
 
-        backup_vol_entry = None
         # If the target is not the primary, copy the backup to the target
         # or gcs.
-        stored_off_primary = False
-        if dcheck.target_gcs_entry:
+        if dcheck.target_type in (StorageConfig.GCS, StorageConfig.S3):
             data_dir = self.backup.primary_data_loc_path()
-            gcs_body = self.gcs_cmd(agent, "PUT",
-                            dcheck.target_gcs_entry, backup_name)
-            if 'error' in gcs_body:
-                body['info'] = 'gcs copy to %s failed: %s' % \
-                            (dcheck.target_gcs_entry.name, gcs_body['error'])
+            storage_body = storage_cmd(agent, "PUT",
+                            dcheck.target_entry, backup_name)
+            if 'error' in storage_body:
+                body['info'] = "Copy to %s '%s' failed: %s" % \
+                    (dcheck.target_type, dcheck.target_entry.name,
+                                                        storage_body['error'])
             else:
-                body['info'] = "Backup file copied to GCS name '%s'" % \
-                                                dcheck.target_gcs_entry.name
-                # Backup was copied to gcs
-                self.backup.add(backup_name,
-                                    gcsid=dcheck.target_gcs_entry.gcsid)
-                stored_off_primary = True
-        elif dcheck.target_agent:
-            backup_vol_entry = dcheck.vol_entry
+                body['info'] = "Backup file copied to %s named '%s'." % \
+                            (dcheck.target_type, dcheck.target_entry.name)
+                # Backup was copied to gcs or s3
+                self.backup.add(backup_name, gcsid=gcsid, s3id=s3id)
+
+                backup_copied = True
+        elif dcheck.target_agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
             # Copy the backup to a non-primary agent
-            source_path = "%s:%s/%s" % (agent.displayname, backup_vol,
+            target_path = "%s:%s/%s" % (agent.displayname, backup_vol,
                                                                 backup_name)
-            copy_body = self.copy_cmd(source_path,
+            copy_body = self.copy_cmd(target_path,
                         dcheck.target_agent.displayname, dcheck.target_dir)
 
             if copy_body.has_key('error'):
@@ -133,30 +146,59 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.info(msg)
                 body['info'] += msg
                 # Something was wrong with the copy to the non-primary agent.
-                #  Leave the backup on the primary after all.
-                backup_vol_entry = None
+                # Leave the backup on the primary after all.
+                backup_copied = False
             else:
                 # The copy succeeded.
-                # Remove the backup file from the primary
-
                 body['info'] += \
-                    "Backup file copied to '%s'" % \
-                                        dcheck.target_agent.displayname
+                    "Backup file copied to agent '%s', directory: %s." % \
+                        (dcheck.target_agent.displayname, dcheck.target_dir)
 
-                self.backup.add(backup_name, volid=backup_vol_entry.volid)
-                stored_off_primary = True
+                self.backup.add(backup_name, volid=dcheck.target_entry.volid)
+                # Remember to remove the backup file from the primary
+                backup_copied = True
+        elif dcheck.target_agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+            if dcheck.target_entry.primary_data_loc:
+                body['info'] += \
+                    'Backup file is configured to stay on ' + \
+                    'the Tableau primary volume.'
+                backup_copied = False
+            else:
+                # Copy the backup file to a different volume on the primary.
+                target_path = ntpath.join(dcheck.target_dir, backup_name)
+                cmd = 'CMD /C COPY \\\"%s\\\" \\\"%s\\\"' % \
+                                                (backup_path, target_path)
+                copy_body = self.cli_cmd(cmd, agent)
+                if 'error' in copy_body:
+                    msg = (u"Copy of backup file '%s' to '%s' on primary " + \
+                        "'%s' failed.  " + \
+                        "Will not copy the backup file. " + \
+                        "Error was: %s") \
+                        % (backup_path, target_path, agent.displayname, 
+                                                            copy_body['error'])
+                    self.log.error(msg)
+                    body['info'] += msg
+                    backup_copied = False
+                else:
+                    body['info'] += \
+                        ("Backup file copied on primary agent to " + \
+                        "directory: %s") % dcheck.target_dir
 
-        if stored_off_primary:
+                    self.backup.add(backup_name,
+                                            volid=dcheck.target_entry.volid)
+                    backup_copied = True
+
+        if backup_copied:
             remove_body = self.delete_file(agent, backup_path)
             # Check if the DEL worked.
             if remove_body.has_key('error'):
                 body['info'] += \
-                    ("\nDEL of backup file failed after copy. "+\
-                        "file: '%s'. Error was: %s") \
+                    ("\nDeletion of backup file failed after copy. "+\
+                        "File: '%s'. Error was: %s") \
                         % (backup_path, remove_body['error'])
-
-        if not stored_off_primary:
-            # Backup remains on the primary.  Dig out the volid for it.
+        else:
+            # Backup remains on the primary either due to a copy
+            # failure or the user specified.  Dig out the volid for it.
             try:
                 vol_entry = meta.Session.query(AgentVolumesEntry).\
                     filter(AgentVolumesEntry.agentid == agent.agentid).\
@@ -187,6 +229,33 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # Send the gcs command to the agent
         return self.cli_cmd(gcs_command, agent, env=env)
+
+    def s3_cmd(self, agent, action, s3_entry, path):
+
+        data_dir = self.backup.primary_data_loc_path()
+        if not data_dir:
+            return self.error("s3_cmd: Couldn't find the " + \
+                        "primary_data_loc in the agent_volumes table " + \
+                        "for the primary agent.")
+
+        resource = os.path.basename(path)
+        token = s3_entry.get_token(resource)
+
+        # fixme: this method doesn't work
+        env = {u'ACCESS_KEY': token.credentials.access_key,
+               u'SECRET_KEY': token.credentials.secret_key,
+               u'SESSION': token.credentials.session_token,
+               u'REGION_ENDPOINT': s3_entry.region,
+               u'PWD': data_dir}
+
+        env = {u'ACCESS_KEY': s3_entry.access_key,
+               u'SECRET_KEY': s3_entry.secret,
+               u'PWD': data_dir}
+
+        s3_command = 'ps3 %s %s "%s"' % (action, s3_entry.bucket, path)
+
+        # Send the s3 command to the agent
+        return self.cli_cmd(s3_command, agent, env=env)
 
     def backupdel_cmd(self, backup):
         """Delete a Tableau backup."""
@@ -252,11 +321,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if not cli_body.has_key("stdout"):
             self.log.error(\
-                "check status of cli failed - missing 'stdout' in reply",
-                                                                    cli_body)
+                "check status of cli failed - missing 'stdout' in reply" + \
+                                    "for command '%s': %s", command, cli_body)
             return self.error(\
-                "Missing 'stdout' in agent reply for command '%s'" % command,
-                                                                    cli_body)
+                "Missing 'stdout' in agent reply for command '%s': %s" % \
+                                                        (command, cli_body))
 
         cleanup_body = self._send_cleanup(body['xid'], agent, command)
 
@@ -491,111 +560,123 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         copy_body = self.cli_cmd(command, dst, env=env)
         return copy_body
 
-    def restore_cmd(self, agent, target, orig_state, userid=None):
-        """Do a tabadmin restore of the passed target, except
-           the target is the format:
-                source-displayname-or-gcsname:pathname
-            or
-                pathname
-            where pathname is:
-                VOLUME/filename
-            The "VOLUME" is looked up on the volume table and expanded.
+    def restore_cmd(self, primary_agent, backup_name, orig_state, userid=None):
+        """Do a tabadmin restore for the backup_name.
+           The backup_name may be in cloud storage, or a volume
+           on some agent.
 
-            An example target:
-                "Tableau Archive #201:C/20140602_174057.tsbak"
-
-            If the target is not the Primary Agent, then the filename
-            will be copied it to the Primary Agent before doing the
-            tabadmin restore.
-
-            Returns a body with the results/status.
+           Returns a body with the results/status.
         """
 
-        # Note: In a restore context, 'target' is the source of the backup,
-        #       while in a backup context 'target' is the destination.
+        backup_entry = self.backup.find_by_name(backup_name)
+        if not backup_entry:
+            self.stateman.update(orig_state)
+            return self.error("Backup name not found: %s", backup_name)
 
-        # Before we do anything, first do sanity checks.
-        # Without a ':', assume the backup is still on the primary.
-        parts = target.split(':')
-        if len(parts) == 1:
-            source_name = agent.displayname
-            source_spec = parts[0]
-        elif len(parts) == 2:
-            source_name = parts[0]          #.e.g "Tableau Archive #201"
-            source_spec = parts[1]          # e.g. "C/20140531_153629.tsbak"
-                                     # or for gcs: "20140531_153629.tsbak"
+        # Get the gcs, s3 or vol entry
+        if backup_entry.gcsid:
+            source_type = StorageConfig.GCS
+            source_entry = self.gcs.get_by_gcsid(backup_entry.gcsid)
+            cloud_cmd = self.gcs_cmd
+        elif backup_entry.s3id:
+            source_type = StorageConfig.S3
+            source_entry = self.s3.get_by_s3id(backup_entry.s3id)
+            cloud_cmd = self.s3_cmd
+        elif backup_entry.volid:
+            source_type = StorageConfig.VOL
+            source_entry = AgentVolumesEntry.get_vol_entry_by_volid(\
+                                                        backup_entry.volid)
+
+            source_agent = Agent.get_by_id(source_entry.agentid)
+            if not source_agent:
+                return self.error(\
+                    "restore_cmd: No such agentid %d referenced by " + \
+                    "volid %d in backupid %d" % \
+                        (source_entry.agentid, backup_entry.volid,
+                                                    backup_entry.backupid))
         else:
-            self.stateman.update(orig_state)
-            return self.error('Invalid target: ' + target)
-
-        if os.path.isabs(source_spec):
-            self.stateman.update(orig_state)
             return self.error(\
-                "May not specify an absolute pathname or disk: " + \
-                    source_spec)
+                "restore_cmd: Backup has no gcs/s3/volID for backup %s" % \
+                                                                backup_name)
 
-        # Get the vol + dir to use for the restore command to tabadmin.
+        # Get the "vol:/dir" to use for the restore command to tabadmin.
         backup_dir = self.backup.primary_data_loc_path()
         if not backup_dir:
             return self.error("restore: Couldn't find the primary_data_loc " + \
                         "in the agent_volumes table for the primary agent.")
 
-        #  e.g. "20140531_153629.tsbak"
-        filename_only = os.path.basename(source_spec)
-        local_fullpathname = ntpath.join(backup_dir, filename_only)
+        # The tableau backup file to use when calling the
+        # 'tabadmin restore <backup-file>' command.
+        # It will be this in call cases except if the backup
+        # file is on the primary but on a different volume than
+        # the palette install.
+        tableau_backup_file = ntpath.join(backup_dir, backup_name)
 
-        # Check if the file is on the Primary Agent.
-        if source_name != agent.displayname:
-            # The file isn't on the Primary agent:
-            # We need to copy the file to the Primary.
+        # Keep track of whether or not a backup was copied to the primary
+        # for the restore.  If so, we'll need to delete the
+        # file after the restore finishes or an error.
+        backup_copied = False
 
-            # First check to see if the source_name is a gcs name.
-            gcs_entry = self.gcs.get_by_name(source_name)
-            if gcs_entry:
-                self.log.debug("restore: Sending gcs command: %s, %s", \
-                               target, agent.displayname)
+        if source_type == StorageConfig.VOL:
+            # Backup is on a disk volume (not cloud storage).
+            # It could be on the main primary volume, or another
+            # primary volume or a volume on an agent.
 
-                body = self.gcs_cmd(agent, "GET", gcs_entry, source_spec)
-                if 'error' in body:
-                    fmt = "restore: gcs GET backup file '%s' " + \
-                        "from gcs file '%s' failed. Error was: %s"
-                    self.log.debug(fmt,
-                               source_spec,
-                               source_name,
-                               body['error'])
-                    self.stateman.update(orig_state)
-                    return body
+            if source_agent.displayname != primary_agent.displayname:
+                # The file isn't on the Primary agent or cloud storage.
+                # We need to copy the file to the Primary.
 
-            else:
-                # It's not on gcs, so copy it from another agent.
-                parts = source_spec.split('/')
-                if len(parts) == 1:
-                    # FIXME
-                    self.stateman.update(orig_state)
-                    return self.error(\
-                        "restore: Bad target spec:  Missing '/': " + \
-                                                            source_spec)
                 # copy_cmd arguments:
-                #   source-agent-name:/filename
+                #   source-agent-name:VOL/filename
                 #   dest-agent-displayname
-                self.log.debug("restore: Sending copy command: %s, %s", \
-                                   target, agent.displayname)
-                # target is something like: "C/20140531_153629.tsbak"
-                body = self.copy_cmd(target, agent.displayname, backup_dir)
+                # copy_source is something like: "C/20140531_153629.tsbak"
+                copy_source = "%s:%s/%s" % \
+                    (source_agent.displayname, source_entry.name,
+                                                            backup_entry.name)
+                self.log.debug(\
+                    "restore: Sending copy command to '%s' to get: %s", \
+                                       source_agent.displayname, copy_source)
+                body = self.copy_cmd(copy_source, primary_agent.displayname,
+                                                                    backup_dir)
 
                 if body.has_key("error"):
                     fmt = "restore: copy backup file '%s' from '%s' failed. " +\
                         "Error was: %s"
                     self.log.debug(fmt,
-                                   source_spec,
-                                   source_name,
+                                   copy_source,
+                                   source_agent.displayname,
                                    body['error'])
                     self.stateman.update(orig_state)
                     return body
+                backup_copied = True
+            elif not source_entry.primary_data_loc:
+                # The file is on the primary, but on a different
+                # volume than the tableau install volume.
+                tableau_backup_file = "%s:%s/%s" % \
+                        (source_entry.name, source_entry.path, backup_name)
+                backup_copied = False
+        else:
+            # The backup is cloud storage: s3 or gcs
+            self.log.debug(\
+                "restore: Sending %s command to primary '%s' to GET '%s'", \
+                   source_type, primary_agent.displayname, backup_entry.name)
+
+            body = cloud_cmd(primary_agent, "GET", source_entry, backup_name)
+            if 'error' in body:
+                fmt = "restore: %s named '%s' GET backup file '%s' " + \
+                    "failed.  Error: %s"
+                self.log.debug(fmt,
+                           source_type,
+                           source_entry.name,
+                           backup_name,
+                           body['error'])
+                self.stateman.update(orig_state)
+                return body
+            backup_copied = True
 
         # The restore file is now on the Primary Agent.
-        self.event_control.gen(EventControl.RESTORE_STARTED, agent.__dict__,
-                                                                userid=userid)
+        self.event_control.gen(EventControl.RESTORE_STARTED,
+                                    primary_agent.__dict__, userid=userid)
 
         reported_status = self.statusmon.get_reported_status()
 
@@ -603,23 +684,24 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # Restore can run only when tableau is stopped.
             self.stateman.update(StateManager.STATE_STOPPING_RESTORE)
             self.log.debug("------------Stopping Tableau for restore-------------")
-            stop_body = self.cli_cmd("tabadmin stop", agent)
+            stop_body = self.cli_cmd("tabadmin stop", primary_agent)
             if stop_body.has_key('error'):
                 self.log.info("Restore: tabadmin stop failed")
-                if source_name != agent.displayname:
+                if backup_copied:
                     # If the file was copied to the Primary, delete
                     # the temporary backup file we copied to the Primary.
-                    self.delete_file(agent, local_fullpathname)
+                    self.delete_file(primary_agent, tableau_backup_file)
                 self.stateman.update(orig_state)
                 return stop_body
 
-            self.event_control.gen(EventControl.STATE_STOPPED, agent.__dict__)
+            self.event_control.gen(EventControl.STATE_STOPPED,
+                                                        primary_agent.__dict__)
 
         # 'tabadmin restore ...' starts tableau as part of the
         # restore procedure.
         # fixme: Maybe the maintenance web server wasn't running?
         maint_msg = ""
-        maint_body = self.maint("stop", agent=agent)
+        maint_body = self.maint("stop", agent=primary_agent)
         if maint_body.has_key("error"):
             self.log.info("Restore: maint stop failed: " + maint_body['error'])
             # continue on, not a fatal error...
@@ -628,9 +710,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         self.stateman.update(StateManager.STATE_STARTING_RESTORE)
         try:
-            cmd = 'tabadmin restore \\\"%s\\\"' % local_fullpathname
+            cmd = 'tabadmin restore \\\"%s\\\"' % tableau_backup_file
             self.log.debug("restore sending command: %s", cmd)
-            restore_body = self.cli_cmd(cmd, agent)
+            restore_body = self.cli_cmd(cmd, primary_agent)
         except httplib.HTTPException, e:
             restore_body = { "error": "HTTP Exception: " + str(e) }
 
@@ -645,21 +727,22 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # fixme: Do we need to add restore information to the database?
         # fixme: check status before cleanup? Or cleanup anyway?
 
-        if source_name != agent.displayname:
+        if backup_copied:
             # If the file was copied to the Primary, delete
             # the temporary backup file we copied to the Primary.
-            self.delete_file(agent, local_fullpathname)
+            self.delete_file(primary_agent, tableau_backup_file)
 
         if restore_success:
             self.stateman.update(StateManager.STATE_STARTED)
-            self.event_control.gen(EventControl.STATE_STARTED, agent.__dict__)
+            self.event_control.gen(EventControl.STATE_STARTED,
+                                                    primary_agent.__dict__)
         else:
             # On a successful restore, tableau starts itself.
             # fixme: eventually control when tableau is started and
             # stopped, rather than have tableau automatically start
             # during the restore.  (Tableau does not support this currently.)
             self.log.info("Restore: starting tableau after failed restore.")
-            start_body = self.cli_cmd("tabadmin start", agent)
+            start_body = self.cli_cmd("tabadmin start", primary_agent)
             if start_body.has_key('error'):
                 self.log.info(\
                     "Restore: 'tabadmin start' failed after failed restore.")
@@ -676,7 +759,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 # The "tableau start" succeeded
                 self.stateman.update(StateManager.STATE_STARTED)
                 self.event_control.gen( \
-                    EventControl.STATE_STARTED, agent.__dict__)
+                    EventControl.STATE_STARTED, primary_agent.__dict__)
 
         return restore_body
 
@@ -1222,6 +1305,31 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             if body.has_key("error"):
                 self.event_control.gen(EventControl.MAINT_START_FAILED,
                             dict(body.items() + agent.__dict__.items()))
+
+        # If there is no backup configuration BACKUP_DEST_ID yet,
+        # create one now.
+        try:
+            self.system.get(StorageConfig.BACKUP_DEST_ID)
+        except ValueError:
+            pass
+        else:
+            # It was found, so return
+            return
+
+        # Set the BACKUP_DEST_ID to the same volume where
+        # tableau is installed.
+        # primary_data_loc where
+        # primary_data_loc where
+        session = meta.Session()
+        try:
+            entry = session.query(AgentVolumesEntry).\
+                filter(AgentVolumesEntry.agentid == agent.agentid).\
+                filter(AgentVolumesEntry.primary_data_loc == True).\
+                one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return
+
+        self.system.save(StorageConfig.BACKUP_DEST_ID, entry.volid)
 
     def remove_agent(self, agent, reason="", gen_event=True):
         manager = self.agentmanager

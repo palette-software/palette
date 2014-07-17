@@ -26,6 +26,15 @@ class GCS(meta.Base):
         except NoResultFound, e:
             return None
 
+    def get_by_gcsid(self, gcsid):
+        try:
+            entry = meta.Session.query(GCS).\
+                filter(GCS.envid == self.envid).\
+                filter(GCS.gcsid == gcsid).one()
+            return entry
+        except NoResultFound, e:
+            return None
+
     @classmethod
     def get_by_gcsid_envid(cls, gcsid, envid):
         try:

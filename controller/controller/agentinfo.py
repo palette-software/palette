@@ -88,6 +88,7 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
 
         if volume.has_key("drive-format"):
             drive_format = volume['drive-format']
+
         if volume.has_key('available-space'):
             available_space = volume['available-space']
 

@@ -36,3 +36,22 @@ class S3(meta.Base):
             return entry
         except NoResultFound, e:
             return None
+
+    def get_by_s3id(self, s3id):
+        try:
+            entry = meta.Session.query(S3).\
+                filter(S3.envid == self.envid).\
+                filter(S3.s3id == s3id).one()
+            return entry
+        except NoResultFound, e:
+            return None
+
+    @classmethod
+    def get_by_s3id_envid(cls, s3id, envid):
+        try:
+            entry = meta.Session.query(S3).\
+                filter(S3.envid == envid).\
+                filter(S3.s3id == s3id).one()
+            return entry
+        except NoResultFound, e:
+            return None
