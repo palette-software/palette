@@ -885,10 +885,6 @@ class AgentManager(threading.Thread):
             agent.odbc = ODBC(agent)
             agent.filemanager = FileManager(agent)
 
-            # FIXME remove these
-            aconn.agentid = agent.agentid
-            aconn.uuid = uuid
-
             pinfo = self.server.init_new_agent(agent)
             if not pinfo:
                 self.log.error("Bad agent with uuid: '%s'.  Disconnecting.",
@@ -912,8 +908,8 @@ class AgentManager(threading.Thread):
                     self.log.error(\
                         "pinfo vols bad for agent with uuid: '%s'.  " \
                             "Disconnecting.", uuid)
-                self._close(conn)
-                return
+                    self._close(conn)
+                    return
 
             if not self.register(agent, body):
                 self.log.error("Bad agent with uuid: %s'.  Disconnecting.",
@@ -956,13 +952,8 @@ class AgentManager(threading.Thread):
         lines = list(set(lines))
 
         lines = ''.join(lines)
-
-        if 'install-dir' not in agent.connection.auth:
-            self.log.error("save_routes: agent is missing 'install-dir'")
-            return
-        aconn = agent.connection
-        route_path = agent.path.join(aconn.auth['install-dir'],
-                                     "conf", "archive", "routes.txt")
+        route_path = agent.path.join(agent_install_dir, "conf",
+                                     "archive", "routes.txt")
         try:
             agent.filemanager.put(route_path, lines)
         except (exc.HTTPException, \
