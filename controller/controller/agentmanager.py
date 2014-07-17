@@ -414,7 +414,6 @@ class AgentManager(threading.Thread):
                            aconn.auth['install-dir'])
             return False
 
-
         install_dir_vol_name = parts[0].upper()
         install_data_dir = ntpath.join(parts[1], AgentConnection.DATA_DIR)
 
@@ -445,17 +444,28 @@ class AgentManager(threading.Thread):
                     # It should already have archive, archive_limit, etc.
                     if 'size' in volume:
                         entry.size = volume['size']
+
+                    if 'type' in volume:
+                        entry.vol_type = volume['type']
+
+                    if entry.vol_type == "Fixed":
+                        if entry.archive_limit == None:
+                            entry.archive_limit = entry.size
+
+                        if not entry.path:
+                            if 'path' in volume:
+                                entry.path = volume['path']
+                            else:
+                                entry.path = install_data_dir
+
                     if 'label' in volume:
                         entry.label = volume['label']
 
-                    if 'vol-type' in volume:
-                        entry.vol_type = volume['vol_type']
+                    if 'drive-format' in volume:
+                        entry.drive_format = volume['drive-format']
 
                     if 'available-space' in volume:
                         entry.available_space = volume['available-space']
-
-                    if 'drive-format' in volume:
-                        entry.drive_format = volume['drive-format']
 
                     if 'size' in volume and 'available-space' in volume:
                         usage_color = self.disk_color(\
@@ -803,9 +813,6 @@ class AgentManager(threading.Thread):
                                     "handling the agent connection.")
                 self._close(conn)
                 continue
-
-            else:
-                self.log.debug("That not be the state: %s", self.server.stateman.get_state())
 
             tobj = threading.Thread(target=self.handle_agent_connection,
                                  args=(conn, addr))

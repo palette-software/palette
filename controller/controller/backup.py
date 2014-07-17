@@ -23,7 +23,7 @@ class BackupEntry(meta.Base):
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
       server_onupdate=func.current_timestamp())
-    UniqueConstraint('volid', 'name')
+    UniqueConstraint('envid', 'name')
 
     # FIXME: make this a mixin
     def todict(self, pretty=False):
@@ -65,6 +65,17 @@ class BackupManager(object):
             return meta.Session.query(BackupEntry).\
                 filter(BackupEntry.envid == self.envid).\
                 filter(BackupEntry.name == name).\
+                one()
+
+        except NoResultFound, e:
+            return None
+
+    @classmethod
+    def find_by_name_envid(cls, name, envid):
+        try:
+            return meta.Session.query(BackupEntry).\
+                filter(BackupEntry.name == name).\
+                filter(BackupEntry.envid == envid).\
                 one()
 
         except NoResultFound, e:

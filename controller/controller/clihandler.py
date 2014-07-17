@@ -345,21 +345,13 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
         self.report_status({})
 
-    @usage('backup [ [target-displayname [volume-name]] | [gcs-name] ]')
+    @usage('backup')
     def do_backup(self, cmd):
         """Perform a Tableau backup and potentially migrate."""
 
-        target = None
-        volume_name = None
-
-        if len(cmd.args) > 2:
+        if len(cmd.args):
             self.print_usage(self.do_backup.__usage__)
             return
-        elif len(cmd.args) == 1:
-            target = cmd.args[0]
-        elif len(cmd.args) == 2:
-            target = cmd.args[0]
-            volume_name = cmd.args[1]
 
         agent = self.get_agent(cmd.dict)
         if not agent:
@@ -414,7 +406,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
 
-        body = self.server.backup_cmd(agent, target, volume_name)
+        body = self.server.backup_cmd(agent)
 
         if self.success(body):
             self.server.event_control.gen(EventControl.BACKUP_FINISHED,
@@ -498,17 +490,18 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
 
-    @usage('restore [source:pathname]')
+    @usage('restore backup-name')
     def do_restore(self, cmd):
-        """Restore.  If the file/path we are restoring from is on a different
-        machine than the Primary Agent, then get the file/path to the
-        Primary Agent first."""
+        """Restore. 
+        The "name" is not a full path-name, but is the backup
+        filename from the 'backup' table.
+        """
 
         if len(cmd.args) != 1:
             self.print_usage(self.do_restore.__usage__)
             return
 
-        target = cmd.args[0]
+        backup_name = cmd.args[0]
 
         agent = self.get_agent(cmd.dict)
         if not agent:
@@ -602,7 +595,8 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # restore_cmd() updates the state correctly depending on the
         # success of backup, copy, stop, restore, etc.
-        body = self.server.restore_cmd(agent, target, main_state, userid=userid)
+        body = self.server.restore_cmd(agent, backup_name, main_state,
+                                                                userid=userid)
 
         # The final RESTORE_FINISHED/RESTORE_FAILED alert is sent only here and
         # not in restore_cmd().  Intermediate alerts like RESTORE_STARTED
@@ -1256,7 +1250,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status(body)
 
-    @usage('s3 [GET|PUT] <bucket> <key-or-path>')
+    @usage('s3 [GET|PUT] s3-name key-or-path')
     def do_s3(self, cmd):
         """Send a file to or receive a file from an S3 bucket"""
 
@@ -1290,7 +1284,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         resource = os.path.basename(keypath)
         token = entry.get_token(resource)
 
-        command = self.server.PS3_BIN+' %s %s "%s"' % \
+        command = 'ps3 %s %s "%s"' % \
             (action, entry.bucket, keypath)
 
         env = {u'ACCESS_KEY': token.credentials.access_key,
@@ -1307,7 +1301,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status(body)
 
-    @usage('gcs [GET|PUT] <bucket> <key-or-path>')
+    @usage('gcs [GET|PUT] gcs-ame key-or-path')
     def do_gcs(self, cmd):
         """Send a file to or receive a file from a GCP bucket"""
 
@@ -1341,7 +1335,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         resource = os.path.basename(keypath)
 
-        command = self.server.PGCS_BIN+' %s %s "%s"' % \
+        command = 'pgcs %s %s "%s"' % \
             (action, entry.bucket, keypath)
 
         # FIXME: We don't really want to send our real keys and
