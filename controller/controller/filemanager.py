@@ -1,8 +1,6 @@
 import os
 import httplib
 import urllib
-import ntpath
-import json
 
 import exc
 
@@ -31,7 +29,7 @@ class FileManager(object):
         self.checkpath(path)
 
         if os.path.isdir(target):
-            target = os.path.join(target, ntpath.basename(path))
+            target = os.path.join(target, self.agent.path.basename(path))
 
         with open(target, "w") as f:
             data = self.get(path)

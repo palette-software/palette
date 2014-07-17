@@ -1,5 +1,3 @@
-import ntpath
-
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
@@ -96,13 +94,13 @@ class BackupManager(object):
         except NoResultFound, e:
             return None
 
-    def primary_data_loc_path(self):
+    def primary_data_loc_path(self, agent):
         vol_entry = self.get_primary_data_loc_vol_entry()
 
         if not vol_entry:
             return None
 
-        return ntpath.join(vol_entry.name + ':', vol_entry.path)
+        return agent.path.join(vol_entry.name + ':', vol_entry.path)
 
     @classmethod
     def all(cls, envid, asc=True):
