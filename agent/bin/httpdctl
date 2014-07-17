@@ -1,7 +1,11 @@
 #!/bin/bash
 
-if [ -z "$TOPDIR" ]; then
-    export TOPDIR=/home/matt/Projects/palette/server/agent
+if [ -z "$INSTALLDIR" ]; then
+    export INSTALLDIR=$(cd `dirname $0`/.. && pwd)
+fi
+
+if [ -z "$DATADIR" ]; then
+    export DATADIR=${INSTALLDIR}
 fi
 
 if [ -z "$LISTEN_PORT" ]; then
@@ -9,9 +13,9 @@ if [ -z "$LISTEN_PORT" ]; then
 fi
 
 if [ -z "$CONF" ]; then
-    export CONF=/home/matt/Projects/palette/server/agent/conf/archive/httpd.conf
+    export CONF=${INSTALLDIR}/conf/archive/httpd.conf
 fi
 
-mkdir -p ${TOPDIR}/logs
+mkdir -p ${INSTALLDIR}/logs
 
-exec /usr/sbin/apache2 -f ${CONF} -E ${TOPDIR}/logs/startup.log $@
+exec /usr/sbin/apache2 -f ${CONF} -E ${INSTALLDIR}/logs/startup.log $@

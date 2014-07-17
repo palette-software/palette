@@ -11,7 +11,7 @@ class HTTPRequest(object):
     def __init__(self, handler, method):
         self.handler = handler
         self.method = method
-        
+
         self.parseurl()
         if self.handler.headers.has_key('content-length'):
             self.content_length = int(self.handler.headers['content-length'])
