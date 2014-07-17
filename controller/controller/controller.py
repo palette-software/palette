@@ -626,34 +626,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             if source_agent.displayname != primary_agent.displayname:
                 # The file isn't on the Primary agent or cloud storage.
                 # We need to copy the file to the Primary.
-=======
-        #  e.g. "20140531_153629.tsbak"
-        filename_only = os.path.basename(source_spec)
-        local_fullpathname = agent.path.join(backup_dir, filename_only)
-
-        # Check if the file is on the Primary Agent.
-        if source_name != agent.displayname:
-            # The file isn't on the Primary agent:
-            # We need to copy the file to the Primary.
-
-            # First check to see if the source_name is a gcs name.
-            gcs_entry = self.gcs.get_by_name(source_name)
-            if gcs_entry:
-                self.log.debug("restore: Sending gcs command: %s, %s", \
-                               target, agent.displayname)
-
-                body = self.gcs_cmd(agent, "GET", gcs_entry, source_spec)
-                if 'error' in body:
-                    fmt = "restore: gcs GET backup file '%s' " + \
-                        "from gcs file '%s' failed. Error was: %s"
-                    self.log.debug(fmt,
-                               source_spec,
-                               source_name,
-                               body['error'])
-                    self.stateman.update(orig_state)
-                    return body
->>>>>>> First working check-in of the linux agent.
-
                 # copy_cmd arguments:
                 #   source-agent-name:VOL/filename
                 #   dest-agent-displayname
@@ -829,7 +801,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             # If the agent is initializing, then "agent_connected"
             # will not know about it yet.
-            # FIXME: use agent here instead of aconn.uuid
             if not aconn.initting and \
                     not self.agentmanager.agent_connected(agent.uuid):
                 self.log.warning("Agent '%s' (type: '%s', uuid %s) " + \
@@ -1143,12 +1114,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                       uri=uri, body=rawbody)
             elif rawbody:
                 body = json.loads(rawbody)
-                self.log.debug("send_immediate for %s %s reply: %s",
-                                                    method, uri, str(body))
             else:
                 body = {}
-                self.log.debug("send_immediate for %s %s reply empty.",
-                                                                method, uri)
         except (httplib.HTTPException, EnvironmentError) as e:
             self.log.error("Agent send_immediate command %s %s failed: %s",
                                         method, uri, str(e))    # bad agent
