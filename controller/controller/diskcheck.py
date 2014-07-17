@@ -101,7 +101,7 @@ class DiskCheck(object):
         try:
             storage_config = StorageConfig(self.server)
         except ValueError, e:
-            raise DiskExceptio(e)
+            raise DiskException(e)
 
         if storage_config.backup_dest_type == StorageConfig.GCS:
             entry = self.server.gcs.get_by_gcsid(\

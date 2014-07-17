@@ -20,18 +20,18 @@ class StorageConfig(object):
         elif encrypt == 'yes':
             self.storage_encrypt = True
         else:
-            raise ValueError("Bad value for system '%s': '%s" % (\
+            raise ValueError("Bad value for system '%s': '%s'" % (\
                                     self.STORAGE_ENCRYPT, encrypt))
 
         auto_retain_count = self.system.get(self.BACKUP_AUTO_RETAIN_COUNT)
         if not auto_retain_count.isdigit():
-            raise ValueError("Bad value for system '%s': '%s" %
+            raise ValueError("Bad value for system '%s': '%s'" %
                             (self.BACKUP_AUTO_RETAIN_COUNT, auto_retain_count))
         self.backup_auto_retain_count = int(auto_retain_count)
 
         user_retain_count = self.system.get(self.BACKUP_USER_RETAIN_COUNT)
         if not user_retain_count.isdigit():
-            raise ValueError("Bad value for system '%s': '%s" % \
+            raise ValueError("Bad value for system '%s': '%s'" % \
                             (self.BACKUP_USER_RETAIN_COUNT, user_retain_count))
 
         self.backup_user_retain_count = int(auto_retain_count)
@@ -44,7 +44,7 @@ class StorageConfig(object):
 
         backup_dest_id = self.system.get(self.BACKUP_DEST_ID)
         if not backup_dest_id.isdigit():
-            raise ValueError("Bad value for system '%s': '%s" % \
+            raise ValueError("Bad value for system '%s': '%s'" % \
                                     (self.BACKUP_DEST_ID, backup_dest_id))
 
         self.backup_dest_id = int(backup_dest_id)
