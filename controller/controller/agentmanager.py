@@ -952,7 +952,7 @@ class AgentManager(threading.Thread):
         lines = list(set(lines))
 
         lines = ''.join(lines)
-        route_path = agent.path.join(agent_install_dir, "conf",
+        route_path = agent.path.join(agent.install_dir, "conf",
                                      "archive", "routes.txt")
         try:
             agent.filemanager.put(route_path, lines)
