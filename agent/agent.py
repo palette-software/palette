@@ -120,6 +120,13 @@ class AgentHandler(SimpleHTTPRequestHandler):
             raise http.HTTPBadRequest()
         return {'status':'ok', 'port':self.server.archive.port }
 
+    def get_path_from_query(self, req):
+        if 'path' not in req.query:
+            raise HTTPBadRequest("'path' is required.")
+        if len(req.query['path']) != 1:
+            raise HTTPBadRequest("'path' must be unique.")
+        return req.query['path'][0]
+
     # The "auth" immediate command reply.
     # Immediate commands methods begin with 'icommand_'
     def handle_auth(self, req):
@@ -134,14 +141,14 @@ class AgentHandler(SimpleHTTPRequestHandler):
               "ip-address": self.server.socket.getsockname()[0],
               "listen-port": self.server.archive_port,
               "uuid": self.server.uuid,
-              "install-dir": self.server.install_dir
+              "install-dir": self.server.install_dir,
+              # FIXME
+              "data-dir": self.server.install_dir
             }
         return d
 
-    def handle_file_GET(req):
-        if 'path' not in req.query:
-            raise HTTPBadRequest()
-        path = req.query['path']
+    def handle_file_GET(self, req):
+        path = self.get_path_from_query(req)
         if not os.path.isfile(path):
             raise HTTPNotFound(path)
         res = req.response
@@ -150,20 +157,18 @@ class AgentHandler(SimpleHTTPRequestHandler):
         res.set_content_length()
         return res
 
-    def handle_file_PUT(req):
-        if 'path' not in req.query:
-            raise HTTPBadRequest()
-        path = req.query['path']
+    def handle_file_PUT(self, req):
+        path = self.get_path_from_query(req)
         # FIXME: catch IOError, OSError
         with open(path, 'w') as f:
-            shutil.copyfileobj(req.rfile, f)
+            if req.content_length:
+                shutil.copyfileobj(req.rfile, f. req.content_length)
         return req.response
 
-    def handle_file_DELETE(req):
-        if 'path' not in req.query:
-            raise HTTPBadRequest()
+    def handle_file_DELETE(self, req):
+        path = self.get_path_from_query(req)
         # FIXME: test for OSError
-        os.remove(req.query['path'])
+        os.remove(path)
         return req.response
 
     def handle_file(self, req):

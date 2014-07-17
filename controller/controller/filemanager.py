@@ -43,8 +43,12 @@ class FileManager(object):
     def put(self, path, data):
         self.checkpath(path)
         uri = self.uri(path)
+        h = {}
+        if not data:
+            # http://bugs.python.org/issue14721
+            h['content-length'] = 0
         self.server.log.debug("FileManager PUT %s: %s", uri, data)
-        return self.agent.connection.http_send('PUT', uri, data)
+        return self.agent.connection.http_send('PUT', uri, data, headers=h)
 
     def sha256(self, path):
         data = {'action':'SHA256', 'path':path}
