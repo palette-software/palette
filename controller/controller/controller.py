@@ -116,7 +116,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # If the target is not the primary, copy the backup to the target
         # or gcs.
         if dcheck.target_type in (StorageConfig.GCS, StorageConfig.S3):
-            data_dir = self.backup.primary_data_loc_path()
+            data_dir = self.backup.primary_data_loc_path(agent)
             storage_body = storage_cmd(agent, "PUT",
                             dcheck.target_entry, backup_name)
             if 'error' in storage_body:
@@ -215,7 +215,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def gcs_cmd(self, agent, action, gcs_entry, path):
 
-        data_dir = self.backup.primary_data_loc_path()
+        data_dir = self.backup.primary_data_loc_path(agent)
         if not data_dir:
             return self.error("gcs_cmd: Couldn't find the " + \
                         "primary_data_loc in the agent_volumes table " + \
@@ -232,7 +232,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def s3_cmd(self, agent, action, s3_entry, path):
 
-        data_dir = self.backup.primary_data_loc_path()
+        data_dir = self.backup.primary_data_loc_path(agent)
         if not data_dir:
             return self.error("s3_cmd: Couldn't find the " + \
                         "primary_data_loc in the agent_volumes table " + \
@@ -534,7 +534,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         source_ip = src.ip_address
 
         if not target_dir:
-            target_dir = self.backup.primary_data_loc_path()
+            target_dir = self.backup.primary_data_loc_path(agent)
             if not target_dir:
                 return self.error("copy_cmd: Couldn't find the " + \
                         "primary_data_loc in the agent_volumes table " + \
@@ -601,7 +601,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                                                 backup_name)
 
         # Get the vol + dir to use for the restore command to tabadmin.
-        backup_dir = self.backup.primary_data_loc_path(agent)
+        backup_dir = self.backup.primary_data_loc_path(primary_agent)
         if not backup_dir:
             return self.error("restore: Couldn't find the primary_data_loc " + \
                         "in the agent_volumes table for the primary agent.")
@@ -1142,7 +1142,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn = agent.connection
         ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
-        ziplog_path = self.backup.primary_data_loc_path()
+        ziplog_path = self.backup.primary_data_loc_path(agent)
 
         cmd = 'tabadmin ziplogs -l -n -a \\\"%s\\\"' % ziplog_path
         body = self.cli_cmd(cmd, agent)
@@ -1159,7 +1159,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn = agent.connection
         ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
-        data_dir = self.backup.primary_data_loc_path()
+        data_dir = self.backup.primary_data_loc_path(agent)
         ziplog_path = agent.path.join(data_dir, ziplog_name)
 
         body = self.cli_cmd('tabadmin cleanup', agent)

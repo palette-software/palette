@@ -1299,7 +1299,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error(ERROR_NOT_FOUND, "s3 instance '" + name + "' not found.")
             return
 
-        data_dir = self.server.backup.primary_data_loc_path()
+        data_dir = self.server.backup.primary_data_loc_path(agent)
 
         if not data_dir:
             self.error(ERROR_NOT_FOUND,
@@ -1351,7 +1351,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                                     "gcs instance '" + name + "' not found.")
             return
 
-        data_dir = self.server.backup.primary_data_loc_path()
+        data_dir = self.server.backup.primary_data_loc_path(agent)
 
         if not data_dir:
             self.error(ERROR_NOT_FOUND,
