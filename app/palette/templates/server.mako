@@ -27,19 +27,23 @@
             {{displayname}}
 %endif
 	      </h3>
-          <p>{{fqdn}} ({{ip-address}})</p>
+          <span class=label>Hostname</span>{{fqdn}} ({{ip-address}})
         </div>
         <div class="col2">
-          <p>
 %if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
-            <span class="editbox environment" data-href="/rest/environment">
+            <div>
+              <span class="label">Environment</span><span class="editbox environment" data-href="/rest/environment">
               {{environment}}
-            </span>
+              </span>
+            </div>
 %else:
-            {{environment}}
+            <div>
+              {{environment}}
+            </div>
 %endif
-          </p>
-          <p>Connection Status {{connection-status}}</p>
+          <div>
+            <span class="label">Monitor &nbsp; &nbsp;<input type="checkbox" class="ios-checkbox"/></span>
+          </div>
         </div>
       </div>
       <i class="fa fa-fw fa-angle-down expand"></i>
@@ -50,12 +54,7 @@
           <article>
 	    <span class="label">Server Type</span>{{agent-type}}
 	  </article>
-          <br/>
-          <article>
-            <span class="label">Hostname</span>{{hostname}}
-          </article>
           <article><span class="label">IP Address</span>{{ip-address}}</article>
-          <article><span class="label">Environment</span>{{environment}}</article>
           <article><span class="label">OS</span>{{os-version}}</article>
 	  <article>
 	    <span class="label">RAM</span>{{installed-memory-readable}}
@@ -70,13 +69,10 @@
 	</div>
 	<div class="col2">
 	  <article>
-	    <span class="label">Select Archive Locations</span>
+	    <span class="label">Attached Disks</span>
 	  </article>
       {{#volumes}}
       <article>
-        <input type="checkbox" data-id="{{volid}}" {{checkbox-state}}
-           ${req.remote_user.roleid < req.remote_user.role.MANAGER_ADMIN \
-                                      and 'disabled' or ''} />
         {{name}}: {{size-readable}} ({{available-readable}} Unused)
       </article>
       {{/volumes}}
