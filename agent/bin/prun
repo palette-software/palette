@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import subprocess
+
+if len(sys.argv) < 2:
+    print >> sys.stderr, 'Usage: prun FileToRun [arguments]'
+    sys.exit(1)
+
+try:
+    stdout = open('./stdout', 'w')
+    stderr = open('./stderr', 'w')
+
+    returncode = subprocess.call(sys.argv[1:], stdout=stdout, stderr=stderr)
+    with open('./tmp', 'w') as f:
+        f.write(str(returncode))
+
+except (OSError, IOError), e:
+    with open('./stderr', 'w') as f:
+        f.write(str(e)+'\n')
+    with open('./tmp', 'w') as f:
+        f.write("-1")
+
+try:
+    os.rename('./tmp', './returncode')
+except:
+    pass

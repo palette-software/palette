@@ -96,12 +96,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         backup_name = time.strftime("%Y%m%d_%H%M%S") + ".tsbak"
 
         # Get the vol + dir to use for the backup command to tabadmin.
-        backup_dir = self.backup.primary_data_loc_path()
+        backup_dir = self.backup.primary_data_loc_path(agent)
         if not backup_dir:
             return self.error("Couldn't find the primary_data_loc in " + \
                         "the agent_volumes table for the primary agent.")
 
-        backup_path = ntpath.join(backup_dir, backup_name)
+        backup_path = agent.path.join(backup_dir, backup_name)
 
         backup_vol = backup_path.split(':')[0]
         # e.g.: c:\\Program\ Files\ (x86)\\Palette\\Data\\2014Jan27_162225.tsbak
@@ -116,7 +116,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # If the target is not the primary, copy the backup to the target
         # or gcs.
         if dcheck.target_type in (StorageConfig.GCS, StorageConfig.S3):
-            data_dir = self.backup.primary_data_loc_path()
+            data_dir = self.backup.primary_data_loc_path(agent)
             storage_body = storage_cmd(agent, "PUT",
                             dcheck.target_entry, backup_name)
             if 'error' in storage_body:
@@ -215,7 +215,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def gcs_cmd(self, agent, action, gcs_entry, path):
 
-        data_dir = self.backup.primary_data_loc_path()
+        data_dir = self.backup.primary_data_loc_path(agent)
         if not data_dir:
             return self.error("gcs_cmd: Couldn't find the " + \
                         "primary_data_loc in the agent_volumes table " + \
@@ -232,7 +232,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def s3_cmd(self, agent, action, s3_entry, path):
 
-        data_dir = self.backup.primary_data_loc_path()
+        data_dir = self.backup.primary_data_loc_path(agent)
         if not data_dir:
             return self.error("s3_cmd: Couldn't find the " + \
                         "primary_data_loc in the agent_volumes table " + \
@@ -280,9 +280,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not vol_entry:
             return self.error("Missing volume id: %d!", entry.volid)
 
+        # FIXME: use agent.path
         backup_path = ntpath.join(vol_entry.name + ":", vol_entry.path, backup)
         self.log.debug("backupdel_cmd: Deleting path '%s' on agent '%s'",
-                                            backup_path, agent.displayname)
+                       backup_path, agent.displayname)
 
         body = self.delete_file(agent, backup_path)
         if not body.has_key('error'):
@@ -533,7 +534,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         source_ip = src.ip_address
 
         if not target_dir:
-            target_dir = self.backup.primary_data_loc_path()
+            target_dir = self.backup.primary_data_loc_path(agent)
             if not target_dir:
                 return self.error("copy_cmd: Couldn't find the " + \
                         "primary_data_loc in the agent_volumes table " + \
@@ -599,8 +600,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 "restore_cmd: Backup has no gcs/s3/volID for backup %s" % \
                                                                 backup_name)
 
-        # Get the "vol:/dir" to use for the restore command to tabadmin.
-        backup_dir = self.backup.primary_data_loc_path()
+        # Get the vol + dir to use for the restore command to tabadmin.
+        backup_dir = self.backup.primary_data_loc_path(primary_agent)
         if not backup_dir:
             return self.error("restore: Couldn't find the primary_data_loc " + \
                         "in the agent_volumes table for the primary agent.")
@@ -625,7 +626,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             if source_agent.displayname != primary_agent.displayname:
                 # The file isn't on the Primary agent or cloud storage.
                 # We need to copy the file to the Primary.
-
                 # copy_cmd arguments:
                 #   source-agent-name:VOL/filename
                 #   dest-agent-displayname
@@ -801,7 +801,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             # If the agent is initializing, then "agent_connected"
             # will not know about it yet.
-            # FIXME: use agent here instead of aconn.uuid
             if not aconn.initting and \
                     not self.agentmanager.agent_connected(agent.uuid):
                 self.log.warning("Agent '%s' (type: '%s', uuid %s) " + \
@@ -965,8 +964,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.info("get_pinfo: Failing due to UPDATING")
             return {"error": "Cannot run command while UPDATING"}
 
-        path = ntpath.join(agent.tableau_data_dir, "data", "tabsvc",
-                           "config", "workgroup.yml")
+        path = agent.path.join(agent.tableau_data_dir, "data", "tabsvc",
+                               "config", "workgroup.yml")
         try:
             yml = agent.connection.filemanager.get(path)
         except (exc.HTTPException, httplib.HTTPException,
@@ -1115,12 +1114,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                       uri=uri, body=rawbody)
             elif rawbody:
                 body = json.loads(rawbody)
-                self.log.debug("send_immediate for %s %s reply: %s",
-                                                    method, uri, str(body))
             else:
                 body = {}
-                self.log.debug("send_immediate for %s %s reply empty.",
-                                                                method, uri)
         except (httplib.HTTPException, EnvironmentError) as e:
             self.log.error("Agent send_immediate command %s %s failed: %s",
                                         method, uri, str(e))    # bad agent
@@ -1147,7 +1142,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn = agent.connection
         ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
-        ziplog_path = self.backup.primary_data_loc_path()
+        ziplog_path = self.backup.primary_data_loc_path(agent)
 
         cmd = 'tabadmin ziplogs -l -n -a \\\"%s\\\"' % ziplog_path
         body = self.cli_cmd(cmd, agent)
@@ -1164,8 +1159,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn = agent.connection
         ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
-        data_dir = self.backup.primary_data_loc_path()
-        ziplog_path = ntpath.join(data_dir, ziplog_name)
+        data_dir = self.backup.primary_data_loc_path(agent)
+        ziplog_path = agent.path.join(data_dir, ziplog_name)
 
         body = self.cli_cmd('tabadmin cleanup', agent)
         body[u'info'] = u'tabadmin cleanup'
@@ -1224,8 +1219,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """
 
         TABLEAU_INSTALL_DIR="tableau-install-dir"
-        YML_CONFIG_FILE_PART=ntpath.join("data", "tabsvc",
-                                         "config", "workgroup.yml")
+        YML_CONFIG_FILE_PART=agent.path.join("data", "tabsvc",
+                                             "config", "workgroup.yml")
 
         aconn = agent.connection
 

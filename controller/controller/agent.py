@@ -9,6 +9,9 @@ from mixin import BaseDictMixin
 from agentinfo import AgentVolumesEntry
 from util import sizestr
 
+import ntpath
+import posixpath
+
 class Agent(meta.Base, BaseDictMixin):
     __tablename__ = 'agent'
 
@@ -30,6 +33,8 @@ class Agent(meta.Base, BaseDictMixin):
     installed_memory = Column(BigInteger)
     processor_type = Column(String)
     processor_count = Column(Integer)
+    install_dir = Column(String, nullable=False)
+    data_dir = Column(String)
     tableau_install_dir = Column(String)
     tableau_data_dir = Column(String)
     tableau_data_size = Column(BigInteger)
@@ -105,4 +110,51 @@ class Agent(meta.Base, BaseDictMixin):
             fmt = "%(value).0f%(symbol)s"
             d['installed-memory-readable'] = \
                 sizestr(self.installed_memory, fmt=fmt)
-        return d
+        return d        
+
+    @classmethod
+    def build(cls, envid, aconn):
+         """Create an agent from a new connection."""
+         body = aconn.auth
+         session = meta.Session()
+
+         uuid = body['uuid']
+         entry = Agent.get_by_uuid(envid, uuid)
+
+         if entry is None:
+             entry = Agent(envid=envid, uuid=uuid)
+
+         entry.version=body['version']
+         entry.os_version=body['os-version']
+         entry.processor_type=body['processor-type']
+         entry.processor_count=body['processor-count']
+         entry.installed_memory=body['installed-memory']
+         entry.hostname=body['hostname']
+         entry.fqdn=body['fqdn']
+         entry.ip_address=body['ip-address']
+         entry.listen_port=body['listen-port']
+         entry.agent_type=aconn.agent_type
+         entry.username=u'palette'# fixme
+         entry.password=u'tableau2014'
+
+         entry.install_dir=body['install-dir']
+
+         # FIXME: this can be removed as data-dir becomes required.
+         if 'data-dir' in body:
+             entry.data_dir = body['data-dir']
+         else:
+             entry.data_dir = body['install-dir']
+
+
+         entry.last_connection_time = func.now()
+         entry = session.merge(entry)
+         session.commit()
+
+         if 'microsoft' in body['os-version'].lower():
+             entry.iswin = True
+             entry.path = ntpath
+         else:
+             entry.iswin = False
+             entry.path = posixpath
+
+         return entry
