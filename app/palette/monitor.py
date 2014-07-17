@@ -76,10 +76,12 @@ class MonitorApplication(PaletteRESTHandler):
         L = [{'item':'All Types', 'id':0}]
 
         d = {'name':'type'}
-        for t in EventControl.types():
+        types = EventControl.types()
+        for t in types:
             if t == c:
-                d['value'] = d['id'] = t
-            L.append({'item':t, 'id':t})
+                d['value'] = types[t]
+                d['id'] = t
+            L.append({'item':types[t], 'id':t})
         if 'id' not in d:
             d['value'] = L[0]['item']
             d['id'] = 0

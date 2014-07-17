@@ -141,7 +141,7 @@
 "email_message":null,
 "icon":null,
 "color":"green",
-"event_type":"restore"
+"event_type":"backup"
 },
 {
 "key":"BACKUP-BEFORE-RESTORE-FINISHED",
@@ -152,7 +152,7 @@
 "email_message":null,
 "icon":null,
 "color":"green",
-"event_type":"restore"
+"event_type":"backup"
 },
 {
 "key":"BACKUP-BEFORE-RESTORE-FAILED",
@@ -163,7 +163,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"restore"
+"event_type":"backup"
 },
 {
 "key":"RESTORE-STARTED",
@@ -174,7 +174,7 @@
 "email_message":null,
 "icon":null,
 "color":"green",
-"event_type":"restore"
+"event_type":"backup"
 },
 {
 "key":"RESTORE-FINISHED",
@@ -185,7 +185,7 @@
 "email_message":null,
 "icon":null,
 "color":"green",
-"event_type":"restore"
+"event_type":"backup"
 },
 {
 "key":"RESTORE-FAILED",
@@ -196,7 +196,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"restore"
+"event_type":"backup"
 },
 {
 "key":"TABLEAU-START-FAILED",
@@ -218,7 +218,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"maint-server"
+"event_type":"status"
 },
 {
 "key":"MAINT-STOP-FAILED",
@@ -229,7 +229,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"maint-server"
+"event_type":"status"
 },
 {
 "key":"MAINT-OFFLINE",
@@ -240,7 +240,7 @@
 "email_message":null,
 "icon":null,
 "color":"green",
-"event_type":"maint-server"
+"event_type":"status"
 },
 {
 "key":"MAINT-ONLINE",
@@ -251,7 +251,7 @@
 "email_message":null,
 "icon":null,
 "color":"green",
-"event_type":"maint-server"
+"event_type":"status"
 },
 {
 "key":"ARCHIVE-START-FAILED",
@@ -262,7 +262,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"maint-server"
+"event_type":"status"
 },
 {
 "key":"ARCHIVE-STOP-FAILED",
@@ -273,7 +273,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"maint-server"
+"event_type":"status"
 },
 {
 "key":"AGENT-COMM-LOST",
@@ -284,7 +284,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"agent"
+"event_type":"status"
 },
 {
 "key":"AGENT-FAILED-STATUS",
@@ -295,7 +295,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"agent"
+"event_type":"status"
 },
 {
 "key":"AGENT-RETURNED-INVALID-STATUS",
@@ -306,7 +306,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"agent"
+"event_type":"status"
 },
 {
 "key":"AGENT-DISCONNECT",
@@ -317,7 +317,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"agent"
+"event_type":"status"
 },
 {
 "key":"LICENSE-INVALID",
@@ -328,7 +328,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"tableau"
+"event_type":"status"
 },
 {
 "key":"LICENSE-EXPIRED",
@@ -339,7 +339,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"tableau"
+"event_type":"status"
 },
 {
 "key":"LICENSE-RENEWAL",
@@ -350,7 +350,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"tableau"
+"event_type":"status"
 },
 {
 "key":"PERMISSION",
@@ -361,7 +361,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"agent"
+"event_type":"status"
 },
 {
 "key":"AGENT-COMMUNICATION",
@@ -372,7 +372,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"agent"
+"event_type":"status"
 },
 {
 "key":"MAINT-WEB",
@@ -383,7 +383,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"maint-server"
+"event_type":"status"
 },
 {
 "key":"TABLEAU-USER-TABLE",
@@ -394,7 +394,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"tableau"
+"event_type":"status"
 },
 {
 "key":"TABLEAU-SYSTEM-TABLE",
@@ -405,7 +405,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"tableau"
+"event_type":"status"
 },
 {
 "key":"SCHEDULE-JOB-STARTED",
@@ -416,7 +416,7 @@
 "email_message":null,
 "icon":null,
 "color":"green",
-"event_type":"sched"
+"event_type":"status"
 },
 {
 "key":"SCHEDULE-JOB-FAILED",
@@ -427,7 +427,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"sched"
+"event_type":"status"
 },
 {
 "key":"EXTRACT-OK",
@@ -460,7 +460,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"tableau"
+"event_type":"status"
 },
 {
 "key":"CLEANUP-FAILED",
@@ -471,7 +471,7 @@
 "email_message":null,
 "icon":null,
 "color":"red",
-"event_type":"tableau"
+"event_type":"status"
 },
 {
 "key":"FIREWALL-OPEN-FAILED",

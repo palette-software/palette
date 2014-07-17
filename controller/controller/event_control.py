@@ -121,23 +121,14 @@ class EventControl(meta.Base, BaseMixin):
     }
 
     # event types
-    TYPE_BACKUP="backup"
-    TYPE_RESTORE="restore"
-    TYPE_MAINT_SERVER="maint-server"
-    TYPE_ARCHIVE_SERVER="archive-server"
-    TYPE_STATUS="status"
-    TYPE_AGENT="agent"
-    TYPE_TABLEAU="tableau"
-    TYPE_SCHED="sched"
-    TYPE_EXTRACT="extract"
+    all_types = {'backup':'Backup & Restore',
+                 'status':'Status',
+                 'agent':'Agent',
+                 'extract':'Extracts'}
 
     @classmethod
     def types(cls):
-        L = []
-        for t in cls.__dict__:
-            if t.startswith('TYPE_'):
-                L.append(getattr(cls, t))
-        return L
+        return cls.all_types
 
     defaults_filename = 'event_control.json'
 
