@@ -19,6 +19,7 @@ from event_control import EventControl
 from firewall import Firewall
 from odbc import ODBC
 from filemanager import FileManager
+from util import sizestr
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
@@ -537,10 +538,10 @@ class AgentManager(threading.Thread):
                                                                 usage_color)
             return
 
-        msg = ("Volume name: %s\nSize: %d\nUsed: %d\nAvailable: %d\n" + \
+        msg = ("Volume name: %s\nSize: %s\nUsed: %s\nAvailable: %s\n" + \
             "Percent used: %2.1f%%\n") % \
-                (entry.name, entry.size, entry.size - entry.available_space,
-                                    entry.available_space, percent)
+                (entry.name, sizestr(entry.size), sizestr(entry.size - entry.available_space),
+                                    sizestr(entry.available_space), percent)
 
         self.server.event_control.gen(event,
                         dict({'info': msg}.items() + agent.__dict__.items()))
