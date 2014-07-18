@@ -1,3 +1,5 @@
+import os
+
 from sqlalchemy import Column, String, BigInteger, Integer, Boolean
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, backref
@@ -61,14 +63,16 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
         return d
 
     @classmethod
-    def build(cls, agentid, volume):
+    def build(cls, agent, volume, install_data_dir):
 
         name = None; path = None; vol_type = None; label = None;
         drive_format = None; archive = False; archive_limit = None;
         size = None; available_space = None;
 
         if volume.has_key("name"):
-            name = volume['name'].upper()
+            name = volume['name']
+            if agent.iswin:
+                name = volume['name'].upper()
 
         if volume.has_key('path'):
             path = volume['path']
@@ -78,10 +82,20 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
 
         if volume.has_key("type"):
             vol_type = volume['type']
-            if vol_type == 'Fixed':
+            if agent.iswin and vol_type == 'Fixed':
                 archive = True
-                if size:
-                    archive_limit = size    # fixme: can't use whole disk
+                path = install_data_dir
+            elif not agent.iswin and volume['type'][:7] == '/dev/sd' and \
+                name != None and \
+                        os.path.commonprefix([agent.data_dir, name]) == name:
+                # The data-dir is on the entry's mount point so it is
+                # the "archive" entry.
+                archive = True
+                path = install_data_dir
+
+        if archive == True:
+            if size:
+                archive_limit = size    # fixme: can't use whole disk
 
         if volume.has_key("label"):
             label = volume['label']
@@ -92,7 +106,7 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
         if volume.has_key('available-space'):
             available_space = volume['available-space']
 
-        return AgentVolumesEntry(agentid=agentid, name=name, path=path,
+        return AgentVolumesEntry(agentid=agent.agentid, name=name, path=path,
             vol_type=vol_type, label=label, drive_format=drive_format,
             archive=archive, archive_limit=archive_limit, size=size, 
             available_space=available_space, primary_data_loc=False,

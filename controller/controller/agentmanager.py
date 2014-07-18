@@ -19,6 +19,7 @@ from event_control import EventControl
 from firewall import Firewall
 from odbc import ODBC
 from filemanager import FileManager
+from storage import StorageConfig
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
@@ -28,8 +29,6 @@ from akiri.framework.ext.sqlalchemy import meta
 # Communicates with the Agent.
 # fixme: maybe combine with the Agent class.
 class AgentConnection(object):
-
-    DATA_DIR = "Data"
 
     def __init__(self, server, conn, addr):
         self.server = server
@@ -372,22 +371,39 @@ class AgentManager(threading.Thread):
                    update({"active" : False}, synchronize_session=False)
 
         aconn = agent.connection
-        parts = aconn.auth['install-dir'].split(':')
-        if len(parts) != 2:
-            self.log.error("Bad format for install-dir: %s",
-                           aconn.auth['install-dir'])
-            return False
-
-        install_dir_vol_name = parts[0].upper()
-        install_data_dir = agent.path.join(parts[1], AgentConnection.DATA_DIR)
+        if agent.iswin:
+            parts = agent.install_dir.split(':')
+            if len(parts) != 2:
+                self.log.error("Bad format for install-dir: %s",
+                                                       agent.install_dir)
+                return False
+            install_dir_vol_name = parts[0].upper()
+            # fixme
+            parts = agent.data_dir.split(':')
+            if len(parts) != 2:
+                self.log.error("Bad format for data-dir: %s",
+                                                       agent.data_dir)
+                return False
+            install_data_dir = agent.path.join(parts[1], "Data")
+        else:
+            # install_dir_vol_name is never used for linux agents, below,
+            # since it is only for primaries with Tableau installed.
+            install_data_dir = agent.path.join(agent.data_dir, "data")
 
         (low_water,high_water) = \
             self.disk_watermark('low'), self.disk_watermark('high')
 
         if 'volumes' in pinfo:
-            for volume in pinfo['volumes']:
+            volumes_sorted = sorted(pinfo['volumes'],
+                                    key=lambda k: k['name'], reverse=True)
+            if not agent.iswin:
+                linux_archive_volume_found = 0
+
+            for volume in volumes_sorted:
                 if 'name' in volume:
-                    name = volume['name'].upper()
+                    name = volume['name']
+                    if agent.iswin:
+                        name = name.upper()
                 else:
                     self.log.error("volume missing 'name' in pinfo for " + \
                         "agentid %d. Will ignore: %s", agentid, str(volume))
@@ -460,12 +476,8 @@ class AgentManager(threading.Thread):
                 else:
                     # Add the volume
                     if 'type' in volume:
-                        if volume['type'] == "Fixed":
-                            # Set a default path for new "Fixed" volumes.
-                            # (Only "Fixed" volumes can be used for an archive.)
-                            volume['path'] = install_data_dir
-
-                        entry = AgentVolumesEntry.build(agentid, volume)
+                        entry = AgentVolumesEntry.build(agent, volume,
+                                                        install_data_dir)
 
                         # If it is the primary agent and install volume,
                         # mark it as the "primary_data_loc" volume.
@@ -475,6 +487,21 @@ class AgentManager(threading.Thread):
                             entry.primary_data_loc = True
                         else:
                             entry.primary_data_loc = False
+
+                        if entry.archive and not agent.iswin:
+                            if linux_archive_volume_found:
+                                # Can be only one archive for Linux
+                                # We sorted the volumes by name in reverse
+                                # order so '/' is checked last.
+                                if entry.name != '/':
+                                    self.log.error("entry.archive True " + \
+                                        "not agent.iswin, " + \
+                                        "linux_archive_volume_found " + \
+                                        "and entry.name != '/': %s" + \
+                                        entry.name)
+                                entry.archive = False
+                            else:
+                                linux_archive_volume_found = True
 
                         if 'size' in volume and 'available-space' in volume:
                             usage_color = self.disk_color(\
@@ -903,13 +930,12 @@ class AgentManager(threading.Thread):
 
             # Now that the agent type and displayname are set, we
             # can update the volume information from pinfo.
-            if agent.iswin: # FIXME: do this for non-Windows agents too
-                if not self.update_agent_pinfo_vols(agent, pinfo):
-                    self.log.error(\
-                        "pinfo vols bad for agent with uuid: '%s'.  " \
-                            "Disconnecting.", uuid)
-                    self._close(conn)
-                    return
+            if not self.update_agent_pinfo_vols(agent, pinfo):
+                self.log.error(\
+                    "pinfo vols bad for agent with uuid: '%s'.  " \
+                        "Disconnecting.", uuid)
+                self._close(conn)
+                return
 
             if not self.register(agent, body):
                 self.log.error("Bad agent with uuid: %s'.  Disconnecting.",
@@ -923,6 +949,9 @@ class AgentManager(threading.Thread):
             self.save_routes(agent) # fixme: check return value?
             aconn.initting = False
 
+            if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+                self.set_default_backup_destid(agent)
+
         except socket.error, e:
             self.log.debug("Socket error: " + str(e))
             self._close(conn)
@@ -934,6 +963,32 @@ class AgentManager(threading.Thread):
         finally:
             session.rollback()
             meta.Session.remove()
+
+    def set_default_backup_destid(self, agent):
+        # If there is no backup configuration BACKUP_DEST_ID yet,
+        # create one now.
+        try:
+            self.server.system.get(StorageConfig.BACKUP_DEST_ID)
+        except ValueError:
+            pass
+        else:
+            # It was found, so don't need to add it.
+            return
+
+        # Set the BACKUP_DEST_ID to the same volume where
+        # tableau is installed.
+        # primary_data_loc where
+        # primary_data_loc where
+        session = meta.Session()
+        try:
+            entry = session.query(AgentVolumesEntry).\
+                filter(AgentVolumesEntry.agentid == agent.agentid).\
+                filter(AgentVolumesEntry.primary_data_loc == True).\
+                one()
+        except NoResultFound:
+            return
+
+        self.server.system.save(StorageConfig.BACKUP_DEST_ID, entry.volid)
 
     def save_routes(self, agent):
         lines = ""
@@ -952,8 +1007,9 @@ class AgentManager(threading.Thread):
         lines = list(set(lines))
 
         lines = ''.join(lines)
-        route_path = agent.path.join(agent.install_dir, "conf",
-                                     "archive", "routes.txt")
+        route_path = agent.path.join(agent.data_dir, "archive", "routes.txt")
+
+        self.log.debug("save_routes: saving to %s: '%s'", route_path, lines)
         try:
             agent.filemanager.put(route_path, lines)
         except (exc.HTTPException, \

@@ -19,7 +19,7 @@ for line in lines[1:]:
     if tokens[0] in excludes:
         continue
     name = tokens[6:]
-    d = {'name': tokens[6], 'type': tokens[0], 'format': tokens[1]}
+    d = {'name': tokens[6], 'type': tokens[0], 'drive-format': tokens[1]}
     d['size'] = int(tokens[2]) * 1024
     d['available-space'] = int(tokens[4]) * 1024
     volumes.append(d)

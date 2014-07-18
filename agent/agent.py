@@ -143,7 +143,7 @@ class AgentHandler(SimpleHTTPRequestHandler):
               "uuid": self.server.uuid,
               "install-dir": self.server.install_dir,
               # FIXME
-              "data-dir": self.server.install_dir
+              "data-dir": self.server.data_dir
             }
         return d
 
@@ -162,7 +162,11 @@ class AgentHandler(SimpleHTTPRequestHandler):
         # FIXME: catch IOError, OSError
         with open(path, 'w') as f:
             if req.content_length:
-                shutil.copyfileobj(req.rfile, f. req.content_length)
+#                FYI: this hangs:
+#                shutil.copyfileobj(req.rfile, f, req.content_length)
+                # fixme: check to make sure all was read?
+                data = req.rfile.read(req.content_length)
+                f.write(data)
         return req.response
 
     def handle_file_DELETE(self, req):
@@ -234,12 +238,22 @@ class Agent(TCPServer):
     LOGGER_NAME = 'main'
     DEFAULT_SECTION = 'DEFAULT'
     DEFAULT_LICENSE_KEY = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+    DEFAULT_DATA_DIR = "/var/palette"
 
     def __init__(self, config):
         self.config = config
         self.host = config.get('controller', 'host', default='localhost')
         self.port = config.getint('controller', 'port', default=8888)
         self.ssl = config.getboolean('controller', 'ssl', default=True)
+        self.data_dir = config.get('controller', 'data-dir',
+                                            default=self.DEFAULT_DATA_DIR)
+
+        if not os.path.isdir(self.data_dir):
+            os.mkdir(self.data_dir)
+        for sub_dir in ["data", "archive", "logs/archive"]:
+            tdir = os.path.join(self.data_dir, sub_dir)
+            if not os.path.isdir(tdir):
+                os.makedirs(tdir)
 
         self.uuid = config.get(self.DEFAULT_SECTION, 'uuid')
         self.version = version()
