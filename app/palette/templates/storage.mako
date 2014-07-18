@@ -5,12 +5,6 @@
 <title>Palette - User Configuration</title>
 </%block>
 
-<style>
-.small-entry {
-  width:55px;
-}
-</style>
-
 <section class="dynamic-content">
   <h1 class="page-title">Storage</h1>
 
@@ -49,6 +43,13 @@
   <h3>Archive Workbooks Only as .twb Files (COMING SOON)</h3>
   <p>Workbook .twb files are just small configuration files, while .twbx are configuration plus extract data which can become very large files</p>
   <input type="checkbox" class="ios-checkbox">
+  <div class="onoffswitch">
+    <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="myonoffswitch" checked>
+    <label class="onoffswitch-label" for="myonoffswitch">
+        <span class="onoffswitch-inner"></span>
+        <span class="onoffswitch-switch"></span>
+    </label>
+  </div>
 </section>
 
 <script id="event-dropdown-template" type="x-tmpl-mustache">
@@ -61,5 +62,5 @@
   </ul>
 </script>
 
-<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/users.js">
+<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/storage.js">
 </script>
