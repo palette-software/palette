@@ -19,8 +19,8 @@ class StoragePage(PalettePage):
     
     def __init__(self, global_conf):
         super(StoragePage, self).__init__(global_conf)       
-        query = meta.Session.query(SystemEntry)
-        print query
+        #query = meta.Session.query(SystemEntry)
+        #print query
 
     def render(self, req, obj=None):        
         return super(StoragePage, self).render(req, obj=obj)
