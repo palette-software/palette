@@ -515,21 +515,22 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not src or not dst:
             return self.error(msg)
 
-        # Enable the firewall port on the source host.
-        self.log.debug("Enabling firewall port %d on src host '%s'", \
+        if agent.iswin:
+            # Enable the firewall port on the source host.
+            self.log.debug("Enabling firewall port %d on src host '%s'", \
                                     src.listen_port, src.displayname)
-        fw_body = src.firewall.enable([src.listen_port])
-        if fw_body.has_key("error"):
-            self.log.error(\
-                "firewall enable port %d on src host %s failed with: %s",
-                    src.listen_port, src.displayname, fw_body['error'])
-            self.event_control.gen(\
-                EventControl.FIREWALL_OPEN_FAILED,
-                    dict({
-                        'error': fw_body['error'],
-                        'info': "Port %d" % src.listen_port}.items() + \
-                                                    agent.__dict__.items()))
-            return fw_body
+            fw_body = src.firewall.enable([src.listen_port])
+            if fw_body.has_key("error"):
+                self.log.error(\
+                    "firewall enable port %d on src host %s failed with: %s",
+                        src.listen_port, src.displayname, fw_body['error'])
+                self.event_control.gen(\
+                    EventControl.FIREWALL_OPEN_FAILED,
+                        dict({
+                            'error': fw_body['error'],
+                            'info': "Port %d" % src.listen_port}.items() + \
+                                                        agent.__dict__.items()))
+                return fw_body
 
         source_ip = src.ip_address
 
@@ -1264,7 +1265,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.sync_cmd(agent)
             self.extract.load(agent)
 
-        self.firewall_manager.do_firewall_ports(agent)
+        if agent.iswin:
+            self.firewall_manager.do_firewall_ports(agent)
 
         # Cleanup.
         self.config_servers(agent)
@@ -1301,31 +1303,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             if body.has_key("error"):
                 self.event_control.gen(EventControl.MAINT_START_FAILED,
                             dict(body.items() + agent.__dict__.items()))
-
-        # If there is no backup configuration BACKUP_DEST_ID yet,
-        # create one now.
-        try:
-            self.system.get(StorageConfig.BACKUP_DEST_ID)
-        except ValueError:
-            pass
-        else:
-            # It was found, so return
-            return
-
-        # Set the BACKUP_DEST_ID to the same volume where
-        # tableau is installed.
-        # primary_data_loc where
-        # primary_data_loc where
-        session = meta.Session()
-        try:
-            entry = session.query(AgentVolumesEntry).\
-                filter(AgentVolumesEntry.agentid == agent.agentid).\
-                filter(AgentVolumesEntry.primary_data_loc == True).\
-                one()
-        except sqlalchemy.orm.exc.NoResultFound:
-            return
-
-        self.system.save(StorageConfig.BACKUP_DEST_ID, entry.volid)
 
     def remove_agent(self, agent, reason="", gen_event=True):
         manager = self.agentmanager

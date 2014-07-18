@@ -18,11 +18,11 @@ class Apache2(object):
 
     def start(self):
         cmd = [self.ctlbin, '-k', 'start']
-        return subprocess.call(cmd, shell=True, env=self.environ)
+        return subprocess.call(cmd, env=self.environ)
 
     def stop(self):
         cmd = [self.ctlbin, '-k', 'stop']
-        return subprocess.call(cmd, shell=True, env=self.environ)
+        return subprocess.call(cmd, env=self.environ)
         
     def setport(self, port):
         self.port = port

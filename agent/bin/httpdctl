@@ -16,6 +16,6 @@ if [ -z "$CONF" ]; then
     export CONF=${INSTALLDIR}/conf/archive/httpd.conf
 fi
 
-mkdir -p ${INSTALLDIR}/logs
+mkdir -p ${DATADIR}/logs/archive
 
-exec /usr/sbin/apache2 -f ${CONF} -E ${INSTALLDIR}/logs/startup.log $@
+exec /usr/sbin/apache2 -f ${CONF} -E ${DATADIR}/logs/startup.log $@
