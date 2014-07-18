@@ -48,6 +48,9 @@ h2 {
 
   <p>Warning Alert at <input type="number" class="small-entry"> %&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Error Alert at <input type="number" class="small-entry"/> %</p>
   
+  <h3>Alert When Any of My Other Storage Volumes Has Reached These Thresholds</h3>
+  <p>Warning Alert at <input type="number" class="small-entry"> %&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Error Alert at <input type="number" class="small-entry"/> %</p>
+  
   <h3>Encrypt Palette Generated Files (COMING SOON)</h3>
   <p>Encrypts your Palette generated Tableau backups, logs and workbooks using industry standard AES256 2048bit encryption adding another level of security.</p>
   <div class="onoffswitch">
