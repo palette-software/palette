@@ -79,7 +79,7 @@ class ExtractManager(object):
 
             body = dict(agent.__dict__.items() + entry.todict().items())
 
-            if entry.finish_code == 0:
+            if row[3] is not None and row[4] is not None:
                 duration = datetime.strptime(row[4], FMT) - datetime.strptime(row[3], FMT)
                 body['duration'] = duration.seconds
                 duration_hms = to_hhmmss(duration)
