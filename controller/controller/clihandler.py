@@ -700,7 +700,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = self.server.cli_cmd(cli_command, agent)
         self.report_status(body)
 
-    @usage('phttp GET https://vol1/filename vol2:/local-directory')
+    @usage('phttp GET|PUT <URL> [source-or-destination]')
     def do_phttp(self, cmd):
         if len(cmd.args) < 2:
             self.print_usage(self.do_phttp.__usage__)

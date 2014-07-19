@@ -84,9 +84,9 @@ class AgentHandler(SimpleHTTPRequestHandler):
                 env = 'env' in req.json and req.json['env'] or {}
                 self.server.processmanager.start(xid, cmd, env, immediate)
                 data = self.server.processmanager.getinfo(xid)
-            elif 'action' == 'cleanup':
+            elif action == 'cleanup':
                 self.server.processmanager.cleanup(xid)
-                data = {'xid', xid}
+                data = {'xid': xid}
             else:
                 raise http.HTTPBadRequest()
         elif req.method == 'GET':
@@ -274,7 +274,7 @@ class Agent(TCPServer):
 
         conf = os.path.join(self.install_dir, 'conf', 'archive', 'httpd.conf')
         port = config.getint("archive", "port", default=8889);
-        self.archive = Apache2(conf, port)
+        self.archive = Apache2(conf, port, self.data_dir)
 
         # Start the Agent server that uses AgentHandler to handle
         # incoming requests from the Controller.

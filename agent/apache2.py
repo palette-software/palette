@@ -5,7 +5,7 @@ class Apache2(object):
 
     CTLBIN = 'httpdctl'
 
-    def __init__(self, conf, port, bindir=None):
+    def __init__(self, conf, port, data_dir, bindir=None):
         self.conf = conf
         if bindir:
             self.bindir = bindir
@@ -15,6 +15,7 @@ class Apache2(object):
         self.ctlbin = os.path.join(bindir, Apache2.CTLBIN)
         self.environ = os.environ.copy()
         self.setport(port)
+        self.environ['DATADIR'] = data_dir
 
     def start(self):
         cmd = [self.ctlbin, '-k', 'start']
