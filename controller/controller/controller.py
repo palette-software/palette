@@ -515,7 +515,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not src or not dst:
             return self.error(msg)
 
-        if agent.iswin:
+        if src.iswin:
             # Enable the firewall port on the source host.
             self.log.debug("Enabling firewall port %d on src host '%s'", \
                                     src.listen_port, src.displayname)
