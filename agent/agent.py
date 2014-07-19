@@ -127,6 +127,15 @@ class AgentHandler(SimpleHTTPRequestHandler):
             raise HTTPBadRequest("'path' must be unique.")
         return req.query['path'][0]
 
+    def get_ip(self):
+        ips = [i[4][0] for i in socket.getaddrinfo(socket.gethostname(),
+                                                                    None)]
+        for ip in ips:
+            if ip != '127.0.1.1':
+                return ip
+
+        return "No-IP-Address"
+
     # The "auth" immediate command reply.
     # Immediate commands methods begin with 'icommand_'
     def handle_auth(self, req):
@@ -138,7 +147,7 @@ class AgentHandler(SimpleHTTPRequestHandler):
               "installed-memory": self.memtotal(),
               "hostname": socket.gethostname(),
               "fqdn": socket.getfqdn(),
-              "ip-address": self.server.socket.getsockname()[0],
+              "ip-address": self.get_ip(),
               "listen-port": self.server.archive_port,
               "uuid": self.server.uuid,
               "install-dir": self.server.install_dir,

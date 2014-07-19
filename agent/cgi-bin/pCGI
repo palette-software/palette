@@ -123,6 +123,8 @@ def handle_file_GET(path):
     if not os.path.isfile(path):
         raise NotFound('File not found: ' + path)
     (mimetype, encoding) = mimetypes.guess_type(path, strict=False)
+    if mimetype == None:
+        mimetype = "application/octet-stream"
     print 'Content-Type: ' + mimetype
     print
     with open(path, 'r') as f:
