@@ -541,8 +541,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                         "primary_data_loc in the agent_volumes table " + \
                         "for the primary agent.")
 
-        command = 'phttp GET "https://%s:%s/%s" "%s"' % \
-            (source_ip, src.listen_port, source_path, target_dir)
+        if src.iswin:
+            command = 'phttp GET "https://%s:%s/%s" "%s"' % \
+                (source_ip, src.listen_port, source_path, target_dir)
+        else:
+            command = 'phttp GET "https://%s:%s%s" "%s"' % \
+                (source_ip, src.listen_port, source_path, target_dir)
 
         try:
             entry = meta.Session.query(Agent).\
