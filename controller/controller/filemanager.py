@@ -70,6 +70,8 @@ class FileManager(object):
         with open(source, "r") as f:
             data = f.read()
             self.put(path, data)
+        self.server.log.debug("sendfile source '%s' path '%s' size %d." % \
+                                                    (source, path, len(data)))
         return {
             'source': source,
             'path': path,
