@@ -66,6 +66,11 @@ class FileManager(object):
         body = self.agent.connection.http_send_json('/file', data)
         return json.loads(body)
 
+    def listdir(self, path):
+        data = {'action':'FILESIZE', 'path':path}
+        body = self.agent.connection.http_send_json('/file', data)
+        return json.loads(body)
+
     def sendfile(self, path, source):
         source = os.path.abspath(os.path.expanduser(source))
         with open(source, "r") as f:
