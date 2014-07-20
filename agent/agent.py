@@ -84,9 +84,9 @@ class AgentHandler(SimpleHTTPRequestHandler):
                 env = 'env' in req.json and req.json['env'] or {}
                 self.server.processmanager.start(xid, cmd, env, immediate)
                 data = self.server.processmanager.getinfo(xid)
-            elif 'action' == 'cleanup':
+            elif action == 'cleanup':
                 self.server.processmanager.cleanup(xid)
-                data = {'xid', xid}
+                data = {'xid': xid}
             else:
                 raise http.HTTPBadRequest()
         elif req.method == 'GET':
@@ -127,6 +127,15 @@ class AgentHandler(SimpleHTTPRequestHandler):
             raise HTTPBadRequest("'path' must be unique.")
         return req.query['path'][0]
 
+    def get_ip(self):
+        ips = [i[4][0] for i in socket.getaddrinfo(socket.gethostname(),
+                                                                    None)]
+        for ip in ips:
+            if ip != '127.0.1.1':
+                return ip
+
+        return "No-IP-Address"
+
     # The "auth" immediate command reply.
     # Immediate commands methods begin with 'icommand_'
     def handle_auth(self, req):
@@ -138,7 +147,7 @@ class AgentHandler(SimpleHTTPRequestHandler):
               "installed-memory": self.memtotal(),
               "hostname": socket.gethostname(),
               "fqdn": socket.getfqdn(),
-              "ip-address": self.server.socket.getsockname()[0],
+              "ip-address": self.get_ip(),
               "listen-port": self.server.archive_port,
               "uuid": self.server.uuid,
               "install-dir": self.server.install_dir,
@@ -274,7 +283,7 @@ class Agent(TCPServer):
 
         conf = os.path.join(self.install_dir, 'conf', 'archive', 'httpd.conf')
         port = config.getint("archive", "port", default=8889);
-        self.archive = Apache2(conf, port)
+        self.archive = Apache2(conf, port, self.data_dir)
 
         # Start the Agent server that uses AgentHandler to handle
         # incoming requests from the Controller.

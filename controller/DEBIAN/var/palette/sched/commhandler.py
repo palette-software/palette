@@ -7,7 +7,7 @@ class CommHandler(object):
 
     def __init__(self):
 
-        parser = argparse.ArgumentParser(description="backup")
+        parser = argparse.ArgumentParser(sys.argv[0])
         parser.add_argument('--hostname', dest='hostname', default='localhost')
         parser.add_argument('--port', dest='port', type=int, default=9000)
         parser.add_argument('--envid', dest='envid', type=int, default=1)
