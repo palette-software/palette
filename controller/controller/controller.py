@@ -515,7 +515,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not src or not dst:
             return self.error(msg)
 
-        if agent.iswin:
+        if src.iswin:
             # Enable the firewall port on the source host.
             self.log.debug("Enabling firewall port %d on src host '%s'", \
                                     src.listen_port, src.displayname)
@@ -541,8 +541,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                         "primary_data_loc in the agent_volumes table " + \
                         "for the primary agent.")
 
-        command = 'phttp GET "https://%s:%s/%s" "%s"' % \
-            (source_ip, src.listen_port, source_path, target_dir)
+        if src.iswin:
+            command = 'phttp GET "https://%s:%s/%s" "%s"' % \
+                (source_ip, src.listen_port, source_path, target_dir)
+        else:
+            command = 'phttp GET "https://%s:%s%s" "%s"' % \
+                (source_ip, src.listen_port, source_path, target_dir)
 
         try:
             entry = meta.Session.query(Agent).\
