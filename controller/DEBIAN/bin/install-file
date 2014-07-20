@@ -12,38 +12,38 @@ class Upgrade(object):
         # State of the controller and its update mode.
         self.state_update = False
 
-        comm = UpgradeHandler()
+        self.comm = UpgradeHandler()
 
-        if comm.verbose:
-            if comm.console:
+        if self.comm.verbose:
+            if self.comm.console:
                 print 'Doing console update'
-            elif comm.target_dir:
+            elif self.comm.target_dir:
                 print 'Doing non-console update'
             else:
                 print 'Nothing to do.'
                 sys.exit(3)
 
-        if not os.path.exists(comm.newfile):
-            self.error("No such file: %s" % comm.newfile)
+        if not os.path.exists(self.comm.newfile):
+            self.error("No such file: %s" % self.comm.newfile)
 
-        checksum = comm.checksum(comm.newfile)
-        if comm.verbose:
-            print "checksum of %s: %s:" % (comm.newfile, checksum)
+        checksum = self.comm.checksum(self.comm.newfile)
+        if self.comm.verbose:
+            print "checksum of %s: %s" % (self.comm.newfile, checksum)
 
         try:
-            comm.send_cmd("update on")
+            self.comm.send_cmd("update on")
     
             self.state_update = True
 
-            filename_only = os.path.basename(comm.newfile)
+            filename_only = os.path.basename(self.comm.newfile)
             filename_only_tmp = filename_only + '.download'
     
-            agent = comm.get_agent_info()
+            agent = self.comm.get_agent_info()
 
-            if comm.console:
+            if self.comm.console:
                 target_dir = agent['install_dir']
-            elif comm.target_dir:
-                target_dir = comm.target_dir
+            elif self.comm.target_dir:
+                target_dir = self.comm.target_dir
             else:
                 self.error("Nothing to do.")
 
@@ -52,12 +52,16 @@ class Upgrade(object):
             target_path = agent['path'].join(target_dir, filename_only)
     
             # order: file put <dest> <source>
-            comm.send_cmd("file put '%s' '%s'" % (target_path_tmp,
-                                                        comm.newfile))
+            self.comm.send_cmd("file put '%s' '%s'" % (target_path_tmp,
+                                                        self.comm.newfile))
 
-            """
-            comm.send_cmd("file sha256 '%s'" % target_path_tmp)
-            agent_checksum = result['stdout']
+            self.comm.send_cmd("file sha256 '%s'" % target_path_tmp)
+            if not 'hash' in self.comm.result:
+                self.error(\
+                    "sha256 command on file '%s' failed.  Missing 'hash': %s",
+                        target_path_tmp, result)
+
+            agent_checksum = self.comm.result['hash']
 
             if checksum != agent_checksum:
                 self.error(\
@@ -66,16 +70,15 @@ class Upgrade(object):
     
 
             # order: file move <src> <dest>
-            comm.send_cmd("file move '%s' '%s'" % (target_path_tmp,
+            self.comm.send_cmd("file move '%s' '%s'" % (target_path_tmp,
                                                             target_path))
 
-            if comm.console:
-                comm.send_cmd("hup")
+            if self.comm.console:
+                self.comm.send_cmd("hup")
                 if result['stdout'] != 'OK':
                     self.error("HUP failed.")
 
-            """
-            comm.send_cmd("update off")
+            self.comm.send_cmd("update off")
 
         except UpgradeException, e:
             self.error(e)
@@ -89,7 +92,7 @@ class Upgrade(object):
 
     def update_back(self):
         if self.state_update:
-            comm.send_cmd("update off")
+            self.comm.send_cmd("update off")
 
     def error(self, msg):
         print >> sys.stderr, "%s: %s" % (sys.argv[0], msg)
