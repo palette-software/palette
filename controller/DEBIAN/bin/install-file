@@ -41,7 +41,8 @@ class Upgrade(object):
             agent = self.comm.get_agent_info()
 
             if self.comm.console:
-                target_dir = agent['install_dir']
+                target_dir = agent['path'].join(agent['install_dir'],
+                                                            'upgrade')
             elif self.comm.target_dir:
                 target_dir = self.comm.target_dir
             else:
@@ -66,7 +67,7 @@ class Upgrade(object):
             if checksum != agent_checksum:
                 self.error(\
                     "Checksum on controller (%s) didn't match agent (%s)." % \
-                        checksum, agent_checksum)
+                        (checksum, agent_checksum))
     
 
             # order: file move <src> <dest>
