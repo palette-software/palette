@@ -790,9 +790,16 @@ class AgentManager(threading.Thread):
         asocketmon = AgentHealthMonitor(self, self.log)
         asocketmon.start()
 
+        session = meta.Session()
+        if self.server.stateman.get_state() == StateManager.STATE_UPGRADING:
+            self.log.info(\
+                "AgentManager changing initial state from UPGRADING to UNKNOWN")
+            self.server.stateman.update(StateManager.STATE_UNKNOWN)
+            session.commit()
+
         while True:
-            if self.server.stateman.get_state() == StateManager.STATE_UPDATING:
-                self.log.debug("AgentManager: UPDATING: Not " + \
+            if self.server.stateman.get_state() == StateManager.STATE_UPGRADING:
+                self.log.debug("AgentManager: UPGRADING: Not " + \
                                     "listening for new agent connections.")
                 time.sleep(10)
                 continue
@@ -802,8 +809,8 @@ class AgentManager(threading.Thread):
                 self.log.debug("Accept failed.")
                 continue
 
-            if self.server.stateman.get_state() == StateManager.STATE_UPDATING:
-                self.log.debug("AgentManager: UPDATING: Not " + \
+            if self.server.stateman.get_state() == StateManager.STATE_UPGRADING:
+                self.log.debug("AgentManager: UPGRADING: Not " + \
                                     "handling the agent connection.")
                 self._close(conn)
                 continue
@@ -1071,7 +1078,6 @@ class AgentHealthMonitor(threading.Thread):
         agents = self.manager.all_agents()
         self.log.debug("about to ping %d agent(s)", len(agents))
 
-
         for key in agents.keys():
             self.manager.lock()
             if not agents.has_key(key):
@@ -1083,7 +1089,6 @@ class AgentHealthMonitor(threading.Thread):
             agent = agents[key]
             self.manager.unlock()
 
-
             self.log.debug(\
                 "Ping: check for agent '%s', type '%s', uuid '%s'." % \
                                 (agent.displayname, agent.agent_type, key))
@@ -1091,11 +1096,11 @@ class AgentHealthMonitor(threading.Thread):
             body = self.server.ping(agent)
             if body.has_key('error'):
                 if self.server.stateman.get_state() == \
-                                            StateManager.STATE_UPDATING:
+                                            StateManager.STATE_UPGRADING:
                     self.log.info(\
                         ("Ping During UPDATE: Agent '%s', type '%s', " + \
                         "uuid '%s' did  not respond to a ping.  " + \
-                        "Ignoring while UPDATING.") %
+                        "Ignoring while UPGRADING.") %
                     (agent.displayname, agent.agent_type, key))
 
                 else:

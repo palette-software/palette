@@ -167,11 +167,18 @@ class Sched(object):
             server.log.error("listener: Scheduled job failed: %s",
                                                                 event.job.name)
         else:
-            server.log.debug("listener: Scheduled job started successfully: %s",
+            server.log.debug(\
+                "listener: Scheduled job started successfully: %s",
                                                                 event.job.name)
 
     @classmethod
     def job_function(cls, command, command_info):
+        if server.upgrading():
+            server.log.info("sched command will be SKIPPED " + \
+                "due to upgrading.  command: %s, command_info: %s",
+                                            command, str(command_info))
+            return
+
         server.log.debug("sched command: %s, command_info: %s", command,
                                                             str(command_info))
         path = os.path.join(command_info['sched_dir'], command)

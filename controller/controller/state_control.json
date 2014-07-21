@@ -133,8 +133,8 @@
 "color":"red"
 },
 {
-"state":"UPDATING",
-"text":"Updating Palette Software",
+"state":"UPGRADING",
+"text":"Upgrading Palette Software",
 "allowable_actions":"",
 "color":"yellow"
 }

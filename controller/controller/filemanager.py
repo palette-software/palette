@@ -48,7 +48,7 @@ class FileManager(object):
         if not data:
             # http://bugs.python.org/issue14721
             h['content-length'] = 0
-        self.server.log.debug("FileManager PUT %s: %s", uri, data)
+        self.server.log.debug("FileManager PUT %s: [data removed]", uri)
         return self.agent.connection.http_send('PUT', uri, data, headers=h)
 
     def sha256(self, path):
@@ -73,7 +73,7 @@ class FileManager(object):
 
     def sendfile(self, path, source):
         source = os.path.abspath(os.path.expanduser(source))
-        with open(source, "r") as f:
+        with open(source, "rb") as f:
             data = f.read()
             self.put(path, data)
         self.server.log.debug("sendfile source '%s' path '%s' size %d." % \
