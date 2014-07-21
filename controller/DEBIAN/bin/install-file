@@ -2,6 +2,7 @@
 
 import os
 import sys
+import time
 
 from palapi import UpgradeHandler, UpgradeException
 
@@ -12,25 +13,25 @@ class Upgrade(object):
         # State of the controller and its upgrade mode.
         self.state_upgrade = False
 
-        self.comm = UpgradeHandler()
-
-        if self.comm.verbose:
-            if self.comm.console:
-                print 'Doing console upgrade'
-            elif self.comm.target_dir:
-                print 'Doing non-console upgrade'
-            else:
-                print 'Nothing to do.'
-                sys.exit(3)
-
-        if not os.path.exists(self.comm.newfile):
-            self.error("No such file: %s" % self.comm.newfile)
-
-        checksum = self.comm.checksum(self.comm.newfile)
-        if self.comm.verbose:
-            print "checksum of %s: %s" % (self.comm.newfile, checksum)
-
         try:
+            self.comm = UpgradeHandler()
+
+            if self.comm.verbose:
+                if self.comm.console:
+                    print 'Doing console upgrade'
+                elif self.comm.target_dir:
+                    print 'Doing non-console upgrade'
+                else:
+                    print 'Nothing to do.'
+                    sys.exit(3)
+
+            if not os.path.exists(self.comm.newfile):
+                self.error("No such file: %s" % self.comm.newfile)
+
+            checksum = self.comm.checksum(self.comm.newfile)
+            if self.comm.verbose:
+                print "checksum of %s: %s" % (self.comm.newfile, checksum)
+
             self.comm.send_cmd("upgrade on")
     
             self.state_upgrade = True
@@ -74,12 +75,22 @@ class Upgrade(object):
             self.comm.send_cmd("file move '%s' '%s'" % (target_path_tmp,
                                                             target_path))
 
+            time.sleep(1)   # Give time to finish
             if self.comm.console:
                 self.comm.send_cmd("hup")
                 if result['stdout'] != 'OK':
                     self.error("HUP failed.")
 
+                # We don't need to do an "upgrade off" if the console
+                # agent was upgraded, since the agent has exited.
+                if self.comm.verbose:
+                    print "Primary Agent Upgrade was successful."
+                sys.exit(0)
+
             self.comm.send_cmd("upgrade off")
+
+            if self.comm.verbose:
+                print "File Upgrade was successful."
 
         except UpgradeException, e:
             self.error(e)
@@ -93,7 +104,10 @@ class Upgrade(object):
 
     def upgrade_back(self):
         if self.state_upgrade:
-            self.comm.send_cmd("upgrade off")
+            try:
+                self.comm.send_cmd("upgrade off")
+            except UpgradeException, e:
+                print >> sys.stderr, "%s: %s" % (sys.argv[0], e)
 
     def error(self, msg):
         print >> sys.stderr, "%s: %s" % (sys.argv[0], msg)
