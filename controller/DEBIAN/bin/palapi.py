@@ -23,7 +23,8 @@ class UpgradeHandler(object):
 
         group1 = parser.add_mutually_exclusive_group(required=True)
         group1.add_argument('--target-dir', dest='target_dir')
-        group1.add_argument('--console', dest='console', action='store_true')
+        group1.add_argument('--console', '-c', dest='console',
+                                                        action='store_true')
 
         group2 = parser.add_mutually_exclusive_group()
         group2.add_argument('--displayname', dest='displayname')
@@ -67,7 +68,13 @@ class UpgradeHandler(object):
 
     def connect(self):
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.conn.connect((self.hostname, self.port))
+        try:
+            self.conn.connect((self.hostname, self.port))
+        except socket.error, e:
+            raise UpgradeException(\
+                ("Could not connect to host '%s', port '%d': %s") %
+                                (self.hostname, self.port, e))
+
         self.sock = self.conn.makefile('w+', 1)
         self.connected = True
 
@@ -83,7 +90,8 @@ class UpgradeHandler(object):
 
         if self.verbose:
             print "Sending command:", cmd
-        self.sock.write(self.preamble + ' ' + cmd + '\n')
+        self.full_command = self.preamble + ' ' + cmd
+        self.sock.write(self.full_command +'\n')
         self.sock.flush()
         self.status = self.sock.readline().strip()
         if self.verbose:
@@ -110,7 +118,8 @@ class UpgradeHandler(object):
 
         if 'error' in self.result:
             raise UpgradeException(\
-                'Error in command response: %s' % self.result['error'])
+                ('Error in command ("%s") response: %s') % \
+                            (self.full_command, self.result['error']))
 
     def _close(self):
         self.connected = False
