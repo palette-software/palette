@@ -42,6 +42,11 @@ class ExtractManager(object):
         self.server = server
 
     def load(self, agent):
+
+        if not self.server.odbc_ok():
+            return {"error": "Cannot run command while in state: %s" % \
+                                            self.server.stateman.get_state()}
+
         stmt = "SELECT background_jobs.id, finish_code, notes, " +\
             "started_at, completed_at, title, subtitle, " +\
             "background_jobs.site_id, owner_id " +\

@@ -9,16 +9,16 @@ class Upgrade(object):
 
     def __init__(self):
 
-        # State of the controller and its update mode.
-        self.state_update = False
+        # State of the controller and its upgrade mode.
+        self.state_upgrade = False
 
         self.comm = UpgradeHandler()
 
         if self.comm.verbose:
             if self.comm.console:
-                print 'Doing console update'
+                print 'Doing console upgrade'
             elif self.comm.target_dir:
-                print 'Doing non-console update'
+                print 'Doing non-console upgrade'
             else:
                 print 'Nothing to do.'
                 sys.exit(3)
@@ -31,9 +31,9 @@ class Upgrade(object):
             print "checksum of %s: %s" % (self.comm.newfile, checksum)
 
         try:
-            self.comm.send_cmd("update on")
+            self.comm.send_cmd("upgrade on")
     
-            self.state_update = True
+            self.state_upgrade = True
 
             filename_only = os.path.basename(self.comm.newfile)
             filename_only_tmp = filename_only + '.download'
@@ -79,26 +79,26 @@ class Upgrade(object):
                 if result['stdout'] != 'OK':
                     self.error("HUP failed.")
 
-            self.comm.send_cmd("update off")
+            self.comm.send_cmd("upgrade off")
 
         except UpgradeException, e:
             self.error(e)
 
-            self.update_back()
+            self.upgrade_back()
 
         except KeyboardInterrupt:
             print "\nInterrupted.  Exiting."
 
-            self.update_back()
+            self.upgrade_back()
 
-    def update_back(self):
-        if self.state_update:
-            self.comm.send_cmd("update off")
+    def upgrade_back(self):
+        if self.state_upgrade:
+            self.comm.send_cmd("upgrade off")
 
     def error(self, msg):
         print >> sys.stderr, "%s: %s" % (sys.argv[0], msg)
 
-        self.update_back()
+        self.upgrade_back()
 
         sys.exit(2)
 

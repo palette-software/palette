@@ -244,6 +244,12 @@ class TableauStatusMonitor(threading.Thread):
                 "Skipping status check.")
             return
 
+        main_state = self.stateman.get_state()
+        if main_state == StateManager.STATE_UPGRADING:
+            self.log.debug("main state is UPGRADING: skipping status check.")
+            aconn.user_action_unlock()
+            return
+
         # We don't force the user to delay starting their request
         # until the 'tabadmin status -v' is finished.
         aconn.user_action_unlock()

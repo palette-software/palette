@@ -268,8 +268,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = self.server.cli_cmd("tabadmin status -v", agent)
         self.report_status(body)
 
-    @usage('update [on | off]')
-    def do_update(self, cmd):
+    @usage('upgrade [on | off]')
+    def do_upgrade(self, cmd):
         stateman = self.server.stateman
 
         if not len(cmd.args):
@@ -278,15 +278,15 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.report_status({"main-state": main_state})
             return
         if len(cmd.args) != 1:
-            self.print_usage(self.do_update.__usage__)
+            self.print_usage(self.do_upgrade.__usage__)
             return
         if cmd.args[0] not in ('on', 'off'):
-            self.print_usage(self.do_update.__usage__)
+            self.print_usage(self.do_upgrade.__usage__)
             return
 
         agent = self.get_agent(cmd.dict, error_on_no_agent=False)
 
-        # Note: an agent doesn't have to be connected to change update mode.
+        # Note: an agent doesn't have to be connected to change upgrade mode.
 
         if agent:
             aconn = agent.connection
@@ -298,7 +298,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error(ERROR_BUSY)
             return
 
-        # Check to see if we're in a state to update
+        # Check to see if we're in a state to upgrade
         main_state = stateman.get_state()
 
         if cmd.args[0] == 'on':
@@ -307,15 +307,16 @@ class CliHandler(socketserver.StreamRequestHandler):
                     StateManager.STATE_DISCONNECTED,
                                                     StateManager.STATE_UNKNOWN):
 
-                self.error(ERROR_BUSY, "FAIL: Can't update - main state is: %s",
+                self.error(\
+                        ERROR_BUSY, "FAIL: Can't upgrade - main state is: %s",
                                                                   main_state)
-                self.server.log.debug("Can't update - main state is: %s",
+                self.server.log.debug("Can't upgrade - main state is: %s",
                                                                     main_state)
                 if aconn:
                     aconn.user_action_unlock()
                 return
 
-            stateman.update(StateManager.STATE_UPDATING)
+            stateman.update(StateManager.STATE_UPGRADING)
             if aconn:
                 aconn.user_action_unlock()
 
@@ -323,11 +324,11 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.report_status({})
             return
 
-        # "update off"
-        if main_state != StateManager.STATE_UPDATING:
-            self.error(ERROR_BUSY, "FAIL: Can't update - main state is: %s",
+        # "upgrade off"
+        if main_state != StateManager.STATE_UPGRADING:
+            self.error(ERROR_BUSY, "FAIL: Can't upgrade - main state is: %s",
                                                               main_state)
-            self.server.log.debug("Can't update - main state is: %s",
+            self.server.log.debug("Can't upgrade - main state is: %s",
                                                                     main_state)
 
             if aconn:
@@ -628,8 +629,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_usage(self.do_copy.__usage__)
             return
 
-        if self.server.updating():
-            self.error(ERROR_WRONG_STATE, "Updating")
+        if self.server.upgrading():
+            self.error(ERROR_WRONG_STATE, "Upgrading")
             return
 
         self.ack()
@@ -710,8 +711,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         if not agent:
             return
 
-        if self.server.updating():
-            self.error(ERROR_WRONG_STATE, "Updating")
+        if self.server.upgrading():
+            self.error(ERROR_WRONG_STATE, "Upgrading")
             return
 
         self.ack()
@@ -1399,6 +1400,11 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         if len(cmd.args) != 1:
             self.print_usage(self.do_sql.__usage__)
+            return
+
+        if not self.server.odbc_ok():
+            self.error(ERROR_WRONG_STATE, "FAIL: Main state is %s." % \
+                                            self.server.stateman.get_state())
             return
 
         stmt = cmd.args[0]

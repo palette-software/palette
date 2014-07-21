@@ -885,17 +885,32 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                             "agent. Unexpected error: " + str(e))    # bad agent
                     return self.error("GET %s failed with: %s" % (uri, str(e)))
 
-    def updating(self):
+    def odbc_ok(self):
+        """Reports back True if odbc commands can be run now to
+           the postgres database.  odbc commands should be not sent
+           in these cases:
+            * When the tableau is stopped, since the postgres is also
+              stopped when tableau is stopped.
+            * When in "UPGRADE" mode.
+        """
         main_state = self.stateman.get_state()
-        if main_state == StateManager.STATE_UPDATING:
+        if main_state in (StateManager.STATE_STARTED,
+                                            StateManager.STATE_DEGRADED):
+            return True
+        else:
+            return False
+
+    def upgrading(self):
+        main_state = self.stateman.get_state()
+        if main_state == StateManager.STATE_UPGRADING:
             return True
         else:
             return False
 
     def get_pinfo(self, agent, update_agent=False):
-        if self.updating():
-            self.log.info("get_pinfo: Failing due to UPDATING")
-            return {"error": "Cannot run command while UPDATING"}
+        if self.upgrading():
+            self.log.info("get_pinfo: Failing due to UPGRADING")
+            return {"error": "Cannot run command while UPGRADING"}
 
         aconn = agent.connection
         body = self.cli_cmd('pinfo', agent, immediate=True)
@@ -928,9 +943,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return pinfo
 
     def license(self, agent):
-        if self.updating():
-            self.log.info("get_pinfo: Failing due to UPDATING")
-            return {"error": "Cannot run command while UPDATING"}
+        if self.upgrading():
+            self.log.info("get_pinfo: Failing due to UPGRADING")
+            return {"error": "Cannot run command while UPGRADING"}
 
         body = self.cli_cmd('tabadmin license', agent)
 
@@ -965,9 +980,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return d
 
     def yml(self, agent):
-        if self.updating():
-            self.log.info("get_pinfo: Failing due to UPDATING")
-            return {"error": "Cannot run command while UPDATING"}
+        if not self.odbc_ok():
+            main_state = self.stateman.get_state()
+            self.log.info("Failed.  Current state: %s",
+                                                    main_state)
+            return {"error": "Cannot run command while in state: %s" % \
+                                                                main_state}
 
         path = agent.path.join(agent.tableau_data_dir, "data", "tabsvc",
                                "config", "workgroup.yml")
@@ -984,6 +1002,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def sync_cmd(self, agent):
         """sync/copy tables from tableau to here."""
+
+        if not self.odbc_ok():
+            main_state = self.stateman.get_state()
+            self.log.info("Failed.  Current state: %s",
+                                                    main_state)
+            return {"error": "Cannot run command while in state: %s" % \
+                                                                main_state}
 
         error_msg = ""
         sync_dict = {}
@@ -1263,7 +1288,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # Note: Don't call this before update_agent_pinfo_dirs()
         # (needed for agent.tableau_data_dir).
-        if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+        if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
+                                                            self.odbc_ok():
             self.yml(agent)
             self.auth.load(agent)
             self.sync_cmd(agent)

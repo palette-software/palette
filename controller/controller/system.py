@@ -39,7 +39,6 @@ class SystemManager(object):
     # Keys
     SYSTEM_KEY_STATE = "state"
     SYSTEM_KEY_EVENT_SUMMARY_FORMAT = "event-summary-format"
-    SYSTEM_KEY_ARCHIVE_BACKUP_LOCATION = "archive-backup-location"
 
     def __init__(self, envid):
         self.envid = envid

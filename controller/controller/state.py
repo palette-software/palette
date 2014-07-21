@@ -35,7 +35,7 @@ class StateManager(object):
 
     STATE_DEGRADED="DEGRADED"       # reported from tabadmin
 
-    STATE_UPDATING="UPDATING"       # agent or controller is updating
+    STATE_UPGRADING="UPGRADING"       # agent or controller is upgrading
 
     STATE_UNKNOWN="UNKNOWN"        # no primary ever connected to the controller
 
