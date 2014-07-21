@@ -1194,7 +1194,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
 
-    @usage('file [GET|PUT|DELETE|SHA256|MOVE|LISTDIR|FILESIZE|WRITE] <path> [arg]')
+    @usage('file [GET|PUT|DELETE|SHA256|MOVE|LISTDIR|SIZE|WRITE] <path> [arg]')
     def do_file(self, cmd):
         """Manipulate a particular file on the agent."""
 
@@ -1247,7 +1247,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                     return
                 self.ack()
                 body = agent.filemanager.listdir(path)
-            elif method == 'FILESIZE':
+            elif method == 'FILESIZE' or method == 'SIZE':
                 if len(cmd.args) != 2:
                     self.print_usage(self.do_file.__usage__)
                     return

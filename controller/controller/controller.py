@@ -972,7 +972,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         path = agent.path.join(agent.tableau_data_dir, "data", "tabsvc",
                                "config", "workgroup.yml")
         try:
-            yml = agent.connection.filemanager.get(path)
+            yml = agent.filemanager.get(path)
         except (exc.HTTPException, httplib.HTTPException,
                 EnvironmentError) as e:
             return self.error("filemanager.get(%s) on %s failed with: %s" % \
