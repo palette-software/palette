@@ -22,7 +22,7 @@ class FileManager(object):
         self.checkpath(path)
         uri = self.uri(path)
         self.server.log.debug("FileManager GET %s", uri)
-        return self.agent.http_send('GET', uri)
+        return self.agent.connection.http_send('GET', uri)
 
     def save(self, path, target='.'):
         """Retrieves a remote file and saves it locally."""
@@ -48,7 +48,7 @@ class FileManager(object):
         if not data:
             # http://bugs.python.org/issue14721
             h['content-length'] = 0
-        self.server.log.debug("FileManager PUT %s: %s", uri, data)
+        self.server.log.debug("FileManager PUT %s: %d", uri, len(data))
         return self.agent.connection.http_send('PUT', uri, data, headers=h)
 
     def sha256(self, path):
@@ -66,7 +66,7 @@ class FileManager(object):
         body = self.agent.connection.http_send_json('/file', data)
         return json.loads(body)
 
-    def listdir(self, path):
+    def filesize(self, path):
         data = {'action':'FILESIZE', 'path':path}
         body = self.agent.connection.http_send_json('/file', data)
         return json.loads(body)
