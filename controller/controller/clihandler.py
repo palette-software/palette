@@ -1280,6 +1280,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         if not agent:
             return
 
+        self.ack()
         agent.connection.http_send_json("/hup", {})
         self.report_status({})
 
