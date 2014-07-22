@@ -84,21 +84,22 @@ class UpgradeHandler(object):
             self.connect()
 
         self.command = cmd
-        self.status = ""
+        self.ack = ""
         self.response = ""
         self.result = {}
+        self.status = ""
 
         if self.verbose:
             print "Sending command:", cmd
         self.full_command = self.preamble + ' ' + cmd
         self.sock.write(self.full_command +'\n')
         self.sock.flush()
-        self.status = self.sock.readline().strip()
+        self.ack = self.sock.readline().strip()
         if self.verbose:
-            print "Status response:", self.status
-        if self.status != 'OK':
+            print "Acknowledgment response:", self.ack
+        if self.ack != 'OK':
             raise UpgradeException("Command '%s' failed: %s" % \
-                                        (self.command, self.status))
+                                        (self.command, self.ack))
 
         if self.verbose:
             print "Reading command response."
@@ -120,6 +121,19 @@ class UpgradeHandler(object):
             raise UpgradeException(\
                 ('Error in command ("%s") response: %s') % \
                             (self.full_command, self.result['error']))
+
+        if not 'status' in self.result:
+            raise UpgradeException(\
+                ('Error in command ("%s").  Missing "status" in ' + \
+                  'response: %s') % \
+                            (self.full_command, str(self.result)))
+
+        if self.result['status'] != "OK":
+            raise UpgradeException(\
+                ('Error in command ("%s").  status not "OK" in ' + \
+                  'response: %s') % \
+                            (self.full_command, self.result['status']))
+
 
     def _close(self):
         self.connected = False

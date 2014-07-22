@@ -52,7 +52,13 @@ class Upgrade(object):
             target_path_tmp = agent['path'].join(target_dir,
                                                         filename_only_tmp)
             target_path = agent['path'].join(target_dir, filename_only)
-    
+
+            self.comm.send_cmd("file listdir '%s'" % target_dir)
+            files = self.comm.result['files']
+
+            if filename_only_tmp in files:
+                self.comm.send_cmd("file delete '%s'" % target_path_tmp)
+
             # order: file put <dest> <source>
             self.comm.send_cmd("file put '%s' '%s'" % (target_path_tmp,
                                                         self.comm.newfile))
@@ -69,7 +75,12 @@ class Upgrade(object):
                 self.error(\
                     "Checksum on controller (%s) didn't match agent (%s)." % \
                         (checksum, agent_checksum))
-    
+
+                self.comm.send_cmd("file delete '%s'" % target_path_tmp)
+                            
+            if filename_only in files:
+                # Delete the old one before moving the old one to its location
+                self.comm.send_cmd("file delete '%s'" % target_path)
 
             # order: file move <src> <dest>
             self.comm.send_cmd("file move '%s' '%s'" % (target_path_tmp,
@@ -78,8 +89,6 @@ class Upgrade(object):
             time.sleep(1)   # Give time to finish
             if self.comm.console:
                 self.comm.send_cmd("hup")
-                if result['stdout'] != 'OK':
-                    self.error("HUP failed.")
 
                 # We don't need to do an "upgrade off" if the console
                 # agent was upgraded, since the agent has exited.

@@ -88,4 +88,4 @@ class FileManager(object):
         self.checkpath(path)
         uri = self.uri(path)
         self.server.log.debug("FileManager DELETE %s", uri)
-        return self.agent.http_send('DELETE', uri)
+        return self.agent.connection.http_send('DELETE', uri)
