@@ -21,7 +21,6 @@
         <span>Manage Tableau</span>
       </a>
     </li>
-    <!--
     <li class="category">
       <a>
         <i class="fa fa-fw fa-gears"></i>
@@ -29,15 +28,28 @@
         <i class="fa fa-fw fa-angle-${obj.integration and 'up' or 'down'} expand"></i>
       </a>
       <ul ${obj.integration and 'class="visible"' or ''}>
+        <li ${obj.active=='s3' and 'class="active"' or ''}>
+          <a href="/configure/s3">
+            <i class="fa fa-fw fa-arrows-alt"></i>
+            <span>AWS S3</span>
+          </a>
+        </li>
+        <li ${obj.active=='gcs' and 'class="active"' or ''}>
+          <a href="/configure/gcs">
+            <i class="fa fa-fw fa-arrows-alt"></i>
+            <span>Google Storage</span>
+          </a>
+        </li>
+        <!--
         <li ${obj.active=='splunk' and 'class="active"' or ''}>
           <a href="/configure/splunk">
             <i class="fa fa-fw fa-arrows-alt"></i>
             <span>Splunk</span>
           </a>
         </li>
+        -->
       </ul>
     </li>
-    -->
     <li class="category">
       <a>
         <i class="fa fa-fw fa-cog"></i>
