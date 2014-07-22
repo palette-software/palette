@@ -47,13 +47,13 @@ h2 {
 
   <section data-href="/rest/storage">
     <h3>Alert When My Server Attached and Palette Cloud Storage Volumes Attain These Thresholds</h3>
-    <p>Warning Alert at <input type="number" class="small-entry numeric data-enabled" data-name="main_warning" > %&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Error Alert at <input type="number" class="small-entry numeric data-enabled" data-name="main_error"/> %</p>
+    <p>Warning Alert at <input type="number" class="small-entry numeric data-enabled" data-name="disk-watermark-low" id="disk-watermark-low"> %&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Error Alert at <input type="number" class="small-entry numeric data-enabled" data-name="disk-watermark-high" id="disk-watermark-high"/> %</p>
       
     <h3>Encrypt Palette Generated Files (COMING SOON)</h3>
     <p>Encrypts your Palette generated Tableau backups, logs and workbooks using industry standard encryption adding another level of security.</p>
     <div class="onoffswitch">
-      <input type="checkbox" class="onoffswitch-checkbox data-enabled" id="encryption_switch" data-name="encryption" checked>
-      <label class="onoffswitch-label" for="encryption_switch">
+      <input type="checkbox" class="onoffswitch-checkbox data-enabled" id="storage-encrypt" data-name="encryption" checked>
+      <label class="onoffswitch-label" for="storage-encrypt">
           <span class="onoffswitch-inner"></span>
           <span class="onoffswitch-switch"></span>
       </label>
@@ -77,8 +77,8 @@ h2 {
     <h3>Archive Workbooks Only as .twb Files (COMING SOON)</h3>
     <p>Workbook .twb files are just small configuration files, while .twbx are configuration plus extract data which can become very large files</p>
     <div class="onoffswitch">
-      <input type="checkbox" class="onoffswitch-checkbox data-enabled" id="archivetwb_switch" data-name="use_twb" checked>
-      <label class="onoffswitch-label" for="archivetwb_switch">
+      <input type="checkbox" class="onoffswitch-checkbox data-enabled" id="archive-twb" data-name="use_twb" checked>
+      <label class="onoffswitch-label" for="archive-twb">
           <span class="onoffswitch-inner"></span>
           <span class="onoffswitch-switch"></span>
       </label>
@@ -88,7 +88,7 @@ h2 {
   </section>
 </section>
 
-<script id="event-dropdown-template" type="x-tmpl-mustache">
+<script id="storage-dropdown-template" type="x-tmpl-mustache">
   <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div data-id="{{id}}">{{value}}</div><span class="caret"></span>
   </button>
   <ul class="dropdown-menu" role="menu">

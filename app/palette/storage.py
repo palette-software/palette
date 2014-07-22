@@ -27,10 +27,11 @@ class StorageApplication(PaletteRESTHandler):
         query = meta.Session.query(SystemEntry).all()
 
         storage = []
+        item = {}
         for entry in query:
-            item = {}
             item[entry.key] = entry.value
-            storage.append(item)
+
+        storage.append(item)
 
         return {'storage': storage}
 
