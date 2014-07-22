@@ -3,18 +3,6 @@ function ($, template, common, EditBox)
 {
     common.startMonitor();
 
-    function update() {
-
-    }
-
-    $.ajax({
-        url: '/rest/storage',
-        success: function(data) {
-            update(data);
-        },
-        error: common.ajaxError,
-    });
-
     /*
      * customDataAttributes
      * Return the HTML5 custom data attributes for a selector or domNode.
@@ -48,6 +36,30 @@ function ($, template, common, EditBox)
             }
             i = i.parentNode;
         }
+    }
+
+    function update_dropdown(data) {
+        var t = $('#storage-config-template').html();
+        var rendered = template.render(t, data);
+        
+        /*$('#server-detail').html(rendered);
+        common.bindEvents();
+        EditBox.bind('.editbox.displayname');
+        EditBox.bind('.editbox.environment', function(value) {
+            $('.editbox.environment >span').html(value);
+        });
+        $('input[type="checkbox"]').change(change);
+        */
+    }
+
+    function update(data) {
+        result = data.storage[0];
+        $("#disk-watermark-low").val(result["disk-watermark-low"]);
+        $("#disk-watermark-high").val(result["disk-watermark-high"]);
+        $("#storage-encrypt").prop("checked", result["storage-encrypt"] == "yes");
+        $("#num-auto-backups").val(result["num-auto-backups"]);
+        $("#num-other-backups").val(result["num-other-backups"]);
+        $("#archive-twb").val(result["archive-twb"]);
     }
 
     $().ready(function() {
@@ -89,4 +101,11 @@ function ($, template, common, EditBox)
 
     });
 
+    $.ajax({
+        url: '/rest/storage',
+        success: function(data) {
+            update(data);
+        },
+        error: common.ajaxError,
+    });
 });
