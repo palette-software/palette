@@ -900,6 +900,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         else:
             return False
 
+    def active_directory_verify(self, agent, username, password):
+        data = {'username':username, 'password':password}
+        body = agent.connection.http_send_json('/ad', data)
+        return json.loads(body)
+
     def upgrading(self):
         main_state = self.stateman.get_state()
         if main_state == StateManager.STATE_UPGRADING:
