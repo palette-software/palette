@@ -4,7 +4,7 @@ import os
 import sys
 import time
 
-from palapi import UpgradeHandler, UpgradeException
+from controller.palapi import UpgradeHandler, UpgradeException
 
 class Upgrade(object):
 
