@@ -28,17 +28,11 @@ h2 {
 
          <h2>Storage Location</h2>
 
-         <div class="btn-group">
+         <div class="btn-group" id="storage-dropdown">
           <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
           <div>Choose a Storage Location</div><span class="caret"></span>
           </button>
-          <ul class="dropdown-menu" role="menu">
-            <li><a href="#">Item 1</a></li>
-            <li><a href="#">Item 2</a></li>
-            <li><a href="#">Item 3</a></li>
-            <li><a href="#">Item 4</a></li>
-            <li><a href="#">Item 5</a></li>
-            <li><a href="#">Item 6</a></li>
+          <ul class="dropdown-menu" id="storage-dropdown" role="menu">
           </ul>
         </div>
       </section>
@@ -62,11 +56,11 @@ h2 {
     <h2>Backups</h2>
     <h3>Daily Scheduled Backups to Retain</h3>
     <p>The number of daily backups you want Palette to keep in storage</p>
-    <p><input type="number" class="small-entry numeric data-enabled" data-name="num_auto_backups"> Backups</p>
+    <p><input type="number" class="small-entry numeric data-enabled" data-name="backup-auto-retain-count" id="backup-auto-retain-count"> Backups</p>
 
     <h3>User Generated Backups to Retain</h3>
     <p>The number of user generated Tableau .tsbak backups you want Palette to keep in storage</p>
-    <p><input type="number" class="small-entry numeric data-enabled" data-name="num_other_backups"> Backups</P>
+    <p><input type="number" class="small-entry numeric data-enabled" data-name="backup-user-retain-count" id="backup-user-retain-count"> Backups</P>
 
     <h2>Logfiles</h2>
     <h3>Log File Archives to Retain</h3>

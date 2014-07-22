@@ -39,8 +39,6 @@ function ($, template, common, EditBox)
     }
 
     function update_dropdown(data) {
-        var t = $('#storage-config-template').html();
-        var rendered = template.render(t, data);
         
         /*$('#server-detail').html(rendered);
         common.bindEvents();
@@ -60,6 +58,13 @@ function ($, template, common, EditBox)
         $("#num-auto-backups").val(result["num-auto-backups"]);
         $("#num-other-backups").val(result["num-other-backups"]);
         $("#archive-twb").val(result["archive-twb"]);
+        $("#backup-auto-retain-count").val(result["backup-auto-retain-count"]);
+        $("#backup-user-retain-count").val(result["backup-user-retain-count"]);
+
+        result = data.storage[1]["volumes"]
+        var t = $('#storage-dropdown-template').html();
+        var rendered = template.render(t, result);
+        $("#storage-dropdown").html(rendered);
     }
 
     $().ready(function() {
