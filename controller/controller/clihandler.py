@@ -1444,6 +1444,31 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
         self.report_status(body)
 
+    @usage('ad verify <username> <password>')
+    def do_ad(self, cmd):
+        """Authenticate against Active Directory."""
+
+        if len(cmd.args) < 1:
+            self.print_usage(self.do_ad.__usage__)
+            return
+
+        action = cmd.args[0].lower()
+        if action == 'verify':
+            if len(cmd.args) != 3:
+                self.print_usage(self.do_ad.__usage__)
+                return
+            agent = self.get_agent(cmd.dict)
+            if not agent:
+                return
+            self.ack()
+            body = self.server.active_directory_verify(agent,
+                                                       cmd.args[1],
+                                                       cmd.args[2])
+        else:
+            self.print_usage(self.do_ad.__usage__)
+            return
+        self.report_status(body)
+
     @usage('sync')
     def do_sync(self, cmd):
         """Synchronize Tableau tables."""
