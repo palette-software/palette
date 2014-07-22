@@ -72,11 +72,10 @@ class Upgrade(object):
             agent_checksum = self.comm.result['hash']
 
             if checksum != agent_checksum:
+                self.comm.send_cmd("file delete '%s'" % target_path_tmp)
                 self.error(\
                     "Checksum on controller (%s) didn't match agent (%s)." % \
                         (checksum, agent_checksum))
-
-                self.comm.send_cmd("file delete '%s'" % target_path_tmp)
                             
             if filename_only in files:
                 # Delete the old one before moving the old one to its location
@@ -100,6 +99,8 @@ class Upgrade(object):
 
             if self.comm.verbose:
                 print "File Upgrade was successful."
+
+            sys.exit(0)
 
         except UpgradeException, e:
             self.error(e)
