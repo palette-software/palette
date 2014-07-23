@@ -26,21 +26,22 @@ class StorageApplication(PaletteRESTHandler):
     def __init__(self, global_conf):
         super(StorageApplication, self).__init__(global_conf)
 
-    def get_agent_name(self, agents, id):
+    def get_agent(self, agents, id):
         for i in agents:
             if i.agentid == id:
-                return i.displayname
-        return ""
+                return i
+        return None
 
     def handle_get(self, req):
+        # populate the storage settings
         query = meta.Session.query(SystemEntry).all()
-
         storage = []
         item = {}
         for entry in query:
             item[entry.key] = entry.value
         storage.append(item)
 
+        # populate the storage volume locations
         locations = {
             'name': 'storage',
             'options' : [
@@ -52,12 +53,21 @@ class StorageApplication(PaletteRESTHandler):
         all_volumes = meta.Session.query(AgentVolumesEntry).all()
         item_count = 3
         for i in all_volumes:
-            item = "{0} {1} {2} ({3} Unused)".format( self.get_agent_name(all_agents, i.agentid), i.name, sizestr(i.size), sizestr(i.available_space))
+            agent = self.get_agent(all_agents, i.agentid)
+            item = "{0} {1} {2} ({3} Unused)".format( agent.displayname, i.name, sizestr(i.size), sizestr(i.available_space))
             locations['options'].append( {'item': item , 'id': item_count} )
             item_count = item_count + 1
 
-        locations['id'] = 1
-        locations['value'] = locations['options'][1]['item']
+        # set the current selection
+        storage_type = storage[0]['backup-dest-type']
+        if storage_type == "gcs":
+            storage_id = 1
+        elif storage_type == "s3":
+            storage_id = 2
+        elif storage_type == "vol":
+            storage_id = int(storage[0]['backup-dest-id']) + 2
+        locations['id'] = storage_id
+        locations['value'] = locations['options'][storage_id]['item']
 
         storage.append({'volumes':locations})
         return {'storage': storage}
@@ -65,16 +75,15 @@ class StorageApplication(PaletteRESTHandler):
     @required_role(Role.MANAGER_ADMIN)
     @required_parameters('id', 'value')
     def handle_post(self, req):
-        key = req.POST['id']
-        value = req.POST['value']
-        if key == "main_warning":
+        k = req.POST['id']
+        v = req.POST['value']
+        row = SystemEntry.get_by_key(k)
+        if row is None:
+            # print error
             pass
-        elif key == "main_error":
-            pass
-        elif key == "other_warning":
-            pass
-        elif key == "other_error":
-            pass        
+
+        row.value = v
+        meta.Session.commit()
         return {}
 
     def handle(self, req):
