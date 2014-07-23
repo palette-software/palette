@@ -33,7 +33,16 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
                                                 'value': StorageConfig.VOL}
         # Note: No default volid set.
     ]
-                
+
+    @classmethod
+    def get_by_key(cls, key):
+        try:
+            entry = meta.Session.query(SystemEntry).\
+                filter(SystemEntry.key == key).one()
+        except NoResultFound:
+            return None
+        return entry
+
 class SystemManager(object):
 
     # Keys
