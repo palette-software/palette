@@ -38,19 +38,8 @@ function ($, template, common, EditBox)
         }
     }
 
-    function update_dropdown(data) {
-        
-        /*$('#server-detail').html(rendered);
-        common.bindEvents();
-        EditBox.bind('.editbox.displayname');
-        EditBox.bind('.editbox.environment', function(value) {
-            $('.editbox.environment >span').html(value);
-        });
-        $('input[type="checkbox"]').change(change);
-        */
-    }
-
     function update(data) {
+        /* populate the settings */
         result = data.storage[0];
         $("#disk-watermark-low").val(result["disk-watermark-low"]);
         $("#disk-watermark-high").val(result["disk-watermark-high"]);
@@ -61,6 +50,7 @@ function ($, template, common, EditBox)
         $("#backup-auto-retain-count").val(result["backup-auto-retain-count"]);
         $("#backup-user-retain-count").val(result["backup-user-retain-count"]);
 
+        /* populate the volumes dropdown */
         result = data.storage[1]["volumes"]
         var t = $('#storage-dropdown-template').html();
         var rendered = template.render(t, result);
