@@ -58,9 +58,6 @@ function ($, template, common, EditBox)
     }
 
     $().ready(function() {
-        $('.refresh > span').bind('click', function() {
-            refresh();
-        });
         $('.onoffswitch-inner').toggleClass("yesnoswitch-inner");
 
         $('.numeric').bind("input", function () { 

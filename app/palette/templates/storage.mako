@@ -9,8 +9,14 @@
 h2 {
   text-transform: uppercase;
 }
-.small-entry {
-  width: 55px;
+input.small-entry {
+  max-width: 50px;
+  border: 1px solid #999999;
+  max-height: 26px;
+  border-radius: 0px;
+  vertical-align: baseline;
+  font-size: 18px;
+  color: #78808A;
 }
 </style>
 
@@ -30,7 +36,6 @@ h2 {
 
          <div class="btn-group" id="storage-dropdown">
           <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-          <div>Choose a Storage Location</div><span class="caret"></span>
           </button>
           <ul class="dropdown-menu" id="storage-dropdown" role="menu">
           </ul>
@@ -41,12 +46,12 @@ h2 {
 
   <section data-href="/rest/storage">
     <h3>Alert When My Server Attached and Palette Cloud Storage Volumes Attain These Thresholds</h3>
-    <p>Warning Alert at <input type="number" class="small-entry numeric data-enabled" data-name="disk-watermark-low" id="disk-watermark-low"> %&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Error Alert at <input type="number" class="small-entry numeric data-enabled" data-name="disk-watermark-high" id="disk-watermark-high"/> %</p>
+    <p>Warning Alert at <input type="text" class="small-entry numeric data-enabled" data-name="disk-watermark-low" id="disk-watermark-low" maxlength="2"> %&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Error Alert at <input type="text" class="small-entry numeric data-enabled" data-name="disk-watermark-high" id="disk-watermark-high"/ maxlength="2"> %</p>
       
     <h3>Encrypt Palette Generated Files (COMING SOON)</h3>
     <p>Encrypts your Palette generated Tableau backups, logs and workbooks using industry standard encryption adding another level of security.</p>
     <div class="onoffswitch">
-      <input type="checkbox" class="onoffswitch-checkbox data-enabled" id="storage-encrypt" data-name="encryption" checked>
+      <input type="checkbox" class="onoffswitch-checkbox data-enabled" id="storage-encrypt" data-name="storage-encrypt" checked>
       <label class="onoffswitch-label" for="storage-encrypt">
           <span class="onoffswitch-inner"></span>
           <span class="onoffswitch-switch"></span>
@@ -56,16 +61,16 @@ h2 {
     <h2>Backups</h2>
     <h3>Daily Scheduled Backups to Retain</h3>
     <p>The number of daily backups you want Palette to keep in storage</p>
-    <p><input type="number" class="small-entry numeric data-enabled" data-name="backup-auto-retain-count" id="backup-auto-retain-count"> Backups</p>
+    <p><input type="text" class="small-entry numeric data-enabled" data-name="backup-auto-retain-count" id="backup-auto-retain-count" maxlength="2"> Backups</p>
 
     <h3>User Generated Backups to Retain</h3>
     <p>The number of user generated Tableau .tsbak backups you want Palette to keep in storage</p>
-    <p><input type="number" class="small-entry numeric data-enabled" data-name="backup-user-retain-count" id="backup-user-retain-count"> Backups</P>
+    <p><input type="text" class="small-entry numeric data-enabled" data-name="backup-user-retain-count" id="backup-user-retain-count" maxlength="2"> Backups</P>
 
     <h2>Logfiles</h2>
     <h3>Log File Archives to Retain</h3>
     <p>The number of Tableau logfile archives you want Palette to keep in storage</p>
-    <p><input type="number" class="small-entry numeric data-enabled" data-name="num_log_files"> Log Archives</p>
+    <p><input type="text" class="small-entry numeric data-enabled" data-name="num_log_files" id-maxlength="2"> Log Archives</p>
 
     <h2>Workbooks</h2>
     <h3>Archive Workbooks Only as .twb Files (COMING SOON)</h3>
