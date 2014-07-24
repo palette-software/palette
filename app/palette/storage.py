@@ -26,12 +26,6 @@ class StorageApplication(PaletteRESTHandler):
     def __init__(self, global_conf):
         super(StorageApplication, self).__init__(global_conf)
 
-    def get_agent(self, agents, id):
-        for i in agents:
-            if i.agentid == id:
-                return i
-        return None
-
     def handle_get(self, req):
         # populate the storage settings
         query = meta.Session.query(SystemEntry).all()
@@ -45,15 +39,13 @@ class StorageApplication(PaletteRESTHandler):
         locations = {
             'name': 'storage',
             'options' : [
-            {'item':'Choose a Storage Location', 'id':0},
-            {'item':'Google Cloud Storage', 'id': 1},
-            {'item':'Amazon S3 Storage', 'id': 2},
+            {'item':'Google Cloud Storage', 'id': 0},
+            {'item':'Amazon S3 Storage', 'id': 1},
         ]}
-        all_agents = meta.Session.query(Agent).all()
         all_volumes = meta.Session.query(AgentVolumesEntry).all()
-        item_count = 3
+        item_count = len(locations['options'])
         for i in all_volumes:
-            agent = self.get_agent(all_agents, i.agentid)
+            agent = Agent.get_by_id(i.agentid)
             item = "{0} {1} {2} ({3} Unused)".format( agent.displayname, i.name, sizestr(i.size), sizestr(i.available_space))
             locations['options'].append( {'item': item , 'id': item_count} )
             item_count = item_count + 1
@@ -61,11 +53,14 @@ class StorageApplication(PaletteRESTHandler):
         # set the current selection
         storage_type = storage[0]['backup-dest-type']
         if storage_type == "gcs":
-            storage_id = 1
+            storage_id = 0
         elif storage_type == "s3":
-            storage_id = 2
+            storage_id = 1
         elif storage_type == "vol":
-            storage_id = int(storage[0]['backup-dest-id']) + 2
+            if storage[0]['backup-dest-id'] is not None:
+                storage_id = int(storage[0]['backup-dest-id']) + 1
+            else:
+                storage_id = 0
         locations['id'] = storage_id
         locations['value'] = locations['options'][storage_id]['item']
 
@@ -77,12 +72,21 @@ class StorageApplication(PaletteRESTHandler):
     def handle_post(self, req):
         k = req.POST['id']
         v = req.POST['value']
-        row = SystemEntry.get_by_key(k)
-        if row is None:
-            # print error
-            pass
+        
+        if k == "storage-encrypt":
+            if v == '0': 
+                v='no' 
+            elif v=='1':
+                v='yes'
 
-        row.value = v
+        row = SystemEntry.get_by_key(k)
+        # the row key should already be there in the table, but if it is not we create it and set it
+        if row is not None:
+            row.value = v
+        else:
+            # TODO fix when we have multiple envs
+            row = SystemEntry(envid=1, key=k, value=v)
+            meta.Session.add(row)
         meta.Session.commit()
         return {}
 
@@ -99,9 +103,6 @@ class StoragePage(PalettePage):
     active = 'storage'
     expanded = True
     required_role = Role.MANAGER_ADMIN
-
-    def handle(self, req):
-        return None
 
 def make_storage(global_conf):
     return StoragePage(global_conf)
