@@ -40,6 +40,24 @@ function ($, template, common, EditBox)
 
     function update(data) {
         /* populate the settings */
+        var t = $('#dropdown-template').html();
+        result = {id: 0, name:'50', value:'50', options: [{item: '50', id:0}, {item: '60', id:1}, {item: '70', id:2}]}
+        var rendered = template.render(t, result);
+        $("#disk-watermark-low").html(rendered);
+
+        result = {id: 0, name:'75', value:'75', options: [{item: '75', id:0}, {item: '85', id:1}, {item: '95', id:2}]}
+        var rendered = template.render(t, result);
+        $("#disk-watermark-high").html(rendered);
+
+        result = {id: 0, name:'7', value:'7', options: [{item: '7', id:0}, {item: '14', id:1}, {item: '21', id:2}]}
+        var rendered = template.render(t, result);
+        $("#backup-auto-retain-count").html(rendered);
+        $("#backup-user-retain-count").html(rendered);
+
+        result = {id: 0, name:'5', value:'5', options: [{item: '5', id:0}, {item: '10', id:1}, {item: '15', id:2}]}
+        var rendered = template.render(t, result);
+        $("#num-log-files").html(rendered);
+
         result = data.storage[0];
         $("#disk-watermark-low").val(result["disk-watermark-low"]);
         $("#disk-watermark-high").val(result["disk-watermark-high"]);
@@ -52,7 +70,6 @@ function ($, template, common, EditBox)
 
         /* populate the volumes dropdown */
         result = data.storage[1]["volumes"]
-        var t = $('#storage-dropdown-template').html();
         var rendered = template.render(t, result);
         $("#storage-dropdown").html(rendered);
     }
