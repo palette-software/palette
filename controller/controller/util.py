@@ -54,7 +54,7 @@ def str2bool(s):
     if not s:
         return False
     s = str(s).lower()
-    if s == 'true' or s == '1':
+    if s == 'true' or s == '1' or s == "yes":
         return True
     return False
     

@@ -11,11 +11,11 @@ from controller.profile import UserProfile, Role
 
 def required_parameters(*params):
     def wrapper(f):
-        def realf(self, req):
+        def realf(self, req, *args):
             for p in params:
                 if p not in req.POST:
                     raise exc.HTTPBadRequest("'" + p + "' missing")
-            return f(self, req)
+            return f(self, req, *args)
         return realf
     return wrapper
 

@@ -99,7 +99,7 @@ class DiskCheck(object):
         self.target_type = None
 
         try:
-            storage_config = StorageConfig(self.server)
+            storage_config = StorageConfig(self.server.system)
         except ValueError, e:
             raise DiskException(e)
 
