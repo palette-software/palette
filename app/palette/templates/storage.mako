@@ -9,15 +9,6 @@
 h2 {
   text-transform: uppercase;
 }
-input.small-entry {
-  max-width: 50px;
-  border: 1px solid #999999;
-  max-height: 26px;
-  border-radius: 0px;
-  vertical-align: baseline;
-  font-size: 18px;
-  color: #78808A;
-}
 </style>
 
 
@@ -39,14 +30,15 @@ input.small-entry {
           </button>
           <ul class="dropdown-menu" id="storage-dropdown" role="menu">
           </ul>
-        </div>
+         </div>
       </section>
     </section>
   </section>
 
   <section data-href="/rest/storage">
     <h3>Alert When My Server Attached and Palette Cloud Storage Volumes Attain These Thresholds</h3>
-    <p>Warning Alert at <input type="text" class="small-entry numeric data-enabled" data-name="disk-watermark-low" id="disk-watermark-low" maxlength="2"> %&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Error Alert at <input type="text" class="small-entry numeric data-enabled" data-name="disk-watermark-high" id="disk-watermark-high"/ maxlength="2"> %</p>
+    <p>Warning Alert at <span id="disk-watermark-low" class="btn-group"></span> % &nbsp; &nbsp; &nbsp; &nbsp;
+    Error Alert at <span id="disk-watermark-high" class="btn-group"></span> %</p>
       
     <h3>Encrypt Palette Generated Files (COMING SOON)</h3>
     <p>Encrypts your Palette generated Tableau backups, logs and workbooks using industry standard encryption adding another level of security.</p>
@@ -61,16 +53,16 @@ input.small-entry {
     <h2>Backups</h2>
     <h3>Daily Scheduled Backups to Retain</h3>
     <p>The number of daily backups you want Palette to keep in storage</p>
-    <p><input type="text" class="small-entry numeric data-enabled" data-name="backup-auto-retain-count" id="backup-auto-retain-count" maxlength="2"> Backups</p>
+    <p><span id="backup-auto-retain-count" class="btn-group"></span> Backups</p>
 
     <h3>User Generated Backups to Retain</h3>
     <p>The number of user generated Tableau .tsbak backups you want Palette to keep in storage</p>
-    <p><input type="text" class="small-entry numeric data-enabled" data-name="backup-user-retain-count" id="backup-user-retain-count" maxlength="2"> Backups</P>
+    <p><span id="backup-user-retain-count" class="btn-group"></span> Backups</P>
 
     <h2>Logfiles</h2>
     <h3>Log File Archives to Retain</h3>
     <p>The number of Tableau logfile archives you want Palette to keep in storage</p>
-    <p><input type="text" class="small-entry numeric data-enabled" data-name="num_log_files" id-maxlength="2"> Log Archives</p>
+    <p><span id="num-log-files" class="btn-group"></span> Log Archives</p>
 
     <h2>Workbooks</h2>
     <h3>Archive Workbooks Only as .twb Files (COMING SOON)</h3>
@@ -87,7 +79,7 @@ input.small-entry {
   </section>
 </section>
 
-<script id="storage-dropdown-template" type="x-tmpl-mustache">
+<script id="dropdown-template" type="x-tmpl-mustache">
   <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div data-id="{{id}}">{{value}}</div><span class="caret"></span>
   </button>
   <ul class="dropdown-menu" role="menu">
