@@ -102,15 +102,33 @@ function ($, topic, template)
     }
 
     /*
+     * gethref
+     * Find the 'href' attribute of a link or the data-href of the parent div.
+     * Returns null if not found or '#'.
+     */
+    function gethref(a) {
+        var href = a.attr('href');
+        if (href && href != '#') {
+            return href;
+        }
+        var parent = a.closest('.btn-group')
+        href = parent.attr('data-href');
+        if (href && href != '#') {
+            return href;
+        }
+        return null
+    }
+
+    /*
      * ddClick
      * Click handler for dropdowns : attached to the <li> tag.
      */
     function ddClick(event) {
         event.preventDefault();
-        var parent = $(this).closest('div');
+        var parent = $(this).closest('.btn-group');
         var a = $(this).find('a');
-        var div =  $(this).parent().siblings().find('div')
-        var href = a.attr('href');
+        var div =  $(parent).find('div')
+        var href = gethref(a)
         var id = a.attr('data-id');
 
         success = function(data) {
@@ -121,7 +139,7 @@ function ($, topic, template)
             if (cb) cb(parent[0], value);
         }
 
-        if (!href || href == '#') {
+        if (href == null){
             success();
             return;
         }
@@ -205,7 +223,7 @@ function ($, topic, template)
             if (!name.match('^data-')) {
                 continue;
             }
-            d[name.substring(5)] = attrs.item(i).nodeValue;
+            d[name.substring(5)] = attrs.item(i).value;
         }
         return d;
     }
@@ -218,7 +236,9 @@ function ($, topic, template)
         $('a.alert.warnings span').html(data['yellow']);
 
         var events = data['events'];
-        if (events.length > 0) eventFilter.lastid = events[0]['eventid'];
+        if (events && events.length > 0){
+            eventFilter.lastid = events[0]['eventid'];
+        }
 
         var rendered = template.render(event_list_template, data);
         if (eventFilter.changed) {
@@ -400,6 +420,7 @@ function ($, topic, template)
     }        
 
     return {'state': current,
+            'customDataAttributes': customDataAttributes,
             'startMonitor': startMonitor,
             'ajaxError': ajaxError,
             'bindEvents': bindEvents,

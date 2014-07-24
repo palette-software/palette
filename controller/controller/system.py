@@ -23,14 +23,22 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
 
     defaults = [{'envid':1, 'key':'disk-watermark-low', 'value':str(50)},
                 {'envid':1, 'key':'disk-watermark-high', 'value':str(80)},
-
-        {'envid':1, 'key':StorageConfig.STORAGE_ENCRYPT, 'value': 'no'},
-        {'envid':1, 'key':StorageConfig.BACKUP_AUTO_RETAIN_COUNT, 
-                                                            'value': '3'},
-        {'envid':1, 'key':StorageConfig.BACKUP_USER_RETAIN_COUNT,
-                                                            'value': '5'},
-        {'envid':1, 'key':StorageConfig.BACKUP_DEST_TYPE, \
-                                                'value': StorageConfig.VOL}
+                {'envid':1, 'key':StorageConfig.STORAGE_ENCRYPT, 'value': 'no'},
+                {'envid':1,
+                 'key':StorageConfig.WORKBOOKS_AS_TWB,
+                 'value': 'no'},
+                {'envid':1,
+                 'key':StorageConfig.BACKUP_AUTO_RETAIN_COUNT,
+                 'value': '3'},
+                {'envid':1,
+                 'key':StorageConfig.BACKUP_USER_RETAIN_COUNT,
+                 'value': '5'},
+                {'envid':1,
+                 'key':StorageConfig.BACKUP_DEST_TYPE,
+                 'value': StorageConfig.VOL},
+                {'envid':1,
+                 'key':StorageConfig.LOG_ARCHIVE_RETAIN_COUNT,
+                 'value': '5'}
         # Note: No default volid set.
     ]
 
@@ -59,7 +67,7 @@ class SystemManager(object):
         session.merge(entry)
         session.commit()
 
-    def entry(self, key):
+    def entry(self, key, **kwargs):
         try:
             entry = meta.Session.query(SystemEntry).\
                 filter(SystemEntry.envid == self.envid).\
@@ -69,8 +77,24 @@ class SystemManager(object):
             raise ValueError("No system row found with key=%s" % key)
         return entry
 
-    def get(self, key):
-        entry = self.entry(key)
+    def get(self, key, **kwargs):
+        if 'default' in kwargs:
+            default = kwargs['default']
+            have_default = True
+            del kwargs['default']
+        else:
+            have_default = False
+
+        if kwargs:
+            raise ValueError("Invalid kwargs")
+
+        try:
+            entry = self.entry(key, **kwargs)
+        except ValueError, e:
+            if have_default:
+                return default
+            else:
+                raise e
         return entry.value
 
     @classmethod

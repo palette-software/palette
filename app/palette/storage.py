@@ -1,22 +1,17 @@
 from webob import exc
 
 from akiri.framework.ext.sqlalchemy import meta
-from akiri.framework.config import store
 
-from controller.profile import UserProfile, Role, Publisher, Admin, License
-from controller.auth import AuthManager
-from controller.util import DATEFMT
-from controller.system import SystemEntry
-from controller.domain import Domain
-from controller.workbooks import WorkbookEntry, WorkbookUpdatesEntry
-from controller.agentinfo import AgentVolumesEntry
+from controller.profile import Role
 from controller.agent import Agent
-from controller.util import sizestr
+from controller.util import sizestr, str2bool
+from controller.storage import StorageConfig
+
+from controller.agentinfo import AgentVolumesEntry # FIXME: remove
+from controller.system import SystemEntry # FIXME: use self.system instead
 
 from page import PalettePage
 from rest import PaletteRESTHandler, required_parameters, required_role
-
-import json
 
 __all__ = ["StorageApplication"]
 
@@ -25,6 +20,7 @@ class StorageApplication(PaletteRESTHandler):
 
     def __init__(self, global_conf):
         super(StorageApplication, self).__init__(global_conf)
+        self.sc = StorageConfig(self.system)
 
     def handle_get(self, req):
         # populate the storage settings
@@ -35,68 +31,167 @@ class StorageApplication(PaletteRESTHandler):
             item[entry.key] = entry.value
         storage.append(item)
 
-        # populate the storage volume locations
-        locations = {
-            'name': 'storage',
-            'options' : [
-            {'item':'Google Cloud Storage', 'id': 0},
-            {'item':'Amazon S3 Storage', 'id': 1},
-        ]}
-        all_volumes = meta.Session.query(AgentVolumesEntry).all()
-        item_count = len(locations['options'])
-        for i in all_volumes:
-            agent = Agent.get_by_id(i.agentid)
-            item = "{0} {1} {2} ({3} Unused)".format( agent.displayname, i.name, sizestr(i.size), sizestr(i.available_space))
-            locations['options'].append( {'item': item , 'id': item_count} )
-            item_count = item_count + 1
+        sc = StorageConfig(self.system)
+        data = {StorageConfig.STORAGE_ENCRYPT: sc.storage_encrypt,
+                StorageConfig.WORKBOOKS_AS_TWB: sc.workbooks_as_twb}
 
-        # set the current selection
-        storage_type = storage[0]['backup-dest-type']
-        if storage_type == "gcs":
-            storage_id = 0
-        elif storage_type == "s3":
-            storage_id = 1
-        elif storage_type == "vol":
-            if storage[0]['backup-dest-id'] is not None:
-                storage_id = int(storage[0]['backup-dest-id']) + 1
-            else:
-                storage_id = 0
-        locations['id'] = storage_id
-        locations['value'] = locations['options'][storage_id]['item']
+        # populate the storage destination type
+        dest = {'name': 'storage-destination',
+                'value': sc.text(sc.backup_dest_type)}
+        options = []
+        for x in [StorageConfig.VOL, StorageConfig.S3, StorageConfig.GCS]:
+            options.append({'id':x, 'item': sc.text(x)})
+        dest['options'] = options
 
-        storage.append({'volumes':locations})
-        return {'storage': storage}
+        low = {'name': StorageConfig.WATERMARK_LOW,
+               'value': str(sc.watermark_low)}
+        options = []
+        for x in [50, 55, 60, 65, 70]:
+            options.append({'id':x, 'item': str(x)})
+        low['options'] = options
+
+        high = {'name': StorageConfig.WATERMARK_HIGH,
+               'value': str(sc.watermark_high)}
+        options = []
+        for x in [75, 80, 85, 90, 95]:
+            options.append({'id':x, 'item': str(x)})
+        high['options'] = options
+
+        auto = {'name': StorageConfig.BACKUP_AUTO_RETAIN_COUNT,
+               'value': str(sc.backup_auto_retain_count)}
+        options = []
+        for x in [7,14,21,28]:
+            options.append({'id':x, 'item': str(x)})
+        auto['options'] = options
+
+        options = []
+        user = {'name': StorageConfig.BACKUP_USER_RETAIN_COUNT,
+               'value': str(sc.backup_user_retain_count)}
+        for x in range(1,11):
+            options.append({'id':x, 'item': str(x)})
+        user['options'] = options
+
+        logs = {'name': StorageConfig.LOG_ARCHIVE_RETAIN_COUNT,
+               'value': str(sc.log_archive_retain_count)}
+        options = []
+        for x in range(1,11):
+            options.append({'id':x, 'item': str(x)})
+        logs['options'] = options
+
+        data['config'] = [dest, low, high, auto, user, logs]
+
+        return data
+
+    @required_parameters('value')
+    def handle_yesno_POST(self, req, name):
+        value = str2bool(req.POST['value'])
+        s = value and 'yes' or 'no'
+        self.system.save(name, s)
+        return {'value':value}
+
+    def handle_encryption(self, req):
+        if req.method == 'GET':
+            return {'value':self.sc.storage_encrypt}
+        elif req.method == 'POST':
+            return self.handle_yesno_POST(req, StorageConfig.STORAGE_ENCRYPT)
+        else:
+            raise exc.HTTPMethodNotAllowed()
+
+    @required_parameters('id')
+    def handle_dest_POST(self, req):
+        value = req.POST['id']
+        self.system.save(StorageConfig.BACKUP_DEST_TYPE, value)
+        return {'id':value}
+
+    def handle_dest(self, req):
+        if req.method == 'GET':
+            return {'id':self.sc.backup_dest_type}
+        elif req.method == 'POST':
+            return self.handle_dest_POST(req)
+        else:
+            raise exc.HTTPMethodNotAllowed()
+
+    @required_parameters('id')
+    def handle_int_POST(self, req, name):
+        value = req.POST['id']
+        self.system.save(name, str(value))
+        return {'id':value}
+
+    def handle_low(self, req):
+        if req.method == 'GET':
+            return {'value':self.sc.watermark_low}
+        elif req.method == 'POST':
+            return self.handle_int_POST(req, StorageConfig.WATERMARK_LOW)
+        else:
+            raise exc.HTTPMethodNotAllowed()
+
+    def handle_high(self, req):
+        if req.method == 'GET':
+            return {'value':self.sc.watermark_high}
+        elif req.method == 'POST':
+            return self.handle_int_POST(req, StorageConfig.WATERMARK_HIGH)
+        else:
+            raise exc.HTTPMethodNotAllowed()
+
+    def handle_auto(self, req):
+        if req.method == 'GET':
+            return {'value':self.sc.backup_auto_retain_count}
+        elif req.method == 'POST':
+            return self.handle_int_POST(req,
+                                        StorageConfig.BACKUP_AUTO_RETAIN_COUNT)
+        else:
+            raise exc.HTTPMethodNotAllowed()
+
+    def handle_user(self, req):
+        if req.method == 'GET':
+            return {'value':self.sc.backup_user_retain_count}
+        elif req.method == 'POST':
+            return self.handle_int_POST(req,
+                                        StorageConfig.BACKUP_USER_RETAIN_COUNT)
+        else:
+            raise exc.HTTPMethodNotAllowed()
+
+    def handle_logs(self, req):
+        if req.method == 'GET':
+            return {'value':self.sc.log_archive_retain_count}
+        elif req.method == 'POST':
+            return self.handle_int_POST(req,
+                                        StorageConfig.LOG_ARCHIVE_RETAIN_COUNT)
+        else:
+            raise exc.HTTPMethodNotAllowed()
+
+    def handle_twb(self, req):
+        if req.method == 'GET':
+            return {'value':self.sc.workbooks_as_twb}
+        elif req.method == 'POST':
+            return self.handle_yesno_POST(req, StorageConfig.WORKBOOKS_AS_TWB)
+        else:
+            raise exc.HTTPMethodNotAllowed()
 
     @required_role(Role.MANAGER_ADMIN)
-    @required_parameters('id', 'value')
-    def handle_post(self, req):
-        k = req.POST['id']
-        v = req.POST['value']
-        
-        if k == "storage-encrypt":
-            if v == '0': 
-                v='no' 
-            elif v=='1':
-                v='yes'
-
-        row = SystemEntry.get_by_key(k)
-        # the row key should already be there in the table, but if it is not we create it and set it
-        if row is not None:
-            row.value = v
-        else:
-            # TODO fix when we have multiple envs
-            row = SystemEntry(envid=1, key=k, value=v)
-            meta.Session.add(row)
-        meta.Session.commit()
-        return {}
-
     def handle(self, req):
+        path_info = self.base_path_info(req)
+        if path_info == 'encryption':
+            return self.handle_encryption(req)
+        elif path_info == 'dest':
+            return self.handle_dest(req)
+        elif path_info == 'low':
+            return self.handle_low(req)
+        elif path_info == 'high':
+            return self.handle_high(req)
+        elif path_info == 'auto':
+            return self.handle_auto(req)
+        elif path_info == 'user':
+            return self.handle_user(req)
+        elif path_info == 'logs':
+            return self.handle_logs(req)
+        elif path_info == 'twb':
+            return self.handle_twb(req)
+
         if req.method == "GET":
             return self.handle_get(req)
-        if req.method == "POST":
-            return self.handle_post(req)
-        else:
-            raise exc.HTTPBadRequest()
+
+        raise exc.HTTPBadRequest()
 
 class StoragePage(PalettePage):
     TEMPLATE = "storage.mako"
