@@ -85,7 +85,6 @@ class S3Application(PaletteRESTHandler):
 class S3Page(PalettePage):
     TEMPLATE = 's3.mako'
     active = 's3'
-    expanded = True
     integration = True
     required_role = Role.MANAGER_ADMIN
 
