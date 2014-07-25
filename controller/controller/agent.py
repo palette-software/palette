@@ -62,7 +62,7 @@ class Agent(meta.Base, BaseDictMixin):
             if 'microsoft' in self.os_version.lower():
                 return True
             else:
-                return False            
+                return False
         raise AttributeError(name)
 
     def connected(self):

@@ -157,4 +157,3 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
             filter_by(envid = envid).\
             order_by(asc('agent.display_order'), asc('name')).\
             all()
-    

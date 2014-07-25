@@ -63,7 +63,7 @@ class StorageApplication(PaletteRESTHandler):
 
         if value is None:
             value = self.sc.text(destid)
-        
+
         dest['value'] = value
         dest['options'] = options
 

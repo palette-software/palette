@@ -34,7 +34,7 @@ function($, template) {
                     data: data,
                     dataType: 'json',
                     async: false,
-            
+
                     success: function(data) {
                         success = true;
                     },
