@@ -26,17 +26,20 @@ h2 {
 
          <h3>Access Key ID</h3>
          <p class="editbox"
-              data-name="access-key-id" data-href="/rest/s3/access-key-id" id="access-key-id">              
+              data-name="access-key" data-href="/rest/s3/access-key" id="access-key">
+              ${obj.config['access-key']}
          </p>
 
          <h3>Access Secret</h3>
          <p class="editbox"
-              data-name="access-key-secret" data-href="/rest/s3/access-key-secret" id="access-key-secret">
+              data-name="access-secret" data-href="/rest/s3/access-secret" id="access-secret">
+              ${obj.config['access-secret']}
          </p>
 
          <h3>Bucket Name</h3>
          <p class="editbox"
               data-name="bucket-name" data-href="/rest/s3/bucket-name" id="bucket-name">
+              ${obj.config['bucket-name']}
          </p>
       </section>
     </section>
