@@ -30,7 +30,7 @@
       <ul ${obj.integration and 'class="visible"' or ''}>
         <li ${obj.active=='s3' and 'class="active"' or ''}>
           <a href="/configure/s3">
-            <i class="fa fa-fw fa-arrows-alt"></i>
+            <i class="fa fa-fw fa-cubes"></i>
             <span>AWS S3</span>
           </a>
         </li>
