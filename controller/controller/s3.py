@@ -55,3 +55,37 @@ class S3(meta.Base):
             return entry
         except NoResultFound, e:
             return None
+
+    @classmethod
+    def get_by_envid_name(cls, envid, name):
+        try:
+            entry = meta.Session.query(S3).\
+                filter(S3.envid == envid).\
+                filter(S3.name == name).one()
+            return entry
+        except NoResultFound, e:
+            return None
+
+    @classmethod
+    def insert_or_update(cls, envid, name, key, value):
+        try:
+            entry = meta.Session.query(S3).\
+                filter(S3.envid == envid).\
+                filter(S3.name == name).one()
+        except NoResultFound, e:
+            entry = None
+
+        if entry is None:
+            entry = S3(envid = envid)
+            entry.name = name
+            meta.Session.add(entry)
+
+        if key == 'access-key-id':
+            entry.access_key = value
+        elif key == 'access-key-secret':
+            entry.secret = value
+        elif key == 'bucket-name':
+             entry.bucket = value
+
+        meta.Session.commit()
+
