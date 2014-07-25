@@ -1,4 +1,5 @@
 from sqlalchemy import DateTime
+from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
 from util import DATEFMT
 
@@ -53,3 +54,14 @@ class BaseMixin(object):
             rows = json.load(f)
             return rows['RECORDS']
 
+
+class OnlineMixin(object):
+
+    @classmethod
+    def exists_in_envid(cls, envid):
+        try:
+            entry = meta.Session.query(cls).\
+                filter(cls.envid == envid).one()
+            return True
+        except NoResultFound, e:
+            return False

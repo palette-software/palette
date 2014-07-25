@@ -57,6 +57,14 @@ class Agent(meta.Base, BaseDictMixin):
         self.firewall = None
         self.filemanager = None
 
+    def __getattr__(self, name):
+        if name == 'iswin':
+            if 'microsoft' in self.os_version.lower():
+                return True
+            else:
+                return False            
+        raise AttributeError(name)
+
     def connected(self):
         if not self.last_disconnect_time or \
                         self.last_disconnect_time < self.last_connection_time:
@@ -150,11 +158,9 @@ class Agent(meta.Base, BaseDictMixin):
          entry = session.merge(entry)
          session.commit()
 
-         if 'microsoft' in body['os-version'].lower():
-             entry.iswin = True
+         if entry.iswin:
              entry.path = ntpath
          else:
-             entry.iswin = False
              entry.path = posixpath
 
          return entry

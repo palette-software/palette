@@ -3,7 +3,9 @@ from akiri.framework.ext.sqlalchemy import meta
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import ForeignKey
 
-class GCS(meta.Base):
+from mixin import OnlineMixin
+
+class GCS(meta.Base, OnlineMixin):
     __tablename__ = 'gcs'
 
     gcsid = Column(BigInteger, unique=True, nullable=False, \

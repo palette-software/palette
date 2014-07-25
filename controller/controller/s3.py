@@ -5,10 +5,12 @@ from akiri.framework.ext.sqlalchemy import meta
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import ForeignKey
 
+from mixin import OnlineMixin
+
 # FIXME: This policy is *way* too permissive.
 POLICY = '{"Statement":[{"Effect":"Allow","Action": "s3:*","Resource":"*"}]}'
 
-class S3(meta.Base):
+class S3(meta.Base, OnlineMixin):
     __tablename__ = 's3'
 
     s3id = Column(BigInteger, unique=True, nullable=False, \
@@ -55,3 +57,4 @@ class S3(meta.Base):
             return entry
         except NoResultFound, e:
             return None
+    

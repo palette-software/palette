@@ -1624,3 +1624,8 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
     background-color: #EEEEEE; color: #999999;
     text-align: right;
 }
+
+/* Individual Elements */
+#storage-destination, #storage-destination ul, #storage-destination ul li {
+    min-width: 350px;
+}

@@ -7,8 +7,9 @@ from controller.agent import Agent
 from controller.util import sizestr, str2bool
 from controller.storage import StorageConfig
 
-from controller.agentinfo import AgentVolumesEntry # FIXME: remove
-from controller.system import SystemEntry # FIXME: use self.system instead
+from controller.agentinfo import AgentVolumesEntry
+from controller.s3 import S3
+from controller.gcs import GCS
 
 from page import PalettePage
 from rest import PaletteRESTHandler, required_parameters, required_role
@@ -22,25 +23,48 @@ class StorageApplication(PaletteRESTHandler):
         super(StorageApplication, self).__init__(global_conf)
         self.sc = StorageConfig(self.system)
 
-    def handle_get(self, req):
-        # populate the storage settings
-        query = meta.Session.query(SystemEntry).all()
-        storage = []
-        item = {}
-        for entry in query:
-            item[entry.key] = entry.value
-        storage.append(item)
+    def build_item_for_volume(self, volume):
+        fmt = "%s %s %s (%s Unused)"
+        name = volume.name
+        if volume.agent.iswin and len(name) == 1:
+            name = name + ':'
+        return fmt % (volume.agent.displayname, name,
+                      sizestr(volume.size), sizestr(volume.available_space))
 
+    def handle_get(self, req):
         sc = StorageConfig(self.system)
         data = {StorageConfig.STORAGE_ENCRYPT: sc.storage_encrypt,
                 StorageConfig.WORKBOOKS_AS_TWB: sc.workbooks_as_twb}
 
         # populate the storage destination type
-        dest = {'name': 'storage-destination',
-                'value': sc.text(sc.backup_dest_type)}
+        dest = {'name': 'storage-destination'}
         options = []
-        for x in [StorageConfig.VOL, StorageConfig.S3, StorageConfig.GCS]:
-            options.append({'id':x, 'item': sc.text(x)})
+
+        value = None
+        destid = self.destid()
+        for volume in AgentVolumesEntry.get_archives_by_envid(self.envid):
+            item = self.build_item_for_volume(volume)
+            options.append({'id':volume.volid, 'item':item})
+            if destid == volume.volid:
+                value = item
+
+        if S3.exists_in_envid(self.envid):
+            options.append({'id': StorageConfig.S3,
+                            'item': sc.text(StorageConfig.S3)})
+
+        if GCS.exists_in_envid(self.envid):
+            options.append({'id': StorageConfig.GCS,
+                            'item': sc.text(StorageConfig.GCS)})
+
+        if not options:
+            # Placeholder until an agent connects.
+            options.append({'id': StorageConfig.VOL,
+                            'item': sc.text(StorageConfig.VOL)})
+
+        if value is None:
+            value = self.sc.text(destid)
+        
+        dest['value'] = value
         dest['options'] = options
 
         low = {'name': StorageConfig.WATERMARK_LOW,
@@ -100,12 +124,30 @@ class StorageApplication(PaletteRESTHandler):
     @required_parameters('id')
     def handle_dest_POST(self, req):
         value = req.POST['id']
-        self.system.save(StorageConfig.BACKUP_DEST_TYPE, value)
+        if value in [StorageConfig.VOL, StorageConfig.S3, StorageConfig.GCS]:
+            destid = -1
+            desttype = value
+        else:
+            destid = value
+            desttype = StorageConfig.VOL
+        self.system.save(StorageConfig.BACKUP_DEST_ID, destid)
+        self.system.save(StorageConfig.BACKUP_DEST_TYPE, desttype)
         return {'id':value}
+
+    # return the id of the current selection (built from StorageConfig)
+    def destid(self):
+        value = self.sc.backup_dest_type
+        if value == StorageConfig.S3 or value == StorageConfig.GCS:
+            return value
+        # StorageConfig.VOL
+        value = int(self.sc.backup_dest_id)
+        if value < 0:
+            return StorageConfig.VOL
+        return value
 
     def handle_dest(self, req):
         if req.method == 'GET':
-            return {'id':self.sc.backup_dest_type}
+            return {'id':self.destid()}
         elif req.method == 'POST':
             return self.handle_dest_POST(req)
         else:
