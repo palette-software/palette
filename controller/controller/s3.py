@@ -57,4 +57,3 @@ class S3(meta.Base, OnlineMixin):
             return entry
         except NoResultFound, e:
             return None
-    
