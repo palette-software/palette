@@ -89,13 +89,6 @@ class S3Page(PalettePage):
     integration = True
     required_role = Role.MANAGER_ADMIN
 
-    def get(self):
-        row = S3.get_by_envid_name(ENVID, CONFIG_NAME)
-        if row is None:
-            return {'access-key': '', 'access-secret': '', 'bucket-name': ''}
-
-        return {'access-key': row.access_key, 'access-secret': row.secret, 'bucket-name': row.bucket}
-
     def __init__(self, global_conf):
         super(S3Page, self).__init__(global_conf)
 
