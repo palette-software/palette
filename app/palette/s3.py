@@ -36,18 +36,18 @@ class S3Application(PaletteRESTHandler):
 
     def handle(self, req):
         if req.method == "GET":
-          	return self.handle_get(req)
+            return self.handle_get(req)
         if req.method == "POST":
             return self.handle_post(req)
         else:
             raise exc.HTTPBadRequest()
- 
+
 class S3Page(PalettePage):
     TEMPLATE = 's3.mako'
     active = 's3'
     expanded = True
     integration = True
     required_role = Role.MANAGER_ADMIN
-    
+
 def make_s3(global_conf):
     return S3Page(global_conf)
