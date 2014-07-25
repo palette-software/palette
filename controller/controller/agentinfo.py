@@ -1,6 +1,6 @@
 import os
 
-from sqlalchemy import Column, String, BigInteger, Integer, Boolean
+from sqlalchemy import Column, String, BigInteger, Integer, Boolean, asc
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm.exc import NoResultFound
@@ -145,9 +145,16 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
 
     @classmethod
     def get_vol_entries_by_agentid(cls, agentid):
-        try:
-            return meta.Session.query(AgentVolumesEntry).\
-                filter(AgentVolumesEntry.agentid == agentid).\
-                all()
-        except NoResultFound, e:
-            return None
+        return meta.Session.query(AgentVolumesEntry).\
+            filter(AgentVolumesEntry.agentid == agentid).\
+            all()
+
+    @classmethod
+    def get_archives_by_envid(cls, envid):
+        return meta.Session.query(AgentVolumesEntry).\
+            filter_by(archive = True).\
+            join('agent').\
+            filter_by(envid = envid).\
+            order_by(asc('agent.display_order'), asc('name')).\
+            all()
+    
