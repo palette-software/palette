@@ -20,11 +20,11 @@ class S3Application(PaletteRESTHandler):
         self.CONFIG_NAME = 'default'
 
     def handle_get(self, req):
-    	row = S3.get_by_envid_name(self.ENVID, self.CONFIG_NAME)
-    	if row is None:
-    		return {'access-key-id': '', 'access-key-secret': '', 'bucket-name': ''}
-    	
-    	return {'access-key-id': row.access_key, 'access-key-secret': row.secret, 'bucket-name': row.bucket}
+        row = S3.get_by_envid_name(self.ENVID, self.CONFIG_NAME)
+        if row is None:
+            return {'access-key-id': '', 'access-key-secret': '', 'bucket-name': ''}
+
+        return {'access-key-id': row.access_key, 'access-key-secret': row.secret, 'bucket-name': row.bucket}
 
     @required_role(Role.MANAGER_ADMIN)
     @required_parameters('name', 'value')
@@ -38,7 +38,7 @@ class S3Application(PaletteRESTHandler):
         if req.method == "GET":
           	return self.handle_get(req)
         if req.method == "POST":
-        	return self.handle_post(req)
+            return self.handle_post(req)
         else:
             raise exc.HTTPBadRequest()
  
