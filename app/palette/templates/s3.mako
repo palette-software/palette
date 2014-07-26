@@ -21,30 +21,22 @@ h2 {
     <section class="row">
       <section class="col-xs-12">
          <p>Cloud storage to save your Tableau backups, logfiles, workbooks and other Palette generated files</p>
-
          <h2>Credentials</h2>
-
          <h3>Access Key ID</h3>
-         <p class="editbox"
-              data-name="access-key" data-href="/rest/s3/access-key" id="access-key">
-              ${obj.config['access-key']}
+         <p class="editbox" data-href="/rest/s3/access-key">
+           ${obj.access_key}
          </p>
-
-         <h3>Access Secret</h3>
-         <p class="editbox"
-              data-name="access-secret" data-href="/rest/s3/access-secret" id="access-secret">
-              ${obj.config['access-secret']}
+         <h3>Secret Access Key</h3>
+         <p class="editbox" data-href="/rest/s3/secret">
+           ${obj.secret}
          </p>
-
          <h3>Bucket Name</h3>
-         <p class="editbox"
-              data-name="bucket-name" data-href="/rest/s3/bucket-name" id="bucket-name">
-              ${obj.config['bucket-name']}
+         <p class="editbox" data-href="/rest/s3/bucket">
+           ${obj.bucket}
          </p>
       </section>
     </section>
     </section>
-
   </section>
 </section>
 
