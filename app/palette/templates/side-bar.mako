@@ -36,7 +36,7 @@
         </li>
         <li ${obj.active=='gcs' and 'class="active"' or ''}>
           <a href="/configure/gcs">
-            <i class="fa fa-fw fa-arrows-alt"></i>
+            <i class="fa fa-fw fa-google"></i>
             <span>Google Storage</span>
           </a>
         </li>
