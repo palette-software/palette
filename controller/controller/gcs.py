@@ -52,3 +52,13 @@ class GCS(meta.Base, OnlineMixin):
         return meta.Session.query(GCS).\
             filter(GCS.envid == self.envid).\
             all()
+
+    @classmethod
+    def get_by_envid_name(self, envid, name):
+        try:
+            entry = meta.Session.query(GCS).\
+                filter(GCS.envid == envid).\
+                filter(GCS.name == name).one()
+            return entry
+        except NoResultFound, e:
+            return None
