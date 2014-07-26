@@ -5,12 +5,12 @@ from akiri.framework.ext.sqlalchemy import meta
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import ForeignKey
 
-from mixin import OnlineMixin
+from mixin import BaseDictMixin, OnlineMixin
 
 # FIXME: This policy is *way* too permissive.
 POLICY = '{"Statement":[{"Effect":"Allow","Action": "s3:*","Resource":"*"}]}'
 
-class S3(meta.Base, OnlineMixin):
+class S3(meta.Base, BaseDictMixin, OnlineMixin):
     __tablename__ = 's3'
 
     s3id = Column(BigInteger, unique=True, nullable=False, \

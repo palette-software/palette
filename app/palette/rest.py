@@ -47,6 +47,7 @@ class PaletteRESTHandler(RESTApplication):
             return store.get('palette', 'domainname')
         if name == 'domain':
             return Domain.get_by_name(self.domainname)
+        # FIXME: either do this or add envid (not both)
         if name == 'environment':
             return Environment.get()
         if name == 'system':

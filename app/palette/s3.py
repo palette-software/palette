@@ -1,3 +1,4 @@
+from webob import exc
 from sqlalchemy.orm.exc import NoResultFound
 
 from akiri.framework.ext.sqlalchemy import meta
@@ -7,10 +8,11 @@ from rest import PaletteRESTHandler, required_parameters, required_role
 from controller.profile import Role
 from controller.s3 import S3
 
+from controller.environment import Environment
+
 __all__ = ["S3Application"]
 
-ENVID = 1
-CONFIG_NAME = 'default'
+DEFAULT_NAME = 'default'
 
 class S3Application(PaletteRESTHandler):
     NAME = 's3'
@@ -18,67 +20,60 @@ class S3Application(PaletteRESTHandler):
     def __init__(self, global_conf):
         super(S3Application, self).__init__(global_conf)
 
-    def insert_or_update(self, envid, name, key, value):
-        try:
-            entry = meta.Session.query(S3).\
-                filter(S3.envid == envid).\
-                filter(S3.name == name).one()
-        except NoResultFound, e:
-            entry = None
-
+    def get(self):
+        entry = S3.get_by_envid_name(self.envid, DEFAULT_NAME)
         if entry is None:
-            entry = S3(envid = envid)
-            entry.name = name
+            entry = S3(envid = self.envid)
+            entry.name = DEFAULT_NAME
             meta.Session.add(entry)
-
-        if key == 'access-key':
-            entry.access_key = value
-        elif key == 'access-secret':
-            entry.secret = value
-        elif key == 'bucket-name':
-             entry.bucket = value
-
+        return entry
         meta.Session.commit()
 
-    @classmethod
-    def get(self):
-        row = S3.get_by_envid_name(ENVID, CONFIG_NAME)
-        if row is None:
-            return {'access-key': '', 'access-secret': '', 'bucket-name': ''}
+    def handle_GET(self):
+        entry = self.get()
+        return entry.todict(pretty=True)
 
-        return {'access-key': row.access_key, 'access-secret': row.secret, 'bucket-name': row.bucket}
-
-    def handle_post_access_key(self, req):
+    @required_parameters('value')
+    def handle_access_key_POST(self, req):
         v = req.POST['value']
-        self.insert_or_update(ENVID, CONFIG_NAME, 'access-key', v)
+        entry = self.get()
+        entry.access_key = v
+        meta.Session.commit()
         return {'value':v}
 
-    def handle_post_access_secret(self, req):
+    @required_parameters('value')
+    def handle_secret_POST(self, req):
         v = req.POST['value']
-        self.insert_or_update(ENVID, CONFIG_NAME, 'access-secret', v)
+        entry = self.get()
+        entry.secret = v
+        meta.Session.commit()
         return {'value':v}
 
-    def handle_post_bucket_name(self, req):
+    @required_parameters('value')
+    def handle_bucket_POST(self, req):
         v = req.POST['value']
-        self.insert_or_update(ENVID, CONFIG_NAME, 'bucket-name', v)
+        entry = self.get()
+        entry.bucket = v
+        meta.Session.commit()
         return {'value':v}
 
-    def handle_post(self, req):
+    @required_parameters('value')
+    def handle_POST(self, req):
         path_info = self.base_path_info(req)
         if path_info == 'access-key':
-            return self.handle_post_access_key(req)
-        elif path_info == 'access-secret':
-            return self.handle_post_access_secret(req)
-        elif path_info == 'bucket-name':
-            return self.handle_post_bucket_name(req)
+            return self.handle_access_key_POST(req)
+        elif path_info == 'secret':
+            return self.handle_secret_POST(req)
+        elif path_info == 'bucket':
+            return self.handle_bucket_POST(req)
         else:
-            raise exc.HTTPMethodNotAllowed()          
+            raise exc.HTTPBadRequest()
 
     def handle(self, req):
         if req.method == 'GET':
-            return self.get()
-        if req.method == 'POST':
-            return self.handle_post(req)
+            return self.handle_GET()
+        elif req.method == 'POST':
+            return self.handle_POST(req)
         else:
             raise exc.HTTPBadRequest()
 
@@ -88,11 +83,15 @@ class S3Page(PalettePage):
     integration = True
     required_role = Role.MANAGER_ADMIN
 
-    def __init__(self, global_conf):
-        super(S3Page, self).__init__(global_conf)
-
     def render(self, req, obj=None):
-        self.config = S3Application.get()
+        envid = Environment.get().envid # FIXME
+        entry = S3.get_by_envid_name(envid, DEFAULT_NAME)
+        if entry is None:
+            entry = S3(envid = envid)
+            entry.name = DEFAULT_NAME
+        self.access_key = entry.access_key and entry.access_key or ''
+        self.secret = entry.secret and entry.secret or ''
+        self.bucket = entry.bucket and entry.bucket or ''
         return super(S3Page, self).render(req, obj=obj)
 
 def make_s3(global_conf):
