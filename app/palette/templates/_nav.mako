@@ -54,4 +54,3 @@
   </div>
 </nav>
 
-<script src="/app/module/palette/js/contact.js"></script>
