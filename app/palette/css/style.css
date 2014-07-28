@@ -1561,6 +1561,7 @@ div.refresh {
     cursor: pointer;
     border: 2px solid #D3D3D3;
     border-radius: 20px;
+    margin: 0;
 }
 .onoffswitch-inner {
     display: block;
@@ -1589,7 +1590,7 @@ div.refresh {
 .onoffswitch-inner:before {
     content: "ON";
     padding-left: 11px;
-    background-color: #53D76A; color: #FFFFFF;
+    background-color: #76e259; color: #FFFFFF;
 }
 .onoffswitch-inner:after {
     content: "OFF";
@@ -1616,7 +1617,7 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
 .yesno span.onoffswitch-inner:before {
     content: "Yes";
     padding-left: 11px;
-    background-color: #53D76A; color: #FFFFFF;
+    background-color: #76e259; color: #FFFFFF;
 }
 .yesno span.onoffswitch-inner:after {
     content: "No";
@@ -1628,4 +1629,27 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
 /* Individual Elements */
 #storage-destination, #storage-destination ul, #storage-destination ul li {
     min-width: 350px;
+}
+
+.monitor {
+    position: relative;
+}
+.monitor .onoffswitch {
+    width: 52px;
+    position: absolute;
+    top: 0;
+    left: 60px;
+    height: 20px;
+}
+.monitor .onoffswitch-inner:after {
+    padding-right: 7px;
+}
+.monitor .onoffswitch-switch {
+    width: 12px;
+    right: 32px;
+}
+.monitor .onoffswitch-inner:before, .monitor .onoffswitch-inner:after {
+    height: 16px;
+    line-height: inherit;
+    font-size: 12px;
 }

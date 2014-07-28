@@ -1,5 +1,5 @@
-require(['jquery', 'template', 'common', 'EditBox'],
-function ($, template, common, EditBox)
+require(['jquery', 'template', 'common', 'EditBox', 'OnOff'],
+function ($, template, common, EditBox, OnOff)
 {
     function change() {
         var node = $(this).get(0);
@@ -30,6 +30,7 @@ function ($, template, common, EditBox)
                 $('.editbox.environment >span').html(value);
             });
             $('input[type="checkbox"]').change(change);
+            OnOff.setup();
         });
     }
 

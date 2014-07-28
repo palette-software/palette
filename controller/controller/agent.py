@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
+from sqlalchemy import Column, Integer, BigInteger, String, DateTime, Boolean
+from sqlalchemy import func
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import reconstructor
 from sqlalchemy.orm.exc import NoResultFound
@@ -21,6 +22,7 @@ class Agent(meta.Base, BaseDictMixin):
     uuid = Column(String, unique=True, index=True)
     displayname = Column(String)
     display_order = Column(Integer)
+    enabled = Column(Boolean, default=True, nullable=False)
     hostname = Column(String)
     fqdn = Column(String)
     agent_type = Column(String)

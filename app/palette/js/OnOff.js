@@ -1,6 +1,16 @@
 define("OnOff", ['jquery', 'template'],
 function($, template) {
 
+    function str2bool(val) {
+        if (val == null) return false;
+        val = val.trim().toLowerCase();
+	    switch(val){
+		case "true": case "yes": case "1": case "checked": return true;
+		case "false": case "no": case "0": return false;
+		default: return false;
+	    }
+    }
+
     function OnOff(node, callback) {
         this.node = node;
         this.callback = callback;
@@ -8,11 +18,13 @@ function($, template) {
         this.name = $(node).attr('data-name');
         this.href = $(node).attr('data-href');
 
+        var value = str2bool($(node).html());
+
         this.template = $('#onoffswitch').html();
         template.parse(this.template);
 
-        // FIXME: use 'checked' in data
         var data = {'name': this.name}
+        if (value) data['checked'] = 'checked';
         var html = template.render(this.template, data);
         $(node).html(html);
 
