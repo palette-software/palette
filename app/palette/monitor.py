@@ -252,6 +252,8 @@ class MonitorApplication(PaletteRESTHandler):
 
         agents = []
         for entry in agent_entries:
+            if not entry.enabled:
+                continue
             # Start out green until proven otherwise
             agent_color_num = Colors.GREEN_NUM
 

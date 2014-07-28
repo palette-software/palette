@@ -8,22 +8,23 @@ from rest import PaletteRESTHandler, required_parameters, required_role
 from controller.agent import Agent
 from controller.agentinfo import AgentVolumesEntry
 from controller.profile import Role
-from controller.util import sizestr
+from controller.util import sizestr, str2bool
 
 class ServerApplication(PaletteRESTHandler):
     NAME = 'servers'
 
+    # FIXME: allow GETs on all sub-URLs
     def handle(self, req):
         path_info = self.base_path_info(req)
         if path_info == '':
             if req.method == 'GET':
                 return self.handle_GET(req)
         elif path_info == 'displayname':
-            if req.method == 'POST':
-                return self.handle_displayname(req)
+            return self.handle_displayname(req)
         elif path_info == 'archive':
-            if req.method == 'POST':
-                return self.handle_archive(req)
+            return self.handle_archive(req)
+        elif path_info == 'monitor':
+            return self.handle_monitor_POST(req)
         raise exc.HTTPMethodNotAllowed()
 
     def volumes(self, server):
@@ -56,9 +57,10 @@ class ServerApplication(PaletteRESTHandler):
         entry = Agent.get_by_id(req.POST['id'])
         if entry is None:
             raise exc.HTTPNotFound()
-        entry.displayname = req.POST['value']
+        value = req.POST['value']
+        entry.displayname = value
         meta.Session.commit()
-        return {}
+        return {'value':value}
 
     @required_role(Role.MANAGER_ADMIN)
     @required_parameters('id', 'value')
@@ -66,9 +68,21 @@ class ServerApplication(PaletteRESTHandler):
         entry = AgentVolumesEntry.get_by_id(req.POST['id'])
         if entry is None:
             raise exc.HTTPNotFound()
-        entry.archive = bool(req.POST['value'])
+        value = str2bool(req.POST['value'])
+        entry.archive = value
         meta.Session.commit()
-        return {}
+        return {'value':value}
+
+    @required_role(Role.MANAGER_ADMIN)
+    @required_parameters('id', 'value')
+    def handle_monitor_POST(self, req):
+        entry = Agent.get_by_id(req.POST['id'])
+        if entry is None:
+            raise exc.HTTPNotFound()
+        value = str2bool(req.POST['value'])
+        entry.enabled = value
+        meta.Session.commit()
+        return {'value':value}
 
 class ServerConfig(PalettePage):
     TEMPLATE = "server.mako"

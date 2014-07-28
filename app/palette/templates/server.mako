@@ -41,8 +41,12 @@
               {{environment}}
             </div>
 %endif
-          <div>
-            <span class="label">Monitor &nbsp; &nbsp;<input type="checkbox" class="ios-checkbox"/></span>
+          <div class="monitor">
+            <span class="label">Monitor</span>
+            <div class="onoffswitch"
+                 data-id="{{agentid}}" data-href="/rest/servers/monitor">
+              {{enabled}}
+            </div>
           </div>
         </div>
       </div>
