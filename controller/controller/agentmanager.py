@@ -102,6 +102,14 @@ class AgentManager(threading.Thread):
     AGENT_TYPE_WORKER="worker"
     AGENT_TYPE_ARCHIVE="archive"
 
+    AGENT_TYPE_NAMES = {AGENT_TYPE_PRIMARY:'Tableau Primary Server',
+                       AGENT_TYPE_WORKER: 'Tableau Worker Server',
+                       AGENT_TYPE_ARCHIVE:'Non Tableau Server'}
+
+    @classmethod
+    def get_type_name(self, t):
+        return AgentManager.AGENT_TYPE_NAMES[t]
+
     def __init__(self, server, host='0.0.0.0', port=0):
         super(AgentManager, self).__init__()
         self.server = server
