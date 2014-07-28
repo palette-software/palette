@@ -9,6 +9,7 @@ from controller.agent import Agent
 from controller.agentinfo import AgentVolumesEntry
 from controller.profile import Role
 from controller.util import sizestr, str2bool
+from controller.agentmanager import AgentManager
 
 class ServerApplication(PaletteRESTHandler):
     NAME = 'servers'
@@ -46,6 +47,7 @@ class ServerApplication(PaletteRESTHandler):
         for server in L:
             d = server.todict(pretty=True, exclude=exclude)
             d['volumes'] = self.volumes(server)
+            d['type-name'] = AgentManager.get_type_name(server.agent_type)
             servers.append(d)
 
         return {'servers': servers,

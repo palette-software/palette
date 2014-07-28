@@ -56,7 +56,7 @@
       <div>
         <div class="col2">
           <article>
-	    <span class="label">Server Type</span>{{agent-type}}
+	    <span class="label">Server Type</span>{{type-name}}
 	  </article>
           <article><span class="label">IP Address</span>{{ip-address}}</article>
           <article><span class="label">OS</span>{{os-version}}</article>
