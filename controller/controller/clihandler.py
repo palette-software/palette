@@ -1284,7 +1284,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         agent.connection.http_send_json("/hup", {})
         self.report_status({})
 
-    @usage('s3 [GET|PUT] <bucket> <key-or-path>')
+    @usage('s3 [GET|PUT] <name> <key-or-path>')
     def do_s3(self, cmd):
         """Send a file to or receive a file from an S3 bucket"""
 
@@ -1321,10 +1321,15 @@ class CliHandler(socketserver.StreamRequestHandler):
         command = 'ps3 %s %s "%s"' % \
             (action, entry.bucket, keypath)
 
+        # fixme: this method doesn't work
         env = {u'ACCESS_KEY': token.credentials.access_key,
                u'SECRET_KEY': token.credentials.secret_key,
                u'SESSION': token.credentials.session_token,
                u'REGION_ENDPOINT': entry.region,
+               u'PWD': data_dir}
+
+        env = {u'ACCESS_KEY': entry.access_key,
+               u'SECRET_KEY': entry.secret,
                u'PWD': data_dir}
 
         # Send command to the agent

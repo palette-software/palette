@@ -44,17 +44,30 @@ class StorageApplication(PaletteRESTHandler):
         destid = self.destid()
         for volume in AgentVolumesEntry.get_archives_by_envid(self.envid):
             item = self.build_item_for_volume(volume)
-            options.append({'id':volume.volid, 'item':item})
-            if destid == volume.volid:
+            ourid = '%s:%d' % (StorageConfig.VOL, volume.volid)
+            options.append({'id': ourid, 'item':item})
+            if destid == ourid:
                 value = item
 
-        if S3.exists_in_envid(self.envid):
-            options.append({'id': StorageConfig.S3,
-                            'item': sc.text(StorageConfig.S3)})
+        for entry in S3.get_s3s_by_envid(self.envid):
+            # fixme: If/when multiple s3 configs are available, distinguish
+            # the s3 items from each other.
+            item = sc.text(StorageConfig.S3)
+            ourid = '%s:%d' % (StorageConfig.S3, entry.s3id)
+            options.append({'id': ourid, 'item': item})
 
-        if GCS.exists_in_envid(self.envid):
-            options.append({'id': StorageConfig.GCS,
-                            'item': sc.text(StorageConfig.GCS)})
+            if destid == ourid:
+                value = item
+
+        for entry in GCS.get_gcss_by_envid(self.envid):
+            # fixme: If/when multiple gcs configs are available, distinguish
+            # the gcs items from each other.
+            item = sc.text(StorageConfig.GCS)
+            ourid = '%s:%d' % (StorageConfig.GCS, entry.gcsid)
+            options.append({'id': ourid, 'item': item})
+
+            if destid == ourid:
+                value = item
 
         if not options:
             # Placeholder until an agent connects.
@@ -124,26 +137,24 @@ class StorageApplication(PaletteRESTHandler):
     @required_parameters('id')
     def handle_dest_POST(self, req):
         value = req.POST['id']
-        if value in [StorageConfig.VOL, StorageConfig.S3, StorageConfig.GCS]:
-            destid = -1
-            desttype = value
-        else:
-            destid = value
-            desttype = StorageConfig.VOL
+        parts = value.split(':')
+        if len(parts) != 2:
+            print "Bad value:", value
+            raise exc.HTTPBadRequest()
+
+        (desttype, destid) = parts
         self.system.save(StorageConfig.BACKUP_DEST_ID, destid)
         self.system.save(StorageConfig.BACKUP_DEST_TYPE, desttype)
         return {'id':value}
 
     # return the id of the current selection (built from StorageConfig)
     def destid(self):
+        dest_id = self.sc.backup_dest_id
+        if dest_id == None:
+            dest_id = 0
+
         value = self.sc.backup_dest_type
-        if value == StorageConfig.S3 or value == StorageConfig.GCS:
-            return value
-        # StorageConfig.VOL
-        value = int(self.sc.backup_dest_id)
-        if value < 0:
-            return StorageConfig.VOL
-        return value
+        return "%s:%d" % (self.sc.backup_dest_type, dest_id)
 
     def handle_dest(self, req):
         if req.method == 'GET':

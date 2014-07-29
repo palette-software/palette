@@ -68,3 +68,9 @@ class S3(meta.Base, BaseDictMixin, OnlineMixin):
         except NoResultFound, e:
             return None
 
+    @classmethod
+    def get_s3s_by_envid(cls, envid):
+        return meta.Session.query(S3).\
+            filter_by(envid = envid).\
+            order_by('s3.name').\
+            all()
