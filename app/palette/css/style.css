@@ -1075,7 +1075,7 @@ label {
     text-align: left;
     display: block;
     color: #5f6670;
-    font-size: 23px;
+    font-size: 17px;
     font-weight: 300;
 }
 /*
@@ -1160,10 +1160,11 @@ ul.checkbox li, ul.radio li {
 
 ul.checkbox li label, ul.radio li label {
     margin-bottom: 0;
+    margin-top: 7px;
     display: inline-block;
     font-weight: 300;
     float: left;
-    line-height: 28px;
+    line-height: 18px;
 }
 
 ul.checkbox li input[type="checkbox"], ul.radio li input[type="radio"] {
@@ -1173,7 +1174,7 @@ ul.checkbox li input[type="checkbox"], ul.radio li input[type="radio"] {
     float: right;
     position: absolute;
     top: 50%;
-    margin-top: -8px;
+    margin-top: -7px;
     right: 0;
     z-index: 0;
 }
