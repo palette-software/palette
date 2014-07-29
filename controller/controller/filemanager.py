@@ -66,6 +66,11 @@ class FileManager(object):
         body = self.agent.connection.http_send_json('/file', data)
         return json.loads(body)
 
+    def mkdirs(self, path):
+        data = {'action':'MKDIRS', 'path':path}
+        body = self.agent.connection.http_send_json('/file', data)
+        return json.loads(body)
+
     def filesize(self, path):
         data = {'action':'FILESIZE', 'path':path}
         body = self.agent.connection.http_send_json('/file', data)
