@@ -20,6 +20,7 @@ from firewall import Firewall
 from odbc import ODBC
 from filemanager import FileManager
 from storage import StorageConfig
+from util import sizestr
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
@@ -100,6 +101,14 @@ class AgentManager(threading.Thread):
     AGENT_TYPE_PRIMARY="primary"
     AGENT_TYPE_WORKER="worker"
     AGENT_TYPE_ARCHIVE="archive"
+
+    AGENT_TYPE_NAMES = {AGENT_TYPE_PRIMARY:'Tableau Primary Server',
+                       AGENT_TYPE_WORKER: 'Tableau Worker Server',
+                       AGENT_TYPE_ARCHIVE:'Non Tableau Server'}
+
+    @classmethod
+    def get_type_name(self, t):
+        return AgentManager.AGENT_TYPE_NAMES[t]
 
     def __init__(self, server, host='0.0.0.0', port=0):
         super(AgentManager, self).__init__()
@@ -564,10 +573,10 @@ class AgentManager(threading.Thread):
                                                                 usage_color)
             return
 
-        msg = ("Volume name: %s\nSize: %d\nUsed: %d\nAvailable: %d\n" + \
+        msg = ("Volume name: %s\nSize: %s\nUsed: %s\nAvailable: %s\n" + \
             "Percent used: %2.1f%%\n") % \
-                (entry.name, entry.size, entry.size - entry.available_space,
-                                    entry.available_space, percent)
+                (entry.name, sizestr(entry.size), sizestr(entry.size - entry.available_space),
+                                    sizestr(entry.available_space), percent)
 
         self.server.event_control.gen(event,
                         dict({'info': msg}.items() + agent.__dict__.items()))
