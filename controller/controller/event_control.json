@@ -464,13 +464,13 @@
 },
 {
 "key":"CLEANUP-FAILED",
-"level":"E",
+"level":"W",
 "send_email":"t",
-"subject":"ERROR - Tableau Server Log Cleanup Failed",
+"subject":"WARNING - Tableau Server Log Cleanup Failed",
 "event_description":"Server: ${displayname}\nDetails: ${stderr}\nAdditional Details: ${error}",
 "email_message":"Server: ${displayname}\nDetails: ${stderr}\nAdditional Details: ${error}",
 "icon":null,
-"color":"red",
+"color":"yellow",
 "event_type":"status"
 },
 {
