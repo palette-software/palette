@@ -53,6 +53,10 @@ class EventControl(meta.Base, BaseMixin):
     BACKUP_FINISHED="BACKUP-FINISHED"
     BACKUP_FAILED="BACKUP-FAILED"
 
+    BACKUP_STARTED_SCHEDULED="BACKUP-STARTED-SCHEDULED"
+    BACKUP_FINISHED_SCHEDULED="BACKUP-FINISHED-SCHEDULED"
+    BACKUP_FAILED_SCHEDULED="BACKUP-FAILED-SCHEDULED"
+
     BACKUP_BEFORE_STOP_STARTED="BACKUP-BEFORE-STOP-STARTED"
     BACKUP_BEFORE_STOP_FINISHED="BACKUP-BEFORE-STOP-FINISHED"
     BACKUP_BEFORE_STOP_FAILED="BACKUP-BEFORE-STOP-FAILED"
@@ -192,7 +196,7 @@ class EventControlManager(object):
         # The userid for extracts is the Tableau "system_users_id".
         # The userid for other events is the "userid".
         # (Both in the "users" table.)
-        if not 'username' not in data and userid:
+        if not 'username' in data and userid:
             if key == "EXTRACT-OK" or key == "EXTRACT-FAILED":
                 user_profile = UserProfile.get_by_system_users_id(userid)
             else:

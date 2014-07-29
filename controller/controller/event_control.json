@@ -100,6 +100,39 @@
 "event_type":"backup"
 },
 {
+"key":"BACKUP-STARTED-SCHEDULED",
+"level":"I",
+"send_email":"t",
+"subject":"INFO - Scheduled Backup Initiated",
+"event_description":"Server: ${displayname}",
+"email_message":"Server: ${displayname}",
+"icon":null,
+"color":"green",
+"event_type":"backup"
+},
+{
+"key":"BACKUP-FINISHED-SCHEDULED",
+"level":"I",
+"send_email":"t",
+"subject":"INFO - Scheduled Backup Completed",
+"event_description":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"email_message":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"icon":null,
+"color":"green",
+"event_type":"backup"
+},
+{
+"key":"BACKUP-FAILED-SCHEDULED",
+"level":"I",
+"send_email":"t",
+"subject":"ERROR - Scheduled Backup Failed",
+"event_description":"Server: ${displayname}\nDetails: ${error}",
+"email_message":"Server: ${displayname}\nDetails: ${error}",
+"icon":null,
+"color":"red",
+"event_type":"backup"
+},
+{
 "key":"BACKUP-BEFORE-STOP-STARTED",
 "level":"I",
 "send_email":"t",
