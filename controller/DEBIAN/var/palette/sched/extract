@@ -5,5 +5,5 @@ from commhandler import CommHandler
 
 if __name__ == "__main__":
     comm = CommHandler()
-    comm.send_cmd("extract import")
+    comm.send_cmd("extract import", skip_on_wrong_state=True)
     sys.exit(0)
