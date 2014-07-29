@@ -1396,6 +1396,7 @@ def main():
     parser.add_argument('config', nargs='?', default=None)
     parser.add_argument('--nostatus', action='store_true', default=False)
     parser.add_argument('--noping', action='store_true', default=False)
+    parser.add_argument('--nosched', action='store_true', default=False)
     args = parser.parse_args()
 
     config = Config(args.config)
@@ -1480,8 +1481,9 @@ def main():
     statusmon = TableauStatusMonitor(server, manager)
     server.statusmon = statusmon
 
-    server.sched = Sched(server)
-    server.sched.populate()
+    if not args.nosched:
+        server.sched = Sched(server)
+        server.sched.populate()
 
     if not args.nostatus:
         log.debug("Starting status monitor.")
