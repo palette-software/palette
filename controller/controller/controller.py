@@ -1408,6 +1408,7 @@ def main():
     config = Config(args.config)
     host = config.get('controller', 'host', default='localhost');
     port = config.getint('controller', 'port', default=9000);
+    agent_port = config.getint('controller', 'agent_port', default=22);
 
     # loglevel is entirely controlled by the INI file.
     logger.make_loggers(config)
@@ -1476,7 +1477,7 @@ def main():
 
     server.stateman = StateManager(server)
 
-    manager = AgentManager(server)
+    manager = AgentManager(server, port=agent_port)
     server.agentmanager = manager
 
     manager.update_last_disconnect_time()
