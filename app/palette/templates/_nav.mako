@@ -5,7 +5,7 @@
     <ul class="nav">
       <li class="more">
         <a class="help" href="javascript:void(0)">
-	  <i class="fa fa-question-circle"></i>
+          <i class="fa fa-question-circle"></i>
           <span>Help</span>
         </a>
         <ul>
