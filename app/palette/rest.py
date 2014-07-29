@@ -82,6 +82,7 @@ class Telnet(object):
             if isinstance(req.remote_user, basestring):
                 remote_user_profile = UserProfile.get_by_name(req.remote_user)
             else:
+                # FIXME: in this case remote_user is the profile
                 remote_user_profile = \
                                 UserProfile.get_by_name(req.remote_user.name)
 
