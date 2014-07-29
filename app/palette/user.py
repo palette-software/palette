@@ -98,25 +98,36 @@ class UserApplication(PaletteRESTHandler):
     @required_role(Role.SUPER_ADMIN)
     @required_parameters('userid', 'roleid')
     def handle_admin(self, req):
-        if req.method != 'POST':
-            raise exc.HTTPMethodNotAllowed()
         user = UserProfile.get(int(req.POST['userid']))
         if not user:
             raise exc.HTTPGone()
-        user.roleid = int(req.POST['roleid'])
+        roleid = int(req.POST['roleid'])
+        user.roleid = roleid
         meta.Session.commit()
-        return {}
+        return {'roleid':roleid}
+
+    def setemail(self, name, value):
+        profile = UserProfile.get_by_name(name)
+        profile.email = value
+        meta.Session.commit()
+        return {'value':value}
 
     @required_role(Role.MANAGER_ADMIN)
+    def handle_email_other(self, req):
+        return self.setemail(req.POST['name'], req.POST['value'])
+
     @required_parameters('name', 'value')
     def handle_email(self, req):
-        if req.method != 'POST':
-            raise exc.HTTPMethodNotAllowed()
-        # FIXME: test authorization
-        profile = UserProfile.get_by_name(req.POST['name'])
-        profile.email = req.POST['value']
-        meta.Session.commit()
-        return {}
+        if isinstance(req.remote_user, basestring):
+            name = req.remote_user
+        else:
+            name = req.remote_user.name
+
+        # any user may update their own email address.
+        if name == req.POST['name']:
+            return self.setemail(name, req.POST['value'])
+
+        return self.handle_email_other(req)
 
 class UserConfig(PalettePage):
     TEMPLATE = "user.mako"
