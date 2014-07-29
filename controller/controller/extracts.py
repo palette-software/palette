@@ -45,8 +45,9 @@ class ExtractManager(object):
 
     # FIXME: add a cache
     def workbook_update(self, agent, entry, cache={}):
+        title = entry.title.replace("'", "''")
         stmt = "SELECT owner_id, project_id FROM workbooks WHERE name = '%s'"
-        stmt = stmt % (entry.title,)
+        stmt = stmt % (title,)
 
         if entry.title in cache:
             row = cache[entry.title]
@@ -61,8 +62,9 @@ class ExtractManager(object):
 
     # FIXME: add a cache
     def datasource_update(self, agent, entry, cache={}):
+        title = entry.title.replace("'", "''")
         stmt = "SELECT owner_id, project_id FROM datasources WHERE name = '%s'"
-        stmt = stmt % (entry.title,)
+        stmt = stmt % (title,)
 
         if entry.title in cache:
             row = cache[entry.title]
