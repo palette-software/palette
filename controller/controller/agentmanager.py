@@ -93,7 +93,7 @@ class AgentConnection(object):
 
 class AgentManager(threading.Thread):
 
-    PORT = 8888
+    PORT = 22
 
     SSL_HANDSHAKE_TIMEOUT_DEFAULT = 5
 
@@ -792,7 +792,13 @@ class AgentManager(threading.Thread):
     def run(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind((self.host, self.port))
+        try:
+            sock.bind((self.host, self.port))
+        except socket.error as e:
+            self.log.error(\
+                "Fatal error: Could not bind to port %d: %s", self.port, str(e))
+            os._exit(99)
+
         sock.listen(8)
 
         # Start socket monitor check thread

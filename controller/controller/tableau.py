@@ -168,11 +168,9 @@ class TableauStatusMonitor(threading.Thread):
                                 status != TableauProcess.STATUS_DEGRADED:
             self.stateman.update(status)
             if status == TableauProcess.STATUS_RUNNING:
-                # fixme: should we have a unique alert for the transition
-                # from DEGRADED to RUNNING instead of this standard
-                # "started" alert?
-                self.server.event_control.gen(EventControl.STATE_STARTED,
-                                              agent.__dict__)
+                self.server.event_control.gen(\
+                        EventControl.STATE_STARTED_AFTER_DEGRADED,
+                                                          agent.__dict__)
             elif status == StateManager.STATUS_STOPPED:
                 self.server.event_control.gen(EventControl.STATE_STOPPED,
                                               agent.__dict__)
@@ -186,14 +184,16 @@ class TableauStatusMonitor(threading.Thread):
                                         status == TableauProcess.STATUS_RUNNING:
             self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateManager.STATE_STARTED)
-            self.server.event_control.gen(EventControl.STATE_STARTED,
-                                          agent.__dict__)
+            self.server.event_control.gen(\
+                                EventControl.STATE_UNEXPECTED_STATE_STARTED,
+                                                              agent.__dict__)
         elif main_state == StateManager.STATE_STARTED and \
                 status == TableauProcess.STATUS_STOPPED:
             self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateManager.STATE_STOPPED)
-            self.server.event_control.gen(EventControl.STATE_STOPPED,
-                                          agent.__dict__)
+            self.server.event_control.gen(\
+                                EventControl.STATE_UNEXPECTED_STATE_STOPPED,
+                                                              agent.__dict__)
         elif status == TableauProcess.STATUS_DEGRADED and \
                 main_state != TableauProcess.STATUS_DEGRADED:
             self.log.debug("Updating main state to %s", status)

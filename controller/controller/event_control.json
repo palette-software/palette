@@ -67,6 +67,39 @@
 "event_type":"status"
 },
 {
+"key":"STATE-STARTED-AFTER-DEGRADED",
+"level":"I",
+"send_email":"t",
+"subject":"INFO - Tableau Server running after DEGRADED",
+"event_description":"Server: ${displayname}",
+"email_message":"Server: ${displayname}",
+"icon":null,
+"color":"green",
+"event_type":"status"
+},
+{
+"key":"STATE-UNEXPECTED-STATE-STARTED",
+"level":"I",
+"send_email":"t",
+"subject":"INFO - Tableau Server was running but expected to be stopped",
+"event_description":"Server: ${displayname}",
+"email_message":"Server: ${displayname}",
+"icon":null,
+"color":"green",
+"event_type":"status"
+},
+{
+"key":"STATE-UNEXPECTED-STATE-STOPPED",
+"level":"I",
+"send_email":"t",
+"subject":"INFO - Tableau Server was stopped but expected to be running",
+"event_description":"Server: ${displayname}",
+"email_message":"Server: ${displayname}",
+"icon":null,
+"color":"green",
+"event_type":"status"
+},
+{
 "key":"BACKUP-STARTED",
 "level":"I",
 "send_email":"t",
@@ -95,6 +128,39 @@
 "subject":"ERROR - Backup Requested by User %(username)s Failed",
 "event_description":"Server: ${displayname}\nUser: ${username}\nDetails: ${error}",
 "email_message":"Server: ${displayname}\nUser: ${username}\nDetails: ${error}",
+"icon":null,
+"color":"red",
+"event_type":"backup"
+},
+{
+"key":"BACKUP-STARTED-SCHEDULED",
+"level":"I",
+"send_email":"t",
+"subject":"INFO - Scheduled Backup Initiated",
+"event_description":"Server: ${displayname}",
+"email_message":"Server: ${displayname}",
+"icon":null,
+"color":"green",
+"event_type":"backup"
+},
+{
+"key":"BACKUP-FINISHED-SCHEDULED",
+"level":"I",
+"send_email":"t",
+"subject":"INFO - Scheduled Backup Completed",
+"event_description":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"email_message":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"icon":null,
+"color":"green",
+"event_type":"backup"
+},
+{
+"key":"BACKUP-FAILED-SCHEDULED",
+"level":"I",
+"send_email":"t",
+"subject":"ERROR - Scheduled Backup Failed",
+"event_description":"Server: ${displayname}\nDetails: ${error}",
+"email_message":"Server: ${displayname}\nDetails: ${error}",
 "icon":null,
 "color":"red",
 "event_type":"backup"

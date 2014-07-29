@@ -400,7 +400,16 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             userid = None
 
-        self.server.event_control.gen(EventControl.BACKUP_STARTED,
+        if userid != None:
+            backup_started_event = EventControl.BACKUP_STARTED
+            backup_finished_event = EventControl.BACKUP_FINISHED
+            backup_failed_event = EventControl.BACKUP_FAILED
+        else:
+            backup_started_event = EventControl.BACKUP_STARTED_SCHEDULED
+            backup_finished_event = EventControl.BACKUP_FINISHED_SCHEDULED
+            backup_failed_event = EventControl.BACKUP_FAILED_SCHEDULED
+
+        self.server.event_control.gen(backup_started_event,
                                       agent.__dict__, userid=userid)
 
         self.ack()
@@ -408,11 +417,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = self.server.backup_cmd(agent)
 
         if self.success(body):
-            self.server.event_control.gen(EventControl.BACKUP_FINISHED,
+            self.server.event_control.gen(backup_finished_event,
                         dict(body.items() + agent.__dict__.items()),
                         userid=userid)
         else:
-            self.server.event_control.gen(EventControl.BACKUP_FAILED,
+            self.server.event_control.gen(backup_failed_event,
                         dict(body.items() + agent.__dict__.items()),
                         userid=userid)
 
