@@ -14,6 +14,9 @@ from request import *
 import httplib
 import ntpath
 
+import boto
+from boto.exception import AWSConnectionError, BotoClientError, BotoServerError
+
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker, scoped_session
 from akiri.framework.ext.sqlalchemy import meta
@@ -239,7 +242,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                         "for the primary agent.")
 
         resource = os.path.basename(path)
-        token = s3_entry.get_token(resource)
+        try:
+            token = s3_entry.get_token(resource)
+        except (AWSConnectionError, BotoClientError, BotoServerError) as e:
+            return self.error("s3: %s" % str(e))
 
         # fixme: this method doesn't work
         env = {u'ACCESS_KEY': token.credentials.access_key,
