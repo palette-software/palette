@@ -9,7 +9,7 @@ X-Python-Version: >= 2.7
 Package: palette
 Architecture: all
 Depends:
- ${python:Depends}, ${misc:Depends},
+ python (>= 2.7), ${misc:Depends},
  python-docutils, python-sphinx, postgresql,
  python-sqlalchemy, python-psycopg2, telnet, controller,
  apache2, libapache2-mod-wsgi,
