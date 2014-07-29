@@ -67,6 +67,39 @@
 "event_type":"status"
 },
 {
+"key":"STATE-STARTED-AFTER-DEGRADED",
+"level":"I",
+"send_email":"t",
+"subject":"INFO - Tableau Server running after DEGRADED",
+"event_description":"Server: ${displayname}",
+"email_message":"Server: ${displayname}",
+"icon":null,
+"color":"green",
+"event_type":"status"
+},
+{
+"key":"STATE-UNEXPECTED-STATE-STARTED",
+"level":"I",
+"send_email":"t",
+"subject":"INFO - Tableau Server was running but expected to be stopped",
+"event_description":"Server: ${displayname}",
+"email_message":"Server: ${displayname}",
+"icon":null,
+"color":"green",
+"event_type":"status"
+},
+{
+"key":"STATE-UNEXPECTED-STATE-STOPPED",
+"level":"I",
+"send_email":"t",
+"subject":"INFO - Tableau Server was stopped but expected to be running",
+"event_description":"Server: ${displayname}",
+"email_message":"Server: ${displayname}",
+"icon":null,
+"color":"green",
+"event_type":"status"
+},
+{
 "key":"BACKUP-STARTED",
 "level":"I",
 "send_email":"t",
