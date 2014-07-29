@@ -4,7 +4,8 @@
     <span id="toggle-main-menu" class="fi-list"></span>
     <ul class="nav">
       <li class="more">
-        <a class="help"><i class="fa fa-question-circle"></i>
+        <a class="help" href="javascript:void(0)">
+          <i class="fa fa-question-circle"></i>
           <span>Help</span>
 	    </a>
         <ul>
