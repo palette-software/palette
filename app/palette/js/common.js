@@ -45,40 +45,13 @@ function ($, topic, template)
      */
     function setupHeaderMenus()
     {
-        /* HEADER POPUP MENUS */
-        var viewport = $(window).width();
-
         $('#mainNav ul.nav li.more').bind('mouseenter', function() {
-            if (viewport >= 960) {
-        	    $('#mainNav ul.nav li.more ul').removeClass('visible');
-                $(this).find('ul').addClass('visible');
-            }
+            $('#mainNav ul.nav li.more ul').removeClass('visible');
+            $(this).find('ul').addClass('visible');
         });
         $('#mainNav ul.nav li.more').bind('mouseleave', function() {
-            if (viewport >= 960) {
-                $(this).find('ul').removeClass('visible');
-            }
+            $(this).find('ul').removeClass('visible');
         });     
-        
-        $('#mainNav ul.nav li.more a').bind('click', function() {
-            if (viewport <= 960) {
-                event.preventDefault();
-            }
-
-        });
-
-        $('#mainNav ul.nav li.more').bind('click', function() {
-            if (viewport <= 960) {
-                var navOpen = $(this).find('ul').hasClass('visible'); 
-                $('#mainNav ul.nav li.more').find('ul').removeClass('visible');
-                if (navOpen) {
-                    $(this).find('ul').removeClass('visible');
-                }
-                else {
-                    $(this).find('ul').addClass('visible');
-                }           
-            } 
-        });
     }
 
     /*
@@ -278,6 +251,7 @@ function ($, topic, template)
      */
     function showClassicWidget() {
         loadUserVoice();
+	$('#mainNav ul.nav li.more ul').removeClass('visible');
 
         UserVoice = window.UserVoice || [];
         UserVoice.push(['showLightbox', 'classic_widget', {
@@ -294,7 +268,8 @@ function ($, topic, template)
      * Connect the help links to UserVoice.
      */
     function bindUserVoice() {
-        $('a.help').bind('click', function() {
+        $('a.help').bind('click', function(event) {
+	    event.stopPropagation();
             showClassicWidget();
         });
     }
