@@ -20,7 +20,8 @@ class CommHandler(object):
 
         self.preamble = "/envid=%d /type=primary" % (self.envid)
 
-    def send_cmd(self, cmd, sync=False, close=True, verbose=False):
+    def send_cmd(self, cmd, sync=False, close=True, verbose=False,
+                                                skip_on_wrong_state=False):
 
         self.data = ""
         self.ddict = {}
@@ -36,6 +37,16 @@ class CommHandler(object):
         data = sock.readline().strip()
         print data
         if data != 'OK':
+            parts = data.split()
+            if len(parts) < 2 or not parts[1].isdigit():
+                print "Bad response from controller with command:", cmd
+                sys.exit(1)
+
+            errnum = int(parts[1])
+            # Skip on BUSY or WRONG_STATE if requested
+            if skip_on_wrong_state and (errnum == 20 or errnum == 21):
+                print "Skipping the following command due to wrong state:", cmd
+                sys.exit(0)
             sys.exit(1)
         if sync:
             self.data = sock.readline()

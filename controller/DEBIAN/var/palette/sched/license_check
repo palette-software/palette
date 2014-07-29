@@ -5,5 +5,5 @@ from commhandler import CommHandler
 
 if __name__ == "__main__":
     comm = CommHandler()
-    comm.send_cmd("license")
+    comm.send_cmd("license", skip_on_wrong_state=True)
     sys.exit(0)
