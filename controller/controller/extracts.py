@@ -33,7 +33,9 @@ class ExtractEntry(meta.Base, BaseDictMixin):
     title = Column(String)
     subtitle = Column(String)
     site_id = Column(Integer)
+    project_id = Column(Integer)
     system_users_id = Column(Integer)
+    job_name = Column(String)
 
 
 class ExtractManager(object):
@@ -41,26 +43,57 @@ class ExtractManager(object):
     def __init__(self, server):
         self.server = server
 
+    # FIXME: add a cache
+    def workbook_update(self, agent, entry, cache={}):
+        stmt = "SELECT owner_id, project_id FROM workbooks WHERE name = '%s'"
+        stmt = stmt % (entry.title,)
+
+        if entry.title in cache:
+            row = cache[entry.title]
+        else:
+            data = agent.odbc.execute(stmt)
+            if 'error' in data or '' not in data or not data['']:
+                return  # FIXME: log
+            row = cache[entry.title] = data[''][0]
+        
+        entry.system_users_id = int(row[0])
+        entry.project_id = int(row[1])
+
+    # FIXME: add a cache
+    def datasource_update(self, agent, entry, cache={}):
+        stmt = "SELECT owner_id, project_id FROM datasources WHERE name = '%s'"
+        stmt = stmt % (entry.title,)
+
+        if entry.title in cache:
+            row = cache[entry.title]
+        else:
+            data = agent.odbc.execute(stmt)
+            if 'error' in data or '' not in data or not data['']:
+                return # FIXME: log
+            row = cache[entry.title] = data[''][0]
+
+        entry.system_users_id = int(row[0])
+        entry.project_id = int(row[1])
+
     def load(self, agent):
 
         if not self.server.odbc_ok():
             return {"error": "Cannot run command while in state: %s" % \
                                             self.server.stateman.get_state()}
 
-        stmt = "SELECT background_jobs.id, finish_code, notes, " +\
-            "started_at, completed_at, title, subtitle, " +\
-            "background_jobs.site_id, owner_id " +\
-            "FROM background_jobs LEFT OUTER JOIN workbooks " +\
-            "ON background_jobs.title = workbooks.name " +\
-            "WHERE job_name = 'Refresh Extracts' AND progress = 100"
+        stmt = "SELECT id, finish_code, notes, started_at, completed_at, "+\
+            "title, subtitle, site_id, job_name " +\
+            "FROM background_jobs " +\
+            "WHERE (job_name = 'Refresh Extracts' "+\
+            " OR job_name = 'Increment Extracts') AND progress = 100"
 
         session = meta.Session()
 
         lastid = self.get_lastid()
         if not lastid is None:
-            stmt += " AND background_jobs.id > " + lastid
+            stmt += " AND id > " + lastid
 
-        stmt += " ORDER BY background_jobs.id ASC"
+        stmt += " ORDER BY id ASC"
 
         data = agent.odbc.execute(stmt)
 
@@ -80,9 +113,17 @@ class ExtractManager(object):
                                  title=row[5],
                                  subtitle=row[6],
                                  site_id=row[7],
-                                 system_users_id=row[8])
+                                 job_name=row[8])
 
-            body = dict(agent.__dict__.items() + entry.todict().items())
+            # Placeholder to be set by the next functions.
+            entry.system_users_id = -1
+
+            if entry.subtitle == 'Workbook':
+                self.workbook_update(agent, entry)
+            if entry.subtitle == 'Data Source':
+                self.datasource_update(agent, entry)
+
+            body = dict(agent.__dict__.items() + entry.todict(pretty=True).items())
 
             if row[3] is not None and row[4] is not None:
                 duration = datetime.strptime(row[4], FMT) - datetime.strptime(row[3], FMT)
@@ -92,11 +133,9 @@ class ExtractManager(object):
 
             if entry.finish_code == 0:
                 self.eventgen(EventControl.EXTRACT_OK, body,
-                              row[8], row[7],
                               timestamp=completed_at.strftime(DATEFMT))
             else:
                 self.eventgen(EventControl.EXTRACT_FAILED, body,
-                              row[8], row[7],
                               timestamp=completed_at.strftime(DATEFMT))
 
             session.add(entry)
@@ -113,10 +152,12 @@ class ExtractManager(object):
                 return str(entry.extractid)
         return None
 
-    def eventgen(self, key, data, userid, siteid, timestamp=None):
-        return self.server.event_control.gen(key, data, userid=userid,
-                                                        siteid=siteid,
-                                                        timestamp=timestamp)
+    # FIXME: add project_id? maybe job_name?
+    def eventgen(self, key, data, timestamp=None):
+        return self.server.event_control.gen(key, data,
+                                             userid=data['system-users-id'],
+                                             siteid=data['site-id'],
+                                             timestamp=timestamp)
 
     @classmethod
     def publishers(cls):
