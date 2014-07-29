@@ -4,9 +4,10 @@
     <span id="toggle-main-menu" class="fi-list"></span>
     <ul class="nav">
       <li class="more">
-        <a class="help"><i class="fa fa-question-circle"></i>
+        <a class="help" href="javascript:void(0)">
+	  <i class="fa fa-question-circle"></i>
           <span>Help</span>
-	    </a>
+        </a>
         <ul>
           <li>
             <a class="help" href="javascript:void(0)">
@@ -31,11 +32,9 @@
           <i class="fa fa-user"></i> 
           <span>${req.remote_user.friendly_name}
 %if req.remote_user.roleid > req.remote_user.role.NO_ADMIN:
-          (${req.remote_user.role.name})</span>
-%else:
-          </span>
+          (${req.remote_user.role.name})
 %endif
-
+          </span>
         </a>
         <ul>
           <li>
@@ -53,4 +52,3 @@
     </ul>
   </div>
 </nav>
-
