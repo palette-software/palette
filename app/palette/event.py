@@ -248,7 +248,6 @@ class EventApplication(RESTApplication):
                              "event-type": entry.event_type,
                              "date": str(entry.creation_time)[:19]
                           })
-        print len(events)
         return events
 
     def handle(self, req):
