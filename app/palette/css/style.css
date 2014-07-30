@@ -1510,6 +1510,9 @@ div.refresh {
 .event-dropdowns {
     height: 67px;
 }
+#type-dropdown, #site-dropdown, #publisher-dropdown {
+    min-width: 180px;
+}
 #user-list .btn-group.dropdown {
     min-width: 150px;
 }
