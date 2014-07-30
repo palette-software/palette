@@ -74,9 +74,13 @@ class Telnet(object):
                                   "telnet_hostname",
                                   default="localhost")
 
-    def send_cmd(self, cmd, req=None, sync=False):
-        # Start and stop commands are always sent to the primary.
-        preamble = "/domainid=%d /type=primary" % (self.app.domain.domainid)
+    def send_cmd(self, cmd, req=None, sync=False, displayname=None):
+        preamble = "/domainid=%d " % self.app.domain.domainid
+        if not displayname:
+            # Send to the primary unless a displayname is specified
+            preamble += "/type=primary"
+        else:
+            preamble += '/displayname="%s"' % displayname
 
         if req:
             if isinstance(req.remote_user, basestring):

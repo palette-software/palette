@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
-from sqlalchemy import ForeignKey, UniqueConstraint
+from sqlalchemy import ForeignKey, UniqueConstraint, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -19,6 +19,7 @@ class BackupEntry(meta.Base):
     gcsid = Column(BigInteger, ForeignKey("gcs.gcsid"))
     s3id = Column(BigInteger, ForeignKey("s3.s3id"))
     volid = Column(BigInteger, ForeignKey("agent_volumes.volid"))
+    auto = Column(Boolean)  # automatically requested/scheduled
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
       server_onupdate=func.current_timestamp())

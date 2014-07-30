@@ -75,14 +75,7 @@ class AlertEmail(object):
         """
 
         subject = event_entry.subject
-        if subject.find("%") == -1:
-            # If no substitution is specified in the subject template,
-            # use a default one that adds the level:
-            subject = "Severity level: %s. %s" % \
-                (EventControl.level_strings[event_entry.level],
-                                                event_entry.subject)
-
-        else:
+        if subject.find("%") != -1:
             # Use the data dict it for template substitution.
             try:
                 subject = subject % data
