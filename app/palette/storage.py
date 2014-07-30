@@ -10,6 +10,7 @@ from controller.storage import StorageConfig
 from controller.agentinfo import AgentVolumesEntry
 from controller.s3 import S3
 from controller.gcs import GCS
+import ntpath, posixpath
 
 from page import PalettePage
 from rest import PaletteRESTHandler, required_parameters, required_role
@@ -134,6 +135,29 @@ class StorageApplication(PaletteRESTHandler):
         else:
             raise exc.HTTPMethodNotAllowed()
 
+    def make_dirs(self, desttype, destid):
+        if desttype != StorageConfig.VOL:
+            # fixme: Do this for s3 and gcs too?
+            return True
+        entry = AgentVolumesEntry.get_vol_entry_with_agent_by_volid(destid)
+        if not entry:
+            print "Could not find vol entry for: %s, %s" % \
+                                                    (desttype, destid)
+            return False
+        if entry.agent.iswin:
+            dir_path = ntpath.join(entry.name.upper() + ":\\", entry.path)
+        else:
+            dir_path = entry.path
+
+        cmd = "file mkdirs '%s'" % dir_path
+        try:
+            self.telnet.send_cmd(cmd, displayname=entry.agent.displayname)
+        except exc.HTTPServiceUnavailable, e:
+            print "Could not create the directory for %s %s: %s" % \
+                                            (desttype, destid, e)
+            return False
+        return True
+
     @required_parameters('id')
     def handle_dest_POST(self, req):
         value = req.POST['id']
@@ -143,6 +167,8 @@ class StorageApplication(PaletteRESTHandler):
             raise exc.HTTPBadRequest()
 
         (desttype, destid) = parts
+        if not self.make_dirs(desttype, destid):
+            return {}
         self.system.save(StorageConfig.BACKUP_DEST_ID, destid)
         self.system.save(StorageConfig.BACKUP_DEST_TYPE, desttype)
         return {'id':value}

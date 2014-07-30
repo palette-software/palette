@@ -144,6 +144,17 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
     get_by_id = get_vol_entry_by_volid
 
     @classmethod
+    def get_vol_entry_with_agent_by_volid(cls, volid):
+        try:
+            return meta.Session.query(AgentVolumesEntry).\
+                filter(AgentVolumesEntry.volid == volid).\
+                join('agent').\
+                filter_by(agentid = AgentVolumesEntry.agentid).\
+                one()
+        except NoResultFound, e:
+            return None
+
+    @classmethod
     def get_vol_entries_by_agentid(cls, agentid):
         return meta.Session.query(AgentVolumesEntry).\
             filter(AgentVolumesEntry.agentid == agentid).\
