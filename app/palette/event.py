@@ -7,9 +7,13 @@ from akiri.framework.config import store
 
 from akiri.framework.ext.sqlalchemy import meta
 
+from sqlalchemy import and_
+
 from controller.environment import Environment
 from controller.event import EventEntry
 from controller.state_control import StateControl
+from controller.event_control import EventControl
+from controller.profile import Role
 
 __all__ = ["EventApplication"]
 
@@ -114,7 +118,7 @@ class EventApplication(RESTApplication):
                                         (start, type(start), end, (type(end)))
                 raise exc.HTTPBadRequest()
 
-        events = self.event_query(start, end, low, high, order,
+        events = self.event_query(req, start, end, low, high, order,
             event_status, event_type, event_site, event_publisher,
                                                             event_project)
 
@@ -138,7 +142,7 @@ class EventApplication(RESTApplication):
                  'red': red_count, 'yellow': yellow_count, 'green': green_count,
                  'events': events }
 
-    def event_query(self, start, end, low, high, order,
+    def event_query(self, req, start, end, low, high, order,
             event_status, event_type, event_site, event_publisher,
                                                             event_project):
 
@@ -162,6 +166,16 @@ class EventApplication(RESTApplication):
 
         if event_project != 0:
             query = query.filter(EventEntry.projectid == event_project)
+
+        if isinstance(req.remote_user, basestring):
+            req.remote_user = UserProfile.get_by_name(req.remote_user)
+
+        userid = req.remote_user.system_users_id
+        if req.remote_user.roleid == Role.NO_ADMIN and \
+                                        EventEntry.userid != userid:
+            query = query.filter(and_(EventEntry.key.in_(\
+                [EventControl.EXTRACT_OK, EventControl.EXTRACT_FAILED]),
+                (EventEntry.userid == userid)))
 
         if type(start) == int or type(end) == int:
             # select based on an event-id
