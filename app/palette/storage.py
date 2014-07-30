@@ -72,8 +72,9 @@ class StorageApplication(PaletteRESTHandler):
 
         if not options:
             # Placeholder until an agent connects.
+            value = sc.text(StorageConfig.VOL)
             options.append({'id': StorageConfig.VOL,
-                            'item': sc.text(StorageConfig.VOL)})
+                            'item': value})
 
         if value is None:
             value = self.sc.text(destid)

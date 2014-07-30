@@ -84,6 +84,9 @@ class StorageConfig(object):
             }
 
     def text(self, value):
+        if ':' in value:
+            tokens = value.split(':')
+            value = tokens[0]
         if value == StorageConfig.VOL:
             return 'Local Volume'
         if value == StorageConfig.S3:
