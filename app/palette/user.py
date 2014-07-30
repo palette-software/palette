@@ -32,10 +32,9 @@ class UserApplication(PaletteRESTHandler):
             return 'Palette System User'
         system_admin_level = d['system-admin-level']
         user_admin_level = d['user-admin-level']
-        publisher_tristate = d['publisher-tristate']
+        publisher = d['publisher']
         info = 'Tableau '
-        if publisher_tristate == Publisher.IMPLICIT or \
-                publisher_tristate == Publisher.GRANTED:
+        if d['publisher']:
             info += 'Publisher & '
         info += Admin.str(user_admin_level, system_admin_level)
         return info

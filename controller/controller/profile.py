@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, BigInteger, DateTime
+from sqlalchemy import Column, String, Integer, BigInteger, DateTime, Boolean
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.exc import NoResultFound
@@ -22,12 +22,11 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     salt = Column(String)
     roleid = Column(BigInteger, ForeignKey("roles.roleid"), default=0)
     system_users_id = Column(Integer)
-    users_id = Column(Integer)
     login_at = Column(DateTime)
     licensing_role_id = Column(Integer)
     user_admin_level = Column(Integer)
     system_admin_level = Column(Integer)
-    publisher_tristate = Column(Integer)
+    publisher = Column(Boolean)
     system_created_at = Column(DateTime)
     timestamp = Column(DateTime)
 

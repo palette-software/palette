@@ -199,17 +199,17 @@ class EventControlManager(object):
         # The userid for extracts is the Tableau "system_users_id".
         # The userid for other events is the "userid".
         # (Both in the "users" table.)
-        if not 'username' in data and userid:
-            if key == "EXTRACT-OK" or key == "EXTRACT-FAILED":
-                user_profile = UserProfile.get_by_system_users_id(userid)
-            else:
-                user_profile = UserProfile.get(userid)
+        profile = None
+        if key == "EXTRACT-OK" or key == "EXTRACT-FAILED":
+            profile = UserProfile.get_by_system_users_id(userid)
+        elif not 'username' in data and userid:
+            profile = UserProfile.get(userid)
 
-            if user_profile:
-                if user_profile.friendly_name:
-                    data['username'] = user_profile.friendly_name
-                else:
-                    data['username'] = user_profile.name
+        if not profile is None:
+            if profile.friendly_name:
+                data['username'] = profile.friendly_name
+            else:
+                data['username'] = profile.name
 
         # Use the data dict for template substitution.
         try:
