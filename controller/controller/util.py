@@ -1,6 +1,8 @@
 import subprocess
+from datetime import datetime
 from dateutil import tz
 
+UTCFMT = "%Y-%m-%d %H:%M:%SZ"
 DATEFMT = "%I:%M %p PDT on %b %d, %Y"
 SIZEFMT = "%(value).1f%(symbol)s"
 SYMBOLS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
@@ -17,6 +19,10 @@ def sizestr(n, fmt=SIZEFMT):
             value = float(n) / prefix[symbol]
             return fmt % locals()
     return fmt % dict(symbol=SYMBOLS[0], value=n)
+
+def parseutc(s):
+    if s is None: return None
+    return datetime.strptime(s, UTCFMT)
 
 def utc2local(t):
     t = t.replace(tzinfo=tz.tzutc())

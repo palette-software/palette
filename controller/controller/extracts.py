@@ -10,7 +10,7 @@ from akiri.framework.ext.sqlalchemy import meta
 from event_control import EventControl
 from profile import UserProfile
 from mixin import BaseDictMixin
-from util import utc2local, DATEFMT
+from util import utc2local, parseutc, DATEFMT
 
 def to_hhmmss(td):
     seconds = td.seconds
@@ -43,10 +43,29 @@ class ExtractManager(object):
     def __init__(self, server):
         self.server = server
 
+    # build a cache of the Tableau 'users' table.
+    # used to translate siteid:userid -> system_user_id
+    def load_users(self, agent):
+        stmt = \
+            'SELECT system_user_id, site_id, id ' +\
+            'FROM users'
+
+        data = agent.odbc.execute(stmt)
+        if 'error' in data or not '' in data:
+            return {}
+
+        cache = {}
+        for row in data['']:
+            key = str(row[1]) + ':' + str(row[2])
+            cache[key] = int(row[0])
+        return cache
+
     # FIXME: add a cache
-    def workbook_update(self, agent, entry, cache={}):
+    def workbook_update(self, agent, entry, users={}, cache={}):
         title = entry.title.replace("'", "''")
-        stmt = "SELECT owner_id, project_id FROM workbooks WHERE name = '%s'"
+        stmt = \
+            "SELECT owner_id, site_id, project_id " +\
+            "FROM workbooks WHERE name = '%s'"
         stmt = stmt % (title,)
 
         if entry.title in cache:
@@ -56,9 +75,12 @@ class ExtractManager(object):
             if 'error' in data or '' not in data or not data['']:
                 return  # FIXME: log
             row = cache[entry.title] = data[''][0]
-        
-        entry.system_users_id = int(row[0])
-        entry.project_id = int(row[1])
+
+        # key = siteid:id
+        key = str(row[1]) + ':' + str(row[0])
+        if key in users:
+            entry.system_users_id = users[key]
+        entry.project_id = int(row[2])
 
     # FIXME: add a cache
     def datasource_update(self, agent, entry, cache={}):
@@ -102,10 +124,13 @@ class ExtractManager(object):
         if 'error' in data or '' not in data:
             return data
 
-        FMT = "%Y-%m-%d %H:%M:%SZ"
+        datasources = {}
+        workbooks = {}
+        users = self.load_users(agent)
+
         for row in data['']:
-            started_at = utc2local(datetime.strptime(row[3], FMT))
-            completed_at = utc2local(datetime.strptime(row[4], FMT))
+            started_at = utc2local(parseutc(row[3]))
+            completed_at = utc2local(parseutc(row[4]))
             entry = ExtractEntry(extractid=row[0],
                                  agentid=agent.agentid,
                                  finish_code=row[1],
@@ -121,14 +146,14 @@ class ExtractManager(object):
             entry.system_users_id = -1
 
             if entry.subtitle == 'Workbook':
-                self.workbook_update(agent, entry)
+                self.workbook_update(agent, entry, users=users, cache=workbooks)
             if entry.subtitle == 'Data Source':
-                self.datasource_update(agent, entry)
+                self.datasource_update(agent, entry, cache=datasources)
 
             body = dict(agent.__dict__.items() + entry.todict(pretty=True).items())
 
             if row[3] is not None and row[4] is not None:
-                duration = datetime.strptime(row[4], FMT) - datetime.strptime(row[3], FMT)
+                duration = parseutc(row[4]) - parseutc(row[3])
                 body['duration'] = duration.seconds
                 duration_hms = to_hhmmss(duration)
                 body['duration_hms'] = duration
