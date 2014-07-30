@@ -19,8 +19,6 @@
     </button>
     <ul class="dropdown-menu" role="menu">
       <li><a href="#">All Projects</a></li>
-      <li><a href="#">Annual Reports</a></li>
-      <li><a href="#">Quarterly Reports</a></li>
     </ul>
   </div>
   <h5 class="sub">Publisher</h5>
@@ -29,8 +27,6 @@
     </button>
     <ul class="dropdown-menu" role="menu">
       <li><a href="#">All Publishers</a></li>
-      <li><a href="#">John Abdo</a></li>
-      <li><a href="#">Matthew Laue</a></li>
     </ul>
   </div>
 </section>
