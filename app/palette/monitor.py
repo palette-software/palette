@@ -383,6 +383,7 @@ class MonitorApplication(PaletteRESTHandler):
                 else:
                     print "Invalid event site:", req.GET['site']
 
+            """
             if 'publisher' in req.GET:
                 if req.GET['publisher'].isdigit():
                     event_publisher = int(req.GET['publisher'])
@@ -391,6 +392,7 @@ class MonitorApplication(PaletteRESTHandler):
 
             if req.remote_user.roleid == Role.NO_ADMIN:
                 event_publisher = req.remote_user.system_users_id
+            """
 
             if 'project' in req.GET:
                 if req.GET['project'].isdigit():
