@@ -1466,7 +1466,6 @@ def main():
     UserProfile.populate()
 
     workbook_manager = WorkbookManager(server.environment.envid)
-    workbook_manager.populate()
 
     server.backup = BackupManager(server.environment.envid)
 
