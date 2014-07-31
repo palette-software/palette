@@ -13,13 +13,13 @@
       <div id="status-dropdown" class="btn-group"></div>
       <div id="type-dropdown" class="btn-group"></div>
       <div id="site-dropdown" class="btn-group"></div>
+<!-- TODO: Add back in Alpha 2 or later
       <div id="publisher-dropdown" class="btn-group"></div>
-      <!-- TODO: Add back in Alpha 2 or later
       <div id="project-dropdown" class="btn-group"></div>
       <div class="col-xs-4">
          <input class="form-control" type="text" placeholder="Workbook" style="margin-top:10px;">
       </div>
-      -->
+-->
 
     </section>
   </section>
