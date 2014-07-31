@@ -171,7 +171,7 @@ class TableauStatusMonitor(threading.Thread):
                 self.server.event_control.gen(\
                         EventControl.STATE_STARTED_AFTER_DEGRADED,
                                                           agent.__dict__)
-            elif status == StateManager.STATUS_STOPPED:
+            elif status == TableauProcess.STATUS_STOPPED:
                 self.server.event_control.gen(EventControl.STATE_STOPPED,
                                               agent.__dict__)
             else:
