@@ -1,7 +1,7 @@
 PACKAGE := controller
 
 # This version is used only for the package name.
-VERSION := $(shell awk 'match($$0, /[0-9]+\.[0-9]+/) { print substr($$0, RSTART, RLENGTH) }' ../setup.py)
+VERSION := $(shell awk 'match($$0, /[0-9]+\.[0-9]+\.[0-9]+/) { print substr($$0, RSTART, RLENGTH) }' ../setup.py)
 
 export PYTHONPATH=..
 DATE:=`date +"%b %d, %Y"`
