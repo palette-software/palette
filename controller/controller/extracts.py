@@ -60,7 +60,6 @@ class ExtractManager(object):
             cache[key] = int(row[0])
         return cache
 
-    # FIXME: add a cache
     def workbook_update(self, agent, entry, users={}, cache={}):
         title = entry.title.replace("'", "''")
         stmt = \
@@ -82,10 +81,12 @@ class ExtractManager(object):
             entry.system_users_id = users[key]
         entry.project_id = int(row[2])
 
-    # FIXME: add a cache
-    def datasource_update(self, agent, entry, cache={}):
+    # FIXME: merge the update functions
+    def datasource_update(self, agent, entry, users={}, cache={}):
         title = entry.title.replace("'", "''")
-        stmt = "SELECT owner_id, project_id FROM datasources WHERE name = '%s'"
+        stmt = \
+            "SELECT owner_id, site_id, project_id " +\
+            "FROM datasources WHERE name = '%s'"
         stmt = stmt % (title,)
 
         if entry.title in cache:
@@ -96,8 +97,11 @@ class ExtractManager(object):
                 return # FIXME: log
             row = cache[entry.title] = data[''][0]
 
-        entry.system_users_id = int(row[0])
-        entry.project_id = int(row[1])
+        # key = siteid:id
+        key = str(row[1]) + ':' + str(row[0])
+        if key in users:
+            entry.system_users_id = users[key]
+        entry.project_id = int(row[2])
 
     def load(self, agent):
 
@@ -146,9 +150,11 @@ class ExtractManager(object):
             entry.system_users_id = -1
 
             if entry.subtitle == 'Workbook':
-                self.workbook_update(agent, entry, users=users, cache=workbooks)
+                self.workbook_update(agent, entry,
+                                     users=users, cache=workbooks)
             if entry.subtitle == 'Data Source':
-                self.datasource_update(agent, entry, cache=datasources)
+                self.datasource_update(agent, entry,
+                                       users=users, cache=datasources)
 
             body = dict(agent.__dict__.items() + entry.todict(pretty=True).items())
 
