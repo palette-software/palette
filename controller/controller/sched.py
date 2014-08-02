@@ -211,8 +211,7 @@ class Sched(object):
         if process.returncode:
             server.event_control.gen(EventControl.SCHEDULED_JOB_FAILED,
                 {'stdout': stdout,
-                    'stderr': stderr,
-                    'info': 'Command: ' + command })
+                    'error': ' ' + stderr})
         else:
             """
             server.event_control.gen(EventControl.SCHEDULED_JOB_STARTED,
