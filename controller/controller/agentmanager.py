@@ -974,6 +974,9 @@ class AgentManager(threading.Thread):
             if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
                 self.set_default_backup_destid(agent)
 
+            self.server.event_control.gen(\
+                            EventControl.AGENT_COMMUNICATION, agent.__dict__)
+
         except socket.error, e:
             self.log.debug("Socket error: " + str(e))
             self._close(conn)
