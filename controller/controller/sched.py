@@ -185,6 +185,9 @@ class Sched(object):
 
         if not os.path.exists(path):
             server.log.error("sched job_function: No such command: %s", path)
+            server.event_control.gen(\
+                EventControl.SCHEDULED_JOB_FAILED,
+                { 'error': "No such command: '%s'" % command})
             return
 
         cmd = [ path,
@@ -208,12 +211,12 @@ class Sched(object):
         server.log.debug("cmd '%s' exit status: %d, stdout: '%s', stderr: %s'",
                                 path, process.returncode, stdout, stderr)
 
+        """
         if process.returncode:
             server.event_control.gen(EventControl.SCHEDULED_JOB_FAILED,
                 {'stdout': stdout,
                     'error': ' ' + stderr})
         else:
-            """
             server.event_control.gen(EventControl.SCHEDULED_JOB_STARTED,
                 {'stdout': stdout,
                     'stderr': stderr,
