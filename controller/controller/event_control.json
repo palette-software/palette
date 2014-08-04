@@ -456,8 +456,8 @@
 "level":"E",
 "send_email":"t",
 "subject":"ERROR - Palette Scheduled Job Failure",
-"event_description":"Status: ERROR\nDetails: ${stderr}\nAdditional Details: ${error}",
-"email_message":"Status: ERROR\nDetails: ${stderr}\nAdditional Details: ${error}",
+"event_description":"Status: ERROR\nDetails: ${error}",
+"email_message":"Status: ERROR\nDetails: ${error}",
 "icon":null,
 "color":"red",
 "event_type":"status"
@@ -467,8 +467,8 @@
 "level":"I",
 "send_email":"f",
 "subject":"INFO - Palette Scheduled Job Started",
-"event_description":"Server: ${displayname}\nDetails: ${stdout}\nAdditional Details: ${info}",
-"email_message":"Server: ${displayname}\nDetails: ${stdout}\nAdditional Details: ${info}",
+"event_description":"Server: ${displayname}\nDetails: ${error}",
+"email_message":"Server: ${displayname}\nDetails: ${error}",
 "icon":null,
 "color":"green",
 "event_type":"status"
