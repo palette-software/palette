@@ -13,14 +13,23 @@ function($, template) {
         this.id = $(node).attr('data-id');
         this.name = $(node).attr('data-name');
         this.href = $(node).attr('data-href');
+        this.pw = $(node).hasClass('password');
+        $(node).css('display', 'inherit');
 
         this.view_template = $('#editbox-view').html();
         template.parse(this.view_template);
         this.edit_template = $('#editbox-edit').html();
         template.parse(this.edit_template);
 
-        var html = template.render(this.view_template, {'value':this.value});
-        $(node).html(html);
+        this.render = function (value)
+        {
+            if (this.pw) {
+                value = (value.length > 0) ? '********' : '';
+            }
+            var html = template.render(this.view_template, {'value':value});
+            $(this.node).html(html);
+        }
+        this.render(this.value);
 
         this.edit = function ()
         {
@@ -36,6 +45,12 @@ function($, template) {
             $('.cancel', this.node).bind('click', function(event) {
                 event.stopPropagation();
                 $(this).parent().data().cancel();
+            });
+            $('input', this.node).on('keyup', function(event) {
+                if (event.which == 13 || event.keyCode ==13) {
+                    event.stopPropagation();
+                    $(this).parent().data().ok();
+                }
             });
         }
 
@@ -78,8 +93,7 @@ function($, template) {
                 value = this.value;
             }
 
-            var html = template.render(this.view_template, {'value': value});
-            $(node).html(html);
+            this.render(value);
             this.state = VIEW;
 
             if (success) {
@@ -96,9 +110,7 @@ function($, template) {
 
         this.cancel = function ()
         {
-            var data = {'value':this.value};
-            var html = template.render(this.view_template, data);
-            $(node).html(html);
+            this.render(this.value);
             this.state = VIEW;
             $('i', this.node).bind('click', function(event) {
                 event.stopPropagation();
