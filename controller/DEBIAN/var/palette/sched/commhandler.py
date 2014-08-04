@@ -35,18 +35,26 @@ class CommHandler(object):
         sock.write(self.preamble + ' ' + cmd + '\n')
         sock.flush()
         data = sock.readline().strip()
-        print data
+        if verbose:
+            print "Response:", data
         if data != 'OK':
             parts = data.split()
             if len(parts) < 2 or not parts[1].isdigit():
-                print "Bad response from controller with command:", cmd
+                print >> sys.stderr, \
+                    "Bad response from controller with command: '%s': %s" % \
+                                                                    (cmd, data)
                 sys.exit(1)
 
             errnum = int(parts[1])
             # Skip on BUSY or WRONG_STATE if requested
             if skip_on_wrong_state and (errnum == 20 or errnum == 21):
-                print "Skipping the following command due to wrong state:", cmd
+                print >> sys.stderr, \
+                    "Skipping command due to wrong state: '%s': %s" % \
+                                                                    (cmd, data)
+                # Quietly exit
                 sys.exit(0)
+            print >> sys.stderr, \
+                "Command '%s' failed: %s" % (cmd, data)
             sys.exit(1)
         if sync:
             self.data = sock.readline()

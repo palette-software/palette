@@ -755,6 +755,11 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_usage(self.do_info.__usage__)
             return
 
+        if not self.server.odbc_ok():
+            self.error(ERROR_WRONG_STATE, "FAIL: Main state is %s." % \
+                                        self.server.stateman.get_state())
+            return
+
         if not len(cmd.args):
             agent = self.get_agent(cmd.dict)
             if not agent:
@@ -796,6 +801,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         if not agent:
             return
 
+        if not self.server.odbc_ok():
+            self.error(ERROR_WRONG_STATE, "FAIL: Main state is %s." % \
+                                            self.server.stateman.get_state())
+            return
+
         self.ack()
         d = self.server.license(agent)
         self.report_status(d)
@@ -808,6 +818,11 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         agent = self.get_agent(cmd.dict)
         if not agent:
+            return
+
+        if not self.server.odbc_ok():
+            self.error(ERROR_WRONG_STATE, "FAIL: Main state is %s." % \
+                                            self.server.stateman.get_state())
             return
 
         if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:

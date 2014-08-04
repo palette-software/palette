@@ -8,20 +8,16 @@ if __name__ == "__main__":
     if not comm.send_cmd("ziplogs", sync=True, close=False, verbose=True,
                                                     skip_on_wrong_state=True):
         print "ziplogs failed with:", comm.error
-        sys.exit(1)
     print "ziplogs reply:", comm.data
 
     if not comm.send_cmd("backup", sync=True, close=False, verbose=True,
                                                     skip_on_wrong_state=True):
         print "backup failed with:", comm.error
-        sys.exit(1)
     print "backup reply:", comm.data
 
     if not comm.send_cmd("cleanup", sync=True, close=True, verbose=True,
                                                     skip_on_wrong_state=True):
         print "cleanup failed with:", comm.error
-        print "cleanup data:", comm.data
-        sys.exit(1)
-    print "cleanup reply:", comm.data
+    print "cleanup data:", comm.data
 
     sys.exit(0)
