@@ -105,9 +105,12 @@ class ExtractManager(object):
 
     def load(self, agent):
 
+        # FIXME
         if not self.server.odbc_ok():
             return {"error": "Cannot run command while in state: %s" % \
-                                            self.server.stateman.get_state()}
+                        self.server.stateman.get_state()}
+
+        self.prune(agent)
 
         stmt = "SELECT id, finish_code, notes, started_at, completed_at, "+\
             "title, subtitle, site_id, job_name " +\
@@ -184,6 +187,24 @@ class ExtractManager(object):
         if entry:
                 return str(entry.extractid)
         return None
+
+    def get_last_background_jobs_id(self, agent):
+        stmt = "SELECT MAX(id) FROM background_jobs"
+        data = agent.odbc.execute(stmt)
+        if not data or not '' in data or data[''][0] is None:
+            return 0
+        row = data[''][0]
+        return int(row[0])
+
+    def prune(self, agent):
+        """
+        If the Tableau Server was restored, there may be events in the
+        Controller database that no longer exist: remove them.
+        """
+        maxid = self.get_last_background_jobs_id(agent)
+        meta.Session.query(ExtractEntry).\
+            filter(ExtractEntry.extractid > maxid).\
+            delete(synchronize_session='fetch')
 
     # FIXME: add project_id? maybe job_name?
     def eventgen(self, key, data, timestamp=None):

@@ -1549,6 +1549,12 @@ div.refresh {
     padding-bottom: 160px;
 }
 
+/* EditBox */
+.editbox.password {
+    display: none;
+}
+
+/* OnOff */
 .onoffswitch {
     position: relative;
     width: 66px;
