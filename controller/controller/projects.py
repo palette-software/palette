@@ -32,7 +32,7 @@ class Project(meta.Base):
         return meta.Session.query(Project).order_by(Project.name).all()
 
     @classmethod
-    def load(cls, agent):
+    def sync(cls, agent):
         stmt = \
             'SELECT id, name, owner_id, created_at, updated_at, ' +\
             'state, description, site_id, special ' +\

@@ -35,7 +35,7 @@ class DataConnection(meta.Base):
         return entry
 
     @classmethod
-    def load(cls, agent):
+    def sync(cls, agent):
         stmt = \
             'SELECT id, server, dbclass, port, username, password, ' +\
             'name, dbname, tablename, owner_type, owner_id, '+\
