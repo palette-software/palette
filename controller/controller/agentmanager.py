@@ -919,8 +919,8 @@ class AgentManager(threading.Thread):
                     return
                 key = body['license-key'].strip()
                 if key != self.server.domain.license_key:
-                    self.log.error("Agent license is incorrect '%s' != '%s'",\
-                                       key, self.server.domain.license_key)
+                    self.log.error("Agent license is incorrect '%s' != '%s'",
+                                   key, self.server.domain.license_key)
                     self._close(conn)
                     return
 
@@ -934,10 +934,13 @@ class AgentManager(threading.Thread):
             agent.odbc = ODBC(agent)
             agent.filemanager = FileManager(agent)
 
-            pinfo = self.server.init_new_agent(agent)
-            if not pinfo:
-                self.log.error("Bad agent with uuid: '%s'.  Disconnecting.",
-                                                                        uuid)
+            try:
+                pinfo = self.server.init_new_agent(agent)
+            except (IOError, ValueError, exc.InvalidStateError,
+                    exc.HTTPException, httplib.HTTPException) as e:
+                self.log.error(
+                    "Bad agent with uuid: '%s'.  Disconnecting.  Error: %s",
+                    uuid, str(e))
                 self._close(conn)
                 return
 
@@ -953,7 +956,7 @@ class AgentManager(threading.Thread):
             # Now that the agent type and displayname are set, we
             # can update the volume information from pinfo.
             if not self.update_agent_pinfo_vols(agent, pinfo):
-                self.log.error(\
+                self.log.error(
                     "pinfo vols bad for agent with uuid: '%s'.  " \
                         "Disconnecting.", uuid)
                 self._close(conn)
@@ -982,12 +985,13 @@ class AgentManager(threading.Thread):
             self._close(conn)
         except Exception, e:
             self.log.error("Exception:")
-            traceback.format_exc()
+            exc_type, exc_value, exc_traceback = sys.exc_info()
             self.log.error(str(e))
-            self.log.error(traceback.format_exc())
+            self.log.error(traceback.format_tb(exc_traceback))
         finally:
             session.rollback()
             meta.Session.remove()
+
 
     def set_default_backup_destid(self, agent):
         # If there is no backup configuration BACKUP_DEST_ID yet,

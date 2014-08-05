@@ -216,9 +216,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             line = fmt % args
         except:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            line = "ERROR %d %s.  Traceback:\n %s" % \
-                (ERROR_INTERNAL, sys.exc_info()[1],
-                                        ''.join(traceback.format_stack()))
+            line = "ERROR %d %s.  fmt: '%s', args: '%s', Traceback: %s" % \
+                (ERROR_INTERNAL,
+                    sys.exc_info()[1],
+                        str(fmt), str(args),
+                        ''.join(traceback.format_tb(exc_traceback)).\
+                                                        replace('\n', ''))
 #        if not line.endswith('\n'):
 #            line += '\n'
         try:
@@ -818,11 +821,6 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         agent = self.get_agent(cmd.dict)
         if not agent:
-            return
-
-        if not self.server.odbc_ok():
-            self.error(ERROR_WRONG_STATE, "FAIL: Main state is %s." % \
-                                            self.server.stateman.get_state())
             return
 
         if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
@@ -1755,15 +1753,18 @@ class CliHandler(socketserver.StreamRequestHandler):
 
             self.server.log.debug("telnet command: '%s'", data)
 
-            session = meta.Session()
             try:
                 cmd = Command(self.server, data)
             except CommandException, e:
                 self.error(ERROR_COMMAND_SYNTAX_ERROR, str(e))
                 continue
-            finally:
-                session.rollback()
-                meta.Session.remove()
+            except Exception, e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                tb = ''.join(traceback.format_tb(exc_traceback)).\
+                                                        replace('\n', '')
+                line = "cmd: %s.  Traceback: %s" % (sys.exc_info()[1], tb)
+
+                self.error(ERROR_COMMAND_FAILED, line)
 
             if not hasattr(self, 'do_'+cmd.name):
                 self.error(ERROR_NO_SUCH_COMMAND,
@@ -1771,5 +1772,22 @@ class CliHandler(socketserver.StreamRequestHandler):
                 continue
 
             # <command> /displayname=X /type=primary, /uuid=Y, /hostname=Z [args]
-            f = getattr(self, 'do_'+cmd.name)
-            f(cmd)
+            session = meta.Session()
+            try:
+                f = getattr(self, 'do_'+cmd.name)
+                f(cmd)
+            except exc.InvalidStateError, e:
+                self.error(ERROR_WRONG_STATE, e.message)
+            except (IOError, ValueError) as e:
+                self.error(ERROR_COMMAND_FAILED, "%s", str(e))
+            except Exception, e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                tb = ''.join(traceback.format_tb(exc_traceback)).\
+                                                        replace('\n', '')
+                line = "%s.  Traceback: %s" % (sys.exc_info()[1], tb)
+
+                self.error(ERROR_COMMAND_FAILED, line)
+            finally:
+                session.rollback()
+                meta.Session.remove()
+

@@ -80,6 +80,7 @@ class FirewallManager(object):
 
         ports = [entry.port for entry in rows]
         body = agent.firewall.enable(ports)
+        success = True
         if 'error' in body:
             self.log.error(\
                 ("open_firewall_ports failed to open ports '%s' on " +
@@ -91,6 +92,7 @@ class FirewallManager(object):
                             'error': body['error'], 
                             'info': "Ports: %s" % str(ports)}.items() + \
                                                     agent.__dict__.items()))
+            success = False
             color = 'red'
         else:
             color = 'green'
@@ -100,6 +102,8 @@ class FirewallManager(object):
             update({'color': color}, synchronize_session=False)
 
         session.commit()
+        if not success:
+            raise IOError("Could not open all firewall ports")
 
     def do_firewall_ports(self, agent):
         # Make sure the agent's firewall rows are populated in the table.

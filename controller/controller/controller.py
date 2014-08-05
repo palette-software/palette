@@ -472,6 +472,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("POST /%s getresponse returned null body" % uri)
         return body
 
+    def success(self, body):
+        if 'error' in body:
+            return False
+        else:
+            return True
+
+    def fail(self, body):
+        if 'error' in body:
+            return True
+        else:
+            return False
+
     def copy_cmd(self, source_path, dest_name, target_dir=None):
         """Sends a phttp command and checks the status.
            copy source-displayname:/path/to/file dest-displayname
@@ -921,23 +933,27 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def get_pinfo(self, agent, update_agent=False):
         if self.upgrading():
             self.log.info("get_pinfo: Failing due to UPGRADING")
-            return {"error": "Cannot run command while UPGRADING"}
+            raise exc.InvalidStateError("Cannot run command while UPGRADING")
 
         aconn = agent.connection
         body = self.cli_cmd('pinfo', agent, immediate=True)
         # FIXME: add a function to test cli success (cli_success?)
-        if not 'exit-status' in body or body['exit-status'] != 0:
-            return body;
+        if not 'exit-status' in body:
+            raise IOError("Missing 'exit-status' from pinfo command response.")
+        if body['exit-status'] != 0:
+            raise IOError("pinfo failed with exit status: %d" % \
+                                                            body['exit-status'])
         json_str = body['stdout']
         try:
             pinfo = json.loads(json_str)
         except ValueError, e:
             self.log.error("Bad json from pinfo. Error: %s, json: %s", \
                                str(e), json_str)
-            return body
+            raise IOError("Bad json from pinfo.  Error: %s, json: %s" % \
+                (str(e), json_str))
         if pinfo is None:
             self.log.error("Bad pinfo output: %s", json_str)
-            return body
+            raise IOError("Bad pinfo output: %s" % json_str)
 
         # When we are called from init_new_agent(), we don't know
         # the agent_type yet and update_agent_pinfo_vols() needs to
@@ -951,6 +967,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.error(\
                     "get_pinfo: Could not update agent: unknown " + \
                                     "displayname.  uuid: %s",  agent.uuid)
+                raise IOError("get_pinfo: Could not update agent: unknown " + \
+                        "displayname.  uuid: %s", agent.uuid)
+
         return pinfo
 
     def license(self, agent):
@@ -991,23 +1010,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return d
 
     def yml(self, agent):
-        if not self.odbc_ok():
-            main_state = self.stateman.get_state()
-            self.log.info("Failed.  Current state: %s",
-                                                    main_state)
-            return {"error": "Cannot run command while in state: %s" % \
-                                                                main_state}
-
         path = agent.path.join(agent.tableau_data_dir, "data", "tabsvc",
                                "config", "workgroup.yml")
-        try:
-            yml = agent.filemanager.get(path)
-        except (exc.HTTPException, httplib.HTTPException,
-                EnvironmentError) as e:
-            return self.error("filemanager.get(%s) on %s failed with: %s" % \
-                                  (path, agent.displayname, str(e)))
-
-
+        yml = agent.filemanager.get(path)
         body = self.agentmanager.update_agent_yml(agent.agentid, yml)
         return body
 
@@ -1016,10 +1021,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if not self.odbc_ok():
             main_state = self.stateman.get_state()
-            self.log.info("Failed.  Current state: %s",
-                                                    main_state)
-            return {"error": "Cannot run command while in state: %s" % \
-                                                                main_state}
+            self.log.info("Failed.  Current state: %s", main_state)
+            raise exc.InvalidStateError(
+                "Cannot run command while in state: %s" % main_state)
 
         error_msg = ""
         sync_dict = {}
@@ -1266,10 +1270,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         aconn = agent.connection
 
         pinfo = self.get_pinfo(agent, update_agent=False)
-        if pinfo.has_key("error"):
-            self.log.error("Couldn't run info command on %s: %s",
-                            aconn.displayname, pinfo['error'])
-            return False
 
         self.log.debug("info returned from %s: %s", aconn.displayname, str(pinfo))
         # Set the type of THIS agent.
@@ -1299,12 +1299,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # Note: Don't call this before update_agent_pinfo_dirs()
         # (needed for agent.tableau_data_dir).
-        if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
-                                                            self.odbc_ok():
-            self.yml(agent)
-            self.auth.load(agent)
-            self.sync_cmd(agent)
-            self.extract.load(agent)
+        if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+            self.yml(agent)     # raises an exception on fail
+            if self.odbc_ok():
+                if self.fail(self.auth.load(agent)):
+                    raise IOError("initial auth load failed")
+                self.sync_cmd(agent)  # ok to fail if not IOError
+                self.extract.load(agent)    # ok to fail if ot IOError
 
         if agent.iswin:
             self.firewall_manager.do_firewall_ports(agent)
