@@ -10,3 +10,6 @@ class HTTPException(httplib.HTTPException):
         self.status = status
         self.reason = reason
         self.body = body
+
+class InvalidStateError(StandardError):
+    pass
