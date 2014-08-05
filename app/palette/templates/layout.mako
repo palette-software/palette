@@ -97,7 +97,7 @@
 </script>
 
 <script id="editbox-edit" type="x-tmpl-mustache">
-  <input value="{{value}}" />
+  <input type="text" value="{{value}}" />
   <i class="fa fa-fw fa-check ok"></i>
   <i class="fa fa-fw fa-times cancel"></i>
 </script>

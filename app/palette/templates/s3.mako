@@ -27,7 +27,7 @@ h2 {
            ${obj.access_key}
          </p>
          <h3>Secret Access Key</h3>
-         <p class="editbox" data-href="/rest/s3/secret">
+         <p class="editbox password" data-href="/rest/s3/secret">
            ${obj.secret}
          </p>
          <h3>Bucket Name</h3>

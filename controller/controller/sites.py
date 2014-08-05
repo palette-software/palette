@@ -38,7 +38,7 @@ class Site(meta.Base):
         return meta.Session.query(Site).order_by(Site.name).all()
 
     @classmethod
-    def load(cls, agent):
+    def sync(cls, agent):
         stmt = \
             'SELECT id, name, status, created_at, updated_at, ' +\
             'user_quota, content_admin_mode, storage_quota, metrics_level, '+\

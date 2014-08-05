@@ -38,6 +38,8 @@ class HTTPRequestEntry(meta.Base):
 
     @classmethod
     def load(cls, agent):
+        cls.prune(agent)
+
         stmt = \
             'SELECT id, controller, action, http_referer, http_user_agent, '+\
             'http_request_uri, remote_ip, created_at, session_id, ' +\
@@ -83,3 +85,19 @@ class HTTPRequestEntry(meta.Base):
 
         d = {u'status': 'OK', u'count': len(data[''])}
         return d
+
+    @classmethod
+    def get_last_http_requests_id(cls, agent):
+        stmt = "SELECT MAX(id) FROM http_requests"
+        data = agent.odbc.execute(stmt)
+        if not data or not '' in data or data[''][0] is None:
+            return 0
+        row = data[''][0]
+        return int(row[0])
+
+    @classmethod
+    def prune(cls, agent):
+        maxid = cls.get_last_http_requests_id(agent)
+        meta.Session.query(HTTPRequestEntry).\
+            filter(HTTPRequestEntry.reqid > maxid).\
+            delete(synchronize_session='fetch')

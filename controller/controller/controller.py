@@ -1028,27 +1028,30 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         error_msg = ""
         sync_dict = {}
 
-        body = Site.load(agent)
+        body = Site.sync(agent)
         if 'error' in body:
-            error_msg += "Site load failure: " + body['error']
+            error_msg += "Site sync failure: " + body['error']
         else:
             sync_dict['sites'] = body['count']
 
-        body = Project.load(agent)
+        body = Project.sync(agent)
         if 'error' in body:
-            error_msg += "Project load failure: " + body['error']
+            if error_msg: error_msg += ", "
+            error_msg += "Project sync failure: " + body['error']
         else:
             sync_dict['projects'] = body['count']
 
         body = HTTPRequestEntry.load(agent)
         if 'error' in body:
+            if error_msg: error_msg += ", "
             error_msg += "HTTPRequest load failure: " + body['error']
         else:
             sync_dict['http-requests'] = body['count']
 
-        body = DataConnection.load(agent)
+        body = DataConnection.sync(agent)
         if 'error' in body:
-            error_msg += "DataConnection load failure: " + body['error']
+            if error_msg: error_msg += ", "
+            error_msg += "DataConnection sync failure: " + body['error']
         else:
             sync_dict['data-connections'] = body['count']
 
