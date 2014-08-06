@@ -15,6 +15,7 @@ import exc
 
 from agent import Agent
 from agentmanager import AgentManager
+from agentinfo import AgentYmlEntry
 from backup import BackupManager
 from event_control import EventControl
 from gcs import GCS
@@ -1112,9 +1113,17 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         body = self.server.cli_cmd('tabadmin stop', agent)
         if self.success(body) and start_maint:
+            port = AgentYmlEntry.get(agent, 'gateway.public.port', default=None)
+            if port is None:
+                port = -1
+            else:
+                try:
+                    port = int(port)
+                except:
+                    port = -1
             # Start the maintenance server only after Tableau has stopped
             # and reqlinquished the web server port.
-            maint_body = self.server.maint("start")
+            maint_body = self.server.maint("start", port=port, agent=agent)
             if self.failed(maint_body):
                 msg = "maint start failed: " + str(maint_body)
                 if not 'info' in body:
