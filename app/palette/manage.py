@@ -46,6 +46,8 @@ class ManageApplication(PaletteRESTHandler):
             cmd = cmd + ' nobackup'
         if not self.getbool(req, 'license'):
             cmd = cmd + ' nolicense'
+        if not self.getbool(req, 'maint'):
+            cmd = cmd + ' nomaint'
         self.telnet.send_cmd(cmd, req=req)
         return {}
 

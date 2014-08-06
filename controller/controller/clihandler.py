@@ -1000,11 +1000,12 @@ class CliHandler(socketserver.StreamRequestHandler):
         # STARTED is set by the status monitor since it really knows the status.
         self.report_status(body)
 
-    @usage('stop [no-backup|nobackup] [no-license|nolicense]')
+    @usage('stop [no-backup|nobackup] [no-license|nolicense] [no-maint|nomaint]')
     def do_stop(self, cmd):
 
         backup_first = True
         license_check = True
+        start_maint = True
 
         for arg in cmd.args:
             arg = arg.lower()
@@ -1012,6 +1013,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                 backup_first = False
             elif arg == "no-license" or arg == "nolicense":
                 license_check = False
+            elif arg == "no-maint" or arg == "nomaint":
+                start_maint = False
             else:
                 self.print_usage(self.do_stop.__usage__)
                 return
@@ -1108,7 +1111,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: Reply with "OK" only after the agent received the command?
 
         body = self.server.cli_cmd('tabadmin stop', agent)
-        if self.success(body):
+        if self.success(body) and start_maint:
             # Start the maintenance server only after Tableau has stopped
             # and reqlinquished the web server port.
             maint_body = self.server.maint("start")
