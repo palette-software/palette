@@ -14,7 +14,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=980,minimal-ui">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link href='//fonts.googleapis.com/css?family=Roboto:300,500' rel='stylesheet' type='text/css'>
 <link rel="stylesheet" type="text/css" href="/app/module/palette/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/app/module/palette/css/font-awesome.min.css">
 <link rel="stylesheet" type="text/css" href="/app/module/palette/fonts/fonts.css">
