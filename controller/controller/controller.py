@@ -1316,7 +1316,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if agent.iswin:
             self.firewall_manager.do_firewall_ports(agent)
 
-        # Cleanup.
         self.config_servers(agent)
 
         return pinfo
@@ -1344,13 +1343,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # If tableau is stopped, turn on the maintenance server
         if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
             return
-
-        main_state = self.stateman.get_state()
-        if main_state == StateManager.STATE_STOPPED:
-            body = self.maint("start", agent=agent, send_alert=False)
-            if body.has_key("error"):
-                self.event_control.gen(EventControl.MAINT_START_FAILED,
-                            dict(body.items() + agent.__dict__.items()))
 
     def remove_agent(self, agent, reason="", gen_event=True):
         manager = self.agentmanager
