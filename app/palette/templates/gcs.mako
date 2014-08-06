@@ -5,12 +5,6 @@
 <title>Palette - User Configuration</title>
 </%block>
 
-<style>
-h2 {
-  text-transform: uppercase;
-}
-</style>
-
 <section class="dynamic-content">
   <section class="top-zone">
     <section class="row">
@@ -21,7 +15,7 @@ h2 {
     <section class="row">
       <section class="col-xs-12">
          <p>Cloud storage to save your Tableau backups, logfiles, workbooks and other Palette generated files</p>
-         <h2>Credentials</h2>
+         <h2 class="page-subtitle">Credentials</h2>
          <h3>Access Key ID</h3>
          <p class="editbox" data-href="/rest/gcs/access-key">
            ${obj.access_key}
