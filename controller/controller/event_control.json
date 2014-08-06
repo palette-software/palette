@@ -529,6 +529,17 @@
 "event_type":"status"
 },
 {
+"key":"STATE-UNEXPECTED-STOPPED-AFTER-DEGRADED",
+"level":"E",
+"send_email":"t",
+"subject":"ERROR - Tableau Server Stopped Unexpectedly after being Degraded",
+"event_description":"Status: ERROR\nDetails: Your Tableau Server has been unexpectedly Stopped after being Degraded. Please investigate the cause.",
+"email_message":"Status: ERROR\nDetails: Your Tableau Server has been unexpectedly Stopped after being Degraded. Please investigate the cause.",
+"icon":null,
+"color":"red",
+"event_type":"status"
+},
+{
 "key":"TABLEAU-START-FAILED",
 "level":"E",
 "send_email":"f",
