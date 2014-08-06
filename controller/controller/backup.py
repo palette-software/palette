@@ -20,6 +20,7 @@ class BackupEntry(meta.Base):
     s3id = Column(BigInteger, ForeignKey("s3.s3id"))
     volid = Column(BigInteger, ForeignKey("agent_volumes.volid"))
     auto = Column(Boolean)  # automatically requested/scheduled
+    encrypted = Column(Boolean)  # whether or not it is encrypted
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
       server_onupdate=func.current_timestamp())
