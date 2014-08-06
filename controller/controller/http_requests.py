@@ -93,6 +93,8 @@ class HTTPRequestEntry(meta.Base):
         if not data or not '' in data or data[''][0] is None:
             return 0
         row = data[''][0]
+        if row[0] is None:
+            return 0
         return int(row[0])
 
     @classmethod
