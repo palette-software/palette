@@ -5,12 +5,6 @@
 <title>Palette - User Configuration</title>
 </%block>
 
-<style>
-h2 {
-  text-transform: uppercase;
-}
-</style>
-
 <section class="dynamic-content storage-page">
   <section class="top-zone">
     <section class="row">
@@ -22,7 +16,7 @@ h2 {
       <section class="col-xs-12">
          <p>Settings for your Palette generated Tableau backups, logfiles, workbooks and other files</p>
 
-         <h2>Storage Location</h2>
+         <h2 class="page-subtitle">Storage Location</h2>
 
          <div class="btn-group" id="storage-destination"
               data-href="/rest/storage/dest">
@@ -42,7 +36,7 @@ h2 {
 
     <div id="storage-encrypt" class="onoffswitch yesno" data-href="/rest/storage/encryption"></div>
 
-    <h2>Backups</h2>
+    <h2 class="page-subtitle">Backups</h2>
     <h3>Daily Scheduled Backups to Retain</h3>
     <p>The number of daily backups you want Palette to keep in storage</p>
     <p><span id="backup-auto-retain-count" data-href="/rest/storage/auto" class="btn-group"></span> Backups</p>
@@ -51,12 +45,12 @@ h2 {
     <p>The number of user generated Tableau .tsbak backups you want Palette to keep in storage</p>
     <p><span id="backup-user-retain-count" data-href="/rest/storage/user" class="btn-group"></span> Backups</P>
 
-    <h2>Logfiles</h2>
+    <h2 class="page-subtitle">Logfiles</h2>
     <h3>Log File Archives to Retain</h3>
     <p>The number of Tableau logfile archives you want Palette to keep in storage</p>
     <p><span id="log-archive-retain-count" data-href="/rest/storage/logs" class="btn-group"></span> Log Archives</p>
 
-    <h2>Workbooks</h2>
+    <h2 class="page-subtitle">Workbooks</h2>
     <h3>Archive Workbooks Only as .twb Files (COMING SOON)</h3>
     <p>Workbook .twb files are just small configuration files, while .twbx are configuration plus extract data which can become very large files</p>
     <div id="workbook-as-twb" class="onoffswitch yesno" data-href="/rest/storage/twb"></div>
