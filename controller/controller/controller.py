@@ -723,12 +723,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # 'tabadmin restore ...' starts tableau as part of the
         # restore procedure.
         # fixme: Maybe the maintenance web server wasn't running?
+        # We currently don't keep track, but assume the maintenance
+        # web server may be running if Tableau is stopped.
         maint_msg = ""
-        maint_body = self.maint("stop", agent=primary_agent)
-        if maint_body.has_key("error"):
-            self.log.info("Restore: maint stop failed: " + maint_body['error'])
-            # continue on, not a fatal error...
-            maint_msg = "Restore: maint stop failed.  Error was: %s" \
+        if orig_state == StateManager.STATE_STOPPED:
+            maint_body = self.maint("stop", agent=primary_agent)
+            if maint_body.has_key("error"):
+                self.log.info("Restore: maint stop failed: " + maint_body['error'])
+                # continue on, not a fatal error...
+                maint_msg = "Restore: maint stop failed.  Error was: %s" \
                                                     % maint_body['error']
 
         self.stateman.update(StateManager.STATE_STARTING_RESTORE)
