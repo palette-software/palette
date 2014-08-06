@@ -151,14 +151,15 @@ class MonitorApplication(PaletteRESTHandler):
             return 'yellow'
         return 'green'
 
-    def volume_info(self, agentid):
+    def volume_info(self, agent):
         (low,high) = self.disk_watermark('low'), self.disk_watermark('high')
 
         volumes = []
-        L = meta.Session.query(AgentVolumesEntry).\
-            filter(AgentVolumesEntry.agentid == agentid).\
-            order_by(AgentVolumesEntry.name).\
-            all()
+        q = meta.Session.query(AgentVolumesEntry).\
+            filter(AgentVolumesEntry.agentid == agent.agentid)
+        if agent.iswin:
+            q = q.filter(AgentVolumesEntry.vol_type == 'Fixed')
+        L = q.order_by(AgentVolumesEntry.name).all()
         for v in L:
             if not v.size or v.available_space is None:
                 continue
@@ -168,11 +169,11 @@ class MonitorApplication(PaletteRESTHandler):
             volumes.append({'name': v.name, 'value': value, 'color': color})
         return volumes
 
-    def firewall_info(self, agentid):
+    def firewall_info(self, agent):
         ports = []
 
         rows = meta.Session.query(FirewallEntry).\
-            filter(FirewallEntry.agentid == agentid).\
+            filter(FirewallEntry.agentid == agent.agentid).\
             all()
 
         for entry in rows:
@@ -284,8 +285,8 @@ class MonitorApplication(PaletteRESTHandler):
                     if lic_color < agent_color_num:
                         agent_color_num = lic_color
 
-                agent['volumes'] = self.volume_info(entry.agentid)
-                agent['ports'] = self.firewall_info(entry.agentid)
+                agent['volumes'] = self.volume_info(entry)
+                agent['ports'] = self.firewall_info(entry)
 
                 vol_lowest_color = self.lowest_color(agent['volumes'])
                 firewall_lowest_color = self.lowest_color(agent['ports'])
