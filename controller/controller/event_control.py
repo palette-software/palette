@@ -11,6 +11,8 @@ from profile import UserProfile
 
 from mixin import BaseMixin
 
+import re
+
 class EventControl(meta.Base, BaseMixin):
     __tablename__ = "event_control"
 
@@ -51,9 +53,6 @@ class EventControl(meta.Base, BaseMixin):
     STATE_STARTED_AFTER_DEGRADED="STATE-STARTED-AFTER-DEGRADED"
     STATE_UNEXPECTED_STATE_STOPPED="STATE-UNEXPECTED-STATE-STOPPED"
     STATE_UNEXPECTED_STATE_STARTED="STATE-UNEXPECTED-STATE-STARTED"
-
-    STATE_UNEXPECTED_STOPPED_AFTER_DEGRADED=\
-        "STATE-UNEXPECTED-STOPPED-AFTER-DEGRADED"
 
     BACKUP_STARTED="BACKUP-STARTED"
     BACKUP_FINISHED="BACKUP-FINISHED"
@@ -233,6 +232,8 @@ class EventControlManager(object):
                             "\ndata: " + str(data)
         else:
            event_description = self.make_default_description(data)
+
+        event_description = re.sub("(\n|\r\n){3,}", "\n\n", event_description)
 
         # Log the event to the database
         self.event.add(key, subject, event_description, event_entry.level,
