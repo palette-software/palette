@@ -15,7 +15,6 @@ function($, template) {
         this.name = $(node).attr('data-name');
         this.href = $(node).attr('data-href');
         this.pw = $(node).hasClass('password');
-        $(node).css('display', 'inherit');
 
         this.view_template = $('#editbox-view').html();
         template.parse(this.view_template);

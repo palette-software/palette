@@ -1447,10 +1447,6 @@ article.event > div.summary > div {
 article.event > div.summary div.col2 {
     padding: 0 10px 0 0;
 }
-/* for monitor slider on the server page */
-article.event > div.summary div.col2 div:first-child {
-    display: inline;
-}
 article.event > div.summary h3 {
     font-family: "Proxima Nova Semibold";
     line-height: 20px;
@@ -1554,11 +1550,6 @@ h2.page-subtitle {
 }
 .storage-page {
     padding-bottom: 160px;
-}
-
-/* EditBox */
-.editbox.password {
-    display: none;
 }
 
 /* OnOff */
