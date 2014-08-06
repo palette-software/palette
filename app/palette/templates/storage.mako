@@ -27,9 +27,10 @@
 
   <section>
     <h3>Alert When My Server Attached and Palette Cloud Storage Volumes Attain These Thresholds</h3>
-    <p>Warning Alert at <span id="disk-watermark-low" data-href="/rest/storage/low" class="btn-group"></span> %
-      &nbsp; &nbsp; &nbsp; &nbsp;
-    Error Alert at <span id="disk-watermark-high" data-href="/rest/storage/high" class="btn-group"></span> %</p>
+    <p>
+      <span>Warning Alert at <span id="disk-watermark-low" data-href="/rest/storage/low" class="btn-group"></span> %</span>
+      &nbsp;<span>Error Alert at <span id="disk-watermark-high" data-href="/rest/storage/high" class="btn-group"></span> %</span>
+    </p>
 
     <h3>Encrypt Palette Generated Files (COMING SOON)</h3>
     <p>Encrypts your Palette generated Tableau backups, logs and workbooks using industry standard encryption adding another level of security.</p>
