@@ -157,7 +157,7 @@
 {
 "key":"BACKUP-FINISHED",
 "level":"I",
-"send_email":"f",
+"send_email":"t",
 "subject":"INFO - Backup Requested by %(username)s Completed",
 "event_description":"Status: INFO\nUser: ${username}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
 "email_message":"Status: INFO\nUser: ${username}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
