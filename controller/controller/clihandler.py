@@ -849,8 +849,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = self.server.sched.delete(cmd.args[1:])
         elif len(cmd.args) == 7 and cmd.args[0] == 'add':
             args = cmd.args[1:]
-            body = self.server.sched.add(args[0], args[1], args[2], args[3],
-                                                        args[4], args[5])
+            name = args[5]
+            body = self.server.sched.add_cron_job(name, minute=args[0],
+                                                  hour=args[1],
+                                                  day_of_month=args[2],
+                                                  month=args[3],
+                                                  day_of_week=args[4])
             if self.success(body):
                 self.ack()
         else:
