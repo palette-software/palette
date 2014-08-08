@@ -19,6 +19,7 @@ from agentinfo import AgentYmlEntry
 from backup import BackupManager
 from event_control import EventControl
 from gcs import GCS
+from http_requests import HTTPRequestEntry
 from s3 import S3
 from system import SystemEntry
 from state import StateManager
@@ -481,6 +482,28 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(main_state)
 
         aconn.user_action_unlock()
+        self.report_status(body)
+
+    @usage('http_request IMPORT')
+    def do_http_request(self, cmd):
+        """Import http_requests table from Tableau"""
+
+        # Reserved for later expansion
+        if len(cmd.args) != 1 or cmd.args[0].upper() != 'IMPORT':
+            self.print_usage(self.do_http_request.__usage__)
+            return
+
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            return
+
+        if not self.server.odbc_ok():
+            self.error(ERROR_WRONG_STATE, "FAIL: Main state is %s." % \
+                                            self.server.stateman.get_state())
+            return
+
+        self.ack()
+        body = HTTPRequestEntry.load(agent)
         self.report_status(body)
 
 
@@ -1547,7 +1570,6 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         self.ack()
-
         body = self.server.sync_cmd(agent)
 
         if self.failed(body):

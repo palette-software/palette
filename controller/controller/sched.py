@@ -106,6 +106,9 @@ class Sched(threading.Thread):
         # sync tables every 5 minutes
         self.add_cron_job(name='sync', minute="3/5")
 
+        # http_requests import every 5 minutes
+        self.add_cron_job(name='http_request', minute='3/5')
+
         # license_check every 5 minutes
         self.add_cron_job(name='license_check', minute="4/5")
 
