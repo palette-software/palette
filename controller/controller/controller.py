@@ -51,7 +51,7 @@ from http_requests import HTTPRequestEntry
 from gcs import GCS
 from s3 import S3
 
-from sched import Sched
+from sched import Sched, Crontab # Crontab is imported for table creation
 from clihandler import CliHandler
 from util import version
 
