@@ -70,15 +70,19 @@
           <li>
             <input name="license" type="checkbox" checked/>
             <label class="checkbox">
-              <span></span>
-              Also perform license check 
+              Also perform license check
             </label>
           </li>
           <li>
             <input name="backup" type="checkbox" checked/>
             <label class="checkbox">
-              <span></span>
-              Also perform safety backup 
+              Also perform safety backup
+            </label>
+          </li>
+          <li>
+            <input name="maint" type="checkbox" checked/>
+            <label class="checkbox">
+              Also start maintenance webserver
             </label>
           </li>
         </ul>

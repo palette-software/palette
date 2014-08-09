@@ -15,6 +15,7 @@ import exc
 
 from agent import Agent
 from agentmanager import AgentManager
+from agentinfo import AgentYmlEntry
 from backup import BackupManager
 from event_control import EventControl
 from gcs import GCS
@@ -1000,11 +1001,12 @@ class CliHandler(socketserver.StreamRequestHandler):
         # STARTED is set by the status monitor since it really knows the status.
         self.report_status(body)
 
-    @usage('stop [no-backup|nobackup] [no-license|nolicense]')
+    @usage('stop [no-backup|nobackup] [no-license|nolicense] [no-maint|nomaint]')
     def do_stop(self, cmd):
 
         backup_first = True
         license_check = True
+        start_maint = True
 
         for arg in cmd.args:
             arg = arg.lower()
@@ -1012,6 +1014,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                 backup_first = False
             elif arg == "no-license" or arg == "nolicense":
                 license_check = False
+            elif arg == "no-maint" or arg == "nomaint":
+                start_maint = False
             else:
                 self.print_usage(self.do_stop.__usage__)
                 return
@@ -1108,10 +1112,18 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: Reply with "OK" only after the agent received the command?
 
         body = self.server.cli_cmd('tabadmin stop', agent)
-        if self.success(body):
+        if self.success(body) and start_maint:
+            port = AgentYmlEntry.get(agent, 'gateway.public.port', default=None)
+            if port is None:
+                port = -1
+            else:
+                try:
+                    port = int(port)
+                except:
+                    port = -1
             # Start the maintenance server only after Tableau has stopped
             # and reqlinquished the web server port.
-            maint_body = self.server.maint("start")
+            maint_body = self.server.maint("start", port=port, agent=agent)
             if self.failed(maint_body):
                 msg = "maint start failed: " + str(maint_body)
                 if not 'info' in body:

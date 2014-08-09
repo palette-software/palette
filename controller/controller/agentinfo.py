@@ -19,6 +19,38 @@ class AgentYmlEntry(meta.Base, BaseDictMixin):
     key = Column(String)
     value = Column(String)
 
+    @classmethod
+    def entry(cls, agent, key, **kwargs):
+        try:
+            entry = meta.Session.query(AgentYmlEntry).\
+                filter(AgentYmlEntry.agentid == agent.agentid).\
+                filter(AgentYmlEntry.key == key).\
+                one()
+        except NoResultFound, e:
+            raise ValueError("No system row found with key=%s" % key)
+        return entry
+
+    @classmethod
+    def get(cls, agent, key, **kwargs):
+        if 'default' in kwargs:
+            default = kwargs['default']
+            have_default = True
+            del kwargs['default']
+        else:
+            have_default = False
+
+        if kwargs:
+            raise ValueError("Invalid kwargs")
+
+        try:
+            entry = cls.entry(agent, key, **kwargs)
+        except ValueError, e:
+            if have_default:
+                return default
+            else:
+                raise e
+        return entry.value
+
 class AgentVolumesEntry(meta.Base, BaseDictMixin):
     __tablename__ = "agent_volumes"
 

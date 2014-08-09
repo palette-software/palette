@@ -26,12 +26,14 @@ class S3Application(PaletteRESTHandler):
             entry = S3(envid = self.envid)
             entry.name = DEFAULT_NAME
             meta.Session.add(entry)
+            meta.Session.commit()
         return entry
-        meta.Session.commit()
 
     def handle_GET(self):
         entry = self.get()
-        return entry.todict(pretty=True)
+        d = entry.todict(pretty=True)
+        d['secret'] =  entry.secret and '********' or ''
+        return d
 
     @required_parameters('value')
     def handle_access_key_POST(self, req):
@@ -47,6 +49,7 @@ class S3Application(PaletteRESTHandler):
         entry = self.get()
         entry.secret = v
         meta.Session.commit()
+        value = v and '********' or ''
         return {'value':v}
 
     @required_parameters('value')
@@ -90,7 +93,7 @@ class S3Page(PalettePage):
             entry = S3(envid = envid)
             entry.name = DEFAULT_NAME
         self.access_key = entry.access_key and entry.access_key or ''
-        self.secret = entry.secret and entry.secret or ''
+        self.secret = entry.secret and '********' or ''
         self.bucket = entry.bucket and entry.bucket or ''
         return super(S3Page, self).render(req, obj=obj)
 

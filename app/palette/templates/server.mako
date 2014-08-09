@@ -58,6 +58,16 @@
           <article>
 	    <span class="label">Server Type</span>{{type-name}}
 	  </article>
+	  {{#tableau-version}}
+	  <article>
+	    <span class="label">Tableau Server Version</span>{{tableau-version}} ({{tableau-bitness}}bit)
+	  </article>
+	  {{/tableau-version}}
+	  {{#tableau-install-dir}}
+	  <article>
+	    <span class="label">Tableau Server Directory</span>{{tableau-install-dir}}
+	  </article>
+	  {{/tableau-install-dir}}
           <article><span class="label">IP Address</span>{{ip-address}}</article>
           <article><span class="label">OS</span>{{os-version}}</article>
 	  <article>

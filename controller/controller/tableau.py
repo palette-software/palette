@@ -172,7 +172,8 @@ class TableauStatusMonitor(threading.Thread):
                         EventControl.STATE_STARTED_AFTER_DEGRADED,
                                                           agent.__dict__)
             elif status == TableauProcess.STATUS_STOPPED:
-                self.server.event_control.gen(EventControl.STATE_STOPPED,
+                self.server.event_control.gen(\
+                        EventControl.STATE_UNEXPECTED_STOPPED_AFTER_DEGRADED,
                                               agent.__dict__)
             else:
                 self.log.error("Unexpected transition from DEGRADED to: %s",

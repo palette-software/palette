@@ -35,6 +35,7 @@ class Agent(meta.Base, BaseDictMixin):
     installed_memory = Column(BigInteger)
     processor_type = Column(String)
     processor_count = Column(Integer)
+    bitness = Column(Integer)
     install_dir = Column(String, nullable=False)
     data_dir = Column(String)
     tableau_install_dir = Column(String)
