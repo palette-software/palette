@@ -11,6 +11,8 @@ from profile import UserProfile
 
 from mixin import BaseMixin
 
+import re
+
 class EventControl(meta.Base, BaseMixin):
     __tablename__ = "event_control"
 
@@ -230,6 +232,8 @@ class EventControlManager(object):
                             "\ndata: " + str(data)
         else:
            event_description = self.make_default_description(data)
+
+        event_description = re.sub("(\n|\r\n){3,}", "\n\n", event_description)
 
         # Log the event to the database
         self.event.add(key, subject, event_description, event_entry.level,

@@ -3,6 +3,7 @@ function($, template) {
 
     var EDIT = 'EDIT';
     var VIEW = 'VIEW';
+    var PW = '********';
 
     function EditBox(node, callback) {
         this.state = VIEW;
@@ -14,7 +15,6 @@ function($, template) {
         this.name = $(node).attr('data-name');
         this.href = $(node).attr('data-href');
         this.pw = $(node).hasClass('password');
-        $(node).css('display', 'inherit');
 
         this.view_template = $('#editbox-view').html();
         template.parse(this.view_template);
@@ -24,7 +24,7 @@ function($, template) {
         this.render = function (value)
         {
             if (this.pw) {
-                value = (value.length > 0) ? '********' : '';
+                value = (value.length > 0) ? PW : '';
             }
             var html = template.render(this.view_template, {'value':value});
             $(this.node).html(html);
@@ -66,7 +66,7 @@ function($, template) {
             }
             var success;
 
-            if (this.href) {
+            if (this.href && (value != PW)) {
                 $.ajax({
                     type: 'POST',
                     url: this.href,
@@ -88,7 +88,11 @@ function($, template) {
             }
 
             if (success) {
-                this.value = value;
+                if (!this.pw) {
+                    this.value = value;
+                } else {
+                    this.value = (value.length > 0) ? PW : '';
+                }
             } else {
                 value = this.value;
             }

@@ -1545,13 +1545,11 @@ div.refresh {
 .profile-page p {
     margin: 0px;
 }
+h2.page-subtitle {
+    text-transform: uppercase;
+}
 .storage-page {
     padding-bottom: 160px;
-}
-
-/* EditBox */
-.editbox.password {
-    display: none;
 }
 
 /* OnOff */

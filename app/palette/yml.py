@@ -15,6 +15,7 @@ class YMLApplication(RESTApplication):
         if req.method != 'GET':
             raise exc.HTTPBadRequest();
         
+        # FIXME: filter by agentid of the primary.
         query = meta.Session.query(AgentYmlEntry).\
             order_by(AgentYmlEntry.key.asc())
 

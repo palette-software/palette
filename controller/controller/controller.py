@@ -810,12 +810,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # 'tabadmin restore ...' starts tableau as part of the
         # restore procedure.
         # fixme: Maybe the maintenance web server wasn't running?
+        # We currently don't keep track, but assume the maintenance
+        # web server may be running if Tableau is stopped.
         maint_msg = ""
-        maint_body = self.maint("stop", agent=primary_agent)
-        if maint_body.has_key("error"):
-            self.log.info("Restore: maint stop failed: " + maint_body['error'])
-            # continue on, not a fatal error...
-            maint_msg = "Restore: maint stop failed.  Error was: %s" \
+        if orig_state == StateManager.STATE_STOPPED:
+            maint_body = self.maint("stop", agent=primary_agent)
+            if maint_body.has_key("error"):
+                self.log.info("Restore: maint stop failed: " + maint_body['error'])
+                # continue on, not a fatal error...
+                maint_msg = "Restore: maint stop failed.  Error was: %s" \
                                                     % maint_body['error']
 
         self.stateman.update(StateManager.STATE_STARTING_RESTORE)
@@ -1402,7 +1405,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if agent.iswin:
             self.firewall_manager.do_firewall_ports(agent)
 
-        # Cleanup.
         self.config_servers(agent)
 
         return pinfo
@@ -1430,13 +1432,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # If tableau is stopped, turn on the maintenance server
         if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
             return
-
-        main_state = self.stateman.get_state()
-        if main_state == StateManager.STATE_STOPPED:
-            body = self.maint("start", agent=agent, send_alert=False)
-            if body.has_key("error"):
-                self.event_control.gen(EventControl.MAINT_START_FAILED,
-                            dict(body.items() + agent.__dict__.items()))
 
     def remove_agent(self, agent, reason="", gen_event=True):
         manager = self.agentmanager
