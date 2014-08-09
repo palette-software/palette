@@ -1,3 +1,4 @@
+import sys, traceback
 from mako.template import Template
 from mako import exceptions
 import mako.runtime
@@ -242,7 +243,16 @@ class EventControlManager(object):
                                                         timestamp=timestamp)
 
         if event_entry.send_email:
-            self.alert_email.send(event_entry, data)
+            try:
+                self.alert_email.send(event_entry, data)
+            except Exception, e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                tb = ''.join(traceback.format_tb(exc_traceback))
+                report = "Error: %s.  Traceback: %s" % (sys.exc_info()[1], tb)
+
+                self.log.error( ("alert_email: Failed for event '%s', ' + \
+                                 data '%s'.  Will not send email. %s") % \
+                                 (event_entry.key, str(data), report))
 
     def make_default_description(self, data):
         """Create a default event message given the incoming dictionary."""
