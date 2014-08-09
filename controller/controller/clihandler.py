@@ -19,6 +19,7 @@ from agentinfo import AgentYmlEntry
 from backup import BackupManager
 from event_control import EventControl
 from gcs import GCS
+from http_requests import HTTPRequestEntry
 from s3 import S3
 from system import SystemEntry
 from state import StateManager
@@ -483,6 +484,28 @@ class CliHandler(socketserver.StreamRequestHandler):
         aconn.user_action_unlock()
         self.report_status(body)
 
+    @usage('http_request IMPORT')
+    def do_http_request(self, cmd):
+        """Import http_requests table from Tableau"""
+
+        # Reserved for later expansion
+        if len(cmd.args) != 1 or cmd.args[0].upper() != 'IMPORT':
+            self.print_usage(self.do_http_request.__usage__)
+            return
+
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            return
+
+        if not self.server.odbc_ok():
+            self.error(ERROR_WRONG_STATE, "FAIL: Main state is %s." % \
+                                            self.server.stateman.get_state())
+            return
+
+        self.ack()
+        body = HTTPRequestEntry.load(agent)
+        self.report_status(body)
+
 
     @usage('extract IMPORT')
     def do_extract(self, cmd):
@@ -849,8 +872,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = self.server.sched.delete(cmd.args[1:])
         elif len(cmd.args) == 7 and cmd.args[0] == 'add':
             args = cmd.args[1:]
-            body = self.server.sched.add(args[0], args[1], args[2], args[3],
-                                                        args[4], args[5])
+            name = args[5]
+            body = self.server.sched.add_cron_job(name, minute=args[0],
+                                                  hour=args[1],
+                                                  day_of_month=args[2],
+                                                  month=args[3],
+                                                  day_of_week=args[4])
             if self.success(body):
                 self.ack()
         else:
@@ -1543,7 +1570,6 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         self.ack()
-
         body = self.server.sync_cmd(agent)
 
         if self.failed(body):

@@ -46,12 +46,12 @@ from workbooks import WorkbookEntry, WorkbookManager
 from sites import Site
 from projects import Project
 from data_connections import DataConnection
-from http_requests import HTTPRequestEntry
+from http_requests import HTTPRequestEntry # needed for create_all()
 
 from gcs import GCS
 from s3 import S3
 
-from sched import Sched
+from sched import Sched, Crontab # needed for create_all()
 from clihandler import CliHandler
 from util import version
 
@@ -1141,13 +1141,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             error_msg += "Project sync failure: " + body['error']
         else:
             sync_dict['projects'] = body['count']
-
-        body = HTTPRequestEntry.load(agent)
-        if 'error' in body:
-            if error_msg: error_msg += ", "
-            error_msg += "HTTPRequest load failure: " + body['error']
-        else:
-            sync_dict['http-requests'] = body['count']
 
         body = DataConnection.sync(agent)
         if 'error' in body:

@@ -14,8 +14,7 @@ Depends:
  python-sqlalchemy, python-psycopg2, python-boto, python-dateutil,
  telnet, daemon, postfix,
  akiri.framework (>= 0.3.1),
- akiri.framework-sqlalchemy,
- python-apscheduler
+ akiri.framework-sqlalchemy
 Description: Palette Controller and Web App
  This package contains the Palette Controller and Web Application
  for controlling, monitoring and managing Tableau databases.
