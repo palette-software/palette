@@ -7,6 +7,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from agent import Agent
 from agentinfo import AgentVolumesEntry
+from agentmanager import AgentManager
 
 from util import DATEFMT
 
@@ -18,7 +19,7 @@ class BackupEntry(meta.Base):
     name = Column(String)
     gcsid = Column(BigInteger, ForeignKey("gcs.gcsid"))
     s3id = Column(BigInteger, ForeignKey("s3.s3id"))
-    volid = Column(BigInteger, ForeignKey("agent_volumes.volid"))
+    agentid = Column(BigInteger, ForeignKey("agent.agentid"))
     auto = Column(Boolean)  # automatically requested/scheduled
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
@@ -29,7 +30,7 @@ class BackupEntry(meta.Base):
     def todict(self, pretty=False):
         d = { 'gcsid': self.gcsid,
               's3id': self.s3id,
-              'volid': self.volid,
+              'agentid': self.agentid,
               'name': self.name}
         if pretty:
             d['creation-time'] = self.creation_time.strftime(DATEFMT)
@@ -45,10 +46,10 @@ class BackupManager(object):
     def __init__(self, envid):
         self.envid = envid
 
-    def add(self, name, gcsid=None, s3id=None, volid=None):
+    def add(self, name, gcsid=None, s3id=None, agentid=None):
         session = meta.Session()
         entry = BackupEntry(name=name, envid=self.envid,
-                                    gcsid=gcsid, s3id=s3id, volid=volid)
+                                    gcsid=gcsid, s3id=s3id, agentid=agentid)
         session.add(entry)
         session.commit()
 
@@ -81,7 +82,7 @@ class BackupManager(object):
         except NoResultFound, e:
             return None
 
-    def get_primary_data_loc_vol_entry(self):
+    def get_tableau_primary_data_loc_vol_entry(self):
         try:
             vol_entry, agent_status_entry = \
                 meta.Session.query(AgentVolumesEntry, Agent).\
@@ -95,13 +96,62 @@ class BackupManager(object):
         except NoResultFound, e:
             return None
 
-    def primary_data_loc_path(self, agent):
-        vol_entry = self.get_primary_data_loc_vol_entry()
+    def tableau_primary_data_loc_path(self, agent):
+        vol_entry = self.get_tableau_primary_data_loc_vol_entry()
 
         if not vol_entry:
             return None
 
+        # fixme: also support linux agent
         return agent.path.join(vol_entry.name + ':', vol_entry.path)
+
+    def get_palette_primary_data_loc_vol_entry(self, primary_agent):
+        """
+            Must pass in the primary agent.
+            (We could look it up, but so need to be called only
+            when we have a primary agent.)
+        """
+        # fixme: also support linux agent
+
+        if primary_agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
+            # fixme: log this?
+            return None
+
+        palette_primary_data_dir = primary_agent.data_dir
+        palette_primary_data_vol = palette_primary_data_dir.split(':')[0]
+
+        try:
+            return meta.Session.query(AgentVolumesEntry).\
+                filter(AgentVolumesEntry.agentid == primary_agent.agentid).\
+                filter(AgentVolumesEntry.name == palette_primary_data_vol).\
+                one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return None
+
+    def palette_primary_data_loc_path(self, agent):
+        """
+            Must pass in the primary agent.
+        """
+        return agent.data_dir
+
+    @classmethod
+    def is_pal_pri_data_vol(cls, agent, name):
+        """
+            Arguments:
+                name:       volume (windows) or directory (linux) name
+            Returns:
+                 True if name is the palette primary data volume.
+                 False if not.
+        """
+        if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
+            return False
+
+        # fixme: support linux too
+        palette_primary_data_vol = agent.data_dir.split(':')[0]
+        if name == palette_primary_data_vol:
+            return True
+        else:
+            return False
 
     @classmethod
     def all(cls, envid, asc=True):
@@ -109,7 +159,7 @@ class BackupManager(object):
         fixme: finish this.
         sql = \
             "SELECT backup agent_volumes FROM backup, agent_volumes " + \
-            "WHERE backup.volid = agent_volumes.volid AND " + \
+            "WHERE backup.agentid = agent_volumes.agentid AND " + \
             "agent_volumes.agentid IN " + \
             "(SELECT agent.agentid FROM agent WHERE agent.envid = %d) " + \
             "ORDER BY backup.creation_time " % (envid)

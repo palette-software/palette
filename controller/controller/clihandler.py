@@ -638,11 +638,11 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status(body)
 
-    @usage('copy source-agent-name:filename dest-agent-name')
+    @usage('copy source-agent-name:filename dest-agent-name dest-dir')
     def do_copy(self, cmd):
         """Copy a file from one agent to another."""
 
-        if len(cmd.args) != 2:
+        if len(cmd.args) != 3:
             self.print_usage(self.do_copy.__usage__)
             return
 
@@ -651,7 +651,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         self.ack()
-        body = self.server.copy_cmd(cmd.args[0], cmd.args[1])
+        body = self.server.copy_cmd(cmd.args[0], cmd.args[1], cmd.args[2])
         self.report_status(body)
 
     # FIXME: print status too
@@ -1776,17 +1776,21 @@ class CliHandler(socketserver.StreamRequestHandler):
             try:
                 f = getattr(self, 'do_'+cmd.name)
                 f(cmd)
+            # fixme on exceptions: reset state?
             except exc.InvalidStateError, e:
                 self.error(ERROR_WRONG_STATE, e.message)
             except (IOError, ValueError) as e:
                 self.error(ERROR_COMMAND_FAILED, "%s", str(e))
             except Exception, e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                tb = ''.join(traceback.format_tb(exc_traceback)).\
-                                                        replace('\n', '')
-                line = "%s.  Traceback: %s" % (sys.exc_info()[1], tb)
+                tb = ''.join(traceback.format_tb(exc_traceback))
+                                                        
+                line = "%s.  Traceback: %s" % (sys.exc_info()[1],
+                                                            tb.replace('\n', ''))
 
                 self.error(ERROR_COMMAND_FAILED, line)
+                self.server.log.error("Error: %s.  Traceback: %s" % \
+                                                        (sys.exc_info()[1], tb))
             finally:
                 session.rollback()
                 meta.Session.remove()

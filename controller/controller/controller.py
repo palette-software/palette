@@ -61,6 +61,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     LOGGER_NAME = "main"
     allow_reuse_address = True
 
+    DATA_DIR = "Data"
+    BACKUP_DIR = "tableau-backups"
+    LOG_DIR = "tableau-logs"
+    WORKBOOKS_DIR = "tableau-workbooks"
+    PALETTE_DIR = "palette-system"
+
     def backup_cmd(self, agent):
         """Perform a backup - not including any necessary migration."""
 
@@ -76,12 +82,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if dcheck.target_type == StorageConfig.GCS:
             self.log.debug("Backup will copy to gcs named '%s'",
                                                 dcheck.target_entry.name)
-            storage_cmd = self.gcs_cmd
+            cloud_cmd = self.gcs_cmd
             gcsid = dcheck.target_entry.gcsid
         elif dcheck.target_type == StorageConfig.S3:
             self.log.debug("Backup will copy to s3 named '%s'",
                                                 dcheck.target_entry.name)
-            storage_cmd = self.s3_cmd
+            cloud_cmd = self.s3_cmd
             s3id = dcheck.target_entry.s3id
         elif dcheck.target_type == StorageConfig.VOL:
             if dcheck.target_entry.primary_data_loc:
@@ -92,156 +98,199 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                         dcheck.target_agent.displayname, dcheck.target_dir)
         else:
             self.log.error("backup_cmd: Invalid target_type: %s",
-                dcheck.target_type)
+                           dcheck.target_type)
             return self.error("backup_cmd: Invalid target_type: %s",
-                                                        dcheck.target_type)
+                              dcheck.target_type)
         # Example name: 20140127_162225.tsbak
         backup_name = time.strftime("%Y%m%d_%H%M%S") + ".tsbak"
 
-        # Get the vol + dir to use for the backup command to tabadmin.
-        backup_dir = self.backup.primary_data_loc_path(agent)
-        if not backup_dir:
-            return self.error("Couldn't find the primary_data_loc in " + \
-                        "the agent_volumes table for the primary agent.")
 
-        backup_path = agent.path.join(backup_dir, backup_name)
+        # Example: "c:/ProgramData/Palette/Data/tableau-backups/20140127_162225.tsbak"
 
-        backup_vol = backup_path.split(':')[0]
-        # e.g.: c:\\Program\ Files\ (x86)\\Palette\\Data\\2014Jan27_162225.tsbak
-        cmd = 'tabadmin backup \\\"%s\\\"' % backup_path
+        if dcheck.target_type == StorageConfig.VOL and \
+           dcheck.target_agent.agent_type == \
+                   AgentManager.AGENT_TYPE_PRIMARY and \
+                           not dcheck.target_is_palette_primary_data_volume:
+           # The backup target is on the primary server but not on the
+           # the palette primary *directory*. Do the backup directly to the
+           # target directory rather than copying it there after the backup.
+
+           # First make sure the target directory on the primary exists.
+            try:
+                agent.filemanager.mkdirs(dcheck.target_dir)
+            except (IOError, ValueError) as e:
+                self.log.error(\
+                    "backup_cmd: Could not create directory: '%s'" % \
+                    dcheck.target_dir)
+                body = {'error': str(e),
+                        'info': "Could not create backup directory '%s'" % \
+                               dcheck.target_dir}
+                return body
+
+            # e.g. E:\\ProgramData\Palette\Data\tableau-backups\2014Jan27_162225.tsbak
+            backup_full_path = agent.path.join(dcheck.target_dir, backup_name)
+        else:
+            # The backup will be done to the palette primary data location
+            # and then one of, depending on the user configuration:
+            # 1) copied to another agent
+            # 2) copied to cloud storage,
+            # 3) remain right there.
+            #
+            # Get the vol + dir to use for the backup command to tabadmin.
+            palette_data_path = self.backup.palette_primary_data_loc_path(agent)
+            # e.g. C:\\ProgramData\Palette\Data\tableau-backups\2014Jan27_162225.tsbak
+            backup_full_path = agent.path.join(self.primary_backup_dir(agent),
+                                          backup_name)
+
+        cmd = 'tabadmin backup \\\"%s\\\"' % backup_full_path
+
         body = self.cli_cmd(cmd, agent)
         if body.has_key('error'):
             return body
 
         body['info'] = ""
-        backup_copied = False
+        delete_local_backup = True
 
-        # If the target is not the primary, copy the backup to the target
-        # or gcs.
+        palette_primary_data_dir_vol_entry = \
+            self.backup.get_palette_primary_data_loc_vol_entry(agent)
+
+        if not palette_primary_data_dir_vol_entry:
+            self.log.error(\
+                "Could not retrieve get_palette_primary_data_loc_vol_entry")
+            return self.error(
+                "Could not retrieve get_palette_primary_data_loc_vol_entry")
+
         if dcheck.target_type in (StorageConfig.GCS, StorageConfig.S3):
-            data_dir = self.backup.primary_data_loc_path(agent)
-            storage_body = storage_cmd(agent, "PUT",
-                            dcheck.target_entry, backup_name)
+            storage_body = cloud_cmd(agent, "PUT",
+                            dcheck.target_entry, backup_full_path)
             if 'error' in storage_body:
                 body['info'] = "Copy to %s '%s' failed: %s" % \
                     (dcheck.target_type, dcheck.target_entry.name,
                                                         storage_body['error'])
+                delete_local_backup = False
+                self.backup.add(backup_full_path,
+                            agentid=palette_primary_data_dir_vol_entry.agentid)
             else:
-                body['info'] = "Backup file copied to %s named '%s'." % \
-                            (dcheck.target_type, dcheck.target_entry.name)
+                body['info'] = "Backup file copied to %s path '%s'." % \
+                            (dcheck.target_type, backup_name)
                 # Backup was copied to gcs or s3
                 self.backup.add(backup_name, gcsid=gcsid, s3id=s3id)
+                delete_local_backup = True
 
-                backup_copied = True
         elif dcheck.target_agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
             # Copy the backup to a non-primary agent
-            target_path = "%s:%s/%s" % (agent.displayname, backup_vol,
-                                                                backup_name)
-            copy_body = self.copy_cmd(target_path,
+            # Example: "Tableau Archive #202:D/palette-backups/20140127_162225.tsbak"
+
+            (backup_vol, backup_path) = backup_full_path.split(':', 1)
+
+            # Get the path used by routes.txt to find the common prefix
+            source_agent_vol_entry = \
+                AgentVolumesEntry.get_vol_entry_by_agentid_vol_name(
+                                                    agent.agentid, backup_vol)
+            if not source_agent_vol_entry:
+                return self.error(
+                    (u"Could not find backup volume '%s' for agentid %d. " + \
+                    "Backup will remain on the primary agent.") % \
+                    (backup_vol, agent.agentid))
+
+            common = os.path.commonprefix([backup_path,
+                                          source_agent_vol_entry.path])
+
+            if common:
+                # Chop off the common part
+                backup_path = backup_path[len(common):]
+
+            source_path = "%s:%s%s" % (agent.displayname, backup_vol,
+                                        backup_path)
+            copy_body = self.copy_cmd(source_path,
                         dcheck.target_agent.displayname, dcheck.target_dir)
 
             if copy_body.has_key('error'):
                 msg = (u"Copy of backup file '%s' to agent '%s:%s' failed. "+\
                     "Will leave the backup file on the primary agent. " + \
                     "Error was: %s") \
-                    % (backup_name, dcheck.target_agent.displayname, 
+                    % (backup_full_path, dcheck.target_agent.displayname, 
                                     dcheck.target_dir, copy_body['error'])
                 self.log.info(msg)
                 body['info'] += msg
                 # Something was wrong with the copy to the non-primary agent.
                 # Leave the backup on the primary after all.
-                backup_copied = False
+                self.backup.add(backup_full_path,
+                            agentid=palette_primary_data_dir_vol_entry.agentid)
+                delete_local_backup = False
             else:
                 # The copy succeeded.
                 body['info'] += \
                     "Backup file copied to agent '%s', directory: %s." % \
                         (dcheck.target_agent.displayname, dcheck.target_dir)
 
-                self.backup.add(backup_name, volid=dcheck.target_entry.volid)
+                target_full_path = dcheck.target_agent.path.join(
+                                            dcheck.target_dir, backup_name)
+
+                self.backup.add(target_full_path,
+                                agentid=dcheck.target_agent.agentid)
                 # Remember to remove the backup file from the primary
-                backup_copied = True
+                delete_local_backup = True
         elif dcheck.target_agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-            if dcheck.target_entry.primary_data_loc:
+            if dcheck.target_is_palette_primary_data_volume:
                 body['info'] += \
-                    'Backup file is configured to stay on ' + \
-                    'the Tableau primary volume.'
-                backup_copied = False
+                    ('Backup file is configured to stay on ' + \
+                    'the Tableau primary agent, ' + \
+                    'palette primary data directory: %s') % dcheck.target_dir
+
+                delete_local_backup = False
             else:
-                # Copy the backup file to a different volume on the primary.
-                target_path = ntpath.join(dcheck.target_dir, backup_name)
-                cmd = 'CMD /C COPY \\\"%s\\\" \\\"%s\\\"' % \
-                                                (backup_path, target_path)
-                copy_body = self.cli_cmd(cmd, agent)
-                if 'error' in copy_body:
-                    msg = (u"Copy of backup file '%s' to '%s' on primary " + \
-                        "'%s' failed.  " + \
-                        "Will not copy the backup file. " + \
-                        "Error was: %s") \
-                        % (backup_path, target_path, agent.displayname, 
-                                                            copy_body['error'])
-                    self.log.error(msg)
-                    body['info'] += msg
-                    backup_copied = False
-                else:
-                    body['info'] += \
-                        ("Backup file copied on primary agent to " + \
-                        "directory: %s") % dcheck.target_dir
+                # The tabadmin backup was done directly to the
+                # alternate volume on the primary agent.
+                body['info'] = ("Backup file is configured to stay on " + \
+                    'the Tableau primary agent, non-primary palette ' + \
+                    'data directory: %s', dcheck.target_dir)
 
-                    self.backup.add(backup_name,
-                                            volid=dcheck.target_entry.volid)
-                    backup_copied = True
+                delete_local_backup = False
+            self.backup.add(backup_full_path,
+                            agentid=dcheck.target_agent.agentid)
 
-        if backup_copied:
-            remove_body = self.delete_file(agent, backup_path)
+        if delete_local_backup:
+            remove_body = self.delete_file(agent, backup_full_path)
             # Check if the DEL worked.
             if remove_body.has_key('error'):
                 body['info'] += \
                     ("\nDeletion of backup file failed after copy. "+\
                         "File: '%s'. Error was: %s") \
-                        % (backup_path, remove_body['error'])
-        else:
-            # Backup remains on the primary either due to a copy
-            # failure or the user specified.  Dig out the volid for it.
-            try:
-                vol_entry = meta.Session.query(AgentVolumesEntry).\
-                    filter(AgentVolumesEntry.agentid == agent.agentid).\
-                    filter(AgentVolumesEntry.primary_data_loc == True).\
-                    one()
-            except sqlalchemy.orm.exc.NoResultFound:
-                body['info'] += "no primary data location volume found! " + \
-                        "backup information cannot be saved to the database."
-                return body
-
-            self.backup.add(backup_name, volid=vol_entry.volid)
-
+                        % (backup_full_path, remove_body['error'])
         return body
 
-    def gcs_cmd(self, agent, action, gcs_entry, path):
+    def primary_backup_dir(self, agent):
+        """return the palette primary backup directory."""
 
-        data_dir = self.backup.primary_data_loc_path(agent)
-        if not data_dir:
-            return self.error("gcs_cmd: Couldn't find the " + \
-                        "primary_data_loc in the agent_volumes table " + \
-                        "for the primary agent.")
+        palette_data_path = self.backup.palette_primary_data_loc_path(agent)
+        return agent.path.join(palette_data_path,
+                               self.DATA_DIR,
+                               self.BACKUP_DIR)
+
+    def gcs_cmd(self, agent, action, gcs_entry, full_path):
+
+        land_dir = agent.path.dirname(full_path)
+
+        filename = agent.path.basename(full_path)
 
         env = {u'ACCESS_KEY': gcs_entry.access_key,
                u'SECRET_KEY': gcs_entry.secret,
-               u'PWD': data_dir}
+               u'PWD': land_dir}
 
-        gcs_command = 'pgcs %s %s "%s"' % (action, gcs_entry.bucket, path)
+        gcs_command = 'pgcs %s %s "%s"' % (action, gcs_entry.bucket, filename)
 
         # Send the gcs command to the agent
         return self.cli_cmd(gcs_command, agent, env=env)
 
-    def s3_cmd(self, agent, action, s3_entry, path):
+    def s3_cmd(self, agent, action, s3_entry, full_path):
 
-        data_dir = self.backup.primary_data_loc_path(agent)
-        if not data_dir:
-            return self.error("s3_cmd: Couldn't find the " + \
-                        "primary_data_loc in the agent_volumes table " + \
-                        "for the primary agent.")
+        land_dir = agent.path.dirname(full_path)
+        #fixme: create the path first
 
-        resource = os.path.basename(path)
+        filename = agent.path.basename(full_path)
+
+        resource = os.path.basename(filename)
         try:
             token = s3_entry.get_token(resource)
         except (AWSConnectionError, BotoClientError, BotoServerError) as e:
@@ -252,13 +301,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                u'SECRET_KEY': token.credentials.secret_key,
                u'SESSION': token.credentials.session_token,
                u'REGION_ENDPOINT': s3_entry.region,
-               u'PWD': data_dir}
+               u'PWD': land_dir}
 
         env = {u'ACCESS_KEY': s3_entry.access_key,
                u'SECRET_KEY': s3_entry.secret,
-               u'PWD': data_dir}
+               u'PWD': land_dir}
 
-        s3_command = 'ps3 %s %s "%s"' % (action, s3_entry.bucket, path)
+        s3_command = 'ps3 %s %s "%s"' % (action, s3_entry.bucket, filename)
 
         # Send the s3 command to the agent
         return self.cli_cmd(s3_command, agent, env=env)
@@ -484,9 +533,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         else:
             return False
 
-    def copy_cmd(self, source_path, dest_name, target_dir=None):
+    def copy_cmd(self, source_path, dest_name, target_dir):
         """Sends a phttp command and checks the status.
-           copy source-displayname:/path/to/file dest-displayname
+           copy source-displayname:/path/to/file dest-displayname dir
                        <source_path>          <dest-displayname>
            generates:
                phttp.exe GET https://primary-ip:192.168.1.1/file dir/
@@ -552,12 +601,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         source_ip = src.ip_address
 
-        if not target_dir:
-            target_dir = self.backup.primary_data_loc_path(agent)
-            if not target_dir:
-                return self.error("copy_cmd: Couldn't find the " + \
-                        "primary_data_loc in the agent_volumes table " + \
-                        "for the primary agent.")
+       # Make sure the target directory on the target agent exists.
+        try:
+            dst.filemanager.mkdirs(target_dir)
+        except (IOError, ValueError) as e:
+            self.log.error(\
+                "copycmd: Could not create directory: '%s'" % target_dir)
+            return self.error(\
+                "Could not create directory '%s' on target agent '%s'" % \
+                target_dir, dst.displayname)
 
         if src.iswin:
             command = 'phttp GET "https://%s:%s/%s" "%s"' % \
@@ -584,18 +636,19 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         copy_body = self.cli_cmd(command, dst, env=env)
         return copy_body
 
-    def restore_cmd(self, primary_agent, backup_name, orig_state, userid=None):
-        """Do a tabadmin restore for the backup_name.
-           The backup_name may be in cloud storage, or a volume
+    def restore_cmd(self, primary_agent, backup_full_path, orig_state,
+                    userid=None):
+        """Do a tabadmin restore for the backup_full_path.
+           The backup_full_path may be in cloud storage, or a volume
            on some agent.
 
            Returns a body with the results/status.
         """
 
-        backup_entry = self.backup.find_by_name(backup_name)
+        backup_entry = self.backup.find_by_name(backup_full_path)
         if not backup_entry:
             self.stateman.update(orig_state)
-            return self.error("Backup name not found: %s", backup_name)
+            return self.error("Backup name not found: %s", backup_full_path)
 
         # Get the gcs, s3 or vol entry
         if backup_entry.gcsid:
@@ -606,42 +659,72 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             source_type = StorageConfig.S3
             source_entry = self.s3.get_by_s3id(backup_entry.s3id)
             cloud_cmd = self.s3_cmd
-        elif backup_entry.volid:
+        elif backup_entry.agentid:
             source_type = StorageConfig.VOL
-            source_entry = AgentVolumesEntry.get_vol_entry_by_volid(\
-                                                        backup_entry.volid)
+            # fixme: support linux
+            vol_name = backup_entry.name.split(':')[0]
+            source_entry = AgentVolumesEntry.get_vol_entry_by_agentid_vol_name(
+                                backup_entry.agentid, vol_name)
+
+            if not source_entry:
+                return self.error(
+                    ("restore_cmd: vol entry not found for backup " + \
+                     "agentid %d, name %s") % \
+                     (backup_entry.agentid, vol_name))
 
             source_agent = Agent.get_by_id(source_entry.agentid)
             if not source_agent:
-                return self.error(\
+                return self.error(
                     "restore_cmd: No such agentid %d referenced by " + \
-                    "volid %d in backupid %d" % \
+                    "agentid %d and name %s in backupid %d" % \
                         (source_entry.agentid, backup_entry.volid,
                                                     backup_entry.backupid))
         else:
-            return self.error(\
-                "restore_cmd: Backup has no gcs/s3/volID for backup %s" % \
-                                                                backup_name)
-
-        # Get the vol + dir to use for the restore command to tabadmin.
-        backup_dir = self.backup.primary_data_loc_path(primary_agent)
-        if not backup_dir:
-            return self.error("restore: Couldn't find the primary_data_loc " + \
-                        "in the agent_volumes table for the primary agent.")
+            return self.error(
+                "restore_cmd: Backup has no gcs/s3/agentid for backup %s" % \
+                                                        backup_full_path)
 
         # The tableau backup file to use when calling the
         # 'tabadmin restore <backup-file>' command.
-        # It will be this in call cases except if the backup
+        # It will be this in all cases except if the backup
         # file is on the primary but on a different volume than
         # the palette install.
-        tableau_backup_file = ntpath.join(backup_dir, backup_name)
 
         # Keep track of whether or not a backup was copied to the primary
         # for the restore.  If so, we'll need to delete the
         # file after the restore finishes or an error.
-        backup_copied = False
 
-        if source_type == StorageConfig.VOL:
+        backup_copied = False
+        if source_type in (StorageConfig.GCS, StorageConfig.S3):
+            # The backup is cloud storage: s3 or gcs
+            self.log.debug(\
+                "restore: Sending %s command to primary '%s' to GET '%s'", \
+                   source_type, primary_agent.displayname, backup_full_path)
+
+            # Cloud storage doesn't support directories.  The
+            # backup_full_path on the cloud storage was only the filename.
+            # We change backup_full_path to be the full path of where
+            # we want to copy the file to.
+            backup_full_path = primary_agent.path.join(
+                    self.primary_backup_dir(primary_agent),
+                    primary_agent.path.basename(backup_full_path))
+
+            body = cloud_cmd(primary_agent, "GET", source_entry,
+                             backup_full_path)
+            if 'error' in body:
+                fmt = "restore: %s named '%s' GET backup file '%s' " + \
+                    "failed.  Error: %s"
+                self.log.debug(fmt,
+                           source_type,
+                           source_entry.name,
+                           backup_full_path,
+                           body['error'])
+                self.stateman.update(orig_state)
+                return body
+
+            backup_copied = True
+        elif source_type == StorageConfig.VOL:
+            # First copy backup file to the primary if it isn't there yet.
             # Backup is on a disk volume (not cloud storage).
             # It could be on the main primary volume, or another
             # primary volume or a volume on an agent.
@@ -650,52 +733,56 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 # The file isn't on the Primary agent or cloud storage.
                 # We need to copy the file to the Primary.
                 # copy_cmd arguments:
-                #   source-agent-name:VOL/filename
-                #   dest-agent-displayname
-                # copy_source is something like: "C/20140531_153629.tsbak"
-                copy_source = "%s:%s/%s" % \
-                    (source_agent.displayname, source_entry.name,
-                                                            backup_entry.name)
+                #   source:    source-agent-name:VOL/tableau-backups/filename
+                #   dest_name: dest-agent-displayname
+                #   dest_dir:  palette-primary-data-path/tableau-backups
+                # source is something like:
+                #               "C/tableau-backups/20140531_153629.tsbak"
+                # with only the "tableau-backup/20140531_153629.tsbak"
+                # last part.
+
+                # Remove the agent's 'data-dir' portion of the beginning
+                # of the source_path.
+                # For example, given:
+                #   \ProgramData\Palette\Data\tableau-backups\2014.gone.tsbak
+                # and a source_entry path of:
+                #   \ProgramData\Palette\Data
+                # end up with:
+                #   \tableau-backups\2014.gone.tsbak
+
+                (backup_vol, backup_path) = backup_full_path.split(':',1)
+
+                common = os.path.commonprefix([backup_path, source_entry.path])
+
+                if common:
+                    # Chop off the leading common part in routes.txt
+                    backup_path = backup_path[len(common):]
+
+                copy_source = "%s:%s%s" % \
+                              (source_agent.displayname, source_entry.name,
+                              backup_path)
+                            
                 self.log.debug(\
                     "restore: Sending copy command to '%s' to get: %s", \
                                        source_agent.displayname, copy_source)
+
+                backup_dir = self.primary_backup_dir(primary_agent)
+
                 body = self.copy_cmd(copy_source, primary_agent.displayname,
-                                                                    backup_dir)
+                                     backup_dir)
 
                 if body.has_key("error"):
-                    fmt = "restore: copy backup file '%s' from '%s' failed. " +\
-                        "Error was: %s"
+                    fmt = "restore: copy backup file '%s' " + \
+                          "from '%s' to directory '%s' failed. " +\
+                          "Error was: %s"
                     self.log.debug(fmt,
                                    copy_source,
                                    source_agent.displayname,
+                                   backup_dir,
                                    body['error'])
                     self.stateman.update(orig_state)
                     return body
                 backup_copied = True
-            elif not source_entry.primary_data_loc:
-                # The file is on the primary, but on a different
-                # volume than the tableau install volume.
-                tableau_backup_file = "%s:%s/%s" % \
-                        (source_entry.name, source_entry.path, backup_name)
-                backup_copied = False
-        else:
-            # The backup is cloud storage: s3 or gcs
-            self.log.debug(\
-                "restore: Sending %s command to primary '%s' to GET '%s'", \
-                   source_type, primary_agent.displayname, backup_entry.name)
-
-            body = cloud_cmd(primary_agent, "GET", source_entry, backup_name)
-            if 'error' in body:
-                fmt = "restore: %s named '%s' GET backup file '%s' " + \
-                    "failed.  Error: %s"
-                self.log.debug(fmt,
-                           source_type,
-                           source_entry.name,
-                           backup_name,
-                           body['error'])
-                self.stateman.update(orig_state)
-                return body
-            backup_copied = True
 
         # The restore file is now on the Primary Agent.
         self.event_control.gen(EventControl.RESTORE_STARTED,
@@ -713,7 +800,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 if backup_copied:
                     # If the file was copied to the Primary, delete
                     # the temporary backup file we copied to the Primary.
-                    self.delete_file(primary_agent, tableau_backup_file)
+                    self.delete_file(primary_agent, backup_full_path)
                 self.stateman.update(orig_state)
                 return stop_body
 
@@ -733,7 +820,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         self.stateman.update(StateManager.STATE_STARTING_RESTORE)
         try:
-            cmd = 'tabadmin restore \\\"%s\\\"' % tableau_backup_file
+            cmd = 'tabadmin restore \\\"%s\\\"' % backup_full_path
             self.log.debug("restore sending command: %s", cmd)
             restore_body = self.cli_cmd(cmd, primary_agent)
         except httplib.HTTPException, e:
@@ -745,7 +832,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             restore_success = True
 
         if maint_msg != "":
-            restore_body['info'] = maint_msg
+            info = maint_msg
+        else:
+            info = ""
 
         # fixme: Do we need to add restore information to the database?
         # fixme: check status before cleanup? Or cleanup anyway?
@@ -753,7 +842,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if backup_copied:
             # If the file was copied to the Primary, delete
             # the temporary backup file we copied to the Primary.
-            self.delete_file(primary_agent, tableau_backup_file)
+            delete_body = self.delete_file(primary_agent, backup_full_path)
+            if 'error' in delete_body:
+                info += '\n' + delete_body['error']
 
         if restore_success:
             self.stateman.update(StateManager.STATE_STARTED)
@@ -765,16 +856,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # stopped, rather than have tableau automatically start
             # during the restore.  (Tableau does not support this currently.)
             self.log.info("Restore: starting tableau after failed restore.")
-            start_body = self.cli_cmd("tabadmin start", primary_agent)
-            if start_body.has_key('error'):
+            start_body = self.cli_cmd("xtabadmin start", primary_agent)
+            if 'error' in start_body:
                 self.log.info(\
                     "Restore: 'tabadmin start' failed after failed restore.")
                 msg = "Restore: 'tabadmin start' failed after failed restore."
                 msg += " Error was: %s" % start_body['error']
-                if restore_body.has_key('info'):
-                    restore_body['info'] += "\n" + msg
-                else:
-                    restore_body['info'] = msg
+                info += "\n" + msg
 
                  # The "tableau start" failed.  Go back to the "STOPPED" state.
                 self.stateman.update(StateManager.STATE_STOPPED)
@@ -783,6 +871,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.stateman.update(StateManager.STATE_STARTED)
                 self.event_control.gen( \
                     EventControl.STATE_STARTED, primary_agent.__dict__)
+
+        if 'info':
+            restore_body['info'] = info.strip()
 
         return restore_body
 
@@ -876,7 +967,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     # Make sure if the command failed, that the 'error'
                     # key is set.
                     if body['exit-status'] != 0:
-                        if body.has_key('stderr'):
+                        if body.has_key('stderr') and body['stderr']:
                             body['error'] = body['stderr']
                         else:
                             body['error'] = u"Failed with exit status: %d" % \
@@ -1190,7 +1281,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn = agent.connection
         ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
-        ziplog_path = self.backup.primary_data_loc_path(agent)
+        path = self.backup.palette_data_loc_path(agent)
+        ziplog_path = agent.path.join(path, "tableau-logs")
 
         cmd = 'tabadmin ziplogs -l -n -a \\\"%s\\\"' % ziplog_path
         body = self.cli_cmd(cmd, agent)
@@ -1206,9 +1298,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """Run tabadmin cleanup'."""
 
         aconn = agent.connection
-        ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
-        data_dir = self.backup.primary_data_loc_path(agent)
-        ziplog_path = agent.path.join(data_dir, ziplog_name)
 
         body = self.cli_cmd('tabadmin cleanup', agent)
         body[u'info'] = u'tabadmin cleanup'
