@@ -1,3 +1,5 @@
+import sys
+import traceback
 import smtplib
 from email.mime.text import MIMEText
 
@@ -120,7 +122,17 @@ class AlertEmail(object):
                 "Not sending: Subject: %s, Message: %s", subject, message)
             return
 
-        msg = MIMEText(message)
+        message = message.encode('utf-8')    # prevent unicode exception
+        try:
+            msg = MIMEText(message)
+        except Exception, e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            tb = ''.join(traceback.format_tb(exc_traceback))
+            report = "Error: %s.  Traceback: %s." % (sys.exc_info()[1], tb)
+            self.log.error("alert send: MIMEText() failed for message." + \
+                             "will not send message: '%s'. %s" % (message, report))
+
+            return
 
         if len(subject) > self.max_subject_len:
             subject = subject[:self.max_subject_len]  + "..."
