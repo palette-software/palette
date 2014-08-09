@@ -1291,8 +1291,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn = agent.connection
         ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
-        path = self.backup.palette_data_loc_path(agent)
-        ziplog_path = agent.path.join(path, "tableau-logs")
+        path = self.backup.palette_primary_data_loc_path(agent)
+        ziplog_path = agent.path.join(path, self.LOG_DIR)
 
         cmd = 'tabadmin ziplogs -l -n -a \\\"%s\\\"' % ziplog_path
         body = self.cli_cmd(cmd, agent)
