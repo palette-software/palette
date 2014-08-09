@@ -782,6 +782,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                    body['error'])
                     self.stateman.update(orig_state)
                     return body
+
+                # This is the filename to use for 'tabadmin restore'
+                # now that it is copied to the primary.
+                backup_full_path = primary_agent.path.join(
+                    self.primary_backup_dir(primary_agent), 
+                    primary_agent.path.basename(backup_full_path))
+
                 backup_copied = True
 
         # The restore file is now on the Primary Agent.
@@ -859,7 +866,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # stopped, rather than have tableau automatically start
             # during the restore.  (Tableau does not support this currently.)
             self.log.info("Restore: starting tableau after failed restore.")
-            start_body = self.cli_cmd("xtabadmin start", primary_agent)
+            start_body = self.cli_cmd("tabadmin start", primary_agent)
             if 'error' in start_body:
                 self.log.info(\
                     "Restore: 'tabadmin start' failed after failed restore.")
