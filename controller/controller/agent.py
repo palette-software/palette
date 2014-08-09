@@ -65,6 +65,11 @@ class Agent(meta.Base, BaseDictMixin):
                 return True
             else:
                 return False
+        if name == 'path':
+            if 'microsoft' in self.os_version.lower():
+                return ntpath
+            else:
+                return posixpath
         raise AttributeError(name)
 
     def connected(self):
@@ -149,12 +154,7 @@ class Agent(meta.Base, BaseDictMixin):
 
          entry.install_dir=body['install-dir']
 
-         # FIXME: this can be removed as data-dir becomes required.
-         if 'data-dir' in body:
-             entry.data_dir = body['data-dir']
-         else:
-             entry.data_dir = body['install-dir']
-
+         entry.data_dir=body['data-dir']
 
          entry.last_connection_time = func.now()
          entry = session.merge(entry)

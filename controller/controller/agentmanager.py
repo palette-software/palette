@@ -358,7 +358,7 @@ class AgentManager(threading.Thread):
            alert if above a disk watermark.
 
            This should be called only after the agent displayname
-           and type are known.."""
+           and type are known."""
 
         if not agent.displayname:
             self.log.error("Unknown agent displayname for agent.")
@@ -381,23 +381,30 @@ class AgentManager(threading.Thread):
 
         aconn = agent.connection
         if agent.iswin:
-            parts = agent.install_dir.split(':')
-            if len(parts) != 2:
-                self.log.error("Bad format for install-dir: %s",
-                                                       agent.install_dir)
-                return False
-            install_dir_vol_name = parts[0].upper()
+            if aconn.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+                if not 'tableau-data-dir' in pinfo:
+                    self.log.error("Missing 'tableau-data-dir' in pinfo: %s",
+                                    pinfo)
+                    return False
+                parts = pinfo['tableau-data-dir'].split(':')
+                if len(parts) != 2:
+                    self.log.error("Bad format for tableau-install-dir: %s",
+                                   pinfo['tableau-data-dir'])
+                    return False
+                tableau_data_dir_vol_name = parts[0].upper()
+
             # fixme
             parts = agent.data_dir.split(':')
             if len(parts) != 2:
                 self.log.error("Bad format for data-dir: %s",
                                                        agent.data_dir)
                 return False
-            install_data_dir = agent.path.join(parts[1], "Data")
+            palette_data_dir = agent.path.join(parts[1], self.server.DATA_DIR)
         else:
-            # install_dir_vol_name is never used for linux agents, below,
+            # tableau_data_dir_vol_name is never used for linux agents, below,
             # since it is only for primaries with Tableau installed.
-            install_data_dir = agent.path.join(agent.data_dir, "data")
+            palette_data_dir = agent.path.join(agent.data_dir,
+                                               self.server.DATA_DIR)
 
         (low_water,high_water) = \
             self.disk_watermark('low'), self.disk_watermark('high')
@@ -448,7 +455,7 @@ class AgentManager(threading.Thread):
                             if 'path' in volume:
                                 entry.path = volume['path']
                             else:
-                                entry.path = install_data_dir
+                                entry.path = palette_data_dir
 
                     if 'label' in volume:
                         entry.label = volume['label']
@@ -486,13 +493,13 @@ class AgentManager(threading.Thread):
                     # Add the volume
                     if 'type' in volume:
                         entry = AgentVolumesEntry.build(agent, volume,
-                                                        install_data_dir)
+                                                        palette_data_dir)
 
-                        # If it is the primary agent and install volume,
+                        # If it is the primary agent and tableau data volume,
                         # mark it as the "primary_data_loc" volume.
                         if aconn.agent_type == \
                                 AgentManager.AGENT_TYPE_PRIMARY and \
-                                install_dir_vol_name == name:
+                                tableau_data_dir_vol_name == name:
                             entry.primary_data_loc = True
                         else:
                             entry.primary_data_loc = False
@@ -531,29 +538,29 @@ class AgentManager(threading.Thread):
 
         # Sanity check.
         # If this is the primary agent, check to see if a volume
-        # exists for the install directory.   There must be
-        # one since 1) we use it for backups and 2) We need to
-        # know how much available disk space is used on the backup
-        # volume.
+        # exists for the tableau primary_data_loc directory.   There must be
+        # one since we need to know how much available disk space is used on
+        # the backup volume.
         if aconn.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
-                not self.primary_data_vol_exists(agentid, install_dir_vol_name):
+                not self.tableau_primary_data_vol_exists(agentid,
+                                                 tableau_data_dir_vol_name):
             self.log.error("pinfo for the primary did not include" + \
-                               " the install dir volume.  " + \
-                               "agentid: %d, install_dir_vol_name: %s",
-                           agentid, install_dir_vol_name)
+                               " the tableau data dir volume.  " + \
+                               "agentid: %d, tableau_data_dir_vol_name: %s",
+                           agentid, tableau_data_dir_vol_name)
             return False
 
         return True
 
-    def primary_data_vol_exists(self, agentid, install_dir_vol_name):
-        """Check to see if there is a volume for the primary
+    def tableau_primary_data_vol_exists(self, agentid, tableau_data_dir_vol_name):
+        """Check to see if there is a volume for the primary tableau
            data directory.  If there is not one, add it.
            Return True if exists, False if doesn't exist.
         """
         try:
             entry = meta.Session.query(AgentVolumesEntry).\
                 filter(AgentVolumesEntry.agentid == agentid).\
-                filter(AgentVolumesEntry.name == install_dir_vol_name).\
+                filter(AgentVolumesEntry.name == tableau_data_dir_vol_name).\
                 filter(AgentVolumesEntry.primary_data_loc == True).\
                 one()
             return True
@@ -903,7 +910,8 @@ class AgentManager(threading.Thread):
                         'ip-address',   # original
                         'listen-port',  # original
                         'uuid',         # original
-                        'install-dir'   # original
+                        'install-dir',  # original
+                        'data-dir'
                         ]
 
             for item in required:
@@ -994,6 +1002,11 @@ class AgentManager(threading.Thread):
 
 
     def set_default_backup_destid(self, agent):
+        if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
+            # The default would be set to the primary, so wait for
+            # the primary to connect and tell us the palette data-dir.
+            return
+
         # If there is no backup configuration BACKUP_DEST_ID yet,
         # create one now.
         try:
@@ -1004,17 +1017,13 @@ class AgentManager(threading.Thread):
             # It was found, so don't need to add it.
             return
 
-        # Set the BACKUP_DEST_ID to the same volume where
-        # tableau is installed.
-        # primary_data_loc where
-        # primary_data_loc where
-        session = meta.Session()
-        try:
-            entry = session.query(AgentVolumesEntry).\
-                filter(AgentVolumesEntry.agentid == agent.agentid).\
-                filter(AgentVolumesEntry.primary_data_loc == True).\
-                one()
-        except NoResultFound:
+        entry = self.server.backup.get_palette_primary_data_loc_vol_entry(agent)
+        self.log.debug(
+            ("set_default_backup_destid: " + \
+            "palette_primary_data_loc_path: volid: %d name %s, path %s") % \
+            (entry.volid, entry.name, entry.path))
+
+        if not entry:
             return
 
         self.server.system.save(StorageConfig.BACKUP_DEST_ID, entry.volid)

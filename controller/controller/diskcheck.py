@@ -4,6 +4,7 @@ from storage import StorageConfig
 
 from agentinfo import AgentVolumesEntry
 from agent import Agent
+from agentmanager import AgentManager
 
 class DiskException(Exception):
     def __init__(self, errmsg):
@@ -25,6 +26,8 @@ class DiskCheck(object):
 
         self.target_entry = None
         self.target_agent = None
+        self.target_is_palette_primary_data_volume = False
+        self.target_vol = ""
         self.target_dir = ""
         self.min_target_disk_needed = .3 * agent.tableau_data_size
 
@@ -38,52 +41,57 @@ class DiskCheck(object):
             raise DiskException(
                 "Missing 'tableau_data_dir' in pinfo.  Cannot proceed.")
 
-        # Check primary agent for disk availability
-        self.primary_check()
+        # Check tableau primary data for disk availability
+        self.tableau_primary_data_check()
 
-        # We now know the primary has enough space.
+        # We now know the tableau primary data has enough space.
         # Determine the target info.
         self.set_target_from_config()
 
-    def primary_check(self):
-        """Check to see if the primary has enough available disk space.
+    def tableau_primary_data_check(self):
+        """Check to see if the tableau primary data area
+           has enough available disk space.
         Returns:
-            True: primary has enough disk space
-            False: primary does NOT have enough disk space
+            True: Has enough disk space
+            False: Does NOT have enough disk space
         """
 
-        min_primary_disk_needed = self.agent.tableau_data_size
+        min_tableau_primary_data_disk_needed = self.agent.tableau_data_size
 
         # e.g. "C:"
         tableau_data_dir = self.agent.tableau_data_dir
-        primary_data_volume = self.agent.tableau_data_dir.split(':')[0]
+        tableau_primary_data_volume = self.agent.tableau_data_dir.split(':')[0]
 
         volumes = \
             AgentVolumesEntry.get_vol_entries_by_agentid(self.agent.agentid)
 
-        volume_l = [vol for vol in volumes if vol.name == primary_data_volume]
+        volume_l = [vol for vol in volumes \
+                    if vol.name == tableau_primary_data_volume]
 
         if not volume_l:
             raise DiskException(
                 ("Missing volume/disk available information from pinfo for " + \
                 "'%s' volume '%s'") % \
-                    (self.agent.displayname, primary_data_volume))
+                    (self.agent.displayname, tableau_primary_data_volume))
 
-        primary_volume = volume_l[0]
+        tableau_primary_data_volume_entry = volume_l[0]
 
-        primary_available = primary_volume.available_space
+        tableau_primary_data_available = \
+            tableau_primary_data_volume_entry.available_space
 
-        if primary_available < min_primary_disk_needed:
+        if tableau_primary_data_available < \
+                                        min_tableau_primary_data_disk_needed:
             raise DiskException(
                 ("Cannot backup due to shortage of disk space on " + \
                 "primary host '%s': %d needed, but only %d available.") % \
                     (self.agent.displayname,
-                     min_primary_disk_needed,
-                     primary_available))
+                     min_tableau_primary_data_disk_needed,
+                     tableau_primary_data_available))
 
         self.log.debug(\
-            "primary_check: primary has enough space.  Need %d and have %d",
-            min_primary_disk_needed, primary_available)
+            "tableau_primary_check: tableau primary data has enough space." + \
+            "Need %d and have %d", min_tableau_primary_data_disk_needed,
+            tableau_primary_data_available)
 
     def set_target_from_config(self):
         """Use the user configuration settings from StorageConfig
@@ -97,6 +105,7 @@ class DiskCheck(object):
         self.target_agent = None
         self.target_entry = None
         self.target_type = None
+        self.target_entry_is_palette_data_area = False
 
         try:
             storage_config = StorageConfig(self.server.system)
@@ -130,6 +139,7 @@ class DiskCheck(object):
             raise DiskException("diskcheck: Invalid backup dest_type: %s" % \
                                             storage_config.backup_dest_type)
 
+        # The rest is for handling a disk volume.
         entry = AgentVolumesEntry.get_vol_entry_by_volid(\
                                                 storage_config.backup_dest_id)
         
@@ -165,7 +175,15 @@ class DiskCheck(object):
                                 entry.agentid, entry.volid, entry.backupid)
 
         self.target_agent = agent
-        self.target_dir = ntpath.join(entry.name + ":\\", entry.path)
+        self.target_vol = entry.name
+        # fixme: agent.path...
+        self.target_dir = ntpath.join(entry.name + ":\\", entry.path,
+                                      self.server.BACKUP_DIR)
+
+
+        self.target_is_palette_primary_data_volume = \
+                self.server.backup.is_pal_pri_data_vol(self.target_agent,
+                                                       self.target_entry.name)
 
         self.log.debug("check_volume_from_config: set target to " + \
                 "agent '%s', volid %d, target dir '%s'. " + \
