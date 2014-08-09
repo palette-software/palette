@@ -22,6 +22,7 @@ class Sched(threading.Thread):
         self.daemon = True
 
         self.server = server
+        self.handler = JobHandler(self)
         self.telnet_hostname = self.server.config.get("palette",
                                                       "telnet_hostname",
                                                       default="localhost")
@@ -64,9 +65,11 @@ class Sched(threading.Thread):
 
         entry.set_next_run_time()
         meta.Session.commit()
+        return {}
 
     def status(self):
-        return [job.todict(pretty=True) for job in Crontab.get_jobs()]
+        jlist = [job.todict(pretty=True) for job in Crontab.get_jobs()]
+        return {'jobs': jlist}
 
     def delete(self, names):
         body = {}
@@ -211,9 +214,9 @@ class JobHandler(object):
             return
 
         cmd = [ path,
-                '--hostname', self.telnet_hostname,
-                '--port', self.telnet_port,
-                '--envid', self.server.environment.envid
+                '--hostname', self.scheduler.telnet_hostname,
+                '--port', str(self.scheduler.telnet_port),
+                '--envid', str(self.server.environment.envid)
                ]
 
         try:
