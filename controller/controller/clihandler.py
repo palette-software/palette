@@ -1818,11 +1818,14 @@ class CliHandler(socketserver.StreamRequestHandler):
             except exc.InvalidStateError, e:
                 self.error(ERROR_WRONG_STATE, e.message)
             except (IOError, ValueError) as e:
-                self.error(ERROR_COMMAND_FAILED, "%s", str(e))
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                tb = ''.join(traceback.format_tb(exc_traceback))
+                line = "%s.  Traceback: %s" % (sys.exc_info()[1],
+                                                            tb.replace('\n', ''))
+                self.error(ERROR_COMMAND_FAILED, line)
             except Exception, e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 tb = ''.join(traceback.format_tb(exc_traceback))
-                                                        
                 line = "%s.  Traceback: %s" % (sys.exc_info()[1],
                                                             tb.replace('\n', ''))
 
