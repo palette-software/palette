@@ -2,232 +2,232 @@ import os
 import time
 import subprocess
 import sys
+import threading
+import re
 
-from apscheduler.scheduler import Scheduler
-from apscheduler.jobstores.sqlalchemy_store import SQLAlchemyJobStore
-from apscheduler.job import Job
-from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
+from datetime import datetime
 
+from sqlalchemy import Column, String, BigInteger, DateTime, LargeBinary
+from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
 
+from mixin import BaseDictMixin
 from event_control import EventControl
+from croniter import Croniter
 
-global server
+class Sched(threading.Thread):
 
-class Sched(object):
+    def __init__(self, server):
+        super(Sched, self).__init__()
+        self.daemon = True
 
-    JOBSTORE='sjs'
-
-    def __init__(self, in_server):
-        global server
-        server = in_server
-
-        self.telnet_hostname = server.config.get("palette", "telnet_hostname",
+        self.server = server
+        self.telnet_hostname = self.server.config.get("palette",
+                                                      "telnet_hostname",
                                                       default="localhost")
 
-        self.telnet_port = server.config.getint("palette", "telnet_port",
-                                                            default=9000)
+        self.telnet_port = self.server.config.getint("palette",
+                                                     "telnet_port",
+                                                     default=9000)
 
-        self.sched_dir = server.config.get("palette", "sched_dir",
-                                                default="/var/palette/sched")
+        self.sched_dir = server.config.get("palette",
+                                           "sched_dir",
+                                           default="/var/palette/sched")
+        self.start()
 
-        self.command_info = {'telnet_hostname': self.telnet_hostname,
-                        'telnet_port': str(self.telnet_port),
-                        'envid': str(server.environment.envid),
-                        'sched_dir': self.sched_dir}
+    def run(self):
+        while True:      
+            now = time.time()
+            nexttime = 61 +  now - (now % 60) # start of the minute
 
-        sqlalchemy_job_store = SQLAlchemyJobStore(engine=meta.engine)
+            for job in Crontab.get_ready_jobs():
+                self.server.log.debug("JOB: " + str(job))
+                try:
+                    self.handler(job.name)
+                except Exception, e:
+                    self.server.error("Job '%s':" + str(e))
+                job.set_next_run_time()
 
-        self.sched = Scheduler(standalone=False, daemonic=True)
-        self.sched.add_jobstore(sqlalchemy_job_store, self.JOBSTORE)
+            meta.Session.commit()
+            time.sleep(nexttime - now)
 
-        self.sched.start()
-        self.sched.add_listener(Sched.listener,
-                                        EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
+    def add_cron_job(self, name,
+                     minute="*", hour="*", day_of_month="*", 
+                     month="*", day_of_week="*"):
+
+        entry = Crontab.get(name)
+        entry.minute = str(minute)
+        entry.hour = str(hour)
+        entry.day_of_month = str(day_of_month)
+        entry.month = str(month)
+        entry.day_of_week = str(day_of_week)
+
+        entry.set_next_run_time()
+        meta.Session.commit()
 
     def status(self):
-        jobs = self.sched.get_jobs()
-        jlist = []
-        for job in jobs:
-            jlist.append(self.job_to_dict(job))
-
-        return {'jobs': jlist}
+        return [job.todict(pretty=True) for job in Crontab.get_jobs()]
 
     def delete(self, names):
-        deleted = []
-        failed = []
-        not_found = []
-        for jobname in names:
-            jobs = self.sched.get_jobs()
-            found = False
-            for job in jobs:
-                if jobname == job.name:
-                    found = True
-                    try:
-                        self.sched.unschedule_job(job)
-                        deleted.append(self.job_to_dict(job))
-                    except KeyError, e:
-                        server.log.error("sched delete failed: " + str(e))
-                        failed.append(self.job_to_dict(job))
-            if not found:
-                server.log.info("No such job name: %s", jobname)
-                not_found.append(jobname)
-
-        body =  {'deleted': deleted}
-        if len(failed):
-            body['error'] = "sched del failed"
-            body['failed'] = failed
-        if len(not_found):
-            body['error'] = "sched del failed"
-            body['not-found'] = not_found
+        body = {}
+        try:
+            Crontab.delete(names)
+            if isinstance(names, basestring):
+                names = [names]
+            body['deleted'] = names
+        except Exception, e:
+            body['status'] = 'FAILED'
+            body['error'] = str(e)
         return body
 
-    def job_to_dict(self, job):
-        return {'name': job.name, 'runs': job.runs, 'trigger': str(job.trigger)}
-
-    def add(self, minute, hour, dom, month, dow, command):
-        path = os.path.join(self.command_info['sched_dir'], command)
-        if not os.path.exists(path):
-            return { 'error': "No such sched command script: " + command}
-
-        try:
-            job = self.sched.add_cron_job(
-                Sched.job_function, jobstore=self.JOBSTORE,
-                    name=command,
-                    args=[command, self.command_info],
-                    minute=minute, hour=hour, day=dom, month=month,
-                                                                day_of_week=dow)
-        except:
-            e = sys.exc_info()[0]
-            return {'error': e}
-
-        return self.job_to_dict(job)
-
     def populate(self):
-        jobs = self.sched.get_jobs()
-
-        if len(self.sched.get_jobs()):
-            server.log.debug("sched populate: already jobs")
+        jobs = Crontab.get_jobs()
+        if jobs:
+            self.server.log.debug("sched populate: already jobs")
             return
 
-        """
-        # Remove all jobs and add them back.
-        for job in jobs:
-            server.log.debug("sched populate: unscheduling %s", job.name)
-            self.sched.unschedule_job(job)
-        """
-
-        server.log.debug("sched populate: adding jobs")
+        self.server.log.debug("sched populate: adding jobs")
 
         # Backup every night at 12:00.
-        self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
-            name='backup',
-            args=['backup', self.command_info],
-            hour=0, minute=0)
+        self.add_cron_job(name='backup', hour=0, minute=0)
 
         # yml every 5 minutes
-        self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
-            name='yml',
-            args=['yml', self.command_info],
-            minute="0/5")
+        self.add_cron_job(name='yml', minute="0/5")
 
         # info_all/pinfo every 5 minutes
-        self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
-            name='info_all',
-            args=['info_all', self.command_info],
-            minute="1/5")
+        self.add_cron_job(name='info_all', minute="1/5")
 
         # extracts every 5 minutes
-        self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
-            name='extract',
-            args=['extract', self.command_info],
-            minute="2/5")
+        self.add_cron_job(name='extract', minute="2/5")
 
         # auth_import every 10 minutes
-        self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
-            name='auth_import',
-            args=['auth_import', self.command_info],
-            minute="2/10")
+        self.add_cron_job(name='auth_import', minute="2/10")
 
         # sync tables every 5 minutes
-        self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
-            name='sync',
-            args=['sync', self.command_info],
-            minute="3/5")
+        self.add_cron_job(name='sync', minute="3/5")
+
+        # http_requests import every 5 minutes
+        self.add_cron_job(name='http_request', minute='3/5')
 
         # license_check every 5 minutes
-        self.sched.add_cron_job(Sched.job_function, jobstore=self.JOBSTORE,
-            name='license_check',
-            args=['license_check', self.command_info],
-            minute="4/5")
+        self.add_cron_job(name='license_check', minute="4/5")
+
+
+class Crontab(meta.Base, BaseDictMixin):
+    __tablename__ = "cron"
+    slash_re = re.compile(r'^(\d+)/(\d+)$')
+
+    cronid = Column(BigInteger, unique=True, nullable=False, primary_key=True)
+    name = Column(String, unique=True, nullable=False)
+    next_run_time = Column(DateTime)
+    minute = Column(String, nullable=False) # 0-59,*
+    hour = Column(String, nullable=False) # 0-23,*
+    day_of_month = Column(String, nullable=False) # 1-31,*
+    month = Column(String, nullable=False) # 1-12,*
+    day_of_week = Column(String, nullable=False) # 0-6,# or names
+
+    # convert X/Y format to comma delimetted list
+    def commafy(self, s, maxval=60):
+        m = self.slash_re.match(s)
+        if not m:
+            return s
+        x,y = int(m.group(1)), int(m.group(2))
+
+        retval = ''
+        while x < maxval:
+            if retval:
+                retval = retval + ','
+            retval = retval + str(x)
+            x = x + y
+        return retval
+
+    def __str__(self):
+        s = ' '.join([self.minute, self.hour,
+                      self.day_of_month,self.month, self.day_of_week])
+        return '[' + self.name + '] ' + s
+
+    def expr(self):
+        return ' '.join([self.commafy(self.minute),
+                         self.commafy(self.hour, maxval=24),
+                         self.day_of_month, self.month, self.day_of_week])
+
+    def set_next_run_time(self):
+        itr = Croniter(self.expr(), start_time = datetime.utcnow())
+        t =  itr.get_next()
+        self.next_run_time = datetime.fromtimestamp(t)
 
     @classmethod
-    def listener(cls, event):
-        if event.exception:
-            server.log.error("listener: Scheduled job failed: %s",
-                                                                event.job.name)
+    def get(self, name):
+        try:
+            entry = meta.Session.query(Crontab).\
+                filter(Crontab.name == name).one()
+        except NoResultFound:
+            entry = Crontab(name=name)
+            meta.Session.add(entry)
+        return entry
+
+    @classmethod
+    def get_ready_jobs(cls):
+        return meta.Session.query(Crontab).\
+                filter(Crontab.next_run_time <= datetime.utcnow()).\
+                order_by(Crontab.cronid).all()
+
+    @classmethod
+    def get_jobs(cls):
+        return meta.Session.query(Crontab).\
+                order_by(Crontab.cronid).all()
+
+    @classmethod
+    def delete(cls, arg):
+        q = session.query(Crontab)
+        if isinstance(arg, basestring):
+            q = q.filter(Crontab.name == arg)
         else:
-            server.log.debug(\
-                "listener: Scheduled job started successfully: %s",
-                                                                event.job.name)
+            q = q.filter(Crontab.name.in_(arg))
+        q.delete(synchronize_session='fetch')
 
-    @classmethod
-    def job_function(cls, command, command_info):
-        if server.upgrading():
-            server.log.info("sched command will be SKIPPED " + \
-                "due to upgrading.  command: %s, command_info: %s",
-                                            command, str(command_info))
+
+class JobHandler(object):
+
+    def __init__(self, scheduler):
+        self.scheduler = scheduler
+        self.server = self.scheduler.server
+
+    def __call__(self, name):
+        if self.server.upgrading():
+            self.server.log.info(
+                "sched command will be SKIPPED due to upgrading.  "
+                "command: %s", name)
             return
 
-        server.log.debug("sched command: %s, command_info: %s", command,
-                                                            str(command_info))
-        path = os.path.join(command_info['sched_dir'], command)
+        self.server.log.debug("sched command: %s", name)
+        path = os.path.join(self.scheduler.sched_dir, name)
 
         if not os.path.exists(path):
-            server.log.error("sched job_function: No such command: %s", path)
-            server.event_control.gen(\
+            self.server.log.error("sched job: No such command: %s", path)
+            self.server.event_control.gen(\
                 EventControl.SCHEDULED_JOB_FAILED,
-                { 'error': "No such command: '%s'" % command})
+                { 'error': "No such command: '%s'" % name})
             return
 
         cmd = [ path,
-                '--hostname', command_info['telnet_hostname'],
-                '--port', command_info['telnet_port'],
-                '--envid', command_info['envid']
+                '--hostname', self.telnet_hostname,
+                '--port', self.telnet_port,
+                '--envid', self.server.environment.envid
                ]
 
         try:
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE, close_fds=True)
+                                       stderr=subprocess.PIPE, close_fds=True)
         except Exception as e:
-            server.event_control.gen(\
+            self.server.event_control.gen(\
                 EventControl.SCHEDULED_JOB_FAILED,
-                { 'error': "Could not start job '%s': %s" % \
-                                                    (cmd, e.__doc__) })
+                { 'error': "Could not start job '%s': %s" % (cmd, e.__doc__) })
             return
 
         stdout, stderr = process.communicate()
 
-        server.log.debug("cmd '%s' exit status: %d, stdout: '%s', stderr: %s'",
-                                path, process.returncode, stdout, stderr)
-
-        """
-        if process.returncode:
-            server.event_control.gen(EventControl.SCHEDULED_JOB_FAILED,
-                {'stdout': stdout,
-                    'error': ' ' + stderr})
-        else:
-            server.event_control.gen(EventControl.SCHEDULED_JOB_STARTED,
-                {'stdout': stdout,
-                    'stderr': stderr,
-                    'info': 'Command: ' + command })"""
-
-        return
-
-if __name__ == "__main__":
-    command_info = {    'telnet_hostname': "localhost",
-                        'telnet_port': 9000,
-                        'sched_dir': "/var/palette/sched"}
-
-    Sched.job_function("backup", command_info)
-    time.sleep(30)
+        self.server.log.debug("cmd '%s' exit status: %d, "
+                              "stdout: '%s', stderr: %s'",
+                              path, process.returncode, stdout, stderr)
+        return    
