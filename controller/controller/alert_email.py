@@ -1,7 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import sys
 import traceback
 import smtplib
 from email.mime.text import MIMEText
+from email.header import Header
 
 from akiri.framework.ext.sqlalchemy import meta
 from sqlalchemy.orm.exc import NoResultFound
@@ -17,7 +21,22 @@ from event_control import EventControl
 
 class AlertEmail(object):
 
-    def __init__(self, server):
+    def __init__(self, server, standalone=False):
+        if standalone:
+            self.standalone = True
+            self.from_email = "tim.flagg@gmail.com"
+            self.to_email = "tim.flagg@gmail.com"
+            self.smtp_server = "localhost"
+            self.smtp_port = 25
+            self.alert_level = 1
+            self.enabled = 1
+            self.max_subject_len = 100
+            import logging
+
+            logging.basicConfig(level=logging.DEBUG)
+            self.log = logging
+            return
+        self.standalone = False
         self.config = server.config
         self.log = server.log
         self.enabled = self.config.getboolean('alert', 'enabled', default=False)
@@ -31,7 +50,7 @@ class AlertEmail(object):
         self.alert_level = self.config.getint("alert", "alert_level",
                                                         default=DEFAULT_ALERT_LEVEL)
 
-        DEFAULT_MAX_SUBJECT_LEN = 100
+        DEFAULT_MAX_SUBJECT_LEN = 1000
         self.max_subject_len = self.config.getint("alert", "max_subject_len",
                                                 default=DEFAULT_MAX_SUBJECT_LEN)
 
@@ -42,6 +61,9 @@ class AlertEmail(object):
 
     def admin_emails(self):
         """Return a list of admins that have an email address."""
+
+        if self.standalone:
+            return [self.to_email]
 
         session = meta.Session()
         rows = session.query(UserProfile).\
@@ -119,12 +141,13 @@ class AlertEmail(object):
         if not to_emails:
             self.log.debug(\
                 "No non-admin users exist with email addresses.  " + \
-                "Not sending: Subject: %s, Message: %s", subject, message)
+                "Not sending: Subject: %s, Message: %s" % (subject, message))
             return
 
+        # Convert from Unicode to utf-8
         message = message.encode('utf-8')    # prevent unicode exception
         try:
-            msg = MIMEText(message)
+            msg = MIMEText(message, "plain", "utf-8")
         except Exception, e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             tb = ''.join(traceback.format_tb(exc_traceback))
@@ -137,7 +160,8 @@ class AlertEmail(object):
         if len(subject) > self.max_subject_len:
             subject = subject[:self.max_subject_len]  + "..."
 
-        msg['Subject'] = "Palette Alert: " + subject
+        subject = Header(unicode("Palette Alert: " + subject), 'utf-8')
+        msg['Subject'] = subject
         msg['From'] = self.from_email
         msg['To'] = ', '.join(to_emails)
         msg_str = msg.as_string()
@@ -153,8 +177,8 @@ class AlertEmail(object):
                 message, e, self.smtp_server, self.smtp_port)
             return
 
-        self.log.info("Emailed alert: Subject: '%s', message: '%s'" % \
-                                                        (subject, message))
+        self.log.info("Emailed alert: Subject: '%s', message: '%s'",
+                                                    subject, message)
 
         return
 
@@ -253,3 +277,18 @@ class AlertEmail(object):
             lines += "    " + line + "\n"
 
         return lines
+
+class EventFake(object):
+    def __init__(self):
+        self.subject = u"ERROR - Tableau Server Partial Process Failure"
+        self.email_message = u"Status: ERROR\n\nPlease review the output below to find which Tableau Process is “Stopped.” Sometimes a Tableau Process will stop running momentarily to restart itself which can cause this alert to be triggered. Normally, Tableau Server will recover in less than 5 minutes. If not, please inspect the Server browser by clicking on the Status box in the top left corner to help you troubleshoot further. \n\nDetails: ${stdout}"
+
+        self.key = EventControl.STATE_DEGRADED
+        self.level = EventControl.LEVEL_ERROR
+
+if __name__ == "__main__":
+    alert_email = AlertEmail(1, standalone=True)
+    entry = EventFake()
+
+    data = {'stdout': 'This is the stdout contents'}
+    alert_email.send(entry, data)

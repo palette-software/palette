@@ -250,9 +250,9 @@ class EventControlManager(object):
                 tb = ''.join(traceback.format_tb(exc_traceback))
                 report = "Error: %s.  Traceback: %s" % (sys.exc_info()[1], tb)
 
-                self.log.error( ("alert_email: Failed for event '%s', ' + \
-                                 data '%s'.  Will not send email. %s") % \
-                                 (event_entry.key, str(data), report))
+                self.log.error(("alert_email: Failed for event '%s', ' + \
+                                 data '%s'.  Will not send email. %s"),
+                                     event_entry.key, str(data), report)
 
     def make_default_description(self, data):
         """Create a default event message given the incoming dictionary."""
