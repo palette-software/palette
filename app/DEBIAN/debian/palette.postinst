@@ -34,11 +34,11 @@ chown -R www-data:adm /var/log/palette
 chown -R www-data:adm /opt/palette
 
 if [ -d /etc/apache2/conf-enabled ]; then
-    ln -s ../conf-available/palette.conf /etc/apache2/conf-enabled/
+    ln -s -f ../conf-available/palette.conf /etc/apache2/conf-enabled/
 fi
 
 if [ -d /etc/apache2/conf.d ]; then
-    ln -s ../conf-available/palette.conf /etc/apache2/conf.d/
+    ln -s -f ../conf-available/palette.conf /etc/apache2/conf.d/
 fi
 
 service apache2 stop || true
