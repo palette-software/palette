@@ -2,7 +2,6 @@ include etc/*
 include etc/ssl/certs/*
 include etc/ssl/private/*
 include etc/apache2/sites-available/*
-include etc/apache2/conf.d/*
-include /var/palette/data/photos/*
+include etc/apache2/conf-available/*
 recursive-include palette *
 exclude setup.cfg

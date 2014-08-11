@@ -1,1 +1,0 @@
-WSGIScriptAlias / /opt/palette/palette.wsgi
