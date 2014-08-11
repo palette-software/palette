@@ -312,8 +312,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                     StateManager.STATE_DISCONNECTED,
                                                     StateManager.STATE_UNKNOWN):
 
-                self.error(\
-                        ERROR_BUSY, "FAIL: Can't upgrade - main state is: %s",
+                self.error(
+                    ERROR_BUSY, "FAIL: Can't upgrade - main state is: %s",
                                                                   main_state)
                 self.server.log.debug("Can't upgrade - main state is: %s",
                                                                     main_state)
@@ -419,7 +419,14 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
 
-        body = self.server.backup_cmd(agent)
+        try:
+            body = self.server.backup_cmd(agent)
+        except Exception, e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            tb = ''.join(traceback.format_tb(exc_traceback)).\
+                                                    replace('\n', '')
+            line = "Backup Error: %s.  Traceback: %s" % (sys.exc_info()[1], tb)
+            body = {'error': line}
 
         if self.success(body):
             self.server.event_control.gen(backup_finished_event,
@@ -563,10 +570,10 @@ class CliHandler(socketserver.StreamRequestHandler):
         if main_state not in (StateManager.STATE_STARTED,
                     StateManager.STATE_DEGRADED, StateManager.STATE_STOPPED):
             self.error(ERROR_WRONG_STATE,
-                "FAIL: Can't backup before restore - main state is:", \
+                "FAIL: Can't backup before restore - main state is: %s",
                                                                   main_state)
-            self.server.log.debug("Can't backup before restore - main state is: %s",
-                                                                    main_state)
+            self.server.log.debug(
+                "Can't backup before restore - main state is: %s", main_state)
             aconn.user_action_unlock()
             return
 
@@ -581,10 +588,10 @@ class CliHandler(socketserver.StreamRequestHandler):
             stateman.update(StateManager.STATE_STOPPED_BACKUP_RESTORE)
         else:
             self.error(ERROR_WRONG_STATE,
-                "FAIL: Can't backup before restore - reported status is:", \
-                                                              reported_status)
+                       ("FAIL: Can't backup before restore - " + \
+                       "reported status is: %s",  reported_status)
             self.server.log.debug(\
-                "Can't backup before restore - reported status is: %s", \
+                "Can't backup before restore - reported status is: %s",
                                                     reported_status)
             aconn.user_action_unlock()
             return
@@ -613,7 +620,14 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # No alerts or state updates are done in backup_cmd().
-        body = self.server.backup_cmd(agent)
+        try:
+            body = self.server.backup_cmd(agent)
+        except Exception, e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            tb = ''.join(traceback.format_tb(exc_traceback)).\
+                                                    replace('\n', '')
+            line = "Backup Error: %s.  Traceback: %s" % (sys.exc_info()[1], tb)
+            body = {'error': line}
 
         if self.success(body):
             self.server.event_control.gen(\
@@ -635,8 +649,16 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # restore_cmd() updates the state correctly depending on the
         # success of backup, copy, stop, restore, etc.
-        body = self.server.restore_cmd(agent, backup_name, main_state,
+        try:
+            body = self.server.restore_cmd(agent, backup_name, main_state,
                                                                 userid=userid)
+        except Exception, e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            tb = ''.join(traceback.format_tb(exc_traceback)).\
+                                                    replace('\n', '')
+            line = "Restore Error: %s.  Traceback: %s" % (sys.exc_info()[1], tb)
+
+            body = {'error': line}
 
         # The final RESTORE_FINISHED/RESTORE_FAILED alert is sent only here and
         # not in restore_cmd().  Intermediate alerts like RESTORE_STARTED
@@ -1800,7 +1822,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 tb = ''.join(traceback.format_tb(exc_traceback)).\
                                                         replace('\n', '')
-                line = "cmd: %s.  Traceback: %s" % (sys.exc_info()[1], tb)
+                line = "cmd: %s. Error: %s. Traceback: %s" % \
+                        (data, sys.exc_info()[1], tb)
 
                 self.error(ERROR_COMMAND_FAILED, line)
 
