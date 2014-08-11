@@ -495,15 +495,6 @@ class AgentManager(threading.Thread):
                         entry = AgentVolumesEntry.build(agent, volume,
                                                         palette_data_dir)
 
-                        # If it is the primary agent and tableau data volume,
-                        # mark it as the "primary_data_loc" volume.
-                        if aconn.agent_type == \
-                                AgentManager.AGENT_TYPE_PRIMARY and \
-                                tableau_data_dir_vol_name == name:
-                            entry.primary_data_loc = True
-                        else:
-                            entry.primary_data_loc = False
-
                         if entry.archive and not agent.iswin:
                             if linux_archive_volume_found:
                                 # Can be only one archive for Linux
@@ -536,36 +527,7 @@ class AgentManager(threading.Thread):
 
         session.commit()
 
-        # Sanity check.
-        # If this is the primary agent, check to see if a volume
-        # exists for the tableau primary_data_loc directory.   There must be
-        # one since we need to know how much available disk space is used on
-        # the backup volume.
-        if aconn.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
-                not self.tableau_primary_data_vol_exists(agentid,
-                                                 tableau_data_dir_vol_name):
-            self.log.error("pinfo for the primary did not include" + \
-                               " the tableau data dir volume.  " + \
-                               "agentid: %d, tableau_data_dir_vol_name: %s",
-                           agentid, tableau_data_dir_vol_name)
-            return False
-
         return True
-
-    def tableau_primary_data_vol_exists(self, agentid, tableau_data_dir_vol_name):
-        """Check to see if there is a volume for the primary tableau
-           data directory.  If there is not one, add it.
-           Return True if exists, False if doesn't exist.
-        """
-        try:
-            entry = meta.Session.query(AgentVolumesEntry).\
-                filter(AgentVolumesEntry.agentid == agentid).\
-                filter(AgentVolumesEntry.name == tableau_data_dir_vol_name).\
-                filter(AgentVolumesEntry.primary_data_loc == True).\
-                one()
-            return True
-        except NoResultFound, e:
-            return False
 
     def gen_disk_event(self, agent, usage_color, entry, percent):
 
@@ -1039,10 +1001,6 @@ class AgentManager(threading.Thread):
             if not volentry.archive:
                 continue
             lines.append("%s:%s\r\n" % (volentry.name, volentry.path))
-
-        # remove duplicate lines: The primary_data_loc could be
-        # the same as a volume path entered by the user.
-        lines = list(set(lines))
 
         lines = ''.join(lines)
         route_path = agent.path.join(agent.data_dir, "archive", "routes.txt")
