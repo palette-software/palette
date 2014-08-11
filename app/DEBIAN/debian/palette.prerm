@@ -1,12 +1,18 @@
-#!/bin/sh
+#!/bin/bash
 
 case "$1" in
     remove|deconfigure)
-        # Put it back the way it was.
-        sed --in-place 's/#Listen 80/Listen 80/' /etc/apache2/ports.conf
         /usr/sbin/a2dissite palette-software.conf palette-software-ssl.conf
         service apache2 stop || true
         rm -rf /opt/palette/plugins
+
+	if [ -e /etc/apache2/conf-enabled/palette.conf ]; then
+	    rm /etc/apache2/conf-enabled/palette.conf
+	fi
+
+	if [ -e /etc/apache2/conf.d/palette.conf ]; then
+	    rm /etc/apache2/conf.d/palette.conf
+	fi
     ;;
     upgrade)
         ;;

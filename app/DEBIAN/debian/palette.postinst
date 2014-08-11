@@ -1,7 +1,10 @@
-#!/bin/sh -e
+#!/bin/bash -e
 
 action="$1"
 oldversion="$2"
+
+# FIXME: there has to be a better way of doing this.
+PYVERS=`python -c 'import sys;print str(sys.version_info.major)+"."+str(sys.version_info.minor)'`
 
 if [ "$action" != configure ]
 then
@@ -9,10 +12,6 @@ then
 fi
 
 set +x
-
-# apache: List on 80 again to redirect.
-sed --in-place 's/^#Listen 80/Listen 80/' /etc/apache2/ports.conf
-
 chmod 610 /etc/ssl/private/ssl-cert-palette-software.key
 
 /usr/sbin/a2enmod ssl rewrite
@@ -25,13 +24,22 @@ chmod 610 /etc/ssl/private/ssl-cert-palette-software.key
 mkdir -p /var/log/palette
 mkdir -p /opt/palette/plugins
 
+# pyshared can't be used here, it doesn't exist on 14.04
 cd /opt/palette/plugins
-for x in `ls -d /usr/share/pyshared/palette*`; do
+for x in `ls -d /usr/lib/python${PYVERS}/dist-packages/palette*`; do
     ln -s -f $x
 done
 
 chown -R www-data:adm /var/log/palette
 chown -R www-data:adm /opt/palette
+
+if [ -d /etc/apache2/conf-enabled ]; then
+    ln -s ../conf-available/palette.conf /etc/apache2/conf-enabled/
+fi
+
+if [ -d /etc/apache2/conf.d ]; then
+    ln -s ../conf-available/palette.conf /etc/apache2/conf.d/
+fi
 
 service apache2 stop || true
 service apache2 start
