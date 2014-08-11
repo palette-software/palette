@@ -90,7 +90,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             cloud_cmd = self.s3_cmd
             s3id = dcheck.target_entry.s3id
         elif dcheck.target_type == StorageConfig.VOL:
-            if dcheck.target_entry.primary_data_loc:
+            if dcheck.target_entry.agentid == agent.agentid:
                 self.log.debug("Backup will stay on the primary.")
             else:
                 self.log.debug(\
@@ -244,7 +244,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 # alternate volume on the primary agent.
                 body['info'] = ("Backup file is configured to stay on " + \
                     'the Tableau primary agent, non-primary palette ' + \
-                    'data directory: %s', dcheck.target_dir)
+                    'data directory: %s') % dcheck.target_dir
 
                 delete_local_backup = False
             self.backup.add(backup_full_path,

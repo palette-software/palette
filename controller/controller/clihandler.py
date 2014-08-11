@@ -589,8 +589,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             self.error(ERROR_WRONG_STATE,
                        ("FAIL: Can't backup before restore - " + \
-                       "reported status is: %s",  reported_status)
-            self.server.log.debug(\
+                       "reported status is: %s",  reported_status))
+            self.server.log.debug(
                 "Can't backup before restore - reported status is: %s",
                                                     reported_status)
             aconn.user_action_unlock()
