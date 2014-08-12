@@ -76,7 +76,6 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
     archive = Column(Boolean)
     archive_limit = Column(BigInteger)
 
-    primary_data_loc = Column(Boolean)
     active = Column(Boolean)
 
     agent = relationship('Agent', backref='volumes')
@@ -141,8 +140,7 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
         return AgentVolumesEntry(agentid=agent.agentid, name=name, path=path,
             vol_type=vol_type, label=label, drive_format=drive_format,
             archive=archive, archive_limit=archive_limit, size=size, 
-            available_space=available_space, primary_data_loc=False,
-                                                            active=True)
+            available_space=available_space, active=True)
 
     @classmethod
     def has_available_space(cls, agentid, min_needed):

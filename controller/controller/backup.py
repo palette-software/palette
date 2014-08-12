@@ -83,29 +83,6 @@ class BackupManager(object):
         except NoResultFound, e:
             return None
 
-    def get_tableau_primary_data_loc_vol_entry(self):
-        try:
-            vol_entry, agent_status_entry = \
-                meta.Session.query(AgentVolumesEntry, Agent).\
-                filter(AgentVolumesEntry.primary_data_loc == True).\
-                filter(AgentVolumesEntry.agentid == Agent.agentid).\
-                filter(Agent.envid == self.envid).\
-                one()
-
-            return vol_entry
-
-        except NoResultFound, e:
-            return None
-
-    def tableau_primary_data_loc_path(self, agent):
-        vol_entry = self.get_tableau_primary_data_loc_vol_entry()
-
-        if not vol_entry:
-            return None
-
-        # fixme: also support linux agent
-        return agent.path.join(vol_entry.name + ':', vol_entry.path)
-
     def get_palette_primary_data_loc_vol_entry(self, primary_agent):
         """
             Must pass in the primary agent.
