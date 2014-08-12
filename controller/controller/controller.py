@@ -53,7 +53,7 @@ from s3 import S3
 
 from sched import Sched, Crontab # needed for create_all()
 from clihandler import CliHandler
-from util import version
+from util import version, success, failed
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
@@ -520,18 +520,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if body == None:
             return self.error("POST /%s getresponse returned null body" % uri)
         return body
-
-    def success(self, body):
-        if 'error' in body:
-            return False
-        else:
-            return True
-
-    def fail(self, body):
-        if 'error' in body:
-            return True
-        else:
-            return False
 
     def copy_cmd(self, source_path, dest_name, target_dir):
         """Sends a phttp command and checks the status.
@@ -1397,7 +1385,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.yml(agent)     # raises an exception on fail
             if self.odbc_ok():
-                if self.fail(self.auth.load(agent)):
+                if failed(self.auth.load(agent)):
                     raise IOError("initial auth load failed")
                 self.sync_cmd(agent)  # ok to fail if not IOError
                 self.extract.load(agent)    # ok to fail if ot IOError
