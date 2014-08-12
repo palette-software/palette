@@ -171,8 +171,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.backup.add(backup_full_path,
                             agentid=palette_primary_data_dir_vol_entry.agentid)
             else:
-                body['info'] = "Backup file copied to %s path '%s'." % \
-                            (dcheck.target_type, backup_name)
+                body['info'] = \
+                    ("Backup file was copied to %s bucket '%s' " + \
+                     "filename '%s'.") % \
+                    (dcheck.target_type, dcheck.target_entry.bucket,
+                     backup_name)
                 # Backup was copied to gcs or s3
                 self.backup.add(backup_name, gcsid=gcsid, s3id=s3id)
                 delete_local_backup = True
