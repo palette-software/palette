@@ -103,7 +103,7 @@ class BackupManager(object):
                 filter(AgentVolumesEntry.agentid == primary_agent.agentid).\
                 filter(AgentVolumesEntry.name == palette_primary_data_vol).\
                 one()
-        except sqlalchemy.orm.exc.NoResultFound:
+        except NoResultFound:
             return None
 
     def palette_primary_data_loc_path(self, agent):
