@@ -14,7 +14,7 @@ if __name__ == "__main__":
                                                     skip_on_wrong_state=True):
         print "backup failed with:", comm.error
     print "backup reply:", comm.data
-
+    sys.exit(0)
     if not comm.send_cmd("cleanup", sync=True, close=True, verbose=True,
                                                     skip_on_wrong_state=True):
         print "cleanup failed with:", comm.error
