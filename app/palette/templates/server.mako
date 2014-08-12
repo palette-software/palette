@@ -20,14 +20,15 @@
           <h3>
 %if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
 	        <span class="editbox displayname"
-		          data-id="{{agentid}}" data-href="/rest/servers/displayname">
+		      data-id="{{agentid}}"
+		      data-href="/rest/servers/displayname">
               {{displayname}}
             </span>
 %else:
             {{displayname}}
 %endif
-	      </h3>
-          <span class=label>Hostname</span>{{fqdn}} ({{ip-address}})
+	  </h3>
+          {{fqdn}}
         </div>
         <div class="col2">
 %if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
