@@ -65,6 +65,7 @@ class PaletteRESTHandler(RESTApplication):
             path_info = path_info[1:]
         return path_info
 
+# This class also has to work for the (Tableau)Authenticator.
 class Telnet(object):
 
     def __init__(self, app):

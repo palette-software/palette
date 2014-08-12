@@ -1543,8 +1543,16 @@ class CliHandler(socketserver.StreamRequestHandler):
             agent = self.get_agent(cmd.dict)
             if not agent:
                 return
+            windomain = AgentYmlEntry.get(agent,
+                                          "wgserver.domain.fqdn",
+                                          default=None)
+            if not windomain:
+                self.error(ERROR_WRONG_STATE,
+                           "FAIL: No ActiveDirectory domain specified.")
+                return
             self.ack()
             body = self.server.active_directory_verify(agent,
+                                                       windomain,
                                                        cmd.args[1],
                                                        cmd.args[2])
         else:

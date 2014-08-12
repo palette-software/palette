@@ -1019,8 +1019,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         else:
             return False
 
-    def active_directory_verify(self, agent, username, password):
-        data = {'username':username, 'password':password}
+    def active_directory_verify(self, agent, windomain, username, password):
+        data = {'domain': windomain, 'username':username, 'password':password}
         body = agent.connection.http_send_json('/ad', data)
         return json.loads(body)
 
