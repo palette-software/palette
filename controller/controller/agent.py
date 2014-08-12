@@ -157,6 +157,10 @@ class Agent(meta.Base, BaseDictMixin):
 
          entry.data_dir=body['data-dir']
 
+         # FIXME: make required when all agents are updated.
+         if 'os-bitness' in body:
+             entry.bitness = body['os-bitness']
+
          entry.last_connection_time = func.now()
          entry = session.merge(entry)
          session.commit()
