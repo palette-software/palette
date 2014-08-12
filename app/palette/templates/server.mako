@@ -56,28 +56,47 @@
       <div>
         <div class="col2">
           <article>
-	    <span class="label">Server Type</span>{{type-name}}
+	    <span class="label">Server Type</span> {{type-name}}
 	  </article>
 	  {{#tableau-version}}
 	  <article>
-	    <span class="label">Tableau Server Version</span>{{tableau-version}} ({{tableau-bitness}}bit)
+	    <span class="label">Tableau Server Version</span>
+	    {{tableau-version}} ({{tableau-bitness}}bit)
 	  </article>
 	  {{/tableau-version}}
 	  {{#tableau-install-dir}}
 	  <article>
-	    <span class="label">Tableau Server Directory</span>{{tableau-install-dir}}
+	    <span class="label">Tableau Server Directory</span>
+	    {{tableau-install-dir}}
 	  </article>
 	  {{/tableau-install-dir}}
-          <article><span class="label">IP Address</span>{{ip-address}}</article>
-          <article><span class="label">OS</span>{{os-version}}{{#bitness}} ({{bitness}}bit){{/bitness}}</article>
+	  {{#tableau-license-type}}
 	  <article>
-	    <span class="label">RAM</span>{{installed-memory-readable}}
+	    <span class="label">Tableau License Type</span>
+	    {{tableau-license-type}}
+	  </article>
+	  {{/tableau-license-type}}
+	  {{#tableau-license-capacity}}
+	  <article>
+	    <span class="label">Tableau License Capacity</span>
+	    {{tableau-license-capacity}}
+	  </article>
+	  {{/tableau-license-capacity}}
+          <article>
+	    <span class="label">IP Address</span> {{ip-address}}
+	  </article>
+          <article>
+	    <span class="label">OS</span>
+	    {{os-version}}{{#bitness}} ({{bitness}}bit){{/bitness}}
 	  </article>
 	  <article>
-	    <span class="label">CPU Cores</span>{{processor-count}}
+	    <span class="label">RAM</span> {{installed-memory-readable}}
 	  </article>
 	  <article>
-	    <span class="label">CPU Type</span>{{processor-type}}
+	    <span class="label">CPU Cores</span> {{processor-count}}
+	  </article>
+	  <article>
+	    <span class="label">CPU Type</span> {{processor-type}}
 	  </article>
 	  <br/>
 	</div>
