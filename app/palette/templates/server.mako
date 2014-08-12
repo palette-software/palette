@@ -69,7 +69,7 @@
 	  </article>
 	  {{/tableau-install-dir}}
           <article><span class="label">IP Address</span>{{ip-address}}</article>
-          <article><span class="label">OS</span>{{os-version}}</article>
+          <article><span class="label">OS</span>{{os-version}}{{#bitness}} ({{bitness}}bit){{/bitness}}</article>
 	  <article>
 	    <span class="label">RAM</span>{{installed-memory-readable}}
 	  </article>
