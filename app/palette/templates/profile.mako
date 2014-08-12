@@ -20,6 +20,7 @@
     ${req.remote_user.email or ''}
   </p>
 
+%if req.remote_user.userid > 0:
   <h2>Tableau Server User License</h2>
   <p>Interactor</p>
 
@@ -28,6 +29,7 @@
 
   <h2>Tableau Server User Publisher Role</h2>
   <p>Publisher</p>
+%endif
 </section>
 
 <script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/profile.js">
