@@ -90,16 +90,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             cloud_cmd = self.s3_cmd
             s3id = dcheck.target_entry.s3id
         elif dcheck.target_type == StorageConfig.VOL:
-            if dcheck.target_entry.primary_data_loc:
+            if dcheck.target_entry.agentid == agent.agentid:
                 self.log.debug("Backup will stay on the primary.")
             else:
                 self.log.debug(\
                     "Backup will copy to target '%s', target_dir '%s'",
                         dcheck.target_agent.displayname, dcheck.target_dir)
         else:
-            self.log.error("backup_cmd: Invalid target_type: %s",
+            self.log.error("backup_cmd: Invalid target_type: %s" % \
                            dcheck.target_type)
-            return self.error("backup_cmd: Invalid target_type: %s",
+            return self.error("backup_cmd: Invalid target_type: %s" % \
                               dcheck.target_type)
         # Example name: 20140127_162225.tsbak
         backup_name = time.strftime("%Y%m%d_%H%M%S") + ".tsbak"
@@ -244,7 +244,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 # alternate volume on the primary agent.
                 body['info'] = ("Backup file is configured to stay on " + \
                     'the Tableau primary agent, non-primary palette ' + \
-                    'data directory: %s', dcheck.target_dir)
+                    'data directory: %s') % dcheck.target_dir
 
                 delete_local_backup = False
             self.backup.add(backup_full_path,
@@ -333,7 +333,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         vol_entry = AgentVolumesEntry.get_vol_entry_by_volid(entry.volid)
         if not vol_entry:
-            return self.error("Missing volume id: %d!", entry.volid)
+            return self.error("Missing volume id: %d!" % entry.volid)
 
         # FIXME: use agent.path
         backup_path = ntpath.join(vol_entry.name + ":", vol_entry.path, backup)
@@ -648,7 +648,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         backup_entry = self.backup.find_by_name(backup_full_path)
         if not backup_entry:
             self.stateman.update(orig_state)
-            return self.error("Backup name not found: %s", backup_full_path)
+            return self.error("Backup name not found: %s" % backup_full_path)
 
         # Get the gcs, s3 or vol entry
         if backup_entry.gcsid:
@@ -1069,7 +1069,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     "get_pinfo: Could not update agent: unknown " + \
                                     "displayname.  uuid: %s",  agent.uuid)
                 raise IOError("get_pinfo: Could not update agent: unknown " + \
-                        "displayname.  uuid: %s", agent.uuid)
+                        "displayname.  uuid: %s" % agent.uuid)
 
         return pinfo
 
