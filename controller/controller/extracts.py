@@ -159,7 +159,8 @@ class ExtractManager(object):
                 self.datasource_update(agent, entry,
                                        users=users, cache=datasources)
 
-            body = dict(agent.__dict__.items() + entry.todict(pretty=True).items())
+            body = agent.todict(pretty=True)
+            body = dict(body.items() + entry.todict(pretty=True).items())
 
             if row[3] is not None and row[4] is not None:
                 duration = parseutc(row[4]) - parseutc(row[3])

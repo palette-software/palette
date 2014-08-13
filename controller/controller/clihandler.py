@@ -445,9 +445,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             backup_finished_event = EventControl.BACKUP_FINISHED_SCHEDULED
             backup_failed_event = EventControl.BACKUP_FAILED_SCHEDULED
 
-        self.server.event_control.gen(backup_started_event,
-                                      agent.__dict__, userid=userid)
-
+        data = agent.todict(pretty=True)
+        self.server.event_control.gen(backup_started_event, data, userid=userid)
         self.ack()
 
         try:
@@ -460,13 +459,15 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = {'error': line}
 
         if success(body):
+            data = agent.todict(pretty=True)
             self.server.event_control.gen(backup_finished_event,
-                        dict(body.items() + agent.__dict__.items()),
-                        userid=userid)
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
         else:
+            data = agent.todict(pretty=True)
             self.server.event_control.gen(backup_failed_event,
-                        dict(body.items() + agent.__dict__.items()),
-                        userid=userid)
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
 
         if reported_status == TableauProcess.STATUS_RUNNING:
             stateman.update(StateManager.STATE_STARTED)
@@ -635,9 +636,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             userid = None
 
-        self.server.event_control.gen( \
-            EventControl.BACKUP_BEFORE_RESTORE_STARTED, agent.__dict__,
-            userid=userid)
+        data = agent.todict(pretty=True)
+        self.server.event_control.gen(\
+            EventControl.BACKUP_BEFORE_RESTORE_STARTED, data, userid=userid)
 
         self.ack()
 
@@ -661,14 +662,16 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = {'error': line}
 
         if success(body):
+            data = agent.todict(pretty=True)
             self.server.event_control.gen(\
                 EventControl.BACKUP_BEFORE_RESTORE_FINISHED,
-                dict(body.items() + agent.__dict__.items()),
+                dict(body.items() + data.items()),
                 userid=userid)
         else:
+            data = agent.todict(pretty=True)
             self.server.event_control.gen(\
                 EventControl.BACKUP_BEFORE_RESTORE_FAILED,
-                dict(body.items() + agent.__dict__.items()),
+                dict(body.items() + data.items()),
                 userid=userid)
 
             self.report_status(body)
@@ -697,15 +700,15 @@ class CliHandler(socketserver.StreamRequestHandler):
         if success(body):
             # Restore finished successfully.  The main state has.
             # already been set.
-            self.server.event_control.gen( \
-                EventControl.RESTORE_FINISHED,
-                dict(body.items() + agent.__dict__.items()),
-                userid=userid)
+            data = agent.todict(pretty=True)
+            self.server.event_control.gen(EventControl.RESTORE_FINISHED,
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
         else:
-            self.server.event_control.gen( \
-                EventControl.RESTORE_FAILED,
-                dict(body.items() + agent.__dict__.items()),
-                userid=userid)
+            data = agent.todict(pretty=True)
+            self.server.event_control.gen(EventControl.RESTORE_FAILED,
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
 
         # Get the latest status from tabadmin
         self.server.statusmon.check_status_with_connection(agent)
@@ -1058,21 +1061,19 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             exit_status = 1 # if no 'exit-status' then consider it failed.
 
+        data = agent.todict(pretty=True)
         if exit_status:
             # The "tableau start" failed.  Go back to "STOPPED" state.
-            self.server.event_control.gen( \
-                EventControl.TABLEAU_START_FAILED,
-                dict(body.items() + agent.__dict__.items()),
-                userid=userid)
+            self.server.event_control.gen(EventControl.TABLEAU_START_FAILED,
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
             stateman.update(StateManager.STATE_STOPPED)
-            self.server.event_control.gen( \
-                EventControl.STATE_STOPPED, agent.__dict__,
-                userid=userid)
+            self.server.event_control.gen(EventControl.STATE_STOPPED,
+                                          data, userid=userid)
         else:
             stateman.update(StateManager.STATE_STARTED)
-            self.server.event_control.gen( \
-                EventControl.STATE_STARTED, agent.__dict__,
-                userid=userid)
+            self.server.event_control.gen(EventControl.STATE_STARTED,
+                                          data, userid=userid)
 
         # Get the latest status from tabadmin
         self.server.statusmon.check_status_with_connection(agent)
@@ -1152,23 +1153,24 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         if backup_first:
             self.server.log.debug(\
-                        "------------Starting Backup for Stop---------------")
+                "------------Starting Backup for Stop---------------")
             stateman.update(StateManager.STATE_STARTED_BACKUP_STOP)
+
+            data = agent.todict(pretty=True)
             self.server.event_control.gen( \
-                EventControl.BACKUP_BEFORE_STOP_STARTED, agent.__dict__,
-                userid=userid)
+                EventControl.BACKUP_BEFORE_STOP_STARTED, data, userid=userid)
 
             body = self.server.backup_cmd(agent)
 
             if success(body):
                 self.server.event_control.gen( \
                     EventControl.BACKUP_BEFORE_STOP_FINISHED,
-                    dict(body.items() + agent.__dict__.items()),
+                    dict(body.items() + data.items()),
                     userid=userid)
             else:
                 self.server.event_control.gen( \
                     EventControl.BACKUP_BEFORE_STOP_FAILED,
-                    dict(body.items() + agent.__dict__.items()),
+                    dict(body.items() + data.items()),
                     userid=userid)
 
                 # Backup failed.  Will not attempt stop
@@ -1215,9 +1217,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         # This will be corrected by the 'tabadmin status -v' processing
         # later.
         stateman.update(StateManager.STATE_STOPPED)
-        self.server.event_control.gen( \
-            EventControl.STATE_STOPPED, agent.__dict__,
-            userid=userid)
+        data = agent.todict(pretty=True)
+        self.server.event_control.gen(EventControl.STATE_STOPPED,
+                                      data, userid=userid)
 
         # Get the latest status from tabadmin which sets the main state.
         self.server.statusmon.check_status_with_connection(agent)
@@ -1741,13 +1743,15 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
         if success(body):
             # FIXME: Do we want to send alerts?
+            # data = agent.todict(pretty=True)
             #server.event_control.gen(EventControl.ZIPLOGS_FINISHED, 
-            #                    dict(body.items() + agent.__dict__.items()))
+            #                    dict(body.items() + data.items()))
             pass
         else:
             # FIXME: Do we want to send alerts?
+            # data = agent.todict(pretty=True)
             #server.event_control.gen(EventControl.ZIPLOGS_FAILED,
-            #                    dict(body.items() + agent.__dict__.items()))
+            #                    dict(body.items() + data.items()))
             pass
 
     @usage('cleanup')
@@ -1793,13 +1797,15 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
         if success(body):
             # FIXME: Do we want to send alerts?
+            # data = agent.todict(pretty=True)
             #server.event_control.gen(EventControl.CLEANUP_FINISHED,
-            #                    dict(body.items() + agent.__dict__.items()))
+            #                    dict(body.items() + data.items()))
             pass
         else:
             # FIXME: Do we want to send alerts?
+            # data = agent.todict(pretty=True)
             #server.event_control.gen(EventControl.CLEANUP_FAILED,
-            #                    dict(body.items() + agent.__dict__.items()))
+            #                    dict(body.items() + data.items()))
             pass
 
     @usage('nop')
