@@ -8,8 +8,8 @@ from akiri.framework.config import store
 
 from controller.agentinfo import AgentYmlEntry
 from controller.profile import UserProfile
-
 from controller.domain import Domain
+from controller.util import success
 from rest import Telnet
 
 class TableauAuthenticator(Authenticator):
@@ -40,10 +40,11 @@ class TableauAuthenticator(Authenticator):
         if not value or value.lower() != 'activedirectory':
             return UserProfile.verify(username, password)
         cmd = "ad verify " + username + " " + password
-        data = self.telnet.send_cmd(cmd, sync=True)
-        d = json.loads(data)
-        # FIXME: create a util function for this.
-        return (('status' in d) and (d['status'].upper() == 'OK'))
+        try:
+            data = self.telnet.send_cmd(cmd, sync=True)
+        except RuntimeError:
+            return False
+        return success(json.loads(data))
 
 
 class TableauAuthFilter(AuthFilter):
