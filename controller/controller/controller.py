@@ -378,13 +378,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         cli_body = self._get_cli_status(body['xid'], agent, command)
 
-        if not cli_body.has_key("stdout"):
+        if not 'stdout' in cli_body:
             self.log.error(\
                 "check status of cli failed - missing 'stdout' in reply" + \
                                     "for command '%s': %s", command, cli_body)
-            return self.error(\
-                "Missing 'stdout' in agent reply for command '%s': %s" % \
-                                                        (command, cli_body))
+            if not 'error' in cli_body:
+                cli_body['error'] = \
+                    "Missing 'stdout' in agent reply for command '%s': %s" % \
+                    (command, cli_body)
 
         cleanup_body = self._send_cleanup(body['xid'], agent, command)
 
@@ -1396,9 +1397,30 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if agent.iswin:
             self.firewall_manager.do_firewall_ports(agent)
 
+        self.clean_xid_dirs(agent)
         self.config_servers(agent)
 
         return pinfo
+
+    def clean_xid_dirs(self, agent):
+        """Remove old XID directories."""
+        xid_dir = agent.path.join(agent.data_dir, "XID")
+        body = agent.filemanager.listdir(xid_dir)
+        if 'error' in body:
+            self.log.error("Could not list the XID directory '%s': %s",
+                           xid_dir, body['error'])
+            return
+
+        if not 'directories' in body:
+            self.log.error(
+                           ("clean_xid_dirs: Filemanager response missing " + \
+                             "directories.  Response: %s") % str(body))
+            return
+
+        for rem_dir in body['directories']:
+            full_path = agent.path.join(xid_dir, rem_dir)
+            self.log.debug("Removing %s", full_path)
+            #agent.filemanager.delete(full_path)
 
     def config_servers(self, agent):
         """Configure the maintenance and archive servers."""
