@@ -1514,7 +1514,9 @@ def main():
     server.cli_get_status_interval = \
       config.getint('controller', 'cli_get_status_interval', default=10)
     server.noping = args.noping
-
+    server.event_debug = config.getboolean('default',
+                                           'event_debug',
+                                           default=False)
     Domain.populate()
     domainname = config.get('palette', 'domainname')
     server.domain = Domain.get_by_name(domainname)

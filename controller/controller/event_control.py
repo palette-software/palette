@@ -146,6 +146,7 @@ class EventControl(meta.Base, BaseMixin):
 
 class EventControlManager(object):
     def __init__(self, server):
+        self.server = server
         self.alert_email = server.alert_email
         self.indented = self.alert_email.indented
         self.log = server.log
@@ -237,6 +238,8 @@ class EventControlManager(object):
            event_description = self.make_default_description(data)
 
         event_description = re.sub("(\n|\r\n){3,}", "\n\n", event_description)
+        if self.server.event_debug:
+            event_description = event_description + "--------\n" + str(data)
 
         # Log the event to the database
         self.event.add(key, subject, event_description, event_entry.level,
