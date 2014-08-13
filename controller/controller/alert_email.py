@@ -54,10 +54,34 @@ class AlertEmail(object):
         self.max_subject_len = self.config.getint("alert", "max_subject_len",
                                                 default=DEFAULT_MAX_SUBJECT_LEN)
 
+        diagnostics_email = self.config.get("alert", "diagnostics_email",
+                                            default="")
+        if diagnostics_email:
+            self.add_diagnostics_email(diagnostics_email)
+
         if self.alert_level < 1:
             self.log.error("Invalid alert level: %d, setting to %d",
                                     self.alert_level, DEFAULT_ALERT_LEVEL)
             self.alert_level = DEFAULT_ALERT_LEVEL
+
+    def add_diagnostics_email(self, diagnostics_email):
+        """If the palette user (userid 0) has an empty email address,
+           add the passed diagnostics_email to it."""
+
+        entry = UserProfile.get(0)
+        if not entry:
+            self.log.error("alert diag: No such user with id 0!")
+            return
+
+        if entry.email:
+            self.log.debug("alert diag: already has a diag email: %s", entry.email)
+            return  # It already has an email address
+
+        entry.email = diagnostics_email
+        session = meta.Session
+        session.merge(entry)
+        session.commit()
+        self.log.debug("alert diag: set a diag email: %s", entry.email)
 
     def admin_emails(self):
         """Return a list of admins that have an email address."""

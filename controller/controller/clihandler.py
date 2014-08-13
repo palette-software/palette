@@ -262,6 +262,48 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = self.server.cli_cmd("tabadmin status -v", agent)
         self.report_status(body)
 
+    @usage('test email')
+    def do_test(self, cmd):
+        if len(cmd.args) < 1:
+            self.print_usage(self.do_test.__usage__)
+            return
+
+        action = cmd.args[0].lower()
+        if action != 'email':
+            self.print_usage(self.do_test.__usage__)
+            return
+
+        event_control = self.server.event_control
+
+        event_entry = event_control.get_event_control_entry(\
+                      EventControl.EMAIL_TEST)
+
+        if not event_entry:
+            self.error(ERROR_INTERNAL,
+                       "Missing test email event '%s'!" %  \
+                      EventControl.EMAIL_TEST)
+            return
+
+        self.ack()
+
+        data = {
+            "displayname": "Test email displayname",
+            "info": "Test  email info",
+        }
+
+        try:
+            self.server.event_control.alert_email.send(event_entry, data)
+        except Exception, e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            tb = ''.join(traceback.format_tb(exc_traceback))
+            line = "%s.  Traceback: %s" % (sys.exc_info()[1],
+                                           tb.replace('\n', ''))
+
+            self.error(ERROR_COMMAND_FAILED, line)
+            return
+
+        self.report_status({})
+
     @usage('upgrade [on | off]')
     def do_upgrade(self, cmd):
         stateman = self.server.stateman
