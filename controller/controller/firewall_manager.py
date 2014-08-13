@@ -83,15 +83,14 @@ class FirewallManager(object):
         success = True
         if 'error' in body:
             self.log.error(\
-                ("open_firewall_ports failed to open ports '%s' on " +
+                ("open_firewall_ports failed to open ports '%s' on " +\
                      "host %s, failed with: %s") % \
-                            (str(ports), agent.displayname, body['error']))
-            self.server.event_control.gen(\
-                    EventControl.FIREWALL_OPEN_FAILED,
-                        dict({
-                            'error': body['error'], 
-                            'info': "Ports: %s" % str(ports)}.items() + \
-                                                    agent.__dict__.items()))
+                    (str(ports), agent.displayname, body['error']))
+            data = agent.todict(pretty=True)
+            data['error'] = body['error']
+            data['info'] = "Ports: " + str(port)
+            self.server.event_control.gen(EventControl.FIREWALL_OPEN_FAILED,
+                                          data)
             success = False
             color = 'red'
         else:

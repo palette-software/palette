@@ -7,6 +7,12 @@ DATEFMT = "%I:%M %p PDT on %b %d, %Y"
 SIZEFMT = "%(value).1f%(symbol)s"
 SYMBOLS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
 
+def success(body):
+    return not failed(body)
+
+def failed(body):
+    return 'error' in body
+
 def sizestr(n, fmt=SIZEFMT):
     n = int(n)
     if n < 0:

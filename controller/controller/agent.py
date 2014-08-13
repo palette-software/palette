@@ -122,6 +122,8 @@ class Agent(meta.Base, BaseDictMixin):
 
     def todict(self, pretty=False, exclude=[]):
         d = super(Agent, self).todict(pretty=pretty, exclude=exclude)
+        del d['username']
+        del d['password']
         if pretty:
             fmt = "%(value).0f%(symbol)s"
             d['installed-memory-readable'] = \
@@ -155,7 +157,10 @@ class Agent(meta.Base, BaseDictMixin):
 
          entry.install_dir=body['install-dir']
 
-         entry.data_dir=body['data-dir']
+
+         # FIXME: make required when all agents are updated.
+         if 'os-bitness' in body:
+             entry.bitness = body['os-bitness']
 
          entry.last_connection_time = func.now()
          entry = session.merge(entry)
@@ -163,7 +168,11 @@ class Agent(meta.Base, BaseDictMixin):
 
          if entry.iswin:
              entry.path = ntpath
+             parts = body['data-dir'].split(':')
+             entry.data_dir = ntpath.join(parts[0].upper() + ':',
+                                          parts[1])
          else:
              entry.path = posixpath
+             entry.data_dir=body['data-dir']
 
          return entry

@@ -6,10 +6,12 @@ from page import PalettePage
 from rest import PaletteRESTHandler, required_parameters, required_role
 
 from controller.agent import Agent
+from controller.agentmanager import AgentManager
 from controller.agentinfo import AgentVolumesEntry, AgentYmlEntry
 from controller.profile import Role
 from controller.util import sizestr, str2bool
-from controller.agentmanager import AgentManager
+
+from controller.system import LicenseEntry
 
 class ServerApplication(PaletteRESTHandler):
     NAME = 'servers'
@@ -48,6 +50,14 @@ class ServerApplication(PaletteRESTHandler):
             d = server.todict(pretty=True, exclude=exclude)
             d['volumes'] = self.volumes(server)
             d['type-name'] = AgentManager.get_type_name(server.agent_type)
+
+            entry = LicenseEntry.get_by_agentid(server.agentid)
+            if not entry is None:
+                d['tableau-license-type'] = entry.gettype()
+                capacity = entry.capacity()
+                if capacity:
+                    d['tableau-license-capacity'] = capacity
+
             if server.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
                 version = AgentYmlEntry.get(server,
                                             'version.external',
@@ -57,6 +67,7 @@ class ServerApplication(PaletteRESTHandler):
                                             'version.bitness',
                                             default=None)
                 if bitness: d['tableau-bitness'] = bitness
+
             servers.append(d)
 
         return {'servers': servers,

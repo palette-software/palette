@@ -26,6 +26,7 @@ from state import StateManager
 from tableau import TableauStatusMonitor, TableauProcess
 
 from cli_errors import *
+from util import success, failed
 
 def usage(msg):
     def wrapper(f):
@@ -72,6 +73,9 @@ class Command(object):
                     doing_dict = False
             else:
                 self.args.append(token.strip())
+
+        if not self.name:
+            raise CommandException("Missing command: %s" % str(line))
 
         # This fills in any missing information in the opts dict.
         self.sanity()
@@ -183,18 +187,6 @@ class CliHandler(socketserver.StreamRequestHandler):
         text = "ERROR %d %s" % (errnum, msg)
         self.print_client(text)
 
-    def success(self, body):
-        if 'error' in body:
-            return False
-        else:
-            return True
-
-    def failed(self, body):
-        if 'error' in body:
-            return True
-        else:
-            return False
-
     def print_usage(self, msg):
         self.error(ERROR_USAGE, 'usage: '+msg)
 
@@ -220,10 +212,11 @@ class CliHandler(socketserver.StreamRequestHandler):
             exc_type, exc_value, exc_traceback = sys.exc_info()
             line = "ERROR %d %s.  fmt: '%s', args: '%s', Traceback: %s" % \
                 (ERROR_INTERNAL,
-                    sys.exc_info()[1],
-                        str(fmt), str(args),
-                        ''.join(traceback.format_tb(exc_traceback)).\
-                                                        replace('\n', ''))
+                 sys.exc_info()[1],
+                 str(fmt), str(args),
+                 ''.join(traceback.format_exception(exc_type, exc_value,
+                                                    exc_traceback)).\
+                                                    replace('\n', ''))
 #        if not line.endswith('\n'):
 #            line += '\n'
         try:
@@ -234,7 +227,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 #            sys.stdout.write(line)
 
     def report_status(self, body):
-        if self.success(body):
+        if success(body):
             body['status'] = CliHandler.STATUS_OK
         else:
             body['status'] = CliHandler.STATUS_ERROR
@@ -272,6 +265,44 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
         body = self.server.cli_cmd("tabadmin status -v", agent)
         self.report_status(body)
+
+    @usage('test email')
+    def do_test(self, cmd):
+        if len(cmd.args) < 1:
+            self.print_usage(self.do_test.__usage__)
+            return
+
+        action = cmd.args[0].lower()
+        if action != 'email':
+            self.print_usage(self.do_test.__usage__)
+            return
+
+        event_control = self.server.event_control
+
+        event_entry = event_control.get_event_control_entry(\
+                      EventControl.EMAIL_TEST)
+
+        if not event_entry:
+            self.error(ERROR_INTERNAL,
+                       "Missing test email event '%s'!" %  \
+                      EventControl.EMAIL_TEST)
+            return
+
+        self.ack()
+
+        data = {
+            "displayname": "Test email displayname",
+            "info": "Test  email info",
+        }
+
+        try:
+            self.server.event_control.alert_email.send(event_entry, data)
+        except Exception, e:
+            self.server.log.exception('CliHandler exception:')
+            self.error(ERROR_COMMAND_FAILED, self.tb())
+            return
+
+        self.report_status({})
 
     @usage('upgrade [on | off]')
     def do_upgrade(self, cmd):
@@ -414,28 +445,27 @@ class CliHandler(socketserver.StreamRequestHandler):
             backup_finished_event = EventControl.BACKUP_FINISHED_SCHEDULED
             backup_failed_event = EventControl.BACKUP_FAILED_SCHEDULED
 
-        self.server.event_control.gen(backup_started_event,
-                                      agent.__dict__, userid=userid)
-
+        data = agent.todict(pretty=True)
+        self.server.event_control.gen(backup_started_event, data, userid=userid)
         self.ack()
 
         try:
             body = self.server.backup_cmd(agent)
         except Exception, e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            tb = ''.join(traceback.format_tb(exc_traceback)).\
-                                                    replace('\n', '')
-            line = "Backup Error: %s.  Traceback: %s" % (sys.exc_info()[1], tb)
+            self.server.log.exception("Backup Exception:")
+            line = "Backup Error. Traceback: %s" % self.tb()
             body = {'error': line}
 
-        if self.success(body):
+        if success(body):
+            data = agent.todict(pretty=True)
             self.server.event_control.gen(backup_finished_event,
-                        dict(body.items() + agent.__dict__.items()),
-                        userid=userid)
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
         else:
+            data = agent.todict(pretty=True)
             self.server.event_control.gen(backup_failed_event,
-                        dict(body.items() + agent.__dict__.items()),
-                        userid=userid)
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
 
         if reported_status == TableauProcess.STATUS_RUNNING:
             stateman.update(StateManager.STATE_STARTED)
@@ -604,16 +634,16 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             userid = None
 
-        self.server.event_control.gen( \
-            EventControl.BACKUP_BEFORE_RESTORE_STARTED, agent.__dict__,
-            userid=userid)
+        data = agent.todict(pretty=True)
+        self.server.event_control.gen(\
+            EventControl.BACKUP_BEFORE_RESTORE_STARTED, data, userid=userid)
 
         self.ack()
 
         # Before we do anything, do a license check, which automatically
         # sends an event if appropriate.
         license_body = self.server.license(agent)
-        if self.failed(license_body):
+        if failed(license_body):
             stateman.update(main_state)
             self.report_status(license_body)
             aconn.user_action_unlock()
@@ -623,21 +653,21 @@ class CliHandler(socketserver.StreamRequestHandler):
         try:
             body = self.server.backup_cmd(agent)
         except Exception, e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            tb = ''.join(traceback.format_tb(exc_traceback)).\
-                                                    replace('\n', '')
-            line = "Backup Error: %s.  Traceback: %s" % (sys.exc_info()[1], tb)
+            self.server.log.exception("Backup for Restore Exception:")
+            line = "Backup For Restore Error. Traceback: %s" % self.tb()
             body = {'error': line}
 
-        if self.success(body):
+        if success(body):
+            data = agent.todict(pretty=True)
             self.server.event_control.gen(\
                 EventControl.BACKUP_BEFORE_RESTORE_FINISHED,
-                dict(body.items() + agent.__dict__.items()),
+                dict(body.items() + data.items()),
                 userid=userid)
         else:
+            data = agent.todict(pretty=True)
             self.server.event_control.gen(\
                 EventControl.BACKUP_BEFORE_RESTORE_FAILED,
-                dict(body.items() + agent.__dict__.items()),
+                dict(body.items() + data.items()),
                 userid=userid)
 
             self.report_status(body)
@@ -653,28 +683,25 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = self.server.restore_cmd(agent, backup_name, main_state,
                                                                 userid=userid)
         except Exception, e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            tb = ''.join(traceback.format_tb(exc_traceback)).\
-                                                    replace('\n', '')
-            line = "Restore Error: %s.  Traceback: %s" % (sys.exc_info()[1], tb)
-
+            self.server.log.exception("Restore Exception:")
+            line = "Restore Error: Traceback: %s" % self.tb()
             body = {'error': line}
 
         # The final RESTORE_FINISHED/RESTORE_FAILED alert is sent only here and
         # not in restore_cmd().  Intermediate alerts like RESTORE_STARTED
         # are sent in restore_cmd().
-        if self.success(body):
+        if success(body):
             # Restore finished successfully.  The main state has.
             # already been set.
-            self.server.event_control.gen( \
-                EventControl.RESTORE_FINISHED,
-                dict(body.items() + agent.__dict__.items()),
-                userid=userid)
+            data = agent.todict(pretty=True)
+            self.server.event_control.gen(EventControl.RESTORE_FINISHED,
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
         else:
-            self.server.event_control.gen( \
-                EventControl.RESTORE_FAILED,
-                dict(body.items() + agent.__dict__.items()),
-                userid=userid)
+            data = agent.todict(pretty=True)
+            self.server.event_control.gen(EventControl.RESTORE_FAILED,
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
 
         # Get the latest status from tabadmin
         self.server.statusmon.check_status_with_connection(agent)
@@ -900,13 +927,13 @@ class CliHandler(socketserver.StreamRequestHandler):
                                                   day_of_month=args[2],
                                                   month=args[3],
                                                   day_of_week=args[4])
-            if self.success(body):
+            if success(body):
                 self.ack()
         else:
             self.print_usage(self.do_sched.__usage__)
             return
 
-        if self.failed(body):
+        if failed(body):
             self.error(ERROR_COMMAND_FAILED, str(body))
         else:
             self.report_status(body)
@@ -1027,21 +1054,19 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             exit_status = 1 # if no 'exit-status' then consider it failed.
 
+        data = agent.todict(pretty=True)
         if exit_status:
             # The "tableau start" failed.  Go back to "STOPPED" state.
-            self.server.event_control.gen( \
-                EventControl.TABLEAU_START_FAILED,
-                dict(body.items() + agent.__dict__.items()),
-                userid=userid)
+            self.server.event_control.gen(EventControl.TABLEAU_START_FAILED,
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
             stateman.update(StateManager.STATE_STOPPED)
-            self.server.event_control.gen( \
-                EventControl.STATE_STOPPED, agent.__dict__,
-                userid=userid)
+            self.server.event_control.gen(EventControl.STATE_STOPPED,
+                                          data, userid=userid)
         else:
             stateman.update(StateManager.STATE_STARTED)
-            self.server.event_control.gen( \
-                EventControl.STATE_STARTED, agent.__dict__,
-                userid=userid)
+            self.server.event_control.gen(EventControl.STATE_STARTED,
+                                          data, userid=userid)
 
         # Get the latest status from tabadmin
         self.server.statusmon.check_status_with_connection(agent)
@@ -1108,7 +1133,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # sends an event if appropriate.
         if license_check:
             license_body = self.server.license(agent)
-            if self.failed(license_body):
+            if failed(license_body):
                 stateman.update(main_state)
                 self.report_status(license_body)
                 aconn.user_action_unlock()
@@ -1121,23 +1146,24 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         if backup_first:
             self.server.log.debug(\
-                        "------------Starting Backup for Stop---------------")
+                "------------Starting Backup for Stop---------------")
             stateman.update(StateManager.STATE_STARTED_BACKUP_STOP)
+
+            data = agent.todict(pretty=True)
             self.server.event_control.gen( \
-                EventControl.BACKUP_BEFORE_STOP_STARTED, agent.__dict__,
-                userid=userid)
+                EventControl.BACKUP_BEFORE_STOP_STARTED, data, userid=userid)
 
             body = self.server.backup_cmd(agent)
 
-            if self.success(body):
+            if success(body):
                 self.server.event_control.gen( \
                     EventControl.BACKUP_BEFORE_STOP_FINISHED,
-                    dict(body.items() + agent.__dict__.items()),
+                    dict(body.items() + data.items()),
                     userid=userid)
             else:
                 self.server.event_control.gen( \
                     EventControl.BACKUP_BEFORE_STOP_FAILED,
-                    dict(body.items() + agent.__dict__.items()),
+                    dict(body.items() + data.items()),
                     userid=userid)
 
                 # Backup failed.  Will not attempt stop
@@ -1161,7 +1187,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: Reply with "OK" only after the agent received the command?
 
         body = self.server.cli_cmd('tabadmin stop', agent)
-        if self.success(body) and start_maint:
+        if success(body) and start_maint:
             port = AgentYmlEntry.get(agent, 'gateway.public.port', default=None)
             if port is None:
                 port = -1
@@ -1173,7 +1199,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             # Start the maintenance server only after Tableau has stopped
             # and reqlinquished the web server port.
             maint_body = self.server.maint("start", port=port, agent=agent)
-            if self.failed(maint_body):
+            if failed(maint_body):
                 msg = "maint start failed: " + str(maint_body)
                 if not 'info' in body:
                     body['info'] = msg
@@ -1184,16 +1210,16 @@ class CliHandler(socketserver.StreamRequestHandler):
         # This will be corrected by the 'tabadmin status -v' processing
         # later.
         stateman.update(StateManager.STATE_STOPPED)
-        self.server.event_control.gen( \
-            EventControl.STATE_STOPPED, agent.__dict__,
-            userid=userid)
+        data = agent.todict(pretty=True)
+        self.server.event_control.gen(EventControl.STATE_STOPPED,
+                                      data, userid=userid)
 
         # Get the latest status from tabadmin which sets the main state.
         self.server.statusmon.check_status_with_connection(agent)
 
         # If the 'stop' had failed, set the status to what we just
         # got back from 'tabadmin status ...'
-        if self.failed(body):
+        if failed(body):
             reported_status = self.server.statusmon.get_reported_status()
             stateman.update(reported_status)
 
@@ -1602,7 +1628,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
         body = self.server.sync_cmd(agent)
 
-        if self.failed(body):
+        if failed(body):
             self.error(ERROR_COMMAND_FAILED, str(body))
         else:
             self.print_client("%s", json.dumps(body))
@@ -1708,15 +1734,17 @@ class CliHandler(socketserver.StreamRequestHandler):
         aconn.user_action_unlock();
 
         self.report_status(body)
-        if self.success(body):
+        if success(body):
             # FIXME: Do we want to send alerts?
+            # data = agent.todict(pretty=True)
             #server.event_control.gen(EventControl.ZIPLOGS_FINISHED, 
-            #                    dict(body.items() + agent.__dict__.items()))
+            #                    dict(body.items() + data.items()))
             pass
         else:
             # FIXME: Do we want to send alerts?
+            # data = agent.todict(pretty=True)
             #server.event_control.gen(EventControl.ZIPLOGS_FAILED,
-            #                    dict(body.items() + agent.__dict__.items()))
+            #                    dict(body.items() + data.items()))
             pass
 
     @usage('cleanup')
@@ -1760,15 +1788,17 @@ class CliHandler(socketserver.StreamRequestHandler):
         aconn.user_action_unlock();
 
         self.report_status(body)
-        if self.success(body):
+        if success(body):
             # FIXME: Do we want to send alerts?
+            # data = agent.todict(pretty=True)
             #server.event_control.gen(EventControl.CLEANUP_FINISHED,
-            #                    dict(body.items() + agent.__dict__.items()))
+            #                    dict(body.items() + data.items()))
             pass
         else:
             # FIXME: Do we want to send alerts?
+            # data = agent.todict(pretty=True)
             #server.event_control.gen(EventControl.CLEANUP_FAILED,
-            #                    dict(body.items() + agent.__dict__.items()))
+            #                    dict(body.items() + data.items()))
             pass
 
     @usage('nop')
@@ -1799,6 +1829,12 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         return agent
 
+    def tb(self):
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        return ''.join(traceback.format_exception(exc_type, exc_value,
+                                                  exc_traceback)).\
+                                                  replace('\n', '')
+
     # DEPRECATED
     def get_aconn(self, opts):
         # FIXME: This method is a temporary hack while we
@@ -1827,13 +1863,10 @@ class CliHandler(socketserver.StreamRequestHandler):
                 self.error(ERROR_COMMAND_SYNTAX_ERROR, str(e))
                 continue
             except Exception, e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                tb = ''.join(traceback.format_tb(exc_traceback)).\
-                                                        replace('\n', '')
-                line = "cmd: %s. Error: %s. Traceback: %s" % \
-                        (data, sys.exc_info()[1], tb)
-
+                self.server.log.exception("Cli CommandException:")
+                line = "Cli Exception.  Traceback: %s" % self.tb()
                 self.error(ERROR_COMMAND_FAILED, line)
+                continue
 
             if not hasattr(self, 'do_'+cmd.name):
                 self.error(ERROR_NO_SUCH_COMMAND,
@@ -1849,20 +1882,15 @@ class CliHandler(socketserver.StreamRequestHandler):
             except exc.InvalidStateError, e:
                 self.error(ERROR_WRONG_STATE, e.message)
             except (IOError, ValueError) as e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                tb = ''.join(traceback.format_tb(exc_traceback))
-                line = "%s.  Traceback: %s" % (sys.exc_info()[1],
-                                                            tb.replace('\n', ''))
+                self.server.log.exception(\
+                    "Cli IOError or ValueError Exception for cmd '%s':" % cmd)
+                line = "Traceback: %s" % self.tb()
                 self.error(ERROR_COMMAND_FAILED, line)
             except Exception, e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                tb = ''.join(traceback.format_tb(exc_traceback))
-                line = "%s.  Traceback: %s" % (sys.exc_info()[1],
-                                                            tb.replace('\n', ''))
-
+                self.server.log.exception("Cli Exception for command '%s':" % \
+                                          cmd.name)
+                line = "Traceback: %s" % self.tb()
                 self.error(ERROR_COMMAND_FAILED, line)
-                self.server.log.error("Error: %s.  Traceback: %s" % \
-                                                        (sys.exc_info()[1], tb))
             finally:
                 session.rollback()
                 meta.Session.remove()

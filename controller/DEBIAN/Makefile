@@ -20,7 +20,7 @@ all:
 .PHONY: all
 
 clean:
-	rm -rf $(PACKAGE)-$(VERSION) *.tar.gz *.dsc *.deb *.changes
+	rm -rf $(PACKAGE)-* *.tar.gz *.dsc *.deb *.changes
 .PHONY: clean
 
 version:
