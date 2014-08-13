@@ -153,13 +153,14 @@ class TableauStatusMonitor(threading.Thread):
                 # StateManager calls the state "STARTED"; Tableau calls
                 # it "RUNNING".
                 self.server.event_control.gen(EventControl.INIT_STATE_STARTED,
-                                                                agent.__dict__)
+                                              agent.todict(pretty=True))
             elif status == TableauProcess.STATUS_STOPPED:
                 self.server.event_control.gen(EventControl.INIT_STATE_STOPPED,
-                                                                agent.__dict__)
+                                              agent.todict(pretty=True))
             elif status == TableauProcess.STATUS_DEGRADED:
+                data = agent.todict(pretty=True)
                 self.server.event_control.gen(EventControl.INIT_STATE_DEGRADED,
-                                    dict(body.items() + agent.__dict__.items()))
+                                              dict(body.items() + data.items()))
             return
 
         # If the main state was DEGRADED but status isn't DEGRADED any more,
@@ -169,15 +170,15 @@ class TableauStatusMonitor(threading.Thread):
             self.stateman.update(status)
             if status == TableauProcess.STATUS_RUNNING:
                 self.server.event_control.gen(\
-                        EventControl.STATE_STARTED_AFTER_DEGRADED,
-                                                          agent.__dict__)
+                    EventControl.STATE_STARTED_AFTER_DEGRADED,
+                    agent.todict(pretty=True))
             elif status == TableauProcess.STATUS_STOPPED:
                 self.server.event_control.gen(\
-                        EventControl.STATE_UNEXPECTED_STOPPED_AFTER_DEGRADED,
-                                              agent.__dict__)
+                    EventControl.STATE_UNEXPECTED_STOPPED_AFTER_DEGRADED,
+                    agent.todict(pretty=True))
             else:
                 self.log.error("Unexpected transition from DEGRADED to: %s",
-                                                                    status)
+                               status)
             return
 
         # If the main state is wrong, correct it.
@@ -186,21 +187,22 @@ class TableauStatusMonitor(threading.Thread):
             self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateManager.STATE_STARTED)
             self.server.event_control.gen(\
-                                EventControl.STATE_UNEXPECTED_STATE_STARTED,
-                                                              agent.__dict__)
+                EventControl.STATE_UNEXPECTED_STATE_STARTED,
+                agent.todict(pretty=True))
         elif main_state == StateManager.STATE_STARTED and \
                 status == TableauProcess.STATUS_STOPPED:
             self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateManager.STATE_STOPPED)
             self.server.event_control.gen(\
-                                EventControl.STATE_UNEXPECTED_STATE_STOPPED,
-                                                              agent.__dict__)
+                EventControl.STATE_UNEXPECTED_STATE_STOPPED,
+                agent.todict(pretty=True))
         elif status == TableauProcess.STATUS_DEGRADED and \
                 main_state != TableauProcess.STATUS_DEGRADED:
             self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateManager.STATE_DEGRADED)
+            data = agent.todict(pretty=True)
             self.server.event_control.gen(EventControl.STATE_DEGRADED,
-                            dict(body.items() + agent.__dict__.items()))
+                                          dict(body.items() + data.items()))
 
     def run(self):
         while True:

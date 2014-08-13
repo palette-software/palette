@@ -14,7 +14,7 @@
 %if obj.license_key:
     <p>License Key: ${obj.license_key}</p>
 %endif
-    <p>The use of this product is subject to the terms of the Palette End User Agreement, unless other specified therein.</p>
+    <p>The use of this product is subject to the terms of the Palette End User Agreement, unless otherwise specified therein.</p>
   </div>
 
   <h2>Palette Software</h2>

@@ -1512,6 +1512,10 @@ article.event > div.summary p {
     white-space: nowrap;
     text-overflow:ellipsis;
 }
+article.event input[type="text"] {
+    height:20px;
+    margin: 0;
+}
 article.event > div.description {
     display: none;
 }

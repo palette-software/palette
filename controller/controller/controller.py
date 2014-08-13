@@ -53,7 +53,7 @@ from s3 import S3
 
 from sched import Sched, Crontab # needed for create_all()
 from clihandler import CliHandler
-from util import version
+from util import version, success, failed
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
@@ -171,8 +171,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.backup.add(backup_full_path,
                             agentid=palette_primary_data_dir_vol_entry.agentid)
             else:
-                body['info'] = "Backup file copied to %s path '%s'." % \
-                            (dcheck.target_type, backup_name)
+                body['info'] = \
+                    ("Backup file was copied to %s bucket '%s' " + \
+                     "filename '%s'.") % \
+                    (dcheck.target_type, dcheck.target_entry.bucket,
+                     backup_name)
                 # Backup was copied to gcs or s3
                 self.backup.add(backup_name, gcsid=gcsid, s3id=s3id)
                 delete_local_backup = True
@@ -375,13 +378,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         cli_body = self._get_cli_status(body['xid'], agent, command)
 
-        if not cli_body.has_key("stdout"):
+        if not 'stdout' in cli_body:
             self.log.error(\
                 "check status of cli failed - missing 'stdout' in reply" + \
                                     "for command '%s': %s", command, cli_body)
-            return self.error(\
-                "Missing 'stdout' in agent reply for command '%s': %s" % \
-                                                        (command, cli_body))
+            if not 'error' in cli_body:
+                cli_body['error'] = \
+                    "Missing 'stdout' in agent reply for command '%s': %s" % \
+                    (command, cli_body)
 
         cleanup_body = self._send_cleanup(body['xid'], agent, command)
 
@@ -521,18 +525,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("POST /%s getresponse returned null body" % uri)
         return body
 
-    def success(self, body):
-        if 'error' in body:
-            return False
-        else:
-            return True
-
-    def fail(self, body):
-        if 'error' in body:
-            return True
-        else:
-            return False
-
     def copy_cmd(self, source_path, dest_name, target_dir):
         """Sends a phttp command and checks the status.
            copy source-displayname:/path/to/file dest-displayname dir
@@ -591,12 +583,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.error(\
                     "firewall enable port %d on src host %s failed with: %s",
                         src.listen_port, src.displayname, fw_body['error'])
-                self.event_control.gen(\
-                    EventControl.FIREWALL_OPEN_FAILED,
-                        dict({
-                            'error': fw_body['error'],
-                            'info': "Port %d" % src.listen_port}.items() + \
-                                                        agent.__dict__.items()))
+                data = agent.todict(pretty=True)
+                data['error'] = fw_body['error']
+                data['info'] = "Port " + str(src.listen_port)
+                self.event_control.gen(EventControl.FIREWALL_OPEN_FAILED, data)
                 return fw_body
 
         source_ip = src.ip_address
@@ -792,8 +782,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 backup_copied = True
 
         # The restore file is now on the Primary Agent.
+        data = primary_agent.todict(pretty=True)
         self.event_control.gen(EventControl.RESTORE_STARTED,
-                                    primary_agent.__dict__, userid=userid)
+                               data, userid=userid)
 
         reported_status = self.statusmon.get_reported_status()
 
@@ -811,8 +802,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.stateman.update(orig_state)
                 return stop_body
 
-            self.event_control.gen(EventControl.STATE_STOPPED,
-                                                        primary_agent.__dict__)
+            data = primary_agent.todict(pretty=True)
+            self.event_control.gen(EventControl.STATE_STOPPED, data)
 
         # 'tabadmin restore ...' starts tableau as part of the
         # restore procedure.
@@ -858,8 +849,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if restore_success:
             self.stateman.update(StateManager.STATE_STARTED)
-            self.event_control.gen(EventControl.STATE_STARTED,
-                                                    primary_agent.__dict__)
+            data = primary_agent.todict(pretty=True)
+            self.event_control.gen(EventControl.STATE_STARTED, data)
         else:
             # On a successful restore, tableau starts itself.
             # fixme: eventually control when tableau is started and
@@ -879,8 +870,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             else:
                 # The "tableau start" succeeded
                 self.stateman.update(StateManager.STATE_STARTED)
-                self.event_control.gen( \
-                    EventControl.STATE_STARTED, primary_agent.__dict__)
+                data = primary_agent.todict(pretty=True)
+                self.event_control.gen(EventControl.STATE_STARTED, data)
 
         if 'info':
             restore_body['info'] = info.strip()
@@ -1095,13 +1086,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if entry.invalid():
             if not entry.notified:
                 # Generate an event
-                self.event_control.gen(\
-                    EventControl.LICENSE_INVALID,
-                        dict({'error':
-                                "interactors: %s, viewers: %s" % \
-                                (entry.interactors, entry.viewers)}.items() + \
-                                    agent.__dict__.items()))
-
+                data = agent.todict(pretty=True)
+                data['error'] = "interactors: %s, viewers: %s" % \
+                    (entry.interactors, entry.viewers)
+                self.event_control.gen(EventControl.LICENSE_INVALID, data)
                 entry.notified = True
                 LicenseEntry.update(entry)
             return self.error(\
@@ -1177,25 +1165,22 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         body = self.send_immediate(agent, "POST", "/maint", send_body)
 
         if body.has_key("error"):
+            data = agent.todict(pretty=True)
+            data['error'] = body['error']
             if action == "start":
-                self.event_control.gen(\
-                    EventControl.MAINT_START_FAILED,
-                            dict({'error': body['error']}.items() +  \
-                                                 agent.__dict__.items()))
+                self.event_control.gen(EventControl.MAINT_START_FAILED, data)
             else:
-                self.event_control.gen(\
-                    EventControl.MAINT_STOP_FAILED,
-                            dict({'error': body['error']}.items() +  \
-                                                 agent.__dict__.items()))
+                self.event_control.gen(EventControl.MAINT_STOP_FAILED, data)
             return body
 
         if not send_alert:
             return body
 
+        data = agent.todict(pretty=True)
         if action == 'start':
-            self.event_control.gen(EventControl.MAINT_ONLINE, agent.__dict__)
+            self.event_control.gen(EventControl.MAINT_ONLINE, data)
         else:
-            self.event_control.gen(EventControl.MAINT_OFFLINE, agent.__dict__)
+            self.event_control.gen(EventControl.MAINT_OFFLINE, data)
 
         return body
 
@@ -1292,9 +1277,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         body[u'info'] = u'tabadmin ziplogs -l -n -a ziplog_name'
 
         if 'error' in body:
-            self.event_control.gen(\
-                EventControl.ZIPLOGS_FAILED,
-                        dict(body.items() + agent.__dict__.items()))
+            data = agent.todict(pretty=True)
+            self.event_control.gen(EventControl.ZIPLOGS_FAILED,
+                                   dict(body.items() + data.items()))
         return body
 
     def cleanup_cmd(self, agent, target=None):
@@ -1315,10 +1300,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     body['error'] = body['stdout']
 
         if 'error' in body:
-            self.event_control.gen(\
-                EventControl.CLEANUP_FAILED,
-                        dict(body.items() + agent.__dict__.items()))
-
+            data = agent.todict(pretty=True)
+            self.event_control.gen(EventControl.CLEANUP_FAILED,
+                                   dict(body.items() + data.items()))
         return body
 
     def error(self, msg, return_dict={}):
@@ -1397,7 +1381,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.yml(agent)     # raises an exception on fail
             if self.odbc_ok():
-                if self.fail(self.auth.load(agent)):
+                if failed(self.auth.load(agent)):
                     raise IOError("initial auth load failed")
                 self.sync_cmd(agent)  # ok to fail if not IOError
                 self.extract.load(agent)    # ok to fail if ot IOError
@@ -1405,9 +1389,30 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if agent.iswin:
             self.firewall_manager.do_firewall_ports(agent)
 
+        self.clean_xid_dirs(agent)
         self.config_servers(agent)
 
         return pinfo
+
+    def clean_xid_dirs(self, agent):
+        """Remove old XID directories."""
+        xid_dir = agent.path.join(agent.data_dir, "XID")
+        body = agent.filemanager.listdir(xid_dir)
+        if 'error' in body:
+            self.log.error("Could not list the XID directory '%s': %s",
+                           xid_dir, body['error'])
+            return
+
+        if not 'directories' in body:
+            self.log.error(
+                           ("clean_xid_dirs: Filemanager response missing " + \
+                             "directories.  Response: %s") % str(body))
+            return
+
+        for rem_dir in body['directories']:
+            full_path = agent.path.join(xid_dir, rem_dir)
+            self.log.debug("Removing %s", full_path)
+            #agent.filemanager.delete(full_path)
 
     def config_servers(self, agent):
         """Configure the maintenance and archive servers."""
@@ -1415,19 +1420,21 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # Put into a known state
             body = self.maint("stop", agent=agent, send_alert=False)
             if body.has_key("error"):
-                self.event_control.gen(\
-                   EventControl.MAINT_STOP_FAILED,
-                            dict(body.items() + agent.__dict__.items()))
+                data = agent.todict(pretty=True)
+                self.event_control.gen(EventControl.MAINT_STOP_FAILED,
+                                       dict(body.items() + data.items()))
 
         body = self.archive(agent, "stop")
         if body.has_key("error"):
+            data = agent.todict(pretty=True)
             self.event_control.gen(EventControl.ARCHIVE_STOP_FAILED,
-                                   dict(body.items() + agent.__dict__.items()))
+                                   dict(body.items() + data.items()))
         # Get ready.
         body = self.archive(agent, "start")
         if body.has_key("error"):
+            data = agent.todict(pretty=True)
             self.event_control.gen(EventControl.ARCHIVE_START_FAILED,
-                            dict(body.items() + agent.__dict__.items()))
+                                   dict(body.items() + data.items()))
 
         # If tableau is stopped, turn on the maintenance server
         if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
@@ -1529,7 +1536,9 @@ def main():
     server.cli_get_status_interval = \
       config.getint('controller', 'cli_get_status_interval', default=10)
     server.noping = args.noping
-
+    server.event_debug = config.getboolean('default',
+                                           'event_debug',
+                                           default=False)
     Domain.populate()
     domainname = config.get('palette', 'domainname')
     server.domain = Domain.get_by_name(domainname)
@@ -1537,10 +1546,6 @@ def main():
     server.environment = Environment.get()
 
     server.event = EventManager(server.environment.envid)
-
-    server.alert_email = AlertEmail(server)
-    EventControl.populate()
-    server.event_control = EventControlManager(server)
 
     server.system = SystemManager(server.environment.envid)
     SystemManager.populate()
@@ -1552,6 +1557,12 @@ def main():
 
     Role.populate()
     UserProfile.populate()
+
+    # Must be done after auth, since it use the users table.
+    server.alert_email = AlertEmail(server)
+
+    EventControl.populate()
+    server.event_control = EventControlManager(server)
 
     workbook_manager = WorkbookManager(server.environment.envid)
 
