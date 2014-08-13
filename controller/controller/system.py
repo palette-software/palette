@@ -169,3 +169,14 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
 
     def valid(self):
         return not self.invalid()
+
+    def gettype(self):
+        if self.interactors is None and self.viewers is None:
+            return "Core"
+        else:
+            return "Named-user"
+
+    def capacity(self):
+        if self.interactors is None and self.viewers is None:
+            return None
+        return "%d interactors, %d viewers" % (self.interactors, self.viewers)

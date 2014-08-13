@@ -26,6 +26,7 @@ from state import StateManager
 from tableau import TableauStatusMonitor, TableauProcess
 
 from cli_errors import *
+from util import success, failed
 
 def usage(msg):
     def wrapper(f):
@@ -183,18 +184,6 @@ class CliHandler(socketserver.StreamRequestHandler):
         text = "ERROR %d %s" % (errnum, msg)
         self.print_client(text)
 
-    def success(self, body):
-        if 'error' in body:
-            return False
-        else:
-            return True
-
-    def failed(self, body):
-        if 'error' in body:
-            return True
-        else:
-            return False
-
     def print_usage(self, msg):
         self.error(ERROR_USAGE, 'usage: '+msg)
 
@@ -234,7 +223,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 #            sys.stdout.write(line)
 
     def report_status(self, body):
-        if self.success(body):
+        if success(body):
             body['status'] = CliHandler.STATUS_OK
         else:
             body['status'] = CliHandler.STATUS_ERROR
@@ -470,7 +459,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             line = "Backup Error: %s.  Traceback: %s" % (sys.exc_info()[1], tb)
             body = {'error': line}
 
-        if self.success(body):
+        if success(body):
             self.server.event_control.gen(backup_finished_event,
                         dict(body.items() + agent.__dict__.items()),
                         userid=userid)
@@ -655,7 +644,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Before we do anything, do a license check, which automatically
         # sends an event if appropriate.
         license_body = self.server.license(agent)
-        if self.failed(license_body):
+        if failed(license_body):
             stateman.update(main_state)
             self.report_status(license_body)
             aconn.user_action_unlock()
@@ -671,7 +660,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             line = "Backup Error: %s.  Traceback: %s" % (sys.exc_info()[1], tb)
             body = {'error': line}
 
-        if self.success(body):
+        if success(body):
             self.server.event_control.gen(\
                 EventControl.BACKUP_BEFORE_RESTORE_FINISHED,
                 dict(body.items() + agent.__dict__.items()),
@@ -705,7 +694,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # The final RESTORE_FINISHED/RESTORE_FAILED alert is sent only here and
         # not in restore_cmd().  Intermediate alerts like RESTORE_STARTED
         # are sent in restore_cmd().
-        if self.success(body):
+        if success(body):
             # Restore finished successfully.  The main state has.
             # already been set.
             self.server.event_control.gen( \
@@ -942,13 +931,13 @@ class CliHandler(socketserver.StreamRequestHandler):
                                                   day_of_month=args[2],
                                                   month=args[3],
                                                   day_of_week=args[4])
-            if self.success(body):
+            if success(body):
                 self.ack()
         else:
             self.print_usage(self.do_sched.__usage__)
             return
 
-        if self.failed(body):
+        if failed(body):
             self.error(ERROR_COMMAND_FAILED, str(body))
         else:
             self.report_status(body)
@@ -1150,7 +1139,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # sends an event if appropriate.
         if license_check:
             license_body = self.server.license(agent)
-            if self.failed(license_body):
+            if failed(license_body):
                 stateman.update(main_state)
                 self.report_status(license_body)
                 aconn.user_action_unlock()
@@ -1171,7 +1160,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
             body = self.server.backup_cmd(agent)
 
-            if self.success(body):
+            if success(body):
                 self.server.event_control.gen( \
                     EventControl.BACKUP_BEFORE_STOP_FINISHED,
                     dict(body.items() + agent.__dict__.items()),
@@ -1203,7 +1192,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: Reply with "OK" only after the agent received the command?
 
         body = self.server.cli_cmd('tabadmin stop', agent)
-        if self.success(body) and start_maint:
+        if success(body) and start_maint:
             port = AgentYmlEntry.get(agent, 'gateway.public.port', default=None)
             if port is None:
                 port = -1
@@ -1215,7 +1204,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             # Start the maintenance server only after Tableau has stopped
             # and reqlinquished the web server port.
             maint_body = self.server.maint("start", port=port, agent=agent)
-            if self.failed(maint_body):
+            if failed(maint_body):
                 msg = "maint start failed: " + str(maint_body)
                 if not 'info' in body:
                     body['info'] = msg
@@ -1235,7 +1224,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # If the 'stop' had failed, set the status to what we just
         # got back from 'tabadmin status ...'
-        if self.failed(body):
+        if failed(body):
             reported_status = self.server.statusmon.get_reported_status()
             stateman.update(reported_status)
 
@@ -1644,7 +1633,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
         body = self.server.sync_cmd(agent)
 
-        if self.failed(body):
+        if failed(body):
             self.error(ERROR_COMMAND_FAILED, str(body))
         else:
             self.print_client("%s", json.dumps(body))
@@ -1750,7 +1739,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         aconn.user_action_unlock();
 
         self.report_status(body)
-        if self.success(body):
+        if success(body):
             # FIXME: Do we want to send alerts?
             #server.event_control.gen(EventControl.ZIPLOGS_FINISHED, 
             #                    dict(body.items() + agent.__dict__.items()))
@@ -1802,7 +1791,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         aconn.user_action_unlock();
 
         self.report_status(body)
-        if self.success(body):
+        if success(body):
             # FIXME: Do we want to send alerts?
             #server.event_control.gen(EventControl.CLEANUP_FINISHED,
             #                    dict(body.items() + agent.__dict__.items()))

@@ -1,5 +1,5 @@
 import sqlalchemy
-from sqlalchemy import Column, Integer, String, DateTime, func
+from sqlalchemy import Column, Integer, String, DateTime, func, or_
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.orm.exc import NoResultFound
@@ -158,7 +158,8 @@ class MonitorApplication(PaletteRESTHandler):
         q = meta.Session.query(AgentVolumesEntry).\
             filter(AgentVolumesEntry.agentid == agent.agentid)
         if agent.iswin:
-            q = q.filter(AgentVolumesEntry.vol_type == 'Fixed')
+            q = q.filter(or_(AgentVolumesEntry.vol_type == 'Fixed',
+                             AgentVolumesEntry.vol_type == 'Network'))
         L = q.order_by(AgentVolumesEntry.name).all()
         for v in L:
             if not v.size or v.available_space is None:
