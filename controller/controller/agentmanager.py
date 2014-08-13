@@ -954,10 +954,7 @@ class AgentManager(threading.Thread):
             self.log.debug("Socket error: " + str(e))
             self._close(conn)
         except Exception, e:
-            self.log.error("Exception:")
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            self.log.error(str(e))
-            self.log.error(traceback.format_tb(exc_traceback))
+            self.log.exception('handle_agent_connection exception:')
         finally:
             session.rollback()
             meta.Session.remove()
