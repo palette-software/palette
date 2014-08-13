@@ -539,16 +539,19 @@ class AgentManager(threading.Thread):
             event = EventControl.DISK_USAGE_ABOVE_HIGH_WATERMERK
         else:
             self.log.error("gen_disk_event: Invalid usage color: %s",
-                                                                usage_color)
+                           usage_color)
             return
 
-        msg = ("Volume name: %s\nSize: %s\nUsed: %s\nAvailable: %s\n" + \
+        msg = \
+            ("Volume name: %s\nSize: %s\nUsed: %s\nAvailable: %s\n" +\
             "Percent used: %2.1f%%\n") % \
-                (entry.name, sizestr(entry.size), sizestr(entry.size - entry.available_space),
-                                    sizestr(entry.available_space), percent)
+            (entry.name, sizestr(entry.size),
+             sizestr(entry.size - entry.available_space),
+             sizestr(entry.available_space), percent)
 
-        self.server.event_control.gen(event,
-                        dict({'info': msg}.items() + agent.__dict__.items()))
+        data = agent.todict(pretty=True)
+        data['info'] = msg
+        self.server.event_control.gen(event, data)
 
     def disk_watermark(self, name):
         """ Threshold for the disk indicator. (low|high) """
@@ -716,12 +719,12 @@ class AgentManager(threading.Thread):
                 uuid, self.agents[uuid].connection.auth['hostname'], reason)
 
             if gen_event:
+                data = agent.todict(pretty=True)
+                data['error'] = reason
+                data['info'] = "\nAgent type: %s\nAgent uuid %s" % \
+                    (agent.displayname, uuid)
                 self.server.event_control.gen(EventControl.AGENT_DISCONNECT,
-                    dict({ 'error': reason,
-                      'info': "\nAgent type: %s\nAgent uuid %s" %
-                        (agent.displayname, uuid) }.items() +
-                                            agent.__dict__.items()))
-
+                                              data)
             self.forget(agent.agentid)
             self.log.debug("remove_agent: closing agent socket.")
             if self._close(agent.connection.socket):
@@ -947,8 +950,8 @@ class AgentManager(threading.Thread):
             if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
                 self.set_default_backup_destid(agent)
 
-            self.server.event_control.gen(\
-                            EventControl.AGENT_COMMUNICATION, agent.__dict__)
+            self.server.event_control.gen(EventControl.AGENT_COMMUNICATION,
+                                          agent.todict(pretty=True))
 
         except socket.error, e:
             self.log.debug("Socket error: " + str(e))

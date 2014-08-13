@@ -582,12 +582,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.error(\
                     "firewall enable port %d on src host %s failed with: %s",
                         src.listen_port, src.displayname, fw_body['error'])
-                self.event_control.gen(\
-                    EventControl.FIREWALL_OPEN_FAILED,
-                        dict({
-                            'error': fw_body['error'],
-                            'info': "Port %d" % src.listen_port}.items() + \
-                                                        agent.__dict__.items()))
+                data = agent.todict(pretty=True)
+                data['error'] = fw_body['error']
+                data['info'] = "Port " + str(src.listen_port)
+                self.event_control.gen(EventControl.FIREWALL_OPEN_FAILED, data)
                 return fw_body
 
         source_ip = src.ip_address
@@ -783,8 +781,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 backup_copied = True
 
         # The restore file is now on the Primary Agent.
+        data = primary_agent.todict(pretty=True)
         self.event_control.gen(EventControl.RESTORE_STARTED,
-                                    primary_agent.__dict__, userid=userid)
+                               data, userid=userid)
 
         reported_status = self.statusmon.get_reported_status()
 
@@ -802,8 +801,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.stateman.update(orig_state)
                 return stop_body
 
-            self.event_control.gen(EventControl.STATE_STOPPED,
-                                                        primary_agent.__dict__)
+            data = primary_agent.todict(pretty=True)
+            self.event_control.gen(EventControl.STATE_STOPPED, data)
 
         # 'tabadmin restore ...' starts tableau as part of the
         # restore procedure.
@@ -849,8 +848,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if restore_success:
             self.stateman.update(StateManager.STATE_STARTED)
-            self.event_control.gen(EventControl.STATE_STARTED,
-                                                    primary_agent.__dict__)
+            data = primary_agent.todict(pretty=True)
+            self.event_control.gen(EventControl.STATE_STARTED, data)
         else:
             # On a successful restore, tableau starts itself.
             # fixme: eventually control when tableau is started and
@@ -870,8 +869,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             else:
                 # The "tableau start" succeeded
                 self.stateman.update(StateManager.STATE_STARTED)
-                self.event_control.gen( \
-                    EventControl.STATE_STARTED, primary_agent.__dict__)
+                data = primary_agent.todict(pretty=True)
+                self.event_control.gen(EventControl.STATE_STARTED, data)
 
         if 'info':
             restore_body['info'] = info.strip()
@@ -1086,13 +1085,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if entry.invalid():
             if not entry.notified:
                 # Generate an event
-                self.event_control.gen(\
-                    EventControl.LICENSE_INVALID,
-                        dict({'error':
-                                "interactors: %s, viewers: %s" % \
-                                (entry.interactors, entry.viewers)}.items() + \
-                                    agent.__dict__.items()))
-
+                data = agent.todict(pretty=True)
+                data['error'] = "interactors: %s, viewers: %s" % \
+                    (entry.interactors, entry.viewers)
+                self.event_control.gen(EventControl.LICENSE_INVALID, data)
                 entry.notified = True
                 LicenseEntry.update(entry)
             return self.error(\
@@ -1168,25 +1164,22 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         body = self.send_immediate(agent, "POST", "/maint", send_body)
 
         if body.has_key("error"):
+            data = agent.todict(pretty=True)
+            data['error'] = body['error']
             if action == "start":
-                self.event_control.gen(\
-                    EventControl.MAINT_START_FAILED,
-                            dict({'error': body['error']}.items() +  \
-                                                 agent.__dict__.items()))
+                self.event_control.gen(EventControl.MAINT_START_FAILED, data)
             else:
-                self.event_control.gen(\
-                    EventControl.MAINT_STOP_FAILED,
-                            dict({'error': body['error']}.items() +  \
-                                                 agent.__dict__.items()))
+                self.event_control.gen(EventControl.MAINT_STOP_FAILED, data)
             return body
 
         if not send_alert:
             return body
 
+        data = agent.todict(pretty=True)
         if action == 'start':
-            self.event_control.gen(EventControl.MAINT_ONLINE, agent.__dict__)
+            self.event_control.gen(EventControl.MAINT_ONLINE, data)
         else:
-            self.event_control.gen(EventControl.MAINT_OFFLINE, agent.__dict__)
+            self.event_control.gen(EventControl.MAINT_OFFLINE, data)
 
         return body
 
@@ -1283,9 +1276,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         body[u'info'] = u'tabadmin ziplogs -l -n -a ziplog_name'
 
         if 'error' in body:
-            self.event_control.gen(\
-                EventControl.ZIPLOGS_FAILED,
-                        dict(body.items() + agent.__dict__.items()))
+            data = agent.todict(pretty=True)
+            self.event_control.gen(EventControl.ZIPLOGS_FAILED,
+                                   dict(body.items() + data.items()))
         return body
 
     def cleanup_cmd(self, agent, target=None):
@@ -1306,10 +1299,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     body['error'] = body['stdout']
 
         if 'error' in body:
-            self.event_control.gen(\
-                EventControl.CLEANUP_FAILED,
-                        dict(body.items() + agent.__dict__.items()))
-
+            data = agent.todict(pretty=True)
+            self.event_control.gen(EventControl.CLEANUP_FAILED,
+                                   dict(body.items() + data.items()))
         return body
 
     def error(self, msg, return_dict={}):
@@ -1406,19 +1398,21 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # Put into a known state
             body = self.maint("stop", agent=agent, send_alert=False)
             if body.has_key("error"):
-                self.event_control.gen(\
-                   EventControl.MAINT_STOP_FAILED,
-                            dict(body.items() + agent.__dict__.items()))
+                data = agent.todict(pretty=True)
+                self.event_control.gen(EventControl.MAINT_STOP_FAILED,
+                                       dict(body.items() + data.items()))
 
         body = self.archive(agent, "stop")
         if body.has_key("error"):
+            data = agent.todict(pretty=True)
             self.event_control.gen(EventControl.ARCHIVE_STOP_FAILED,
-                                   dict(body.items() + agent.__dict__.items()))
+                                   dict(body.items() + data.items()))
         # Get ready.
         body = self.archive(agent, "start")
         if body.has_key("error"):
+            data = agent.todict(pretty=True)
             self.event_control.gen(EventControl.ARCHIVE_START_FAILED,
-                            dict(body.items() + agent.__dict__.items()))
+                                   dict(body.items() + data.items()))
 
         # If tableau is stopped, turn on the maintenance server
         if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:

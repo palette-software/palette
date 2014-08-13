@@ -122,6 +122,8 @@ class Agent(meta.Base, BaseDictMixin):
 
     def todict(self, pretty=False, exclude=[]):
         d = super(Agent, self).todict(pretty=pretty, exclude=exclude)
+        del d['username']
+        del d['password']
         if pretty:
             fmt = "%(value).0f%(symbol)s"
             d['installed-memory-readable'] = \
