@@ -80,7 +80,7 @@ i.tableau {
     color: #76e259;
 }
 #mainNav {
-    background: #333;
+    background: #fff;
     position: fixed;
     height: 67px;
     border-bottom: 7px solid #8D96A3;
@@ -930,7 +930,7 @@ h1.page-title {
     top: 0;
     display: block;
     height: 60px;
-    width: 149px;
+    width: 242px;
     box-sizing: content-box;
     background-repeat: no-repeat;
     margin-left: 15px;
@@ -986,24 +986,68 @@ p.large {
 .margin-top {
     margin-top: 12px !important;
 }
-.button, input[type="submit"].login {
-    position: relative;
-    width: 100px;
-    padding: 0.5em 1em;
+/* login page styles */
+.body-box {
+    padding: 0;
+    margin: 0;
+}
+.login-box {
+    background-color: #fff;
+}
+.center-box {
+    text-align:center;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    width: 455px;
+    padding: 55px 0px 55px 0px;
+}
+input[type="text"].login, input[type="password"].login {
+    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+    border: 1px solid #d9d9d9;
+    border-radius: 0px;
+    color: #666666;
+    font-size: 19px;
+    outline: 0;
+    height: 48px;
+    padding-left: 13px;
+    box-sizing: border-box;
+    margin-bottom:14px;
+}
+button.login {
+    font-family: "Proxima Nova Regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     color: #fff;
+    border-radius: 0px;
+    background-color: #a2adbd;
+    width: 100%;
+    font-size: 20px;
     font-weight: 500;
-    font-size: 1.3em;
-    background: #02acf8;
-    border: 1px solid #02acf8;
-    border-radius: 3px;
+    text-transform: uppercase;
+    outline: 0;
+    border: 0;
+    max-width: 320px;
+    height: 48px;
+    margin-top: 9px;
     cursor: pointer;
     outline: none;
     display: inline-block;
     -webkit-appearance: none;
 }
-input[type="submit"].login {
-    height: 35px;
-    margin-top: 10px;
+button.login:hover, input[type="submit"].login:hover {
+    background-color: #b3bbc8;
+}
+button.login:active, input[type="submit"].login:active {
+    background-color: #666666;
+    color: #d9d9d9;
+    outline: 0;
+}
+button.login:focus, input[type="submit"].login:focus {
+    background-color: #666666;
+    color: #d9d9d9;
+    outline: none;
+}
+img.login {
+    padding-bottom: 0 0 39px 0;
 }
 .big {
     width: 150px;
@@ -1116,10 +1160,11 @@ input[type="text"], input[type="password"], input[type="email"], select {
 }
 
 input[type="text"]:focus, input[type="password"]:focus, input[type="date"]:focus, input[type="datetime"]:focus, input[type="datetime-local"]:focus, input[type="month"]:focus, input[type="week"]:focus, input[type="email"]:focus, input[type="number"]:focus, input[type="search"]:focus, input[type="tel"]:focus, input[type="time"]:focus, input[type="url"]:focus, textarea:focus {
-    border: 1px solid #66c3f0;
+    border: 1px solid #a6a6a6;
     outline: 0;
     box-shadow: 0 0;
 }
+
 label.checkbox-label {
     font-weight: 300;
     text-transform: none;
@@ -1128,17 +1173,18 @@ label.checkbox-label {
 }
 label.error {
     width: 100%;
-    font-size: 12px;
+    font-size: 14px;
     text-align: center;
-    margin: -8px 0 25px 0;
+    margin: 0px 0 15px 0;
     color: #E52C22;
 }
 p.error {
     width: 100%;
-    font-size: 12px;
+    font-size: 14px;
     text-align: center;
-    margin: 0px 0 25px 0;
+    margin: 0px 0 15px 0;
     color: #E52C22;
+    margin-top: 10px;
 }
 .checkbox, .radio {
     padding: 0;
@@ -1289,12 +1335,13 @@ ul.title-area > li > h1 > a {
     display: inline-block;
     position: relative;
     height: 60px;
+    color: #8D96A3;
 }
 #mainNav ul.nav li > i {
     font-size: 24px;
 }
 #mainNav ul.nav li > a {
-    color: #b6bbc2;
+    color: #8D96A3;
     text-decoration: none;
     line-height: 60px;
     font-weight: 300;
@@ -1311,7 +1358,7 @@ ul.title-area > li > h1 > a {
     background-color: rgba(250, 250, 250, 0.1) !important;
 }
 #mainNav ul.nav li > a span {
-    color: #b6bbc2;
+    color: #697078;
     margin-left: 5px;
     text-transform: uppercase;
     font-family: "Proxima Nova Semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
