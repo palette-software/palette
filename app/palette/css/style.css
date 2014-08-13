@@ -987,10 +987,6 @@ p.large {
     margin-top: 12px !important;
 }
 /* login page styles */
-.body-box {
-    padding: 0;
-    margin: 0;
-}
 .login-box {
     background-color: #fff;
 }
@@ -1000,7 +996,8 @@ p.large {
     margin-right: auto;
     display: block;
     width: 455px;
-    padding: 55px 0px 55px 0px;
+    height: 486px;
+    padding: 0px 0px 55px 0px;
 }
 input[type="text"].login, input[type="password"].login {
     font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
@@ -1048,6 +1045,9 @@ button.login:focus, input[type="submit"].login:focus {
 }
 img.login {
     padding-bottom: 0 0 39px 0;
+}
+input[type="text"].login:-webkit-autofill {
+   -webkit-box-shadow: 0 0 0px 1000px white inset;
 }
 /* other styles*/
 .big {
