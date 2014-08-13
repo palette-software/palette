@@ -23,32 +23,34 @@
 </%block>
 
 </head>
-<body class="full-size-box">
-  <section class="login-box">
-    <div class="center-box">
-      <a href="/">
-        <img class="login" src="/app/module/palette/images/palette_logo.png">
-      </a>
-      <form method="POST" action="/login" id="form">
-          <input class="login" type="text" name="username" id="username"
-            placeholder="Tableau Server Username">
-          <input class="login" type="password" name="password" id="password"
-            placeholder="Tableau Server Password">
-        <section class="row">
-          <section class="col-xs-12">
-            <button type="submit" name="login" id="login"
-                    class="login">Login
-            </button>
+<body class="body-box">
+  <section class="full-size-box">
+    <section class="login-box">
+      <div class="center-box">
+        <a href="/">
+          <img class="login" src="/app/module/palette/images/palette_logo.png">
+        </a>
+        <form method="POST" action="/login" id="form">
+            <input class="login" type="text" name="username" id="username"
+              placeholder="Tableau Server Username">
+            <input class="login" type="password" name="password" id="password"
+              placeholder="Tableau Server Password">
+          <section class="row">
+            <section class="col-xs-12">
+              <button type="submit" name="login" id="login"
+                      class="login">Login
+              </button>
+            </section>
           </section>
-        </section>
-        %if 'AUTH_ERROR' in req.environ:
-        <section class="hidden" id="auth-error"></section>
-        %endif
-        <p class="hidden error" id="error">
-          Login Failed <b>Invalid userID</b> or <b>password</b>
-        </p>
-      </form>
-    </div>
-  </section>
+          %if 'AUTH_ERROR' in req.environ:
+          <section class="hidden" id="auth-error"></section>
+          %endif
+          <p class="hidden error" id="error">
+            Login Failed <b>Invalid userID</b> or <b>password</b>
+          </p>
+        </form>
+      </div>
+    </section>
+  </section>        
 </body>
 </html>
