@@ -74,6 +74,9 @@ class Command(object):
             else:
                 self.args.append(token.strip())
 
+        if not self.name:
+            raise CommandException("Missing command: %s" % str(line))
+
         # This fills in any missing information in the opts dict.
         self.sanity()
 
@@ -209,10 +212,11 @@ class CliHandler(socketserver.StreamRequestHandler):
             exc_type, exc_value, exc_traceback = sys.exc_info()
             line = "ERROR %d %s.  fmt: '%s', args: '%s', Traceback: %s" % \
                 (ERROR_INTERNAL,
-                    sys.exc_info()[1],
-                        str(fmt), str(args),
-                        ''.join(traceback.format_tb(exc_traceback)).\
-                                                        replace('\n', ''))
+                 sys.exc_info()[1],
+                 str(fmt), str(args),
+                 ''.join(traceback.format_exception(exc_type, exc_value,
+                                                    exc_traceback)).\
+                                                    replace('\n', ''))
 #        if not line.endswith('\n'):
 #            line += '\n'
         try:
@@ -294,12 +298,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         try:
             self.server.event_control.alert_email.send(event_entry, data)
         except Exception, e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            tb = ''.join(traceback.format_tb(exc_traceback))
-            line = "%s.  Traceback: %s" % (sys.exc_info()[1],
-                                           tb.replace('\n', ''))
-
-            self.error(ERROR_COMMAND_FAILED, line)
+            self.server.log.exception('CliHandler exception:')
+            self.error(ERROR_COMMAND_FAILED, self.tb())
             return
 
         self.report_status({})
@@ -452,10 +452,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         try:
             body = self.server.backup_cmd(agent)
         except Exception, e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            tb = ''.join(traceback.format_tb(exc_traceback)).\
-                                                    replace('\n', '')
-            line = "Backup Error: %s.  Traceback: %s" % (sys.exc_info()[1], tb)
+            self.server.log.exception("Backup Exception:")
+            line = "Backup Error. Traceback: %s" % self.tb()
             body = {'error': line}
 
         if success(body):
@@ -655,10 +653,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         try:
             body = self.server.backup_cmd(agent)
         except Exception, e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            tb = ''.join(traceback.format_tb(exc_traceback)).\
-                                                    replace('\n', '')
-            line = "Backup Error: %s.  Traceback: %s" % (sys.exc_info()[1], tb)
+            self.server.log.exception("Backup for Restore Exception:")
+            line = "Backup For Restore Error. Traceback: %s" % self.tb()
             body = {'error': line}
 
         if success(body):
@@ -687,11 +683,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = self.server.restore_cmd(agent, backup_name, main_state,
                                                                 userid=userid)
         except Exception, e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            tb = ''.join(traceback.format_tb(exc_traceback)).\
-                                                    replace('\n', '')
-            line = "Restore Error: %s.  Traceback: %s" % (sys.exc_info()[1], tb)
-
+            self.server.log.exception("Restore Exception:")
+            line = "Restore Error: Traceback: %s" % self.tb()
             body = {'error': line}
 
         # The final RESTORE_FINISHED/RESTORE_FAILED alert is sent only here and
@@ -1836,6 +1829,12 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         return agent
 
+    def tb(self):
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        return ''.join(traceback.format_exception(exc_type, exc_value,
+                                                  exc_traceback)).\
+                                                  replace('\n', '')
+
     # DEPRECATED
     def get_aconn(self, opts):
         # FIXME: This method is a temporary hack while we
@@ -1864,13 +1863,10 @@ class CliHandler(socketserver.StreamRequestHandler):
                 self.error(ERROR_COMMAND_SYNTAX_ERROR, str(e))
                 continue
             except Exception, e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                tb = ''.join(traceback.format_tb(exc_traceback)).\
-                                                        replace('\n', '')
-                line = "cmd: %s. Error: %s. Traceback: %s" % \
-                        (data, sys.exc_info()[1], tb)
-
+                self.server.log.exception("Cli CommandException:")
+                line = "Cli Exception.  Traceback: %s" % self.tb()
                 self.error(ERROR_COMMAND_FAILED, line)
+                continue
 
             if not hasattr(self, 'do_'+cmd.name):
                 self.error(ERROR_NO_SUCH_COMMAND,
@@ -1886,20 +1882,15 @@ class CliHandler(socketserver.StreamRequestHandler):
             except exc.InvalidStateError, e:
                 self.error(ERROR_WRONG_STATE, e.message)
             except (IOError, ValueError) as e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                tb = ''.join(traceback.format_tb(exc_traceback))
-                line = "%s.  Traceback: %s" % (sys.exc_info()[1],
-                                                            tb.replace('\n', ''))
+                self.server.log.exception(\
+                    "Cli IOError or ValueError Exception for cmd '%s':" % cmd)
+                line = "Traceback: %s" % self.tb()
                 self.error(ERROR_COMMAND_FAILED, line)
             except Exception, e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                tb = ''.join(traceback.format_tb(exc_traceback))
-                line = "%s.  Traceback: %s" % (sys.exc_info()[1],
-                                                            tb.replace('\n', ''))
-
+                self.server.log.exception("Cli Exception for command '%s':" % \
+                                          cmd.name)
+                line = "Traceback: %s" % self.tb()
                 self.error(ERROR_COMMAND_FAILED, line)
-                self.server.log.error("Error: %s.  Traceback: %s" % \
-                                                        (sys.exc_info()[1], tb))
             finally:
                 session.rollback()
                 meta.Session.remove()
