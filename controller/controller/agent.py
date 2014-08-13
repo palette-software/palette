@@ -155,7 +155,6 @@ class Agent(meta.Base, BaseDictMixin):
 
          entry.install_dir=body['install-dir']
 
-         entry.data_dir=body['data-dir']
 
          # FIXME: make required when all agents are updated.
          if 'os-bitness' in body:
@@ -167,7 +166,11 @@ class Agent(meta.Base, BaseDictMixin):
 
          if entry.iswin:
              entry.path = ntpath
+             parts = body['data-dir'].split(':')
+             entry.data_dir = ntpath.join(parts[0].upper() + ':',
+                                          parts[1])
          else:
              entry.path = posixpath
+             entry.data_dir=body['data-dir']
 
          return entry

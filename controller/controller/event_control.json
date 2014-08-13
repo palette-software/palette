@@ -593,6 +593,17 @@
 "icon":null,
 "color":"red",
 "event_type":"status"
+},
+{
+"key":"EMAIL-TEST",
+"level":"I",
+"send_email":"t",
+"subject":"INFO - Email test",
+"event_description":"Status: TEST\nThis is a test email. \nServer: ${displayname}\nDetails: ${info}$",
+"email_message":"Status: TEST\nServer: ${displayname}\nDetails: ${info}",
+"icon":null,
+"color":"green",
+"event_type":"status"
 }
 ]
 }
