@@ -1541,10 +1541,6 @@ def main():
 
     server.event = EventManager(server.environment.envid)
 
-    server.alert_email = AlertEmail(server)
-    EventControl.populate()
-    server.event_control = EventControlManager(server)
-
     server.system = SystemManager(server.environment.envid)
     SystemManager.populate()
 
@@ -1555,6 +1551,12 @@ def main():
 
     Role.populate()
     UserProfile.populate()
+
+    # Must be done after auth, since it use the users table.
+    server.alert_email = AlertEmail(server)
+
+    EventControl.populate()
+    server.event_control = EventControlManager(server)
 
     workbook_manager = WorkbookManager(server.environment.envid)
 
