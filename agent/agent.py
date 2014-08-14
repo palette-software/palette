@@ -5,6 +5,7 @@ import ssl
 import json
 import time
 import argparse
+import hashlib
 
 import platform
 import multiprocessing
@@ -24,7 +25,7 @@ import logger
 from util import version, str2bool
 
 import http
-from http import HTTPRequest, HTTPResponse
+from http import HTTPRequest, HTTPResponse, HTTPBadRequest
 
 # Accepts commands from the Controller and sends replies.
 # The body of the request and response is JSON.
@@ -65,17 +66,20 @@ class AgentHandler(SimpleHTTPRequestHandler):
             return -1
         return 0
 
+    def get_required_json_parameter(self, req, name):
+        if name not in req.json:
+            raise http.HTTPBadRequest("Missing JSON parameter '"+name+"'")
+        return req.json[name]
+
     def handle_cli(self, req):
         if req.method == 'POST':
             try:
-                action = req.json['action'].lower()
-                xid = int(req.json['xid'])
+                action = self.get_required_json_parameter(req, 'action').lower()
+                xid = int(self.get_required_json_parameter(req, 'xid'))
             except (TypeError, KeyError, TypeError):
                 raise http.HTTPBadRequest()
             if action == 'start':
-                if not 'cli' in req.json:
-                    raise http.HTTPBadRequest()
-                cmd = req.json['cli']
+                cmd = self.get_required_json_parameter(req, 'cli')
                 self.server.log.info('CMD['+str(xid)+']: '+cmd)
                 if 'immediate' in req.json:
                     immediate = req.json['immediate']
@@ -128,13 +132,7 @@ class AgentHandler(SimpleHTTPRequestHandler):
         return req.query['path'][0]
 
     def get_ip(self):
-        ips = [i[4][0] for i in socket.getaddrinfo(socket.gethostname(),
-                                                                    None)]
-        for ip in ips:
-            if ip != '127.0.1.1':
-                return ip
-
-        return "No-IP-Address"
+        return self.server.socket.getsockname()[0]
 
     # The "auth" immediate command reply.
     # Immediate commands methods begin with 'icommand_'
@@ -184,6 +182,91 @@ class AgentHandler(SimpleHTTPRequestHandler):
         os.remove(path)
         return req.response
 
+    def compute_sha256(self, data):
+        return hashlib.sha256(data).hexdigest()
+
+    def handle_sha256(self, req):
+        path = self.get_required_json_parameter(req, 'path')
+        d = {}
+        if not os.path.isfile(path):
+            d['status'] = 'FAILED'
+            d['error'] = 'File does not exist: ' + path
+            return d
+
+        with open(path, 'rb') as f:
+            data = f.read()
+
+        h = self.compute_sha256(data)
+        d['status'] = 'OK'
+        d['hash'] = h
+        return d
+
+    def handle_move(self, req):
+        src = self.get_required_json_parameter(req, 'source')
+        dst = self.get_required_json_parameter(req, 'destination')
+        
+        d = {}
+        try:
+            shutil.move(src, dst)
+        except Exception, e:
+            d['status'] = 'FAILED'
+            d['error'] = str(e)
+            return d
+        d['status'] = 'OK'
+        return d
+
+    def handle_listdir(self, req):
+        path = self.get_required_json_parameter(req, 'path')
+        d = {}
+        if not os.path.isdir(path):
+            d['status'] = "FAILED";
+            d['error'] = "Not a valid directory: '" + path + "'";
+            return d;
+
+        files = []; dirs = []
+        for name in os.listdir(path):
+            p = os.path.join(path, name)
+            if os.path.isfile(p):
+                files.append(name)
+            elif os.path.isdir(p):
+                dirs.append(name)
+        d['status'] = "OK"
+        d['files'] = files
+        d['directories'] = dirs
+        return d
+
+    def handle_filesize(self, req):
+        path = self.get_required_json_parameter(req, 'path')
+        d = {}
+        if not os.path.isfile(path):
+            d['status'] = "FAILED";
+            d['error'] = "Invalid path: '" + path + "'";
+            return d;
+
+        d['status'] = "OK"
+        d['size'] = os.path.getsize(path)
+        return d
+
+    def handle_mkdirs(self, req):
+        path = self.get_required_json_parameter(req, 'path')
+        if not os.path.isdir(path):
+            os.makedirs(path)
+        return {'status': "OK"}
+
+    def handle_file_POST(self, req):
+        action = self.get_required_json_parameter(req, 'action').upper()
+        if action == 'SHA256':
+            return self.handle_sha256(req)
+        if action == 'MOVE':
+            return self.handle_move(req)
+        if action == 'LISTDIR':
+            return self.handle_listdir(req)
+        if action == 'FILESIZE':
+            return self.handle_filesize(req)
+        if action == 'MKDIRS':
+            return self.handle_mkdirs(req)
+        raise HTTPBadRequest("Invalid action '" + action + "'")
+
     def handle_file(self, req):
         if req.method == 'GET':
             return self.handle_file_GET(req)
@@ -191,6 +274,8 @@ class AgentHandler(SimpleHTTPRequestHandler):
             return self.handle_file_PUT(req)
         if req.method == 'DELETE':
             return self.handle_file_DELETE(req)
+        if req.method == 'POST':
+            return self.handle_file_POST(req)
         raise HTTPBadRequest()
 
     def handle_method(self, method):
