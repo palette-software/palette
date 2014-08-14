@@ -225,8 +225,8 @@
 "level":"W",
 "send_email":"t",
 "subject":"WARNING - Tableau Server Log Cleanup Failed",
-"event_description":"Server: ${displayname}\nDetails: ${stderr}\nAdditional Details: ${error}",
-"email_message":"Server: ${displayname}\nDetails: ${stderr}\nAdditional Details: ${error}",
+"event_description":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${error}",
+"email_message":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${error}",
 "icon":null,
 "color":"yellow",
 "event_type":"status"
