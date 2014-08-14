@@ -160,9 +160,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         backup_size_body = agent.filemanager.filesize(backup_full_path)
         if not success(backup_size_body):
             self.log.error("Failed to get size of backup file %s: %s" %\
-                            backup_full_path, backup_size_body['error'])
+                            (backup_full_path, backup_size_body['error']))
+            backup_size = 0
 
-        backup_size = backup_size_body['size']
+        else:
+            backup_size = backup_size_body['size']
 
         body['info'] = ""
         delete_local_backup = True
@@ -191,7 +193,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.backup.add(backup_full_path,
                             agentid=palette_primary_data_dir_vol_entry.agentid)
             else:
-                copy_elapsed_time = time.time() - copy_start-time
+                copy_elapsed_time = time.time() - copy_start_time
                 body['info'] = \
                     ("Backup file was copied to %s bucket '%s' " + \
                      "filename '%s'.") % \
@@ -245,7 +247,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 delete_local_backup = False
             else:
                 # The copy succeeded.
-                copy_elapsed_time = time.time() - copy_start_time()
+                copy_elapsed_time = time.time() - copy_start_time
                 body['info'] += \
                     "Backup file copied to agent '%s', directory: %s." % \
                         (dcheck.target_agent.displayname, dcheck.target_dir)
@@ -290,23 +292,26 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         total_time = backup_elapsed_time + copy_elapsed_time
 
         stats = 'Backup size: %s\n' % sizestr(backup_size)
-        stats += 'Backup elapsed time: %s (%.1f%%)\n' % \
-                  (self.seconds_to_str(backup_elapsed_time),
-                   (backup_elapsed_time / total_time) * 100)
+        stats += 'Backup elapsed time: %s' % \
+                  (self.seconds_to_str(backup_elapsed_time))
 
         if copy_elapsed_time:
-            stats += 'Backup copy elapsed time: %s (%.1f%%)' % \
+            stats += ' (%.0f%%)\n' % ((backup_elapsed_time / total_time) * 100)
+            stats += 'Backup copy elapsed time: %s (%.0f%%)\n' % \
                      (self.seconds_to_str(copy_elapsed_time),
                      (copy_elapsed_time / total_time) * 100)
 
-            stats += 'Total time: %s' % self.seconds_to_str(total_time)
+            stats += 'Backup total elapsed time: %s' % \
+                      self.seconds_to_str(total_time)
+        else:
+            stats += '\n'
 
-        body['info'] += stats
+        body['info'] += '\n' + stats
         return body
 
 
     def seconds_to_str(self, seconds):
-            return str(datetime.timedelta(seconds=seconds))
+            return str(datetime.timedelta(seconds=int(seconds)))
 
     def primary_backup_dir(self, agent):
         """return the palette primary backup directory."""
@@ -1309,7 +1314,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         self.agentmanager.set_displayname(aconn, uuid, displayname)
 
-    def ziplogs_cmd(self, agent, target=None):
+    def ziplogs_cmd(self, agent, target=None, userid=None):
         """Run tabadmin ziplogs'."""
 
         aconn = agent.connection
@@ -1317,44 +1322,40 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         path = self.backup.palette_primary_data_loc_path(agent)
         ziplog_path = agent.path.join(path, self.LOG_DIR)
 
-        #self.event_control.gen(EventControl.ZIPLOGS_STARTED,....
+        data = agent.todict(pretty=True)
+
+        self.event_control.gen(EventControl.ZIPLOGS_STARTED,
+                               data, userid=userid)
+                               
         cmd = 'tabadmin ziplogs -l -n -a \\\"%s\\\"' % ziplog_path
         body = self.cli_cmd(cmd, agent)
         body[u'info'] = u'tabadmin ziplogs -l -n -a ziplog_name'
 
         if 'error' in body:
-            data = agent.todict(pretty=True)
             self.event_control.gen(EventControl.ZIPLOGS_FAILED,
                                    dict(body.items() + data.items()))
         else:
-            #self.event_control.gen(EventControl.ZIPLOGS_FINISHED,....
-
+            self.event_control.gen(EventControl.ZIPLOGS_FINISHED,
+                                   dict(body.items() + data.items()))
         return body
 
-    def cleanup_cmd(self, agent, target=None):
+    def cleanup_cmd(self, agent, target=None, userid=None):
         """Run tabadmin cleanup'."""
 
         aconn = agent.connection
 
-        #self.event_control.gen(EventControl.CLEANUP_STARTED,....
+        data = agent.todict(pretty=True)
+        self.event_control.gen(EventControl.CLEANUP_STARTED, data,
+                               userid=userid)
         body = self.cli_cmd('tabadmin cleanup', agent)
-        body[u'info'] = u'tabadmin cleanup'
-        # 'tabadmin cleanup' returns an exit status of 1 but sends
-        # the error to stdout instead of stderr.
-        #
-        if 'exit-status' in body and body['exit-status'] != 0 and \
-                            'stderr' in body and not body['stderr']:
-            if 'error' in body and not body['error'] or \
-                                                not 'error' in body:
-                if 'stdout' in body:
-                    body['error'] = body['stdout']
-
         if 'error' in body:
-            data = agent.todict(pretty=True)
             self.event_control.gen(EventControl.CLEANUP_FAILED,
-                                   dict(body.items() + data.items()))
+                                   dict(body.items() + data.items()),
+                                   userid=userid)
         else:
-            self.event_control.gen(EventControl.CLEANUP_FINISHED,....
+            self.event_control.gen(EventControl.CLEANUP_FINISHED,
+                                   dict(body.items() + data.items()),
+                                   userid=userid)
         return body
 
     def error(self, msg, return_dict={}):
