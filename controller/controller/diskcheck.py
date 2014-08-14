@@ -90,7 +90,7 @@ class DiskCheck(object):
 
         self.log.debug(\
             "tableau_primary_check: tableau primary data has enough space." + \
-            "Need %d and have %d", min_tableau_primary_data_disk_needed,
+            "  Need %d and have %d", min_tableau_primary_data_disk_needed,
             tableau_primary_data_available)
 
     def set_target_from_config(self):
