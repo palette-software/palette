@@ -30,10 +30,11 @@
         <img class="login" src="/app/module/palette/images/palette_logo.png">
       </a>
       <form method="POST" action="/login" id="form">
-          <input class="login" type="text" name="username" id="username"
-            placeholder="Tableau Server Username">
-          <input class="login" type="password" name="password" id="password"
-            placeholder="Tableau Server Password">
+        <div class="login-label">Tableau Server Username</div>
+        <input class="login" type="text" name="username" id="username">
+        <div class="login-spacer"></div>
+        <div class="login-label">Tableau Server Password</div>
+        <input class="login" type="password" name="password" id="password">
         <section class="row">
           <section class="col-xs-12">
             <button type="submit" name="login" id="login"
