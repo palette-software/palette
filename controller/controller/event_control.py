@@ -1,4 +1,5 @@
 import sys, traceback
+import time
 from mako.template import Template
 from mako import exceptions
 import mako.runtime
@@ -9,6 +10,7 @@ from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
 from profile import UserProfile
+from util import DATEFMT
 
 from mixin import BaseMixin
 
@@ -109,7 +111,12 @@ class EventControl(meta.Base, BaseMixin):
     EXTRACT_OK="EXTRACT-OK"
     EXTRACT_FAILED="EXTRACT-FAILED"
 
+    ZIPLOGS_STARTED="ZIPLOGS-STARTED"
+    ZIPLOGS_FINISHED="ZIPLOGS-FINISHED"
     ZIPLOGS_FAILED="ZIPLOGS-FAILED"
+
+    CLEANUP_STARTED="CLEANUP-STARTED"
+    CLEANUP_FINISHED="CLEANUP-FINISHED"
     CLEANUP_FAILED="CLEANUP-FAILED"
     SYNC_FAILED="SYNC_FAILED"
 
@@ -176,6 +183,7 @@ class EventControlManager(object):
                                 pid
                                 exit-status
                                 run-status
+                                timestamp
                             - Sometimes added:
                                 error
                                 info
@@ -201,6 +209,11 @@ class EventControlManager(object):
 
         if 'exit-status' in data:
             data['exit_status'] = data['exit-status']
+
+        if not 'time' in data:
+            if not timestamp:
+                timestamp = time.strftime(DATEFMT)
+            data['time'] = timestamp
 
         # The userid for extracts is the Tableau "system_users_id".
         # The userid for other events is the "userid".

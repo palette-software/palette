@@ -199,12 +199,34 @@
 "event_type":"backup"
 },
 {
+"key":"CLEANUP-FINISHED",
+"level":"I",
+"send_email":"t",
+"subject":"INFO - Safety Cleanup Completed",
+"event_description":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"email_message":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"icon":null,
+"color":"green",
+"event_type":"status"
+},
+{
+"key":"CLEANUP-STARTED",
+"level":"I",
+"send_email":"f",
+"subject":"INFO - Cleanup Initiated",
+"event_description":"Status: INFO",
+"email_message":"Status: INFO",
+"icon":null,
+"color":"green",
+"event_type":"status"
+},
+{
 "key":"CLEANUP-FAILED",
 "level":"W",
 "send_email":"t",
 "subject":"WARNING - Tableau Server Log Cleanup Failed",
-"event_description":"Server: ${displayname}\nDetails: ${stderr}\nAdditional Details: ${error}",
-"email_message":"Server: ${displayname}\nDetails: ${stderr}\nAdditional Details: ${error}",
+"event_description":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${error}",
+"email_message":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${error}",
 "icon":null,
 "color":"yellow",
 "event_type":"status"
@@ -568,6 +590,28 @@
 "subject":"ERROR - Tableau Server User Table Issue",
 "event_description":"Status: ERROR\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}",
 "email_message":"Status: ERROR\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}",
+"icon":null,
+"color":"green",
+"event_type":"status"
+},
+{
+"key":"ZIPLOGS-FINISHED",
+"level":"I",
+"send_email":"t",
+"subject":"INFO - Ziplogs Completed",
+"event_description":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"email_message":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"icon":null,
+"color":"green",
+"event_type":"status"
+},
+{
+"key":"ZIPLOGS-STARTED",
+"level":"I",
+"send_email":"f",
+"subject":"INFO - Ziplogs Initiated",
+"event_description":"Status: INFO",
+"email_message":"Status: INFO",
 "icon":null,
 "color":"green",
 "event_type":"status"
