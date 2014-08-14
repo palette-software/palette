@@ -61,6 +61,7 @@ class Site(meta.Base):
             entry = Site.get(row[0])
             if not entry:
                 entry = Site(siteid=row[0])
+                session.add(entry)
             entry.name = row[1]
             entry.status = row[2]
             entry.created_at = row[3]
@@ -75,7 +76,6 @@ class Site(meta.Base):
             entry.custom_subscription_email = row[12]
             entry.luid = row[13]
             entry.query_limit = row[14]
-            session.merge(entry)
             ids.append(entry.siteid)
 
         session.query(Site).\

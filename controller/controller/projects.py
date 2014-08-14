@@ -51,6 +51,7 @@ class Project(meta.Base):
             entry = Project.get(row[0])
             if not entry:
                 entry = Project(projectid=row[0])
+                session.add(entry)
             entry.name = row[1]
             entry.owner_id = row[2]
             entry.created_at = row[3]
@@ -59,7 +60,6 @@ class Project(meta.Base):
             entry.description = row[6]
             entry.site_id = row[7]
             entry.special = row[8]
-            session.merge(entry)
             ids.append(entry.projectid)
 
         session.query(Project).\
