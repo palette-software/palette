@@ -132,13 +132,7 @@ class AgentHandler(SimpleHTTPRequestHandler):
         return req.query['path'][0]
 
     def get_ip(self):
-        ips = [i[4][0] for i in socket.getaddrinfo(socket.gethostname(),
-                                                                    None)]
-        for ip in ips:
-            if ip != '127.0.1.1':
-                return ip
-
-        return "No-IP-Address"
+        return self.server.socket.getsockname()[0]
 
     # The "auth" immediate command reply.
     # Immediate commands methods begin with 'icommand_'
