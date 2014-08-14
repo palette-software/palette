@@ -1722,28 +1722,20 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return
 
-        # FIXME: Do we want to send alerts?
-        #server.event_control.gen(EventControl.BACKUP_STARTED)
+        if cmd.dict.has_key('userid'):
+            userid = int(cmd.dict['userid'])
+        else:
+            userid = None
+
         self.ack()
 
-        body = self.server.ziplogs_cmd(agent)
+        body = self.server.ziplogs_cmd(agent, userid=userid)
 
         stateman.update(main_state)
         aconn.user_action_unlock();
 
         self.report_status(body)
-        if success(body):
-            # FIXME: Do we want to send alerts?
-            # data = agent.todict(pretty=True)
-            #server.event_control.gen(EventControl.ZIPLOGS_FINISHED, 
-            #                    dict(body.items() + data.items()))
-            pass
-        else:
-            # FIXME: Do we want to send alerts?
-            # data = agent.todict(pretty=True)
-            #server.event_control.gen(EventControl.ZIPLOGS_FAILED,
-            #                    dict(body.items() + data.items()))
-            pass
+        # Events are generated in ziplogs_cmd
 
     @usage('cleanup')
     def do_cleanup(self, cmd):
@@ -1776,28 +1768,20 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return
 
-        # FIXME: Do we want to send alerts?
-        #server.event_control.gen(EventControl.BACKUP_STARTED)
+        if cmd.dict.has_key('userid'):
+            userid = int(cmd.dict['userid'])
+        else:
+            userid = None
+
         self.ack()
 
-        body = self.server.cleanup_cmd(agent)
+        body = self.server.cleanup_cmd(agent, userid=userid)
 
         stateman.update(main_state)
         aconn.user_action_unlock();
 
         self.report_status(body)
-        if success(body):
-            # FIXME: Do we want to send alerts?
-            # data = agent.todict(pretty=True)
-            #server.event_control.gen(EventControl.CLEANUP_FINISHED,
-            #                    dict(body.items() + data.items()))
-            pass
-        else:
-            # FIXME: Do we want to send alerts?
-            # data = agent.todict(pretty=True)
-            #server.event_control.gen(EventControl.CLEANUP_FAILED,
-            #                    dict(body.items() + data.items()))
-            pass
+        # Events are generated in cleanup_cmd
 
     @usage('nop')
     def do_nop(self, cmd):
