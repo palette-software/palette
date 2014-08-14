@@ -122,8 +122,8 @@ class Agent(meta.Base, BaseDictMixin):
 
     def todict(self, pretty=False, exclude=[]):
         d = super(Agent, self).todict(pretty=pretty, exclude=exclude)
-        del d['username']
-        del d['password']
+        if 'username' in d: del d['username']
+        if 'password' in d: del d['password']
         if pretty:
             fmt = "%(value).0f%(symbol)s"
             d['installed-memory-readable'] = \
@@ -137,10 +137,15 @@ class Agent(meta.Base, BaseDictMixin):
          session = meta.Session()
 
          uuid = body['uuid']
-         entry = Agent.get_by_uuid(envid, uuid)
 
-         if entry is None:
+         entry = Agent.get_by_uuid(envid, uuid)
+         if entry:
+             # Make a copy of the object
+             entry = session.merge(entry)
+             # but points at the same aconn...
+         else:
              entry = Agent(envid=envid, uuid=uuid)
+             session.add(entry)
 
          entry.version=body['version']
          entry.os_version=body['os-version']
@@ -163,7 +168,6 @@ class Agent(meta.Base, BaseDictMixin):
              entry.bitness = body['os-bitness']
 
          entry.last_connection_time = func.now()
-         entry = session.merge(entry)
          session.commit()
 
          if entry.iswin:

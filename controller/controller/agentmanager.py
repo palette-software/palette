@@ -156,13 +156,6 @@ class AgentManager(threading.Thread):
                                       synchronize_session=False)
         session.commit()
 
-    # must be called with the agentmanager lock held
-    def find_by_uuid(self, uuid):
-        for key in self.agents.keys():
-            agent = self.agents[key]
-            if agent.uuid == uuid:
-                return agent
-        return None
 
     def register(self, agent, body):
         """
@@ -228,10 +221,6 @@ class AgentManager(threading.Thread):
             self.new_primary_event.set()
 
         self.unlock()
-
-        session = meta.Session()
-        session.commit()
-        session.expunge(agent)
         return True
 
     def set_all_agent_types(self):
@@ -243,8 +232,7 @@ class AgentManager(threading.Thread):
         session = meta.Session()
 
         rows = session.query(Agent).\
-            filter(Agent.agent_type != \
-                                        AgentManager.AGENT_TYPE_PRIMARY).\
+            filter(Agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY).\
             all()
 
         for entry in rows:
@@ -257,7 +245,6 @@ class AgentManager(threading.Thread):
 #                print "Correcting agent type from", entry.agent_type, "to", agent_type
                 # Set the agent to the correct type.
                 entry.agent_type = agent_type
-                session.merge(entry)
 
         session.commit()
 
@@ -431,11 +418,10 @@ class AgentManager(threading.Thread):
                         filter(AgentVolumesEntry.agentid == agentid).\
                         filter(AgentVolumesEntry.name == name).\
                         one()
-                    found = True
                 except NoResultFound, e:
-                    found = False
+                    entry = None
 
-                if found:
+                if not entry is None:
                     # Merge it into the existing volume entry.
                     # It should already have archive, archive_limit, etc.
                     if 'size' in volume:
@@ -488,7 +474,6 @@ class AgentManager(threading.Thread):
                                 entry.watermark_notified_color = usage_color
 
                     entry.active = True  # Note the agent reported it
-                    session.merge(entry)
                 else:
                     # Add the volume
                     if 'type' in volume:
@@ -643,7 +628,8 @@ class AgentManager(threading.Thread):
 
         for key in self.agents:
             if self.agents[key].agent_type == agent_type:
-                return self.agents[key]
+                agent = self.agents[key]
+                return agent
 
         return None
 
@@ -950,8 +936,11 @@ class AgentManager(threading.Thread):
             if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
                 self.set_default_backup_destid(agent)
 
-            self.server.event_control.gen(EventControl.AGENT_COMMUNICATION,
-                                          agent.todict(pretty=True))
+            self.server.event_control.gen(\
+                EventControl.AGENT_COMMUNICATION, agent.todict(pretty=True))
+
+            session = meta.Session()
+            session.commit()
 
         except socket.error, e:
             self.log.debug("Socket error: " + str(e))
@@ -959,6 +948,7 @@ class AgentManager(threading.Thread):
         except Exception, e:
             self.log.exception('handle_agent_connection exception:')
         finally:
+            session.expunge(agent)
             session.rollback()
             meta.Session.remove()
 
@@ -1099,7 +1089,7 @@ class AgentHealthMonitor(threading.Thread):
                         (agent.displayname, agent.agent_type, key))
 
                     self.manager.remove_agent(agent,
-                                                "Lost contact with an agent")
+                                              "Lost contact with an agent")
             else:
                 self.log.debug(\
                     "Ping: Reply from agent '%s', type '%s', uuid %s." %
