@@ -78,7 +78,10 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
 
     active = Column(Boolean)
 
-    agent = relationship('Agent', backref='volumes')
+    agent = relationship('Agent',
+                         backref=backref('volumes',
+                                         order_by='AgentVolumesEntry.name')
+                         )
     UniqueConstraint('agentid', 'name')
 
     def todict(self, pretty=False):
