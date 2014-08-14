@@ -56,6 +56,7 @@ class DataConnection(meta.Base):
             entry = DataConnection.get(row[0])
             if not entry:
                 entry = DataConnection(dcid=row[0])
+                session.add(entry)
             entry.server = row[1]
             entry.dbclass = row[2]
             entry.port = row[3]
@@ -71,7 +72,6 @@ class DataConnection(meta.Base):
             entry.caption = row[13]
             entry.site_id = row[14]
             entry.keychain = row[15]
-            session.merge(entry)
             ids.append(entry.dcid)
 
         session.query(DataConnection).\

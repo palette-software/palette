@@ -251,6 +251,9 @@ class EventControlManager(object):
            event_description = self.make_default_description(data)
 
         event_description = re.sub("(\n|\r\n){3,}", "\n\n", event_description)
+        if not event_description.endswith("\n"):
+            event_description = event_description + "\n"
+
         if self.server.event_debug:
             event_description = event_description + "--------\n" + str(data)
 
