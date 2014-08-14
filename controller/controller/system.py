@@ -125,11 +125,12 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
         return entry
 
     @classmethod
-    def save(cls, agentid, interactors=None, viewers=None):
+    def get(cls, agentid, interactors=None, viewers=None):
         session = meta.Session()
         entry = cls.get_by_agentid(agentid)
         if not entry:
             entry = LicenseEntry(agentid=agentid)
+            session.add(entry)
 
         entry.interactors = interactors
         entry.viewers = viewers
@@ -137,16 +138,6 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
         # If the entry is valid, reset the notification field.
         if entry.valid():
             entry.notified = False
-
-        session.merge(entry)
-        session.commit()
-        return entry
-
-    @classmethod
-    def update(cls, entry):
-        session = meta.Session()
-        session.merge(entry)
-        session.commit()
 
         return entry
 

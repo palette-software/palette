@@ -1076,12 +1076,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not 'stdout' in body:
             return body
 
+        session = meta.Session()
+
         output = body['stdout']
         d = LicenseEntry.parse(output)
-
-        entry = LicenseEntry.save(agentid=agent.agentid, **d)
-        if not entry:
-            return self.error("Could not save license entry: %s" % str(d))
+        entry = LicenseEntry.get(agentid=agent.agentid, **d)
+        session.commit()
 
         if entry.invalid():
             if not entry.notified:
@@ -1091,7 +1091,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     (entry.interactors, entry.viewers)
                 self.event_control.gen(EventControl.LICENSE_INVALID, data)
                 entry.notified = True
-                LicenseEntry.update(entry)
+                session.commit()
             return self.error(\
                 "License invalid on '%s': interactors: %s, viewers: %s" % \
                     (agent.displayname, entry.interactors, entry.viewers))

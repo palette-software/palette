@@ -79,7 +79,7 @@ class HTTPRequestEntry(meta.Base):
                                      vizql_session=row[16],
                                      site_id=row[17],
                                      currentsheet=row[18])
-            session.merge(entry)
+            session.add(entry)
 
         session.commit()
 
