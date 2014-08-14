@@ -217,6 +217,10 @@ class EventControlManager(object):
             else:
                 data['username'] = profile.name
 
+        # set server-url
+        data['server-url'] = self.server.system.get('server-url',
+                                                    default='localhost')
+
         # Use the data dict for template substitution.
         try:
             subject = subject % data
