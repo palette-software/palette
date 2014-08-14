@@ -78,9 +78,7 @@ class AlertEmail(object):
             return  # It already has an email address
 
         entry.email = diagnostics_email
-        session = meta.Session
-        session.merge(entry)
-        session.commit()
+        meta.Session.commit()
         self.log.debug("alert diag: set a diag email: %s", entry.email)
 
     def admin_emails(self):
