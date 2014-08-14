@@ -1009,7 +1009,8 @@ input[type="text"].login, input[type="password"].login {
     height: 48px;
     padding-left: 13px;
     box-sizing: border-box;
-    margin-bottom:14px;
+    margin-bottom:0px;
+    margin-top: 0px;
 }
 button.login {
     font-family: "Proxima Nova Regular","Helvetica Neue",Helvetica,Arial,sans-serif;
@@ -1024,7 +1025,7 @@ button.login {
     border: 0;
     max-width: 320px;
     height: 48px;
-    margin-top: 9px;
+    margin-top: 23px;
     cursor: pointer;
     outline: none;
     display: inline-block;
@@ -1043,11 +1044,36 @@ button.login:focus, input[type="submit"].login:focus {
     color: #d9d9d9;
     outline: none;
 }
-img.login {
-    padding-bottom: 0 0 39px 0;
-}
 input[type="text"].login:-webkit-autofill {
    -webkit-box-shadow: 0 0 0px 1000px white inset;
+}
+.login-label {
+    text-align: left;
+    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+    font-size: 19px;
+    line-height: 19px;
+    padding-bottom: 4px;
+    margin: 0;
+}
+.login-spacer {
+    height: 25px;
+}
+.login-box {
+    width: 33%;
+    margin: 0 auto;
+    display: table-cell;
+    vertical-align: middle;
+    position: relative;
+}
+.login-box form {
+    max-width: 320px;
+    display: block;
+    margin: 0 auto
+}
+.login-box img {
+    display: block;
+    max-width: 320px;
+    margin: 0 auto 39px auto;
 }
 /* other styles*/
 .big {
@@ -1097,23 +1123,6 @@ input[type="submit"].login:active {
     height: 100%;
     display: table;
     margin: 0 auto;
-}
-.login-box {
-    width: 33%;
-    margin: 0 auto;
-    display: table-cell;
-    vertical-align: middle;
-    position: relative;
-}
-.login-box form {
-    max-width: 320px;
-    display: block;
-    margin: 0 auto
-}
-.login-box img {
-    display: block;
-    max-width: 320px;
-    margin: 0 auto 25px auto;
 }
 label {
     margin: 25px 0 8px 0;
