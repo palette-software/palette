@@ -7,6 +7,7 @@ import socket
 
 import json
 import time
+import datetime
 
 import exc
 from request import *
@@ -53,7 +54,7 @@ from s3 import S3
 
 from sched import Sched, Crontab # needed for create_all()
 from clihandler import CliHandler
-from util import version, success, failed
+from util import version, success, failed, sizestr
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
@@ -144,9 +145,24 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         cmd = 'tabadmin backup \\\"%s\\\"' % backup_full_path
 
+        backup_start_time = time.time()
         body = self.cli_cmd(cmd, agent)
+        backup_elapsed_time = time.time() - backup_start_time
+
         if body.has_key('error'):
+            body['info'] = 'Backup command elapsed time: %s' % \
+                            self.seconds_to_str(backup_end_time - start_time)
             return body
+
+        BACKUP_UNKNOWN = -1
+
+        backup_size = BACKUP_UNKNOWN
+        backup_size_body = agent.filemanager.filesize(backup_full_path)
+        if not success(backup_size_body):
+            self.log.error("Failed to get size of backup file %s: %s" %\
+                            backup_full_path, backup_size_body['error'])
+
+        backup_size = backup_size_body['size']
 
         body['info'] = ""
         delete_local_backup = True
@@ -160,9 +176,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error(
                 "Could not retrieve get_palette_primary_data_loc_vol_entry")
 
+        copy_elapsed_time = 0
+
         if dcheck.target_type in (StorageConfig.GCS, StorageConfig.S3):
+            copy_start_time = time.time()
             storage_body = cloud_cmd(agent, "PUT",
                             dcheck.target_entry, backup_full_path)
+            copy_end_time = time.time()
             if 'error' in storage_body:
                 body['info'] = "Copy to %s '%s' failed: %s" % \
                     (dcheck.target_type, dcheck.target_entry.name,
@@ -171,6 +191,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.backup.add(backup_full_path,
                             agentid=palette_primary_data_dir_vol_entry.agentid)
             else:
+                copy_elapsed_time = time.time() - copy_start-time
                 body['info'] = \
                     ("Backup file was copied to %s bucket '%s' " + \
                      "filename '%s'.") % \
@@ -205,6 +226,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             source_path = "%s:%s%s" % (agent.displayname, backup_vol,
                                         backup_path)
+            copy_start_time = time.time()
             copy_body = self.copy_cmd(source_path,
                         dcheck.target_agent.displayname, dcheck.target_dir)
 
@@ -223,6 +245,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 delete_local_backup = False
             else:
                 # The copy succeeded.
+                copy_elapsed_time = time.time() - copy_start_time()
                 body['info'] += \
                     "Backup file copied to agent '%s', directory: %s." % \
                         (dcheck.target_agent.displayname, dcheck.target_dir)
@@ -261,7 +284,29 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     ("\nDeletion of backup file failed after copy. "+\
                         "File: '%s'. Error was: %s") \
                         % (backup_full_path, remove_body['error'])
+
+
+        # Report backup stats
+        total_time = backup_elapsed_time + copy_elapsed_time
+
+        stats = 'Backup size: %s\n' % sizestr(backup_size)
+        stats += 'Backup elapsed time: %s (%.1f%%)\n' % \
+                  (self.seconds_to_str(backup_elapsed_time),
+                   (backup_elapsed_time / total_time) * 100)
+
+        if copy_elapsed_time:
+            stats += 'Backup copy elapsed time: %s (%.1f%%)' % \
+                     (self.seconds_to_str(copy_elapsed_time),
+                     (copy_elapsed_time / total_time) * 100)
+
+            stats += 'Total time: %s' % self.seconds_to_str(total_time)
+
+        body['info'] += stats
         return body
+
+
+    def seconds_to_str(self, seconds):
+            return str(datetime.timedelta(seconds=seconds))
 
     def primary_backup_dir(self, agent):
         """return the palette primary backup directory."""
@@ -1272,6 +1317,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         path = self.backup.palette_primary_data_loc_path(agent)
         ziplog_path = agent.path.join(path, self.LOG_DIR)
 
+        #self.event_control.gen(EventControl.ZIPLOGS_STARTED,....
         cmd = 'tabadmin ziplogs -l -n -a \\\"%s\\\"' % ziplog_path
         body = self.cli_cmd(cmd, agent)
         body[u'info'] = u'tabadmin ziplogs -l -n -a ziplog_name'
@@ -1280,6 +1326,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             data = agent.todict(pretty=True)
             self.event_control.gen(EventControl.ZIPLOGS_FAILED,
                                    dict(body.items() + data.items()))
+        else:
+            #self.event_control.gen(EventControl.ZIPLOGS_FINISHED,....
+
         return body
 
     def cleanup_cmd(self, agent, target=None):
@@ -1287,6 +1336,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn = agent.connection
 
+        #self.event_control.gen(EventControl.CLEANUP_STARTED,....
         body = self.cli_cmd('tabadmin cleanup', agent)
         body[u'info'] = u'tabadmin cleanup'
         # 'tabadmin cleanup' returns an exit status of 1 but sends
@@ -1303,6 +1353,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             data = agent.todict(pretty=True)
             self.event_control.gen(EventControl.CLEANUP_FAILED,
                                    dict(body.items() + data.items()))
+        else:
+            self.event_control.gen(EventControl.CLEANUP_FINISHED,....
         return body
 
     def error(self, msg, return_dict={}):
@@ -1398,7 +1450,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """Remove old XID directories."""
         xid_dir = agent.path.join(agent.data_dir, "XID")
         body = agent.filemanager.listdir(xid_dir)
-        if 'error' in body:
+
+        if not success(body):
             self.log.error("Could not list the XID directory '%s': %s",
                            xid_dir, body['error'])
             return
