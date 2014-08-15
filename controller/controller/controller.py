@@ -928,6 +928,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return restore_body
 
+    # FIXME: use filemanager.delete() instead?
     def delete_file(self, agent, source_fullpathname):
         """Delete a file, check the error, and return the body result."""
         self.log.debug("Removing file '%s'", source_fullpathname)
@@ -1466,7 +1467,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         for rem_dir in body['directories']:
             full_path = agent.path.join(xid_dir, rem_dir)
             self.log.debug("Removing %s", full_path)
-            #agent.filemanager.delete(full_path)
+            agent.filemanager.delete(full_path)
 
     def config_servers(self, agent):
         """Configure the maintenance and archive servers."""
