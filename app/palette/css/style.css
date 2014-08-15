@@ -310,6 +310,15 @@ article.popup p {
     width: 80px;
     font-size: 50px;
 }
+.secondary-side-bar ul.server-list > li > a > i.down-arrow  {
+    position: absolute;
+    line-height: 100px;
+    top: 0;
+    left: 240px;
+    font-size: 26px;
+    color: #8e96a3;
+}
+
 .secondary-side-bar ul.Logs li a {
     padding: 0 25px;
     line-height: 32px;
@@ -354,6 +363,14 @@ article.popup p {
     display: block;
     margin: 10px 25px;
     height: 32px;
+}
+.main-side-bar .status > i {
+    position: absolute;
+    color: #A9A7AC;
+    display: block;
+    top: 78px;
+    font-size: 28px;
+    left: 205px;
 }
 .btn-group {
     position: relative;
@@ -475,7 +492,7 @@ ul.dropdown-menu a:hover {
     cursor: pointer;
 }
 
-.main-side-bar .status img, .main-side-bar .status i {
+.main-side-bar .status img {
     position: absolute;
     width: 64px;
     height: 64px;

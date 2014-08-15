@@ -51,6 +51,7 @@
           <span class="hostname">{{hostname}}</span>
           <span class="address">{{ip_address}}</span>
 	    </div>
+        <i class="fa fa-fw fa-angle-down down-arrow"></i>
       </a>
       <ul class="processes">
 	{{#volumes}}
