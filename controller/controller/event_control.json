@@ -71,8 +71,8 @@
 "level":"E",
 "send_email":"t",
 "subject":"ERROR - Safety Backup Failed",
-"event_description":"Status: ERROR\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}",
-"email_message":"Status: ERROR\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}",
+"event_description":"Status: ERROR\nDetails: ${error}",
+"email_message":"Status: ERROR\nDetails: ${error}",
 "icon":null,
 "color":"red",
 "event_type":"backup"
@@ -104,8 +104,8 @@
 "level":"E",
 "send_email":"t",
 "subject":"ERROR - Safety Backup Failed",
-"event_description":"Status: ERROR\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}",
-"email_message":"Status: ERROR\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}",
+"event_description":"Status: ERROR\nDetails: ${error}",
+"email_message":"Status: ERROR\nDetails: ${error}",
 "icon":null,
 "color":"red",
 "event_type":"backup"
