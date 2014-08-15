@@ -396,7 +396,7 @@ article.popup p {
 .dropdown-menu {
     width: 100%;
     border: 0;
-    box-shadow: 0 3px rgba(0,0,0,0.1);
+    box-shadow: 0 0 rgba(0,0,0,0.1);
     -webkit-border-bottom-right-radius: 15px;
     -webkit-border-bottom-left-radius: 15px;
     -moz-border-radius-bottomright: 15px;
@@ -1628,6 +1628,10 @@ div.refresh {
 }
 h2.page-subtitle {
     text-transform: uppercase;
+    font-family: "Proxima Nova semibold",Helvetica,Arial,sans-serif;
+    color: #5f6670;
+    font-size: 17px;
+    margin-top: 30px;
 }
 .storage-page {
     padding-bottom: 160px;
