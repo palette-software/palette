@@ -46,8 +46,9 @@
         <section class="hidden" id="auth-error"></section>
         %endif
         <p class="hidden error" id="error">
-          Login Failed <b>Invalid userID</b> or <b>password</b>
+          <b>Unrecognized Username or Password</b>
         </p>
+        <p class="login-instructions">If you forgot your Tableau Server Username or Password, please contact your organization's Tableau Server Administrator.</p>
       </form>
     </div>
   </section>
