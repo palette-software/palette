@@ -23,6 +23,13 @@ function ($, topic, template)
         $('.main-side-bar .status').off('click');
         $('.main-side-bar .status').bind('click', function() {
             $('.main-side-bar li.active, .secondary-side-bar, .dynamic-content, .secondary-side-bar.servers').toggleClass('servers-visible');
+            if ($('#expand-right').hasClass('fa-angle-right')) {
+                $('#expand-right').removeClass('fa-angle-right');
+                $('#expand-right').addClass('fa-angle-left');
+            } else {
+                $('#expand-right').removeClass('fa-angle-left');
+                $('#expand-right').addClass('fa-angle-right');
+            }
         });
     }
 
@@ -177,6 +184,15 @@ function ($, topic, template)
         $('.server-list li a').bind('click', function() {
             $(this).toggleClass('visible');
             $(this).parent().find('ul.processes').toggleClass('visible');
+
+            var child = $(this).find('i.down-arrow');
+            if (child.hasClass('fa-angle-down')) {
+               child.removeClass('fa-angle-down');
+               child.addClass('fa-angle-up');
+            } else {
+               child.removeClass('fa-angle-up');
+               child.addClass('fa-angle-down');
+            }
         });
     }
 
