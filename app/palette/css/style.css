@@ -61,7 +61,7 @@ i.tableau {
     height: 100%;
 }
 .hidden {
-    display: none;
+    visibility: hidden;
 }
 .visible {
     display: block !important;
@@ -1074,6 +1074,9 @@ input[type="text"].login:-webkit-autofill {
     display: block;
     max-width: 320px;
     margin: 0 auto 39px auto;
+}
+.login-instructions {
+    margin-top: 25px;
 }
 /* other styles*/
 .big {
