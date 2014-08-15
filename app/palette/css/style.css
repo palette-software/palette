@@ -20,12 +20,12 @@ h1 {
 h2, h3, h4, h5, h6 {
     font-family: "Proxima Nova regular",Helvetica,Arial,sans-serif;
     color: #5f6670;
-    font-size: 23px;
+    font-size: 17px;
 }
 p {
     font-family: "proxima nova light",Helvetica,Arial,sans-serif;
-    line-height: 23px;
-    font-size: 21px;
+    line-height: 20px;
+    font-size: 16px;
     color: #78808A;
 }
 a {
@@ -369,12 +369,12 @@ article.popup p {
 }
 .btn-group button .caret {
     position: absolute;
-    right: 15px;
+    right: 11px;
     top: 50%;
     margin-top: -2px;
-    border-top: 4px solid #697078;
-    border-right: 4px solid transparent;
-    border-left: 4px solid transparent;
+    border-top: 5px solid #697078;
+    border-right: 5px solid transparent;
+    border-left: 5px solid transparent;
 }
 .dropdown-menu {
     width: 100%;
@@ -859,7 +859,7 @@ ul.processes.visible {
     background-color: #EF5455;
 }
 .btn-group>.btn, .btn-group-vertical>.btn {
-    padding-right: 45px;
+    padding-right: 30px;
 }
 .dynamic-content .top-zone .btn-group {
     display: inline-block;
