@@ -5,6 +5,7 @@ from storage import StorageConfig
 from agentinfo import AgentVolumesEntry
 from agent import Agent
 from agentmanager import AgentManager
+from util import sizestr
 
 class DiskException(Exception):
     def __init__(self, errmsg):
@@ -83,15 +84,15 @@ class DiskCheck(object):
                                         min_tableau_primary_data_disk_needed:
             raise DiskException(
                 ("Cannot backup due to shortage of disk space on " + \
-                "primary host '%s': %d needed, but only %d available.") % \
+                "primary host '%s': %s needed, but only %s available.") % \
                     (self.agent.displayname,
-                     min_tableau_primary_data_disk_needed,
-                     tableau_primary_data_available))
+                     sizestr(min_tableau_primary_data_disk_needed),
+                     sizestr(tableau_primary_data_available)))
 
         self.log.debug(\
             "tableau_primary_check: tableau primary data has enough space." + \
-            "  Need %d and have %d", min_tableau_primary_data_disk_needed,
-            tableau_primary_data_available)
+            "  Need %s and have %s", sizestr(min_tableau_primary_data_disk_needed),
+            sizestr(tableau_primary_data_available))
 
     def set_target_from_config(self):
         """Use the user configuration settings from StorageConfig
@@ -154,8 +155,8 @@ class DiskCheck(object):
         if entry.available_space < self.min_target_disk_needed:
             raise DiskException(\
                 ("Not enough available space on volid %d: Available space: " +
-                "%d, needed: %d") % (entry.volid, entry.available_space,
-                                                self.min_target_disk_needed))
+                "%s, needed: %s") % (sizestr(entry.volid, entry.available_space),
+                                                sizestr(self.min_target_disk_needed)))
 
         # Check if the backup would use more disk space than is allowed
         # by the "archive_limit" in the volume entry.
@@ -163,11 +164,11 @@ class DiskCheck(object):
                                                     entry.archive_limit:
             raise DiskException(\
                 ("Minimum space needed greater than archive limit." + \
-                "volid: %d.  Need: %d.  With backup vol would have: %d.  " + \
-                "Allowed/archive limit: %d") % \
-                (entry.volid, self.min_target_disk_needed,
-                entry.size - entry.available_space + \
-                            self.min_target_disk_needed, entry.archive_limit))
+                "volid: %d.  Need: %s.  With backup vol would have: %s.  " + \
+                "Allowed/archive limit: %s") % \
+                (entry.volid, sizestr(self.min_target_disk_needed),
+                sizestr(entry.size - entry.available_space + \
+                            self.min_target_disk_needed), sizestr(entry.archive_limit)))
         agent = Agent.get_by_id(entry.agentid)
         if not agent:
             raise DiskException(\
@@ -187,8 +188,8 @@ class DiskCheck(object):
 
         self.log.debug("check_volume_from_config: set target to " + \
                 "agent '%s', volid %d, target dir '%s'. " + \
-                "Need %d, have %d, size %d, " + \
-                "archive limit %d",
+                "Need %s, have %s, size %s, " + \
+                "archive limit %s",
                     agent.displayname, entry.volid, self.target_dir,
-                    self.min_target_disk_needed, entry.available_space,
-                                            entry.size, entry.archive_limit)
+                    sizestr(self.min_target_disk_needed), sizestr(entry.available_space),
+                                            sizestr(entry.size), sizestr(entry.archive_limit))
