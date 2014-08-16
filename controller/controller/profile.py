@@ -18,6 +18,7 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     name = Column(String, unique=True, nullable=False)
     friendly_name = Column(String)
     email = Column(String)
+    email_level = Column(Integer, default=1)
     hashed_password = Column(String)
     salt = Column(String)
     roleid = Column(BigInteger, ForeignKey("roles.roleid"), default=0)
@@ -70,7 +71,7 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
         return entry.hashed_password == tableau_hash(password, entry.salt)
 
     defaults = [{'userid':0, 'name':'palette', 'friendly_name':'Palette',
-                 'email': None, 'salt':'', 'roleid':3,
+                 'email': None, 'salt':'', 'roleid':3, # SUPER_ADMIN
                  'hashed_password':tableau_hash('tableau2014','')}]
 
 class Role(meta.Base, BaseMixin):
