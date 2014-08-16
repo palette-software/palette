@@ -44,12 +44,6 @@ function (jquery)
             return;
         }
         for (var i = 0; i < fields.length; i++) {
-            var node = jquery('#'+fields[i]);
-            var val = node.parent().html();
-            val += "<label for=\"" + fields[i] + "\" class=\"error\">" + 
-                "This field is required.</label>";
-            node.parent().html(val);
-
             var node = jquery('#'+fields[i]); // must re-grab the node
             node.keyup(function(event) {
                 change(node);
@@ -57,6 +51,8 @@ function (jquery)
             change(node);
         }
         errmode = true;
+
+        jquery('#error').removeClass('hidden');
     }
 
     if (jquery('#auth-error').length) {
