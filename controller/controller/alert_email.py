@@ -48,11 +48,11 @@ class AlertEmail(object):
 
         DEFAULT_ALERT_LEVEL = 1
         self.alert_level = self.config.getint("alert", "alert_level",
-                                                        default=DEFAULT_ALERT_LEVEL)
+                                              default=DEFAULT_ALERT_LEVEL)
 
         DEFAULT_MAX_SUBJECT_LEN = 1000
         self.max_subject_len = self.config.getint("alert", "max_subject_len",
-                                                default=DEFAULT_MAX_SUBJECT_LEN)
+                                                  default=DEFAULT_MAX_SUBJECT_LEN)
 
         diagnostics_email = self.config.get("alert", "diagnostics_email",
                                             default="")
@@ -90,7 +90,8 @@ class AlertEmail(object):
         session = meta.Session()
         rows = session.query(UserProfile).\
             filter(UserProfile.roleid > 0).\
-            filter(UserProfile.email != "").\
+            filter(UserProfile.email != None).\
+            filter(UserProfile.email_level > 0).\
             all()
 
         return [entry.email for entry in rows]
@@ -150,7 +151,7 @@ class AlertEmail(object):
         if not self.enabled:
             self.log.info(\
                 "Alerts disabled.  Not sending: Subject: %s, Message: %s",
-                                                            subject, message)
+                subject, message)
             return
 
         if event_entry.key == EventControl.EXTRACT_OK:
