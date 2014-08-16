@@ -20,12 +20,12 @@ h1 {
 h2, h3, h4, h5, h6 {
     font-family: "Proxima Nova regular",Helvetica,Arial,sans-serif;
     color: #5f6670;
-    font-size: 23px;
+    font-size: 17px;
 }
 p {
     font-family: "proxima nova light",Helvetica,Arial,sans-serif;
-    line-height: 23px;
-    font-size: 21px;
+    line-height: 20px;
+    font-size: 16px;
     color: #78808A;
 }
 a {
@@ -61,7 +61,7 @@ i.tableau {
     height: 100%;
 }
 .hidden {
-    display: none;
+    visibility: hidden;
 }
 .visible {
     display: block !important;
@@ -310,6 +310,15 @@ article.popup p {
     width: 80px;
     font-size: 50px;
 }
+.secondary-side-bar ul.server-list > li > a > i.down-arrow  {
+    position: absolute;
+    line-height: 100px;
+    top: 0;
+    left: 240px;
+    font-size: 26px;
+    color: #8e96a3;
+}
+
 .secondary-side-bar ul.Logs li a {
     padding: 0 25px;
     line-height: 32px;
@@ -355,6 +364,14 @@ article.popup p {
     margin: 10px 25px;
     height: 32px;
 }
+.main-side-bar .status > i {
+    position: absolute;
+    color: #A9A7AC;
+    display: block;
+    top: 78px;
+    font-size: 28px;
+    left: 205px;
+}
 .btn-group {
     position: relative;
     max-width: 320px;
@@ -369,17 +386,17 @@ article.popup p {
 }
 .btn-group button .caret {
     position: absolute;
-    right: 15px;
+    right: 11px;
     top: 50%;
     margin-top: -2px;
-    border-top: 4px solid #697078;
-    border-right: 4px solid transparent;
-    border-left: 4px solid transparent;
+    border-top: 5px solid #697078;
+    border-right: 5px solid transparent;
+    border-left: 5px solid transparent;
 }
 .dropdown-menu {
     width: 100%;
     border: 0;
-    box-shadow: 0 3px rgba(0,0,0,0.1);
+    box-shadow: 0 0 rgba(0,0,0,0.1);
     -webkit-border-bottom-right-radius: 15px;
     -webkit-border-bottom-left-radius: 15px;
     -moz-border-radius-bottomright: 15px;
@@ -475,7 +492,7 @@ ul.dropdown-menu a:hover {
     cursor: pointer;
 }
 
-.main-side-bar .status img, .main-side-bar .status i {
+.main-side-bar .status img {
     position: absolute;
     width: 64px;
     height: 64px;
@@ -859,7 +876,7 @@ ul.processes.visible {
     background-color: #EF5455;
 }
 .btn-group>.btn, .btn-group-vertical>.btn {
-    padding-right: 45px;
+    padding-right: 30px;
 }
 .dynamic-content .top-zone .btn-group {
     display: inline-block;
@@ -1074,6 +1091,9 @@ input[type="text"].login:-webkit-autofill {
     display: block;
     max-width: 320px;
     margin: 0 auto 39px auto;
+}
+.login-instructions {
+    margin-top: 25px;
 }
 /* other styles*/
 .big {
@@ -1608,6 +1628,10 @@ div.refresh {
 }
 h2.page-subtitle {
     text-transform: uppercase;
+    font-family: "Proxima Nova semibold",Helvetica,Arial,sans-serif;
+    color: #5f6670;
+    font-size: 17px;
+    margin-top: 30px;
 }
 .storage-page {
     padding-bottom: 160px;
