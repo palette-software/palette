@@ -842,7 +842,12 @@ class AgentManager(threading.Thread):
                 self._shutdown(conn)
                 return
 
-        self.log.debug("New socket accepted.")
+        try:
+            peername = conn.getpeername()[0]
+        except socket.error, e:
+            peername = "Unknown peername: %s" % str(e)
+
+        self.log.debug("New socket accepted from %s.", peername)
         conn.settimeout(self.socket_timeout)
 
         session = meta.Session()
