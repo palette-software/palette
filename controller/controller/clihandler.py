@@ -19,7 +19,6 @@ from agentinfo import AgentYmlEntry
 from backup import BackupManager
 from event_control import EventControl
 from gcs import GCS
-from http_requests import HTTPRequestEntry
 from s3 import S3
 from system import SystemEntry
 from state import StateManager
@@ -540,7 +539,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         self.ack()
-        body = HTTPRequestEntry.load(agent)
+        body = self.server.hrman.load(agent)
         self.report_status(body)
 
 

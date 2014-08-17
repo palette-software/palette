@@ -9,9 +9,9 @@ from sqlalchemy import Column, Integer, BigInteger, String, Boolean
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
+
 from profile import UserProfile
 from util import DATEFMT
-
 from mixin import BaseMixin
 
 import re
@@ -223,6 +223,9 @@ class EventControlManager(object):
         profile = None
         if key == "EXTRACT-OK" or key == "EXTRACT-FAILED":
             profile = UserProfile.get_by_system_users_id(userid)
+        elif key == "HTTP-ERROR":
+            if userid != -1:
+                profile = UserProfile.get_by_system_users_id(userid)
         elif not 'username' in data and userid != None:
             profile = UserProfile.get(userid)
 
