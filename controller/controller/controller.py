@@ -47,7 +47,7 @@ from workbooks import WorkbookEntry, WorkbookManager
 from sites import Site
 from projects import Project
 from data_connections import DataConnection
-from http_requests import HTTPRequestEntry # needed for create_all()
+from http_requests import HttpRequestEntry, HttpRequestManager
 
 from gcs import GCS
 from s3 import S3
@@ -1609,6 +1609,7 @@ def main():
 
     server.auth = AuthManager(server)
     server.extract = ExtractManager(server)
+    server.hrman = HttpRequestManager(server)
 
     Role.populate()
     UserProfile.populate()

@@ -11,6 +11,7 @@ from event_control import EventControl
 from profile import UserProfile
 from mixin import BaseDictMixin
 from util import utc2local, parseutc, DATEFMT
+from cache import TableauCacheManager
 
 def to_hhmmss(td):
     seconds = td.seconds
@@ -38,29 +39,12 @@ class ExtractEntry(meta.Base, BaseDictMixin):
     job_name = Column(String)
 
 
-class ExtractManager(object):
+class ExtractManager(TableauCacheManager):
 
     def __init__(self, server):
         self.server = server
 
-    # build a cache of the Tableau 'users' table.
-    # used to translate siteid:userid -> system_user_id
-    def load_users(self, agent):
-        stmt = \
-            'SELECT system_user_id, site_id, id ' +\
-            'FROM users'
-
-        data = agent.odbc.execute(stmt)
-        if 'error' in data or not '' in data:
-            return {}
-
-        cache = {}
-        for row in data['']:
-            key = str(row[1]) + ':' + str(row[2])
-            cache[key] = int(row[0])
-        return cache
-
-    def workbook_update(self, agent, entry, users={}, cache={}):
+    def workbook_update(self, agent, entry, users, cache={}):
         title = entry.title.replace("'", "''")
         stmt = \
             "SELECT owner_id, site_id, project_id " +\
@@ -75,14 +59,11 @@ class ExtractManager(object):
                 return  # FIXME: log
             row = cache[entry.title] = data[''][0]
 
-        # key = siteid:id
-        key = str(row[1]) + ':' + str(row[0])
-        if key in users:
-            entry.system_users_id = users[key]
+        entry.system_users_id = users.get(row[1], row[0])
         entry.project_id = int(row[2])
 
     # FIXME: merge the update functions
-    def datasource_update(self, agent, entry, users={}, cache={}):
+    def datasource_update(self, agent, entry, users, cache={}):
         title = entry.title.replace("'", "''")
         stmt = \
             "SELECT owner_id, site_id, project_id " +\
@@ -97,10 +78,7 @@ class ExtractManager(object):
                 return # FIXME: log
             row = cache[entry.title] = data[''][0]
 
-        # key = siteid:id
-        key = str(row[1]) + ':' + str(row[0])
-        if key in users:
-            entry.system_users_id = users[key]
+        entry.system_users_id = users.get(row[1], row[0])
         entry.project_id = int(row[2])
 
     def load(self, agent):
@@ -153,11 +131,9 @@ class ExtractManager(object):
             entry.system_users_id = -1
 
             if entry.subtitle == 'Workbook':
-                self.workbook_update(agent, entry,
-                                     users=users, cache=workbooks)
+                self.workbook_update(agent, entry, users, cache=workbooks)
             if entry.subtitle == 'Data Source':
-                self.datasource_update(agent, entry,
-                                       users=users, cache=datasources)
+                self.datasource_update(agent, entry, users, cache=datasources)
 
             body = agent.todict(pretty=True)
             body = dict(body.items() + entry.todict(pretty=True).items())

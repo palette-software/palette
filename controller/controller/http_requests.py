@@ -5,13 +5,15 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from akiri.framework.ext.sqlalchemy import meta
 
+from agentinfo import AgentYmlEntry
+from cache import TableauCacheManager
 from mixin import BaseDictMixin
 from http_control import HttpControl
 from event_control import EventControl
-
 from util import utc2local, parseutc, DATEFMT
+from sites import Site
 
-class HTTPRequestEntry(meta.Base, BaseDictMixin):
+class HttpRequestEntry(meta.Base, BaseDictMixin):
     __tablename__ = 'http_requests'
 
     reqid = Column(BigInteger, primary_key=True)
@@ -36,22 +38,20 @@ class HTTPRequestEntry(meta.Base, BaseDictMixin):
 
     @classmethod
     def get_lastid(cls):
-        entry = meta.Session.query(HTTPRequestEntry).\
-            order_by(HTTPRequestEntry.reqid.desc()).first()
+        entry = meta.Session.query(HttpRequestEntry).\
+            order_by(HttpRequestEntry.reqid.desc()).first()
         if entry:
             return str(entry.reqid)
         return None
 
-    @classmethod
-    def eventgen(cls, agent, entry, completed_at):
-        body = dict(agent.todict().items() + entry.todict().items())
-        timestamp=completed_at.strftime(DATEFMT)
-        agent.server.event_control.gen(EventControl.HTTP_ERROR, body,
-                                       timestamp=completed_at.strftime(DATEFMT))
 
-    @classmethod
-    def load(cls, agent):
-        cls.prune(agent)
+class HttpRequestManager(TableauCacheManager):
+
+    def __init__(self, server):
+        self.server = server
+
+    def load(self, agent):
+        self.prune(agent)
 
         stmt = \
             'SELECT id, controller, action, http_referer, http_user_agent, '+\
@@ -63,10 +63,11 @@ class HTTPRequestEntry(meta.Base, BaseDictMixin):
         session = meta.Session()
 
         controldata = HttpControl.info()
+        cache = self.load_users(agent)
 
-        lastid = cls.get_lastid()
+        lastid = HttpRequestEntry.get_lastid()
         if not lastid is None:
-            stmt += "WHERE id > " + lastid
+            stmt += 'WHERE id > ' + str(lastid)
 
         data = agent.odbc.execute(stmt)
         if 'error' in data:
@@ -77,7 +78,7 @@ class HTTPRequestEntry(meta.Base, BaseDictMixin):
         for row in data['']:
             created_at = utc2local(parseutc(row[7]))
             completed_at = utc2local(parseutc(row[9]))
-            entry = HTTPRequestEntry(reqid=row[0],
+            entry = HttpRequestEntry(reqid=row[0],
                                      controller=row[1],
                                      action = row[2],
                                      http_referer=row[3],
@@ -101,7 +102,7 @@ class HTTPRequestEntry(meta.Base, BaseDictMixin):
                 excludes = controldata[entry.status]
                 # check the URI against the list to be skipped.
                 if not entry.controller in excludes:
-                    cls.eventgen(agent, entry, completed_at)
+                    self.eventgen(agent, entry, completed_at, cache)
 
             session.add(entry)
 
@@ -110,8 +111,8 @@ class HTTPRequestEntry(meta.Base, BaseDictMixin):
         d = {u'status': 'OK', u'count': len(data[''])}
         return d
 
-    @classmethod
-    def get_last_http_requests_id(cls, agent):
+
+    def get_last_http_requests_id(self, agent):
         stmt = "SELECT MAX(id) FROM http_requests"
         data = agent.odbc.execute(stmt)
         if not data or not '' in data or data[''][0] is None:
@@ -121,9 +122,45 @@ class HTTPRequestEntry(meta.Base, BaseDictMixin):
             return 0
         return int(row[0])
 
-    @classmethod
-    def prune(cls, agent):
-        maxid = cls.get_last_http_requests_id(agent)
-        meta.Session.query(HTTPRequestEntry).\
-            filter(HTTPRequestEntry.reqid > maxid).\
+    def parseuri(self, body):
+        url = body['controller'] # ???
+        tokens = url[1:].split('/')
+        # /views/<workbook>/<viewname>
+        if len(tokens) == 3 and tokens[0].lower() == 'views':
+            body['workbook'] = tokens[1]
+            body['view'] = tokens[2]
+        # /t/<site>/views/<workbook>/<viewname>
+        elif len(tokens) == 5 and tokens[0].lower() == 't':
+            body['site'] = tokens[1]
+            body['workbook'] = tokens[3]
+            body['view'] = tokens[4]
+
+
+    def eventgen(self, agent, entry, completed_at, cache):
+        body = dict(agent.todict().items() + entry.todict().items())
+        system_user_id = cache.get(entry.site_id, entry.user_id)
+        if system_user_id != -1:
+            body['system_user_id'] = system_user_id
+        url = AgentYmlEntry.get(agent,
+                                'svcmonitor.notification.smtp.canonical_url',
+                                default=None)
+        if url:
+            body['tableau-server-url'] = url
+
+        self.parseuri(body)
+        if entry.site_id and 'site' not in body:
+            site = Site.get(entry.site_id)
+            if site:
+                body['site'] = site.name
+
+        timestamp=completed_at.strftime(DATEFMT)
+        self.server.event_control.gen(EventControl.HTTP_ERROR, body,
+                                      userid=system_user_id,
+                                      timestamp=completed_at.strftime(DATEFMT))
+
+
+    def prune(self, agent):
+        maxid = self.get_last_http_requests_id(agent)
+        meta.Session.query(HttpRequestEntry).\
+            filter(HttpRequestEntry.reqid > maxid).\
             delete(synchronize_session='fetch')
