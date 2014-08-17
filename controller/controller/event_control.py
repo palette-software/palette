@@ -221,7 +221,7 @@ class EventControlManager(object):
         profile = None
         if key == "EXTRACT-OK" or key == "EXTRACT-FAILED":
             profile = UserProfile.get_by_system_users_id(userid)
-        elif not 'username' in data and userid:
+        elif not 'username' in data and userid != None:
             profile = UserProfile.get(userid)
 
         if not profile is None:
@@ -229,6 +229,9 @@ class EventControlManager(object):
                 data['username'] = profile.friendly_name
             else:
                 data['username'] = profile.name
+
+        if not 'username' in data:
+            data['username'] = mako.runtime.UNDEFINED
 
         # set server-url
         data['server-url'] = self.server.system.get('server-url',
