@@ -5,7 +5,13 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from akiri.framework.ext.sqlalchemy import meta
 
-class HTTPRequestEntry(meta.Base):
+from mixin import BaseDictMixin
+from http_control import HttpControl
+from event_control import EventControl
+
+from util import utc2local, parseutc, DATEFMT
+
+class HTTPRequestEntry(meta.Base, BaseDictMixin):
     __tablename__ = 'http_requests'
 
     reqid = Column(BigInteger, primary_key=True)
@@ -37,6 +43,13 @@ class HTTPRequestEntry(meta.Base):
         return None
 
     @classmethod
+    def eventgen(cls, agent, entry, completed_at):
+        body = dict(agent.todict().items() + entry.todict().items())
+        timestamp=completed_at.strftime(DATEFMT)
+        agent.server.event_control.gen(EventControl.HTTP_ERROR, body,
+                                       timestamp=completed_at.strftime(DATEFMT))
+
+    @classmethod
     def load(cls, agent):
         cls.prune(agent)
 
@@ -49,6 +62,8 @@ class HTTPRequestEntry(meta.Base):
 
         session = meta.Session()
 
+        controldata = HttpControl.info()
+
         lastid = cls.get_lastid()
         if not lastid is None:
             stmt += "WHERE id > " + lastid
@@ -60,6 +75,8 @@ class HTTPRequestEntry(meta.Base):
             data['error'] = "Missing '' key in query response."
 
         for row in data['']:
+            created_at = utc2local(parseutc(row[7]))
+            completed_at = utc2local(parseutc(row[9]))
             entry = HTTPRequestEntry(reqid=row[0],
                                      controller=row[1],
                                      action = row[2],
@@ -67,9 +84,9 @@ class HTTPRequestEntry(meta.Base):
                                      http_user_agent=row[4],
                                      http_request_uri=row[5],
                                      remote_ip=row[6],
-                                     created_at=row[7],
+                                     created_at=created_at,
                                      session_id=row[8],
-                                     completed_at=row[9],
+                                     completed_at=completed_at,
                                      port=row[10],
                                      user_id=row[11],
                                      worker=row[12],
@@ -79,6 +96,13 @@ class HTTPRequestEntry(meta.Base):
                                      vizql_session=row[16],
                                      site_id=row[17],
                                      currentsheet=row[18])
+
+            if entry.status in controldata:
+                excludes = controldata[entry.status]
+                # check the URI against the list to be skipped.
+                if not entry.controller in excludes:
+                    cls.eventgen(agent, entry, completed_at)
+
             session.add(entry)
 
         session.commit()
