@@ -163,7 +163,7 @@ class AlertEmail(object):
 
         if not to_emails:
             self.log.debug(\
-                "No non-admin users exist with email addresses.  " + \
+                "No admin users exist with email addresses.  " + \
                 "Not sending: Subject: %s, Message: %s" % (subject, message))
             return
 
