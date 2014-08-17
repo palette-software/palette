@@ -298,6 +298,17 @@
 "event_type":"agent"
 },
 {
+"key":"HTTP-ERROR",
+"level":"E",
+"send_email":"t",
+"subject":"ERROR - HTTP request failed on Tableau Server",
+"event_description":"Server: ${displayname}\nURI: ${http-request_uri}\nSTATUS: ${status}",
+"email_message":"Server: ${displayname}\nURI: ${http_request_uri}\nSTATUS: ${status}",
+"icon":null,
+"color":"red",
+"event_type":"agent"
+},
+{
 "key":"INIT-STATE-DEGRADED",
 "level":"I",
 "send_email":"f",
