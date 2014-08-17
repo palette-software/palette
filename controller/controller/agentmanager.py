@@ -31,6 +31,8 @@ from akiri.framework.ext.sqlalchemy import meta
 # fixme: maybe combine with the Agent class.
 class AgentConnection(object):
 
+    _CID = 1
+
     def __init__(self, server, conn, addr):
         self.server = server
         self.socket = conn
@@ -53,6 +55,13 @@ class AgentConnection(object):
         self.user_action_lockobj = threading.RLock()
 
         self.filemanager = FileManager(self)
+
+        # unique identifier
+        # can never be 0
+        self.conn_id = AgentConnection._CID
+        AgentConnection._CID += 1
+        if AgentConnection._CID == 0:
+            AgentConnection._CID += 1
 
     def httpexc(self, res, method='GET', body=None):
         if body is None:
@@ -124,7 +133,7 @@ class AgentManager(threading.Thread):
         self.port = port and port or self.PORT
         self.socket = None
         # A dictionary with all AgentConnections with the key being
-        # the unique 'uuid'.
+        # the unique 'conn_id'.
         self.agents = {}
 
         self.socket_timeout = self.config.getint('controller','socket_timeout', default=60)
@@ -169,8 +178,8 @@ class AgentManager(threading.Thread):
        """
 
         self.lock()
-        self.log.debug("new agent: name %s, uuid %s", \
-                           body['hostname'], body['uuid'])
+        self.log.debug("new agent: name %s, uuid %s, conn_id %d", \
+                       body['hostname'], body['uuid'], agent.connection.conn_id)
 
         new_agent_type = agent.agent_type
         # Don't allow two primary agents to be connected and
@@ -204,7 +213,7 @@ class AgentManager(threading.Thread):
 
         self.log.debug("register agent: %s", agent.displayname)
 
-        self.agents[agent.uuid] = agent
+        self.agents[agent.connection.conn_id] = agent
 
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("register: Initializing state entries on connect")
@@ -613,13 +622,13 @@ class AgentManager(threading.Thread):
     def all_agents(self):
         return self.agents
 
-    def agent_connected(self, uuid):
-        """Check to see if the passed agent is still connected.
+    def agent_connected(self, aconn):
+        """Check to see if the passed AgentConnection is still connected.
         Returns:
             True if still conencted.
             False if not connected.
         """
-        return uuid in self.agents
+        return aconn.conn_id in self.agents
 
     def agent_by_type(self, agent_type):
         """Returns an instance of an agent of the requested type.
@@ -700,15 +709,20 @@ class AgentManager(threading.Thread):
 
         self.lock()
         uuid = agent.uuid
-        if self.agents.has_key(uuid):
-            self.log.debug("Removing agent with uuid %s, name %s, reason: %s",\
-                uuid, self.agents[uuid].connection.auth['hostname'], reason)
+        conn_id = agent.connection.conn_id
+        if self.agents.has_key(conn_id):
+            self.log.debug("Removing agent with conn_id %d, uuid %s, " + \
+                           "name %s, reason: %s", conn_id, uuid,
+                            self.agents[conn_id].connection.auth['hostname'],
+                            reason)
 
             if gen_event:
                 data = agent.todict(pretty=True)
                 data['error'] = reason
-                data['info'] = "\nAgent type: %s\nAgent uuid %s" % \
-                    (agent.displayname, uuid)
+                data['info'] = ("\nAgent type: %s\n" + \
+                                "Agent connection-id: %d\n" + \
+                                "Agent uuid %s") % \
+                                (agent.displayname, conn_id, uuid)
                 self.server.event_control.gen(EventControl.AGENT_DISCONNECT,
                                               data)
             self.forget(agent.agentid)
@@ -718,9 +732,10 @@ class AgentManager(threading.Thread):
             else:
                 self.log.debug("remove_agent: close agent socket failed")
 
-            del self.agents[uuid]
+            del self.agents[conn_id]
         else:
-            self.log.debug("remove_agent: No such agent with uuid %s", uuid)
+            self.log.debug("remove_agent: No such agent with conn_id %d",
+                           conn_id)
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("remove_agent: Initializing state entries on removal")
             self.server.stateman.update(StateManager.STATE_DISCONNECTED)
@@ -827,7 +842,12 @@ class AgentManager(threading.Thread):
                 self._shutdown(conn)
                 return
 
-        self.log.debug("New socket accepted.")
+        try:
+            peername = conn.getpeername()[0]
+        except socket.error, e:
+            peername = "Unknown peername: %s" % str(e)
+
+        self.log.debug("New socket accepted from %s.", peername)
         conn.settimeout(self.socket_timeout)
 
         session = meta.Session()
@@ -1060,37 +1080,39 @@ class AgentHealthMonitor(threading.Thread):
         for key in agents.keys():
             self.manager.lock()
             if not agents.has_key(key):
-                self.log.debug(\
-                    "agent with uuid '%s' is now gone and won't be checked." %
-                            key)
+                self.log.debug("agent with conn_id %d, is now gone and " + \
+                               "won't be checked.", key)
                 self.manager.unlock()
                 continue
             agent = agents[key]
             self.manager.unlock()
 
-            self.log.debug(\
-                "Ping: check for agent '%s', type '%s', uuid '%s'." % \
-                                (agent.displayname, agent.agent_type, key))
+            self.log.debug(
+                "Ping: check for agent '%s', type '%s', uuid '%s', " + \
+                "conn_id %d.",
+                           agent.displayname, agent.agent_type, agent.uuid,
+                            key)
 
             body = self.server.ping(agent)
             if body.has_key('error'):
                 if self.server.stateman.get_state() == \
                                             StateManager.STATE_UPGRADING:
-                    self.log.info(\
+                    self.log.info(
                         ("Ping During UPDATE: Agent '%s', type '%s', " + \
-                        "uuid '%s' did  not respond to a ping.  " + \
-                        "Ignoring while UPGRADING.") %
-                    (agent.displayname, agent.agent_type, key))
+                        "uuid '%s', conn_id %d did  not respond to a " + \
+                        "ping.  Ignoring while UPGRADING.") %
+                    (agent.displayname, agent.agent_type, agent.uuid, key))
 
                 else:
-                    self.log.info(\
-                        ("Ping: Agent '%s', type '%s', uuid '%s' did " + \
-                        "not respond to a ping.  Removing.") %
-                        (agent.displayname, agent.agent_type, key))
+                    self.log.info(
+                        "Ping: Agent '%s', type '%s', uuid '%s', " + \
+                        "conn_id %d, did not respond to a ping.  Removing.",
+                        agent.displayname, agent.agent_type, agent.uuid, key)
 
                     self.manager.remove_agent(agent,
                                               "Lost contact with an agent")
             else:
-                self.log.debug(\
-                    "Ping: Reply from agent '%s', type '%s', uuid %s." %
-                                (agent.displayname, agent.agent_type, key))
+                self.log.debug(
+                    "Ping: Reply from agent '%s', type '%s', uuid %s, " + \
+                    "conn_id %d", 
+                        agent.displayname, agent.agent_type, agent.uuid, key)

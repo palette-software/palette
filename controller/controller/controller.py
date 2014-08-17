@@ -150,8 +150,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         backup_elapsed_time = time.time() - backup_start_time
 
         if body.has_key('error'):
-            body['info'] = 'Backup command elapsed time: %s' % \
-                            self.seconds_to_str(backup_end_time - start_time)
+            body['info'] = 'Backup command elapsed time before failure: %s' % \
+                            self.seconds_to_str(backup_elapsed_time)
             return body
 
         BACKUP_UNKNOWN = -1
@@ -429,13 +429,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         cli_body = self._get_cli_status(body['xid'], agent, command)
 
         if not 'stdout' in cli_body:
-            self.log.error(\
-                "check status of cli failed - missing 'stdout' in reply" + \
-                                    "for command '%s': %s", command, cli_body)
+            self.log.error(
+                "check status of cli xid %d failed - missing 'stdout' in " + \
+                "reply for command '%s': %s", body['xid'], command, cli_body)
             if not 'error' in cli_body:
                 cli_body['error'] = \
-                    "Missing 'stdout' in agent reply for command '%s': %s" % \
-                    (command, cli_body)
+                    ("Missing 'stdout' in agent reply for xid %d, " + \
+                    "command '%s': %s") % (command, body['xid'], cli_body)
 
         cleanup_body = self._send_cleanup(body['xid'], agent, command)
 
@@ -463,8 +463,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         uri = self.CLI_URI
 
         displayname = agent.displayname and agent.displayname or agent.uuid
-        self.log.debug("about to send the cli command to '%s', type '%s' xid: %d, command: %s",
-                displayname, agent.agent_type, req.xid, cli_command)
+        self.log.debug(
+            "about to send the cli command to '%s', conn_id %d, " + \
+            "type '%s' xid: %d, command: %s",
+            displayname, agent.connection.conn_id, agent.agent_type,
+            req.xid, cli_command)
         try:
             aconn.httpconn.request('POST', '/cli', req.send_body, headers)
             self.log.debug('sent cli command.')
@@ -562,7 +565,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.remove_agent(agent, "Command to agent failed. " \
                                   + "Error: " + str(e))
             return self.error("'%s' failed for command '%s' with: %s" % \
-                                  (uri, orig_cli_command, str(e)))
+                                  (uri, orig_cli_command, str(e)), {})
         finally:
             # Must call aconn.unlock() even after self.remove_agent(),
             # since another thread may waiting on the lock.
@@ -572,7 +575,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.log.debug("done reading.")
         body = json.loads(body_json)
         if body == None:
-            return self.error("POST /%s getresponse returned null body" % uri)
+            return self.error("POST /%s getresponse returned null body" % uri, {})
         return body
 
     def copy_cmd(self, source_path, dest_name, target_dir):
@@ -599,9 +602,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         for key in agents.keys():
             self.agentmanager.lock()
             if not agents.has_key(key):
-                self.log.info(\
-                    "copy_cmd: agent with uuid '%s' is now gone and " + \
-                                                    "won't be checked.", key)
+                self.log.info(
+                    "copy_cmd: agent with conn_id %d is now " + \
+                    "gone and won't be checked.", key)
                 self.agentmanager.unlock()
                 continue
             agent = agents[key]
@@ -968,13 +971,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # If the agent is initializing, then "agent_connected"
             # will not know about it yet.
             if not aconn.initting and \
-                    not self.agentmanager.agent_connected(agent.uuid):
-                self.log.warning("Agent '%s' (type: '%s', uuid %s) " + \
-                        "disconnected before finishing: %s",
-                           agent.displayname, agent.agent_type, agent.uuid, uri)
-                return self.error(("Agent '%s' (type: '%s', uuid %s) " + \
-                    "disconnected before finishing: %s") %
-                        (agent.displayname, agent.agent_type, agent.uuid, uri))
+                    not self.agentmanager.agent_connected(aconn):
+                self.log.warning(
+                    "Agent '%s' (type: '%s', uuid %s, conn_id %d) " + \
+                    "disconnected before finishing: %s",
+                     agent.displayname, agent.agent_type, agent.uuid,
+                     aconn.conn_id, uri)
+                return self.error(("Agent '%s' (type: '%s', uuid %s, " + \
+                    "conn_id %d), disconnected before finishing: %s") %
+                    (agent.displayname, agent.agent_type, agent.uuid,
+                    aconn.conn_id, uri))
 
             aconn.lock()
             self.log.debug("Sending GET " + uri)
