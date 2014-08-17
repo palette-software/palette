@@ -19,8 +19,8 @@ import re
 class EventControl(meta.Base, BaseMixin):
     __tablename__ = "event_control"
 
-    eventid = Column(BigInteger, unique=True, nullable=False, \
-                                   autoincrement=True, primary_key=True)
+    eventid = Column(BigInteger, unique=True, nullable=False,
+                     autoincrement=True, primary_key=True)
 
     # The unique event key for the subject and message templates.
     key = Column(String, unique=True, nullable=False)
@@ -114,6 +114,8 @@ class EventControl(meta.Base, BaseMixin):
     ZIPLOGS_STARTED="ZIPLOGS-STARTED"
     ZIPLOGS_FINISHED="ZIPLOGS-FINISHED"
     ZIPLOGS_FAILED="ZIPLOGS-FAILED"
+
+    HTTP_ERROR="HTTP-ERROR"
 
     CLEANUP_STARTED="CLEANUP-STARTED"
     CLEANUP_FINISHED="CLEANUP-FINISHED"
