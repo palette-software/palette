@@ -135,8 +135,7 @@ class ExtractManager(TableauCacheManager):
             if entry.subtitle == 'Data Source':
                 self.datasource_update(agent, entry, users, cache=datasources)
 
-            body = agent.todict(pretty=True)
-            body = dict(body.items() + entry.todict(pretty=True).items())
+            body = dict(agent.todict().items() + entry.todict().items())
 
             if row[3] is not None and row[4] is not None:
                 duration = parseutc(row[4]) - parseutc(row[3])
@@ -188,8 +187,8 @@ class ExtractManager(TableauCacheManager):
     # FIXME: add project_id? maybe job_name?
     def eventgen(self, key, data, timestamp=None):
         return self.server.event_control.gen(key, data,
-                                             userid=data['system-users-id'],
-                                             siteid=data['site-id'],
+                                             userid=data['system_users_id'],
+                                             siteid=data['site_id'],
                                              timestamp=timestamp)
 
     @classmethod

@@ -444,7 +444,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             backup_finished_event = EventControl.BACKUP_FINISHED_SCHEDULED
             backup_failed_event = EventControl.BACKUP_FAILED_SCHEDULED
 
-        data = agent.todict(pretty=True)
+        data = agent.todict()
         self.server.event_control.gen(backup_started_event, data, userid=userid)
         self.ack()
 
@@ -455,13 +455,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             line = "Backup Error. Traceback: %s" % self.tb()
             body = {'error': line}
 
+        data = agent.todict()
         if success(body):
-            data = agent.todict(pretty=True)
             self.server.event_control.gen(backup_finished_event,
                                           dict(body.items() + data.items()),
                                           userid=userid)
         else:
-            data = agent.todict(pretty=True)
             self.server.event_control.gen(backup_failed_event,
                                           dict(body.items() + data.items()),
                                           userid=userid)
@@ -633,7 +632,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             userid = None
 
-        data = agent.todict(pretty=True)
+        data = agent.todict()
         self.server.event_control.gen(\
             EventControl.BACKUP_BEFORE_RESTORE_STARTED, data, userid=userid)
 
@@ -656,14 +655,13 @@ class CliHandler(socketserver.StreamRequestHandler):
             line = "Backup For Restore Error. Traceback: %s" % self.tb()
             body = {'error': line}
 
+        data = agent.todict()
         if success(body):
-            data = agent.todict(pretty=True)
             self.server.event_control.gen(\
                 EventControl.BACKUP_BEFORE_RESTORE_FINISHED,
                 dict(body.items() + data.items()),
                 userid=userid)
         else:
-            data = agent.todict(pretty=True)
             self.server.event_control.gen(\
                 EventControl.BACKUP_BEFORE_RESTORE_FAILED,
                 dict(body.items() + data.items()),
@@ -689,15 +687,14 @@ class CliHandler(socketserver.StreamRequestHandler):
         # The final RESTORE_FINISHED/RESTORE_FAILED alert is sent only here and
         # not in restore_cmd().  Intermediate alerts like RESTORE_STARTED
         # are sent in restore_cmd().
+        data = agent.todict()
         if success(body):
             # Restore finished successfully.  The main state has.
             # already been set.
-            data = agent.todict(pretty=True)
             self.server.event_control.gen(EventControl.RESTORE_FINISHED,
                                           dict(body.items() + data.items()),
                                           userid=userid)
         else:
-            data = agent.todict(pretty=True)
             self.server.event_control.gen(EventControl.RESTORE_FAILED,
                                           dict(body.items() + data.items()),
                                           userid=userid)
@@ -1051,7 +1048,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             exit_status = 1 # if no 'exit-status' then consider it failed.
 
-        data = agent.todict(pretty=True)
+        data = agent.todict()
         if exit_status:
             # The "tableau start" failed.  Go back to "STOPPED" state.
             self.server.event_control.gen(EventControl.TABLEAU_START_FAILED,
@@ -1146,7 +1143,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                 "------------Starting Backup for Stop---------------")
             stateman.update(StateManager.STATE_STARTED_BACKUP_STOP)
 
-            data = agent.todict(pretty=True)
+            data = agent.todict()
             self.server.event_control.gen( \
                 EventControl.BACKUP_BEFORE_STOP_STARTED, data, userid=userid)
 
@@ -1207,9 +1204,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         # This will be corrected by the 'tabadmin status -v' processing
         # later.
         stateman.update(StateManager.STATE_STOPPED)
-        data = agent.todict(pretty=True)
         self.server.event_control.gen(EventControl.STATE_STOPPED,
-                                      data, userid=userid)
+                                      agent.todict(), userid=userid)
 
         # Get the latest status from tabadmin which sets the main state.
         self.server.statusmon.check_status_with_connection(agent)

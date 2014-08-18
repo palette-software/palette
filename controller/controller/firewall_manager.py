@@ -86,11 +86,11 @@ class FirewallManager(object):
                 ("open_firewall_ports failed to open ports '%s' on " +\
                      "host %s, failed with: %s") % \
                     (str(ports), agent.displayname, body['error']))
-            data = agent.todict(pretty=True)
+            data = agent.todict()
             data['error'] = body['error']
             data['info'] = "Ports: " + str(port)
-            self.server.event_control.gen(EventControl.FIREWALL_OPEN_FAILED,
-                                          data)
+            self.server.event_control.gen(\
+                EventControl.FIREWALL_OPEN_FAILED, data)
             success = False
             color = 'red'
         else:

@@ -543,7 +543,7 @@ class AgentManager(threading.Thread):
              sizestr(entry.size - entry.available_space),
              sizestr(entry.available_space), percent)
 
-        data = agent.todict(pretty=True)
+        data = agent.todict()
         data['info'] = msg
         self.server.event_control.gen(event, data)
 
@@ -717,7 +717,7 @@ class AgentManager(threading.Thread):
                             reason)
 
             if gen_event:
-                data = agent.todict(pretty=True)
+                data = agent.todict()
                 data['error'] = reason
                 data['info'] = ("\nAgent type: %s\n" + \
                                 "Agent connection-id: %d\n" + \
@@ -957,7 +957,7 @@ class AgentManager(threading.Thread):
                 self.set_default_backup_destid(agent)
 
             self.server.event_control.gen(\
-                EventControl.AGENT_COMMUNICATION, agent.todict(pretty=True))
+                EventControl.AGENT_COMMUNICATION, agent.todict())
 
             session = meta.Session()
             session.commit()
