@@ -115,6 +115,15 @@ class AgentManager(threading.Thread):
                        AGENT_TYPE_WORKER: 'Tableau Worker Server',
                        AGENT_TYPE_ARCHIVE:'Non Tableau Server'}
 
+    # Displayname templates
+    PRIMARY_TEMPLATE="Tableau Primary" # not a template since only 1
+    WORKER_TEMPLATE="Tableau Worker #%d"
+    ARCHIVE_TEMPLATE="Tableau Archive #%d"
+
+    # Starting point for worker/archive displayname numbers.
+    WORKER_START=100
+    ARCHIVE_START=200
+
     @classmethod
     def get_type_name(self, t):
         return AgentManager.AGENT_TYPE_NAMES[t]
@@ -181,6 +190,15 @@ class AgentManager(threading.Thread):
         self.log.debug("new agent: name %s, uuid %s, conn_id %d", \
                        body['hostname'], body['uuid'], agent.connection.conn_id)
 
+        if agent.displayname is None or agent.displayname == "":
+            # Set the displayname inside the lock.  Otherwise,
+            # if multiple agents connect at the same time, they
+            # won't know what what displayname/order they should be
+            # given without conflicting.
+            (displayname, display_order) = self.calc_new_displayname(agent)
+            agent.displayname = displayname
+            agent.display_order = display_order
+
         new_agent_type = agent.agent_type
         # Don't allow two primary agents to be connected and
         # don't allow two agents with the same name to be connected.
@@ -237,6 +255,9 @@ class AgentManager(threading.Thread):
         worker agents if needed.  For example, a worker may have
         connected and set as "archive" before the primary ever connected
         with its yml file that tells us the ip addresses of workers.
+
+        Also potentially changes the displaynames if a worker
+        was previously classified and named as an archive.
         """
         session = meta.Session()
 
@@ -255,7 +276,53 @@ class AgentManager(threading.Thread):
                 # Set the agent to the correct type.
                 entry.agent_type = agent_type
 
+                # And correct displayname.
+                if self.displayname_changeable(entry):
+                    (displayname, display_order) = \
+                                            self.calc_new_displayname(entry)
+                    entry.displayname = displayname
+                    entry.display_order = display_order
+
         session.commit()
+
+    def displayname_changeable(self, agent):
+        """Determine whether or not we can change the displayname.
+           We can change the displayname if the displayname isn't set yet.
+           Otherwise, we can't unless the displayname unless it
+           looks like the default displayname that we created (not the user) 
+           is still being used that was set when a worker was classified
+           and called an ARCHIVE_TEMPLATE.
+        """
+
+        if agent.displayname is None or agent.displayname == "":
+            # We are the first to name this one.
+            return True
+
+        agent.agent_type = AgentManager.AGENT_TYPE_WORKER
+        if agent.agent_type != AgentManager.AGENT_TYPE_WORKER:
+            # Only workers could potentially need to be renamed/classified.
+            return False
+
+        # Let's see if the worker is using a displayname we probably gave it.
+        pound_template = AgentManager.ARCHIVE_TEMPLATE.find("#")
+        if pound_template == -1:
+            self.log.error("naming: Bad archive template!  Missing '#': %s",
+                            AgentManager.ARCHIVE_TEMPLATE)
+            return False
+
+        pound_displayname = agent.displayname.find("#")
+        if pound_displayname == -1:
+            self.log.debug("naming: displayname does not have '#' so won't rename.")
+            return False
+
+        if AgentManager.ARCHIVE_TEMPLATE[:pound_template] == \
+                                    agent.displayname[:pound_displayname]:
+            self.log.debug("naming: Same archive prefix: Can rename.")
+            return True
+
+        self.log.debug("naming: Different archive prefix: Will not rename: %s",
+                                                        agent.displayname)
+        return False
 
     def calc_new_displayname(self, new_agent):
         """
@@ -269,37 +336,34 @@ class AgentManager(threading.Thread):
                 Archive Server #2
                     ...
         """
-        PRIMARY_TEMPLATE="Tableau Primary" # not a template since only 1
-        WORKER_TEMPLATE="Tableau Worker #%d"
-        ARCHIVE_TEMPLATE="Tableau Archive #%d"
-
-        # Starting point for 
-        WORKER_START=100
-        ARCHIVE_START=200
-
         if new_agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-            return (PRIMARY_TEMPLATE, 1)
+            return (AgentManager.PRIMARY_TEMPLATE, 1)
 
         session = meta.Session()
 
-        # Count how many of this agent type exist.
+        # Count how many of this agent type exist, but don't
+        # count ourself.
         rows = session.query(Agent).\
             filter(Agent.envid == self.envid).\
             filter(Agent.agent_type == new_agent.agent_type).\
+            filter(Agent.uuid != new_agent.uuid).\
+            filter(Agent.displayname != None).\
             all()
 
         # The new agent will be the next one.
         count = len(rows) + 1
 
         if new_agent.agent_type == AgentManager.AGENT_TYPE_WORKER:
-            return (WORKER_TEMPLATE % (count + WORKER_START), count + WORKER_START)
+            return (AgentManager.WORKER_TEMPLATE % \
+                                    (count + AgentManager.WORKER_START),
+                    count + AgentManager.WORKER_START)
         elif new_agent.agent_type == AgentManager.AGENT_TYPE_ARCHIVE:
-            return (ARCHIVE_TEMPLATE % (count + ARCHIVE_START),
-                                                        count + ARCHIVE_START)
+            return (AgentManager.ARCHIVE_TEMPLATE % \
+                                    (count + AgentManager.ARCHIVE_START),
+                    count + AgentManager.ARCHIVE_START)
         self.log.error("calc_new_displayname: INVALID agent type: %s",
-                                                            new_agent.agent_type)
+                        new_agent.agent_type)
         return ("INVALID AGENT TYPE: %s" % new_agent.agent_type, 0)
-
 
     def update_agent_yml(self, agentid, yml):
         """update the agent_yml table with this agent's yml contents."""
@@ -353,12 +417,11 @@ class AgentManager(threading.Thread):
            Checks the disk-usage of each volume and generates an
            alert if above a disk watermark.
 
-           This should be called only after the agent displayname
-           and type are known."""
+           This should be called only after the agent type
+           type is known.
 
-        if not agent.displayname:
-            self.log.error("Unknown agent displayname for agent.")
-            return False
+           If displayname is sent, then disk-usage events will
+           not be sent since the event needs that."""
 
         if not agent.agent_type:
             self.log.error("Unknown agent type for agent: %s",
@@ -461,7 +524,8 @@ class AgentManager(threading.Thread):
                     if 'available-space' in volume:
                         entry.available_space = volume['available-space']
 
-                    if 'size' in volume and 'available-space' in volume:
+                    if agent.displayname != None and \
+                            'size' in volume and 'available-space' in volume:
                         usage_color = self.disk_color(\
                             entry.size - entry.available_space,
                                             entry.size, low_water, high_water)
@@ -504,7 +568,8 @@ class AgentManager(threading.Thread):
                             else:
                                 linux_archive_volume_found = True
 
-                        if 'size' in volume and 'available-space' in volume:
+                        if agent.displayname != None and \
+                              'size' in volume and 'available-space' in volume:
                             usage_color = self.disk_color(\
                                 entry.size - entry.available_space,
                                         entry.size, low_water, high_water)
@@ -563,7 +628,7 @@ class AgentManager(threading.Thread):
         return 'green'
 
     def is_tableau_worker(self, ip):
-        """Returns True if the passed ip adress (string) is
+        """Returns True if the passed ip address (string) is
            known to be a tableau worker host.  The type of tableau host is
            reported in the tableau primary host's yml file on the
            "worker.hosts" line.  For example:
@@ -927,10 +992,9 @@ class AgentManager(threading.Thread):
                 agent.agent_type = aconn.agent_type
 
             if agent.displayname is None or agent.displayname == "":
-                (displayname, display_order) = \
-                                self.calc_new_displayname(agent.connection)
-                agent.displayname = displayname
-                agent.display_order = display_order
+                displayname_needed_setting = True
+            else:
+                displayname_needed_settting = False
 
             # Now that the agent type and displayname are set, we
             # can update the volume information from pinfo.
@@ -946,6 +1010,17 @@ class AgentManager(threading.Thread):
                                                                         uuid)
                 self._close(conn)
                 return
+
+            if displayname_needed_setting:
+                # Go through the vols again to send any disk events
+                # since the agent previously didn't have a displayname
+                # and will only send events if it has a displayname.
+                if not self.update_agent_pinfo_vols(agent, pinfo):
+                    self.log.error(
+                        "pinfo vols failed second time for agent with " + \
+                        "uuid: '%s'.  Disconnecting.", uuid)
+                    self._close(conn)
+                    return
 
             #fixme: not a great place to do this
             #aconn.displayname = agent.displayname
@@ -971,7 +1046,6 @@ class AgentManager(threading.Thread):
             session.expunge(agent)
             session.rollback()
             meta.Session.remove()
-
 
     def set_default_backup_destid(self, agent):
         if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
