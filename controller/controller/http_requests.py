@@ -145,7 +145,7 @@ class HttpRequestManager(TableauCacheManager):
                                 'svcmonitor.notification.smtp.canonical_url',
                                 default=None)
         if url:
-            body['tableau-server-url'] = url
+            body['tableau_server_url'] = url
 
         self.parseuri(body)
         if entry.site_id and 'site' not in body:
