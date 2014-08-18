@@ -261,41 +261,11 @@ function ($, topic, template)
         s.parentNode.insertBefore(uv,s)
     }
 
-    /*
-     * showClassicWidget()
-     * Display the UserVoice lightbox.
-     */
-    function showClassicWidget() {
-        loadUserVoice();
-	$('#mainNav ul.nav li.more ul').removeClass('visible');
-
-        UserVoice = window.UserVoice || [];
-        UserVoice.push(['showLightbox', 'classic_widget', {
-            mode: 'support',
-            primary_color: '#333333',
-            link_color: '#5f6670',
-            support_tab_name: 'Contact Palette',
-            forum_id: 253967
-        }]);
-    }
-
-    /*
-     * bindUserVoice()
-     * Connect the help links to UserVoice.
-     */
-    function bindUserVoice() {
-        $('a.help').bind('click', function(event) {
-	    event.stopPropagation();
-            showClassicWidget();
-        });
-    }
-
     /* Code run automatically when 'common' is included */
     $().ready(function() {
         setupHeaderMenus();
         setupCategories();
         bindStatus();
-        bindUserVoice();
     });
 
 

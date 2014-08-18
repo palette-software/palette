@@ -10,7 +10,7 @@
         </a>
         <ul>
           <li>
-            <a class="help" href="javascript:void(0)">
+            <a href="http://hello.palette-software.com" target="_blank">
               <i class="fa fa-fw fa-envelope"></i> Contact Palette
             </a>
           </li>
