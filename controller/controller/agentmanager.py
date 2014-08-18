@@ -994,7 +994,7 @@ class AgentManager(threading.Thread):
             if agent.displayname is None or agent.displayname == "":
                 displayname_needed_setting = True
             else:
-                displayname_needed_settting = False
+                displayname_needed_setting = False
 
             # Now that the agent type and displayname are set, we
             # can update the volume information from pinfo.
