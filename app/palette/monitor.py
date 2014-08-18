@@ -303,7 +303,8 @@ class MonitorApplication(PaletteRESTHandler):
                     msg = msg + ' ' + agent['last-disconnect-time']
                 agent['warnings'] = [{'color':'red', 'message': msg}]
 
-            if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
+            if entry.agent_type in (AgentManager.AGENT_TYPE_PRIMARY,
+                                    AgentManager.AGENT_TYPE_WORKER) and \
                                     main_state == StateManager.STATE_STOPPED:
                 agent_color_num = Colors.RED_NUM
                 agent['warnings'] = [{'color':'red',
