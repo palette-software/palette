@@ -239,7 +239,7 @@ class EventControlManager(object):
             data['username'] = mako.runtime.UNDEFINED
 
         # set server-url
-        data['server-url'] = self.server.system.get('server-url',
+        data['server_url'] = self.server.system.get('server-url',
                                                     default='localhost')
 
         # Use the data dict for template substitution.
