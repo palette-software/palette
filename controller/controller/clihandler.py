@@ -438,10 +438,14 @@ class CliHandler(socketserver.StreamRequestHandler):
         if userid != None:
             backup_started_event = EventControl.BACKUP_STARTED
             backup_finished_event = EventControl.BACKUP_FINISHED
+            backup_finished_copy_failed_event = \
+                                    EventControl.BACKUP_FINISHED_COPY_FAILED
             backup_failed_event = EventControl.BACKUP_FAILED
         else:
             backup_started_event = EventControl.BACKUP_STARTED_SCHEDULED
             backup_finished_event = EventControl.BACKUP_FINISHED_SCHEDULED
+            backup_finished_copy_failed_event = \
+                            EventControl.BACKUP_FINISHED_SCHEDULED_COPY_FAILED
             backup_failed_event = EventControl.BACKUP_FAILED_SCHEDULED
 
         data = agent.todict()
@@ -457,7 +461,11 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         data = agent.todict()
         if success(body):
-            self.server.event_control.gen(backup_finished_event,
+            if 'copy-failed' in body:
+                real_event = backup_finished_copy_failed_event
+            else:
+                real_event = backup_finished_event
+            self.server.event_control.gen(real_event,
                                           dict(body.items() + data.items()),
                                           userid=userid)
         else:

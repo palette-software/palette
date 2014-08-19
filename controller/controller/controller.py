@@ -190,6 +190,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     (dcheck.target_type, dcheck.target_entry.name,
                                                         storage_body['error'])
                 delete_local_backup = False
+                body['copy-failed'] = True
                 self.backup.add(backup_full_path,
                             agentid=palette_primary_data_dir_vol_entry.agentid)
             else:
@@ -237,6 +238,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     "Error was: %s") \
                     % (backup_full_path, dcheck.target_agent.displayname, 
                                     dcheck.target_dir, copy_body['error'])
+                body['copy-failed'] = True
                 self.log.info(msg)
                 body['info'] += msg
                 # Something was wrong with the copy to the non-primary agent.
