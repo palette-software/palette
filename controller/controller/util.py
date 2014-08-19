@@ -7,6 +7,8 @@ DATEFMT = "%I:%M %p PDT on %b %d, %Y"
 SIZEFMT = "%(value).1f%(symbol)s"
 SYMBOLS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
 
+UNDEFINED="*UNDEFINED*"
+
 def success(body):
     return not failed(body)
 
@@ -70,3 +72,8 @@ def str2bool(s):
         return True
     return False
     
+# analoguous to the 2.7 functionality
+# https://docs.python.org/2/library/datetime.html#datetime.timedelta.total_seconds
+def timedelta_total_seconds(t2, t1):
+    td = t2 - t1
+    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6

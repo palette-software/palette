@@ -10,7 +10,7 @@ from cache import TableauCacheManager
 from mixin import BaseDictMixin
 from http_control import HttpControl
 from event_control import EventControl
-from util import utc2local, parseutc, DATEFMT
+from util import utc2local, parseutc, DATEFMT, timedelta_total_seconds
 from sites import Site
 
 class HttpRequestEntry(meta.Base, BaseDictMixin):
@@ -63,8 +63,7 @@ class HttpRequestManager(TableauCacheManager):
         session = meta.Session()
 
         controldata = HttpControl.info()
-        cache = self.load_users(agent)
-
+        usercache = self.load_users(agent)
         lastid = HttpRequestEntry.get_lastid()
         if not lastid is None:
             stmt += 'WHERE id > ' + str(lastid)
@@ -98,12 +97,29 @@ class HttpRequestManager(TableauCacheManager):
                                      site_id=row[17],
                                      currentsheet=row[18])
 
-            if entry.status in controldata:
-                excludes = controldata[entry.status]
+            seconds = timedelta_total_seconds(completed_at, created_at)
+
+            if entry.status >= 400:
+                if entry.status in controldata:
+                    excludes = controldata[entry.status]
+                else:
+                    excludes = []
                 # check the URI against the list to be skipped.
                 if not entry.controller in excludes:
-                    self.eventgen(agent, entry, completed_at, cache)
-
+                    self.eventgen(EventControl.HTTP_BAD_STATUS,
+                                  agent, entry, usercache,
+                                  body = {'duration':seconds})
+            else:
+                errorlevel = self.server.system.getint('http-load-error')
+                warnlevel = self.server.system.getint('http-load-warn')
+                if seconds >= errorlevel:
+                    self.eventgen(EventControl.HTTP_LOAD_ERROR,
+                                  agent, entry, usercache,
+                                  body = {'duration':seconds})
+                elif seconds >= warnlevel:
+                    self.eventgen(EventControl.HTTP_LOAD_WARN,
+                                  agent, entry, usercache,
+                                  body = {'duration':seconds})
             session.add(entry)
 
         session.commit()
@@ -122,9 +138,8 @@ class HttpRequestManager(TableauCacheManager):
             return 0
         return int(row[0])
 
-    def parseuri(self, body):
-        url = body['controller'] # ???
-        tokens = url[1:].split('/')
+    def parseuri(self, uri, body):
+        tokens = uri[1:].split('/')
         # /views/<workbook>/<viewname>
         if len(tokens) == 3 and tokens[0].lower() == 'views':
             body['workbook'] = tokens[1]
@@ -135,29 +150,44 @@ class HttpRequestManager(TableauCacheManager):
             body['workbook'] = tokens[3]
             body['view'] = tokens[4]
 
+    # translate workbook -> owner_id,site_id -> owner
+    def translate_workbook(self, body, usercache):
+        name = body['workbook']
+        pass
 
-    def eventgen(self, agent, entry, completed_at, cache):
-        body = dict(agent.todict().items() + entry.todict().items())
-        system_user_id = cache.get(entry.site_id, entry.user_id)
+    def eventgen(self, key, agent, entry, usercache, body={}):
+        body = dict(body.items() +\
+                        agent.todict().items() +\
+                        entry.todict().items())
+
+        uri = entry.controller # ?!
+        self.parseuri(uri, body)
+
+        system_user_id = usercache.get(entry.site_id, entry.user_id)
         if system_user_id != -1:
             body['system_user_id'] = system_user_id
+            body['username'] = \
+                self.get_username_from_system_user_id(system_user_id)
+
+        if 'workbook' in body:
+            self.translate_workbook(body, usercache)
+
         url = AgentYmlEntry.get(agent,
                                 'svcmonitor.notification.smtp.canonical_url',
                                 default=None)
         if url:
             body['tableau_server_url'] = url
 
-        self.parseuri(body)
         if entry.site_id and 'site' not in body:
             site = Site.get(entry.site_id)
             if site:
                 body['site'] = site.name
 
+        completed_at = entry.completed_at
         timestamp=completed_at.strftime(DATEFMT)
-        self.server.event_control.gen(EventControl.HTTP_ERROR, body,
+        self.server.event_control.gen(key, body,
                                       userid=system_user_id,
                                       timestamp=completed_at.strftime(DATEFMT))
-
 
     def prune(self, agent):
         maxid = self.get_last_http_requests_id(agent)

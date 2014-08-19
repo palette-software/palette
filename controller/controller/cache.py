@@ -1,3 +1,6 @@
+from profile import UserProfile
+from util import UNDEFINED
+
 # Holds a cache of system_ids per site_id/user_id
 class TableauUserCache(object):
 
@@ -17,6 +20,7 @@ class TableauUserCache(object):
             return self.data[key]
         return -1
 
+
 class TableauCacheManager(object):
 
     # build a cache of the Tableau 'users' table.
@@ -35,3 +39,14 @@ class TableauCacheManager(object):
             cache.add(site_id=row[1], user_id=row[2],
                       system_user_id=int(row[0]))
         return cache
+
+    # translate a system_user_id value to the 'username' used by eventgen.
+    def get_username_from_system_user_id(self, system_user_id):
+        profile = UserProfile.get_by_system_users_id(system_user_id)
+        if profile:
+            if profile.friendly_name:
+                return profile.friendly_name
+            else:
+                return profile.name
+        else:
+            return UNDEFINED
