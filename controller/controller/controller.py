@@ -226,11 +226,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 # Chop off the common part
                 backup_path = backup_path[len(common):]
 
-            source_path = "%s:%s%s" % (agent.displayname, backup_vol,
-                                        backup_path)
+            source_path = "%s%s" % (backup_vol, backup_path)
             copy_start_time = time.time()
-            copy_body = self.copy_cmd(source_path,
-                        dcheck.target_agent.displayname, dcheck.target_dir)
+            copy_body = self.copy_cmd(agent.agentid, source_path,
+                        dcheck.target_agent.agentid, dcheck.target_dir)
 
             if copy_body.has_key('error'):
                 msg = (u"Copy of backup file '%s' to agent '%s:%s' failed. "+\
@@ -578,23 +577,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("POST /%s getresponse returned null body" % uri, {})
         return body
 
-    def copy_cmd(self, source_path, dest_name, target_dir):
+    def copy_cmd(self, source_agentid, source_path, target_agentid, target_dir):
         """Sends a phttp command and checks the status.
-           copy source-displayname:/path/to/file dest-displayname dir
-                       <source_path>          <dest-displayname>
+           copy from  source_agentid /path/to/file target_agentid target-dir
+                                      <source_path>            <target-dir>
            generates:
                phttp.exe GET https://primary-ip:192.168.1.1/file dir/
            and sends it as a cli command to agent:
-                dest-displayname
+                target-agentid
            Returns the body dictionary from the status."""
 
-        if source_path.find(':') == -1:
-            return self.error("Missing ':' in source path: %s" % source_path)
-
-        (source_displayname, source_path) = source_path.split(':',1)
-
-        if len(source_displayname) == 0 or len(source_path) == 0:
-            return self.error("[ERROR] Invalid source specification.")
+        if not len(source_path):
+            return self.error("[ERROR] Invalid source path with no length.")
 
         agents = self.agentmanager.all_agents()
         src = dst = None
@@ -610,19 +604,19 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             agent = agents[key]
             self.agentmanager.unlock()
 
-            if agent.displayname == source_displayname:
+            if agent.agentid == source_agentid:
                 src = agent
-            if agent.displayname == dest_name:
+            if agent.agentid == target_agentid:
                 dst = agent
 
         msg = ""
-        # fixme: make sure the source isn't the same as the dest
+        # fixme: make sure the source isn't the same as the target
         if not src:
-            msg = "No connected source agent with displayname: %s." % \
-              source_displayname
+            msg = "No connected source agent with agentid: %d." % \
+              source_agentid
         if not dst:
-            msg += "No connected destination agent with displayname: %s." % \
-              dest_name
+            msg += "No connected target agent with agentid: %s." % \
+              target_agentid
 
         if not src or not dst:
             return self.error(msg)
@@ -675,7 +669,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         self.log.debug("agent username: %s, password: %s", entry.username,
                                                             entry.password)
-        # Send command to destination agent
+        # Send command to target agent
         copy_body = self.cli_cmd(command, dst, env=env)
         return copy_body
 
@@ -772,14 +766,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # It could be on the main primary volume, or another
             # primary volume or a volume on an agent.
 
-            if source_agent.displayname != primary_agent.displayname:
+            if source_agent.agentid != primary_agent.agentid:
                 # The file isn't on the Primary agent or cloud storage.
                 # We need to copy the file to the Primary.
                 # copy_cmd arguments:
-                #   source:    source-agent-name:VOL/tableau-backups/filename
-                #   dest_name: dest-agent-displayname
-                #   dest_dir:  palette-primary-data-path/tableau-backups
-                # source is something like:
+                #   source_agentid  <source-agentid>
+                #   source_path:    VOL/tableau-backups/filename
+                #   target_agentid: <target-agentid>
+                #   target_dir:     palette-primary-data-path/tableau-backups
+                # source_path is something like:
                 #               "C/tableau-backups/20140531_153629.tsbak"
                 # with only the "tableau-backup/20140531_153629.tsbak"
                 # last part.
@@ -801,26 +796,28 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     # Chop off the leading common part in routes.txt
                     backup_path = backup_path[len(common):]
 
-                copy_source = "%s:%s%s" % \
-                              (source_agent.displayname, source_entry.name,
-                              backup_path)
+                copy_source = "%s%s" % (source_entry.name, backup_path)
                             
-                self.log.debug(\
-                    "restore: Sending copy command to '%s' to get: %s", \
-                                       source_agent.displayname, copy_source)
+                self.log.debug("restore: Sending copy command to " + \
+                               "agentid %d (%s) to get: %s", 
+                               source_agent.agentid, source_agent.displayname,
+                               copy_source)
 
                 backup_dir = self.primary_backup_dir(primary_agent)
 
-                body = self.copy_cmd(copy_source, primary_agent.displayname,
-                                     backup_dir)
+                body = self.copy_cmd(source_entry.agentid, copy_source,
+                                    primary_agent.agentid, backup_dir)
 
                 if body.has_key("error"):
                     fmt = "restore: copy backup file '%s' " + \
-                          "from '%s' to directory '%s' failed. " +\
-                          "Error was: %s"
+                          "from agentid %d (%s) '%s' to target agentid %d " + \
+                          "(%s) directory '%s' failed.  Error was: %s"
                     self.log.debug(fmt,
                                    copy_source,
+                                   source_agent.agentid,
                                    source_agent.displayname,
+                                   primary_agent.agentid,
+                                   primary_agent.displayname,
                                    backup_dir,
                                    body['error'])
                     self.stateman.update(orig_state)
@@ -1314,7 +1311,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def displayname_cmd(self, aconn, uuid, displayname):
         """Sets displayname for the agent with the given hostname. At
-           this point assumes hostname is unique in the database."""
+           this point assumes uuid is unique in the database."""
 
         self.agentmanager.set_displayname(aconn, uuid, displayname)
 
