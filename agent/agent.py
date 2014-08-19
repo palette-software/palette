@@ -27,6 +27,9 @@ from util import version, str2bool
 import http
 from http import HTTPRequest, HTTPResponse, HTTPBadRequest
 
+# default settings
+DEFAULT_RECONNECT_INTERVAL = 10
+
 # Accepts commands from the Controller and sends replies.
 # The body of the request and response is JSON.
 class AgentHandler(SimpleHTTPRequestHandler):
@@ -370,6 +373,7 @@ class Agent(TCPServer):
         port = config.getint("archive", "port", default=8889);
         self.archive = Apache2(conf, port, self.data_dir)
 
+    def start(self):
         # Start the Agent server that uses AgentHandler to handle
         # incoming requests from the Controller.
         TCPServer.__init__(self, (self.host, self.port),
@@ -384,6 +388,10 @@ class Agent(TCPServer):
 
     def get_request(self):
         return (self.socket, 'localhost')
+
+    def close(self):
+        if self.socket is not None:
+            self.socket.close()
 
 class HttpException(Exception):
     def __init__(self, status_code):
@@ -405,7 +413,17 @@ if __name__ == '__main__':
     agent.log = log
     log.info("Agent version: %s", agent.version)
 
-    agent.connect()
-    log.info("connected to %s:%d%s", agent.host, agent.port, \
-                 agent.ssl and ' [SSL]' or '')
-    agent.serve_forever()
+    while True:
+       agent.start()
+
+       try:
+          agent.connect()
+          log.info("connected to %s:%d%s", agent.host, agent.port, \
+                   agent.ssl and ' [SSL]' or '')
+          agent.serve_forever()
+       except:
+          agent.close()
+
+          reconnect_interval = config.get('controller', 'reconnect_interval', default=DEFAULT_RECONNECT_INTERVAL)
+          log.info("Disconnected from controller. Retrying in {0}".format(reconnect_interval))
+          time.sleep(reconnect_interval)
