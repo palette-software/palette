@@ -38,7 +38,9 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
                  'value': StorageConfig.VOL},
                 {'envid':1,
                  'key':StorageConfig.LOG_ARCHIVE_RETAIN_COUNT,
-                 'value': '5'}
+                 'value': '5'},
+                {'envid':1, 'key':'http-load-warn', 'value':str(10)},
+                {'envid':1, 'key':'http-load-error', 'value':str(20)}
         # Note: No default volid set.
     ]
 
@@ -96,6 +98,9 @@ class SystemManager(object):
             else:
                 raise e
         return entry.value
+
+    def getint(self, key, **kwargs):
+        return int(self.get(key, **kwargs))
 
     @classmethod
     def populate(cls):

@@ -141,7 +141,7 @@ class ExtractManager(TableauCacheManager):
                 duration = parseutc(row[4]) - parseutc(row[3])
                 body['duration'] = duration.seconds
                 duration_hms = to_hhmmss(duration)
-                body['duration_hms'] = duration
+                body['duration_hms'] = str(duration_hms)
 
             if entry.finish_code == 0:
                 self.eventgen(EventControl.EXTRACT_OK, body,
@@ -186,6 +186,10 @@ class ExtractManager(TableauCacheManager):
 
     # FIXME: add project_id? maybe job_name?
     def eventgen(self, key, data, timestamp=None):
+        system_user_id = data['system_users_id']
+        data['username'] = \
+            self.get_username_from_system_user_id(system_user_id)
+
         return self.server.event_control.gen(key, data,
                                              userid=data['system_users_id'],
                                              siteid=data['site_id'],
