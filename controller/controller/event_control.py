@@ -3,7 +3,6 @@ import time
 from mako.template import Template
 from mako import exceptions
 import mako.runtime
-mako.runtime.UNDEFINED="*UNDEFINED*"
 
 from sqlalchemy import Column, Integer, BigInteger, String, Boolean
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
@@ -11,8 +10,10 @@ from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
 
 from profile import UserProfile
-from util import DATEFMT
+from util import DATEFMT, UNDEFINED
 from mixin import BaseMixin
+
+mako.runtime.UNDEFINED=UNDEFINED
 
 import re
 
@@ -115,7 +116,9 @@ class EventControl(meta.Base, BaseMixin):
     ZIPLOGS_FINISHED="ZIPLOGS-FINISHED"
     ZIPLOGS_FAILED="ZIPLOGS-FAILED"
 
-    HTTP_ERROR="HTTP-ERROR"
+    HTTP_BAD_STATUS="HTTP-BAD-STATUS"
+    HTTP_LOAD_WARN="HTTP-LOAD-WARN"
+    HTTP_LOAD_ERROR="HTTP-LOAD-ERROR"
 
     CLEANUP_STARTED="CLEANUP-STARTED"
     CLEANUP_FINISHED="CLEANUP-FINISHED"
@@ -211,6 +214,7 @@ class EventControlManager(object):
 
         if 'exit-status' in data:
             data['exit_status'] = data['exit-status']
+            del data['exit-status']
 
         if not 'time' in data:
             if not timestamp:
@@ -221,12 +225,7 @@ class EventControlManager(object):
         # The userid for other events is the "userid".
         # (Both in the "users" table.)
         profile = None
-        if key == "EXTRACT-OK" or key == "EXTRACT-FAILED":
-            profile = UserProfile.get_by_system_users_id(userid)
-        elif key == "HTTP-ERROR":
-            if userid != -1:
-                profile = UserProfile.get_by_system_users_id(userid)
-        elif not 'username' in data and userid != None:
+        if not 'username' in data and userid != None:
             profile = UserProfile.get(userid)
 
         if not profile is None:
@@ -273,7 +272,7 @@ class EventControlManager(object):
         self.event.add(key, subject, event_description, event_entry.level,
                        event_entry.icon, event_entry.color, 
                        event_entry.event_type, userid=userid, siteid=siteid,
-                                                        timestamp=timestamp)
+                       timestamp=timestamp)
 
         if event_entry.send_email:
             try:
