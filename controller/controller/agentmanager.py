@@ -24,6 +24,7 @@ from util import sizestr
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import InvalidRequestError
 from akiri.framework.ext.sqlalchemy import meta
 
 # The Controller's Agent Manager.
@@ -117,8 +118,8 @@ class AgentManager(threading.Thread):
 
     # Displayname templates
     PRIMARY_TEMPLATE="Tableau Primary" # not a template since only 1
-    WORKER_TEMPLATE="Tableau Worker #%d"
-    ARCHIVE_TEMPLATE="Tableau Archive #%d"
+    WORKER_TEMPLATE="Tableau Worker %d"
+    ARCHIVE_TEMPLATE="Tableau Archive %d"
 
     # Starting point for worker/archive displayname numbers.
     WORKER_START=100
@@ -175,20 +176,17 @@ class AgentManager(threading.Thread):
         session.commit()
 
 
-    def register(self, agent, body):
+    def register(self, agent, orig_agent_type):
         """
            - Checks agent uuid and type against already connected agents.
            - Calculates a displayname and order if it is a new agent.
            - Adds the agent to the connected agents dictionary.
            - Expunges agent from db session
-
-           Called with the agent object and body /auth dictionary that
-           was sent from the agent in json.
        """
 
         self.lock()
         self.log.debug("new agent: name %s, uuid %s, conn_id %d", \
-                       body['hostname'], body['uuid'], agent.connection.conn_id)
+                       agent.hostname, agent.uuid, agent.connection.conn_id)
 
         if agent.displayname is None or agent.displayname == "":
             # Set the displayname inside the lock.  Otherwise,
@@ -205,12 +203,12 @@ class AgentManager(threading.Thread):
         # Keep the newest one.
         for key in self.agents:
             a = self.agents[key]
-            if a.uuid == body['uuid']:
+            if a.uuid == agent.uuid:
                 self.log.info("Agent already connected with uuid '%s': " + \
-                    "will remove it and use the new connection.", body['uuid'])
+                    "will remove it and use the new connection.", agent.uuid)
                 self.remove_agent(a, ("An agent is already connected " + \
                     "with uuid '%s': will remove it and use the new " + \
-                        "connection.") % (body['uuid']), gen_event=False)
+                        "connection.") % (agent.uuid), gen_event=False)
                 break
             elif new_agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
                         a.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
@@ -233,6 +231,8 @@ class AgentManager(threading.Thread):
 
         self.agents[agent.connection.conn_id] = agent
 
+        self.log.debug("register: orig_agent_type: %s, new_agent_type: %s",
+                       str(orig_agent_type), new_agent_type)
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("register: Initializing state entries on connect")
             self.server.stateman.update(StateManager.STATE_PENDING)
@@ -246,6 +246,16 @@ class AgentManager(threading.Thread):
             # Tell the status thread to start getting status on
             # the new primary.
             self.new_primary_event.set()
+        elif new_agent_type == AgentManager.AGENT_TYPE_WORKER and \
+                            orig_agent_type == AgentManager.AGENT_TYPE_ARCHIVE:
+            self.log.debug("register: may change displayname for %s",
+                            agent.displayname)
+            # Possibly correct displayname.
+            if self.displayname_changeable(agent):
+                (displayname, display_order) = \
+                                        self.calc_new_displayname(agent)
+                agent.displayname = displayname
+                agent.display_order = display_order
 
         self.unlock()
         return True
@@ -270,13 +280,20 @@ class AgentManager(threading.Thread):
                 agent_type = AgentManager.AGENT_TYPE_WORKER
             else:
                 agent_type = AgentManager.AGENT_TYPE_ARCHIVE
+            self.log.debug("set_all_agent_types for %s. Was %s is %s.",
+                            entry.displayname, entry.agent_type, agent_type)
 
             if entry.agent_type != agent_type:
-#                print "Correcting agent type from", entry.agent_type, "to", agent_type
+                self.log.debug("Correcting agent type from %s to %s",
+                               entry.agent_type, agent_type)
                 # Set the agent to the correct type.
                 entry.agent_type = agent_type
 
-                # And correct displayname.
+                # We correct displaynames only for workers.
+                if agent_type != AgentManager.AGENT_TYPE_WORKER:
+                    continue
+
+                # Possibly correct displayname.
                 if self.displayname_changeable(entry):
                     (displayname, display_order) = \
                                             self.calc_new_displayname(entry)
@@ -291,58 +308,123 @@ class AgentManager(threading.Thread):
            Otherwise, we can't unless the displayname unless it
            looks like the default displayname that we created (not the user) 
            is still being used that was set when a worker was classified
-           and called an ARCHIVE_TEMPLATE.
+           and called an ARCHIVE_TEMPLATE instead of WORKER_TEMPLATE.
         """
 
         if agent.displayname is None or agent.displayname == "":
             # We are the first to name this one.
             return True
 
-        agent.agent_type = AgentManager.AGENT_TYPE_WORKER
         if agent.agent_type != AgentManager.AGENT_TYPE_WORKER:
             # Only workers could potentially need to be renamed/classified.
             return False
 
-        # Let's see if the worker is using a displayname we probably gave it.
-        pound_template = AgentManager.ARCHIVE_TEMPLATE.find("#")
-        if pound_template == -1:
-            self.log.error("naming: Bad archive template!  Missing '#': %s",
-                            AgentManager.ARCHIVE_TEMPLATE)
+        # Let's see if the worker is using a displayname we probably gave it
+        # when we thought it was an archive.
+
+        if abs(len(AgentManager.ARCHIVE_TEMPLATE) - len(agent.displayname)) > 1:
+            self.log.debug(
+                "naming: Length difference more than 1 byte. Will not rename.")
             return False
 
-        pound_displayname = agent.displayname.find("#")
-        if pound_displayname == -1:
-            self.log.debug("naming: displayname does not have '#' so won't rename.")
+        # main length (without "%d")
+        main_len = len(AgentManager.ARCHIVE_TEMPLATE) - len("%d")   # w/o '%d'
+
+        # "Tableau Archive "
+        if agent.displayname[:main_len] != \
+                                    AgentManager.ARCHIVE_TEMPLATE[:main_len]:
+            self.log.debug("naming: Different archive prefix: Cannot rename.")
             return False
 
-        if AgentManager.ARCHIVE_TEMPLATE[:pound_template] == \
-                                    agent.displayname[:pound_displayname]:
-            self.log.debug("naming: Same archive prefix: Can rename.")
-            return True
+        digits = agent.displayname[main_len:]
+        if not digits.isdigit():
+            self.log.debug(
+                    "naming: archive end isn't all digits.  Cannot rename:", 
+                    agent.displayname)
+            return False
 
-        self.log.debug("naming: Different archive prefix: Will not rename: %s",
+        self.log.debug("naming: Looks like we named it earlier: Can rename: %s",
                                                         agent.displayname)
-        return False
+        return True
 
     def calc_new_displayname(self, new_agent):
         """
             Returns (agent-display-name, agent-display-order)
-            The naming scheme for V1:
+            The current naming scheme:
                 Tableau Primary
-                Tableau Worker #1
-                Tableau Worker #2
+                Tableau Worker 1
+                Tableau Worker 2
                     ...
-                Archive Server #1 (formerly "Other")
-                Archive Server #2
+                Archive Server 1
+                Archive Server 2
                     ...
         """
         if new_agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             return (AgentManager.PRIMARY_TEMPLATE, 1)
 
+        if new_agent.agent_type == AgentManager.AGENT_TYPE_ARCHIVE:
+            return self.calc_archive_name(new_agent)
+
+        if new_agent.agent_type == AgentManager.AGENT_TYPE_WORKER:
+            return self.calc_worker_name(new_agent)
+
+        self.log.error("calc_new_displayname: INVALID agent type: %s",
+                        new_agent.agent_type)
+        return ("INVALID AGENT TYPE: %s" % new_agent.agent_type, 0)
+
+    def calc_worker_name(self, new_agent):
+        """Calculate the worker name and display order.
+           We look for the "workerX.host" entry that has
+           our ip address."""
+
+        try:
+            hosts = self.get_worker_hosts()
+        except ValueError, e:
+            self.log.error("calc_worker_name: %s", str(e))
+            return (AgentManager.WORKER_TEMPLATE % 0,
+                    AgentManager.WORKER_START)
+
+        if len(hosts) <= 1:
+            self.log.error(
+                "calc_worker_name: host count is too small: %d: %s",
+                                                        len(hosts), str(hosts))
+            return (AgentManager.WORKER_TEMPLATE % 0,
+                    AgentManager.WORKER_START)
+
+        session = meta.Session()
+        for worker_num in range(1, len(hosts)+1):
+            # Get entry for "worker%d.host".  Its value is worker's IP address.
+            worker_key = "worker%d.host" % worker_num
+
+            query = session.query(AgentYmlEntry).\
+                filter(AgentYmlEntry.key == worker_key).first()
+            if not query:
+                self.log.error("calc_worker_name: Missing yml key: %s",
+                               worker_key)
+                return (AgentManager.WORKER_TEMPLATE % 0,
+                        AgentManager.WORKER_START)
+
+            # If the value is our ip address, then use it
+            if query.value == new_agent.ip_address:
+                self.log.debug("calc_worker_name: We are %s (%s)",
+                               worker_key, new_agent.ip_address)
+                return (AgentManager.WORKER_TEMPLATE % worker_num,
+                        AgentManager.WORKER_START + worker_num)
+
+        self.log.error(
+                    "calc_worker_name: yml file was missing our IP address: %s",
+                    new_agent.ip-address)
+
+        return (AgentManager.WORKER_TEMPLATE % 0,
+                AgentManager.WORKER_START)
+
+    def calc_archive_name(self, new_agent):
+        """Calculate the archive name and initial display order."""
+
         session = meta.Session()
 
-        # Count how many of this agent type exist, but don't
-        # count ourself.
+        # Count how many of archive agents there are.
+        # Don't include ourself In the count.
         rows = session.query(Agent).\
             filter(Agent.envid == self.envid).\
             filter(Agent.agent_type == new_agent.agent_type).\
@@ -353,17 +435,8 @@ class AgentManager(threading.Thread):
         # The new agent will be the next one.
         count = len(rows) + 1
 
-        if new_agent.agent_type == AgentManager.AGENT_TYPE_WORKER:
-            return (AgentManager.WORKER_TEMPLATE % \
-                                    (count + AgentManager.WORKER_START),
-                    count + AgentManager.WORKER_START)
-        elif new_agent.agent_type == AgentManager.AGENT_TYPE_ARCHIVE:
-            return (AgentManager.ARCHIVE_TEMPLATE % \
-                                    (count + AgentManager.ARCHIVE_START),
-                    count + AgentManager.ARCHIVE_START)
-        self.log.error("calc_new_displayname: INVALID agent type: %s",
-                        new_agent.agent_type)
-        return ("INVALID AGENT TYPE: %s" % new_agent.agent_type, 0)
+        return (AgentManager.ARCHIVE_TEMPLATE % count,
+                AgentManager.ARCHIVE_START)
 
     def update_agent_yml(self, agentid, yml):
         """update the agent_yml table with this agent's yml contents."""
@@ -637,24 +710,35 @@ class AgentManager(threading.Thread):
             are the workers.
         """
 
-        session = meta.Session()
-        query = session.query(AgentYmlEntry).\
-            filter(AgentYmlEntry.key == "worker.hosts").first()
+        try:
+            hosts = self.get_worker_hosts()
+        except ValueError, e:
+            return False
 
-        if not query:
-            return False    # We don't know what it is until primary yml file
-
-        # The value is in the format:
-        #       "DEV-PRIMARY, 10.0.0.102"
-        # where the first host is the primary and the remaining are
-        # Tableau workers.
-        hosts = [x.strip() for x in query.value.split(',')]
         if len(hosts) == 1:
             return False
         if ip in hosts:
             return True
         else:
             return False
+
+    def get_worker_hosts(self):
+        """Get the value 'worker.hosts' from the yml file and return
+           the list of hosts there."""
+
+        session = meta.Session()
+        query = session.query(AgentYmlEntry).\
+            filter(AgentYmlEntry.key == "worker.hosts").first()
+
+        if not query:
+            raise ValueError('worker.hosts not found.')
+
+        # The value is in the format:
+        #       "DEV-PRIMARY, 10.0.0.102"
+        # where the first host is the primary and the remaining are
+        # Tableau workers.
+        hosts = [x.strip() for x in query.value.split(',')]
+        return hosts
 
     def set_displayname(self, aconn, uuid, displayname):
         session = meta.Session()
@@ -773,6 +857,9 @@ class AgentManager(threading.Thread):
             reason = "Agent communication failure"
 
         self.lock()
+        session = meta.Session()
+        session.merge(agent)
+
         uuid = agent.uuid
         conn_id = agent.connection.conn_id
         if self.agents.has_key(conn_id):
@@ -797,7 +884,7 @@ class AgentManager(threading.Thread):
             else:
                 self.log.debug("remove_agent: close agent socket failed")
 
-            del self.agents[conn_id]
+            del self.agents[conn_id]    # Deletes original one
         else:
             self.log.debug("remove_agent: No such agent with conn_id %d",
                            conn_id)
@@ -808,6 +895,10 @@ class AgentManager(threading.Thread):
             # a previous agent, so the user will see the last
             # real state.
 
+        try:
+            session.expunge(agent)      # Removes the other one
+        except InvalidRequestError, e:
+            pass # may be gone
         self.unlock()
 
     def _close(self, sock):
@@ -978,6 +1069,8 @@ class AgentManager(threading.Thread):
             agent.odbc = ODBC(agent)
             agent.filemanager = FileManager(agent)
 
+            orig_agent_type = agent.agent_type
+
             try:
                 pinfo = self.server.init_new_agent(agent)
             except (IOError, ValueError, exc.InvalidStateError,
@@ -996,8 +1089,8 @@ class AgentManager(threading.Thread):
             else:
                 displayname_needed_setting = False
 
-            # Now that the agent type and displayname are set, we
-            # can update the volume information from pinfo.
+            # Now that the agent type, we can update the volume information
+            # from pinfo.
             if not self.update_agent_pinfo_vols(agent, pinfo):
                 self.log.error(
                     "pinfo vols bad for agent with uuid: '%s'.  " \
@@ -1005,22 +1098,11 @@ class AgentManager(threading.Thread):
                 self._close(conn)
                 return
 
-            if not self.register(agent, body):
+            if not self.register(agent, orig_agent_type):
                 self.log.error("Bad agent with uuid: %s'.  Disconnecting.",
                                                                         uuid)
                 self._close(conn)
                 return
-
-            if displayname_needed_setting:
-                # Go through the vols again to send any disk events
-                # since the agent previously didn't have a displayname
-                # and will only send events if it has a displayname.
-                if not self.update_agent_pinfo_vols(agent, pinfo):
-                    self.log.error(
-                        "pinfo vols failed second time for agent with " + \
-                        "uuid: '%s'.  Disconnecting.", uuid)
-                    self._close(conn)
-                    return
 
             #fixme: not a great place to do this
             #aconn.displayname = agent.displayname
@@ -1028,11 +1110,24 @@ class AgentManager(threading.Thread):
             self.save_routes(agent) # fixme: check return value?
             aconn.initting = False
 
-            if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-                self.set_default_backup_destid(agent)
-
             self.server.event_control.gen(\
                 EventControl.AGENT_COMMUNICATION, agent.todict())
+
+            if displayname_needed_setting:
+                # Go through the vols again to send any disk events
+                # since the agent previously didn't have a displayname
+                # and will only send events if it has a displayname.
+                # Do this after we send the "AGENT_COMMUNICATION" event
+                # or the event order looks wrong.
+                if not self.update_agent_pinfo_vols(agent, pinfo):
+                    self.log.error(
+                        "pinfo vols failed second time for agent with " + \
+                        "uuid: '%s'.  Disconnecting.", uuid)
+                    self._close(conn)
+                    return
+
+            if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+                self.set_default_backup_destid(agent)
 
             session = meta.Session()
             session.commit()

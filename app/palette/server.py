@@ -43,7 +43,8 @@ class ServerApplication(PaletteRESTHandler):
 
     def handle_GET(self, req):
         exclude = ['username', 'password']
-        L = meta.Session.query(Agent).order_by(Agent.display_order).all()
+        L = meta.Session.query(Agent).order_by(Agent.display_order).\
+                order_by(Agent.displayname).all()
 
         servers = []
         for server in L:
