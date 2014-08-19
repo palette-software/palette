@@ -250,6 +250,7 @@ class MonitorApplication(PaletteRESTHandler):
         agent_entries = meta.Session.query(Agent).\
             filter(Agent.envid == self.environment.envid).\
             order_by(Agent.display_order).\
+            order_by(Agent.displayname).\
             all()
 
         agents = []

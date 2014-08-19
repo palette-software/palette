@@ -156,7 +156,9 @@ class Agent(meta.Base, BaseDictMixin):
          entry.fqdn=body['fqdn']
          entry.ip_address=body['ip-address']
          entry.listen_port=body['listen-port']
-         entry.agent_type=aconn.agent_type
+         # Note: Do not set agent_type here since 1) We need to know
+         # what the agent_type was in the case where the row existed, and
+         # 2) the agent_type isn't known yet at the time we are called anyway.
          entry.username=u'palette'# fixme
          entry.password=u'tableau2014'
 
