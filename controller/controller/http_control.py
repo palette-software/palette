@@ -17,8 +17,6 @@ class HttpControl(meta.Base, BaseMixin):
     modification_time = Column(DateTime, server_default=func.now(),
                                onupdate=func.current_timestamp())
 
-    defaults = [{'status':500}]
-
     @classmethod
     def all(cls):
         return meta.Session.query(HttpControl).\

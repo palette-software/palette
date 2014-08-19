@@ -298,12 +298,34 @@
 "event_type":"agent"
 },
 {
-"key":"HTTP-ERROR",
+"key":"HTTP-BAD-STATUS",
 "level":"E",
 "send_email":"t",
-"subject":"ERROR - HTTP request failed on Tableau Server",
-"event_description":"Server: ${displayname}\nURI: ${http-request_uri}\nSTATUS: ${status}",
-"email_message":"Server: ${displayname}\nURI: ${http_request_uri}\nSTATUS: ${status}",
+"subject":"ERROR - HTTP request error on Tableau Server",
+"event_description":"Server: ${displayname}\nURI: ${http_request_uri}\nSTATUS: ${status}",
+"email_message":"Server: ${displayname}\nURI: ${http_request_uri}\nSTATUS: ${status}\nTIME: ${duration} seconds\n",
+"icon":null,
+"color":"red",
+"event_type":"agent"
+},
+{
+"key":"HTTP-LOAD-WARN",
+"level":"W",
+"send_email":"t",
+"subject":"WARNING - HTTP load time warning on Tableau Server",
+"event_description":"Server: ${displayname}\nURI: ${http_request_uri}\nSTATUS: ${status}",
+"email_message":"Server: ${displayname}\nURI: ${http_request_uri}\nSTATUS: ${status}\nTIME: ${duration} seconds\n",
+"icon":null,
+"color":"yellow",
+"event_type":"agent"
+},
+{
+"key":"HTTP-LOAD-ERROR",
+"level":"E",
+"send_email":"t",
+"subject":"ERROR - HTTP load time error on Tableau Server",
+"event_description":"Server: ${displayname}\nURI: ${http_request_uri}\nSTATUS: ${status}",
+"email_message":"Server: ${displayname}\nURI: ${http_request_uri}\nSTATUS: ${status}\nTIME: ${duration} seconds\n",
 "icon":null,
 "color":"red",
 "event_type":"agent"
