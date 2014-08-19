@@ -155,8 +155,9 @@ class DiskCheck(object):
         if entry.available_space < self.min_target_disk_needed:
             raise DiskException(\
                 ("Not enough available space on volid %d: Available space: " +
-                "%s, needed: %s") % (sizestr(entry.volid, entry.available_space),
-                                                sizestr(self.min_target_disk_needed)))
+                "%s, needed: %s") % \
+                        (entry.volid, sizestr(entry.available_space),
+                        sizestr(self.min_target_disk_needed)))
 
         # Check if the backup would use more disk space than is allowed
         # by the "archive_limit" in the volume entry.

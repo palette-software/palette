@@ -166,6 +166,17 @@
 "event_type":"backup"
 },
 {
+"key":"BACKUP-FINISHED-COPY-FAILED",
+"level":"W",
+"send_email":"t",
+"subject":"INFO - Backup Requested by %(username)s Completed, But Copy Failed",
+"event_description":"Status: INFO\nUser: ${username}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"email_message":"Status: INFO\nUser: ${username}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"icon":null,
+"color":"yellow",
+"event_type":"backup"
+},
+{
 "key":"BACKUP-FINISHED-SCHEDULED",
 "level":"I",
 "send_email":"t",
@@ -174,6 +185,17 @@
 "email_message":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
 "icon":null,
 "color":"green",
+"event_type":"backup"
+},
+{
+"key":"BACKUP-FINISHED-SCHEDULED-COPY-FAILED",
+"level":"W",
+"send_email":"t",
+"subject":"INFO - Scheduled Backup Completed, But Copy Failed",
+"event_description":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"email_message":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"icon":null,
+"color":"yellow",
 "event_type":"backup"
 },
 {
