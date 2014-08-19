@@ -10,9 +10,9 @@ Package: controller
 Architecture: all
 Depends:
  python (>= 2.7), ${misc:Depends},
- python-docutils, python-sphinx, postgresql,
+ python-docutils, python-sphinx, python-crypto,
  python-sqlalchemy, python-psycopg2, python-boto, python-dateutil,
- telnet, daemon, postfix,
+ postgresql, telnet, daemon, postfix,
  akiri.framework (>= 0.3.1),
  akiri.framework-sqlalchemy
 Description: Palette Controller and Web App
