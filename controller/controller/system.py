@@ -69,7 +69,7 @@ class SystemManager(object):
         session.merge(entry)
         session.commit()
 
-    def entry(self, key, **kwargs):
+    def entry(self, key):
         try:
             entry = meta.Session.query(SystemEntry).\
                 filter(SystemEntry.envid == self.envid).\

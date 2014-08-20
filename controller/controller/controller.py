@@ -1626,7 +1626,7 @@ def main():
     EventControl.populate()
     server.event_control = EventControlManager(server)
 
-    workbook_manager = WorkbookManager(server.environment.envid)
+    server.workbooks = WorkbookManager(server.environment.envid)
 
     server.backup = BackupManager(server.environment.envid)
 
