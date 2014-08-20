@@ -25,6 +25,8 @@ from util import sizestr
 from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.orm.session import make_transient
+#from sqlalchemy.inspection import inspect
 from akiri.framework.ext.sqlalchemy import meta
 
 # The Controller's Agent Manager.
@@ -898,7 +900,9 @@ class AgentManager(threading.Thread):
         try:
             session.expunge(agent)      # Removes the other one
         except InvalidRequestError, e:
-            pass # may be gone
+            self.log.error("remove_agent expunge error: %s", str(e))
+        make_transient(agent)
+        self.log.error("after expunge: %s", str(agent.todict()))
         self.unlock()
 
     def _close(self, sock):
@@ -1138,7 +1142,13 @@ class AgentManager(threading.Thread):
         except Exception, e:
             self.log.exception('handle_agent_connection exception:')
         finally:
-            session.expunge(agent)
+            try:
+                # Use " ifinspect(agent).session" when we go to sqlalchemy
+                # > 0.8
+                session.expunge(agent)
+            except:
+                pass
+
             session.rollback()
             meta.Session.remove()
 
