@@ -703,8 +703,6 @@ class AgentManager(threading.Thread):
             are the workers.
         """
 
-        return True
-
         try:
             hosts = self.get_worker_hosts()
         except ValueError, e:
