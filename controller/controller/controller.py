@@ -1418,7 +1418,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                agent.tableau_install_dir)
                 return False
         else:
-            if self.agentmanager.is_tableau_worker(agent.ip_address):
+            if self.agentmanager.is_tableau_worker(agent):
                 agent.agent_type = aconn.agent_type = \
                                     AgentManager.AGENT_TYPE_WORKER
             else:

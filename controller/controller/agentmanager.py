@@ -278,7 +278,7 @@ class AgentManager(threading.Thread):
             all()
 
         for entry in rows:
-            if self.is_tableau_worker(entry.ip_address):
+            if self.is_tableau_worker(entry):
                 agent_type = AgentManager.AGENT_TYPE_WORKER
             else:
                 agent_type = AgentManager.AGENT_TYPE_ARCHIVE
@@ -393,6 +393,13 @@ class AgentManager(threading.Thread):
             return (AgentManager.WORKER_TEMPLATE % 0,
                     AgentManager.WORKER_START)
 
+        dot = new_agent.hostname.find('.')
+        if dot == -1:
+            hostname = new_agent.hostname
+        else:
+            # Remove domain name
+            hostname = new_agent.hostname[:dot]
+
         session = meta.Session()
         for worker_num in range(1, len(hosts)+1):
             # Get entry for "worker%d.host".  Its value is worker's IP address.
@@ -406,11 +413,21 @@ class AgentManager(threading.Thread):
                 return (AgentManager.WORKER_TEMPLATE % 0,
                         AgentManager.WORKER_START)
 
-            # If the value is our ip address, then use it
-            if query.value == new_agent.ip_address:
-                self.log.debug("calc_worker_name: We are %s (%s)",
-                               worker_key, new_agent.ip_address)
-                return (AgentManager.WORKER_TEMPLATE % worker_num,
+            # If the value is anything we're known by, then use it
+            if self.is_ip(query.value):
+                if query.value != new_agent.ip_address:
+                    continue
+            else:
+                dot = query.value.find('.')
+                if dot != -1:
+                    worker = query.value[:dot]
+                else:
+                    worker = query.value
+                if worker != hostname:
+                    continue
+            self.log.debug("calc_worker_name: We are %s (%s)",
+                           worker_key, query.value)
+            return (AgentManager.WORKER_TEMPLATE % worker_num,
                         AgentManager.WORKER_START + worker_num)
 
         self.log.error(
@@ -431,7 +448,6 @@ class AgentManager(threading.Thread):
             filter(Agent.envid == self.envid).\
             filter(Agent.agent_type == new_agent.agent_type).\
             filter(Agent.uuid != new_agent.uuid).\
-            filter(Agent.displayname != None).\
             all()
 
         # The new agent will be the next one.
@@ -702,8 +718,8 @@ class AgentManager(threading.Thread):
             return 'yellow'
         return 'green'
 
-    def is_tableau_worker(self, ip):
-        """Returns True if the passed ip address (string) is
+    def is_tableau_worker(self, agent):
+        """Returns True if the passed agent
            known to be a tableau worker host.  The type of tableau host is
            reported in the tableau primary host's yml file on the
            "worker.hosts" line.  For example:
@@ -719,9 +735,32 @@ class AgentManager(threading.Thread):
 
         if len(hosts) == 1:
             return False
-        if ip in hosts:
-            return True
+
+        dot = agent.hostname.find('.')
+        if dot == -1:
+            hostname = agent.hostname
         else:
+            # Remove domain name
+            hostname = agent.hostname[:dot]
+
+        for worker in hosts[1:]:
+            if self.is_ip(worker):
+                if worker == agent.ip_address:
+                    return True
+            else:
+                dot = worker.find('.')
+                if dot != -1:
+                    # Remove domain name from this possible worker name
+                    worker = worker[:dot]
+                if worker == hostname:
+                    return True
+        return False
+
+    def is_ip(self, spec):
+        try:
+            ip = socket.inet_aton(spec)
+            return True
+        except socket.error:
             return False
 
     def get_worker_hosts(self):
