@@ -99,7 +99,7 @@ class HttpRequestManager(TableauCacheManager):
 
             seconds = timedelta_total_seconds(completed_at, created_at)
 
-            if entry.status >= 400:
+            if entry.status >= 400 and entry.action == 'show':
                 if entry.status in controldata:
                     excludes = controldata[entry.status]
                 else:
@@ -109,7 +109,7 @@ class HttpRequestManager(TableauCacheManager):
                     self.eventgen(EventControl.HTTP_BAD_STATUS,
                                   agent, entry, usercache,
                                   body = {'duration':seconds})
-            else:
+            elif entry.action == 'show':
                 errorlevel = self.server.system.getint('http-load-error')
                 warnlevel = self.server.system.getint('http-load-warn')
                 if seconds >= errorlevel:
