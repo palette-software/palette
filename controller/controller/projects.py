@@ -8,7 +8,9 @@ from akiri.framework.ext.sqlalchemy import meta
 class Project(meta.Base):
     __tablename__ = 'projects'
 
+    # FIXME: BigInteger
     projectid = Column(Integer, primary_key=True)
+    # FIXME: add agentid
     name = Column(String, nullable=False)
     owner_id = Column(Integer)
     created_at = Column(DateTime)

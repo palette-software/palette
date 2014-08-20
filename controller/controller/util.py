@@ -36,6 +36,10 @@ def utc2local(t):
     t = t.replace(tzinfo=tz.tzutc())
     return t.astimezone(tz.tzlocal())
 
+def odbc2dt(s):
+    if s is None: return None
+    return utc2local(parseutc(s))
+
 def version():
     try:
         from version import VERSION
