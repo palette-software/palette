@@ -8,7 +8,9 @@ from akiri.framework.ext.sqlalchemy import meta
 class DataConnection(meta.Base):
     __tablename__ = 'data_connections'
 
+    # FIXME: BigInteger
     dcid = Column(Integer, primary_key=True)
+    # FIXME: add agentid
     server = Column(String)
     dbclass = Column(String)
     port = Column(Integer)

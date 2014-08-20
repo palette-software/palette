@@ -50,3 +50,7 @@ class TableauCacheManager(object):
                 return profile.name
         else:
             return UNDEFINED
+
+    def schema(self, data):
+        L = data["$schema"]["Info"]
+        return [L[i+1:i+3] for i in xrange(0, len(L), 3)]
