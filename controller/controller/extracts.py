@@ -157,6 +157,8 @@ class ExtractManager(TableauCacheManager):
         return {u'status': 'OK',
                 u'count': len(data[''])}
 
+    # FIXME: user agentid
+    # FIXME: use MAX()
     def get_lastid(self):
         entry = meta.Session.query(ExtractEntry).\
             order_by(ExtractEntry.extractid.desc()).first()

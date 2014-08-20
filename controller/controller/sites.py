@@ -8,7 +8,9 @@ from akiri.framework.ext.sqlalchemy import meta
 class Site(meta.Base):
     __tablename__ = 'sites'
 
+    # FIXME: BigInteger
     siteid = Column(Integer, primary_key=True)
+    # FIXME: add agentid
     name = Column(String, nullable=False)
     status = Column(String)
     created_at = Column(DateTime)

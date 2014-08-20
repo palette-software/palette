@@ -542,6 +542,29 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
 
+    @usage('workbook IMPORT')
+    def do_workbook(self, cmd):
+        """Import workbooks table from Tableau"""
+
+        # Reserved for later expansion
+        if len(cmd.args) != 1 or cmd.args[0].upper() != 'IMPORT':
+            self.print_usage(self.do_workbook.__usage__)
+            return
+
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            return
+
+        if not self.server.odbc_ok():
+            self.error(ERROR_WRONG_STATE, "FAIL: Main state is %s." % \
+                           self.server.stateman.get_state())
+            return
+
+        self.ack()
+        body = self.server.workbooks.load(agent)
+        self.report_status(body)
+
+
     @usage('extract IMPORT')
     def do_extract(self, cmd):
         """Import extracts from the background_jobs table in Tableau"""
