@@ -19,7 +19,14 @@ class BaseDictMixin(object):
             if value is None:
                 continue
             if isinstance(c.type, DateTime):
-                value = value.strftime(DATEFMT)
+                try:
+                    value = value.strftime(DATEFMT)
+                except AttributeError, e:
+                     # It is possible this value has been set directly but
+                     # not yet converted by the ORM.
+                     # i.e. It is not a DateTime instance but something else
+                     # that can be later converted to a DateTime instance.
+                    value = str(value)
             elif not isinstance(value, (int, long)):
                 value = str(value)
             name = pretty and c.name.replace('_', '-') or c.name

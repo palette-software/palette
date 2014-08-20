@@ -271,8 +271,12 @@ class MonitorApplication(PaletteRESTHandler):
             agent['listen_port'] = entry.listen_port
 
             agent['creation-time'] = entry.creation_time.strftime(DATEFMT)
-            agent['modification_time'] = \
-                entry.modification_time.strftime(DATEFMT)
+            if entry.modification_time != None:
+                agent['modification_time'] = \
+                    entry.modification_time.strftime(DATEFMT)
+            else:
+                agent['modification_time'] = ""
+
             agent['last-connnection-time'] = \
                 entry.last_connection_time.strftime(DATEFMT)
             if entry.last_disconnect_time:
