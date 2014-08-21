@@ -28,7 +28,7 @@ class BaseDictMixin(object):
                      # that can be later converted to a DateTime instance.
                     value = str(value)
             elif not isinstance(value, (int, long)):
-                value = str(value)
+                value = unicode(value)
             name = pretty and c.name.replace('_', '-') or c.name
             d[name] = value
         return d
