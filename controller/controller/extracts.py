@@ -81,10 +81,10 @@ class ExtractManager(TableauCacheManager):
         entry.system_users_id = users.get(row[1], row[0])
         entry.project_id = int(row[2])
 
-    def load(self, agent):
+    def load(self, agent, check_odbc_state=True):
 
         # FIXME
-        if not self.server.odbc_ok():
+        if check_odbc_state and not self.server.odbc_ok():
             return {"error": "Cannot run command while in state: %s" % \
                         self.server.stateman.get_state()}
 
