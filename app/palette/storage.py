@@ -20,6 +20,9 @@ __all__ = ["StorageApplication"]
 class StorageApplication(PaletteRESTHandler):
     NAME = 'storage'
 
+    LOW_WATERMARK_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+    HIGH_WATERMARK_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+
     def __init__(self, global_conf):
         super(StorageApplication, self).__init__(global_conf)
         self.sc = StorageConfig(self.system)
@@ -85,14 +88,14 @@ class StorageApplication(PaletteRESTHandler):
         low = {'name': StorageConfig.WATERMARK_LOW,
                'value': str(sc.watermark_low)}
         options = []
-        for x in [50, 55, 60, 65, 70]:
+        for x in self.LOW_WATERMARK_RANGE:
             options.append({'id':x, 'item': str(x)})
         low['options'] = options
 
         high = {'name': StorageConfig.WATERMARK_HIGH,
                'value': str(sc.watermark_high)}
         options = []
-        for x in [75, 80, 85, 90, 95]:
+        for x in self.HIGH_WATERMARK_RANGE:
             options.append({'id':x, 'item': str(x)})
         high['options'] = options
 
