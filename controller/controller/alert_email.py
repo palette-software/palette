@@ -82,7 +82,8 @@ class AlertEmail(object):
         self.log.debug("alert diag: set a diag email: %s", entry.email)
 
     def admin_emails(self):
-        """Return a list of admins that have an email address."""
+        """Return a list of admins that have an email address, enabled
+           and aren't the palette user."""
 
         if self.standalone:
             return [self.to_email]
@@ -92,6 +93,7 @@ class AlertEmail(object):
             filter(UserProfile.roleid > 0).\
             filter(UserProfile.email != None).\
             filter(UserProfile.email_level > 0).\
+            filter(UserProfile.userid != 0).\
             all()
 
         return [entry.email for entry in rows]
@@ -161,7 +163,14 @@ class AlertEmail(object):
         else:
             to_emails = self.admin_emails()
 
-        if not to_emails:
+        # Get the diagnostics email and bcc it there if it exists.
+        entry = UserProfile.get(0)
+        if entry and entry.email != None and entry.email != "":
+            bcc = [entry.email]
+        else:
+            bcc = None
+
+        if not to_emails and not bcc:
             self.log.debug(\
                 "No admin users exist with email addresses.  " + \
                 "Not sending: Subject: %s, Message: %s" % (subject, message))
@@ -186,12 +195,20 @@ class AlertEmail(object):
         subject = Header(unicode("Palette Alert: " + subject), 'utf-8')
         msg['Subject'] = subject
         msg['From'] = self.from_email
-        msg['To'] = ', '.join(to_emails)
+
+        all_to = []
+
+        if to_emails:
+            msg['To'] = ', '.join(to_emails)
+            all_to += to_emails
+        if bcc:
+            all_to += bcc
+
         msg_str = msg.as_string()
 
         try:
             mail_server = smtplib.SMTP(self.smtp_server, self.smtp_port)
-            mail_server.sendmail(self.from_email, to_emails, msg_str)
+            mail_server.sendmail(self.from_email, all_to, msg_str)
             mail_server.quit()
         except (smtplib.SMTPException, EnvironmentError) as e:
             self.log.error(\
