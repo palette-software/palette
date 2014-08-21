@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Integer, BigInteger, DateTime, Boolean
+from sqlalchemy import func
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.exc import NoResultFound
@@ -48,8 +49,9 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     @classmethod
     def get_by_system_users_id(cls, system_users_id):
         try:
-            entry = meta.Session.query(UserProfile).\
-                    filter(UserProfile.system_users_id == system_users_id).one()
+            q = meta.Session.query(UserProfile)
+            q = q.filter(UserProfile.system_users_id == system_users_id)
+            entry = q.one()
         except NoResultFound, e:
             entry = None
         return entry
@@ -57,8 +59,10 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     @classmethod
     def get_by_name(cls, name):
         try:
-            entry = meta.Session.query(UserProfile).\
-                            filter(UserProfile.name == name and UserProfile.userid > 0).one()
+            q = meta.Session.query(UserProfile)
+            q = q.filter(func.lower(UserProfile.name) == name.lower() and \
+                             UserProfile.userid > 0)
+            entry = q.one()
         except NoResultFound, e:
             entry = None
         return entry
