@@ -14,4 +14,4 @@ clean:
 .PHONY: clean
 
 build-setup:
-	sudo apt-get install -y debhelper
+	sudo apt-get install -y debhelper python-setuptools python-sqlalchemy
