@@ -1159,10 +1159,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         body = self.agentmanager.update_agent_yml(agent.agentid, yml)
         return body
 
-    def sync_cmd(self, agent):
+    def sync_cmd(self, agent, check_odbc_state=True):
         """sync/copy tables from tableau to here."""
 
-        if not self.odbc_ok():
+        if check_odbc_state and not self.odbc_ok():
             main_state = self.stateman.get_state()
             self.log.info("Failed.  Current state: %s", main_state)
             raise exc.InvalidStateError(
@@ -1425,6 +1425,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 agent.agent_type = aconn.agent_type = \
                                     AgentManager.AGENT_TYPE_ARCHIVE
 
+        if agent.iswin:
+            self.firewall_manager.do_firewall_ports(agent)
+
+        self.clean_xid_dirs(agent)
+        self.config_servers(agent)
+
         # This saves directory-related info from pinfo: it
         # does not save the volume info since we may not
         # know the displayname yet and the displayname is
@@ -1435,17 +1441,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # (needed for agent.tableau_data_dir).
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.yml(agent)     # raises an exception on fail
-            if self.odbc_ok():
-                if failed(self.auth.load(agent)):
-                    raise IOError("initial auth load failed")
-                self.sync_cmd(agent)  # ok to fail if not IOError
-                self.extract.load(agent)    # ok to fail if ot IOError
-
-        if agent.iswin:
-            self.firewall_manager.do_firewall_ports(agent)
-
-        self.clean_xid_dirs(agent)
-        self.config_servers(agent)
+            if not self.upgrading():
+                # These can all fail as long as they don't get an IOError.
+                # For example, if tableau is stopped, these will fail,
+                # but we don't know tableau's status yet and it's
+                # worth trying, especially to import the users.
+                if success(self.auth.load(agent, check_odbc_state=False)):
+                    self.sync_cmd(agent, check_odbc_state=False)
+                    self.extract.load(agent, check_odbc_state=False)
+                else:
+                    self.log.debug(
+                        "init_new_agent: Couldn't do initial import of " + \
+                        "auth, etc. probably due to tableau stopped.")
 
         return pinfo
 

@@ -121,7 +121,6 @@ class AgentManager(threading.Thread):
     # Displayname templates
     PRIMARY_TEMPLATE="Tableau Primary" # not a template since only 1
     WORKER_TEMPLATE="Tableau Worker %d"
-    ARCHIVE_TEMPLATE="Tableau Archive %d"
 
     # Starting point for worker/archive displayname numbers.
     WORKER_START=100
@@ -190,16 +189,19 @@ class AgentManager(threading.Thread):
         self.log.debug("new agent: name %s, uuid %s, conn_id %d", \
                        agent.hostname, agent.uuid, agent.connection.conn_id)
 
-        if agent.displayname is None or agent.displayname == "":
-            # Set the displayname inside the lock.  Otherwise,
-            # if multiple agents connect at the same time, they
-            # won't know what what displayname/order they should be
-            # given without conflicting.
+        new_agent_type = agent.agent_type
+
+        if (agent.displayname is None or agent.displayname == "") or \
+           (new_agent_type == AgentManager.AGENT_TYPE_WORKER and \
+              orig_agent_type == AgentManager.AGENT_TYPE_ARCHIVE and \
+              self.displayname_changeable(agent)):
+            self.log.debug("register: setting or changing displayname for %s",
+                            str(agent.displayname))
+
             (displayname, display_order) = self.calc_new_displayname(agent)
             agent.displayname = displayname
             agent.display_order = display_order
 
-        new_agent_type = agent.agent_type
         # Don't allow two primary agents to be connected and
         # don't allow two agents with the same name to be connected.
         # Keep the newest one.
@@ -248,16 +250,6 @@ class AgentManager(threading.Thread):
             # Tell the status thread to start getting status on
             # the new primary.
             self.new_primary_event.set()
-        elif new_agent_type == AgentManager.AGENT_TYPE_WORKER and \
-                            orig_agent_type == AgentManager.AGENT_TYPE_ARCHIVE:
-            self.log.debug("register: may change displayname for %s",
-                            agent.displayname)
-            # Possibly correct displayname.
-            if self.displayname_changeable(agent):
-                (displayname, display_order) = \
-                                        self.calc_new_displayname(agent)
-                agent.displayname = displayname
-                agent.display_order = display_order
 
         self.unlock()
         return True
@@ -310,44 +302,29 @@ class AgentManager(threading.Thread):
            Otherwise, we can't unless the displayname unless it
            looks like the default displayname that we created (not the user) 
            is still being used that was set when a worker was classified
-           and called an ARCHIVE_TEMPLATE instead of WORKER_TEMPLATE.
+           and named the hostname.
         """
 
         if agent.displayname is None or agent.displayname == "":
             # We are the first to name this one.
+            self.log.debug("naming: Empty displayname. Changeable.")
             return True
 
         if agent.agent_type != AgentManager.AGENT_TYPE_WORKER:
             # Only workers could potentially need to be renamed/classified.
+            self.log.debug("naming: Wrong type to change: %s", agent.agent_type)
             return False
 
         # Let's see if the worker is using a displayname we probably gave it
         # when we thought it was an archive.
 
-        if abs(len(AgentManager.ARCHIVE_TEMPLATE) - len(agent.displayname)) > 1:
+        if agent.displayname == agent.hostname:
             self.log.debug(
-                "naming: Length difference more than 1 byte. Will not rename.")
-            return False
-
-        # main length (without "%d")
-        main_len = len(AgentManager.ARCHIVE_TEMPLATE) - len("%d")   # w/o '%d'
-
-        # "Tableau Archive "
-        if agent.displayname[:main_len] != \
-                                    AgentManager.ARCHIVE_TEMPLATE[:main_len]:
-            self.log.debug("naming: Different archive prefix: Cannot rename.")
-            return False
-
-        digits = agent.displayname[main_len:]
-        if not digits.isdigit():
-            self.log.debug(
-                    "naming: archive end isn't all digits.  Cannot rename:", 
+                    "naming: Looks like we named it earlier: Can rename: %s",
                     agent.displayname)
+            return True
+        else:
             return False
-
-        self.log.debug("naming: Looks like we named it earlier: Can rename: %s",
-                                                        agent.displayname)
-        return True
 
     def calc_new_displayname(self, new_agent):
         """
@@ -357,9 +334,12 @@ class AgentManager(threading.Thread):
                 Tableau Worker 1
                 Tableau Worker 2
                     ...
-                Archive Server 1
-                Archive Server 2
+                hostname of archive
                     ...
+                    ...
+            Note:
+                We should be called with the agent lock so archive
+                agents don't end up with duplicate names.
         """
         if new_agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             return (AgentManager.PRIMARY_TEMPLATE, 1)
@@ -431,30 +411,25 @@ class AgentManager(threading.Thread):
                         AgentManager.WORKER_START + worker_num)
 
         self.log.error(
-                    "calc_worker_name: yml file was missing our IP address: %s",
-                    new_agent.ip-address)
+                "calc_worker_name: yml file was missing our " + \
+                "IP (%s) or name: %s", new_agent.ip_address,
+                new_agent.hostname)
 
         return (AgentManager.WORKER_TEMPLATE % 0,
                 AgentManager.WORKER_START)
 
     def calc_archive_name(self, new_agent):
-        """Calculate the archive name and initial display order."""
+        """Choose the archive name and initial display order."""
 
-        session = meta.Session()
+        if new_agent.hostname != None and new_agent.fqdn != "":
+            return (new_agent.hostname,
+                    AgentManager.ARCHIVE_START)
 
-        # Count how many of archive agents there are.
-        # Don't include ourself In the count.
-        rows = session.query(Agent).\
-            filter(Agent.envid == self.envid).\
-            filter(Agent.agent_type == new_agent.agent_type).\
-            filter(Agent.uuid != new_agent.uuid).\
-            all()
+        self.log.error(
+            "calc_archive_name: agent has no hostname! Don't know " + \
+            "what to name it: uuid: %s", new_agent.uuid)
 
-        # The new agent will be the next one.
-        count = len(rows) + 1
-
-        return (AgentManager.ARCHIVE_TEMPLATE % count,
-                AgentManager.ARCHIVE_START)
+        return ("UNNAMED NON-WORKER/PRIMARY", AgentManager.WORKER_START)
 
     def update_agent_yml(self, agentid, yml):
         """update the agent_yml table with this agent's yml contents."""

@@ -89,6 +89,17 @@
 "event_type":"backup"
 },
 {
+"key":"BACKUP-BEFORE-RESTORE-FINISHED-COPY-FAILED",
+"level":"W",
+"send_email":"t",
+"subject":"WARNING - Safety Backup Before Restore Completed, But Copy Failed",
+"event_description":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"email_message":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"icon":null,
+"color":"yellow",
+"event_type":"backup"
+},
+{
 "key":"BACKUP-BEFORE-RESTORE-STARTED",
 "level":"I",
 "send_email":"f",
@@ -119,6 +130,17 @@
 "email_message":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
 "icon":null,
 "color":"green",
+"event_type":"backup"
+},
+{
+"key":"BACKUP-BEFORE-STOP-FINISHED-COPY-FAILED",
+"level":"W",
+"send_email":"t",
+"subject":"WARNING - Safety Backup Completed, But Copy Failed",
+"event_description":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"email_message":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"icon":null,
+"color":"yellow",
 "event_type":"backup"
 },
 {
