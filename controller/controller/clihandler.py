@@ -665,8 +665,12 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         data = agent.todict()
         if success(body):
-            self.server.event_control.gen(\
-                EventControl.BACKUP_BEFORE_RESTORE_FINISHED,
+            if 'copy-failed' in body:
+                real_event = \
+                       EventControl.BACKUP_BEFORE_RESTORE_FINISHED_COPY_FAILED
+            else:
+                real_event = EventControl.BACKUP_BEFORE_RESTORE_FINISHED
+            self.server.event_control.gen(real_event,
                 dict(body.items() + data.items()),
                 userid=userid)
         else:
@@ -1158,8 +1162,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = self.server.backup_cmd(agent)
 
             if success(body):
-                self.server.event_control.gen( \
-                    EventControl.BACKUP_BEFORE_STOP_FINISHED,
+                if 'copy-failed' in body:
+                    real_event = \
+                            EventControl.BACKUP_BEFORE_STOP_FINISHED_COPY_FAILED
+                else:
+                    real_event = EventControl.BACKUP_BEFORE_STOP_FINISHED
+                self.server.event_control.gen(real_event,
                     dict(body.items() + data.items()),
                     userid=userid)
             else:

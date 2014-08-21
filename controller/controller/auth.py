@@ -50,8 +50,8 @@ class AuthManager(object):
                 cache[sysid] = obj
         return cache
 
-    def load(self, agent):
-        if not self.server.odbc_ok():
+    def load(self, agent, check_odbc_state=True):
+        if check_odbc_state and not self.server.odbc_ok():
             return {"error": "Cannot run command while in state: %s" % \
                         self.server.stateman.get_state()}
 
