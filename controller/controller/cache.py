@@ -1,3 +1,4 @@
+from manager import Manager
 from profile import UserProfile
 from util import UNDEFINED
 
@@ -21,7 +22,7 @@ class TableauUserCache(object):
         return -1
 
 
-class TableauCacheManager(object):
+class TableauCacheManager(Manager):
 
     # build a cache of the Tableau 'users' table.
     # used to translate siteid:userid -> system_user_id

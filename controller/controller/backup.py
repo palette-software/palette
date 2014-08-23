@@ -9,6 +9,7 @@ from agent import Agent
 from agentinfo import AgentVolumesEntry
 from agentmanager import AgentManager
 
+from manager import Manager
 from util import DATEFMT
 
 class BackupEntry(meta.Base):
@@ -24,7 +25,7 @@ class BackupEntry(meta.Base):
     encrypted = Column(Boolean)  # whether or not it is encrypted
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
-      server_onupdate=func.current_timestamp())
+                               server_onupdate=func.current_timestamp())
     UniqueConstraint('envid', 'name')
 
     # FIXME: make this a mixin
@@ -42,15 +43,12 @@ class BackupEntry(meta.Base):
         return d
 
 
-class BackupManager(object):
-
-    def __init__(self, envid):
-        self.envid = envid
+class BackupManager(Manager):
 
     def add(self, name, gcsid=None, s3id=None, agentid=None):
         session = meta.Session()
         entry = BackupEntry(name=name, envid=self.envid,
-                                    gcsid=gcsid, s3id=s3id, agentid=agentid)
+                            gcsid=gcsid, s3id=s3id, agentid=agentid)
         session.add(entry)
         session.commit()
 

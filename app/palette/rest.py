@@ -53,7 +53,7 @@ class PaletteRESTHandler(RESTApplication):
         if name == 'environment':
             return Environment.get()
         if name == 'system':
-            return SystemManager(self.envid)
+            return SystemManager(self) # FIXME: very unclean : self != server
         raise AttributeError(name)
 
     def base_path_info(self, req):
