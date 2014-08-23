@@ -1606,9 +1606,9 @@ def main():
     Environment.populate()
     server.environment = Environment.get()
 
-    server.event = EventManager(server.environment.envid)
+    server.event = EventManager(server)
 
-    server.system = SystemManager(server.environment.envid)
+    server.system = SystemManager(server)
     SystemManager.populate()
 
     StateControl.populate()
@@ -1628,7 +1628,7 @@ def main():
 
     server.workbooks = WorkbookManager(server)
 
-    server.backup = BackupManager(server.environment.envid)
+    server.backup = BackupManager(server)
 
     server.gcs = GCS(server.environment.envid)
     server.s3 = S3(server.environment.envid)

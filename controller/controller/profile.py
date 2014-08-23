@@ -16,6 +16,7 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'users'
     userid = Column(BigInteger, unique=True, nullable=False, \
                         autoincrement=True, primary_key=True)
+    active = Column(Boolean, default=True)
     name = Column(String, unique=True, nullable=False)
     friendly_name = Column(String)
     email = Column(String)

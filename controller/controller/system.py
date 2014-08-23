@@ -8,6 +8,7 @@ from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from akiri.framework.ext.sqlalchemy import meta
 from mixin import BaseMixin, BaseDictMixin
 
+from manager import Manager
 from storage import StorageConfig
 
 class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
@@ -46,23 +47,21 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
     ]
 
     @classmethod
-    def get_by_key(cls, key):
+    def get_by_key(cls, envid, key):
         try:
             entry = meta.Session.query(SystemEntry).\
+                filter(SystemEntry.envid == envid).\
                 filter(SystemEntry.key == key).one()
         except NoResultFound:
             return None
         return entry
 
-class SystemManager(object):
+# NOTE: 'server' may be either a Controller or a PaletteRESTHandler
+class SystemManager(Manager):
 
     # Keys
     SYSTEM_KEY_STATE = "state"
     SYSTEM_KEY_EVENT_SUMMARY_FORMAT = "event-summary-format"
-
-    # FIXME: accept server instead.
-    def __init__(self, envid):
-        self.envid = envid
 
     def save(self, key, value):
         session = meta.Session()
@@ -72,14 +71,10 @@ class SystemManager(object):
         session.commit()
 
     def entry(self, key):
-        try:
-            entry = meta.Session.query(SystemEntry).\
-                filter(SystemEntry.envid == self.envid).\
-                filter(SystemEntry.key == key).\
-                one()
-        except NoResultFound, e:
+        value = SystemEntry.get_by_key(self.envid, key)
+        if value is None:
             raise ValueError("No system row found with key=%s" % key)
-        return entry
+        return value
 
     def get(self, key, **kwargs):
         if 'default' in kwargs:

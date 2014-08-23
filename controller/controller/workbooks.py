@@ -129,9 +129,6 @@ class WorkbookUpdateEntry(meta.Base, BaseDictMixin):
 
 class WorkbookManager(TableauCacheManager):
 
-    def __init__(self, server):
-        self.server = server
-
     def load(self, agent):
         envid = self.server.environment.envid
         self.prune(agent)

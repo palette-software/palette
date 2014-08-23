@@ -1,7 +1,8 @@
 import platform
-from system import SystemManager
+from manager import Manager
+from system import SystemEntry, SystemManager
 
-class StateManager(object):
+class StateManager(Manager):
     # possible states
     STATE_DISCONNECTED="DISCONNECTED"
     # connected but no status reported from tabadmin yet
@@ -40,11 +41,10 @@ class StateManager(object):
     STATE_UNKNOWN="UNKNOWN"        # no primary ever connected to the controller
 
     def __init__(self, server):
-        self.server = server
+        super(StateManager, self).__init__(server)
         self.system = self.server.system
         self.config = self.server.config
         self.log = self.server.log
-        self.envid = self.server.environment.envid
 
     def update(self, state):
         if state == "RUNNING":
@@ -61,6 +61,8 @@ class StateManager(object):
     @classmethod
     def get_state_by_envid(cls, envid):
         try:
-            return SystemManager(envid).get(SystemManager.SYSTEM_KEY_STATE)
+            key = SystemManager.SYSTEM_KEY_STATE
+            entry = SystemEntry.get_by_key(envid, key)
+            return entry.value
         except ValueError, e:
             return StateManager.STATE_DISCONNECTED
