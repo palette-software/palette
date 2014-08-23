@@ -15,182 +15,180 @@ class DiskException(Exception):
 class DiskCheck(object):
     """Checks the backup and sets the target/location information."""
 
-    def __init__(self, server, agent):
+    def __init__(self, server, agent, parent_dir):
         # inputs
         self.server = server
         self.log = server.log
 
         self.agent = agent
+        self.parent_dir = parent_dir     # "backup", or "ziplogs"
 
         # outputs
         self.target_type = None  # StorageConfig.VOL, GCS or S3.
 
         self.target_entry = None
         self.target_agent = None
-        self.target_is_palette_primary_data_volume = False
         self.target_vol = ""
         self.target_dir = ""
         self.min_target_disk_needed = .3 * agent.tableau_data_size
+
+        # Stores the directory where should the backup, etc. be done.
+        # It may be the final destination directory or it could be temporarily
+        # used before copying to the cloud or other agent.
+        self.primary_dir = ""
+        self.primary_entry = None
+
+        self.primary_dir_is_palette_primary_data_volume = False
+
+        # Whether or not the primary agent is the final destination.
+        self.primary_final_dest = True
 
         self.set_locs()
 
     def set_locs(self):
         """Set backup volume location based on free disk and volumes
-        available.
+           available.
         """
         if not self.agent.tableau_data_dir:
             raise DiskException(
                 "Missing 'tableau_data_dir' in pinfo.  Cannot proceed.")
 
-        # Check tableau primary data for disk availability
-        self.tableau_primary_data_check()
+        try:
+            self.storage_config = StorageConfig(self.server.system)
+        except ValueError, e:
+            raise DiskException(e)
 
-        # We now know the tableau primary data has enough space.
         # Determine the target info.
         self.set_target_from_config()
-
-    def tableau_primary_data_check(self):
-        """Check to see if the tableau primary data area
-           has enough available disk space.
-        Returns:
-            True: Has enough disk space
-            False: Does NOT have enough disk space
-        """
-
-        min_tableau_primary_data_disk_needed = self.agent.tableau_data_size
-
-        # e.g. "C:"
-        tableau_data_dir = self.agent.tableau_data_dir
-        tableau_primary_data_volume = self.agent.tableau_data_dir.split(':')[0]
-
-        volumes = \
-            AgentVolumesEntry.get_vol_entries_by_agentid(self.agent.agentid)
-
-        volume_l = [vol for vol in volumes \
-                    if vol.name == tableau_primary_data_volume]
-
-        if not volume_l:
-            raise DiskException(
-                ("Missing volume/disk available information from pinfo for " + \
-                "'%s' volume '%s'") % \
-                    (self.agent.displayname, tableau_primary_data_volume))
-
-        tableau_primary_data_volume_entry = volume_l[0]
-
-        tableau_primary_data_available = \
-            tableau_primary_data_volume_entry.available_space
-
-        if tableau_primary_data_available < \
-                                        min_tableau_primary_data_disk_needed:
-            raise DiskException(
-                ("Cannot backup due to shortage of disk space on " + \
-                "primary host '%s': %s needed, but only %s available.") % \
-                    (self.agent.displayname,
-                     sizestr(min_tableau_primary_data_disk_needed),
-                     sizestr(tableau_primary_data_available)))
-
-        self.log.debug(\
-            "tableau_primary_check: tableau primary data has enough space." + \
-            "  Need %s and have %s", sizestr(min_tableau_primary_data_disk_needed),
-            sizestr(tableau_primary_data_available))
 
     def set_target_from_config(self):
         """Use the user configuration settings from StorageConfig
            to set and check a target type and entry, etc.
-
-           Returns:
-                True - no error
-                False - error
          """
 
         self.target_agent = None
         self.target_entry = None
         self.target_type = None
         self.target_entry_is_palette_data_area = False
+        self.primary_final_dest = False
 
-        try:
-            storage_config = StorageConfig(self.server.system)
-        except ValueError, e:
-            raise DiskException(e)
-
-        if storage_config.backup_dest_type == StorageConfig.GCS:
-            entry = self.server.gcs.get_by_gcsid(\
-                                            storage_config.backup_dest_id)
+        if self.storage_config.backup_dest_type == StorageConfig.GCS:
+            entry = self.server.gcs.get_by_gcsid(
+                                            self.storage_config.backup_dest_id)
 
             if not entry:
-                raise DiskException(\
+                raise DiskException(
                         "gcsid not found: %d" % storage_config.backup_dest_id)
 
             self.target_entry = entry
             self.target_type = StorageConfig.GCS
-            return entry
-        elif storage_config.backup_dest_type == StorageConfig.S3:
-            entry = self.server.s3.get_by_s3id(\
-                                            storage_config.backup_dest_id)
+            self.primary_final_dest = False
+            self.set_primary_dir()
+            return
+        elif self.storage_config.backup_dest_type == StorageConfig.S3:
+            entry = self.server.s3.get_by_s3id(
+                                            self.storage_config.backup_dest_id)
 
             if not entry:
-                raise DiskException(\
-                        "s3id not found: %d" % storage_config.backup_dest_id)
+                raise DiskException(
+                    "s3id not found: %d" % self.storage_config.backup_dest_id)
 
             self.target_entry = entry
             self.target_type = StorageConfig.S3
-            return entry
-        elif storage_config.backup_dest_type != StorageConfig.VOL:
-            # sanity check
+            self.primary_final_dest = False
+            self.set_primary_dir()
+            return
+        elif self.storage_config.backup_dest_type == StorageConfig.VOL:
+            self.config_vol_target()
+            return
+        else:
             raise DiskException("diskcheck: Invalid backup dest_type: %s" % \
-                                            storage_config.backup_dest_type)
+                                        self.storage_config.backup_dest_type)
 
-        # The rest is for handling a disk volume.
-        entry = AgentVolumesEntry.get_vol_entry_by_volid(\
-                                                storage_config.backup_dest_id)
+    def config_vol_target(self):
+        # Backup is configured to go to a volume.
+        entry = AgentVolumesEntry.get_vol_entry_by_volid(
+                                        self.storage_config.backup_dest_id)
         
         if not entry:
-            raise DiskException(\
-                    "volid not found: %d" % storage_config.backup_dest_id)
+            raise DiskException(
+                    "volid not found: %d" % self.storage_config.backup_dest_id)
 
         self.target_entry = entry
         self.target_type = StorageConfig.VOL
 
+        target_agent = Agent.get_by_id(entry.agentid)
+        if not target_agent:
+            raise DiskException(
+                "No such agentid %d referenced by volid %d in backupid %d" % \
+                (entry.agentid, entry.volid,
+                                        self.storage_config.backup_dest_id))
+
         # Check to see if this volume has enough available disk space.
         if entry.available_space < self.min_target_disk_needed:
-            raise DiskException(\
-                ("Not enough available space on volid %d: Available space: " +
+            raise DiskException(
+                ("Not enough available space on '%s' volume '%s' volid %d: " + \
+                 "Available space: " +
                 "%s, needed: %s") % \
-                        (entry.volid, sizestr(entry.available_space),
+                        (target_agent.displayname,
+                        entry.name, entry.volid, sizestr(entry.available_space),
                         sizestr(self.min_target_disk_needed)))
 
         # Check if the backup would use more disk space than is allowed
         # by the "archive_limit" in the volume entry.
         if entry.size - entry.available_space + self.min_target_disk_needed > \
                                                     entry.archive_limit:
-            raise DiskException(\
+            raise DiskException(
                 ("Minimum space needed greater than archive limit." + \
                 "volid: %d.  Need: %s.  With backup vol would have: %s.  " + \
                 "Allowed/archive limit: %s") % \
                 (entry.volid, sizestr(self.min_target_disk_needed),
                 sizestr(entry.size - entry.available_space + \
                             self.min_target_disk_needed), sizestr(entry.archive_limit)))
-        agent = Agent.get_by_id(entry.agentid)
-        if not agent:
-            raise DiskException(\
-                "No such agentid %d referenced by volid %d in backupid %d" % \
-                                entry.agentid, entry.volid, entry.backupid)
 
-        self.target_agent = agent
+        self.target_agent = target_agent
         self.target_vol = entry.name
         # fixme: agent.path...
         self.target_dir = ntpath.join(entry.name + ":\\", entry.path,
-                                      self.server.BACKUP_DIR)
+                                                          self.parent_dir)
 
-
-        self.target_is_palette_primary_data_volume = \
-                self.server.backup.is_pal_pri_data_vol(self.target_agent,
-                                                       self.target_entry.name)
+        if self.target_agent.agentid == self.agent.agentid:
+            self.primary_dir = self.target_dir
+            self.primary_entry = self.target_entry
+            self.primary_final_dest = True
+        else:
+            self.primary_final_dest = False
+            # Find a good directory to use on the primary before
+            # copying to the agent.
+            self.set_primary_dir()
 
         self.log.debug("check_volume_from_config: set target to " + \
-                "agent '%s', volid %d, target dir '%s'. " + \
+                "agent '%s', volid %d, target dir '%s', " + \
+                "primary_dir '%s'. " + \
                 "Need %s, have %s, size %s, " + \
                 "archive limit %s",
                     agent.displayname, entry.volid, self.target_dir,
-                    sizestr(self.min_target_disk_needed), sizestr(entry.available_space),
-                                            sizestr(entry.size), sizestr(entry.archive_limit))
+                    self.primary_dir,
+                    sizestr(self.min_target_disk_needed),
+                                        sizestr(entry.available_space),
+                    sizestr(entry.size), sizestr(entry.archive_limit))
+
+    def set_primary_dir(self):
+        """
+            Find a directory on the primary that can temporarily hold
+            the backup, etc. before it is copied to another agent or cloud.
+        """
+
+        for volume in \
+            AgentVolumesEntry.get_vol_entries_by_agentid(self.agent.agentid):
+
+            if volume.available_space > self.min_target_disk_needed:
+                # fixme: agent.path... and support linux
+                self.primary_dir = volume.name + ":" + volume.path + \
+                                                "\\" + self.parent_dir
+                self.primary_entry = volume
+                return
+
+        raise DiskException("There is not enough disk space on any " + \
+            "volumes on the Tableau Primary to temporarily hold the " + \
+            "backup before copying.")

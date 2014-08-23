@@ -73,7 +73,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # Disk space check.
         try:
-            dcheck = DiskCheck(self, agent)
+            dcheck = DiskCheck(self, agent, self.BACKUP_DIR)
         except DiskException, e:
             return self.error(str(e))
 
@@ -108,15 +108,22 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # Example: "c:/ProgramData/Palette/Data/tableau-backups/20140127_162225.tsbak"
 
-        if dcheck.target_type == StorageConfig.VOL and \
-           dcheck.target_agent.agent_type == \
-                   AgentManager.AGENT_TYPE_PRIMARY and \
-                           not dcheck.target_is_palette_primary_data_volume:
-           # The backup target is on the primary server but not on the
-           # the palette primary *directory*. Do the backup directly to the
-           # target directory rather than copying it there after the backup.
+        if not self.backup.is_pal_pri_data_vol(agent, dcheck.primary_dir):
+            # Make sure the primary directory exists. This is where the
+            # backup will be done.
+            try:
+                agent.filemanager.mkdirs(dcheck.primary_dir)
+            except (IOError, ValueError) as e:
+                self.log.error(\
+                    "backup_cmd: Could not create directory: '%s'" % \
+                    dcheck.primary_dir)
+                body = {'error': str(e),
+                        'info': "Could not create backup directory '%s'" % \
+                               dcheck.primary_dir}
+                return body
 
-           # First make sure the target directory on the primary exists.
+        if dcheck.primary_dir != dcheck.target_dir:
+           # Make sure the target directory on the primary exists.
             try:
                 agent.filemanager.mkdirs(dcheck.target_dir)
             except (IOError, ValueError) as e:
@@ -128,20 +135,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                dcheck.target_dir}
                 return body
 
-            # e.g. E:\\ProgramData\Palette\Data\tableau-backups\2014Jan27_162225.tsbak
-            backup_full_path = agent.path.join(dcheck.target_dir, backup_name)
-        else:
-            # The backup will be done to the palette primary data location
-            # and then one of, depending on the user configuration:
-            # 1) copied to another agent
-            # 2) copied to cloud storage,
-            # 3) remain right there.
-            #
-            # Get the vol + dir to use for the backup command to tabadmin.
-            palette_data_path = self.backup.palette_primary_data_loc_path(agent)
-            # e.g. C:\\ProgramData\Palette\Data\tableau-backups\2014Jan27_162225.tsbak
-            backup_full_path = agent.path.join(self.primary_backup_dir(agent),
-                                          backup_name)
+        # e.g. E:\\ProgramData\Palette\Data\tableau-backups\2014Jan27_162225.tsbak
+        backup_full_path = agent.path.join(dcheck.primary_dir, backup_name)
+
+        # If the target is not on the primary agent, then after the
+        # backup, it will be copied to either:
+        #   1) another agent
+        # or
+        #   2) cloud storage
+        #
 
         cmd = 'tabadmin backup \\\"%s\\\"' % backup_full_path
 
@@ -169,15 +171,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         body['info'] = ""
         delete_local_backup = True
 
-        palette_primary_data_dir_vol_entry = \
-            self.backup.get_palette_primary_data_loc_vol_entry(agent)
-
-        if not palette_primary_data_dir_vol_entry:
-            self.log.error(\
-                "Could not retrieve get_palette_primary_data_loc_vol_entry")
-            return self.error(
-                "Could not retrieve get_palette_primary_data_loc_vol_entry")
-
         copy_elapsed_time = 0
 
         if dcheck.target_type in (StorageConfig.GCS, StorageConfig.S3):
@@ -192,7 +185,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 delete_local_backup = False
                 body['copy-failed'] = True
                 self.backup.add(backup_full_path,
-                            agentid=palette_primary_data_dir_vol_entry.agentid)
+                            agentid=dcheck.primary_entry.agentid)
             else:
                 copy_elapsed_time = time.time() - copy_start_time
                 body['info'] = \
@@ -204,7 +197,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.backup.add(backup_name, gcsid=gcsid, s3id=s3id)
                 delete_local_backup = True
 
-        elif dcheck.target_agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
+        elif dcheck.target_agent.agentid != agent.agentid:
             # Copy the backup to a non-primary agent
             # Example: "Tableau Archive #202:D/palette-backups/20140127_162225.tsbak"
 
@@ -220,6 +213,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     "Backup will remain on the primary agent.") % \
                     (backup_vol, agent.agentid))
 
+            self.log.debug("backup_path: '%s' " + \
+                           "source_agent_vol_entry.path: '%s'",
+                           backup_path,
+                          source_agent_vol_entry.path)
             common = os.path.commonprefix([backup_path,
                                           source_agent_vol_entry.path])
 
@@ -244,7 +241,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 # Something was wrong with the copy to the non-primary agent.
                 # Leave the backup on the primary after all.
                 self.backup.add(backup_full_path,
-                            agentid=palette_primary_data_dir_vol_entry.agentid)
+                            agentid=dcheck.primary_entry.agentid)
                 delete_local_backup = False
             else:
                 # The copy succeeded.
@@ -260,22 +257,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                 agentid=dcheck.target_agent.agentid)
                 # Remember to remove the backup file from the primary
                 delete_local_backup = True
-        elif dcheck.target_agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-            if dcheck.target_is_palette_primary_data_volume:
-                body['info'] += \
+        elif dcheck.target_agent.agentid == agent.agentid:
+            body['info'] += \
                     ('Backup file is configured to stay on ' + \
                     'the Tableau primary agent, ' + \
-                    'palette primary data directory: %s') % dcheck.target_dir
-
-                delete_local_backup = False
-            else:
-                # The tabadmin backup was done directly to the
-                # alternate volume on the primary agent.
-                body['info'] = ("Backup file is configured to stay on " + \
-                    'the Tableau primary agent, non-primary palette ' + \
                     'data directory: %s') % dcheck.target_dir
 
-                delete_local_backup = False
+            delete_local_backup = False
             self.backup.add(backup_full_path,
                             agentid=dcheck.target_agent.agentid)
 
