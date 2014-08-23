@@ -40,7 +40,7 @@ class WorkbookApplication(PaletteRESTHandler):
         users = {}
 
         workbooks = []
-        for entry in WorkbookEntry.all_by_envid(self.envid):
+        for entry in WorkbookEntry.get_all_by_envid(self.envid):
             data = entry.todict(pretty=True)
 
             updates = []

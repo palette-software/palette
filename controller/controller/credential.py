@@ -33,8 +33,9 @@ class CredentialEntry(meta.Base, BaseMixin, BaseDictMixin):
     def setpasswd(self, cleartext):
         self.embedded = aes_encrypt(cleartext)
 
+
 class CredentialManager(Manager):
 
     def get(self, key, **kwargs):
         return CredentialEntry.\
-            get_unique_by_envid_key(envid, 'key', key, **kwargs)
+            get_unique_by_keys({'envid':envid, 'key':key}, **kwargs)
