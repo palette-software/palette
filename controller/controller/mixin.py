@@ -61,6 +61,33 @@ class BaseMixin(object):
             rows = json.load(f)
             return rows['RECORDS']
 
+    @classmethod
+    def get_unique_by_envid_key(cls, envid, keyname, key, **kwargs):
+        if 'default' in kwargs:
+            default = kwargs['default']
+            have_default = True
+            del kwargs['default']
+        else:
+            have_default = False
+
+        if kwargs:
+            raise ValueError("Invalid kwargs")
+
+        try:
+            entry = meta.Session.query(cls).\
+                filter(cls.envid == envid).\
+                filter(getattr(cls, keyname) == key).\
+                one()
+        except NoResultFound, e:
+            if have_default:
+                return default
+            raise KeyError("envid:%d, %s:%s" % (envid, keyname, key))
+        return entry
+
+    @classmethod
+    def get_all_by_envid(cls, envid):
+        return meta.Session.query(cls).filter(cls.envid == envid).all()
+
 
 class OnlineMixin(object):
 
