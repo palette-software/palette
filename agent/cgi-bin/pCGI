@@ -131,13 +131,13 @@ def handle_file_GET(path):
         shutil.copyfileobj(f, sys.stdout)
 
 
-def handle_file_PUT(path):
-    if 'CONTENT_LENGTH' != req.environ:
+def handle_file_PUT(req, path):
+    if 'CONTENT_LENGTH' not in req.environ:
         raise BadRequest("Missing CONTENT_LENGTH in PUT request")
     length = int(req.environ['CONTENT_LENGTH'])
 
     with open(path, 'w') as f:
-        shutil.copyfileobj(sys.stdin, f, length)
+        shutil.copyfileobj(sys.stdin, f, 8192)
     
     (mimetype, encoding) = mimetypes.guess_type(path, strict=False)
     print 'Content-Type: ' + mimetype
@@ -166,15 +166,13 @@ def handle():
         if req.method != 'GET':
             raise MethodNotAllowed(req.method)
         return handle_directory(path)
-    elif os.path.isfile(path):
+    else:
         if req.method == 'GET':
             return handle_file_GET(path)
         elif req.method == 'PUT':
-            return handle_file_PUT(path)
+            return handle_file_PUT(req, path)
         else:
             raise MethodNotAllowed(req.method)
-    else:
-        raise BadRequest(req.method + ' ' + req.uri)
 
 if __name__ == '__main__':
     try:
