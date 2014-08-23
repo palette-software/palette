@@ -101,6 +101,7 @@ class AuthManager(object):
                 entry.licensing_role_id = obj.licensing_role_id
                 entry.publisher = obj.publisher
 
+        # FIXME: don't do this, just mark inactive.
         # delete entries no longer found in the Tableau database.
         session.query(UserProfile).\
             filter(not_(UserProfile.name.in_(names))).\
