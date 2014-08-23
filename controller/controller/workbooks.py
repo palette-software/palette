@@ -129,10 +129,9 @@ class WorkbookUpdateEntry(meta.Base, BaseDictMixin):
 
 class WorkbookManager(TableauCacheManager):
 
+    # really sync *and* load
     def load(self, agent):
         envid = self.server.environment.envid
-        self.prune(agent)
-
         users = self.load_users(agent)
 
         stmt = \
@@ -227,17 +226,6 @@ class WorkbookManager(TableauCacheManager):
         return {u'status': 'OK', u'schema': schema}
 
     # returns a UTC string or None
-    def last_tableau_update(self, agent):
-        stmt = 'SELECT MAX(updated_at) from workbooks'
-        data = agent.odbc.execute(stmt)
-        if not data or not '' in data or data[''][0] is None:
-            return None
-        row = data[''][0]
-        if row[0] is None:
-            return None
-        return row[0]
-
-    # returns a UTC string or None
     def last_update(self):
         envid = self.server.environment.envid
         session = meta.Session()
@@ -247,16 +235,3 @@ class WorkbookManager(TableauCacheManager):
         if value[0] is None:
             return None
         return str(value[0])
-
-    def prune(self, agent):
-        """
-        If the Tableau Server was restored, there may be revisions in the
-        Controller database that no longer exist: remove them.
-        """
-        last_tableau_update = odbc2dt(self.last_tableau_update(agent))
-        if last_tableau_update:
-            envid = self.server.environment.envid
-            meta.Session.query(WorkbookEntry).\
-                filter(WorkbookEntry.updated_at > last_tableau_update).\
-                filter(WorkbookEntry.envid == envid).\
-                delete(synchronize_session='fetch')
