@@ -42,7 +42,7 @@ from event import EventManager
 from event_control import EventControl, EventControlManager
 from extracts import ExtractManager
 from storage import StorageConfig
-from workbooks import WorkbookEntry, WorkbookManager
+from workbooks import WorkbookEntry, WorkbookUpdateEntry, WorkbookManager
 
 from sites import Site
 from projects import Project
@@ -1626,7 +1626,7 @@ def main():
     EventControl.populate()
     server.event_control = EventControlManager(server)
 
-    server.workbooks = WorkbookManager(server.environment.envid)
+    server.workbooks = WorkbookManager(server)
 
     server.backup = BackupManager(server.environment.envid)
 

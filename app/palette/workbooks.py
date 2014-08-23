@@ -8,47 +8,55 @@ from akiri.framework.config import store
 from akiri.framework.ext.sqlalchemy import meta
 
 from controller.domain import Domain
-from controller.workbooks import WorkbookEntry, WorkbookUpdatesEntry
+from controller.workbooks import WorkbookEntry
+from controller.util import UNDEFINED
+from controller.profile import UserProfile
+
+from rest import PaletteRESTHandler
 
 __all__ = ["WorkbookApplication"]
 
-class WorkbookApplication(RESTApplication):
+class WorkbookApplication(PaletteRESTHandler):
 
     NAME = 'workbooks'
 
-    def __init__(self, global_conf):
-        super(WorkbookApplication, self).__init__(global_conf)
+    def getuser_fromdb(self, system_users_id):
+        if system_users_id < 0:
+            return UNDEFINED
+        user = UserProfile.get_by_system_users_id(system_users_id)
+        if not user:
+            return UNDEFINED
+        return user.display_name()
 
-        domainname = store.get('palette', 'domainname')
-        self.domainid = Domain.get_by_name(domainname).domainid
+    def getuser(self, system_users_id, cache={}):
+        if system_users_id in cache:
+            return cache[system_users_id]
+        user = self.getuser_fromdb(system_users_id)
+        cache[system_users_id] = user
+        return user
 
     def handle_get(self, req):
-        query = meta.Session.query(WorkbookEntry).\
-            all()
+
+        users = {}
 
         workbooks = []
-        for entry in query:
-            workbook = {}
-            workbook['name' ] = entry.name
-            workbook['summary'] = entry.summary
-            workbook['color'] = entry.color
-
-            update_query = meta.Session.query(WorkbookUpdatesEntry).\
-                filter(WorkbookUpdatesEntry.domainid == self.domainid).\
-                filter(WorkbookUpdatesEntry.workbookid == entry.workbookid).\
-                all()
+        for entry in WorkbookEntry.all_by_envid(self.envid):
+            data = entry.todict(pretty=True)
 
             updates = []
-            for update_entry in update_query:
-                update = {}
-                update['name'] = update_entry.name
-                update['timestamp'] = update_entry.timestamp
-                update['url'] = update_entry.url
-                updates.append(update)
+            for update in entry.updates:
+                d = update.todict(pretty=True)
+                d['username'] = self.getuser(update.system_users_id, users)
+                updates.append(d)
+            data['updates'] = updates
 
-            workbook['updates'] = updates
+            if entry.updates:
+                # The summary field contains the name of the current owner,
+                # which can be found from the last (by-time) update entry.
+                system_users_id = entry.updates[0].system_users_id
+                data['summary'] = self.getuser(system_users_id, users)
 
-            workbooks.append(workbook)
+            workbooks.append(data)
 
         return {'workbooks': workbooks}
 

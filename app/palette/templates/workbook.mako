@@ -74,7 +74,7 @@
       <ul>
         {{#updates}}
         <li>
-          <a href="#">{{timestamp}}</a> by {{name}}
+          <a href="#">{{timestamp}}</a> by {{username}}
           <a class="edit" href="#"><i class="fa fa-fw fa-pencil"></i></a>
         </li>
         {{/updates}}

@@ -38,7 +38,8 @@ def utc2local(t):
 
 def odbc2dt(s):
     if s is None: return None
-    return utc2local(parseutc(s))
+    dt = parseutc(s)
+    return dt.replace(tzinfo=None)
 
 def version():
     try:

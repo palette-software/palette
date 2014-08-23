@@ -236,6 +236,7 @@ class EventControlManager(object):
             profile = UserProfile.get(userid)
 
         if not profile is None:
+            # FIXME: use display_name
             if profile.friendly_name:
                 data['username'] = profile.friendly_name
             else:

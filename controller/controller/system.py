@@ -13,6 +13,7 @@ from storage import StorageConfig
 class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'system'
 
+    # FIXME: integer
     envid = Column(BigInteger, ForeignKey("environment.envid"),
                    primary_key=True)
     key = Column(String, unique=True, nullable=False, primary_key=True)
@@ -59,6 +60,7 @@ class SystemManager(object):
     SYSTEM_KEY_STATE = "state"
     SYSTEM_KEY_EVENT_SUMMARY_FORMAT = "event-summary-format"
 
+    # FIXME: accept server instead.
     def __init__(self, envid):
         self.envid = envid
 
