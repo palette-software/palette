@@ -7,11 +7,11 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from akiri.framework.ext.sqlalchemy import meta
 
-from mixin import BaseDictMixin
+from mixin import BaseMixin, BaseDictMixin
 from cache import TableauCacheManager
 from util import odbc2dt
 
-class WorkbookEntry(meta.Base, BaseDictMixin):
+class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = "workbooks"
 
     workbookid = Column(BigInteger, unique=True, nullable=False,
@@ -54,32 +54,12 @@ class WorkbookEntry(meta.Base, BaseDictMixin):
     __table_args__ = (UniqueConstraint('envid', 'id'),)
 
     @classmethod
-    def all_by_envid(cls, envid):
-        return meta.Session.query(cls).\
-            filter(cls.envid == envid).all()
+    def get(cls, envid, wbid, **kwargs):
+        return cls.get_by_envid_key(envid, 'workbookid', wbid, **kwargs)
 
     @classmethod
-    def get(cls, envid, wbid, **kwargs):
-        if 'default' in kwargs:
-            default = kwargs['default']
-            have_default = True
-            del kwargs['default']
-        else:
-            have_default = False
-
-        if kwargs:
-            raise ValueError("Invalid kwargs")
-
-        try:
-            entry = meta.Session.query(cls).\
-                filter(cls.envid == envid).\
-                filter(cls.id == wbid).\
-                one()
-        except NoResultFound, e:
-            if have_default:
-                return default
-            raise ValueError("No such workbook: " + str(wbid))
-        return entry
+    def get_all_by_envid(cls, envid):
+        return cls.get_all_by_keys({'envid':envid})
 
 
 class WorkbookUpdateEntry(meta.Base, BaseDictMixin):
@@ -104,27 +84,9 @@ class WorkbookUpdateEntry(meta.Base, BaseDictMixin):
 
     @classmethod
     def get(cls, wbid, revision, **kwargs):
-        if 'default' in kwargs:
-            default = kwargs['default']
-            have_default = True
-            del kwargs['default']
-        else:
-            have_default = False
-
-        if kwargs:
-            raise ValueError("Invalid kwargs")
-
-        try:
-            entry = meta.Session.query(cls).\
-                filter(cls.workbookid == wbid).\
-                filter(cls.revision == revision).\
-                one()
-        except NoResultFound, e:
-            if have_default:
-                return default
-            raise ValueError("No such workbook update: (%d, %s)" %\
-                             (wbid,revision))
-        return entry
+        return cls.get_unique_by_keys({'workbookid': wbid,
+                                       'revision': revision},
+                                      **kwargs)
 
 
 class WorkbookManager(TableauCacheManager):

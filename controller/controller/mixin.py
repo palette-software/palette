@@ -62,7 +62,7 @@ class BaseMixin(object):
             return rows['RECORDS']
 
     @classmethod
-    def get_unique_by_envid_key(cls, envid, keyname, key, **kwargs):
+    def get_unique_by_keys(cls, keys):
         if 'default' in kwargs:
             default = kwargs['default']
             have_default = True
@@ -71,22 +71,28 @@ class BaseMixin(object):
             have_default = False
 
         if kwargs:
-            raise ValueError("Invalid kwargs")
+            raise ValueError("Invalid kwargs: " + str(kwargs))
+        
+        query = meta.Session.query(cls)
+
+        for key, value in keys.items():
+            query = query.filter(getattr(cls, key) == value)
 
         try:
-            entry = meta.Session.query(cls).\
-                filter(cls.envid == envid).\
-                filter(getattr(cls, keyname) == key).\
-                one()
+            entry = query.one()
         except NoResultFound, e:
             if have_default:
                 return default
-            raise KeyError("envid:%d, %s:%s" % (envid, keyname, key))
+            raise ValueError("No such value: " + str(keys))
         return entry
 
+
     @classmethod
-    def get_all_by_envid(cls, envid):
-        return meta.Session.query(cls).filter(cls.envid == envid).all()
+    def get_all_by_keys(cls, keys):
+        query = meta.Session.query(cls)
+        for key, value in keys.items():
+            query = query.filter(getattr(cls, key) == value)
+        return query.all()
 
 
 class OnlineMixin(object):
