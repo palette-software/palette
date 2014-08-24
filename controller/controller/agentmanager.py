@@ -404,7 +404,7 @@ class AgentManager(threading.Thread):
                     worker = query.value[:dot]
                 else:
                     worker = query.value
-                if worker != hostname:
+                if worker.upper() != hostname.upper():
                     continue
             self.log.debug("calc_worker_name: We are %s (%s)",
                            worker_key, query.value)
@@ -728,7 +728,7 @@ class AgentManager(threading.Thread):
                 if dot != -1:
                     # Remove domain name from this possible worker name
                     worker = worker[:dot]
-                if worker == hostname:
+                if worker.upper() == hostname.upper():
                     return True
         return False
 
