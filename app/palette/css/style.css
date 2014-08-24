@@ -1636,6 +1636,9 @@ h2.page-subtitle {
 .storage-page {
     padding-bottom: 160px;
 }
+.workbook-page .event .summary div.col2 div {
+    text-align: right;
+}
 
 /* OnOff */
 .onoffswitch {
