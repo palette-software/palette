@@ -60,9 +60,5 @@ class StateManager(Manager):
 
     @classmethod
     def get_state_by_envid(cls, envid):
-        try:
-            key = SystemManager.SYSTEM_KEY_STATE
-            entry = SystemEntry.get_by_key(envid, key)
-            return entry.value
-        except ValueError, e:
-            return StateManager.STATE_DISCONNECTED
+        entry = SystemEntry.get_by_key(envid, SystemManager.SYSTEM_KEY_STATE)
+        return entry and entry.value or StateManager.STATE_DISCONNECTED
