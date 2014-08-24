@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, DateTime, Boolean
 from sqlalchemy import Integer, BigInteger, SmallInteger
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy import not_
+from sqlalchemy import not_, UniqueConstraint
 from sqlalchemy.schema import ForeignKey
 
 from mixin import BaseMixin
@@ -28,6 +28,8 @@ class Site(meta.Base, BaseMixin):
     custom_subscription_email = Column(String)
     luid = Column(String, unique=True)
     query_limit = Column(Integer)
+
+    __table_args__ = (UniqueConstraint('envid', 'siteid'),)
 
     @classmethod
     def get(cls, envid, siteid, **kwargs):
@@ -60,11 +62,10 @@ class Site(meta.Base, BaseMixin):
 
         session = meta.Session()
         for row in data['']:
-            entry = Site.get(row[0])
+            entry = Site.get(envid, row[0])
             if not entry:
-                entry = Site(siteid=row[0])
+                entry = Site(envid=envid, siteid=row[0])
                 session.add(entry)
-            entry.envid = envid
             entry.name = row[1]
             entry.status = row[2]
             entry.created_at = row[3]

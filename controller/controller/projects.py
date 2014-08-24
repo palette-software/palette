@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, DateTime, Boolean
 from sqlalchemy import Integer, BigInteger, SmallInteger
-from sqlalchemy import not_
+from sqlalchemy import not_, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.schema import ForeignKey
 
@@ -21,6 +21,8 @@ class Project(meta.Base, BaseMixin):
     description = Column(String)
     site_id = Column(Integer, nullable=False)
     special = Column(Integer)
+
+    __table_args__ = (UniqueConstraint('envid', 'projectid'),)
 
     @classmethod
     def get(cls, envid, projectid, **kwargs):
@@ -49,11 +51,10 @@ class Project(meta.Base, BaseMixin):
 
         session = meta.Session()
         for row in data['']:
-            entry = Project.get(row[0])
+            entry = Project.get(envid, row[0])
             if not entry:
-                entry = Project(projectid=row[0])
+                entry = Project(envid=envid, projectid=row[0])
                 session.add(entry)
-            entry.envid = envid
             entry.name = row[1]
             entry.owner_id = row[2]
             entry.created_at = row[3]
