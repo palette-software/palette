@@ -82,10 +82,15 @@ class AuthManager(object):
             sysid = L[7]
             names.append(name)
 
+            email = L[1]
+
             entry = UserProfile.get_by_name(name)
             if not entry:
-                entry = UserProfile(name=name, email=L[1])
+                entry = UserProfile(name=name)
                 session.add(entry)
+            if email:
+                # If an email was entered in Tableau - it wins.
+                entry.email = email
             entry.hashed_password = L[2]
             entry.salt = L[3]
             entry.friendly_name=L[4]
@@ -101,6 +106,8 @@ class AuthManager(object):
                 entry.licensing_role_id = obj.licensing_role_id
                 entry.publisher = obj.publisher
 
+        session.commit()
+
         # delete entries no longer found in the Tableau database.
         session.query(UserProfile).\
             filter(not_(UserProfile.name.in_(names))).\
@@ -108,8 +115,6 @@ class AuthManager(object):
 
         now = time.strftime(DATEFMT)
         self.server.system.save(self.LAST_IMPORT_KEY, now)
-
-        session.commit()
 
         d = {u'status': 'OK', u'count': len(data[''])}
         self.server.log.debug("auth load returning: %s", str(d))
