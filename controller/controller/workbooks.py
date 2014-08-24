@@ -16,7 +16,7 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
 
     workbookid = Column(BigInteger, unique=True, nullable=False,
                         autoincrement=True, primary_key=True)
-    envid = Column(Integer, ForeignKey("environment.envid"), nullable=False)
+    envid = Column(BigInteger, ForeignKey("environment.envid"), nullable=False)
     id = Column(BigInteger, nullable=False)
     name = Column(String)
     repository_url = Column(String)
@@ -55,14 +55,15 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
 
     @classmethod
     def get(cls, envid, wbid, **kwargs):
-        return cls.get_by_envid_key(envid, 'workbookid', wbid, **kwargs)
+        keys = {'envid':envid, 'workbookid':wbid}
+        return cls.get_unique_by_keys(keys, **kwargs)
 
     @classmethod
     def get_all_by_envid(cls, envid):
         return cls.get_all_by_keys({'envid':envid})
 
 
-class WorkbookUpdateEntry(meta.Base, BaseDictMixin):
+class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = "workbook_updates"
 
     wuid = Column(BigInteger, unique=True, nullable=False, \
@@ -72,6 +73,7 @@ class WorkbookUpdateEntry(meta.Base, BaseDictMixin):
     timestamp = Column(DateTime, server_default=func.now())
     system_users_id = Column(Integer)
     url = Column(String)
+    note = Column(String)
 
     # NOTE: system_users_id is not a foreign key to avoid load dependencies.
 
@@ -88,6 +90,9 @@ class WorkbookUpdateEntry(meta.Base, BaseDictMixin):
                                        'revision': revision},
                                       **kwargs)
 
+    @classmethod
+    def get_by_id(cls, wuid, **kwargs):
+        return cls.get_unique_by_keys({'wuid': wuid}, **kwargs)
 
 class WorkbookManager(TableauCacheManager):
 

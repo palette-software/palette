@@ -2,15 +2,18 @@ from sqlalchemy import Column, String, DateTime, Boolean
 from sqlalchemy import Integer, BigInteger, SmallInteger
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import not_
+from sqlalchemy.schema import ForeignKey
+
+from mixin import BaseMixin
 
 from akiri.framework.ext.sqlalchemy import meta
 
-class Site(meta.Base):
+class Site(meta.Base, BaseMixin):
     __tablename__ = 'sites'
 
     # FIXME: BigInteger
     siteid = Column(Integer, primary_key=True)
-    # FIXME: add agentid
+    envid = Column(Integer, ForeignKey("environment.envid"), nullable=False)
     name = Column(String, nullable=False)
     status = Column(String)
     created_at = Column(DateTime)
@@ -27,20 +30,17 @@ class Site(meta.Base):
     query_limit = Column(Integer)
 
     @classmethod
-    def get(cls, siteid):
-        try:
-            entry = meta.Session.query(Site).\
-                filter(Site.siteid == siteid).one()
-        except NoResultFound, e:
-            entry = None
-        return entry
+    def get(cls, envid, siteid, **kwargs):
+        keys = {'envid':envid, 'siteid':siteid}
+        return cls.get_unique_by_keys(keys, **kwargs)
 
     @classmethod
-    def all(cls):
-        return meta.Session.query(Site).order_by(Site.name).all()
+    def all(cls, envid):
+        return cls.get_all_by_keys({'envid':envid}, order_by='name')
 
     @classmethod
     def sync(cls, agent):
+        envid = agent.server.environment.envid
         stmt = \
             'SELECT id, name, status, created_at, updated_at, ' +\
             'user_quota, content_admin_mode, storage_quota, metrics_level, '+\
@@ -64,6 +64,7 @@ class Site(meta.Base):
             if not entry:
                 entry = Site(siteid=row[0])
                 session.add(entry)
+            entry.envid = envid
             entry.name = row[1]
             entry.status = row[2]
             entry.created_at = row[3]

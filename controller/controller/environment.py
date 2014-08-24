@@ -9,7 +9,7 @@ class Environment(meta.Base, BaseMixin):
     __tablename__ = 'environment'
 
     envid = Column(BigInteger, unique=True, nullable=False, \
-                        autoincrement=True, primary_key=True)
+                   autoincrement=True, primary_key=True)
     domainid = Column(BigInteger, ForeignKey("domain.domainid"))
     name = Column(String, unique=True, nullable=False, index=True)
     creation_time = Column(DateTime, server_default=func.now())

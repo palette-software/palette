@@ -8,10 +8,13 @@ from akiri.framework.config import store
 from akiri.framework.ext.sqlalchemy import meta
 
 from controller.domain import Domain
-from controller.workbooks import WorkbookEntry
+from controller.workbooks import WorkbookEntry, WorkbookUpdateEntry
 from controller.util import UNDEFINED
 from controller.profile import UserProfile, Role
 from controller.credential import CredentialEntry
+from controller.util import DATEFMT
+from controller.sites import Site
+from controller.projects import Project
 
 from page import PalettePage, FAKEPW
 from rest import PaletteRESTHandler, required_parameters, required_role
@@ -53,6 +56,24 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
             meta.Session.add(entry)
         return entry
 
+    def get_site(self, siteid, cache={}):
+        if siteid in cache:
+            return cache[siteid]
+        envid = self.environment.envid
+        entry = Site.get(envid, siteid, default=None)
+        name = entry and entry.name or ''
+        cache[siteid] = name
+        return name
+
+    def get_project(self, projectid, cache={}):
+        if projectid in cache:
+            return cache[projectid]
+        envid = self.environment.envid
+        entry = Project.get(envid, projectid, default=None)
+        name = entry and entry.name or ''
+        cache[projectid] = name
+        return name
+
     @required_parameters('value')
     def handle_user_POST(self, req, cred):
         value = req.POST['value']
@@ -81,8 +102,19 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         value = cred and FAKEPW or ''
         return {'value': value}
 
+    # GET doesn't have a ready meaning.
+    @required_parameters('id', 'value')
+    def handle_update_note(self, req     ):
+        wuid = req.POST['id']
+        update = WorkbookUpdateEntry.get_by_id(wuid)
+        if not update:
+            raise exc.HTTPGone()
+        update.note = req.POST['value']
+        meta.Session.commit()
+        return {'value': update.note}
+
     def handle_get(self, req):
-        users = {}
+        users = {}; sites={}; projects={}  # lookup caches
         envid = self.environment.envid
 
         workbooks = []
@@ -96,11 +128,14 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
                 updates.append(d)
             data['updates'] = updates
 
-            if entry.updates:
-                # The summary field contains the name of the current owner,
-                # which can be found from the last (by-time) update entry.
-                system_users_id = entry.updates[0].system_users_id
-                data['summary'] = self.getuser(system_users_id, users)
+            current = entry.updates[0]
+            system_users_id = current.system_users_id
+            data['last-updated-by'] = self.getuser(system_users_id, users)
+            data['last-updated-at'] = current.timestamp.strftime(DATEFMT)
+
+            # FIXME
+            data['site'] = self.get_site(entry.site_id, cache=sites)
+            data['project'] = self.get_project(entry.project_id, cache=projects)
 
             workbooks.append(data)
 
@@ -117,6 +152,8 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
             return self.handle_user(req, key=self.SECONDARY_KEY)
         elif path_info == 'secondary/password':
             return self.handle_passwd(req, key=self.SECONDARY_KEY)
+        elif path_info == 'updates/note':
+            return self.handle_update_note(req)
         elif path_info:
             raise exc.HTTPBadRequest()
 

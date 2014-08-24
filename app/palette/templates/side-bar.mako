@@ -11,7 +11,7 @@
         <i class="fa fa-fw fa-copy"></i><span>Events</span>
       </a>
     </li>
-    <li class="has-side-bar ${obj.active=='activity' and 'active' or ''}">
+    <li class="${obj.active=='activity' and 'active' or ''}">
       <a href="/activity"><i class="fa fa-fw fa-book"></i>
         <span>Workbook Archive</span>
       </a>

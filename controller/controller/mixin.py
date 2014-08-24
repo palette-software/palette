@@ -88,10 +88,14 @@ class BaseMixin(object):
 
 
     @classmethod
-    def get_all_by_keys(cls, keys):
+    def get_all_by_keys(cls, keys, order_by=[]):
         query = meta.Session.query(cls)
         for key, value in keys.items():
             query = query.filter(getattr(cls, key) == value)
+        if isinstance(order_by, basestring):
+            order_by = [order_by]
+        for clause in order_by:
+            query = query.order_by(clause)
         return query.all()
 
 
