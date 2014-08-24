@@ -2,7 +2,7 @@
 <%inherit file="layout.mako" />
 
 <%block name="title">
-<title>Palette - User Configuration</title>
+<title>Palette - Storage Configuration</title>
 </%block>
 
 <section class="dynamic-content storage-page">

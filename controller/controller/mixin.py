@@ -62,7 +62,7 @@ class BaseMixin(object):
             return rows['RECORDS']
 
     @classmethod
-    def get_unique_by_keys(cls, keys):
+    def get_unique_by_keys(cls, keys, **kwargs):
         if 'default' in kwargs:
             default = kwargs['default']
             have_default = True

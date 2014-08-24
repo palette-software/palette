@@ -2,13 +2,11 @@ from webob import exc
 from sqlalchemy.orm.exc import NoResultFound
 
 from akiri.framework.ext.sqlalchemy import meta
-from page import PalettePage
+from page import PalettePage, FAKEPW
 from rest import PaletteRESTHandler, required_parameters, required_role
 
 from controller.profile import Role
 from controller.gcs import GCS
-
-from controller.environment import Environment
 
 __all__ = ["GCSApplication"]
 
@@ -32,7 +30,7 @@ class GCSApplication(PaletteRESTHandler):
     def handle_GET(self):
         entry = self.get()
         d = entry.todict(pretty=True)
-        d['secret'] =  entry.secret and '********' or ''
+        d['secret'] =  entry.secret and FAKEPW or ''
         return d
 
     @required_parameters('value')
@@ -49,7 +47,7 @@ class GCSApplication(PaletteRESTHandler):
         entry = self.get()
         entry.secret = v
         meta.Session.commit()
-        value = v and '********' or ''
+        value = v and FAKEPW or ''
         return {'value':value}
 
     @required_parameters('value')
@@ -87,13 +85,13 @@ class GCSPage(PalettePage):
     required_role = Role.MANAGER_ADMIN
 
     def render(self, req, obj=None):
-        envid = Environment.get().envid # FIXME
+        envid = self.environment.envid
         entry = GCS.get_by_envid_name(envid, DEFAULT_NAME)
         if entry is None:
             entry = GCS(envid = envid)
             entry.name = DEFAULT_NAME
         self.access_key = entry.access_key and entry.access_key or ''
-        self.secret = entry.secret and '********' or ''
+        self.secret = entry.secret and FAKEPW or ''
         self.bucket = entry.bucket and entry.bucket or ''
         return super(GCSPage, self).render(req, obj=obj)
 

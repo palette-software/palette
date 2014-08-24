@@ -42,7 +42,6 @@ class PaletteRESTHandler(RESTApplication):
     def __init__(self, global_conf):
         super(PaletteRESTHandler, self).__init__(global_conf)
         self.telnet = Telnet(self)
-        self.envid = Environment.get().envid
 
     def __getattr__(self, name):
         if name == 'domainname':

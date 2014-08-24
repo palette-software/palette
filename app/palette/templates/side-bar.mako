@@ -76,6 +76,12 @@
             <span>Storage</span>
           </a>
         </li>
+        <li  ${obj.active=='tabcmd' and 'class="active"' or ''}>
+          <a href="/configure/tabcmd">
+            <i class="fa fa-fw fa-truck"></i>
+            <span>Tabcmd User</span>
+          </a>
+        </li>
         <li  ${obj.active=='yml' and 'class="active"' or ''}>
           <a href="/configure/yml">
             <i class="fa fa-fw tableau"></i>
