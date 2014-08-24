@@ -106,25 +106,13 @@ class Sched(threading.Thread):
         # Backup every night at 12:00.
         self.add_cron_job(name='backup', hour=0, minute=0)
 
-        # yml every 5 minutes
         self.add_cron_job(name='yml', minute="0/5")
-
-        # info_all/pinfo every 5 minutes
         self.add_cron_job(name='info_all', minute="1/5")
-
-        # extracts every 5 minutes
-        self.add_cron_job(name='extract', minute="2/5")
-
-        # auth_import every 10 minutes
         self.add_cron_job(name='auth_import', minute="2/10")
-
-        # sync tables every 5 minutes
         self.add_cron_job(name='sync', minute="3/5")
-
-        # http_requests import every 5 minutes
         self.add_cron_job(name='http_request', minute='3/5')
-
-        # license_check every 5 minutes
+        self.add_cron_job(name='extract', minute="3/5")
+        self.add_cron_job(name='workbook', minute='3/5')
         self.add_cron_job(name='license_check', minute="4/5")
 
 
