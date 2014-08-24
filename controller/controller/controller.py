@@ -108,31 +108,30 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         # Example: "c:/ProgramData/Palette/Data/tableau-backups/20140127_162225.tsbak"
 
-        if not self.backup.is_pal_pri_data_vol(agent, dcheck.primary_dir):
-            # Make sure the primary directory exists. This is where the
-            # backup will be done.
-            try:
-                agent.filemanager.mkdirs(dcheck.primary_dir)
-            except (IOError, ValueError) as e:
-                self.log.error(\
-                    "backup_cmd: Could not create directory: '%s'" % \
-                    dcheck.primary_dir)
-                body = {'error': str(e),
-                        'info': "Could not create backup directory '%s'" % \
-                               dcheck.primary_dir}
-                return body
+        # Make sure the primary directory exists. This is where the
+        # backup will be done.
+        try:
+            agent.filemanager.mkdirs(dcheck.primary_dir)
+        except (IOError, ValueError) as e:
+            self.log.error(\
+                "backup_cmd: Could not create directory: '%s'" % \
+                dcheck.primary_dir)
+            body = {'error': str(e),
+                    'info': "Could not create backup directory '%s'" % \
+                           dcheck.primary_dir}
+            return body
 
-        if dcheck.primary_dir != dcheck.target_dir:
-           # Make sure the target directory on the primary exists.
+        if dcheck.target_dir and (dcheck.primary_dir != dcheck.target_dir):
+            # Make sure the target directory on the primary exists.
             try:
                 agent.filemanager.mkdirs(dcheck.target_dir)
             except (IOError, ValueError) as e:
                 self.log.error(\
-                    "backup_cmd: Could not create directory: '%s'" % \
+                    "backup_cmd: Could not create target directory: '%s'" % \
                     dcheck.target_dir)
                 body = {'error': str(e),
-                        'info': "Could not create backup directory '%s'" % \
-                               dcheck.target_dir}
+                        'info': ("Could not create backup target " + \
+                                 "directory: '%s'") % dcheck.target_dir}
                 return body
 
         # e.g. E:\\ProgramData\Palette\Data\tableau-backups\2014Jan27_162225.tsbak
@@ -185,7 +184,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 delete_local_backup = False
                 body['copy-failed'] = True
                 self.backup.add(backup_full_path,
-                            agentid=dcheck.primary_entry.agentid)
+                                size=backup_size,
+                                agentid=dcheck.primary_entry.agentid)
             else:
                 copy_elapsed_time = time.time() - copy_start_time
                 body['info'] = \
@@ -194,7 +194,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     (dcheck.target_type, dcheck.target_entry.bucket,
                      backup_name)
                 # Backup was copied to gcs or s3
-                self.backup.add(backup_name, gcsid=gcsid, s3id=s3id)
+                self.backup.add(backup_name, size=backup_size,
+                                gcsid=gcsid, s3id=s3id)
                 delete_local_backup = True
 
         elif dcheck.target_agent.agentid != agent.agentid:
@@ -241,6 +242,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 # Something was wrong with the copy to the non-primary agent.
                 # Leave the backup on the primary after all.
                 self.backup.add(backup_full_path,
+                            size=backup_size,
                             agentid=dcheck.primary_entry.agentid)
                 delete_local_backup = False
             else:
@@ -254,6 +256,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                             dcheck.target_dir, backup_name)
 
                 self.backup.add(target_full_path,
+                                size=backup_size,
                                 agentid=dcheck.target_agent.agentid)
                 # Remember to remove the backup file from the primary
                 delete_local_backup = True
@@ -265,6 +268,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
             delete_local_backup = False
             self.backup.add(backup_full_path,
+                            size=backup_size,
                             agentid=dcheck.target_agent.agentid)
 
         if delete_local_backup:
@@ -301,14 +305,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def seconds_to_str(self, seconds):
             return str(datetime.timedelta(seconds=int(seconds)))
-
-    def primary_backup_dir(self, agent):
-        """return the palette primary backup directory."""
-
-        palette_data_path = self.backup.palette_primary_data_loc_path(agent)
-        return agent.path.join(palette_data_path,
-                               self.DATA_DIR,
-                               self.BACKUP_DIR)
 
     def gcs_cmd(self, agent, action, gcs_entry, full_path):
 
@@ -711,17 +707,26 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 "restore_cmd: Backup has no gcs/s3/agentid for backup %s" % \
                                                         backup_full_path)
 
-        # The tableau backup file to use when calling the
-        # 'tabadmin restore <backup-file>' command.
-        # It will be this in all cases except if the backup
-        # file is on the primary but on a different volume than
-        # the palette install.
+        # Get the tableau backup file to use when calling the
+        # 'tabadmin restore <backup-file>' command for the case
+        # where the backup file is not on the primary.
+        if source_type in (StorageConfig.GCS, StorageConfig.S3) or \
+            ((source_type == StorageConfig.VOL) and \
+                    (source_agent.agentid != primary_agent.agentid)):
+            try:
+                (primary_dir, primary_entry) = \
+                    DiskCheck.get_primary_loc(primary_agent, self.BACKUP_DIR)
+            except DiskException, e:
+                self.log.error("restore_cmd: get_primary_loc failed: %s", str(e))
+                return self.error("restore_cmd: %s" % str(e))
+        else:
+            primary_dir = primary_agent.path.basename(backup_full_path)
 
         # Keep track of whether or not a backup was copied to the primary
         # for the restore.  If so, we'll need to delete the
         # file after the restore finishes or an error.
-
         backup_copied = False
+
         if source_type in (StorageConfig.GCS, StorageConfig.S3):
             # The backup is cloud storage: s3 or gcs
             self.log.debug(\
@@ -733,7 +738,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # We change backup_full_path to be the full path of where
             # we want to copy the file to.
             backup_full_path = primary_agent.path.join(
-                    self.primary_backup_dir(primary_agent),
+                    primary_dir,
                     primary_agent.path.basename(backup_full_path))
 
             body = cloud_cmd(primary_agent, "GET", source_entry,
@@ -793,10 +798,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                source_agent.agentid, source_agent.displayname,
                                copy_source)
 
-                backup_dir = self.primary_backup_dir(primary_agent)
-
                 body = self.copy_cmd(source_entry.agentid, copy_source,
-                                    primary_agent.agentid, backup_dir)
+                                    primary_agent.agentid, primary_dir)
 
                 if body.has_key("error"):
                     fmt = "restore: copy backup file '%s' " + \
@@ -808,7 +811,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                    source_agent.displayname,
                                    primary_agent.agentid,
                                    primary_agent.displayname,
-                                   backup_dir,
+                                   primary_dir,
                                    body['error'])
                     self.stateman.update(orig_state)
                     return body
@@ -816,7 +819,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 # This is the filename to use for 'tabadmin restore'
                 # now that it is copied to the primary.
                 backup_full_path = primary_agent.path.join(
-                    self.primary_backup_dir(primary_agent), 
+                    primary_dir,
                     primary_agent.path.basename(backup_full_path))
 
                 backup_copied = True
@@ -1310,14 +1313,19 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn = agent.connection
         ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
-        path = self.backup.palette_primary_data_loc_path(agent)
-        ziplog_path = agent.path.join(path, self.LOG_DIR)
+        try:
+            # fixme: add size estimate/required?
+            (primary_dir, primary_entry) = \
+                    DiskCheck.get_primary_loc(primary_agent, self.LOG_DIR)
+        except DiskException, e:
+            self.log.error("ziplogs_cmd: %s", str(e))
+            return self.error("ziplogs_cmd: %s" % str(e))
 
         data = agent.todict()
         self.event_control.gen(EventControl.ZIPLOGS_STARTED,
                                data, userid=userid)
                                
-        cmd = 'tabadmin ziplogs -l -n -a \\\"%s\\\"' % ziplog_path
+        cmd = 'tabadmin ziplogs -l -n -a \\\"%s\\\"' % primary_dir
         body = self.cli_cmd(cmd, agent)
         body[u'info'] = u'tabadmin ziplogs -l -n -a ziplog_name'
 
