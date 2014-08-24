@@ -36,4 +36,8 @@ drop table http_request cascade;
 drop table projects cascade;
 drop table sites cascade;
 drop table http_requests cascade;
+drop table credentials cascade;
+drop table cron cascade;
+drop table http_control cascade;
+drop table workbook_updates cascade;
 EOF
