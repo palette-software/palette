@@ -4,7 +4,6 @@ from storage import StorageConfig
 
 from agentinfo import AgentVolumesEntry
 from agent import Agent
-from agentmanager import AgentManager
 from util import sizestr
 
 class DiskException(Exception):
@@ -28,8 +27,7 @@ class DiskCheck(object):
 
         self.target_entry = None
         self.target_agent = None
-        self.target_vol = ""
-        self.target_dir = ""
+        self.target_dir = ""    # Not used for cloud storage
         self.min_target_disk_needed = .3 * agent.tableau_data_size
 
         # Stores the directory where should the backup, etc. be done.
@@ -83,7 +81,12 @@ class DiskCheck(object):
             self.target_entry = entry
             self.target_type = StorageConfig.GCS
             self.primary_final_dest = False
-            self.set_primary_dir()
+            # Get the location to backup or stage to
+            (self.primary_dir, self.primary_entry) = \
+                   DiskCheck.get_primary_loc(self.agent,
+                                             self.parent_dir,
+                                             self.min_target_disk_needed)
+            self.log.debug("s3: primary_dir: %s", self.primary_dir)
             return
         elif self.storage_config.backup_dest_type == StorageConfig.S3:
             entry = self.server.s3.get_by_s3id(
@@ -96,7 +99,12 @@ class DiskCheck(object):
             self.target_entry = entry
             self.target_type = StorageConfig.S3
             self.primary_final_dest = False
-            self.set_primary_dir()
+            # Get the location to backup or stage to
+            (self.primary_dir, self.primary_entry) = \
+                   DiskCheck.get_primary_loc(self.agent,
+                                             self.parent_dir,
+                                             self.min_target_disk_needed)
+            self.log.debug("gcs: primary_dir: %s", self.primary_dir)
             return
         elif self.storage_config.backup_dest_type == StorageConfig.VOL:
             self.config_vol_target()
@@ -149,8 +157,8 @@ class DiskCheck(object):
         self.target_agent = target_agent
         self.target_vol = entry.name
         # fixme: agent.path...
-        self.target_dir = ntpath.join(entry.name + ":\\", entry.path,
-                                                          self.parent_dir)
+        self.target_dir = entry.name + ":" +  entry.path + \
+                                               "\\" + self.parent_dir
 
         if self.target_agent.agentid == self.agent.agentid:
             self.primary_dir = self.target_dir
@@ -158,37 +166,49 @@ class DiskCheck(object):
             self.primary_final_dest = True
         else:
             self.primary_final_dest = False
-            # Find a good directory to use on the primary before
-            # copying to the agent.
-            self.set_primary_dir()
+            # Get the location to backup or stage to
+            (self.primary_dir, self.primary_entry) = \
+                   DiskCheck.get_primary_loc(self.agent,
+                                self.parent_dir,
+                                self.min_target_disk_needed)
 
         self.log.debug("check_volume_from_config: set target to " + \
                 "agent '%s', volid %d, target dir '%s', " + \
                 "primary_dir '%s'. " + \
                 "Need %s, have %s, size %s, " + \
                 "archive limit %s",
-                    agent.displayname, entry.volid, self.target_dir,
+                    self.agent.displayname, entry.volid, self.target_dir,
                     self.primary_dir,
                     sizestr(self.min_target_disk_needed),
                                         sizestr(entry.available_space),
                     sizestr(entry.size), sizestr(entry.archive_limit))
 
-    def set_primary_dir(self):
+    @classmethod
+    def get_primary_loc(cls, agent, parent_dir, min_disk_needed=0):
         """
             Find a directory on the primary that can temporarily hold
-            the backup, etc. before it is copied to another agent or cloud.
+            the backup, etc. before it is copied to another agent or cloud,
+            or used for restore, etc.
+
+            Arguments:
+                agent
+                minimum_disk_needed     bytes needed on the volume, unless 0
+                parent_dir:             The directory name to add, such as:
+                                        'backup', 'ziplogs', etc.
+
         """
 
         for volume in \
-            AgentVolumesEntry.get_vol_entries_by_agentid(self.agent.agentid):
+            AgentVolumesEntry.get_vol_archive_entries_by_agentid(agent.agentid):
 
-            if volume.available_space > self.min_target_disk_needed:
+            if not min_disk_needed or volume.available_space > min_disk_needed:
                 # fixme: agent.path... and support linux
-                self.primary_dir = volume.name + ":" + volume.path + \
-                                                "\\" + self.parent_dir
-                self.primary_entry = volume
-                return
+                primary_dir = volume.name + ":" + volume.path + \
+                                                "\\" + parent_dir
+                primary_entry = volume
+
+                return (primary_dir, primary_entry)
 
         raise DiskException("There is not enough disk space on any " + \
             "volumes on the Tableau Primary to temporarily hold the " + \
-            "backup before copying.")
+            "file for this operation.")

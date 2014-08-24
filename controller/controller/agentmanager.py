@@ -14,6 +14,7 @@ import httplib
 
 from agent import Agent
 from agentinfo import AgentYmlEntry, AgentVolumesEntry
+from diskcheck import DiskCheck, DiskException
 from state import StateManager
 from event_control import EventControl
 from firewall import Firewall
@@ -1182,16 +1183,20 @@ class AgentManager(threading.Thread):
             # It was found, so don't need to add it.
             return
 
-        entry = self.server.backup.get_palette_primary_data_loc_vol_entry(agent)
-        self.log.debug(
-            ("set_default_backup_destid: " + \
-            "palette_primary_data_loc_path: volid: %d name %s, path %s") % \
-            (entry.volid, entry.name, entry.path))
-
-        if not entry:
+        try:
+            (primary_dir, primary_entry) = \
+                    DiskCheck.get_primary_loc(agent, "")
+        except DiskException, e:
+            self.log.error("set_default_backup_destid: %s", str(e))
             return
 
-        self.server.system.save(StorageConfig.BACKUP_DEST_ID, entry.volid)
+        self.log.debug(
+            ("set_default_backup_destid: " + \
+            "volid: %d name %s, path %s") % \
+            (primary_entry.volid, primary_entry.name, primary_entry.path))
+
+        self.server.system.save(StorageConfig.BACKUP_DEST_ID,
+                                                        primary_entry.volid)
 
     def save_routes(self, agent):
         lines = ""

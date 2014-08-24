@@ -1413,7 +1413,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         agent.connection.http_send_json("/hup", {})
         self.report_status({})
 
-    @usage('s3 [GET|PUT] <name> <key-or-path>')
+    @usage('s3 [GET|PUT] <s3-name> <key-or-path> <local-dir>')
     def do_s3(self, cmd):
         """Send a file to or receive a file from an S3 bucket"""
 
@@ -1422,26 +1422,22 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         aconn = agent.connection
-        if len(cmd.args) != 3 or len(cmd.args) > 4:
+        if len(cmd.args) != 4:
             self.print_usage(self.do_s3.__usage__)
             return
 
         action = cmd.args[0].upper()
         name = cmd.args[1]
         keypath = cmd.args[2]
+        data_dir = cmd.args[3]
 
         entry = self.server.s3.get_by_name(name)
         if not entry:
             self.error(ERROR_NOT_FOUND, "s3 instance '" + name + "' not found.")
             return
 
-        data_dir = self.server.backup.primary_data_loc_path(agent)
-
-        if not data_dir:
-            self.error(ERROR_NOT_FOUND,
-                        "Missing primary-data_loc in the agent_volumes table")
-            return
-
+        # fixme
+        # sanity check on local-dir on the primary?
         self.ack()
 
         resource = os.path.basename(keypath)
@@ -1469,7 +1465,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status(body)
 
-    @usage('gcs [GET|PUT] gcs-ame key-or-path')
+    @usage('gcs [GET|PUT] <gcs-name> <key-or-path> <local-dir>')
     def do_gcs(self, cmd):
         """Send a file to or receive a file from a GCP bucket"""
 
@@ -1478,13 +1474,14 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         aconn = agent.connection
-        if len(cmd.args) != 3 or len(cmd.args) > 4:
+        if len(cmd.args) != 4:
             self.print_usage(self.do_gcs.__usage__)
             return
 
         action = cmd.args[0].upper()
         name = cmd.args[1]
         keypath = cmd.args[2]
+        data_dir = cmd.args[3]
 
         entry = self.server.gcs.get_by_name(name)
         if not entry:
@@ -1492,12 +1489,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                                     "gcs instance '" + name + "' not found.")
             return
 
-        data_dir = self.server.backup.primary_data_loc_path(agent)
-
-        if not data_dir:
-            self.error(ERROR_NOT_FOUND,
-                        "Missing primary-data_loc in the agent_volumes table")
-            return
+        # fixme
+        # sanity check on local-dir on the primary?
 
         self.ack()
 

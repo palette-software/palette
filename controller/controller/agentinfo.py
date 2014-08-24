@@ -198,10 +198,11 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
             return None
 
     @classmethod
-    def get_vol_entries_by_agentid(cls, agentid):
+    def get_vol_archive_entries_by_agentid(cls, agentid):
         return meta.Session.query(AgentVolumesEntry).\
+            filter(AgentVolumesEntry.archive == True).\
             filter(AgentVolumesEntry.agentid == agentid).\
-            order_by(AgentVolumesEntry.name).\
+            order_by(AgentVolumesEntry.name.desc()).\
             all()
 
     @classmethod

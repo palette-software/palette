@@ -20,6 +20,7 @@ class BackupEntry(meta.Base):
     gcsid = Column(BigInteger, ForeignKey("gcs.gcsid"))
     s3id = Column(BigInteger, ForeignKey("s3.s3id"))
     agentid = Column(BigInteger, ForeignKey("agent.agentid"))
+    size = Column(BigInteger)
     auto = Column(Boolean)  # automatically requested/scheduled
     encrypted = Column(Boolean)  # whether or not it is encrypted
     creation_time = Column(DateTime, server_default=func.now())
@@ -47,10 +48,10 @@ class BackupManager(object):
     def __init__(self, envid):
         self.envid = envid
 
-    def add(self, name, gcsid=None, s3id=None, agentid=None):
+    def add(self, name, size=0, gcsid=None, s3id=None, agentid=None):
         session = meta.Session()
-        entry = BackupEntry(name=name, envid=self.envid,
-                                    gcsid=gcsid, s3id=s3id, agentid=agentid)
+        entry = BackupEntry(name=name, envid=self.envid, size=size,
+                            gcsid=gcsid, s3id=s3id, agentid=agentid)
         session.add(entry)
         session.commit()
 
@@ -82,35 +83,6 @@ class BackupManager(object):
 
         except NoResultFound, e:
             return None
-
-    def get_palette_primary_data_loc_vol_entry(self, primary_agent):
-        """
-            Must pass in the primary agent.
-            (We could look it up, but so need to be called only
-            when we have a primary agent.)
-        """
-        # fixme: also support linux agent
-
-        if primary_agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
-            # fixme: log this?
-            return None
-
-        palette_primary_data_dir = primary_agent.data_dir
-        palette_primary_data_vol = palette_primary_data_dir.split(':')[0]
-
-        try:
-            return meta.Session.query(AgentVolumesEntry).\
-                filter(AgentVolumesEntry.agentid == primary_agent.agentid).\
-                filter(AgentVolumesEntry.name == palette_primary_data_vol).\
-                one()
-        except NoResultFound:
-            return None
-
-    def palette_primary_data_loc_path(self, agent):
-        """
-            Must pass in the primary agent.
-        """
-        return agent.data_dir
 
     @classmethod
     def is_pal_pri_data_vol(cls, agent, name):
