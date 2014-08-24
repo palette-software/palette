@@ -27,6 +27,7 @@ from agent import Agent
 from agentinfo import AgentVolumesEntry
 from auth import AuthManager
 from backup import BackupManager
+from credential import CredentialEntry, CredentialManager
 from diskcheck import DiskCheck, DiskException
 from firewall_manager import FirewallManager
 from state import StateManager
@@ -1614,6 +1615,7 @@ def main():
     StateControl.populate()
 
     server.auth = AuthManager(server)
+    server.cred = CredentialManager(server)
     server.extract = ExtractManager(server)
     server.hrman = HttpRequestManager(server)
 
