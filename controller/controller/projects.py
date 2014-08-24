@@ -51,7 +51,7 @@ class Project(meta.Base, BaseMixin):
 
         session = meta.Session()
         for row in data['']:
-            entry = Project.get(envid, row[0])
+            entry = Project.get(envid, row[0], default=None)
             if not entry:
                 entry = Project(envid=envid, projectid=row[0])
                 session.add(entry)
