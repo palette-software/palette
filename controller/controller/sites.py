@@ -62,7 +62,7 @@ class Site(meta.Base, BaseMixin):
 
         session = meta.Session()
         for row in data['']:
-            entry = Site.get(envid, row[0])
+            entry = Site.get(envid, row[0], default=None)
             if not entry:
                 entry = Site(envid=envid, siteid=row[0])
                 session.add(entry)
