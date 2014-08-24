@@ -179,7 +179,9 @@ class StorageApplication(PaletteRESTHandler):
         if req.method == 'GET':
             return {'value':self.sc.watermark_low}
         elif req.method == 'POST':
-            return self.handle_int_POST(req, StorageConfig.WATERMARK_LOW)
+            d = self.handle_int_POST(req, StorageConfig.WATERMARK_LOW)
+            self.telnet.send_cmd('info all', req=req)
+            return d
         else:
             raise exc.HTTPMethodNotAllowed()
 
@@ -187,7 +189,9 @@ class StorageApplication(PaletteRESTHandler):
         if req.method == 'GET':
             return {'value':self.sc.watermark_high}
         elif req.method == 'POST':
-            return self.handle_int_POST(req, StorageConfig.WATERMARK_HIGH)
+            d = self.handle_int_POST(req, StorageConfig.WATERMARK_HIGH)
+            self.telnet.send_cmd('info all', req=req)
+            return d
         else:
             raise exc.HTTPMethodNotAllowed()
 
