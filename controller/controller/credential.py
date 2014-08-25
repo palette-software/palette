@@ -42,4 +42,5 @@ class CredentialEntry(meta.Base, BaseMixin, BaseDictMixin):
 class CredentialManager(Manager):
 
     def get(self, key, **kwargs):
+        envid = self.server.environment.envid
         return CredentialEntry.get_by_envid_key(envid, key, **kwargs)

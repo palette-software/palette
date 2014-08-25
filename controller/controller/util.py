@@ -82,3 +82,18 @@ def str2bool(s):
 def timedelta_total_seconds(t2, t1):
     td = t2 - t1
     return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+
+def safecmd(cmd):
+    """Hackish function to obscure passwords in debug output (e.g. tabcmd)"""
+    L = []; obscure = False
+    for x in cmd.split():
+        if x == '--password':
+            obscure = True
+            L.append(x)
+            continue
+        if obscure:
+            L.append('<>')
+        else:
+            L.append(x)
+        obscure = False
+    return ' '.join(L)
