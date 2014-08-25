@@ -55,6 +55,7 @@ class HttpRequestEntry(meta.Base, BaseDictMixin):
 class HttpRequestManager(TableauCacheManager):
 
     def load(self, agent):
+        envid = self.server.environment.envid
         self.prune(agent)
 
         stmt = \
@@ -101,6 +102,7 @@ class HttpRequestManager(TableauCacheManager):
                                      site_id=row[17],
                                      currentsheet=row[18])
 
+            entry.envid = envid
             seconds = timedelta_total_seconds(completed_at, created_at)
 
             if entry.status >= 400 and entry.action == 'show':

@@ -55,7 +55,7 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
 
     @classmethod
     def get(cls, envid, wbid, **kwargs):
-        keys = {'envid':envid, 'workbookid':wbid}
+        keys = {'envid':envid, 'id':wbid}
         return cls.get_unique_by_keys(keys, **kwargs)
 
     @classmethod
@@ -116,7 +116,7 @@ class WorkbookManager(TableauCacheManager):
 
         session = meta.Session()
 
-        last_update = self.last_update()
+        last_update = self.last_update(envid)
         if last_update:
             # NOTE: the precision of the updated_at timestamp on windows
             # is greater than that on linux so this where clause always
@@ -125,6 +125,7 @@ class WorkbookManager(TableauCacheManager):
 
         data = agent.odbc.execute(stmt)
 
+        updates = []
         schema = self.schema(data)
 
         if 'error' in data or '' not in data:
@@ -175,7 +176,7 @@ class WorkbookManager(TableauCacheManager):
             wb.asset_key_id = row[32]
             wb.document_version = row[33]
 
-            wbu = WorkbookUpdateEntry.get(wbid, revision, default=None)
+            wbu = WorkbookUpdateEntry.get(wb.workbookid, revision, default=None)
             if not wbu:
                 system_users_id = users.get(wb.site_id, wb.owner_id)
                 timestamp = updated_at and updated_at or wb.created_at
@@ -187,15 +188,19 @@ class WorkbookManager(TableauCacheManager):
                 session.add(wbu)
 
         session.commit()
-        return {u'status': 'OK', u'schema': schema}
+
+        # Second pass - build the archive files.
+        for update in updates:
+            pass
+
+        return {u'status': 'OK',
+                u'schema': schema,
+                u'updates':str(len(updates))}
 
     # returns a UTC string or None
-    def last_update(self):
-        envid = self.server.environment.envid
-        session = meta.Session()
-        value = session.query(func.max(WorkbookEntry.updated_at)).\
-                filter(WorkbookEntry.envid == envid).\
-                one()
-        if value[0] is None:
+    def last_update(self, envid):
+        value = WorkbookEntry.max('updated_at', filters={'envid':envid})
+        if value is None:
             return None
-        return str(value[0])
+        return str(value)
+
