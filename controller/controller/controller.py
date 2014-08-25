@@ -715,10 +715,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     (source_agent.agentid != primary_agent.agentid)):
             try:
                 (primary_dir, primary_entry) = \
-                    DiskCheck.get_primary_loc(primary_agent, self.BACKUP_DIR)
+                    DiskCheck.get_primary_loc(primary_agent, self.BACKUP_DIR,
+                                               backup_entry.size)
             except DiskException, e:
                 self.log.error("restore_cmd: get_primary_loc failed: %s", str(e))
                 return self.error("restore_cmd: %s" % str(e))
+            self.log.debug("restore_cmd: primary_dir: %s", primary_dir)
         else:
             primary_dir = primary_agent.path.basename(backup_full_path)
 
@@ -953,8 +955,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn = agent.connection
         while True:
-            self.log.debug("about to get status of cli command '%s', xid %d",
-                           orig_cli_command, xid)
+            self.log.debug(
+                "about to get status of cli command '%s', xid %d, conn_id %d",
+                           orig_cli_command, xid, aconn.conn_id)
 
             # If the agent is initializing, then "agent_connected"
             # will not know about it yet.
@@ -1256,10 +1259,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         headers = {"Content-Type": "application/json"}
 
-        self.log.debug(\
-            "about to send an immediate command to '%s', type '%s', " + \
-                "method '%s', uri '%s', body '%s'",
-                    agent.displayname, agent.agent_type, method, uri, send_body)
+        self.log.debug(
+            "about to send an immediate command to '%s', conn_id %d, " + \
+                "type '%s', method '%s', uri '%s', body '%s'",
+                    agent.displayname, agent.conn_id, agent.agent_type,
+                    method, uri, send_body)
 
         aconn = agent.connection
         aconn.lock()
@@ -1298,8 +1302,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         finally:
             aconn.unlock()
 
-        self.log.debug("send immediate %s %s success, response: %s", \
-                                                method, uri, str(body))
+        self.log.debug(
+            "send immediate %s %s success, conn_id %d, response: %s",
+                                    method, uri, agent.conn_id, str(body))
         return body
 
     def displayname_cmd(self, aconn, uuid, displayname):
