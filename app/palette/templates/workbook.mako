@@ -48,7 +48,7 @@
 	    <span class="label">Site</span>{{site}} and <span class="label">Project</span>{{project}}
 	  </div>
           <div>
-	    <span class="label">Last Updated</span>{{last-updated-at}}
+	    <span class="label">Last Updated</span><a href="{{url}}">{{last-updated-at}}</a>
 	  </div>
         </div>
       </div>
@@ -59,7 +59,7 @@
         {{#updates}}
         <li>
           <div>
-	    <a href="#">rev{{revision}} {{timestamp}}</a> by {{username}}
+	    <a href="{{url}}">rev{{revision}} {{timestamp}}</a> by {{username}}
 	  </div>
 	  <div>
 	    <span class="label">Note</span>

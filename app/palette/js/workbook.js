@@ -12,6 +12,10 @@ function ($, template, common, EditBox)
                 $('#workbook-list').html(rendered);
                 common.bindEvents(); /* workbooks have '.event' class */
                 EditBox.setup();
+                // prevent the link from opening/closing the event.
+                $('.event > div.summary a').bind('click', function(event) {
+                    event.stopPropagation();
+                });
             });
         },
         error: common.ajaxError,
