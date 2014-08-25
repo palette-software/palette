@@ -125,6 +125,8 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
             for update in entry.updates:
                 d = update.todict(pretty=True)
                 d['username'] = self.getuser(update.system_users_id, users)
+                if 'url' not in d or not d['url']:
+                    d['url'] = '#'
                 updates.append(d)
             data['updates'] = updates
 
@@ -133,7 +135,9 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
             data['last-updated-by'] = self.getuser(system_users_id, users)
             data['last-updated-at'] = current.timestamp.strftime(DATEFMT)
 
-            # FIXME
+            if 'url' not in data or not data['url']:
+                data['url'] = '#'
+
             data['site'] = self.get_site(entry.site_id, cache=sites)
             data['project'] = self.get_project(entry.project_id, cache=projects)
 
