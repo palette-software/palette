@@ -451,7 +451,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.log.debug(
             "about to send the cli command to '%s', conn_id %d, " + \
             "type '%s' xid: %d, command: %s",
-            displayname, agent.connection.conn_id, agent.agent_type,
+            displayname, aconn.conn_id, agent.agent_type,
             req.xid, cli_command)
         try:
             aconn.httpconn.request('POST', '/cli', req.send_body, headers)
@@ -1259,13 +1259,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         headers = {"Content-Type": "application/json"}
 
+        aconn = agent.connection
+
         self.log.debug(
             "about to send an immediate command to '%s', conn_id %d, " + \
                 "type '%s', method '%s', uri '%s', body '%s'",
-                    agent.displayname, agent.conn_id, agent.agent_type,
+                    agent.displayname, aconn.conn_id, agent.agent_type,
                     method, uri, send_body)
 
-        aconn = agent.connection
         aconn.lock()
         body = {}
         try:
@@ -1304,7 +1305,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         self.log.debug(
             "send immediate %s %s success, conn_id %d, response: %s",
-                                    method, uri, agent.conn_id, str(body))
+                                    method, uri, aconn.conn_id, str(body))
         return body
 
     def displayname_cmd(self, aconn, uuid, displayname):
