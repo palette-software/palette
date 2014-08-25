@@ -820,6 +820,28 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = self.server.cli_cmd(cli_command, agent)
         self.report_status(body)
 
+
+    @usage('tabcmd [args...]')
+    def do_tabcmd(self, cmd):
+
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            return
+
+        self.ack()
+
+        if cmd.args:
+            args = cmd.args[0]
+            for arg in cmd.args[1:]:
+                if ' ' in arg:
+                    args += ' "' + arg + '" '
+                else:
+                    args += ' ' + arg
+        else:
+            args = ''
+        body = self.server.tabcmd(agent, args)
+        self.report_status(body)
+
     @usage('phttp GET|PUT <URL> [source-or-destination]')
     def do_phttp(self, cmd):
         if len(cmd.args) < 2:
