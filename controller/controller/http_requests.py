@@ -1,7 +1,8 @@
 from sqlalchemy import Column, String, DateTime, Boolean
 from sqlalchemy import Integer, BigInteger, SmallInteger
-from sqlalchemy import not_
+from sqlalchemy import func, UniqueConstraint, not_
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.schema import ForeignKey
 
 from akiri.framework.ext.sqlalchemy import meta
 
@@ -16,7 +17,11 @@ from sites import Site
 class HttpRequestEntry(meta.Base, BaseDictMixin):
     __tablename__ = 'http_requests'
 
-    reqid = Column(BigInteger, primary_key=True)
+
+    reqid = Column(BigInteger, unique=True, nullable=False,
+                   autoincrement=True, primary_key=True)
+    envid = Column(BigInteger, ForeignKey("environment.envid"), nullable=False)
+    id = Column(BigInteger, nullable=False)
     controller = Column(String)
     action = Column(String)
     http_referer = Column(String)
@@ -36,19 +41,18 @@ class HttpRequestEntry(meta.Base, BaseDictMixin):
     site_id = Column(Integer)
     currentsheet = Column(String)
 
+    __table_args__ = (UniqueConstraint('envid', 'id'),)
+
     @classmethod
     def get_lastid(cls):
         entry = meta.Session.query(HttpRequestEntry).\
-            order_by(HttpRequestEntry.reqid.desc()).first()
+            order_by(HttpRequestEntry.id.desc()).first()
         if entry:
-            return str(entry.reqid)
+            return str(entry.id)
         return None
 
 
 class HttpRequestManager(TableauCacheManager):
-
-    def __init__(self, server):
-        self.server = server
 
     def load(self, agent):
         self.prune(agent)
@@ -77,7 +81,7 @@ class HttpRequestManager(TableauCacheManager):
         for row in data['']:
             created_at = utc2local(parseutc(row[7]))
             completed_at = utc2local(parseutc(row[9]))
-            entry = HttpRequestEntry(reqid=row[0],
+            entry = HttpRequestEntry(id=row[0],
                                      controller=row[1],
                                      action = row[2],
                                      http_referer=row[3],
@@ -156,6 +160,7 @@ class HttpRequestManager(TableauCacheManager):
         pass
 
     def eventgen(self, key, agent, entry, usercache, body={}):
+        envid = self.server.environment.envid
         body = dict(body.items() +\
                         agent.todict().items() +\
                         entry.todict().items())
@@ -179,7 +184,7 @@ class HttpRequestManager(TableauCacheManager):
             body['tableau_server_url'] = url
 
         if entry.site_id and 'site' not in body:
-            site = Site.get(entry.site_id)
+            site = Site.get(envid, entry.site_id)
             if site:
                 body['site'] = site.name
 
@@ -192,5 +197,5 @@ class HttpRequestManager(TableauCacheManager):
     def prune(self, agent):
         maxid = self.get_last_http_requests_id(agent)
         meta.Session.query(HttpRequestEntry).\
-            filter(HttpRequestEntry.reqid > maxid).\
+            filter(HttpRequestEntry.id > maxid).\
             delete(synchronize_session='fetch')

@@ -4,6 +4,7 @@ from datetime import datetime
 from sqlalchemy import Column, BigInteger, Integer, String, DateTime
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy import UniqueConstraint
 
 from akiri.framework.ext.sqlalchemy import meta
 
@@ -26,7 +27,8 @@ class ExtractEntry(meta.Base, BaseDictMixin):
 
     extractid = Column(BigInteger, unique=True, nullable=False,
                        primary_key=True)
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False)
+    envid = Column(BigInteger, ForeignKey("environment.envid"), nullable=False)
+    id = Column(BigInteger, nullable=False)
     finish_code = Column(Integer, nullable=False)
     notes = Column(String)
     started_at = Column(DateTime)
@@ -38,11 +40,10 @@ class ExtractEntry(meta.Base, BaseDictMixin):
     system_users_id = Column(Integer)
     job_name = Column(String)
 
+    __table_args__ = (UniqueConstraint('envid', 'id'),)
+
 
 class ExtractManager(TableauCacheManager):
-
-    def __init__(self, server):
-        self.server = server
 
     def workbook_update(self, agent, entry, users, cache={}):
         title = entry.title.replace("'", "''")
@@ -82,6 +83,7 @@ class ExtractManager(TableauCacheManager):
         entry.project_id = int(row[2])
 
     def load(self, agent, check_odbc_state=True):
+        envid = self.server.environment.envid
 
         # FIXME
         if check_odbc_state and not self.server.odbc_ok():
@@ -116,8 +118,7 @@ class ExtractManager(TableauCacheManager):
         for row in data['']:
             started_at = utc2local(parseutc(row[3]))
             completed_at = utc2local(parseutc(row[4]))
-            entry = ExtractEntry(extractid=row[0],
-                                 agentid=agent.agentid,
+            entry = ExtractEntry(id=row[0],
                                  finish_code=row[1],
                                  notes=row[2],
                                  started_at=started_at,
@@ -126,6 +127,7 @@ class ExtractManager(TableauCacheManager):
                                  subtitle=row[6],
                                  site_id=row[7],
                                  job_name=row[8])
+            entry.envid = envid
 
             # Placeholder to be set by the next functions.
             entry.system_users_id = -1
