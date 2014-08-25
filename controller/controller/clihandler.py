@@ -856,7 +856,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         agents = self.server.agentmanager.all_agents()
         if len(agents) == 0:
-            json.dumps({})
+            self.report_status({})
             return
 
         pinfos = []
@@ -870,7 +870,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = self.server.get_pinfo(agent, update_agent=True)
             pinfos.append(body)
 
-        self.report_status({"pinfos": pinfos})
+        self.report_status({"info": pinfos})
 
     @usage('license')
     def do_license(self, cmd):

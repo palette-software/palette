@@ -270,7 +270,10 @@ class MonitorApplication(PaletteRESTHandler):
             agent['ip_address'] = entry.ip_address
             agent['listen_port'] = entry.listen_port
 
-            agent['creation-time'] = entry.creation_time.strftime(DATEFMT)
+            if entry.creation_time:
+                # Since creation_time is set on commit() there is a very
+                # small window where the creation_time may be None.
+                agent['creation-time'] = entry.creation_time.strftime(DATEFMT)
             if entry.modification_time != None:
                 agent['modification_time'] = \
                     entry.modification_time.strftime(DATEFMT)
