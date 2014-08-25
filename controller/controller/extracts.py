@@ -10,7 +10,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from event_control import EventControl
 from profile import UserProfile
-from mixin import BaseDictMixin
+from mixin import BaseMixin, BaseDictMixin
 from util import utc2local, parseutc, DATEFMT
 from cache import TableauCacheManager
 
@@ -22,7 +22,7 @@ def to_hhmmss(td):
     seconds %= 60
     return "%02i:%02i:%02i" % (hours, minutes, seconds)
 
-class ExtractEntry(meta.Base, BaseDictMixin):
+class ExtractEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = "extracts"
 
     extractid = Column(BigInteger, unique=True, nullable=False,
@@ -100,9 +100,9 @@ class ExtractManager(TableauCacheManager):
 
         session = meta.Session()
 
-        lastid = self.get_lastid()
+        lastid = self.get_lastid(envid)
         if not lastid is None:
-            stmt += " AND id > " + lastid
+            stmt += " AND id > " + str(lastid)
 
         stmt += " ORDER BY id ASC"
 
@@ -159,14 +159,9 @@ class ExtractManager(TableauCacheManager):
         return {u'status': 'OK',
                 u'count': len(data[''])}
 
-    # FIXME: user agentid
-    # FIXME: use MAX()
-    def get_lastid(self):
-        entry = meta.Session.query(ExtractEntry).\
-            order_by(ExtractEntry.extractid.desc()).first()
-        if entry:
-                return str(entry.extractid)
-        return None
+    # Returns None if the table is empty.
+    def get_lastid(self, envid):
+        return ExtractEntry.max('id', filters={'envid':envid})
 
     def get_last_background_jobs_id(self, agent):
         stmt = "SELECT MAX(id) FROM background_jobs"

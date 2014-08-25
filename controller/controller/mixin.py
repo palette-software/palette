@@ -1,4 +1,4 @@
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, func
 from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
 from util import DATEFMT
@@ -97,6 +97,16 @@ class BaseMixin(object):
         for clause in order_by:
             query = query.order_by(clause)
         return query.all()
+
+    @classmethod
+    def max(cls, column, filters={}, default=None):
+        query = meta.Session().query(func.max(getattr(cls, column)))
+        for key, value in filters.items():
+            query = query.filter(getattr(cls, key) == value)
+        value = query.one()
+        if value[0] is None:
+            return default
+        return value[0]
 
 
 class OnlineMixin(object):

@@ -10,7 +10,7 @@ class DataConnection(meta.Base):
 
     # FIXME: BigInteger
     dcid = Column(Integer, primary_key=True)
-    # FIXME: add agentid
+    # FIXME: add envid
     server = Column(String)
     dbclass = Column(String)
     port = Column(Integer)
