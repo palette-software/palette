@@ -175,9 +175,6 @@ class WorkbookManager(TableauCacheManager):
             wb.asset_key_id = row[32]
             wb.document_version = row[33]
 
-            # Must commit after each row so that wookbookid(wb.id) is set.
-            # session.commit()
-
             wbu = WorkbookUpdateEntry.get(wbid, revision, default=None)
             if not wbu:
                 system_users_id = users.get(wb.site_id, wb.owner_id)
