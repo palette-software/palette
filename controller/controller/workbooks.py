@@ -236,7 +236,7 @@ class WorkbookManager(TableauCacheManager):
                 u'schema': schema,
                 u'updates':str(len(updates))}
 
-    # FIXME
+    # FIXME: DiskCheck.get_primary_loc(agent, self.LOG_DIR)
     def agent_tmpdir(self, agent):
         return 'C:\\'
 
