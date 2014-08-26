@@ -1,7 +1,7 @@
 from sqlalchemy import DateTime, func
 from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
-from util import DATEFMT
+from util import DATEFMT, utc2local
 
 import os
 import json
@@ -20,6 +20,7 @@ class BaseDictMixin(object):
                 continue
             if isinstance(c.type, DateTime):
                 try:
+                    value = utc2local(value) # FIXME
                     value = value.strftime(DATEFMT)
                 except AttributeError, e:
                      # It is possible this value has been set directly but

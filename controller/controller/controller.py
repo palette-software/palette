@@ -467,7 +467,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 return tokens[0] + '//' + tokens[2]
         return None
 
-    def tabcmd(self, agent, args=''):
+    def tabcmd(self, args, agent):
         cred = self.cred.get('primary', default=None)
         if cred is None:
             cred = self.cred.get('secondary', default=None)

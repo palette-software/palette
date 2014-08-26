@@ -135,13 +135,10 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
                 updates.append(d)
             data['updates'] = updates
 
-            current = entry.updates[0]
-            system_users_id = current.system_users_id
-            data['last-updated-by'] = self.getuser(system_users_id, users)
-            data['last-updated-at'] = current.timestamp.strftime(DATEFMT)
-
-            if 'url' not in data or not data['url']:
-                data['url'] = '#'
+            current = updates[0]
+            data['last-updated-by'] = d['username']
+            data['last-updated-at'] = d['timestamp']
+            data['url'] = d['url']
 
             data['site'] = self.get_site(entry.site_id, cache=sites)
             data['project'] = self.get_project(entry.project_id, cache=projects)
