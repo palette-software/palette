@@ -1,4 +1,6 @@
+import os
 import time
+
 from sqlalchemy import Column, BigInteger, Integer, Boolean, String, DateTime
 from sqlalchemy import func, UniqueConstraint
 from sqlalchemy.schema import ForeignKey
@@ -9,7 +11,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from mixin import BaseMixin, BaseDictMixin
 from cache import TableauCacheManager
-from util import odbc2dt
+from util import odbc2dt, failed
 
 class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = "workbooks"
@@ -51,11 +53,12 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
     assert_key_id = Column(Integer)
     document_version = Column(String)
 
-    __table_args__ = (UniqueConstraint('envid', 'id'),)
+    __table_args__ = (UniqueConstraint('envid', 'id'), 
+                      UniqueConstraint('envid', 'name'))
 
     @classmethod
-    def get(cls, envid, wbid, **kwargs):
-        keys = {'envid':envid, 'id':wbid}
+    def get(cls, envid, name, **kwargs):
+        keys = {'envid':envid, 'name':name}
         return cls.get_unique_by_keys(keys, **kwargs)
 
     @classmethod
@@ -70,9 +73,9 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
                   autoincrement=True, primary_key=True)
     workbookid = Column(BigInteger, ForeignKey("workbooks.workbookid"))
     revision = Column(String, nullable=False)
-    timestamp = Column(DateTime, server_default=func.now())
+    timestamp = Column(DateTime, nullable=False)
     system_users_id = Column(Integer)
-    url = Column(String, unique=True)
+    url = Column(String)  # FIXME: make this unique.
     note = Column(String)
 
     # NOTE: system_users_id is not a foreign key to avoid load dependencies.
@@ -83,6 +86,10 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     )
 
     __table_args__ = (UniqueConstraint('workbookid', 'revision'),)
+
+    # ideally: site-project-name-rev.twb
+    def filename(self):
+        return self.workbook.repository_url + '-rev' + self.revision + '.twb'
 
     @classmethod
     def get(cls, wbid, revision, **kwargs):
@@ -98,7 +105,13 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     def get_by_url(cls, url, **kwargs):
         return cls.get_unique_by_keys({'url': url}, **kwargs)
 
+
 class WorkbookManager(TableauCacheManager):
+
+    def __init__(self, server):
+        super(WorkbookManager, self).__init__(server)
+        path = server.config.get('palette', 'workbook_archive_dir')
+        self.path = os.path.abspath(path)
 
     # really sync *and* load
     def load(self, agent):
@@ -120,12 +133,12 @@ class WorkbookManager(TableauCacheManager):
 
         session = meta.Session()
 
-        last_update = self.last_update(envid)
-        if last_update:
+        last_created_at = self.last_created_at(envid)
+        if last_created_at:
             # NOTE: the precision of the updated_at timestamp on windows
-            # is greater than that on linux so this where clause always
+            # is greater than that on linux so this where clause often
             # returns at least one entry (if the table is non-empty)
-            stmt += " WHERE updated_at > '" + last_update + "'"
+            stmt += " WHERE created_at > '" + last_created_at + "'"
 
         data = agent.odbc.execute(stmt)
 
@@ -139,15 +152,17 @@ class WorkbookManager(TableauCacheManager):
 
         for row in data['']:
             wbid = row[0]
+            name = row[1]
             revision = row[22]
             updated_at = odbc2dt(row[5])
 
-            wb = WorkbookEntry.get(envid, wbid, default=None)
+            wb = WorkbookEntry.get(envid, name, default=None)
             if wb is None:
-                wb = WorkbookEntry(envid=envid, id=wbid)
+                wb = WorkbookEntry(envid=envid, id=wbid, name=name)
                 session.add(wb)
+            else:
+                wb.id = wbid  # id is updated with each revision.
 
-            wb.name = row[1]
             wb.repository_url = row[2]
             wb.description = row[3]
             wb.created_at = odbc2dt(row[4])
@@ -183,27 +198,64 @@ class WorkbookManager(TableauCacheManager):
             wbu = WorkbookUpdateEntry.get(wb.workbookid, revision, default=None)
             if not wbu:
                 system_users_id = users.get(wb.site_id, wb.owner_id)
-                timestamp = updated_at and updated_at or wb.created_at
+                # A new row is created each time in the Tableau database,
+                # so the created_at time is actually the publish time.
                 wbu = WorkbookUpdateEntry(workbookid=wb.workbookid,
                                           revision=revision,
                                           system_users_id = system_users_id,
-                                          timestamp=timestamp,
+                                          timestamp=wb.created_at,
                                           url='')
                 session.add(wbu)
+                updates.append(wbu)
 
         session.commit()
 
         # Second pass - build the archive files.
         for update in updates:
-            pass
+            filename = self.retrieve_workbook(update, agent)
+            if not filename:
+                self.server.log.error('Failed to retrieve workbook: %s %s',
+                                      update.workbook.repository_url,
+                                      update.revision)
+                continue
+            update.url = filename
+            # retrieval is a long process, so commit after each.
+            session.commit()
 
         return {u'status': 'OK',
                 u'schema': schema,
                 u'updates':str(len(updates))}
 
+    # FIXME
+    def agent_tmpdir(self, agent):
+        return 'C:\\'
+
+    # returns the filename *on the agent* or None on error.
+    def build_workbook(self, update, agent, filename=None):
+        if not filename: filename = update.filename()
+        url = '/workbooks/' + update.workbook.repository_url + '.twb'
+        dst = agent.path.join(self.agent_tmpdir(agent), filename)
+        cmd = 'get %s -f "%s"' % (url, dst)
+        body = self.server.tabcmd(cmd, agent)
+        if failed(body):
+            return None
+        return dst
+
+    # returns the filename - in self.path - or None on error.
+    def retrieve_workbook(self, update, agent):
+        filename = update.filename()
+        path = self.build_workbook(update, agent)
+        if not path:
+            return None
+        body = agent.filemanager.save(path, target=self.path)
+        if failed(body):
+            return None
+        return filename
+
+    # This is the time the last revision was created.
     # returns a UTC string or None
-    def last_update(self, envid):
-        value = WorkbookEntry.max('updated_at', filters={'envid':envid})
+    def last_created_at(self, envid):
+        value = WorkbookEntry.max('created_at', filters={'envid':envid})
         if value is None:
             return None
         return str(value)

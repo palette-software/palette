@@ -839,7 +839,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                     args += ' ' + arg
         else:
             args = ''
-        body = self.server.tabcmd(agent, args)
+        body = self.server.tabcmd(args, agent)
         self.report_status(body)
 
     @usage('phttp GET|PUT <URL> [source-or-destination]')
