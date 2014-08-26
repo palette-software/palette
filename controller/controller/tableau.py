@@ -147,6 +147,7 @@ class TableauStatusMonitor(threading.Thread):
                                         "main_state: %s", status, main_state)
             return  # fixme: do something more drastic than return?
 
+        # The last state was PENDING.
         if main_state == StateManager.STATE_PENDING:
             self.stateman.update(status)
             data = agent.todict()
@@ -201,7 +202,8 @@ class TableauStatusMonitor(threading.Thread):
             self.stateman.update(StateManager.STATE_DEGRADED)
             self.server.event_control.gen(EventControl.STATE_DEGRADED,
                                           dict(body.items() + data.items()))
-
+        self.log.info("set_main_state: No change. main_state %s, state: %s",
+                           main_state, status)
     def run(self):
         while True:
             self.log.debug("status-check: About to timeout or wait for a " + \

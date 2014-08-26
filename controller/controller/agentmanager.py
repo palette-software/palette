@@ -187,7 +187,7 @@ class AgentManager(threading.Thread):
        """
 
         self.lock()
-        self.log.debug("new agent: name %s, uuid %s, conn_id %d", \
+        self.log.debug("register: new agent name %s, uuid %s, conn_id %d", \
                        agent.hostname, agent.uuid, agent.connection.conn_id)
 
         new_agent_type = agent.agent_type
@@ -769,20 +769,44 @@ class AgentManager(threading.Thread):
         except NoResultFound, e:
             raise ValueError('No agent found with uuid=%s' % (uuid))
 
-    def forget(self, agentid):
-        if not agentid:
+    def forget(self, agent):
+        """Looks for an agent with the same uuid and conn_id.
+           Returns:
+                True    success
+                False   couldn't find it or invalid agent.
+        """
+
+        if not agent.agentid:
             self.log.debug("forget:  Won't try to forget agentid of None")
             # Can happen if we sent a failed command to the agent
             # that hasn't been remembered yet.
-            return
+            return False
 
         session = meta.Session()
-        #fixme: add try
-        entry = session.query(Agent).\
-            filter(Agent.agentid == agentid).\
-            one()
-        entry.last_disconnect_time = func.now()
+        try:
+            entry = session.query(Agent).\
+                filter(Agent.agentid == agent.agentid).\
+                filter(Agent.conn_id == agent.conn_id).\
+                one()
+        except NoResultFound, e:
+            self.log.debug(
+                ("forget: Not found (was probably recently updated with a " + \
+                "new conn_id by a new thread).  agentid: %d, conn_id: %d") % \
+                (agent.agentid, agent.conn_id))
+
+        else:
+            self.log.debug("forget: Forgot agentid: %d, conn_id: %d",
+                           agent.agentid, agent.conn_id)
+
+        session.query(Agent).\
+            filter(Agent.agentid == agent.agentid).\
+            update({'last_disconnect_time': func.now()},
+                   synchronize_session=False)
+
+        #If we do this, conn_id is overwritten with the wrong/old value.
+        #entry.last_disconnect_time = func.now()
         session.commit()
+        return True
 
     # Return the list of all agents
     def all_agents(self):
@@ -875,10 +899,12 @@ class AgentManager(threading.Thread):
 
         self.lock()
         session = meta.Session()
-        session.merge(agent)
+        make_transient(agent)
 
         uuid = agent.uuid
         conn_id = agent.connection.conn_id
+        forgot = False
+        self.log.debug("remove_agent loc 20: conn_id: %d, %d", agent.connection.conn_id, agent.conn_id)
         if self.agents.has_key(conn_id):
             self.log.debug("Removing agent with conn_id %d, uuid %s, " + \
                            "name %s, reason: %s", conn_id, uuid,
@@ -894,19 +920,27 @@ class AgentManager(threading.Thread):
                                 (agent.displayname, conn_id, uuid)
                 self.server.event_control.gen(EventControl.AGENT_DISCONNECT,
                                               data)
-            self.forget(agent.agentid)
+            self.log.debug("remove_agent loc 22: conn_id: %d, %d", agent.connection.conn_id, agent.conn_id)
+            forgot = self.forget(agent)
+            self.log.debug("remove_agent loc 23: conn_id: %d, %d", agent.connection.conn_id, agent.conn_id)
             self.log.debug("remove_agent: closing agent socket.")
             if self._close(agent.connection.socket):
-                self.log.debug("remove_agent: close agent socket succeeded.")
+                self.log.debug("remove_agent: close agent socket succeeded")
             else:
                 self.log.debug("remove_agent: close agent socket failed")
 
             del self.agents[conn_id]    # Deletes original one
         else:
-            self.log.debug("remove_agent: No such agent with conn_id %d",
-                           conn_id)
+            self.log.debug("remove_agent: No agent with conn_id %d", conn_id)
+
+        self.log.debug("remove_agent loc 25: conn_id: %d, %d", agent.connection.conn_id, agent.conn_id)
+        if not forgot:
+            self.unlock()
+            return False
+
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-            self.log.debug("remove_agent: Initializing state entries on removal")
+            self.log.debug(
+                        "remove_agent: Initializing state entries on removal")
             self.server.stateman.update(StateManager.STATE_DISCONNECTED)
             # Note: We don't update/clear the "reported" state from
             # a previous agent, so the user will see the last
@@ -916,7 +950,7 @@ class AgentManager(threading.Thread):
             session.expunge(agent)      # Removes the other one
         except InvalidRequestError, e:
             self.log.error("remove_agent expunge error: %s", str(e))
-        make_transient(agent)
+        #make_transient(agent)  # done above
         self.log.error("after expunge: %s", str(agent.todict()))
         self.unlock()
 
@@ -954,11 +988,8 @@ class AgentManager(threading.Thread):
         asocketmon.start()
 
         session = meta.Session()
-        if self.server.stateman.get_state() == StateManager.STATE_UPGRADING:
-            self.log.info(\
-                "AgentManager changing initial state from UPGRADING to UNKNOWN")
-            self.server.stateman.update(StateManager.STATE_UNKNOWN)
-            session.commit()
+        self.server.stateman.update(StateManager.STATE_DISCONNECTED)
+        session.commit()
 
         while True:
             if self.server.stateman.get_state() == StateManager.STATE_UPGRADING:
@@ -1022,13 +1053,14 @@ class AgentManager(threading.Thread):
         except socket.error, e:
             peername = "Unknown peername: %s" % str(e)
 
-        self.log.debug("New socket accepted from %s.", peername)
         conn.settimeout(self.socket_timeout)
 
         session = meta.Session()
 
         try:
             aconn = AgentConnection(self.server, conn, addr)
+            self.log.debug("New socket accepted from %s, conn_id %d",
+                           peername, aconn.conn_id)
 
             # sleep for 100ms to prevent:
             #  'An existing connection was forcibly closed by the remote host'
@@ -1108,8 +1140,8 @@ class AgentManager(threading.Thread):
             else:
                 displayname_needed_setting = False
 
-            # Now that the agent type, we can update the volume information
-            # from pinfo.
+            # Now that we know the agent type, we can update the
+            # volume information from pinfo.
             if not self.update_agent_pinfo_vols(agent, pinfo):
                 self.log.error(
                     "pinfo vols bad for agent with uuid: '%s'.  " \
