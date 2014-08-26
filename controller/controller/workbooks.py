@@ -13,12 +13,15 @@ from mixin import BaseMixin, BaseDictMixin
 from cache import TableauCacheManager
 from util import odbc2dt, failed
 
+# NOTE: system_user_id is maintained in two places.  This is not ideal from
+# a db design perspective but makes the find-by-current-owner code clearer.
 class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = "workbooks"
 
     workbookid = Column(BigInteger, unique=True, nullable=False,
                         autoincrement=True, primary_key=True)
     envid = Column(BigInteger, ForeignKey("environment.envid"), nullable=False)
+    system_user_id = Column(Integer)
     id = Column(BigInteger, nullable=False)
     name = Column(String)
     repository_url = Column(String)
@@ -63,7 +66,12 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
 
     @classmethod
     def get_all_by_envid(cls, envid):
-        return cls.get_all_by_keys({'envid':envid})
+        return cls.get_all_by_keys({'envid':envid}, order_by='name')
+
+    @classmethod
+    def get_all_by_system_user(cls, envid, system_user_id):
+        filters = {'envid':envid, 'system_user_id':system_user_id}
+        return cls.get_all_by_keys(filters, order_by='name')
 
 
 class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
@@ -74,11 +82,11 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     workbookid = Column(BigInteger, ForeignKey("workbooks.workbookid"))
     revision = Column(String, nullable=False)
     timestamp = Column(DateTime, nullable=False)
-    system_users_id = Column(Integer)
+    system_user_id = Column(Integer)
     url = Column(String)  # FIXME: make this unique.
     note = Column(String)
 
-    # NOTE: system_users_id is not a foreign key to avoid load dependencies.
+    # NOTE: system_user_id is not a foreign key to avoid load dependencies.
 
     workbook = relationship('WorkbookEntry', \
         backref=backref('updates',
@@ -195,14 +203,16 @@ class WorkbookManager(TableauCacheManager):
             wb.asset_key_id = row[32]
             wb.document_version = row[33]
 
+            system_user_id = users.get(wb.site_id, wb.owner_id)
+            wb.system_user_id = system_user_id;
+
             wbu = WorkbookUpdateEntry.get(wb.workbookid, revision, default=None)
             if not wbu:
-                system_users_id = users.get(wb.site_id, wb.owner_id)
                 # A new row is created each time in the Tableau database,
                 # so the created_at time is actually the publish time.
                 wbu = WorkbookUpdateEntry(workbookid=wb.workbookid,
                                           revision=revision,
-                                          system_users_id = system_users_id,
+                                          system_user_id = system_user_id,
                                           timestamp=wb.created_at,
                                           url='')
                 session.add(wbu)
