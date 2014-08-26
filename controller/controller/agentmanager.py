@@ -37,10 +37,11 @@ class AgentConnection(object):
 
     _CID = 1
 
-    def __init__(self, server, conn, addr):
+    def __init__(self, server, conn, addr, peername):
         self.server = server
         self.socket = conn
         self.addr = addr
+        self.peername = peername
         self.httpconn = False   # Used by the controller
         self.auth = {}          # Used by the controller
         self.agentid = None
@@ -1058,9 +1059,10 @@ class AgentManager(threading.Thread):
         session = meta.Session()
 
         try:
-            aconn = AgentConnection(self.server, conn, addr)
-            self.log.debug("New socket accepted from %s, conn_id %d",
-                           peername, aconn.conn_id)
+            aconn = AgentConnection(self.server, conn, addr, peername)
+            self.log.debug(
+                "New socket accepted from addr %s, peername %s, conn_id %d",
+                           addr, peername, aconn.conn_id)
 
             # sleep for 100ms to prevent:
             #  'An existing connection was forcibly closed by the remote host'

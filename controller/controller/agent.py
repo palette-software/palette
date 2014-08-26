@@ -29,6 +29,7 @@ class Agent(meta.Base, BaseDictMixin):
     agent_type = Column(String)
     version = Column(String)
     ip_address = Column(String)
+    peername = Column(String)
     listen_port = Column(Integer)
     username = Column(String)
     password = Column(String)
@@ -157,6 +158,7 @@ class Agent(meta.Base, BaseDictMixin):
          entry.hostname=body['hostname']
          entry.fqdn=body['fqdn']
          entry.ip_address=body['ip-address']
+         entry.peername=aconn.peername
          entry.listen_port=body['listen-port']
          # Note: Do not set agent_type here since 1) We need to know
          # what the agent_type was in the case where the row existed, and
