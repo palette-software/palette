@@ -221,6 +221,13 @@ class WorkbookData(BaseApplication):
             return Environment.get()
         raise AttributeError(name)
 
+    def check_permission(self, req, update):
+        if req.remote_user.roleid > Role.NO_ADMIN:
+            return True
+        if req.remote_user.system_users_id == update.workbook.system_user_id:
+            return True
+
+    @translate_remote_user
     def handle(self, req):
         envid = self.environment.envid
 
@@ -232,7 +239,8 @@ class WorkbookData(BaseApplication):
         if update is None:
             return exc.HTTPNotFound()
 
-        # FIXME: check permissions on the update: current owner or admin
+        if not self.check_permission(req, update):
+            return exc.HTTPForbidden()
 
         path = os.path.join(self.path, path_info)
         if not os.path.isfile(path):
