@@ -247,6 +247,10 @@ class EventControlManager(object):
         # set server-url
         data['server_url'] = self.server.system.get('server-url',
                                                     default='localhost')
+        data['disk_watermark_low'] = self.server.system.get('disk-watermark-low', 
+                                                    default='')
+        data['disk_watermark_high'] = self.server.system.get('disk-watermark-high', 
+                                                    default='')
 
         # Use the data dict for template substitution.
         try:
