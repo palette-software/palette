@@ -72,7 +72,7 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     revision = Column(String, nullable=False)
     timestamp = Column(DateTime, server_default=func.now())
     system_users_id = Column(Integer)
-    url = Column(String)
+    url = Column(String, unique=True)
     note = Column(String)
 
     # NOTE: system_users_id is not a foreign key to avoid load dependencies.
@@ -93,6 +93,10 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     @classmethod
     def get_by_id(cls, wuid, **kwargs):
         return cls.get_unique_by_keys({'wuid': wuid}, **kwargs)
+
+    @classmethod
+    def get_by_url(cls, url, **kwargs):
+        return cls.get_unique_by_keys({'url': url}, **kwargs)
 
 class WorkbookManager(TableauCacheManager):
 

@@ -1,13 +1,15 @@
+import os
 import socket
 
 from webob import exc
+from paste.fileapp import FileApp
 
-from akiri.framework.api import RESTApplication
+from akiri.framework.api import RESTApplication, BaseApplication
 from akiri.framework.config import store
 
 from akiri.framework.ext.sqlalchemy import meta
 
-from controller.domain import Domain
+from controller.environment import Environment
 from controller.workbooks import WorkbookEntry, WorkbookUpdateEntry
 from controller.util import UNDEFINED
 from controller.profile import UserProfile, Role
@@ -127,6 +129,9 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
                 d['username'] = self.getuser(update.system_users_id, users)
                 if 'url' not in d or not d['url']:
                     d['url'] = '#'
+                else:
+                    # FIXME: make this configurable
+                    d['url'] = '/data/workbook-archive/' + d['url']
                 updates.append(d)
             data['updates'] = updates
 
@@ -190,3 +195,41 @@ class TabcmdPage(PalettePage, CredentialMixin):
 
 def make_tabcmd(global_conf):
     return TabcmdPage(global_conf)
+
+
+class WorkbookData(BaseApplication):
+
+    def __init__(self, global_conf, path=None):
+        super(WorkbookData, self).__init__(global_conf)
+        if not path:
+            dirname = os.path.dirname(global_conf['__file__'])
+            path = os.path.join(dirname, 'data', 'workbook-archive')
+        self.path = os.path.abspath(path)
+        if not os.path.isdir(self.path):
+            os.makedirs(self.path)
+
+    def __getattr__(self, name):
+        if name == 'environment':
+            return Environment.get()
+        raise AttributeError(name)
+
+    def handle(self, req):
+        envid = self.environment.envid
+
+        path_info = req.environ['PATH_INFO']
+        if path_info.startswith('/'):
+            path_info = path_info[1:]
+
+        update = WorkbookUpdateEntry.get_by_url(path_info, default=None)
+        if update is None:
+            return exc.HTTPNotFound()
+
+        # FIXME: check permissions on the update: current owner or admin
+
+        path = os.path.join(self.path, path_info)
+        if not os.path.isfile(path):
+            return exc.HTTPGone()
+        return FileApp(path)
+
+def make_workbook_data(global_conf, path=None):
+    return WorkbookData(global_conf)
