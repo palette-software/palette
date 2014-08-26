@@ -19,7 +19,8 @@ from controller.sites import Site
 from controller.projects import Project
 
 from page import PalettePage, FAKEPW
-from rest import PaletteRESTHandler, required_parameters, required_role
+from rest import PaletteRESTHandler
+from rest import translate_remote_user, required_parameters, required_role
 
 __all__ = ["WorkbookApplication"]
 
@@ -36,19 +37,19 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
 
     NAME = 'workbooks'
 
-    def getuser_fromdb(self, system_users_id):
-        if system_users_id < 0:
+    def getuser_fromdb(self, system_user_id):
+        if system_user_id < 0:
             return UNDEFINED
-        user = UserProfile.get_by_system_users_id(system_users_id)
+        user = UserProfile.get_by_system_users_id(system_user_id)
         if not user:
             return UNDEFINED
         return user.display_name()
 
-    def getuser(self, system_users_id, cache={}):
-        if system_users_id in cache:
-            return cache[system_users_id]
-        user = self.getuser_fromdb(system_users_id)
-        cache[system_users_id] = user
+    def getuser(self, system_user_id, cache={}):
+        if system_user_id in cache:
+            return cache[system_user_id]
+        user = self.getuser_fromdb(system_user_id)
+        cache[system_user_id] = user
         return user
 
     def get_cred(self, name):
@@ -90,6 +91,7 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         meta.Session.commit()
         return {'value':value}
 
+    @required_role(Role.MANAGER_ADMIN)
     def handle_user(self, req, key):
         cred = self.get_cred(key)
         if req.method == 'POST':
@@ -97,6 +99,7 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         value = cred and cred.user or ''
         return {'value': value}
         
+    @required_role(Role.MANAGER_ADMIN)
     def handle_passwd(self, req, key):
         cred = self.get_cred(key)
         if req.method == 'POST':
@@ -105,6 +108,7 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         return {'value': value}
 
     # GET doesn't have a ready meaning.
+    @required_role(Role.MANAGER_ADMIN)
     @required_parameters('id', 'value')
     def handle_update_note(self, req     ):
         wuid = req.POST['id']
@@ -115,18 +119,26 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         meta.Session.commit()
         return {'value': update.note}
 
+    @translate_remote_user
     def handle_get(self, req):
         users = {}; sites={}; projects={}  # lookup caches
         envid = self.environment.envid
 
+        if req.remote_user.roleid > Role.NO_ADMIN:
+            entries = WorkbookEntry.get_all_by_envid(envid)
+        else:
+            system_user_id = req.remote_user.system_users_id
+            entries = WorkbookEntry.get_all_by_system_user(envid,
+                                                           system_user_id)
+
         workbooks = []
-        for entry in WorkbookEntry.get_all_by_envid(envid):
+        for entry in entries:
             data = entry.todict(pretty=True)
 
             updates = []
             for update in entry.updates:
                 d = update.todict(pretty=True)
-                d['username'] = self.getuser(update.system_users_id, users)
+                d['username'] = self.getuser(update.system_user_id, users)
                 if 'url' not in d or not d['url']:
                     d['url'] = '#'
                 else:
@@ -147,7 +159,6 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
 
         return {'workbooks': workbooks}
 
-    @required_role(Role.MANAGER_ADMIN)
     def handle(self, req):
         path_info = self.base_path_info(req)
         if path_info == 'primary/user':

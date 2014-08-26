@@ -7,6 +7,7 @@ from profile import UserProfile, Publisher, License
 from system import SystemManager
 from util import DATEFMT, UTCFMT, utc2local, parseutc
 
+# FIXME: use base Manager class.
 class AuthManager(object):
 
     LAST_IMPORT_KEY = 'last-user-import'

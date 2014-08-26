@@ -37,6 +37,13 @@ def required_role(name):
         return realf
     return wrapper
 
+def translate_remote_user(f):
+    def realf(self, req, *args, **kwargs):
+        if isinstance(req.remote_user, basestring):
+            req.remote_user = UserProfile.get_by_name(req.remote_user)
+        return f(self, req, *args, **kwargs)
+    return realf
+
 class PaletteRESTHandler(RESTApplication):
 
     def __init__(self, global_conf):
