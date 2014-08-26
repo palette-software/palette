@@ -905,7 +905,6 @@ class AgentManager(threading.Thread):
         uuid = agent.uuid
         conn_id = agent.connection.conn_id
         forgot = False
-        self.log.debug("remove_agent loc 20: conn_id: %d, %d", agent.connection.conn_id, agent.conn_id)
         if self.agents.has_key(conn_id):
             self.log.debug("Removing agent with conn_id %d, uuid %s, " + \
                            "name %s, reason: %s", conn_id, uuid,
@@ -921,9 +920,7 @@ class AgentManager(threading.Thread):
                                 (agent.displayname, conn_id, uuid)
                 self.server.event_control.gen(EventControl.AGENT_DISCONNECT,
                                               data)
-            self.log.debug("remove_agent loc 22: conn_id: %d, %d", agent.connection.conn_id, agent.conn_id)
             forgot = self.forget(agent)
-            self.log.debug("remove_agent loc 23: conn_id: %d, %d", agent.connection.conn_id, agent.conn_id)
             self.log.debug("remove_agent: closing agent socket.")
             if self._close(agent.connection.socket):
                 self.log.debug("remove_agent: close agent socket succeeded")
@@ -934,7 +931,6 @@ class AgentManager(threading.Thread):
         else:
             self.log.debug("remove_agent: No agent with conn_id %d", conn_id)
 
-        self.log.debug("remove_agent loc 25: conn_id: %d, %d", agent.connection.conn_id, agent.conn_id)
         if not forgot:
             self.unlock()
             return False
