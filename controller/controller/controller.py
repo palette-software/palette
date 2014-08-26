@@ -1322,7 +1322,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         try:
             # fixme: add size estimate/required?
             (primary_dir, primary_entry) = \
-                    DiskCheck.get_primary_loc(primary_agent, self.LOG_DIR)
+                    DiskCheck.get_primary_loc(agent, self.LOG_DIR)
         except DiskException, e:
             self.log.error("ziplogs_cmd: %s", str(e))
             return self.error("ziplogs_cmd: %s" % str(e))
