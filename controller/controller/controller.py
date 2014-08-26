@@ -1331,9 +1331,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.event_control.gen(EventControl.ZIPLOGS_STARTED,
                                data, userid=userid)
                                
-        cmd = 'tabadmin ziplogs -l -n -a \\\"%s\\\"' % primary_dir
+        cmd = 'tabadmin ziplogs -f -l -n -a \\\"%s\\\"' % primary_dir
         body = self.cli_cmd(cmd, agent)
-        body[u'info'] = u'tabadmin ziplogs -l -n -a ziplog_name'
+        body[u'info'] = unicode(cmd)
 
         if 'error' in body:
             self.event_control.gen(EventControl.ZIPLOGS_FAILED,
