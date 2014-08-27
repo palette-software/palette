@@ -1,7 +1,6 @@
 import os
 import sys
 import socket
-import argparse
 import json
 import hashlib
 import ntpath
@@ -12,68 +11,34 @@ class UpgradeException(Exception):
         Exception.__init__(self, errmsg)
 
 class UpgradeHandler(object):
-    def __init__(self):
-        parser = argparse.ArgumentParser(sys.argv[0])
-
-        parser.add_argument('-v', '--verbose', dest='verbose',
-                                                    action='store_true')
-        parser.add_argument('--hostname', dest='hostname', default='localhost')
-        parser.add_argument('--port', dest='port', type=int, default=9000)
-        parser.add_argument('--envid', dest='envid', type=int, default=1)
-
-        group1 = parser.add_mutually_exclusive_group(required=True)
-        group1.add_argument('--target-dir', dest='target_dir')
-        group1.add_argument('--console', '-c', dest='console',
-                                                        action='store_true')
-
-        group2 = parser.add_mutually_exclusive_group()
-        group2.add_argument('--displayname', dest='displayname')
-        group2.add_argument('--uuid', dest='uuid')
-        group2.add_argument('--type', dest='agent_type', default='primary')
-
-        parser.add_argument("newfile")
-
-        args = parser.parse_args()
-
-        self.verbose = args.verbose
-        self.hostname = args.hostname
-        self.port = args.port
-        self.envid = args.envid
-        self.newfile = os.path.abspath(args.newfile)
-
-        self.console = args.console
-
-        self.target_dir = args.target_dir
-
-        self.displayname = args.displayname
-        self.uuid = args.uuid
-        self.agent_type = args.agent_type
+    def __init__(self, args):
+        self.args = args
 
         self.connected = False
 
-        self.preamble = "/envid=%d" % (self.envid)
+        self.preamble = "/envid=%d" % (args.envid)
 
-        if self.displayname:
-            self.preamble += ' /displayname="%s"' % (self.displayname)
+        if args.displayname:
+            self.preamble += ' /displayname="%s"' % (args.displayname)
             self.spec_str = "displayname"
-            self.spec_val = self.displayname
-        elif self.uuid:
-            self.preamble += ' /uuid=%s' % (self.uuid)
+            self.spec_val = args.displayname
+        elif args.uuid:
+            self.preamble += ' /uuid=%s' % (args.uuid)
             self.spec_str = "uuid"
-            self.spec_val = self.uuid
-        elif self.agent_type:
-            self.preamble += ' /type=%s' % (self.agent_type)
+            self.spec_val = args.uuid
+        elif args.agent_type:
+            self.preamble += ' /type=%s' % (args.agent_type)
             self.spec_str = "type"
-            self.spec_val = self.agent_type
+            self.spec_val = self.args
 
     def connect(self):
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            self.conn.connect((self.hostname, self.port))
+            self.conn.connect((self.args.hostname, self.args.port))
         except socket.error, e:
             raise UpgradeException(\
                 ("Could not connect to host '%s', port '%d': %s") %
-                                (self.hostname, self.port, e))
+                                (self.args.hostname, self.args.port, e))
 
         self.sock = self.conn.makefile('w+', 1)
         self.connected = True
@@ -89,19 +54,19 @@ class UpgradeHandler(object):
         self.result = {}
         self.status = ""
 
-        if self.verbose:
+        if self.args.verbose > 2:
             print "Sending command:", cmd
         self.full_command = self.preamble + ' ' + cmd
         self.sock.write(self.full_command +'\n')
         self.sock.flush()
         self.ack = self.sock.readline().strip()
-        if self.verbose:
+        if self.args.verbose > 2:
             print "Acknowledgment response:", self.ack
         if self.ack != 'OK':
             raise UpgradeException("Command '%s' failed: %s" % \
                                         (self.command, self.ack))
 
-        if self.verbose:
+        if self.args.verbose > 2:
             print "Reading command response."
         self.response = self.sock.readline()
 
@@ -114,7 +79,7 @@ class UpgradeHandler(object):
         finally:
             self._close()
 
-        if self.verbose:
+        if self.args.verbose > 2:
             print 'Response:', self.response
 
         if 'error' in self.result:
@@ -163,22 +128,26 @@ class UpgradeHandler(object):
             raise UpgradeException("Bad result from 'list' command: %s." % \
                                                         self.result)
 
-        for agent in self.result['agents']:
-            if (self.displayname and agent['displayname'] == \
-                                                    self.displayname) \
-                or (self.uuid and agent['uuid'] == self.uuid) \
-                    or (self.agent_type and agent['agent_type'] == \
-                                                        self.agent_type):
+        if not len(self.result['agents']):
+            raise UpgradeException("No agents connected now: %s." % \
+                                                        self.result)
 
-                required = ['os_version',
-                            'install_dir']
+        for agent in self.result['agents']:
+            if (self.args.displayname and agent['displayname'] == \
+                                                    self.args.displayname) \
+                or (self.args.uuid and agent['uuid'] == self.args.uuid) \
+                    or (self.args.agent_type and agent['agent-type'] == \
+                                                        self.args.agent_type):
+
+                required = ['os-version',
+                            'install-dir']
                 for item in required:
                     if not item in agent:
                         raise UpgradeException(\
                             "Missing required key '%s' in '%s'" % \
                                                         (item, str(agent)))
 
-                if 'microsoft' in agent['os_version'].lower():
+                if 'microsoft' in agent['os-version'].lower():
                     agent['iswin'] = True
                     agent['path'] = ntpath
                 else:
