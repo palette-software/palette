@@ -211,6 +211,9 @@ class WorkbookManager(TableauCacheManager):
             system_user_id = users.get(wb.site_id, wb.owner_id)
             wb.system_user_id = system_user_id;
 
+            # must commit here so that update foreign keys work.
+            session.commit()
+
             wbu = WorkbookUpdateEntry.get(wb.workbookid, revision, default=None)
             if not wbu:
                 # A new row is created each time in the Tableau database,
@@ -227,6 +230,7 @@ class WorkbookManager(TableauCacheManager):
 
         # Second pass - build the archive files.
         for update in updates:
+            session.refresh(update)
             filename = self.retrieve_workbook(update, agent)
             if not filename:
                 self.server.log.error('Failed to retrieve workbook: %s %s',

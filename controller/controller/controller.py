@@ -456,13 +456,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if cred is None:
             cred = self.cred.get('secondary', default=None)
             if cred is None:
+                errmsg = 'No credentials found.'
+                self.log.error('tabcmd: ' + errmsg)
                 return {'error': 'No credentials found.'}
         pw = cred.getpasswd()
         if not cred.user or not pw:
-            return {'error': 'Invalid credentials.'}
+            errmsg = 'Invalid credentials.'
+            self.log.error('tabcmd: ' + errmsg)
+            return {'error': errmsg}
         url = self.localurl(agent)
         if not url:
-            return {'error': 'No local URL available.'}
+            errmsg = 'No local URL available.'
+            return {'error': errmsg}
         # tabcmd options must come last.
         cmd = ('tabcmd %s -u %s --password %s ' + \
                '--no-cookie --server %s --no-certcheck ') %\
