@@ -24,9 +24,10 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from agentmanager import AgentManager
 from agent import Agent
-from agentinfo import AgentVolumesEntry
+from agentinfo import AgentVolumesEntry, AgentYmlEntry
 from auth import AuthManager
 from backup import BackupManager
+from credential import CredentialEntry, CredentialManager
 from diskcheck import DiskCheck, DiskException
 from firewall_manager import FirewallManager
 from state import StateManager
@@ -42,7 +43,7 @@ from event import EventManager
 from event_control import EventControl, EventControlManager
 from extracts import ExtractManager
 from storage import StorageConfig
-from workbooks import WorkbookEntry, WorkbookManager
+from workbooks import WorkbookEntry, WorkbookUpdateEntry, WorkbookManager
 
 from sites import Site
 from projects import Project
@@ -54,7 +55,7 @@ from s3 import S3
 
 from sched import Sched, Crontab # needed for create_all()
 from clihandler import CliHandler
-from util import version, success, failed, sizestr
+from util import version, success, failed, sizestr, safecmd
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
@@ -404,8 +405,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return body
 
         if not body.has_key('run-status'):
-            return self.error("_send_cli (%s) body response missing 'run-status': %s" % \
-                (command, str(body)))
+            return self.error("_send_cli (%s) missing 'run-status': %s" % \
+                              (safecmd(command), str(body)))
 
         # It is possible for the command to finish immediately.
         if body['run-status'] == 'finished':
@@ -420,7 +421,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             if not 'error' in cli_body:
                 cli_body['error'] = \
                     ("Missing 'stdout' in agent reply for xid %d, " + \
-                    "command '%s': %s") % (command, body['xid'], cli_body)
+                    "command '%s': %s") % \
+                    (safecmd(command), body['xid'], cli_body)
 
         cleanup_body = self._send_cleanup(body['xid'], agent, command)
 
@@ -431,6 +433,41 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return cleanup_body
 
         return cli_body
+
+    def localurl(self, agent):
+        """ Generate a url for Tableau that the agent can use internally"""
+        url = self.system.get('tableau-server-url', default=None)
+        if url: return url
+
+        key = 'svcmonitor.notification.smtp.canonical_url'
+        url = AgentYmlEntry.get(agent, key, default=None)
+        if url: return url
+
+        key = 'datacollector.apache.url'
+        url = AgentYmlEntry.get(agent, key, default=None)
+        if url:
+            tokens = url.split('/', 3)
+            if len(tokens) >= 3:
+                return tokens[0] + '//' + tokens[2]
+        return None
+
+    def tabcmd(self, args, agent):
+        cred = self.cred.get('primary', default=None)
+        if cred is None:
+            cred = self.cred.get('secondary', default=None)
+            if cred is None:
+                return {'error': 'No credentials found.'}
+        pw = cred.getpasswd()
+        if not cred.user or not pw:
+            return {'error': 'Invalid credentials.'}
+        url = self.localurl(agent)
+        if not url:
+            return {'error': 'No local URL available.'}
+        # tabcmd options must come last.
+        cmd = ('tabcmd %s -u %s --password %s ' + \
+               '--no-cookie --server %s --no-certcheck ') %\
+              (args, cred.user, pw, url)
+        return self.cli_cmd(cmd, agent)
 
     def _send_cli(self, cli_command, agent, env=None, immediate=False):
         """Send a "cli" command to an Agent.
@@ -452,7 +489,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             "about to send the cli command to '%s', conn_id %d, " + \
             "type '%s' xid: %d, command: %s",
             displayname, aconn.conn_id, agent.agent_type,
-            req.xid, cli_command)
+            req.xid, safecmd(cli_command))
         try:
             aconn.httpconn.request('POST', '/cli', req.send_body, headers)
             self.log.debug('sent cli command.')
@@ -460,14 +497,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             res = aconn.httpconn.getresponse()
 
             self.log.debug('_send_cli: command: cli: ' + \
-                               str(res.status) + ' ' + str(res.reason))
+                           str(res.status) + ' ' + str(res.reason))
             # print "headers:", res.getheaders()
             self.log.debug("_send_cli reading...")
             body_json = res.read()
 
             if res.status != httplib.OK:
                 self.log.error("_send_cli: command: '%s', %d %s : %s",
-                               cli_command, res.status, res.reason, body_json)
+                               safecmd(cli_command), res.status,
+                               res.reason, body_json)
                 reason = "Command sent to agent failed. Error: " + res.reason
                 self.remove_agent(agent, reason)
                 return self.httperror(res, method="POST",
@@ -477,10 +515,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         except (httplib.HTTPException, EnvironmentError) as e:
             self.log.error(\
                 "_send_cli: command '%s' failed with httplib.HTTPException: %s",
-                                                        cli_command, str(e))
+                           safecmd(cli_command), str(e))
             self.remove_agent(agent, EventControl.AGENT_COMM_LOST) # bad agent
             return self.error("_send_cli: '%s' command failed with: %s" %
-                            (cli_command, str(e)))
+                              (safecmd(cli_command), str(e)))
         finally:
             aconn.unlock()
 
@@ -1608,14 +1646,15 @@ def main():
     Environment.populate()
     server.environment = Environment.get()
 
-    server.event = EventManager(server.environment.envid)
+    server.event = EventManager(server)
 
-    server.system = SystemManager(server.environment.envid)
+    server.system = SystemManager(server)
     SystemManager.populate()
 
     StateControl.populate()
 
     server.auth = AuthManager(server)
+    server.cred = CredentialManager(server)
     server.extract = ExtractManager(server)
     server.hrman = HttpRequestManager(server)
 
@@ -1628,9 +1667,9 @@ def main():
     EventControl.populate()
     server.event_control = EventControlManager(server)
 
-    workbook_manager = WorkbookManager(server.environment.envid)
+    server.workbooks = WorkbookManager(server)
 
-    server.backup = BackupManager(server.environment.envid)
+    server.backup = BackupManager(server)
 
     server.gcs = GCS(server.environment.envid)
     server.s3 = S3(server.environment.envid)

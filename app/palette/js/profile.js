@@ -1,4 +1,4 @@
-require(['jquery', 'template', 'common', 'EditBox', 'bootstrap', 'domReady!'],
+require(['jquery', 'template', 'common', 'EditBox', 'bootstrap'],
 function ($, template, common, EditBox)
 {
     EditBox.setup();

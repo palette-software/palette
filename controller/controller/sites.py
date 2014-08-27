@@ -1,14 +1,19 @@
 from sqlalchemy import Column, String, DateTime, Boolean
 from sqlalchemy import Integer, BigInteger, SmallInteger
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy import not_
+from sqlalchemy import not_, UniqueConstraint
+from sqlalchemy.schema import ForeignKey
+
+from mixin import BaseMixin
 
 from akiri.framework.ext.sqlalchemy import meta
 
-class Site(meta.Base):
+class Site(meta.Base, BaseMixin):
     __tablename__ = 'sites'
 
+    # FIXME: BigInteger
     siteid = Column(Integer, primary_key=True)
+    envid = Column(Integer, ForeignKey("environment.envid"), nullable=False)
     name = Column(String, nullable=False)
     status = Column(String)
     created_at = Column(DateTime)
@@ -24,21 +29,20 @@ class Site(meta.Base):
     luid = Column(String, unique=True)
     query_limit = Column(Integer)
 
-    @classmethod
-    def get(cls, siteid):
-        try:
-            entry = meta.Session.query(Site).\
-                filter(Site.siteid == siteid).one()
-        except NoResultFound, e:
-            entry = None
-        return entry
+    __table_args__ = (UniqueConstraint('envid', 'siteid'),)
 
     @classmethod
-    def all(cls):
-        return meta.Session.query(Site).order_by(Site.name).all()
+    def get(cls, envid, siteid, **kwargs):
+        keys = {'envid':envid, 'siteid':siteid}
+        return cls.get_unique_by_keys(keys, **kwargs)
+
+    @classmethod
+    def all(cls, envid):
+        return cls.get_all_by_keys({'envid':envid}, order_by='name')
 
     @classmethod
     def sync(cls, agent):
+        envid = agent.server.environment.envid
         stmt = \
             'SELECT id, name, status, created_at, updated_at, ' +\
             'user_quota, content_admin_mode, storage_quota, metrics_level, '+\
@@ -58,9 +62,9 @@ class Site(meta.Base):
 
         session = meta.Session()
         for row in data['']:
-            entry = Site.get(row[0])
+            entry = Site.get(envid, row[0], default=None)
             if not entry:
-                entry = Site(siteid=row[0])
+                entry = Site(envid=envid, siteid=row[0])
                 session.add(entry)
             entry.name = row[1]
             entry.status = row[2]

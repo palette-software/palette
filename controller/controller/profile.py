@@ -16,6 +16,8 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'users'
     userid = Column(BigInteger, unique=True, nullable=False, \
                         autoincrement=True, primary_key=True)
+    # FIXME: add envid
+    active = Column(Boolean, default=True)
     name = Column(String, unique=True, nullable=False)
     friendly_name = Column(String)
     email = Column(String)
@@ -23,7 +25,7 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     hashed_password = Column(String)
     salt = Column(String)
     roleid = Column(BigInteger, ForeignKey("roles.roleid"), default=0)
-    system_users_id = Column(Integer)
+    system_users_id = Column(Integer, unique=True)
     login_at = Column(DateTime)
     licensing_role_id = Column(Integer)
     user_admin_level = Column(Integer)
@@ -34,8 +36,16 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
 
     role = relationship("Role")
 
-    def __str__(self):
+    def __unicode__(self):
+        if self.friendly_name:
+            return self.friendly_name
         return self.name
+
+    def __str__(self):
+        return unicode(self).encode('utf-8')
+
+    def display_name(self):
+        return unicode(self)
 
     @classmethod
     def get(cls, userid):
@@ -76,7 +86,8 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
 
     defaults = [{'userid':0, 'name':'palette', 'friendly_name':'Palette',
                  'email': None, 'salt':'', 'roleid':3, # SUPER_ADMIN
-                 'hashed_password':tableau_hash('tableau2014','')}]
+                 'hashed_password':tableau_hash('tableau2014',''),
+                 'system_users_id':0}]
 
 class Role(meta.Base, BaseMixin):
     __tablename__ = 'roles'

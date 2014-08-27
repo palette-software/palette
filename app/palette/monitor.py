@@ -89,9 +89,10 @@ class MonitorApplication(PaletteRESTHandler):
         return d
     
     def site_options(self, req):
+        envid = self.environment.envid
         index = self.getindex(req, 'site')
         L = [{'item':'All Sites', 'id':0}] + \
-            [{'item':x.name, 'id':x.siteid} for x in Site.all()]
+            [{'item':x.name, 'id':x.siteid} for x in Site.all(envid)]
         if index >= len(L):
             index = 0
         return {'name':'site',
@@ -103,11 +104,12 @@ class MonitorApplication(PaletteRESTHandler):
         return site[0].name
 
     def project_options(self, req):
+        envid = self.environment.envid
         index = self.getindex(req, 'project')
-        sites = [x for x in meta.Session.query(Site).order_by(Site.name).all()]
-        projects = [x for x in meta.Session.query(Project).order_by(Project.name).all()]
+        sites = Site.all(envid)
+        projects = Project.all(envid)
         L = [{'item':'All Projects', 'id':0}]
-        if len(Site.all()) > 1:
+        if len(sites) > 1:
             temp = [{'item':'Site: ' + self.get_project_sitename(sites, x.site_id) + ', Project: ' + x.name , 'id':x.projectid} for x in projects]
             temp = sorted(temp, key=lambda k: k['item'])
             L = L + temp
