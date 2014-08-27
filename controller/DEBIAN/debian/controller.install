@@ -2,7 +2,8 @@ etc/controller.ini		/etc
 etc/ssl/certs/palette_cert.pem	/etc/ssl/certs
 etc/init.d/controller	/etc/init.d
 bin/controller			/usr/bin
-bin/install-file        /usr/bin
+bin/upgrade-agent        /usr/bin
+bin/sum-files        /usr/bin
 var/palette/sched/auth_import    /var/palette/sched
 var/palette/sched/backup    /var/palette/sched
 var/palette/sched/extract    /var/palette/sched
