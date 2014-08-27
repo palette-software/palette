@@ -1589,7 +1589,7 @@ def main():
     # Create the table definition ONCE, before all the other threads start.
     meta.Base.metadata.create_all(bind=meta.engine)
     meta.Session = scoped_session(sessionmaker(bind=meta.engine,
-                                               expire_on_commit=False))
+                                   autoflush=False, expire_on_commit=False))
 
     log.debug("Starting agent listener.")
 
