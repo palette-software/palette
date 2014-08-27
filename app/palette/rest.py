@@ -37,12 +37,18 @@ def required_role(name):
         return realf
     return wrapper
 
+def translate_remote_user(f):
+    def realf(self, req, *args, **kwargs):
+        if isinstance(req.remote_user, basestring):
+            req.remote_user = UserProfile.get_by_name(req.remote_user)
+        return f(self, req, *args, **kwargs)
+    return realf
+
 class PaletteRESTHandler(RESTApplication):
 
     def __init__(self, global_conf):
         super(PaletteRESTHandler, self).__init__(global_conf)
         self.telnet = Telnet(self)
-        self.envid = Environment.get().envid
 
     def __getattr__(self, name):
         if name == 'domainname':
@@ -53,7 +59,7 @@ class PaletteRESTHandler(RESTApplication):
         if name == 'environment':
             return Environment.get()
         if name == 'system':
-            return SystemManager(self.envid)
+            return SystemManager(self) # FIXME: very unclean : self != server
         raise AttributeError(name)
 
     def base_path_info(self, req):

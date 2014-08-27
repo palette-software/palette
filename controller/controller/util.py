@@ -3,7 +3,7 @@ from datetime import datetime
 from dateutil import tz
 
 UTCFMT = "%Y-%m-%d %H:%M:%SZ"
-DATEFMT = "%I:%M %p PDT on %b %d, %Y"
+DATEFMT = "%-I:%M%p PDT on %b %d, %Y"
 SIZEFMT = "%(value).1f%(symbol)s"
 SYMBOLS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
 
@@ -35,6 +35,11 @@ def parseutc(s):
 def utc2local(t):
     t = t.replace(tzinfo=tz.tzutc())
     return t.astimezone(tz.tzlocal())
+
+def odbc2dt(s):
+    if s is None: return None
+    dt = parseutc(s)
+    return dt.replace(tzinfo=None)
 
 def version():
     try:
@@ -77,3 +82,18 @@ def str2bool(s):
 def timedelta_total_seconds(t2, t1):
     td = t2 - t1
     return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+
+def safecmd(cmd):
+    """Hackish function to obscure passwords in debug output (e.g. tabcmd)"""
+    L = []; obscure = False
+    for x in cmd.split():
+        if x == '--password':
+            obscure = True
+            L.append(x)
+            continue
+        if obscure:
+            L.append('<>')
+        else:
+            L.append(x)
+        obscure = False
+    return ' '.join(L)

@@ -11,7 +11,7 @@
         <i class="fa fa-fw fa-copy"></i><span>Events</span>
       </a>
     </li>
-    <li class="has-side-bar ${obj.active=='activity' and 'active' or ''}">
+    <li class="${obj.active=='activity' and 'active' or ''}">
       <a href="/activity"><i class="fa fa-fw fa-book"></i>
         <span>Workbook Archive</span>
       </a>
@@ -74,6 +74,12 @@
           <a href="/configure/storage">
             <i class="fa fa-fw fa-arrow-circle-o-down"></i>
             <span>Storage</span>
+          </a>
+        </li>
+        <li  ${obj.active=='tabcmd' and 'class="active"' or ''}>
+          <a href="/configure/tabcmd">
+            <i class="fa fa-fw fa-truck"></i>
+            <span>Tabcmd User</span>
           </a>
         </li>
         <li  ${obj.active=='yml' and 'class="active"' or ''}>
