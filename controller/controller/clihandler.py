@@ -340,7 +340,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             if main_state not in (StateManager.STATE_STARTED,
                     StateManager.STATE_STOPPED, StateManager.STATE_DEGRADED,
                     StateManager.STATE_DISCONNECTED,
-                                                    StateManager.STATE_UNKNOWN):
+                    StateManager.STATE_UPGRADING, StateManager.STATE_UNKNOWN):
 
                 self.error(
                     ERROR_BUSY, "FAIL: Can't upgrade - main state is: %s",
@@ -351,7 +351,9 @@ class CliHandler(socketserver.StreamRequestHandler):
                     aconn.user_action_unlock()
                 return
 
-            stateman.update(StateManager.STATE_UPGRADING)
+            # They can request to upgrade even if they are already upgrading.
+            if main_state != StateManager.STATE_UPGRADING:
+                stateman.update(StateManager.STATE_UPGRADING)
             if aconn:
                 aconn.user_action_unlock()
 
