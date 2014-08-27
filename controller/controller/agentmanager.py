@@ -184,7 +184,7 @@ class AgentManager(threading.Thread):
            - Checks agent uuid and type against already connected agents.
            - Calculates a displayname and order if it is a new agent.
            - Adds the agent to the connected agents dictionary.
-           - Expunges agent from db session
+           - Makes agent transient with respect to the database.
        """
 
         self.lock()
@@ -1190,7 +1190,7 @@ class AgentManager(threading.Thread):
             try:
                 # Use " ifinspect(agent).session" when we go to sqlalchemy
                 # > 0.8
-                session.expunge(agent)
+                make_transient(agent)
             except:
                 pass
 
