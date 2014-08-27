@@ -1,3 +1,4 @@
+from manager import Manager
 from profile import UserProfile
 from util import UNDEFINED
 
@@ -21,7 +22,7 @@ class TableauUserCache(object):
         return -1
 
 
-class TableauCacheManager(object):
+class TableauCacheManager(Manager):
 
     # build a cache of the Tableau 'users' table.
     # used to translate siteid:userid -> system_user_id
@@ -50,3 +51,7 @@ class TableauCacheManager(object):
                 return profile.name
         else:
             return UNDEFINED
+
+    def schema(self, data):
+        L = data["$schema"]["Info"]
+        return [L[i+1:i+3] for i in xrange(0, len(L), 3)]

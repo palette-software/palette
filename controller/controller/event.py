@@ -5,6 +5,7 @@ from sqlalchemy.schema import ForeignKey
 
 from akiri.framework.ext.sqlalchemy import meta
 
+from manager import Manager
 from util import DATEFMT
 
 class EventEntry(meta.Base):
@@ -27,9 +28,7 @@ class EventEntry(meta.Base):
     projectid = Column(Integer)
     creation_time = Column(DateTime, server_default=func.now())
 
-class EventManager(object):
-    def __init__(self, envid):
-        self.envid = envid
+class EventManager(Manager):
 
     def add(self, key, title, description, level, icon, color, event_type,
             userid=None, siteid=None, projectid=None, timestamp=None):

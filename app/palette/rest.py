@@ -11,19 +11,19 @@ from controller.profile import UserProfile, Role
 
 def required_parameters(*params):
     def wrapper(f):
-        def realf(self, req, *args):
+        def realf(self, req, *args, **kwargs):
             if req.method != 'POST':
                 raise exc.HTTPMethodNotAllowed(req.method)
             for p in params:
                 if p not in req.POST:
                     raise exc.HTTPBadRequest("'" + p + "' missing")
-            return f(self, req, *args)
+            return f(self, req, *args, **kwargs)
         return realf
     return wrapper
 
 def required_role(name):
     def wrapper(f):
-        def realf(self, req):
+        def realf(self, req, *args, **kwargs):
             if isinstance(name, basestring):
                 role = Role.get_by_name(name).roleid
             else:
@@ -33,16 +33,22 @@ def required_role(name):
                 req.remote_user = UserProfile.get_by_name(req.remote_user)
             if req.remote_user.roleid < role.roleid:
                 raise exc.HTTPForbidden("The '"+role.name+"' role is required.")
-            return f(self, req)
+            return f(self, req, *args, **kwargs)
         return realf
     return wrapper
+
+def translate_remote_user(f):
+    def realf(self, req, *args, **kwargs):
+        if isinstance(req.remote_user, basestring):
+            req.remote_user = UserProfile.get_by_name(req.remote_user)
+        return f(self, req, *args, **kwargs)
+    return realf
 
 class PaletteRESTHandler(RESTApplication):
 
     def __init__(self, global_conf):
         super(PaletteRESTHandler, self).__init__(global_conf)
         self.telnet = Telnet(self)
-        self.envid = Environment.get().envid
 
     def __getattr__(self, name):
         if name == 'domainname':
@@ -53,7 +59,7 @@ class PaletteRESTHandler(RESTApplication):
         if name == 'environment':
             return Environment.get()
         if name == 'system':
-            return SystemManager(self.envid)
+            return SystemManager(self) # FIXME: very unclean : self != server
         raise AttributeError(name)
 
     def base_path_info(self, req):

@@ -7,10 +7,10 @@ from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
 
 from util import sizestr
-from mixin import BaseDictMixin
+from mixin import BaseMixin, BaseDictMixin
 
 # FIXME: move these classes to agent.py
-class AgentYmlEntry(meta.Base, BaseDictMixin):
+class AgentYmlEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = "agent_yml"
 
     ymlid = Column(Integer, unique=True, nullable=False, primary_key=True)
@@ -21,14 +21,8 @@ class AgentYmlEntry(meta.Base, BaseDictMixin):
 
     @classmethod
     def entry(cls, agent, key, **kwargs):
-        try:
-            entry = meta.Session.query(AgentYmlEntry).\
-                filter(AgentYmlEntry.agentid == agent.agentid).\
-                filter(AgentYmlEntry.key == key).\
-                one()
-        except NoResultFound, e:
-            raise ValueError("No system row found with key=%s" % key)
-        return entry
+        filters = {'agentid':agent.agentid, 'key':key}
+        return cls.get_unique_by_keys(filters, **kwargs)
 
     @classmethod
     def get(cls, agent, key, **kwargs):

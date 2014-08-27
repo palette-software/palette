@@ -1,4 +1,5 @@
 /build
 /dist
+/data
 /*.ini
 webapp.log

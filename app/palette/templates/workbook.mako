@@ -5,33 +5,7 @@
 <title>Palette - Workbook Archive</title>
 </%block>
 
-<section class="secondary-side-bar">
-  <h2>Filter</h2>
-  <h5 class="sub margin-top">Workbook</h5>
-  <section class="padding">
-    <input type="text" placeholder="Workbook">
-  </section>
-  <h5 class="sub">Project</h5>
-  <div class="btn-group">
-    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-      <div>All Projects</div>
-      <span class="caret"></span>
-    </button>
-    <ul class="dropdown-menu" role="menu">
-      <li><a href="#">All Projects</a></li>
-    </ul>
-  </div>
-  <h5 class="sub">Publisher</h5>
-  <div class="btn-group">
-    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Publishers</div><span class="caret"></span>
-    </button>
-    <ul class="dropdown-menu" role="menu">
-      <li><a href="#">All Publishers</a></li>
-    </ul>
-  </div>
-</section>
-
-<section class="dynamic-content with-secondary-sidebar">
+<section class="dynamic-content workbook-page">
   <section class="top-zone">
     <section class="row">
       <section class="col-xs-12">
@@ -65,8 +39,18 @@
     <div class="summary clearfix">
       <i class="fa fa-fw fa-book {{color}}"></i>
       <div>
-        <h3>{{name}}</h3>
-        <p>{{summary}}</p>
+	<div class="col2">
+          <h3>{{name}}</h3>
+          <p><span class="label">Current Publisher</span>{{last-updated-by}}</p>
+	</div>
+	<div class="col2">
+          <div>
+	    <span class="label">Site</span>{{site}} and <span class="label">Project</span>{{project}}
+	  </div>
+          <div>
+	    <span class="label">Last Update</span><a href="{{url}}">rev{{current-revision}} {{last-updated-at}}</a>
+	  </div>
+        </div>
       </div>
       <i class="fa fa-fw fa-angle-down expand"></i>
     </div>
@@ -74,8 +58,16 @@
       <ul>
         {{#updates}}
         <li>
-          <a href="#">{{timestamp}}</a> by {{name}}
-          <a class="edit" href="#"><i class="fa fa-fw fa-pencil"></i></a>
+          <div>
+	    <a href="{{url}}">rev{{revision}} {{timestamp}}</a> by {{username}}
+	  </div>
+	  <div>
+	    <span class="label">Note</span>
+	    <span class="editbox"
+		  data-id="{{wuid}}"
+		  data-href="/rest/workbooks/updates/note">
+	    </span>
+	  </div>
         </li>
         {{/updates}}
       </ul>
@@ -86,5 +78,3 @@
 
 <script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/workbook.js">
 </script>
-
-
