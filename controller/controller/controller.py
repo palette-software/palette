@@ -1000,7 +1000,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         while True:
             self.log.debug(
                 "about to get status of cli command '%s', xid %d, conn_id %d",
-                           orig_cli_command, xid, aconn.conn_id)
+                           safecmd(orig_cli_command), xid, aconn.conn_id)
 
             # If the agent is initializing, then "agent_connected"
             # will not know about it yet.
