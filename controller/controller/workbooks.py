@@ -59,6 +59,11 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
     __table_args__ = (UniqueConstraint('envid', 'id'), 
                       UniqueConstraint('envid', 'name'))
 
+    def fileext(self):
+        if self.data_engine_extracts:
+            return 'twbx'
+        return 'twb'
+
     @classmethod
     def get(cls, envid, name, **kwargs):
         keys = {'envid':envid, 'name':name}
@@ -96,8 +101,8 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     __table_args__ = (UniqueConstraint('workbookid', 'revision'),)
 
     # ideally: site-project-name-rev.twb
-    def filename(self):
-        return self.workbook.repository_url + '-rev' + self.revision + '.twb'
+    def basename(self):
+        return self.workbook.repository_url + '-rev' + self.revision
 
     @classmethod
     def get(cls, wbid, revision, **kwargs):
@@ -241,19 +246,31 @@ class WorkbookManager(TableauCacheManager):
         return 'C:\\'
 
     # returns the filename *on the agent* or None on error.
-    def build_workbook(self, update, agent, filename=None):
-        if not filename: filename = update.filename()
-        url = '/workbooks/' + update.workbook.repository_url + '.xml'
-        dst = agent.path.join(self.agent_tmpdir(agent), filename)
+    def build_workbook(self, update, agent):
+        tmpdir = self.agent_tmpdir(agent)
+        name = update.basename()
+        ext = update.workbook.fileext()
+        url = '/workbooks/' + update.workbook.repository_url + '.' + ext
+        dst = agent.path.join(tmpdir, name + '.' + ext)
         cmd = 'get %s -f "%s"' % (url, dst)
+
+        self.server.log.debug('building workbook archive : ' + dst)
+
         body = self.server.tabcmd(cmd, agent)
         if failed(body):
             return None
+        if ext == 'twbx':
+            cmd = 'ptwbx ' + '"' + dst + '"'
+            body = self.server.cli_cmd(cmd, agent)
+            if failed(body):
+                agent.filemanager.delete(dst)
+                return None
+            dst = agent.path.join(tmpdir, name + '.twb')
+        # FIXME: move twbx/twb to backup location.
         return dst
 
     # returns the filename - in self.path - or None on error.
     def retrieve_workbook(self, update, agent):
-        filename = update.filename()
         path = self.build_workbook(update, agent)
         if not path:
             return None
@@ -261,7 +278,7 @@ class WorkbookManager(TableauCacheManager):
         if failed(body):
             return None
         agent.filemanager.delete(path)
-        return filename
+        return agent.path.basename(path)
 
     # This is the time the last revision was created.
     # returns a UTC string or None
