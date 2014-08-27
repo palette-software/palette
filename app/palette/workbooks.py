@@ -249,4 +249,4 @@ class WorkbookData(BaseApplication):
         return FileApp(path)
 
 def make_workbook_data(global_conf, path=None):
-    return WorkbookData(global_conf)
+    return WorkbookData(global_conf, path=path)
