@@ -148,8 +148,9 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
             data['updates'] = updates
 
             current = updates[0]
-            data['last-updated-by'] = d['username']
-            data['last-updated-at'] = d['timestamp']
+            data['last-updated-by'] = current['username']
+            data['last-updated-at'] = current['timestamp']
+            data['current-revision'] = current['revision']
             data['url'] = d['url']
 
             data['site'] = self.get_site(entry.site_id, cache=sites)

@@ -48,7 +48,7 @@
 	    <span class="label">Site</span>{{site}} and <span class="label">Project</span>{{project}}
 	  </div>
           <div>
-	    <span class="label">Last Updated</span><a href="{{url}}">{{last-updated-at}}</a>
+	    <span class="label">Last Update</span><a href="{{url}}">rev{{current-revision}} {{last-updated-at}}</a>
 	  </div>
         </div>
       </div>

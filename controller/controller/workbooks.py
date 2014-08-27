@@ -90,7 +90,7 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
 
     workbook = relationship('WorkbookEntry', \
         backref=backref('updates',
-                        order_by='desc(WorkbookUpdateEntry.timestamp)')
+                        order_by='desc(WorkbookUpdateEntry.revision)')
     )
 
     __table_args__ = (UniqueConstraint('workbookid', 'revision'),)
@@ -243,7 +243,7 @@ class WorkbookManager(TableauCacheManager):
     # returns the filename *on the agent* or None on error.
     def build_workbook(self, update, agent, filename=None):
         if not filename: filename = update.filename()
-        url = '/workbooks/' + update.workbook.repository_url + '.twb'
+        url = '/workbooks/' + update.workbook.repository_url + '.xml'
         dst = agent.path.join(self.agent_tmpdir(agent), filename)
         cmd = 'get %s -f "%s"' % (url, dst)
         body = self.server.tabcmd(cmd, agent)
@@ -260,6 +260,7 @@ class WorkbookManager(TableauCacheManager):
         body = agent.filemanager.save(path, target=self.path)
         if failed(body):
             return None
+        agent.filemanager.delete(path)
         return filename
 
     # This is the time the last revision was created.
