@@ -7,7 +7,9 @@ from Crypto import Random
 
 AES_KEY_BITS = 256
 AES_KEY_BYTES = (AES_KEY_BITS/8)
-AES_KEY_FILE = os.path.abspath(os.path.expanduser('~/.aes'))
+AES_KEY_FILE_DEFAULT = os.path.abspath(os.path.expanduser('~/.aes'))
+
+aes_key_file = AES_KEY_FILE_DEFAULT
 
 """ 
   This is the Tableau password storage algorithm. 
@@ -16,19 +18,25 @@ AES_KEY_FILE = os.path.abspath(os.path.expanduser('~/.aes'))
 def tableau_hash(password, salt):
     return hashlib.sha1(str(password) + "fnord" + str(salt)).hexdigest()
 
+def set_aes_key_file(path):
+    global aes_key_file
+    aes_key_file = path
+    if not os.path.isfile(aes_key_file):
+        return genaeskey()
 
 def genaeskey():
     key = Random.new().read(AES_KEY_BYTES)
-    tmp = os.path.abspath(AES_KEY_FILE + '.tmp')
+    tmp = os.path.abspath(aes_key_file + '.tmp')
     with open(tmp, 'w') as f:
         f.write(key)
-    os.rename(tmp, AES_KEY_FILE)
+    os.rename(tmp, aes_key_file)
+    os.chmod(aes_key_file, 0600)
     return key
 
 def aeskey():
-    if not os.path.isfile(AES_KEY_FILE):
+    if not os.path.isfile(aes_key_file):
         return genaeskey()
-    with open(AES_KEY_FILE, 'r') as f:
+    with open(aes_key_file, 'r') as f:
         key = f.read(AES_KEY_BYTES)
     return key
 

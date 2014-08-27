@@ -5,8 +5,6 @@ from webob import exc
 from paste.fileapp import FileApp
 
 from akiri.framework.api import RESTApplication, BaseApplication
-from akiri.framework.config import store
-
 from akiri.framework.ext.sqlalchemy import meta
 
 from controller.environment import Environment
@@ -17,6 +15,7 @@ from controller.credential import CredentialEntry
 from controller.util import DATEFMT
 from controller.sites import Site
 from controller.projects import Project
+from controller.passwd import set_aes_key_file
 
 from page import PalettePage, FAKEPW
 from rest import PaletteRESTHandler
@@ -147,11 +146,13 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
                 updates.append(d)
             data['updates'] = updates
 
-            current = updates[0]
-            data['last-updated-by'] = current['username']
-            data['last-updated-at'] = current['timestamp']
-            data['current-revision'] = current['revision']
-            data['url'] = d['url']
+            if updates:
+                # slight change that the first update is not yet committed.
+                current = updates[0]
+                data['last-updated-by'] = current['username']
+                data['last-updated-at'] = current['timestamp']
+                data['current-revision'] = current['revision']
+                data['url'] = current['url']
 
             data['site'] = self.get_site(entry.site_id, cache=sites)
             data['project'] = self.get_project(entry.project_id, cache=projects)
@@ -202,7 +203,10 @@ class TabcmdPage(PalettePage, CredentialMixin):
             req.secondary_user = req.secondary_pw = ''
         return super(TabcmdPage, self).render(req, obj=obj)
 
-def make_tabcmd(global_conf):
+def make_tabcmd(global_conf, aes_key_file=None):
+    # FIXME: should be actually global.
+    if aes_key_file:
+        set_aes_key_file(aes_key_file)
     return TabcmdPage(global_conf)
 
 

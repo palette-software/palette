@@ -9,7 +9,7 @@ from manager import Manager
 from cache import TableauCacheManager
 from util import odbc2dt
 
-from passwd import aes_encrypt, aes_decrypt
+from passwd import aes_encrypt, aes_decrypt, set_aes_key_file
 
 class CredentialEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = "credentials"
@@ -40,6 +40,12 @@ class CredentialEntry(meta.Base, BaseMixin, BaseDictMixin):
 
 
 class CredentialManager(Manager):
+
+    def __init__(self, server):
+        super(CredentialManager, self).__init__(server)
+        keyfile = server.config.get('palette', 'aes_key_file', default=None)
+        if keyfile:
+            set_aes_key_file(keyfile)
 
     def get(self, key, **kwargs):
         envid = self.server.environment.envid

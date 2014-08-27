@@ -1611,6 +1611,8 @@ def main():
     port = config.getint('controller', 'port', default=9000);
     agent_port = config.getint('controller', 'agent_port', default=22);
 
+
+
     # loglevel is entirely controlled by the INI file.
     logger.make_loggers(config)
     log = logger.get(Controller.LOGGER_NAME)
