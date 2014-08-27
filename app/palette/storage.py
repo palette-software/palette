@@ -36,6 +36,7 @@ class StorageApplication(PaletteRESTHandler):
                       sizestr(volume.size), sizestr(volume.available_space))
 
     def handle_get(self, req):
+        envid = self.environment.envid
         sc = StorageConfig(self.system)
         data = {StorageConfig.STORAGE_ENCRYPT: sc.storage_encrypt,
                 StorageConfig.WORKBOOKS_AS_TWB: sc.workbooks_as_twb}
@@ -46,14 +47,14 @@ class StorageApplication(PaletteRESTHandler):
 
         value = None
         destid = self.destid()
-        for volume in AgentVolumesEntry.get_archives_by_envid(self.envid):
+        for volume in AgentVolumesEntry.get_archives_by_envid(envid):
             item = self.build_item_for_volume(volume)
             ourid = '%s:%d' % (StorageConfig.VOL, volume.volid)
             options.append({'id': ourid, 'item':item})
             if destid == ourid:
                 value = item
 
-        for entry in S3.get_s3s_by_envid(self.envid):
+        for entry in S3.get_s3s_by_envid(envid):
             # fixme: If/when multiple s3 configs are available, distinguish
             # the s3 items from each other.
             item = sc.text(StorageConfig.S3)
@@ -63,7 +64,7 @@ class StorageApplication(PaletteRESTHandler):
             if destid == ourid:
                 value = item
 
-        for entry in GCS.get_gcss_by_envid(self.envid):
+        for entry in GCS.get_gcss_by_envid(envid):
             # fixme: If/when multiple gcs configs are available, distinguish
             # the gcs items from each other.
             item = sc.text(StorageConfig.GCS)
@@ -254,6 +255,7 @@ class StorageApplication(PaletteRESTHandler):
             return self.handle_get(req)
 
         raise exc.HTTPBadRequest()
+
 
 class StoragePage(PalettePage):
     TEMPLATE = "storage.mako"

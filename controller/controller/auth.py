@@ -7,6 +7,7 @@ from profile import UserProfile, Publisher, License
 from system import SystemManager
 from util import DATEFMT, UTCFMT, utc2local, parseutc
 
+# FIXME: use base Manager class.
 class AuthManager(object):
 
     LAST_IMPORT_KEY = 'last-user-import'
@@ -108,10 +109,10 @@ class AuthManager(object):
 
         session.commit()
 
-        # delete entries no longer found in the Tableau database.
+        # deleted entries no longer found in Tableau are marked inactive.
         session.query(UserProfile).\
             filter(not_(UserProfile.name.in_(names))).\
-            delete(synchronize_session='fetch')
+            update({'active': False}, synchronize_session='fetch')
 
         now = time.strftime(DATEFMT)
         self.server.system.save(self.LAST_IMPORT_KEY, now)

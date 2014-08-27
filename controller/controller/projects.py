@@ -1,14 +1,18 @@
 from sqlalchemy import Column, String, DateTime, Boolean
 from sqlalchemy import Integer, BigInteger, SmallInteger
-from sqlalchemy import not_
+from sqlalchemy import not_, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.schema import ForeignKey
 
 from akiri.framework.ext.sqlalchemy import meta
+from mixin import BaseMixin
 
-class Project(meta.Base):
+class Project(meta.Base, BaseMixin):
     __tablename__ = 'projects'
 
+    # FIXME: BigInteger
     projectid = Column(Integer, primary_key=True)
+    envid = Column(Integer, ForeignKey("environment.envid"), nullable=False)
     name = Column(String, nullable=False)
     owner_id = Column(Integer)
     created_at = Column(DateTime)
@@ -18,21 +22,20 @@ class Project(meta.Base):
     site_id = Column(Integer, nullable=False)
     special = Column(Integer)
 
-    @classmethod
-    def get(cls, projectid):
-        try:
-            entry = meta.Session.query(Project).\
-                filter(Project.projectid == projectid).one()
-        except NoResultFound, e:
-            entry = None
-        return entry
+    __table_args__ = (UniqueConstraint('envid', 'projectid'),)
 
     @classmethod
-    def all(cls):
-        return meta.Session.query(Project).order_by(Project.name).all()
+    def get(cls, envid, projectid, **kwargs):
+        keys = {'envid':envid, 'projectid':projectid}
+        return cls.get_unique_by_keys(keys, **kwargs)
+
+    @classmethod
+    def all(cls, envid):
+        return cls.get_all_by_keys({'envid':envid}, order_by='name')
 
     @classmethod
     def sync(cls, agent):
+        envid = agent.server.environment.envid
         stmt = \
             'SELECT id, name, owner_id, created_at, updated_at, ' +\
             'state, description, site_id, special ' +\
@@ -48,9 +51,9 @@ class Project(meta.Base):
 
         session = meta.Session()
         for row in data['']:
-            entry = Project.get(row[0])
+            entry = Project.get(envid, row[0], default=None)
             if not entry:
-                entry = Project(projectid=row[0])
+                entry = Project(envid=envid, projectid=row[0])
                 session.add(entry)
             entry.name = row[1]
             entry.owner_id = row[2]
