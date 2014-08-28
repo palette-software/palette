@@ -18,6 +18,11 @@ echo CREATE ROLE palette WITH SUPERUSER LOGIN PASSWORD \'palpass\' | sudo -u pos
 sudo -u postgres createdb paldb 2>&1 | echo
 
 mkdir -p /var/log/palette /var/palette/data/workbook-archive
+if [ ! -f /var/palette/.aes ]; then
+    dd if=/dev/urandom of=/var/palette/.aes bs=32 count=1
+    chown www-data /var/palette/.aes
+    chmod 0400 /var/palette/.aes
+fi
 
 update-rc.d controller defaults
 service controller start
