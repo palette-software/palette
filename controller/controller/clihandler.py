@@ -1563,6 +1563,37 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status(body)
 
+    @usage('gcsdel <gcs-name> <filename>')
+    def do_gcsdel(self, cmd):
+        """Delete a filename from a gcs-name."""
+
+        if len(cmd.args) != 2:
+            self.print_usage(self.do_gcsdel.__usage__)
+            return
+
+        self.ack()
+
+        try:
+            self.server.delete_gcs_file(cmd.args[0], cmd.args[1])
+        except IOError, e:
+            self.error(ERROR_COMMAND_FAILED, str(e).replace('\n', ''))
+            return
+
+        self.report_status({})
+
+    @usage('s3del <s3-name> <filename>')
+    def do_s3del(self, cmd):
+        """Delete a filename from a s3-name."""
+
+        if len(cmd.args) != 2:
+            self.print_usage(self.do_s3del.__usage__)
+            return
+
+        self.ack()
+
+        self.server.delete_s3_file(cmd.args[0], cmd.args[1])
+        self.report_status({})
+
     @usage('sql <statement>')
     def do_sql(self, cmd):
         """Run a SQL statement against the Tableau database."""
