@@ -152,10 +152,22 @@ class EventControl(meta.Base, BaseMixin):
     }
 
     # event types
-    all_types = {'backup':'Backup & Restore',
-                 'status':'Status',
-                 'agent':'Agent',
-                 'extract':'Extracts'}
+    all_types = {
+                 'agent' : 'Agent',
+                 'backup': 'Backup',
+                 'cleanup' : 'Cleanup',
+                 'communication' : 'Communication',
+                 'extract' : 'Extracts',
+                 'firewall': 'Firewall',
+                 'http' : 'HTTP',
+                 'license' : 'License',
+                 'load' : 'Load',
+                 'logs' : 'Logs',
+                 'maintenance' : 'Maintenance',
+                 'restore' : 'Restore',
+                 'status' : 'Status',
+                 'storage' : 'Storage',
+                 'tableau' : 'Tableau' }
 
     @classmethod
     def types(cls):
