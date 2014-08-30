@@ -912,12 +912,14 @@ class AgentManager(threading.Thread):
                             reason)
 
             if gen_event:
-                data = agent.todict()
+                # get the latest from the DB just incase the display name changed
+                temp_agent = Agent.get_by_id(agent.agentid)
+                data = temp_agent.todict()
                 data['error'] = reason
                 data['info'] = ("\nAgent type: %s\n" + \
                                 "Agent connection-id: %d\n" + \
                                 "Agent uuid %s") % \
-                                (agent.displayname, conn_id, uuid)
+                                (temp_agent.displayname, conn_id, uuid)
                 self.server.event_control.gen(EventControl.AGENT_DISCONNECT,
                                               data)
             forgot = self.forget(agent)
