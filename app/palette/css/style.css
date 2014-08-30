@@ -156,6 +156,7 @@ article.popup p {
     -o-transition: all 0.3s ease-out;
     transition: all 0.3s ease-out;
     overflow-y:scroll;
+    overflow:hidden;
     padding-bottom: 64px;
     max-width: 600px;
     white-space: nowrap;
@@ -832,7 +833,6 @@ ul.processes.visible {
 }
 .dynamic-content .top-zone {
     width: 100%;
-    height: 120px;
 }
 .dynamic-content .top-zone .row {
     height: auto !important;
@@ -878,16 +878,13 @@ ul.processes.visible {
 .btn-group>.btn, .btn-group-vertical>.btn {
     padding-right: 30px;
 }
-.dynamic-content .top-zone .btn-group {
+.dynamic-content .top-zone .btn-group, #event-count {
     display: inline-block;
     margin:10px 0 25px 10px;
     white-space: nowrap;
 }
 .dynamic-content .top-zone .btn-group:first-of-type {
     margin-left: 0;
-}
-.dynamic-content .bottom-zone {
-    padding-top: 20px;
 }
 .dynamic-content label {
     text-align: left;
@@ -1591,8 +1588,8 @@ div.refresh {
 .event-dropdowns {
     height: 67px;
 }
-#type-dropdown, #site-dropdown, #publisher-dropdown {
-    min-width: 180px;
+#type-dropdown, #status-dropdown {
+    min-width: 150px;
 }
 #user-list .btn-group.dropdown {
     min-width: 150px;
@@ -1722,11 +1719,6 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
     text-align: right;
 }
 
-/* Individual Elements */
-#storage-destination, #storage-destination ul, #storage-destination ul li {
-    min-width: 370px;
-}
-
 .monitor {
     position: relative;
 }
@@ -1748,4 +1740,27 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
     height: 16px;
     line-height: inherit;
     font-size: 12px;
+}
+
+/* Individual Elements */
+#storage-destination, #storage-destination ul, #storage-destination ul li {
+    min-width: 370px;
+}
+
+#event-count {
+    line-height: 32px;
+    font-size: 16px;
+    position: relative;
+    vertical-align: middle;
+    min-width: 85px;
+    text-align: right;
+}
+#event-pagination {
+    float: right;
+    line-height: 32px;
+    font-size: 16px;
+}
+#event-pagination div {
+    display: inline;
+    margin-right: 10px;
 }

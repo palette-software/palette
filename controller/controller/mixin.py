@@ -34,6 +34,32 @@ class BaseDictMixin(object):
             d[name] = value
         return d
 
+    def todict_all_fields(self, pretty=False, exclude=[]):
+        if not isinstance(self, meta.Base):
+            raise ProgrammingError("meta.Base instance required.");
+        d = {}
+        for c in self.__table__.columns:
+            if c.name in exclude:
+                continue
+            value = getattr(self, c.name)
+            if value is None:
+                value = "None"
+            elif isinstance(c.type, DateTime):
+                try:
+                    value = utc2local(value) # FIXME
+                    value = value.strftime(DATEFMT)
+                except AttributeError, e:
+                     # It is possible this value has been set directly but
+                     # not yet converted by the ORM.
+                     # i.e. It is not a DateTime instance but something else
+                     # that can be later converted to a DateTime instance.
+                    value = str(value)
+            elif not isinstance(value, (int, long)):
+                value = unicode(value)
+            name = pretty and c.name.replace('_', '-') or c.name
+            d[name] = value
+        return d
+
 class BaseMixin(object):
 
     defaults = []
@@ -89,7 +115,7 @@ class BaseMixin(object):
 
 
     @classmethod
-    def get_all_by_keys(cls, keys, order_by=[]):
+    def get_all_by_keys(cls, keys, order_by=[], limit=None):
         query = meta.Session.query(cls)
         for key, value in keys.items():
             query = query.filter(getattr(cls, key) == value)
@@ -97,6 +123,8 @@ class BaseMixin(object):
             order_by = [order_by]
         for clause in order_by:
             query = query.order_by(clause)
+        if not limit is None:
+            query = query.limit(limit)
         return query.all()
 
     @classmethod
@@ -104,10 +132,17 @@ class BaseMixin(object):
         query = meta.Session().query(func.max(getattr(cls, column)))
         for key, value in filters.items():
             query = query.filter(getattr(cls, key) == value)
-        value = query.one()
-        if value[0] is None:
+        value = query.scalar()
+        if value is None:
             return default
-        return value[0]
+        return value
+
+    @classmethod
+    def count(cls, filters={}):
+        query = meta.Session().query(cls)
+        for key, value in filters.items():
+            query = query.filter(getattr(cls, key) == value)
+        return query.count()
 
 
 class OnlineMixin(object):

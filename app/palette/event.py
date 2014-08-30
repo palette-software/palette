@@ -2,12 +2,11 @@ import socket
 
 from webob import exc
 
-from akiri.framework.api import RESTApplication
 from akiri.framework.config import store
 
 from akiri.framework.ext.sqlalchemy import meta
 
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 
 from controller.environment import Environment
 from controller.event import EventEntry
@@ -15,243 +14,143 @@ from controller.state_control import StateControl
 from controller.event_control import EventControl
 from controller.profile import Role
 
+from rest import PaletteRESTHandler
+
 __all__ = ["EventApplication"]
 
-class EventApplication(RESTApplication):
+class EventApplication(PaletteRESTHandler):
 
     NAME = 'events'
+    DEFAULT_PAGE_SIZE = 25
 
-    def __init__(self, global_conf):
-        super(EventApplication, self).__init__(global_conf)
-
-        self.envid = Environment.get().envid
-
-    def handle_get(self, req, event_status="0", event_type="0",
-                    event_site=0, event_publisher=0, event_project=0):
-
-        # Event retrieval accepts:
-        #   What should be selected from the event table:
-        #       start: eventid or a date/time.  Requirement: start <= end
-        #       end: eventid or a date/time
-        #   You don't have to specify both a start and end.
-        #
-        #   After the rows are selected by the above 'start' and 'end',
-        #   you can choose EITHER "low" or "high".
-        #   If "low" is specifified, low/earlier rows are returned.
-        #   If "high" is specfieid, high/later rows are returned.
-        #   With "low" and "high", you specify the maximum number of rows to return:
-        #       low=30 (return the lowest 30 rows)
-        #   or
-        #       high=30 (return the highest 30 rows)
-        # Sample requests:
-        #   http://localhost:8080/rest/events?start=3&end=10&low=2&order=asc
-        #   http://localhost:8080/rest/events?end=10&high=3&order=asc
-        #   http://localhost:8080/rest/events?start=2&end=10&high=3
-        #   http://localhost:8080/rest/events?start=2&end=10&low=3
-        #   http://localhost:8080/rest/events?start=2&end=10&high=3&order=desc
-        # Bad requests:
-        #   http://localhost:8080/rest/events?start=now&end=10&low=3
-        #       (start=datetime, end=eventid)
-        #   http://localhost:8080/rest/events?start=5&end=4&low=3
-        #       (end < start)
-        # start and end are event-id's or date-related:
-        #   event-id (integer), "now", "epoch", or a datetime.
-        #   datetime examples:
-        #       2014-04-12
-        #       12/04/2013 12:00:00
-        #       12/04/2013 12:34:54 PM
-        start = None
-        end = None
-        # Can't specify low AND high
-        low = None
-        high = None
-
-        order = 'asc'   # default
-
-        if 'low' in req.GET:     # max rows to return
-            try:
-                low = int(req.GET['low'])
-            except ValueError, e:
-                print "Invalid low:", req.GET['low']
-                raise exc.HTTPBadRequest()
-
-        if 'high' in req.GET:     # max rows to return
-            try:
-                high = int(req.GET['high'])
-            except ValueError, e:
-                print "Invalid high:", req.GET['high']
-                raise exc.HTTPBadRequest()
-
-            if low:
-                print "Can't specify both 'low' and 'high'"
-                raise exc.HTTPBadRequest()
-
-        if 'order' in req.GET:
-            order = req.GET['order']
-            if order not in ("asc", "desc"):
-                print "Invalid order:", order
-                raise exc.HTTPBadRequest()
-
-        if 'start' in req.GET:
-            start = req.GET['start']
-            if start.isdigit():
-                start = int(start)
-            elif start == 'now':
-                start = 'now()'
-
-        if 'end' in req.GET:
-            end = req.GET['end']
-            if end.isdigit():
-                end = int(end)
-                # Validity check
-                if type(start) == int and start > end:
-                    print "Error: start (%d) must be <= end (%d)." % (start, end)
-                    raise exc.HTTPBadRequest()
-            elif end == 'now':
-                end = u'now()'
-
-        # Input validitiy checking
-        if start != None and end != None:
-            if type(start) != type(end):
-                print "Error: Start and end are different types."
-                print "type(%s): %s, type(%s): %s" % \
-                                        (start, type(start), end, (type(end)))
-                raise exc.HTTPBadRequest()
-
-        events = self.event_query(req, start, end, low, high, order,
-            event_status, event_type, event_site, event_publisher,
-                                                            event_project)
-
-        # Count the number of red, yellow and green events.
-        red_count = len(meta.Session.query(EventEntry).\
-                    filter(EventEntry.color == StateControl.COLOR_RED).all())
-        yellow_count = len(meta.Session.query(EventEntry).\
-                    filter(EventEntry.color == StateControl.COLOR_YELLOW).all())
-        green_count = len(meta.Session.query(EventEntry).\
-                    filter(EventEntry.color == StateControl.COLOR_GREEN).all())
-
-        # Get the list of all event_types found.
-        query = meta.Session.query(EventEntry).\
-            distinct(EventEntry.event_type).\
-            order_by(EventEntry.event_type).\
-            all()
-
-        event_types = [entry.event_type for entry in query]
-
-        return { 'event-types': event_types,
-                 'red': red_count, 'yellow': yellow_count, 'green': green_count,
-                 'events': events }
-
-    def event_query(self, req, start, end, low, high, order,
-            event_status, event_type, event_site, event_publisher,
-                                                            event_project):
-
-#        print "start:", start, ", end:", end, ", low:",low, ", high:", high,
-#        print ", order:", order
-#        print "event_status:", event_status, "event_type:", event_type, "event_site:", event_site, "event_publisher:", event_publisher, "event_project:", event_project
-        query = meta.Session.query(EventEntry).\
-            filter(EventEntry.envid == self.envid)
-
-        if event_status != "0":
-            query = query.filter(EventEntry.level == event_status)
-
-        if event_type != "0":
-            query = query.filter(EventEntry.event_type == event_type)
-
-        if event_site != 0:
-            query = query.filter(EventEntry.siteid == event_site)
-
-        if event_publisher != 0:
-            query = query.filter(EventEntry.userid == event_publisher)
-
-        if event_project != 0:
-            query = query.filter(EventEntry.projectid == event_project)
-
-        if isinstance(req.remote_user, basestring):
-            req.remote_user = UserProfile.get_by_name(req.remote_user)
-
-        userid = req.remote_user.system_users_id
-        if req.remote_user.roleid == Role.NO_ADMIN and \
-                                        EventEntry.userid != userid:
-            query = query.filter(and_(EventEntry.key.in_(\
-                [EventControl.EXTRACT_OK, EventControl.EXTRACT_FAILED]),
-                (EventEntry.userid == userid)))
-
-        if type(start) == int or type(end) == int:
-            # select based on an event-id
-            if start:
-                query = query.filter(EventEntry.eventid >= start)
-            if end:
-                query = query.filter(EventEntry.eventid <= end)
-
-            if low:
-                query = query.order_by(EventEntry.eventid.asc())
-                query = query.limit(low)
+    def fixup_icon(self, entry):
+        # FIXME: really use the database table
+        if not entry.icon:
+            if entry.color == 'green':
+                icon = 'fa-check-circle'
+            elif entry.color == 'red':
+                icon = 'fa-times-circle'
             else:
-                query = query.order_by(EventEntry.eventid.desc())
-                query = query.limit(high)
+                icon = 'fa-exclamation-circle'
+        entry.icon = icon
 
-            if order == 'asc':
-                query = query.from_self().order_by(EventEntry.eventid.asc())
-            else:
-                query = query.from_self().order_by(EventEntry.eventid.desc())
-        else:
-            # select based on start, which can be a date,
-            # 'epoch' or 'now()'.
-            if start:
-                query = query.filter(EventEntry.creation_time >= start)
-            if end:
-                query = query.filter(EventEntry.creation_time <= end)
+    def convert_description_to_html(self, entry):
+        html = ""
+        for line in entry.description.split('\n'):
+            # Replace each leading space with '&nbsp;'
+            line_lstripped = line.lstrip(' ')
+            lspace_count = len(line) - len(line_lstripped)
+            line = '&nbsp;' * lspace_count + line_lstripped
 
-            if low:
-                query = query.order_by(EventEntry.creation_time.asc())
-                query = query.limit(low)
-            else:
-                query = query.order_by(EventEntry.creation_time.desc())
-                query = query.limit(high)
+            # Add a break at each line
+            html += line + "<br />" + "\n"
+        entry.description = html
 
-            if order == 'asc':
-                query = query.from_self().order_by(EventEntry.creation_time.asc())
-            else:
-                query = query.from_self().order_by(EventEntry.creation_time.desc())
+    def query_mostrecent(self, status=None, event_type=None,
+                         timestamp=None, limit=None):
+        envid = self.environment.envid
+        filters = {}
+        filters['envid'] = envid
+        q = meta.Session.query(EventEntry).filter(EventEntry.envid == envid)
+        if status:
+            filters['level'] = status
+            q = q.filter(EventEntry.level == status)
+        if event_type:
+            filters['event_type'] = event_type
+            q = q.filter(EventEntry.event_type == event_type)
+        if not timestamp is None:
+            q = q.filter(EventEntry.timestamp > timestamp)
+        q = q.order_by(EventEntry.timestamp.desc())
+        if not limit is None:
+            q = q.limit(limit)
 
         events = []
-        for entry in query:
+        for event in q.all():
+            self.convert_description_to_html(event)
+            self.fixup_icon(event)
+            events.append(event.todict(pretty=True))
 
-            description = ""
+        data = {}
+        data['events'] = events
+        data['count'] = EventEntry.count(filters)
+        return data
 
-            for line in entry.description.split('\n'):
-                # Replace each leading space with '&nbsp;'
-                line_lstripped = line.lstrip(' ')
-                lspace_count = len(line) - len(line_lstripped)
-                line = '&nbsp;' * lspace_count + line_lstripped
+    def query_page(self, page, limit=None,
+                   status=None, event_type=None, timestamp=None):
+        envid = self.environment.envid
+        filters = {}
+        filters['envid'] = envid
+        q = meta.Session.query(EventEntry).filter(EventEntry.envid == envid)
+        if status:
+            filters['level'] = status
+            q = q.filter(EventEntry.level == status)
+        if event_type:
+            filters['event_type'] = event_type
+            q = q.filter(EventEntry.event_type == event_type)
+        if not timestamp is None:
+            q = q.filter(EventEntry.timestamp <= timestamp)
 
-                # Add a break at each line
-                description += line + "<br />" + "\n"
+        if limit is None:
+            limit = self.DEFAULT_PAGE_SIZE
+        offset = (page - 1) * limit
+        q = q.order_by(EventEntry.timestamp.desc()).\
+            limit(limit).\
+            offset(offset)
 
-            # FIXME: really use the database table
-            if not entry.icon:
-                if entry.color == 'green':
-                    icon = 'fa-check-circle'
-                elif entry.color == 'red':
-                    icon = 'fa-times-circle'
-                else:
-                    icon = 'fa-exclamation-circle'
+        events = []
+        for event in q.all():
+            self.convert_description_to_html(event)
+            self.fixup_icon(event)
+            events.append(event.todict(pretty=True))
 
-            events.append({  "eventid": entry.eventid,
-                             "title": entry.title,
-                             "summary": entry.summary,
-                             "description": description,
-                             "level": entry.level,
-                             "icon": icon,
-                             "color": entry.color,
-                             "event-type": entry.event_type,
-                             "date": str(entry.creation_time)[:19]
-                          })
-        return events
+        data = {}
+        data['events'] = events
+        data['count'] = EventEntry.count(filters)
+        return data
+
+    def get(self, req, name):
+        if not name in req.GET:
+            return None
+        value = req.GET[name]
+        if value == '0':
+            return None
+        return value
+
+    def getint(self, req, name):
+        try:
+            return int(req.GET[name])
+        except:
+            pass
+        return None
+
+    def getfloat(self, req, name):
+        try:
+            return float(req.GET[name])
+        except:
+            pass
+        return None
+
+    # ts is epoch seconds as a float.
+    def handle_get(self, req):
+        page = self.getint(req, 'page')
+        timestamp = self.getfloat(req, 'ts')
+        if not timestamp is None:
+            timestamp = datetime.utcfromtimestamp(timestamp)
+        if page is None:
+            return self.query_mostrecent(status=self.get(req,'status'),
+                                         event_type=self.get(req, 'type'),
+                                         timestamp=timestamp,
+                                         limit=self.getint(req, 'limit'))
+        else:
+            return self.query_page(page,
+                                   status=self.get(req,'status'),
+                                   event_type=self.get(req, 'type'),
+                                   timestamp=timestamp,
+                                   limit=self.getint(req, 'limit'))
 
     def handle(self, req):
         if req.method == "GET":
             return self.handle_get(req)
         else:
             raise exc.HTTPBadRequest()
+

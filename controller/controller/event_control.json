@@ -9,7 +9,7 @@
 "email_message":"Status: ERROR\nTime: ${time}\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails: ${info}${error}\n\nWe have lost the ability to communicate with the ${displayname} server. Possible causes include:\n\n1. Network failure due to firewall or general connecitivity change\n2. Server hardware failure\n3. Server operating system failure\n4. Palette Agent failure\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"communucation"
 },
 {
 "key":"AGENT-COMMUNICATION",
@@ -20,7 +20,7 @@
 "email_message":"Status: INFO\nTime: ${time}\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nThis server is now connected and being monitored.\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
-"event_type":"status"
+"event_type":"communucation"
 },
 {
 "key":"AGENT-DISCONNECT",
@@ -31,7 +31,7 @@
 "email_message":"Status: ERROR\nTime: ${time}\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails: ${info}\n${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"communucation"
 },
 {
 "key":"AGENT-FAILED-STATUS",
@@ -42,7 +42,7 @@
 "email_message":"Status: ERROR\nTime: ${time}\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails: ${info}${error}\n${stdout}${stderr}\n${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"agent"
 },
 {
 "key":"AGENT-RETURNED-INVALID-STATUS",
@@ -53,7 +53,7 @@
 "email_message":"Status: ERROR\nTime: ${time}\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails:\n${stdout}${stderr}\n${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"agent"
 },
 {
 "key":"ARCHIVE-START-FAILED",
@@ -64,7 +64,7 @@
 "email_message":"Status: ERROR\nTime: ${time}\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails:\n${stdout}${stderr}\n${info}${error}\n\nThe service that manages where your backups are stored is not able to start properly.\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"agent"
 },
 {
 "key":"ARCHIVE-STOP-FAILED",
@@ -75,7 +75,7 @@
 "email_message":"Status: ERROR\nTime: ${time}\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails:\n${stdout}${stderr}\n${info}${error}\n\nThe service that manages where your backups are stored is not able to start properly.\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"storage"
 },
 {
 "key":"BACKUP-BEFORE-RESTORE-FAILED",
@@ -192,7 +192,7 @@
 "level":"I",
 "send_email":"f",
 "subject":"INFO - Backup Requested by %(username)s Completed",
-"event_description":"Status: INFO\nRequesting User: ${username}\n\n${info}\n\nDetails: \n${stdout}${stderr}\n\n",
+"event_description":"Status: \t\t\t\tINFO\nType: \t\t\t\t\tBackup\nTime: \t\t\t\t\t${time}\n\nRequesting User: ${username}\n\n${info}\n\nDetails: \n${stdout}${stderr}\n\n",
 "email_message":"Status: INFO\nTime: ${time}\nRequesting User: ${username}\n\n${info}\n\nDetails: \n${stdout}${stderr}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
@@ -262,7 +262,7 @@
 "email_message":"Status: WARNING\n\nYour Tableau Server experienced a failure to remove older logs completely. Please read the notes below for more detail and possible next steps.\n\nNotes: ${stdout}${stderr}\nAdditional Notes: ${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"yellow",
-"event_type":"status"
+"event_type":"cleanup"
 },
 {
 "key":"CLEANUP-FINISHED",
@@ -273,7 +273,7 @@
 "email_message":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
 "icon":null,
 "color":"green",
-"event_type":"status"
+"event_type":"cleanup"
 },
 {
 "key":"CLEANUP-STARTED",
@@ -284,7 +284,7 @@
 "email_message":"Status: INFO",
 "icon":null,
 "color":"green",
-"event_type":"status"
+"event_type":"cleanup"
 },
 {
 "key":"DISK-USAGE-ABOVE-HIGH-WATERMARK",
@@ -295,7 +295,7 @@
 "email_message":"Status: ERROR\nTime: ${time}\nServer: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\nDetails: ${info}\n\nYour current Warning Disk Storage Threshold is set at ${disk_watermark_high}% of your volume's capacity. You can adjust this value by going to your Storage Configuration Page at ${server_url}configure/storage.\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"agent"
+"event_type":"storage"
 },
 {
 "key":"DISK-USAGE-ABOVE-LOW-WATERMARK",
@@ -306,7 +306,7 @@
 "email_message":"Status: WARNING\nTime: ${time}\nServer: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\nDetails: ${info}\n\nYour current Warning Disk Storage Threshold is set at ${disk_watermark_low}% of your volume's capacity. You can adjust this value by going to your Storage Configuration Page at ${server_url}configure/storage.\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"yellow",
-"event_type":"agent"
+"event_type":"storage"
 },
 {
 "key":"DISK-USAGE-OKAY",
@@ -317,7 +317,7 @@
 "email_message":"Status: INFO\nTinme: ${time}\nServer: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails: ${info}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
-"event_type":"agent"
+"event_type":"storage"
 },
 {
 "key":"EMAIL-TEST",
@@ -335,8 +335,8 @@
 "level":"E",
 "send_email":"t",
 "subject":"ERROR - Extract(s) Refresh Failed for %(subtitle)s '%(title)s' by Publisher '%(username)s'",
-"event_description":"Status: ERROR\nTime: ${completed_at}\nPublisher: ${username}\n${subtitle}: ${title}\nJob Name: ${job_name}\nJob Extract ID: ${extractid}\nJob Duration: ${duration} Seconds\n\nNotes:\n${notes}",
-"email_message":"Status: ERROR\nTime: ${completed_at}\nPublisher: ${username}\n${subtitle}: ${title}\nJob Name: ${job_name}\nJob Extract ID: ${extractid}\nJob Duration: ${duration} Seconds\n\nNotes:\n${notes}\n\nThis message was sent from your Palette Server at ${server_url}\n",
+"event_description":"Status: ERROR\n\nTime: ${completed_at}\nPublisher: ${username}\n${subtitle}: ${title}\nJob Name: ${job_name}\nJob Extract ID: ${id}\nJob Duration: ${duration} Seconds\n\n<b>Notes:</b>\n${notes}",
+"email_message":"Status: ERROR\n\nTime: ${completed_at}\nPublisher: ${username}\n${subtitle}: ${title}\nJob Name: ${job_name}\nBackground Job ID: ${id}\nJob Duration: ${duration} Seconds\n\n<b>Notes:</b>\n${notes}\n\nThis message was sent from your Palette Server at ${server_url}\n",
 "icon":null,
 "color":"red",
 "event_type":"extract"
@@ -346,8 +346,8 @@
 "level":"I",
 "send_email":"f",
 "subject":"INFO - Extract(s) Refresh Completed for %(subtitle)s '%(title)s' by Publisher '%(username)s'",
-"event_description":"Status: INFO\nCompleted At: ${completed_at}\nPublisher: ${username}\n${subtitle}: ${title}\nJob Name: ${job_name}\nJob Extract ID: ${extractid}\nJob Duration: ${duration} Seconds\n\nNotes:\n${notes}",
-"email_message":"Status: INFO\nCompleted At: ${completed_at}\nPublisher: ${username}\n${subtitle}: ${title}\nJob Name: ${job_name}\nJob Extract ID: ${extractid}\nJob Duration: ${duration} Seconds\n\nNotes:\n${notes}\n\nThis message was sent from your Palette Server at ${server_url}\n",
+"event_description":"Status: INFO\n\nCompleted At: ${completed_at}\nPublisher: ${username}\n${subtitle}: ${title}\nJob Name: ${job_name}\nBackground Job ID: ${id}\nJob Duration: ${duration} Seconds\n\n<b>Notes:</b>\n${notes}",
+"email_message":"Status: INFO\n\nCompleted At: ${completed_at}\nPublisher: ${username}\n${subtitle}: ${title}\nJob Name: ${job_name}\nBackground Job ID: ${id}\nJob Duration: ${duration} Seconds\n\n<b>Notes:</b>\n${notes}\n\nThis message was sent from your Palette Server at ${server_url}\n",
 "icon":null,
 "color":"green",
 "event_type":"extract"
@@ -361,7 +361,7 @@
 "email_message":"Status: INFO\nTime: ${time}\nServer: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"agent"
+"event_type":"firewall"
 },
 {
 "key":"HTTP-BAD-STATUS",
@@ -372,7 +372,7 @@
 "email_message":"Status: ERROR\nHTTP Status Error Code: ${status}\nProblem URL: ${tableau_server_url}${http_request_uri}\nReferring URL: ${http_referer}\nTableau Controller: ${controller}\nTableau Action: ${action}\n\nTableau HTTP Request ID: ${reqid}\nURL Server by Tableau Worker IP: ${worker}\nSession ID: ${session_id}\n\nBrowser Interactor: ${username}\nBrowser IP: ${remote_ip}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"agent"
+"event_type":"http"
 },
 {
 "key":"HTTP-LOAD-ERROR",
@@ -383,7 +383,7 @@
 "email_message":"Status: ERROR\n\nTime:${time}\nHTTP Status Code: ${status}\nProblem URL: ${tableau_server_url}${http_request_uri}\nLoad Duration: ${duration} seconds\nReferring URL: ${http_referer}\nTableau Controller: ${controller}\nTableau Action: ${action}\n\nTableau HTTP Request ID: ${reqid}\nURL Server by Tableau Worker IP: ${worker}\nSession ID: ${session_id}\n\nBrowser Interactor: ${username}\nBrowser IP: ${remote_ip}\n\nNote: Error loading threshold is currently set at ${http_load_error} seconds.\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"agent"
+"event_type":"load"
 },
 {
 "key":"HTTP-LOAD-WARN",
@@ -394,7 +394,7 @@
 "email_message":"Status: WARNING\n\nTime:${time}\nHTTP Status Code: ${status}\nProblem URL: ${tableau_server_url}${http_request_uri}\nLoad Duration: ${duration} seconds\nReferring URL: ${http_referer}\nTableau Controller: ${controller}\nTableau Action: ${action}\n\nTableau HTTP Request ID: ${reqid}\nURL Server by Tableau Worker IP: ${worker}\nSession ID: ${session_id}\n\nNote: Warning threshold is currently set at ${http_load_warn} seconds.\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"yellow",
-"event_type":"agent"
+"event_type":"load"
 },
 {
 "key":"INIT-STATE-DEGRADED",
@@ -405,7 +405,7 @@
 "email_message":"Status: INFO\nTime: ${time}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
-"event_type":"status"
+"event_type":"tableau"
 },
 {
 "key":"INIT-STATE-STARTED",
@@ -416,7 +416,7 @@
 "email_message":"Status: INFO\nTime: ${time}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
-"event_type":"status"
+"event_type":"tableau"
 },
 {
 "key":"INIT-STATE-STOPPED",
@@ -427,7 +427,7 @@
 "email_message":"Status: INFO\nTime: ${time}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
-"event_type":"status"
+"event_type":"tableau"
 },
 {
 "key":"LICENSE-EXPIRED",
@@ -438,7 +438,7 @@
 "email_message":"Status: ERROR\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"license"
 },
 {
 "key":"LICENSE-INVALID",
@@ -449,7 +449,7 @@
 "email_message":"Status: ERROR\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nYour Tableau Server License has expired and needs to be fixed.\n\nDetails: \n${stdout}${stderr}\n${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"license"
 },
 {
 "key":"LICENSE-RENEWAL",
@@ -460,7 +460,7 @@
 "email_message":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"license"
 },
 {
 "key":"MAINT-OFFLINE",
@@ -471,7 +471,7 @@
 "email_message":"Status: INFO\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nVisits to your Tableau Server will now see a \"Tableau Server Down for Maintenance\" Page instead of receiving an HTTP 404 \"Page Not Found\" Error.\n\nDetails: \n${stdout}${stderr}\n${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}\n",
 "icon":null,
 "color":"green",
-"event_type":"status"
+"event_type":"maintentance"
 },
 {
 "key":"MAINT-ONLINE",
@@ -482,7 +482,7 @@
 "email_message":"Status: INFO\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nVisits to your Tableau Server will now see a \"Tableau Server Down for Maintenance\" Page instead of receiving an HTTP 404 \"Page Not Found\" Error.\n\nDetails: \n${stdout}${stderr}\n${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}\n",
 "icon":null,
 "color":"green",
-"event_type":"status"
+"event_type":"maintentance"
 },
 {
 "key":"MAINT-START-FAILED",
@@ -493,7 +493,7 @@
 "email_message":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"maintentance"
 },
 {
 "key":"MAINT-STOP-FAILED",
@@ -504,7 +504,7 @@
 "email_message":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"maintentance"
 },
 {
 "key":"MAINT-WEB",
@@ -515,7 +515,7 @@
 "email_message":"Server: ${displayname}\nUsername: ${username}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}",
 "icon":null,
 "color":"green",
-"event_type":"status"
+"event_type":"maintentance"
 },
 {
 "key":"PERMISSION",
@@ -537,7 +537,7 @@
 "email_message":"Status: ERROR\nTime:${time}\nRequesting User: ${username}\nDetails: ${stdout}${stderr}\nAdditional Details: ${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"backup"
+"event_type":"restore"
 },
 {
 "key":"RESTORE-FINISHED",
@@ -548,7 +548,7 @@
 "email_message":"Status: INFO\nRequesting User: ${username}\nDetails: ${stdout}${stderr}",
 "icon":null,
 "color":"green",
-"event_type":"backup"
+"event_type":"restore"
 },
 {
 "key":"RESTORE-STARTED",
@@ -559,7 +559,7 @@
 "email_message":"Status: INFO\nRequesting User: ${username}",
 "icon":null,
 "color":"green",
-"event_type":"backup"
+"event_type":"restore"
 },
 {
 "key":"SCHEDULE-JOB-FAILED",
@@ -592,7 +592,7 @@
 "email_message":"Status: ERROR\nTime: ${time}\n\nPlease review the output below to find which Tableau Process is “Stopped.” Sometimes a Tableau Process will stop running momentarily to restart itself which can cause this alert to be triggered. Normally, Tableau Server will recover in less than 5 minutes. If not, please inspect the Server browser by clicking on the Status box in the top left corner to help you troubleshoot further. \n\nDetails: ${stdout}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"tableau"
 },
 {
 "key":"STATE-STARTED",
@@ -603,7 +603,7 @@
 "email_message":"Status: INFO\n\nRequesting User: ${username}\n\nYour Tableau Server was Started by ${username} \n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
-"event_type":"status"
+"event_type":"tableau"
 },
 {
 "key":"STATE-STARTED-AFTER-DEGRADED",
@@ -614,7 +614,7 @@
 "email_message":"Status: INFO\nTime: ${time}\n\nYour Tableau Server has recovered from a Partial Process Degrade Event (also called a Tableau Server Status Degrade). If this recovery happens automatically within 5 minutes of the initial Partial Process Degrade Event, then no further action is needed at this time. This is how the Tableau Server was designed to automatically manage its Processes.\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
-"event_type":"status"
+"event_type":"tableau"
 },
 {
 "key":"STATE-STOPPED",
@@ -625,7 +625,7 @@
 "email_message":"Status: WARNING\nRequesting User: ${username}\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails: Your Tableau Server has been intentionally Stopped by ${username}.\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"yellow",
-"event_type":"status"
+"event_type":"tableau"
 },
 {
 "key":"STATE-UNEXPECTED-STATE-STARTED",
@@ -636,7 +636,7 @@
 "email_message":"Status: INFO\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nYour Tableau Server has returned to normal operation after an unexpected stop. This can sometimes happen if another user has manually stopped and started the Tableau Server directly from the Tableau Server application. It is recommended that you always use your Palette Server to stop and start your Tableau Server to reduce unnecessary false alerts.\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
-"event_type":"status"
+"event_type":"tableau"
 },
 {
 "key":"STATE-UNEXPECTED-STATE-STOPPED",
@@ -647,7 +647,7 @@
 "email_message":"Status: ERROR\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails: Your Tableau Server has been unexpectedly Stopped. Please investigate the cause.\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"tableau"
 },
 {
 "key":"STATE-UNEXPECTED-STOPPED-AFTER-DEGRADED",
@@ -658,7 +658,7 @@
 "email_message":"Status: ERROR\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails: Your Tableau Server has been unexpectedly Stopped after being Degraded. Please investigate the cause.\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"tableau"
 },
 {
 "key":"TABLEAU-START-FAILED",
@@ -669,7 +669,7 @@
 "email_message":"Status: ERROR\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nMessage: Your Tableau Server has failed to Start. Please investigate the cause.\n\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"tableau"
 },
 {
 "key":"TABLEAU-SYSTEM-TABLE",
@@ -680,7 +680,7 @@
 "email_message":"Status: ERROR\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"yellow",
-"event_type":"status"
+"event_type":"tableau"
 },
 {
 "key":"TABLEAU-USER-TABLE",
@@ -702,7 +702,7 @@
 "email_message":"Status - ERROR\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"logs"
 },
 {
 "key":"ZIPLOGS-FINISHED",
@@ -713,7 +713,7 @@
 "email_message":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
 "icon":null,
 "color":"green",
-"event_type":"status"
+"event_type":"logs"
 },
 {
 "key":"ZIPLOGS-STARTED",
@@ -724,7 +724,7 @@
 "email_message":"Status: INFO",
 "icon":null,
 "color":"green",
-"event_type":"status"
+"event_type":"logs"
 }
 ]
 }

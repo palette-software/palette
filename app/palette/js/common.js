@@ -137,6 +137,56 @@ function ($, topic, template)
     }
 
     /*
+     * setPage(n)
+     */
+    function setPage(n) {
+        eventFilter.page = n;
+        /* turn on update for at least one more cycle. */
+        eventFilter.liveUpdate = true;
+        resetPoll();
+    }
+
+    /*
+     * pageCount()
+     */
+    function pageCount() {
+        n = (eventFilter.count + eventFilter.limit -1) / eventFilter.limit;
+        return Math.floor(n);
+    }
+
+    /*
+     * nextPage()
+     */
+    function nextPage() {
+        if (eventFilter.page < pageCount()) {
+            setPage(eventFilter.page+1);
+        }
+    }
+
+    /*
+     * prevPage()
+     */
+    function prevPage() {
+        if (eventFilter.page > 1) {
+            setPage(eventFilter.page-1);
+        }
+    }
+
+    /*
+     * firstPage()
+     */
+    function firstPage() {
+        setPage(1);
+    }
+
+    /*
+     * nextPage()
+     */
+    function lastPage() {
+        setPage(pageCount());
+    }
+
+    /*
      * setupDropdowns()
      * Enable the select-like elements created with the dropdown class.
      */
@@ -152,9 +202,28 @@ function ($, topic, template)
     function setupEventDropdowns() {
         $('.dropdown-menu li').off('click');
         $('.dropdown-menu li').bind('click', ddClick);
+        $('.event-dropdowns div.btn-group').each(function () {
+            $(this).data('callback', function(node, value) {
+                eventFilter.page = 1;
+                resetPoll();
+            });
+        });
     }
 
-
+    /*
+     * setupEventPagination()
+     * Enable the next, previous, etc links.
+     */
+    function setupEventPagination() {
+        $('#event-pagination .next a').off('click');
+        $('#event-pagination .next a').bind('click', nextPage);
+        $('#event-pagination .previous a').off('click');
+        $('#event-pagination .previous a').bind('click', prevPage);
+        $('#event-pagination .first a').off('click');
+        $('#event-pagination .first a').bind('click', firstPage);
+        $('#event-pagination .last a').off('click');
+        $('#event-pagination .last a').bind('click', lastPage);
+    }
     /*
      * setupConfigure
      * Enable the configure expansion item on main sidebar.
@@ -218,25 +287,49 @@ function ($, topic, template)
     }
 
     /*
-     * updateEvents
+     * updateEventList
      */
-    function updateEvents(data) {
-        $('a.alert.errors span').html(data['red']);
-        $('a.alert.warnings span').html(data['yellow']);
-
+    function updateEventList(data) {
         var events = data['events'];
-        if (events && events.length > 0){
-            eventFilter.lastid = events[0]['eventid'];
+        if (events == null) {
+            /* no update request/sent */
+            return;
+        }
+
+        if (events.length == 0) {
+            eventFilter.ref = null;
+            eventFilter.current['first'] = 0;
+            eventFilter.current['last'] = 0;
+            eventFilter.current['count'] = 0;
+            $('#event-list').html('');
+            return;
+        }
+
+        /* checking the first eventid, the last eventid and the count is
+           enough to tell if anything has changed (since events are ordered) */
+        if ((events[0].eventid == eventFilter.current['first']) && 
+            (events[events.length-1].eventid == eventFilter.current['last']) &&
+            (events.length = eventFilter.current['count']))
+        {
+            /* same values found. */
+            return;
         }
 
         var rendered = template.render(event_list_template, data);
-        if (eventFilter.changed) {
-            $('#event-list').html(rendered);
-            eventFilter.changed = false;
-        } else {
-            var html = rendered + '\n' + $('#event-list').html();
-            $('#event-list').html(html);
-        }            
+        $('#event-list').html(rendered);
+
+        eventFilter.ref = events[0]['reference-time'];
+        eventFilter.current['first'] = events[0].eventid;
+        eventFilter.current['last'] = events[events.length-1].eventid;
+        eventFilter.current['count'] = events.length;
+    }
+
+    /*
+     * updateEvents
+     */
+    function updateEvents(data) {
+
+        updateEventList(data);
 
         for (var i in data['config']) {
             var d = data['config'][i];
@@ -244,21 +337,23 @@ function ($, topic, template)
             $('#'+d['name']+'-dropdown').html(rendered);
         }
 
-        setupEventDropdowns();
-        bindEvents();
-    }
+        var count = data['event-count'];
+        if (count != null) {
+            $('#event-count span').html(count);
+            eventFilter.count = count;
+            $('#event-pagination .page-number').html(eventFilter.page);
+            $('#event-pagination .page-count').html(pageCount());
+        }
 
-    /*
-     * loadUserVoice()
-     * Install the JS code necessary to run uservoice.
-     */
-    function loadUserVoice() {
-        var uv=document.createElement('script');
-        uv.type='text/javascript';
-        uv.async=true;
-        uv.src='//widget.uservoice.com/OggeFPvaqWHCBdmBclbA.js';
-        var s=document.getElementsByTagName('script')[0];
-        s.parentNode.insertBefore(uv,s)
+        if (eventFilter.page > 1) {
+            eventFilter.liveUpdate = false;
+        }
+
+        bindEvents();
+
+        /* FIXME: do these once. */
+        setupEventDropdowns();
+        setupEventPagination();
     }
 
     /* Code run automatically when 'common' is included */
@@ -270,7 +365,9 @@ function ($, topic, template)
 
 
     /* MONITOR TIMER */
-    var interval = 1000; //ms - FIXME: make configurable from the backend.
+//    var interval = 1000; //ms - FIXME: make configurable from the backend.
+    var interval = 5000; //ms - FIXME: make configurable from the backend.
+    var timer = null;
     var current = null;
 
     function update(data)
@@ -282,7 +379,7 @@ function ($, topic, template)
          * Broadcast the state change, if applicable.
          * NOTE: this method may lead to false positives, which is OK.
          */
-        if (json == current && !eventFilter.changed) {
+        if (json == current) {
             return;
         }
          
@@ -306,6 +403,7 @@ function ($, topic, template)
     /*
      * ddDataId
      * Get the data-id of the current selection in a particular dropdown.
+     * '0' is always 'all' or 'unset'.
      */
     function ddDataId(name) {
         var selector = "#"+name+'-dropdown > button > div';
@@ -317,28 +415,40 @@ function ($, topic, template)
      * pseudo-class for maintaining the selected events
      */
     var eventFilter = {
+        page: 1,
         limit: 25,
-        lastid: 0,
-        selectors: {'status':0, 'type':0, 'site':0, 
-                    'publisher':0, 'project':0},
-        changed: false,
+        count: 0,
+        ref: null, /* timestamp as an epoch float, microsecond resolution */
+        selectors: {'status':'0', 'type':'0'},
+        current: {'first':0,'last':0, 'count':0}, /* currently displayed list */
+        liveUpdate: true, /* update events on next poll cycle? */
 
         queryString: function () {
-            var start = this.lastid + 1;
-            var qs = 'order=desc';
+            var array = [];
             for (var key in this.selectors) {
                 var value = ddDataId(key);
                 if (typeof(value) == 'undefined') {
                     continue;
                 } else if (value != this.selectors[key]) {
                     this.selectors[key] = value;
-                    this.changed = true;
                 }
-                qs += '&'+key+'='+value;
+                if (value != '0') {
+                    array.push(key+'='+value)
+                }
             }
-            if (this.changed) this.lastid = 0;
-            var start = this.lastid + 1;
-            return qs + '&start='+start+'&high='+this.limit;
+
+            if (this.page > 1 ) {
+                if (eventFilter.liveUpdate) {
+                    array.push('limit='+this.limit);
+                    array.push('page='+this.page);
+                    array.push('ref='+this.ref);
+                } else {
+                    array.push('event=false');
+                }
+            } else {
+                array.push('limit='+this.limit);
+            }
+            return array.join('&');
         }
     }
 
@@ -358,9 +468,16 @@ function ($, topic, template)
                 update(data);
             },
             complete: function() {
-                setTimeout(poll, interval);
+                timer = setTimeout(poll, interval);
             }
         });
+    }
+
+    function resetPoll() {
+        if (timer != null) {
+            clearTimeout(timer);
+        }
+        poll();
     }
 
     function startMonitor() {
