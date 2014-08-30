@@ -185,7 +185,7 @@ class HttpRequestManager(TableauCacheManager):
     def eventgen(self, key, agent, entry, body={}):
         body = dict(body.items() +\
                         agent.todict().items() +\
-                        entry.todict_all_fields().items())
+                        entry.todict().items())
 
         self.parseuri(entry.http_request_uri, body)
 
