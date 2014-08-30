@@ -28,7 +28,7 @@ from controller.event_control import EventControl
 
 from page import PalettePage
 from event import EventApplication
-from rest import PaletteRESTHandler
+from rest import PaletteRESTHandler, translate_remote_user
 
 __all__ = ["MonitorApplication"]
 
@@ -213,6 +213,7 @@ class MonitorApplication(PaletteRESTHandler):
 
         return lowest_color_num
 
+    @translate_remote_user
     def handle_monitor(self, req):
         # Get the state
         main_state = StateManager.get_state_by_envid(self.environment.envid)
@@ -222,10 +223,6 @@ class MonitorApplication(PaletteRESTHandler):
             print "UNKNOWN STATE!  State:", main_state
             # fixme: stop everything?  Log this somewhere?
             return
-
-        # FIXME: hack
-        if isinstance(req.remote_user, basestring):
-            req.remote_user = UserProfile.get_by_name(req.remote_user)
 
         allowable_actions = []
         if req.remote_user.roleid >= Role.MANAGER_ADMIN:
@@ -382,48 +379,11 @@ class MonitorApplication(PaletteRESTHandler):
                       }
 
         if not 'event' in req.GET or \
-                    ('event' in req.GET and req.GET['event'] != 'false'):
-            event_status = "0"
-            event_type = "0"
-            event_site = 0
-            event_publisher = 0
-            event_project = 0
+           ('event' in req.GET and req.GET['event'] != 'false'):
 
-            if 'status' in req.GET:
-                event_status = req.GET['status']
-            if 'type' in req.GET:
-                event_type = req.GET['type']
-            if 'site' in req.GET:
-                if req.GET['site'].isdigit():
-                    event_site = int(req.GET['site'])
-                else:
-                    print "Invalid event site:", req.GET['site']
-
-            """
-            if 'publisher' in req.GET:
-                if req.GET['publisher'].isdigit():
-                    event_publisher = int(req.GET['publisher'])
-                else:
-                    print "Invalid event publisher:", req.GET['publisher']
-
-            if req.remote_user.roleid == Role.NO_ADMIN:
-                event_publisher = req.remote_user.system_users_id
-            """
-
-            if 'project' in req.GET:
-                if req.GET['project'].isdigit():
-                    event_project = int(req.GET['project'])
-                else:
-                    print "Invalid event project:", req.GET['project']
-
-            events = self.event.handle_get(req,
-                event_status=event_status,
-                event_type=event_type,
-                event_site=event_site,
-                event_publisher=event_publisher,
-                event_project=event_project)
-
+            events = self.event.handle_get(req)
             monitor_ret['events'] = events['events']
+            monitor_ret['event-count'] = events['count']
 
         return monitor_ret
 

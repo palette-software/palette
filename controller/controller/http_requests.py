@@ -13,6 +13,8 @@ from http_control import HttpControl
 from event_control import EventControl
 from util import utc2local, parseutc, DATEFMT, timedelta_total_seconds
 from sites import Site
+from workbooks import WorkbookEntry
+from profile import UserProfile
 
 class HttpRequestEntry(meta.Base, BaseDictMixin):
     __tablename__ = 'http_requests'
@@ -21,6 +23,7 @@ class HttpRequestEntry(meta.Base, BaseDictMixin):
     reqid = Column(BigInteger, unique=True, nullable=False,
                    autoincrement=True, primary_key=True)
     envid = Column(BigInteger, ForeignKey("environment.envid"), nullable=False)
+    system_user_id = Column(String)
     id = Column(BigInteger, nullable=False)
     controller = Column(String)
     action = Column(String)
@@ -67,7 +70,7 @@ class HttpRequestManager(TableauCacheManager):
         session = meta.Session()
 
         controldata = HttpControl.info()
-        usercache = self.load_users(agent)
+        users = self.load_users(agent)
         lastid = HttpRequestEntry.get_lastid()
         if not lastid is None:
             stmt += 'WHERE id > ' + str(lastid)
@@ -81,6 +84,11 @@ class HttpRequestManager(TableauCacheManager):
         for row in data['']:
             created_at = utc2local(parseutc(row[7]))
             completed_at = utc2local(parseutc(row[9]))
+
+            user_id = row[11]
+            site_id = row[17]
+            system_user_id = users.get(site_id, user_id)
+
             entry = HttpRequestEntry(id=row[0],
                                      controller=row[1],
                                      action = row[2],
@@ -92,17 +100,18 @@ class HttpRequestManager(TableauCacheManager):
                                      session_id=row[8],
                                      completed_at=completed_at,
                                      port=row[10],
-                                     user_id=row[11],
+                                     user_id=user_id,
                                      worker=row[12],
                                      status=row[13],
                                      user_cookie=row[14],
                                      user_ip=row[15],
                                      vizql_session=row[16],
-                                     site_id=row[17],
+                                     site_id=site_id,
                                      currentsheet=row[18])
 
             entry.envid = envid
-            seconds = timedelta_total_seconds(completed_at, created_at)
+            entry.system_user_id = system_user_id
+            seconds = int(timedelta_total_seconds(completed_at, created_at))
 
             if entry.status >= 400 and entry.action == 'show':
                 if entry.status in controldata:
@@ -111,20 +120,20 @@ class HttpRequestManager(TableauCacheManager):
                     excludes = []
                 # check the URI against the list to be skipped.
                 if not entry.controller in excludes:
+                    body =  {'duration':seconds}
                     self.eventgen(EventControl.HTTP_BAD_STATUS,
-                                  agent, entry, usercache,
-                                  body = {'duration':seconds})
+                                  agent, entry, body=body)
             elif entry.action == 'show':
                 errorlevel = self.server.system.getint('http-load-error')
                 warnlevel = self.server.system.getint('http-load-warn')
                 if seconds >= errorlevel:
+                    body = {'duration':seconds}
                     self.eventgen(EventControl.HTTP_LOAD_ERROR,
-                                  agent, entry, usercache,
-                                  body = {'duration':seconds})
+                                  agent, entry, body=body)
                 elif seconds >= warnlevel:
+                    body = {'duration':seconds}
                     self.eventgen(EventControl.HTTP_LOAD_WARN,
-                                  agent, entry, usercache,
-                                  body = {'duration':seconds})
+                                  agent, entry, body=body)
             session.add(entry)
 
         session.commit()
@@ -144,6 +153,12 @@ class HttpRequestManager(TableauCacheManager):
         return int(row[0])
 
     def parseuri(self, uri, body):
+        tokens = uri.split('?', 1)
+        if len(tokens) == 2:
+            body['uri'] = uri = tokens[0]
+            body['query_string'] = tokens[1]
+        else:
+            body['uri'] = uri
         tokens = uri[1:].split('/')
         # /views/<workbook>/<viewname>
         if len(tokens) == 3 and tokens[0].lower() == 'views':
@@ -155,28 +170,34 @@ class HttpRequestManager(TableauCacheManager):
             body['workbook'] = tokens[3]
             body['view'] = tokens[4]
 
-    # translate workbook -> owner_id,site_id -> owner
-    def translate_workbook(self, body, usercache):
-        name = body['workbook']
-        pass
-
-    def eventgen(self, key, agent, entry, usercache, body={}):
+    # translate workbook.name -> system_user_id -> owner
+    def translate_workbook(self, body):
         envid = self.server.environment.envid
+        name = body['workbook']
+        workbook = WorkbookEntry.get(envid, name, default=None)
+        if not workbook:
+            return
+        user = UserProfile.get_by_system_user_id(envid, workbook.system_user_id)
+        if not user:
+            return
+        body['owner'] = user.display_name()
+
+    def eventgen(self, key, agent, entry, body={}):
         body = dict(body.items() +\
                         agent.todict().items() +\
                         entry.todict_all_fields().items())
 
-        uri = entry.controller # ?!
-        self.parseuri(uri, body)
+        self.parseuri(entry.http_request_uri, body)
 
-        system_user_id = usercache.get(entry.site_id, entry.user_id)
+        system_user_id = entry.system_user_id
         if system_user_id != -1:
             body['system_user_id'] = system_user_id
             body['username'] = \
-                self.get_username_from_system_user_id(system_user_id)
+                self.get_username_from_system_user_id(entry.envid,
+                                                      system_user_id)
 
         if 'workbook' in body:
-            self.translate_workbook(body, usercache)
+            self.translate_workbook(body)
 
         url = AgentYmlEntry.get(agent,
                                 'svcmonitor.notification.smtp.canonical_url',
@@ -185,7 +206,7 @@ class HttpRequestManager(TableauCacheManager):
             body['tableau_server_url'] = url
 
         if entry.site_id and 'site' not in body:
-            site = Site.get(envid, entry.site_id)
+            site = Site.get(entry.envid, entry.site_id)
             if site:
                 body['site'] = site.name
 
@@ -193,7 +214,7 @@ class HttpRequestManager(TableauCacheManager):
         timestamp=completed_at.strftime(DATEFMT)
         self.server.event_control.gen(key, body,
                                       userid=system_user_id,
-                                      timestamp=completed_at.strftime(DATEFMT))
+                                      timestamp=completed_at)
 
     def prune(self, agent):
         maxid = self.get_last_http_requests_id(agent)

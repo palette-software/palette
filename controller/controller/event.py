@@ -1,14 +1,16 @@
 import time
 
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
+from sqlalchemy import Index
 from sqlalchemy.schema import ForeignKey
 
 from akiri.framework.ext.sqlalchemy import meta
 
 from manager import Manager
-from util import DATEFMT
+from mixin import BaseMixin, BaseDictMixin
+from util import DATEFMT, utctotimestamp
 
-class EventEntry(meta.Base):
+class EventEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = "events"
 
     eventid = Column(BigInteger, unique=True, nullable=False, \
@@ -27,20 +29,16 @@ class EventEntry(meta.Base):
     siteid = Column(Integer)
     projectid = Column(Integer)
     creation_time = Column(DateTime, server_default=func.now())
+    timestamp = Column(DateTime, server_default=func.now())
 
-class EventManager(Manager):
+    def todict(self, pretty=False, exclude=[]):
+        d = super(EventEntry, self).todict(pretty=pretty, exclude=exclude)
 
-    def add(self, key, title, description, level, icon, color, event_type,
-            userid=None, siteid=None, projectid=None, timestamp=None):
-        if timestamp is None:
-            summary = time.strftime(DATEFMT)
+        ts = "%.6f" % utctotimestamp(self.timestamp)
+        if pretty:
+            d['reference-time'] = ts
         else:
-            summary = timestamp
+            d['reference-time'] = ts
+        return d
 
-        session = meta.Session()
-        entry = EventEntry(key=key, envid=self.envid, title=title,
-                           description=description, level=level, icon=icon,
-                           color=color, event_type=event_type, summary=summary,
-                           userid=userid)
-        session.add(entry)
-        session.commit()
+Index('idx', EventEntry.envid, EventEntry.timestamp.desc())
