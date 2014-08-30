@@ -23,6 +23,7 @@ class AlertEmail(object):
 
     def __init__(self, server, standalone=False):
         if standalone:
+            self.envid = 1
             self.standalone = True
             self.from_email = "tim.flagg@gmail.com"
             self.to_email = "tim.flagg@gmail.com"
@@ -36,6 +37,7 @@ class AlertEmail(object):
             logging.basicConfig(level=logging.DEBUG)
             self.log = logging
             return
+        self.envid = server.environment.envid
         self.standalone = False
         self.config = server.config
         self.log = server.log
@@ -68,7 +70,7 @@ class AlertEmail(object):
         """If the palette user (userid 0) has an empty email address,
            add the passed diagnostics_email to it."""
 
-        entry = UserProfile.get(0)
+        entry = UserProfile.get(self.envid, 0)
         if not entry:
             self.log.error("alert diag: No such user with id 0!")
             return
@@ -102,13 +104,13 @@ class AlertEmail(object):
         """Return a list with the publisher_email for the user
            if it exists and has an email address."""
 
-        if not 'system_users_id' in data:
+        if not 'system_user_id' in data:
             return []
 
         session = meta.Session()
         try:
             entry = session.query(UserProfile).\
-                filter(UserProfile.system_users_id == data['system_users_id']).\
+                filter(UserProfile.system_user_id == data['system_user_id']).\
                 filter(UserProfile.email != "").\
                 one()
         except NoResultFound, e:
@@ -164,7 +166,7 @@ class AlertEmail(object):
             to_emails = self.admin_emails()
 
         # Get the diagnostics email and bcc it there if it exists.
-        entry = UserProfile.get(0)
+        entry = UserProfile.get(self.envid, 0)
         if entry and entry.email != None and entry.email != "":
             bcc = [entry.email]
         else:

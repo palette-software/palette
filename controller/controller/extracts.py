@@ -37,7 +37,7 @@ class ExtractEntry(meta.Base, BaseMixin, BaseDictMixin):
     subtitle = Column(String)
     site_id = Column(Integer)
     project_id = Column(Integer)
-    system_users_id = Column(Integer)
+    system_user_id = Column(Integer)
     job_name = Column(String)
 
     __table_args__ = (UniqueConstraint('envid', 'id'),)
@@ -60,7 +60,7 @@ class ExtractManager(TableauCacheManager):
                 return  # FIXME: log
             row = cache[entry.title] = data[''][0]
 
-        entry.system_users_id = users.get(row[1], row[0])
+        entry.system_user_id = users.get(row[1], row[0])
         entry.project_id = int(row[2])
 
     # FIXME: merge the update functions
@@ -79,7 +79,7 @@ class ExtractManager(TableauCacheManager):
                 return # FIXME: log
             row = cache[entry.title] = data[''][0]
 
-        entry.system_users_id = users.get(row[1], row[0])
+        entry.system_user_id = users.get(row[1], row[0])
         entry.project_id = int(row[2])
 
     def load(self, agent, check_odbc_state=True):
@@ -130,7 +130,7 @@ class ExtractManager(TableauCacheManager):
             entry.envid = envid
 
             # Placeholder to be set by the next functions.
-            entry.system_users_id = -1
+            entry.system_user_id = -1
 
             if entry.subtitle == 'Workbook':
                 self.workbook_update(agent, entry, users, cache=workbooks)
@@ -185,12 +185,13 @@ class ExtractManager(TableauCacheManager):
 
     # FIXME: add project_id? maybe job_name?
     def eventgen(self, key, data, timestamp=None):
-        system_user_id = data['system_users_id']
+        envid = self.server.environment.envid
+        system_user_id = data['system_user_id']
         data['username'] = \
-            self.get_username_from_system_user_id(system_user_id)
+            self.get_username_from_system_user_id(envid, system_user_id)
 
         return self.server.event_control.gen(key, data,
-                                             userid=data['system_users_id'],
+                                             userid=data['system_user_id'],
                                              siteid=data['site_id'],
                                              timestamp=timestamp)
 
@@ -198,5 +199,5 @@ class ExtractManager(TableauCacheManager):
     def publishers(cls):
         query = meta.Session.query(UserProfile).\
             join(ExtractEntry,
-                 UserProfile.system_users_id == ExtractEntry.system_users_id)
+                 UserProfile.system_user_id == ExtractEntry.system_user_id)
         return query.all()

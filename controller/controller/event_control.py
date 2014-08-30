@@ -14,6 +14,7 @@ from event import EventEntry
 from profile import UserProfile
 from util import DATEFMT, UNDEFINED
 from mixin import BaseMixin
+from manager import Manager
 
 mako.runtime.UNDEFINED=UNDEFINED
 
@@ -177,9 +178,11 @@ class EventControl(meta.Base, BaseMixin):
 
     defaults_filename = 'event_control.json'
 
-class EventControlManager(object):
+
+class EventControlManager(Manager):
+
     def __init__(self, server):
-        self.server = server
+        super(EventControlManager, self).__init__(server)
         self.alert_email = server.alert_email
         self.indented = self.alert_email.indented
         self.log = server.log
@@ -242,19 +245,13 @@ class EventControlManager(object):
             # FIXME: is this needed or used?
             data['time'] = timestamp.strftime(DATEFMT)
 
-        # The userid for extracts is the Tableau "system_users_id".
-        # The userid for other events is the "userid".
-        # (Both in the "users" table.)
+        # The userid for other events is the Palette "userid".
         profile = None
         if not 'username' in data and userid != None:
-            profile = UserProfile.get(userid)
+            profile = UserProfile.get(self.envid, userid)
 
         if not profile is None:
-            # FIXME: use display_name
-            if profile.friendly_name:
-                data['username'] = profile.friendly_name
-            else:
-                data['username'] = profile.name
+            data['username'] = profile.display_name()
 
         if not 'username' in data:
             data['username'] = mako.runtime.UNDEFINED
@@ -262,18 +259,18 @@ class EventControlManager(object):
         # set server-url
         data['server_url'] = self.server.system.get('server-url',
                                                     default='localhost')
-        data['disk_watermark_low'] = self.server.system.get('disk-watermark-low', 
-                                                    default='')
-        data['disk_watermark_high'] = self.server.system.get('disk-watermark-high', 
-                                                    default='')
+        data['disk_watermark_low'] \
+            = self.server.system.get('disk-watermark-low', default='')
+        data['disk_watermark_high'] \
+            = self.server.system.get('disk-watermark-high', default='')
 
         # Use the data dict for template substitution.
         try:
             subject = subject % data
         except (ValueError, KeyError) as e:
             subject = "Template subject conversion failure: " + str(e) + \
-                "subject: " + subject + \
-                ", data: " + str(data)
+                      "subject: " + subject + \
+                      ", data: " + str(data)
         if event_description:
             try:
                 mako_template = Template(event_description)

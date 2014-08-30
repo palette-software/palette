@@ -21,6 +21,7 @@ class HttpRequestEntry(meta.Base, BaseDictMixin):
     reqid = Column(BigInteger, unique=True, nullable=False,
                    autoincrement=True, primary_key=True)
     envid = Column(BigInteger, ForeignKey("environment.envid"), nullable=False)
+    system_user_id = Column(String)
     id = Column(BigInteger, nullable=False)
     controller = Column(String)
     action = Column(String)
@@ -173,7 +174,7 @@ class HttpRequestManager(TableauCacheManager):
         if system_user_id != -1:
             body['system_user_id'] = system_user_id
             body['username'] = \
-                self.get_username_from_system_user_id(system_user_id)
+                self.get_username_from_system_user_id(envid, system_user_id)
 
         if 'workbook' in body:
             self.translate_workbook(body, usercache)
@@ -193,7 +194,7 @@ class HttpRequestManager(TableauCacheManager):
         timestamp=completed_at.strftime(DATEFMT)
         self.server.event_control.gen(key, body,
                                       userid=system_user_id,
-                                      timestamp=completed_at.strftime(DATEFMT))
+                                      timestamp=completed_at)
 
     def prune(self, agent):
         maxid = self.get_last_http_requests_id(agent)

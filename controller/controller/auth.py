@@ -3,17 +3,15 @@ import time
 from sqlalchemy import not_
 from akiri.framework.ext.sqlalchemy import meta
 
+from manager import Manager
 from profile import UserProfile, Publisher, License
 from system import SystemManager
 from util import DATEFMT, UTCFMT, utc2local, parseutc
 
-# FIXME: use base Manager class.
-class AuthManager(object):
+# TableauCacheManager is not used since a different 'load_users' is needed.
+class AuthManager(Manager):
 
     LAST_IMPORT_KEY = 'last-user-import'
-
-    def __init__(self, server):
-        self.server = server
 
     # build a cache of the Tableau 'users' table.
     def load_users(self, agent):
@@ -52,6 +50,8 @@ class AuthManager(object):
         return cache
 
     def load(self, agent, check_odbc_state=True):
+        envid = self.server.environment.envid
+
         if check_odbc_state and not self.server.odbc_ok():
             return {"error": "Cannot run command while in state: %s" % \
                         self.server.stateman.get_state()}
@@ -85,9 +85,9 @@ class AuthManager(object):
 
             email = L[1]
 
-            entry = UserProfile.get_by_name(name)
+            entry = UserProfile.get_by_name(envid, name)
             if not entry:
-                entry = UserProfile(name=name)
+                entry = UserProfile(envid=envid, name=name)
                 session.add(entry)
             if email:
                 # If an email was entered in Tableau - it wins.
@@ -97,7 +97,7 @@ class AuthManager(object):
             entry.friendly_name=L[4]
             entry.system_admin_level=L[5]
             entry.system_created_at=L[6]
-            entry.system_users_id = sysid
+            entry.system_user_id = sysid
 
             obj = None
             if sysid in cache:
