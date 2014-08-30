@@ -115,7 +115,7 @@ class BaseMixin(object):
 
 
     @classmethod
-    def get_all_by_keys(cls, keys, order_by=[]):
+    def get_all_by_keys(cls, keys, order_by=[], limit=None):
         query = meta.Session.query(cls)
         for key, value in keys.items():
             query = query.filter(getattr(cls, key) == value)
@@ -123,6 +123,8 @@ class BaseMixin(object):
             order_by = [order_by]
         for clause in order_by:
             query = query.order_by(clause)
+        if not limit is None:
+            query = query.limit(limit)
         return query.all()
 
     @classmethod
@@ -130,10 +132,17 @@ class BaseMixin(object):
         query = meta.Session().query(func.max(getattr(cls, column)))
         for key, value in filters.items():
             query = query.filter(getattr(cls, key) == value)
-        value = query.one()
-        if value[0] is None:
+        value = query.scalar()
+        if value is None:
             return default
-        return value[0]
+        return value
+
+    @classmethod
+    def count(cls, filters={}):
+        query = meta.Session().query(cls)
+        for key, value in filters.items():
+            query = query.filter(getattr(cls, key) == value)
+        return query.count()
 
 
 class OnlineMixin(object):
