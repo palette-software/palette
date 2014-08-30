@@ -58,6 +58,12 @@
         <i class="fa fa-fw fa-angle-${obj.expanded and 'up' or 'down'} expand"></i>
       </a>
       <ul ${obj.expanded and 'class="visible"' or ''}>
+        <li ${obj.active=='storage' and 'class="active"' or ''}>
+          <a href="/configure/storage">
+            <i class="fa fa-fw fa-edit"></i>
+            <span>General</span>
+          </a>
+        </li>
         <li ${obj.active=='users' and 'class="active"' or ''}>
           <a href="/configure/users">
             <i class="fa fa-fw fa-group"></i>
@@ -68,12 +74,6 @@
           <a href="/configure/servers">
             <i class="fa fa-fw fa-laptop"></i>
             <span>Servers</span>
-          </a>
-        </li>
-        <li ${obj.active=='storage' and 'class="active"' or ''}>
-          <a href="/configure/storage">
-            <i class="fa fa-fw fa-arrow-circle-o-down"></i>
-            <span>Storage</span>
           </a>
         </li>
         <li  ${obj.active=='tabcmd' and 'class="active"' or ''}>

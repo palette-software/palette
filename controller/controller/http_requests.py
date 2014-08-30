@@ -51,7 +51,6 @@ class HttpRequestEntry(meta.Base, BaseDictMixin):
             return str(entry.id)
         return None
 
-
 class HttpRequestManager(TableauCacheManager):
 
     def load(self, agent):
@@ -165,7 +164,7 @@ class HttpRequestManager(TableauCacheManager):
         envid = self.server.environment.envid
         body = dict(body.items() +\
                         agent.todict().items() +\
-                        entry.todict().items())
+                        entry.todict_all_fields().items())
 
         uri = entry.controller # ?!
         self.parseuri(uri, body)

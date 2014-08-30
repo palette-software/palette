@@ -5,6 +5,7 @@ from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.orm.exc import NoResultFound
 from webob import exc
 import sys
+from collections import OrderedDict
 
 from akiri.framework.config import store
 
@@ -76,7 +77,9 @@ class MonitorApplication(PaletteRESTHandler):
         L = [{'item':'All Types', 'id':0}]
 
         d = {'name':'type'}
-        types = EventControl.types()
+        types = OrderedDict()
+        for key in sorted(EventControl.types().iterkeys()):
+           types[key] = EventControl.types()[key]
         for t in types:
             if t == c:
                 d['value'] = types[t]

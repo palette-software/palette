@@ -356,19 +356,6 @@ function ($, topic, template)
         setupEventPagination();
     }
 
-    /*
-     * loadUserVoice()
-     * Install the JS code necessary to run uservoice.
-     */
-    function loadUserVoice() {
-        var uv=document.createElement('script');
-        uv.type='text/javascript';
-        uv.async=true;
-        uv.src='//widget.uservoice.com/OggeFPvaqWHCBdmBclbA.js';
-        var s=document.getElementsByTagName('script')[0];
-        s.parentNode.insertBefore(uv,s)
-    }
-
     /* Code run automatically when 'common' is included */
     $().ready(function() {
         setupHeaderMenus();
