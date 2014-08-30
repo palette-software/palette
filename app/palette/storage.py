@@ -8,8 +8,7 @@ from controller.util import sizestr, str2bool
 from controller.storage import StorageConfig
 
 from controller.agentinfo import AgentVolumesEntry
-from controller.s3 import S3
-from controller.gcs import GCS
+from controller.cloud import CloudManager
 import ntpath, posixpath
 
 from page import PalettePage
@@ -54,21 +53,9 @@ class StorageApplication(PaletteRESTHandler):
             if destid == ourid:
                 value = item
 
-        for entry in S3.get_s3s_by_envid(envid):
-            # fixme: If/when multiple s3 configs are available, distinguish
-            # the s3 items from each other.
-            item = sc.text(StorageConfig.S3)
-            ourid = '%s:%d' % (StorageConfig.S3, entry.s3id)
-            options.append({'id': ourid, 'item': item})
-
-            if destid == ourid:
-                value = item
-
-        for entry in GCS.get_gcss_by_envid(envid):
-            # fixme: If/when multiple gcs configs are available, distinguish
-            # the gcs items from each other.
-            item = sc.text(StorageConfig.GCS)
-            ourid = '%s:%d' % (StorageConfig.GCS, entry.gcsid)
+        for entry in CloudManager.get_clouds_by_envid(envid):
+            item = sc.text(entry.cloud_type)
+            ourid = '%s:%d' % (entry.cloud_type, entry.cloudid)
             options.append({'id': ourid, 'item': item})
 
             if destid == ourid:

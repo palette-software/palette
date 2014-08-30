@@ -13,7 +13,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.config import store
 from akiri.framework.ext.sqlalchemy import meta
 
-from controller.backup import BackupEntry, BackupManager
+from controller.files import FileEntry, FileManager
 from controller.agentinfo import AgentVolumesEntry
 from controller.agent import Agent
 from controller.domain import Domain
@@ -42,8 +42,9 @@ class BackupApplication(PaletteRESTHandler):
 
         filename = req.POST['filename']
 
-        backup_entry = BackupManager.find_by_name_envid(filename,
-                                                    self.environment.envid)
+        backup_entry = FileManager.find_by_name_envid(self.environment.envid,
+                                            filename,
+                                            FileManager.FILE_TYPE_BACKUP)
         if not backup_entry:
             print >> sys.stderr, "Backup not found:", filename
             return {}
@@ -52,8 +53,10 @@ class BackupApplication(PaletteRESTHandler):
         return {}
 
     def get_last_backup(self):
-        last_db = meta.Session.query(BackupEntry).\
-            order_by(BackupEntry.creation_time.desc()).\
+        last_db = meta.Session.query(FileEntry).\
+            filter(FileEntry.envid == self.environment.envid).\
+            filter(FileEntry.file_type == FileManager.FILE_TYPE_BACKUP).\
+            order_by(FileEntry.creation_time.desc()).\
             first()
         return last_db
 
@@ -76,7 +79,8 @@ class BackupApplication(PaletteRESTHandler):
     @required_role(Role.READONLY_ADMIN)
     def handle_GET(self, req):
         L = [x.todict(pretty=True) for x \
-                 in BackupManager.all(self.environment.envid, asc=False)]
+                 in FileManager.all(self.environment.envid,
+                                    FileManager.FILE_TYPE_BACKUP, asc=False)]
         # FIXME: convert TIMEZONE
         tomorrow = datetime.date.today() + datetime.timedelta(days=1)
         midnight = datetime.datetime.combine(tomorrow, datetime.time(0,0))
