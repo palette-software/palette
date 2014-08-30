@@ -103,7 +103,7 @@ class HttpRequestManager(TableauCacheManager):
                                      currentsheet=row[18])
 
             entry.envid = envid
-            seconds = timedelta_total_seconds(completed_at, created_at)
+            seconds = int(timedelta_total_seconds(completed_at, created_at))
 
             if entry.status >= 400 and entry.action == 'show':
                 if entry.status in controldata:

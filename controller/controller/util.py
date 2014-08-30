@@ -79,9 +79,14 @@ def str2bool(s):
     
 # analoguous to the 2.7 functionality
 # https://docs.python.org/2/library/datetime.html#datetime.timedelta.total_seconds
+# returns a float.
 def timedelta_total_seconds(t2, t1):
     td = t2 - t1
-    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 1e6
+
+# reverse of dateime.utcfromtimestamp()
+def utctotimestamp(dt, epoch=datetime(1970,1,1)):
+    return timedelta_total_seconds(dt, epoch)
 
 def safecmd(cmd):
     """Hackish function to obscure passwords in debug output (e.g. tabcmd)"""
