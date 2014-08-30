@@ -34,31 +34,6 @@ class BaseDictMixin(object):
             d[name] = value
         return d
 
-    def todict_all_fields(self, pretty=False, exclude=[]):
-        if not isinstance(self, meta.Base):
-            raise ProgrammingError("meta.Base instance required.");
-        d = {}
-        for c in self.__table__.columns:
-            if c.name in exclude:
-                continue
-            value = getattr(self, c.name)
-            if value is None:
-                value = "None"
-            elif isinstance(c.type, DateTime):
-                try:
-                    value = utc2local(value) # FIXME
-                    value = value.strftime(DATEFMT)
-                except AttributeError, e:
-                     # It is possible this value has been set directly but
-                     # not yet converted by the ORM.
-                     # i.e. It is not a DateTime instance but something else
-                     # that can be later converted to a DateTime instance.
-                    value = str(value)
-            elif not isinstance(value, (int, long)):
-                value = unicode(value)
-            name = pretty and c.name.replace('_', '-') or c.name
-            d[name] = value
-        return d
 
 class BaseMixin(object):
 
