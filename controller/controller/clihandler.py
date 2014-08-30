@@ -455,7 +455,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
 
         try:
-            body = self.server.backup_cmd(agent)
+            body = self.server.backup_cmd(agent, userid)
         except Exception, e:
             self.server.log.exception("Backup Exception:")
             line = "Backup Error. Traceback: %s" % self.tb()
@@ -489,15 +489,20 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
 
-    @usage('backupdel backup-name')
-    def do_backupdel(self, cmd):
-        """Delete a Tableau backup."""
+    @usage('filedel file-name')
+    def do_filedel(self, cmd):
+        """Delete a file in the 'files' table."""
 
         target = None
         if len(cmd.args) != 1:
             self.print_usage(self.do_backupdel.__usage__)
             return
-        backup = cmd.args[0]
+        filename = cmd.args[0]
+
+        entry = self.server.files.find_by_name(filename)
+        if not entry:
+            self.error(ERROR_NOT_FOUND, "File not found: %s" + filename)
+            return
 
         aconn = self.get_aconn(cmd.dict)
         if not aconn:
@@ -522,7 +527,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         self.ack()
-        body = self.server.backupdel_cmd(backup)
+        body = self.server.filedel_cmd(entry)
 
         stateman.update(main_state)
 
@@ -682,7 +687,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # No alerts or state updates are done in backup_cmd().
         try:
-            body = self.server.backup_cmd(agent)
+            body = self.server.backup_cmd(agent, userid)
         except Exception, e:
             self.server.log.exception("Backup for Restore Exception:")
             line = "Backup For Restore Error. Traceback: %s" % self.tb()
@@ -1206,7 +1211,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.server.event_control.gen( \
                 EventControl.BACKUP_BEFORE_STOP_STARTED, data, userid=userid)
 
-            body = self.server.backup_cmd(agent)
+            body = self.server.backup_cmd(agent, userid)
 
             if success(body):
                 if 'copy-failed' in body:
@@ -1478,37 +1483,13 @@ class CliHandler(socketserver.StreamRequestHandler):
         keypath = cmd.args[2]
         data_dir = cmd.args[3]
 
-        entry = self.server.s3.get_by_name(name)
+        entry = self.server.cloud.get_by_name(name, CloudManager.CLOUD_TYPE_S3)
         if not entry:
             self.error(ERROR_NOT_FOUND, "s3 instance '" + name + "' not found.")
             return
 
-        # fixme
-        # sanity check on local-dir on the primary?
         self.ack()
-
-        resource = os.path.basename(keypath)
-        token = entry.get_token(resource)
-
-        command = 'ps3 %s %s "%s"' % \
-            (action, entry.bucket, keypath)
-
-        # fixme: this method doesn't work
-        env = {u'ACCESS_KEY': token.credentials.access_key,
-               u'SECRET_KEY': token.credentials.secret_key,
-               u'SESSION': token.credentials.session_token,
-               u'REGION_ENDPOINT': entry.region,
-               u'PWD': data_dir}
-
-        env = {u'ACCESS_KEY': entry.access_key,
-               u'SECRET_KEY': entry.secret,
-               u'PWD': data_dir}
-
-        # Send command to the agent
-        body = self.server.cli_cmd(command, agent, env=env)
-
-        body[u'env'] = env
-        body[u'resource'] = resource
+        body = server.s3_cmd(agent, action, entry, data_dir, full_path)
 
         self.report_status(body)
 
@@ -1530,10 +1511,10 @@ class CliHandler(socketserver.StreamRequestHandler):
         keypath = cmd.args[2]
         data_dir = cmd.args[3]
 
-        entry = self.server.gcs.get_by_name(name)
+        entry = self.server.cloud.get_by_name(name, CloudManager.CLOUD_TYPE_GCS)
         if not entry:
             self.error(ERROR_NOT_FOUND,
-                                    "gcs instance '" + name + "' not found.")
+                                    "gcs entry '" + name + "' not found.")
             return
 
         # fixme
@@ -1541,26 +1522,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
 
-        resource = os.path.basename(keypath)
-
-        command = 'pgcs %s %s "%s"' % \
-            (action, entry.bucket, keypath)
-
-        # FIXME: We don't really want to send our real keys and
-        #        secrets to the agents, but while boto.connect_gs
-        #        can replace boto.connect_s3, there is no GCS
-        #        equivalent for boto.connect_sts, so we may need
-        #        to move away from boto to get GCS temporary tokens.
-        env = {u'ACCESS_KEY': entry.access_key,
-               u'SECRET_KEY': entry.secret,
-               u'PWD': data_dir}
-
-        # Send command to the agent
-        body = self.server.cli_cmd(command, agent, env=env)
-
-        body[u'env'] = env
-        body[u'resource'] = resource
-
+        body = server.gcs_cmd(agent, action, entry, data_dir, full_path)
         self.report_status(body)
 
     @usage('gcsdel <gcs-name> <filename>')
@@ -1571,10 +1533,15 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_usage(self.do_gcsdel.__usage__)
             return
 
+        entry = self.server.cloud.get_by_name(name, CloudManager.CLOUD_TYPE_GCS)
+        if not entry:
+            self.error(ERROR_NOT_FOUND,
+                                    "gcs entry '" + name + "' not found.")
+
         self.ack()
 
         try:
-            self.server.delete_gcs_file(cmd.args[0], cmd.args[1])
+            self.server.delete_gcs_file(entry, cmd.args[1])
         except IOError, e:
             self.error(ERROR_COMMAND_FAILED, str(e).replace('\n', ''))
             return
@@ -1589,9 +1556,13 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_usage(self.do_s3del.__usage__)
             return
 
+        entry = self.server.cloud.get_by_name(name, CloudManager.CLOUD_TYPE_S3)
+        if not entry:
+            self.error(ERROR_NOT_FOUND, "s3 instance '" + name + "' not found.")
+            return
         self.ack()
 
-        self.server.delete_s3_file(cmd.args[0], cmd.args[1])
+        self.server.delete_s3_file(entry, cmd.args[1])
         self.report_status({})
 
     @usage('sql <statement>')

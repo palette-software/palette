@@ -30,9 +30,9 @@ from agentmanager import AgentManager
 from agent import Agent
 from agentinfo import AgentVolumesEntry, AgentYmlEntry
 from auth import AuthManager
-from backup import BackupManager
 from credential import CredentialEntry, CredentialManager
 from diskcheck import DiskCheck, DiskException
+from files import FileManager
 from firewall_manager import FirewallManager
 from state import StateManager
 from system import SystemManager, LicenseEntry
@@ -54,8 +54,8 @@ from projects import Project
 from data_connections import DataConnection
 from http_requests import HttpRequestEntry, HttpRequestManager
 
-from gcs import GCS
-from s3 import S3
+from place_file import PlaceFile
+from cloud import CloudManager
 
 from sched import Sched, Crontab # needed for create_all()
 from clihandler import CliHandler
@@ -73,33 +73,37 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     WORKBOOKS_DIR = "tableau-workbooks"
     PALETTE_DIR = "palette-system"
 
-    def backup_cmd(self, agent):
+    FILENAME_FMT = "%Y%m%d_%H%M%S"
+
+    def backup_cmd(self, agent, userid):
         """Perform a backup - not including any necessary migration."""
+
+        if userid == None:
+            auto = True     # It is an 'automatic/scheduled' backup
+        else:
+            auto = False    # It was requested by a specific user
+
+        min_disk_needed = agent.tableau_data_size * .3
 
         # Disk space check.
         try:
-            dcheck = DiskCheck(self, agent, self.BACKUP_DIR)
+            dcheck = DiskCheck(self, agent, self.BACKUP_DIR,
+                    FileManager.FILE_TYPE_BACKUP, min_disk_needed)
         except DiskException, e:
             return self.error(str(e))
 
         gcsid = None
         s3id = None
 
-        if dcheck.target_type == StorageConfig.GCS:
-            self.log.debug("Backup will copy to gcs named '%s'",
+        if dcheck.target_type == StorageConfig.CLOUD:
+            self.log.debug(
+                "Backup will copy to cloud storage type %s named '%s'",
                                                 dcheck.target_entry.name)
-            cloud_cmd = self.gcs_cmd
-            gcsid = dcheck.target_entry.gcsid
-        elif dcheck.target_type == StorageConfig.S3:
-            self.log.debug("Backup will copy to s3 named '%s'",
-                                                dcheck.target_entry.name)
-            cloud_cmd = self.s3_cmd
-            s3id = dcheck.target_entry.s3id
         elif dcheck.target_type == StorageConfig.VOL:
             if dcheck.target_entry.agentid == agent.agentid:
                 self.log.debug("Backup will stay on the primary.")
             else:
-                self.log.debug(\
+                self.log.debug(
                     "Backup will copy to target '%s', target_dir '%s'",
                         dcheck.target_agent.displayname, dcheck.target_dir)
         else:
@@ -108,46 +112,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("backup_cmd: Invalid target_type: %s" % \
                               dcheck.target_type)
         # Example name: 20140127_162225.tsbak
-        backup_name = time.strftime("%Y%m%d_%H%M%S") + ".tsbak"
-
+        backup_name = time.strftime(self.FILENAME_FMT) + ".tsbak"
 
         # Example: "c:/ProgramData/Palette/Data/tableau-backups/20140127_162225.tsbak"
 
-        # Make sure the primary directory exists. This is where the
-        # backup will be done.
-        try:
-            agent.filemanager.mkdirs(dcheck.primary_dir)
-        except (IOError, ValueError) as e:
-            self.log.error(\
-                "backup_cmd: Could not create directory: '%s'" % \
-                dcheck.primary_dir)
-            body = {'error': str(e),
-                    'info': "Could not create backup directory '%s'" % \
-                           dcheck.primary_dir}
-            return body
-
-        if dcheck.target_dir and (dcheck.primary_dir != dcheck.target_dir):
-            # Make sure the target directory on the primary exists.
-            try:
-                agent.filemanager.mkdirs(dcheck.target_dir)
-            except (IOError, ValueError) as e:
-                self.log.error(\
-                    "backup_cmd: Could not create target directory: '%s'" % \
-                    dcheck.target_dir)
-                body = {'error': str(e),
-                        'info': ("Could not create backup target " + \
-                                 "directory: '%s'") % dcheck.target_dir}
-                return body
-
         # e.g. E:\\ProgramData\Palette\Data\tableau-backups\2014Jan27_162225.tsbak
         backup_full_path = agent.path.join(dcheck.primary_dir, backup_name)
-
-        # If the target is not on the primary agent, then after the
-        # backup, it will be copied to either:
-        #   1) another agent
-        # or
-        #   2) cloud storage
-        #
 
         cmd = 'tabadmin backup \\\"%s\\\"' % backup_full_path
 
@@ -160,9 +130,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                             self.seconds_to_str(backup_elapsed_time)
             return body
 
-        BACKUP_UNKNOWN = -1
-
-        backup_size = BACKUP_UNKNOWN
         backup_size_body = agent.filemanager.filesize(backup_full_path)
         if not success(backup_size_body):
             self.log.error("Failed to get size of backup file %s: %s" %\
@@ -172,132 +139,29 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         else:
             backup_size = backup_size_body['size']
 
-        body['info'] = ""
-        delete_local_backup = True
+        # If the target is not on the primary agent, then after the
+        # backup, it will be copied to either:
+        #   1) another agent
+        # or
+        #   2) cloud storage
+        #
+        place = PlaceFile(self, agent, dcheck, backup_full_path, backup_size,
+                          auto)
 
-        copy_elapsed_time = 0
-
-        if dcheck.target_type in (StorageConfig.GCS, StorageConfig.S3):
-            copy_start_time = time.time()
-            storage_body = cloud_cmd(agent, "PUT",
-                            dcheck.target_entry, backup_full_path)
-            copy_end_time = time.time()
-            if 'error' in storage_body:
-                body['info'] = "Copy to %s '%s' failed: %s" % \
-                    (dcheck.target_type, dcheck.target_entry.name,
-                                                        storage_body['error'])
-                delete_local_backup = False
-                body['copy-failed'] = True
-                self.backup.add(backup_full_path,
-                                size=backup_size,
-                                agentid=dcheck.primary_entry.agentid)
-            else:
-                copy_elapsed_time = time.time() - copy_start_time
-                body['info'] = \
-                    ("Backup file was copied to %s bucket '%s' " + \
-                     "filename '%s'.") % \
-                    (dcheck.target_type, dcheck.target_entry.bucket,
-                     backup_name)
-                # Backup was copied to gcs or s3
-                self.backup.add(backup_name, size=backup_size,
-                                gcsid=gcsid, s3id=s3id)
-                delete_local_backup = True
-
-        elif dcheck.target_agent.agentid != agent.agentid:
-            # Copy the backup to a non-primary agent
-            # Example: "Tableau Archive #202:D/palette-backups/20140127_162225.tsbak"
-
-            (backup_vol, backup_path) = backup_full_path.split(':', 1)
-
-            # Get the path used by routes.txt to find the common prefix
-            source_agent_vol_entry = \
-                AgentVolumesEntry.get_vol_entry_by_agentid_vol_name(
-                                                    agent.agentid, backup_vol)
-            if not source_agent_vol_entry:
-                return self.error(
-                    (u"Could not find backup volume '%s' for agentid %d. " + \
-                    "Backup will remain on the primary agent.") % \
-                    (backup_vol, agent.agentid))
-
-            self.log.debug("backup_path: '%s' " + \
-                           "source_agent_vol_entry.path: '%s'",
-                           backup_path,
-                          source_agent_vol_entry.path)
-            common = os.path.commonprefix([backup_path,
-                                          source_agent_vol_entry.path])
-
-            if common:
-                # Chop off the common part
-                backup_path = backup_path[len(common):]
-
-            source_path = "%s%s" % (backup_vol, backup_path)
-            copy_start_time = time.time()
-            copy_body = self.copy_cmd(agent.agentid, source_path,
-                        dcheck.target_agent.agentid, dcheck.target_dir)
-
-            if copy_body.has_key('error'):
-                msg = (u"Copy of backup file '%s' to agent '%s:%s' failed. "+\
-                    "Will leave the backup file on the primary agent. " + \
-                    "Error was: %s") \
-                    % (backup_full_path, dcheck.target_agent.displayname, 
-                                    dcheck.target_dir, copy_body['error'])
-                body['copy-failed'] = True
-                self.log.info(msg)
-                body['info'] += msg
-                # Something was wrong with the copy to the non-primary agent.
-                # Leave the backup on the primary after all.
-                self.backup.add(backup_full_path,
-                            size=backup_size,
-                            agentid=dcheck.primary_entry.agentid)
-                delete_local_backup = False
-            else:
-                # The copy succeeded.
-                copy_elapsed_time = time.time() - copy_start_time
-                body['info'] += \
-                    "Backup file copied to agent '%s', directory: %s." % \
-                        (dcheck.target_agent.displayname, dcheck.target_dir)
-
-                target_full_path = dcheck.target_agent.path.join(
-                                            dcheck.target_dir, backup_name)
-
-                self.backup.add(target_full_path,
-                                size=backup_size,
-                                agentid=dcheck.target_agent.agentid)
-                # Remember to remove the backup file from the primary
-                delete_local_backup = True
-        elif dcheck.target_agent.agentid == agent.agentid:
-            body['info'] += \
-                    ('Backup file is configured to stay on ' + \
-                    'the Tableau primary agent, ' + \
-                    'data directory: %s') % dcheck.target_dir
-
-            delete_local_backup = False
-            self.backup.add(backup_full_path,
-                            size=backup_size,
-                            agentid=dcheck.target_agent.agentid)
-
-        if delete_local_backup:
-            remove_body = self.delete_file(agent, backup_full_path)
-            # Check if the DEL worked.
-            if remove_body.has_key('error'):
-                body['info'] += \
-                    ("\nDeletion of backup file failed after copy. "+\
-                        "File: '%s'. Error was: %s") \
-                        % (backup_full_path, remove_body['error'])
-
+        body['info'] = place.info
 
         # Report backup stats
-        total_time = backup_elapsed_time + copy_elapsed_time
+        total_time = backup_elapsed_time + place.copy_elapsed_time
 
         stats = 'Backup size: %s\n' % sizestr(backup_size)
         stats += 'Backup elapsed time: %s' % \
                   (self.seconds_to_str(backup_elapsed_time))
 
-        if copy_elapsed_time:
+        if place.copied:
             stats += ' (%.0f%%)\n' % ((backup_elapsed_time / total_time) * 100)
             stats += 'Backup copy elapsed time: %s (%.0f%%)\n' % \
-                     (self.seconds_to_str(copy_elapsed_time),
-                     (copy_elapsed_time / total_time) * 100)
+                     (self.seconds_to_str(place.copy_elapsed_time),
+                     (place.copy_elapsed_time / total_time) * 100)
 
             stats += 'Backup total elapsed time: %s' % \
                       self.seconds_to_str(total_time)
@@ -305,70 +169,80 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             stats += '\n'
 
         body['info'] += '\n' + stats
+
+        rotate_info = self.rotate_files(FileManager.FILE_TYPE_BACKUP)
+        body['info'] += rotate_info
         return body
+
+    def rotate_files(self, file_type):
+        """Rotate/delete old auto-generated and then user-generated
+           backup files."""
+        st_config = StorageConfig(self.system)
+        find_method = self.files.find_by_auto_envid
+        find_name = "scheduled"
+
+        info = self.file_rotate(st_config.backup_auto_retain_count,
+                                find_method, find_name, file_type)
+
+        find_method = self.files.find_by_non_auto_envid
+        find_name = "user generated"
+
+        info += self.file_rotate(st_config.backup_user_retain_count,
+                                 find_method, find_name, file_type)
+
+        return info
+
+    def file_rotate(self, retain_count, find_method, find_name, file_type):
+        """Delete the old files."""
+
+        rows = find_method(self.environment.envid, file_type)
+
+        # Delete the old auto/scheduled backups.
+        remove_count = len(rows) - retain_count
+        if remove_count < 0:
+            remove_count = 0
+            info = ""
+
+        else:
+            info = ("\nThere are %d %s %s files.  Retaining %d.  " + \
+                   "Will remove %d.") % \
+                   (len(rows), find_name, file_type,
+                   retain_count, remove_count)
+
+            self.log.debug(info)
+
+        for entry in rows[:remove_count]:
+            self.log.debug(
+                    "file_rotate: deleting %s file type " +
+                    "%s name %s fileid %d", find_name, file_type, entry.name,
+                    entry.fileid)
+            body = self.filedel_cmd(entry)
+            if 'error' in body:
+                info += '\n' + body['error']
+            else:
+                info += '\nRemoving  %s' % entry.name
+
+        return info
 
     def seconds_to_str(self, seconds):
             return str(datetime.timedelta(seconds=int(seconds)))
 
-    def gcs_cmd(self, agent, action, gcs_entry, full_path):
+    def filedel_cmd(self, entry):
+        """Delete a file, wherever it is
+            Argument:
+                    entry   The file entry.
+        """
 
-        land_dir = agent.path.dirname(full_path)
+        if entry.storage_type == FileManager.STORAGE_TYPE_CLOUD:
+            try:
+                self.delete_cloud_file(self, entry)
+            except IOError as e:
+                return {'error': str(e)}
+            return {}
 
-        filename = agent.path.basename(full_path)
-
-        env = {u'ACCESS_KEY': gcs_entry.access_key,
-               u'SECRET_KEY': gcs_entry.secret,
-               u'PWD': land_dir}
-
-        gcs_command = 'pgcs %s %s "%s"' % (action, gcs_entry.bucket, filename)
-
-        # Send the gcs command to the agent
-        return self.cli_cmd(gcs_command, agent, env=env)
-
-    def s3_cmd(self, agent, action, s3_entry, full_path):
-
-        land_dir = agent.path.dirname(full_path)
-        #fixme: create the path first
-
-        filename = agent.path.basename(full_path)
-
-        resource = os.path.basename(filename)
-        try:
-            token = s3_entry.get_token(resource)
-        except (AWSConnectionError, BotoClientError, BotoServerError) as e:
-            return self.error("s3: %s" % str(e))
-
-        # fixme: this method doesn't work
-        env = {u'ACCESS_KEY': token.credentials.access_key,
-               u'SECRET_KEY': token.credentials.secret_key,
-               u'SESSION': token.credentials.session_token,
-               u'REGION_ENDPOINT': s3_entry.region,
-               u'PWD': land_dir}
-
-        env = {u'ACCESS_KEY': s3_entry.access_key,
-               u'SECRET_KEY': s3_entry.secret,
-               u'PWD': land_dir}
-
-        s3_command = 'ps3 %s %s "%s"' % (action, s3_entry.bucket, filename)
-
-        # Send the s3 command to the agent
-        return self.cli_cmd(s3_command, agent, env=env)
-
-    def backupdel_cmd(self, backup):
-        """Delete a Tableau backup."""
-
-        entry = self.backup.find_by_name_envid(backup, self.environment.envid)
-        if not entry:
-            return self.error(
-                "no backup found with name: %s, envid %d" % (backup,
-                                                        self.environment.envid))
-
-        if not entry.agentid:
-            return self.error("Can delete backups only on agents.")
-
-        agent = Agent.get_by_id(entry.agentid)
+        agent = Agent.get_by_id(entry.storageid)
         if not agent:
-            return self.error("Unknown agentid: %d", entry.agentid)
+            return self.error("Unknown agentid: %d", entry.storageid)
 
         target_agent = None
         agents = self.agentmanager.all_agents()
@@ -383,24 +257,25 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             agent = agents[key]
             self.agentmanager.unlock()
 
-            if agent.agentid == entry.agentid:
+            if agent.agentid == entry.storageid:
                 target_agent = agent
                 break
 
         if not target_agent:
-            return self.error("Agentid %d not connected.", entry.agentid)
+            return {'error': "Agentid %d not connected." % entry.storageid}
 
-        backup_full_path = entry.name
-        self.log.debug("backupdel_cmd: Deleting path '%s' on agent '%s'",
-                       backup_full_path, target_agent.displayname)
+        file_full_path = entry.name
+        self.log.debug("filedel_cmd: Deleting path '%s' on agent '%s'",
+                       file_full_path, target_agent.displayname)
 
-        body = self.delete_file(target_agent, backup_full_path)
+        body = self.delete_agent_file(target_agent, file_full_path)
         if not body.has_key('error'):
             try:
-                self.backup.remove(entry.backupid)
+                self.files.remove(entry.fileid)
             except sqlalchemy.orm.exc.NoResultFound:
-                return self.error("backup not found name=%s agent=%s" % \
-              (backup_full_path, target_agent.displayname))
+                return {'error': ("fileid %d not found: name=%s agent=%s" % \
+                        (entry.fileid, file_full_path,
+                        target_agent.displayname))}
 
         return body
 
@@ -726,57 +601,55 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
            Returns a body with the results/status.
         """
 
-        backup_entry = self.backup.find_by_name(backup_full_path)
+        backup_entry = self.files.find_by_name(backup_full_path,
+                                               FileManager.FILE_TYPE_BACKUP)
         if not backup_entry:
             self.stateman.update(orig_state)
             return self.error("Backup name not found: %s" % backup_full_path)
 
-        # Get the gcs, s3 or vol entry
-        if backup_entry.gcsid:
-            source_type = StorageConfig.GCS
-            source_entry = self.gcs.get_by_gcsid(backup_entry.gcsid)
-            cloud_cmd = self.gcs_cmd
-        elif backup_entry.s3id:
-            source_type = StorageConfig.S3
-            source_entry = self.s3.get_by_s3id(backup_entry.s3id)
-            cloud_cmd = self.s3_cmd
-        elif backup_entry.agentid:
-            source_type = StorageConfig.VOL
+        # Get the cloud or vol entry
+        if backup_entry.storage_type == FileManager.STORAGE_TYPE_CLOUD:
+            source_type = FileManager.STORAGE_TYPE_CLOUD
+            source_entry = self.cloud.get_by_cloudid(backup_entry.cloudid)
+        elif backup_entry.storage_type == FileManager.STORAGE_TYPE_AGENT:
+            source_type = FileManager.STORAGE_TYPE_AGENT
             # fixme: support linux
             vol_name = backup_entry.name.split(':')[0]
             source_entry = AgentVolumesEntry.get_vol_entry_by_agentid_vol_name(
-                                backup_entry.agentid, vol_name)
+                                backup_entry.storageid, vol_name)
 
             if not source_entry:
                 return self.error(
                     ("restore_cmd: vol entry not found for backup " + \
                      "agentid %d, name %s") % \
-                     (backup_entry.agentid, vol_name))
+                     (backup_entry.storageid, vol_name))
 
             source_agent = Agent.get_by_id(source_entry.agentid)
             if not source_agent:
                 return self.error(
                     "restore_cmd: No such agentid %d referenced by " + \
-                    "agentid %d and name %s in backupid %d" % \
-                        (source_entry.agentid, backup_entry.volid,
-                                                    backup_entry.backupid))
+                    "files entry %d and name %s" % \
+                        (source_entry.agentid, backup_entry.backupid,
+                                            backup_entry.name))
         else:
-            return self.error(
-                "restore_cmd: Backup has no gcs/s3/agentid for backup %s" % \
-                                                        backup_full_path)
+            return self.error("restore_cmd: Unknown file storage type " + \
+                              "'%s' for backup '%s'" % \
+                              backup_entry.storage_type, backup_full_path)
 
         # Get the tableau backup file to use when calling the
         # 'tabadmin restore <backup-file>' command for the case
         # where the backup file is not on the primary.
-        if source_type in (StorageConfig.GCS, StorageConfig.S3) or \
-            ((source_type == StorageConfig.VOL) and \
+        if source_type == FileManager.STORAGE_TYPE_CLOUD or \
+            ((source_type == FileManager.STORAGE_TYPE_AGENT) and \
                     (source_agent.agentid != primary_agent.agentid)):
             try:
                 (primary_dir, primary_entry) = \
                     DiskCheck.get_primary_loc(primary_agent, self.BACKUP_DIR,
-                                               backup_entry.size)
+                                              FileManager.FILE_TYPE_BACKUP,
+                                              backup_entry.size)
             except DiskException, e:
-                self.log.error("restore_cmd: get_primary_loc failed: %s", str(e))
+                self.log.error("restore_cmd: get_primary_loc failed: %s",
+                               str(e))
                 return self.error("restore_cmd: %s" % str(e))
             self.log.debug("restore_cmd: primary_dir: %s", primary_dir)
         else:
@@ -787,7 +660,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # file after the restore finishes or an error.
         backup_copied = False
 
-        if source_type in (StorageConfig.GCS, StorageConfig.S3):
+        if source_type == FileManager.STORAGE_TYPE_CLOUD:
             # The backup is cloud storage: s3 or gcs
             self.log.debug(\
                 "restore: Sending %s command to primary '%s' to GET '%s'", \
@@ -800,6 +673,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             backup_full_path = primary_agent.path.join(
                     primary_dir,
                     primary_agent.path.basename(backup_full_path))
+
+            if source_entry.cloud_type == CloudManager.CLOUD_TYPE_GCS:
+                cloud_cmd = self.gcs_cmd
+            elif source_entry.cloud_type == CloudManager.CLOUD_TYPE_S3:
+                cloud_cmd = self.s3_cmd
 
             body = cloud_cmd(primary_agent, "GET", source_entry,
                              backup_full_path)
@@ -815,7 +693,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 return body
 
             backup_copied = True
-        elif source_type == StorageConfig.VOL:
+        elif source_type == FileManager.STORAGE_TYPE_AGENT:
             # First copy backup file to the primary if it isn't there yet.
             # Backup is on a disk volume (not cloud storage).
             # It could be on the main primary volume, or another
@@ -902,7 +780,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 if backup_copied:
                     # If the file was copied to the Primary, delete
                     # the temporary backup file we copied to the Primary.
-                    self.delete_file(primary_agent, backup_full_path)
+                    self.delete_agent_file(primary_agent, backup_full_path)
                 self.stateman.update(orig_state)
                 return stop_body
 
@@ -946,7 +824,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if backup_copied:
             # If the file was copied to the Primary, delete
             # the temporary backup file we copied to the Primary.
-            delete_body = self.delete_file(primary_agent, backup_full_path)
+            delete_body = self.delete_agent_file(primary_agent,
+                                                 backup_full_path)
             if 'error' in delete_body:
                 info += '\n' + delete_body['error']
 
@@ -980,7 +859,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return restore_body
 
     # FIXME: use filemanager.delete() instead?
-    def delete_file(self, agent, source_fullpathname):
+    def delete_agent_file(self, agent, source_fullpathname):
         """Delete a file, check the error, and return the body result."""
         self.log.debug("Removing file '%s'", source_fullpathname)
         cmd = 'CMD /C DEL \\\"%s\\\"' % source_fullpathname
@@ -990,11 +869,25 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # fixme: report somewhere the DEL failed.
         return remove_body
 
-    def delete_s3_file(self, name, path):
-        entry = self.s3.get_by_name(name)
+    def delete_cloud_file(self, file_entry):
+        cloud_entry = self.cloud.get_by_cloudid(entry.storageid)
         if not entry:
-            raise IOError("No such s3 name: %s" % name)
+            raise IOError("No such cloudid: %d for file %s" % \
+                        (file_entry.cloudid, file_entry.path))
 
+        if cloud_entry.cloud_type == CloudManager.CLOUD_TYPE_S3:
+            self.delete_s3_file(cloud_entry, file_entry.path)
+        elif cloud_entry.cloud_type == CloudManager.CLOUD_TYPE_GCS:
+            self.delete_gcs_file(cloud_entry, file_entry.path)
+        else:
+            self.log.error("delete_cloud_file: Unknown cloud_type: %s " + \
+                           "for file: %s" % (cloud_entry.cloud_type,
+                           file_entry.name))
+            raise IOError("delete_cloud_file: Unknown cloud_type %s " + \
+                           "for file: %s" % (cloud_entry.cloud_type,
+                            file_entry.path))
+
+    def delete_s3_file(self, entry, path):
         # fixme: use temporary token if configured for it
         conn = connection.S3Connection(entry.access_key, entry.secret)
         bucket = connection.Bucket(conn, entry.bucket)
@@ -1003,11 +896,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         dk.key = path
         bucket.delete_key(dk)
 
-    def delete_gcs_file(self, name, path):
-        entry = self.gcs.get_by_name(name)
-        if not entry:
-            raise IOError("No such gcs name: %s" % name)
-
+    def delete_gcs_file(self, entry, path):
         conn = boto.connect_gs(entry.access_key, entry.secret)
         bucket = conn.get_bucket(entry.bucket)
 
@@ -1019,6 +908,60 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         except boto.exception.BotoServerError, e:
             raise IOError("Failed to delete '%s' from bucket '%s': %s" % \
                           (path, entry.bucket, str(e)))
+
+    def gcs_cmd(self, agent, action, cloud_entry, data_dir, full_path):
+
+        # fixme: sanity check on data-dir on the primary?
+
+        filename = agent.path.basename(full_path)
+
+        # FIXME: We don't really want to send our real keys and
+        #        secrets to the agents, but while boto.connect_gs
+        #        can replace boto.connect_s3, there is no GCS
+        #        equivalent for boto.connect_sts, so we may need
+        #        to move away from boto to get GCS temporary tokens.
+        env = {u'ACCESS_KEY': cloud_entry.access_key,
+               u'SECRET_KEY': cloud_entry.secret,
+               u'PWD': data_dir}
+
+        gcs_command = 'pgcs %s %s "%s"' % (action, cloud_entry.bucket,
+                                          full_path)
+
+        # Send the gcs command to the agent
+        return self.cli_cmd(gcs_command, agent, env=env)
+
+    def s3_cmd(self, agent, action, cloud_entry, data_dir, full_path):
+
+        # fixme: sanity check on data-dir on the primary?
+
+        #fixme: create the path first
+        filename = agent.path.basename(full_path)
+
+        """
+        # fixme: Not all users have authorization to do this.
+        resource = os.path.basename(filename)
+        try:
+            token = s3_entry.get_token(resource)
+        except (AWSConnectionError, BotoClientError, BotoServerError) as e:
+            return self.error("s3: %s" % str(e))
+
+        # fixme: this method doesn't work
+        env = {u'ACCESS_KEY': token.credentials.access_key,
+               u'SECRET_KEY': token.credentials.secret_key,
+               u'SESSION': token.credentials.session_token,
+               u'REGION_ENDPOINT': s3_entry.region,
+               u'PWD': land_dir}
+        """
+
+        env = {u'ACCESS_KEY': s3_entry.access_key,
+               u'SECRET_KEY': s3_entry.secret,
+               u'PWD': data_dir}
+
+        s3_command = 'ps3 %s %s "%s"' % (action, s3_entry.bucket, filename)
+
+        # Send the s3 command to the agent
+        return self.cli_cmd(s3_command, agent, env=env)
+
 
     def _get_cli_status(self, xid, agent, orig_cli_command):
         """Gets status on the command and xid.  Returns:
@@ -1403,14 +1346,21 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.agentmanager.set_displayname(aconn, uuid, displayname)
 
     def ziplogs_cmd(self, agent, target=None, userid=None):
-        """Run tabadmin ziplogs'."""
+        """Run tabadmin ziplogs."""
+
+        if userid == None:
+            auto = True     # It is an 'automatic/scheduled' backup
+        else:
+            auto = False    # It was requested by a specific user
 
         aconn = agent.connection
-        ziplog_name = time.strftime("%Y%m%d_%H%M%S") + ".logs.zip"
+
+        # fixme: get more accurate estimate of ziplog size
+        min_disk_needed = agent.tableau_data_size * .3
+        # Disk space check.
         try:
-            # fixme: add size estimate/required?
-            (primary_dir, primary_entry) = \
-                    DiskCheck.get_primary_loc(agent, self.LOG_DIR)
+            dcheck = DiskCheck(self, agent, self.LOG_DIR,
+                               FileManager.FILE_TYPE_ZIPLOG, min_disk_needed)
         except DiskException, e:
             self.log.error("ziplogs_cmd: %s", str(e))
             return self.error("ziplogs_cmd: %s" % str(e))
@@ -1419,9 +1369,28 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.event_control.gen(EventControl.ZIPLOGS_STARTED,
                                data, userid=userid)
                                
-        cmd = 'tabadmin ziplogs -f -l -n -a \\\"%s\\\"' % primary_dir
+        ziplogs_name = time.strftime(self.FILENAME_FMT) + ".logs.zip"
+        ziplogs_full_path= agent.path.join(dcheck.primary_dir, ziplogs_name)
+        cmd = 'tabadmin ziplogs -f -l -n -a \\\"%s\\\"' % ziplogs_full_path
         body = self.cli_cmd(cmd, agent)
         body[u'info'] = unicode(cmd)
+
+        if success(body):
+            ziplog_size_body = agent.filemanager.filesize(ziplogs_full_path)
+            if not success(ziplog_size_body):
+                self.log.error("Failed to get size of ziplogs file %s: %s" %\
+                            (ziplog_full_path, ziplog_size_body['error']))
+                ziplog_size = 0
+            else:
+                ziplog_size = ziplog_size_body['size']
+
+            # Place the file where it belongs (different agent, cloud, etc.)
+            place = PlaceFile(self, agent, dcheck, ziplogs_full_path,
+                              ziplog_size, auto)
+            body['info'] += place.info
+
+            rotate_info = self.rotate_files(FileManager.FILE_TYPE_ZIPLOG)
+            body['info'] += rotate_info
 
         if 'error' in body:
             self.event_control.gen(EventControl.ZIPLOGS_FAILED,
@@ -1721,10 +1690,9 @@ def main():
 
     server.workbooks = WorkbookManager(server)
 
-    server.backup = BackupManager(server)
+    server.files = FileManager(server)
 
-    server.gcs = GCS(server.environment.envid)
-    server.s3 = S3(server.environment.envid)
+    server.cloud = CloudManager(server)
 
     server.firewall_manager = FirewallManager(server)
 

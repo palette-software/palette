@@ -12,44 +12,72 @@ class DiskException(Exception):
 
 # This a transitory class - instantiated each time it is needed.
 class DiskCheck(object):
-    """Checks the backup and sets the target/location information."""
+    """Sets the location for:
+        - the initial command (if staging is needed)
+        - The target/location (if a different final location is needed,
+          like a different agent+volume).
+        - Make directories on the primary that are referenced here.
+    """
 
-    def __init__(self, server, agent, parent_dir):
+    def __init__(self, server, agent, parent_dir, file_type, min_disk_needed):
         # inputs
         self.server = server
         self.log = server.log
 
         self.agent = agent
         self.parent_dir = parent_dir     # "backup", or "ziplogs"
+        self.file_type = file_type
 
         # outputs
-        self.target_type = None  # StorageConfig.VOL, GCS or S3.
+        self.target_type = None  # StorageConfig.VOL or CLOUD
 
         self.target_entry = None
         self.target_agent = None
         self.target_dir = ""    # Not used for cloud storage
-        self.min_target_disk_needed = .3 * agent.tableau_data_size
+        self.min_disk_needed = min_disk_needed
 
-        # Stores the directory where should the backup, etc. be done.
+        # Specifies the directory where should the file should be
+        # created, initially.
         # It may be the final destination directory or it could be temporarily
         # used before copying to the cloud or other agent.
         self.primary_dir = ""
         self.primary_entry = None
-
-        self.primary_dir_is_palette_primary_data_volume = False
 
         # Whether or not the primary agent is the final destination.
         self.primary_final_dest = True
 
         self.set_locs()
 
+        self.mkdirs()
+
+    def mkdirs(self):
+        """Make sure the primary agent directories exists."""
+
+        try:
+            self.agent.filemanager.mkdirs(self.primary_dir)
+        except (IOError, ValueError) as e:
+            self.log.error(
+                "diskcheck.mkdirs: Could not create directory: '%s': %s",
+                self.primary_dir, str(e))
+            raise DiskException("Could not create directory '%s': %s" % \
+                                (self.primary_dir, str(e)))
+
+        if self.target_dir and (self.primary_dir != self.target_dir):
+            # Make sure the target directory on the primary exists, too.
+            try:
+                self.agent.filemanager.mkdirs(self.target_dir)
+            except (IOError, ValueError) as e:
+                self.log.error("diskcheck.mkdirs: Could not create " + \
+                               "target directory: '%s': %s",
+                                self.target_dir, str(e))
+                raise DiskException(
+                    ("Could not create target directory " + \
+                                 "'%s': %s") % (self.target_dir, str(e)))
+
     def set_locs(self):
-        """Set backup volume location based on free disk and volumes
+        """Set file agent/volume location based on free disk and volumes
            available.
         """
-        if not self.agent.tableau_data_dir:
-            raise DiskException(
-                "Missing 'tableau_data_dir' in pinfo.  Cannot proceed.")
 
         try:
             self.storage_config = StorageConfig(self.server.system)
@@ -64,57 +92,41 @@ class DiskCheck(object):
            to set and check a target type and entry, etc.
          """
 
-        self.target_agent = None
-        self.target_entry = None
-        self.target_type = None
-        self.target_entry_is_palette_data_area = False
         self.primary_final_dest = False
 
-        if self.storage_config.backup_dest_type == StorageConfig.GCS:
-            entry = self.server.gcs.get_by_gcsid(
-                                            self.storage_config.backup_dest_id)
-
-            if not entry:
-                raise DiskException(
-                        "gcsid not found: %d" % storage_config.backup_dest_id)
-
-            self.target_entry = entry
-            self.target_type = StorageConfig.GCS
-            self.primary_final_dest = False
-            # Get the location to backup or stage to
-            (self.primary_dir, self.primary_entry) = \
-                   DiskCheck.get_primary_loc(self.agent,
-                                             self.parent_dir,
-                                             self.min_target_disk_needed)
-            self.log.debug("s3: primary_dir: %s", self.primary_dir)
-            return
-        elif self.storage_config.backup_dest_type == StorageConfig.S3:
-            entry = self.server.s3.get_by_s3id(
-                                            self.storage_config.backup_dest_id)
-
-            if not entry:
-                raise DiskException(
-                    "s3id not found: %d" % self.storage_config.backup_dest_id)
-
-            self.target_entry = entry
-            self.target_type = StorageConfig.S3
-            self.primary_final_dest = False
-            # Get the location to backup or stage to
-            (self.primary_dir, self.primary_entry) = \
-                   DiskCheck.get_primary_loc(self.agent,
-                                             self.parent_dir,
-                                             self.min_target_disk_needed)
-            self.log.debug("gcs: primary_dir: %s", self.primary_dir)
-            return
-        elif self.storage_config.backup_dest_type == StorageConfig.VOL:
+        if self.storage_config.backup_dest_type == StorageConfig.VOL:
             self.config_vol_target()
             return
+        elif self.storage_config.backup_dest_type == StorageConfig.CLOUD:
+            self.config_cloud_target()
         else:
             raise DiskException("diskcheck: Invalid backup dest_type: %s" % \
-                                        self.storage_config.backup_dest_type)
+                                self.storage_config.backup_dest_type)
+
+
+    def config_cloud_target(self):
+        """File is configured to go to the cloud."""
+        entry = self.server.cloud.get_by_cloudid(
+                                            self.storage_config.backup_dest_id)
+
+        if not entry:
+            raise DiskException(
+                    "cloudid not found: %d" % storage_config.backup_dest_id)
+
+        self.target_entry = entry
+        self.target_type = StorageConfig.CLOUD
+        self.primary_final_dest = False
+        # Get the location to backup/ziplogs or stage to
+        (self.primary_dir, self.primary_entry) = \
+               DiskCheck.get_primary_loc(self.agent,
+                                         self.parent_dir,
+                                         self.min_disk_needed)
+        self.log.debug("cloud: primary_dir: %s", self.primary_dir)
+        return
+
 
     def config_vol_target(self):
-        # Backup is configured to go to a volume.
+        # File is configured to go to an agent.
         entry = AgentVolumesEntry.get_vol_entry_by_volid(
                                         self.storage_config.backup_dest_id)
         
@@ -133,26 +145,26 @@ class DiskCheck(object):
                                         self.storage_config.backup_dest_id))
 
         # Check to see if this volume has enough available disk space.
-        if entry.available_space < self.min_target_disk_needed:
+        if entry.available_space < self.min_disk_needed:
             raise DiskException(
                 ("Not enough available space on '%s' volume '%s' volid %d: " + \
                  "Available space: " +
                 "%s, needed: %s") % \
                         (target_agent.displayname,
                         entry.name, entry.volid, sizestr(entry.available_space),
-                        sizestr(self.min_target_disk_needed)))
+                        sizestr(self.min_disk_needed)))
 
-        # Check if the backup would use more disk space than is allowed
+        # Check if the backup/ziplog would use more disk space than is allowed
         # by the "archive_limit" in the volume entry.
-        if entry.size - entry.available_space + self.min_target_disk_needed > \
+        if entry.size - entry.available_space + self.min_disk_needed > \
                                                     entry.archive_limit:
             raise DiskException(
                 ("Minimum space needed greater than archive limit." + \
-                "volid: %d.  Need: %s.  With backup vol would have: %s.  " + \
+                "volid: %d.  Need: %s.  With vol would have: %s.  " + \
                 "Allowed/archive limit: %s") % \
-                (entry.volid, sizestr(self.min_target_disk_needed),
+                (entry.volid, sizestr(self.min_disk_needed),
                 sizestr(entry.size - entry.available_space + \
-                            self.min_target_disk_needed), sizestr(entry.archive_limit)))
+                            self.min_disk_needed), sizestr(entry.archive_limit)))
 
         self.target_agent = target_agent
         self.target_vol = entry.name
@@ -166,11 +178,11 @@ class DiskCheck(object):
             self.primary_final_dest = True
         else:
             self.primary_final_dest = False
-            # Get the location to backup or stage to
+            # Get the location to backup/ziplog or stage to
             (self.primary_dir, self.primary_entry) = \
                    DiskCheck.get_primary_loc(self.agent,
                                 self.parent_dir,
-                                self.min_target_disk_needed)
+                                self.min_disk_needed)
 
         self.log.debug("check_volume_from_config: set target to " + \
                 "agent '%s', volid %d, target dir '%s', " + \
@@ -179,7 +191,7 @@ class DiskCheck(object):
                 "archive limit %s",
                     self.agent.displayname, entry.volid, self.target_dir,
                     self.primary_dir,
-                    sizestr(self.min_target_disk_needed),
+                    sizestr(self.min_disk_needed),
                                         sizestr(entry.available_space),
                     sizestr(entry.size), sizestr(entry.archive_limit))
 
@@ -187,8 +199,8 @@ class DiskCheck(object):
     def get_primary_loc(cls, agent, parent_dir, min_disk_needed=0):
         """
             Find a directory on the primary that can temporarily hold
-            the backup, etc. before it is copied to another agent or cloud,
-            or used for restore, etc.
+            the backup/ziplog, etc. before it is copied to another
+            agent or cloud, or used for restore, etc.
 
             Arguments:
                 agent
