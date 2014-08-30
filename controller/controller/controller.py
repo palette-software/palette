@@ -16,6 +16,10 @@ import httplib
 import ntpath
 
 import boto
+
+from boto.s3 import connection
+from boto.gs.connection import GSConnection
+
 from boto.exception import AWSConnectionError, BotoClientError, BotoServerError
 
 import sqlalchemy
@@ -303,7 +307,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         body['info'] += '\n' + stats
         return body
 
-
     def seconds_to_str(self, seconds):
             return str(datetime.timedelta(seconds=int(seconds)))
 
@@ -354,38 +357,50 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def backupdel_cmd(self, backup):
         """Delete a Tableau backup."""
 
-        # FIXME: tie backup to domain
-
-        entry = self.backup.find_by_name(backup)
+        entry = self.backup.find_by_name_envid(backup, self.environment.envid)
         if not entry:
-            return self.error("no backup found with name: %s" % (backup))
+            return self.error(
+                "no backup found with name: %s, envid %d" % (backup,
+                                                        self.environment.envid))
 
-        if not entry.volid:
-            return self.error("Can delete only backups on primary and agents.")
+        if not entry.agentid:
+            return self.error("Can delete backups only on agents.")
 
-        agent_db = Agent.get_agentstatusentry_by_volid(entry.volid)
-
-        agent = self.agentmanager.agent_by_uuid(agent_db.uuid)
+        agent = Agent.get_by_id(entry.agentid)
         if not agent:
-            return self.error("agent not connected: displayname=%s uuid=%s" % \
-              (agent_db.displayname, agent_db.uuid))
+            return self.error("Unknown agentid: %d", entry.agentid)
 
-        vol_entry = AgentVolumesEntry.get_vol_entry_by_volid(entry.volid)
-        if not vol_entry:
-            return self.error("Missing volume id: %d!" % entry.volid)
+        target_agent = None
+        agents = self.agentmanager.all_agents()
+        for key in agents.keys():
+            self.agentmanager.lock()
+            if not agents.has_key(key):
+                self.log.info(
+                    "copy_cmd: agent with conn_id %d is now " + \
+                    "gone and won't be checked.", key)
+                self.agentmanager.unlock()
+                continue
+            agent = agents[key]
+            self.agentmanager.unlock()
 
-        # FIXME: use agent.path
-        backup_path = ntpath.join(vol_entry.name + ":", vol_entry.path, backup)
+            if agent.agentid == entry.agentid:
+                target_agent = agent
+                break
+
+        if not target_agent:
+            return self.error("Agentid %d not connected.", entry.agentid)
+
+        backup_full_path = entry.name
         self.log.debug("backupdel_cmd: Deleting path '%s' on agent '%s'",
-                       backup_path, agent.displayname)
+                       backup_full_path, target_agent.displayname)
 
-        body = self.delete_file(agent, backup_path)
+        body = self.delete_file(target_agent, backup_full_path)
         if not body.has_key('error'):
             try:
                 self.backup.remove(entry.backupid)
             except sqlalchemy.orm.exc.NoResultFound:
                 return self.error("backup not found name=%s agent=%s" % \
-              (backup, agent.displayname))
+              (backup_full_path, target_agent.displayname))
 
         return body
 
@@ -974,6 +989,36 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.info('DEL of "%s" failed.', source_fullpathname)
             # fixme: report somewhere the DEL failed.
         return remove_body
+
+    def delete_s3_file(self, name, path):
+        entry = self.s3.get_by_name(name)
+        if not entry:
+            raise IOError("No such s3 name: %s" % name)
+
+        # fixme: use temporary token if configured for it
+        conn = connection.S3Connection(entry.access_key, entry.secret)
+        bucket = connection.Bucket(conn, entry.bucket)
+
+        dk = connection.Key(bucket)
+        dk.key = path
+        bucket.delete_key(dk)
+
+    def delete_gcs_file(self, name, path):
+        entry = self.gcs.get_by_name(name)
+        if not entry:
+            raise IOError("No such gcs name: %s" % name)
+
+        conn = boto.connect_gs(entry.access_key, entry.secret)
+        bucket = conn.get_bucket(entry.bucket)
+
+        dk = boto.s3.key.Key(bucket)
+        dk.key = path
+
+        try:
+            dk.delete()
+        except boto.exception.BotoServerError, e:
+            raise IOError("Failed to delete '%s' from bucket '%s': %s" % \
+                          (path, entry.bucket, str(e)))
 
     def _get_cli_status(self, xid, agent, orig_cli_command):
         """Gets status on the command and xid.  Returns:

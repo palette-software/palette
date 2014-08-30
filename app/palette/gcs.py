@@ -19,6 +19,7 @@ class GCSApplication(PaletteRESTHandler):
         super(GCSApplication, self).__init__(global_conf)
 
     def get(self):
+        self.envid = self.environment.envid
         entry = GCS.get_by_envid_name(self.envid, DEFAULT_NAME)
         if entry is None:
             entry = GCS(envid = self.envid)
@@ -53,6 +54,10 @@ class GCSApplication(PaletteRESTHandler):
     @required_parameters('value')
     def handle_bucket_POST(self, req):
         v = req.POST['value']
+        if v.find('gs://') == 0:
+            v = v[5:]
+        elif v.find('https://storage.googleapis.com/') == 0:
+            v = v[31:]
         entry = self.get()
         entry.bucket = v
         meta.Session.commit()

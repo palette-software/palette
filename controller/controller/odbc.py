@@ -3,7 +3,7 @@ class ODBC(object):
 
     URI = '/sql'
 
-    DRIVER = '{PostgreSQL ANSI(x64)}'
+    DRIVER = '{PostgreSQL Unicode(x64)}'
     SERVER = '127.0.0.1'
     PORT = 8060
     DATABASE = 'workgroup'
