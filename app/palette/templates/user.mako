@@ -30,7 +30,7 @@
           <p>{{visited-info}}</p>
         </div>
         <div class="col2">
-          <div><span class="label">Tableau Role</span><span>{{tableau-info}}</span></div>
+          <div><span class="label">{{tableau-info}}</span></div>
           <div><span class="label">Palette Role</span><span>{{admin-type}}</span></div>
         </div>
       </div>

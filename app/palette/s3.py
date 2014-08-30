@@ -19,6 +19,7 @@ class S3Application(PaletteRESTHandler):
         super(S3Application, self).__init__(global_conf)
 
     def get(self):
+        self.envid = self.environment.envid
         entry = S3.get_by_envid_name(self.envid, DEFAULT_NAME)
         if entry is None:
             entry = S3(envid = self.envid)
@@ -53,6 +54,10 @@ class S3Application(PaletteRESTHandler):
     @required_parameters('value')
     def handle_bucket_POST(self, req):
         v = req.POST['value']
+        if v.find('s3://') == 0:
+           v = v[5:]
+        elif v.find('https://s3.amazonaws.com/') == 0:
+           v = v[25:]
         entry = self.get()
         entry.bucket = v
         meta.Session.commit()

@@ -2,30 +2,27 @@
   <section class="row">
     <section class="col-xs-12">
       <h1 class="page-title">Events</h1>
-      <!--
-          <a href="#" class="alert errors"><span>0</span></a>
-          <a href="#" class="alert warnings"><span>0</span></a>
-	  -->
     </section>
   </section>
   <section class="row">
     <section class="col-xs-12 event-dropdowns">
+      <div id="event-count"><span>0</span> Events</div>
       <div id="status-dropdown" class="btn-group"></div>
       <div id="type-dropdown" class="btn-group"></div>
-      <div id="site-dropdown" class="btn-group"></div>
-<!-- TODO: Add back in Alpha 2 or later
-      <div id="publisher-dropdown" class="btn-group"></div>
-      <div id="project-dropdown" class="btn-group"></div>
-      <div class="col-xs-4">
-         <input class="form-control" type="text" placeholder="Workbook" style="margin-top:10px;">
-      </div>
--->
-
     </section>
   </section>
 </section>
 <section class="bottom-zone">
   <section id="event-list"></section>
+  <section id="event-pagination">
+    <div>
+    Page <span class="page-number"></span> of <span class="page-count"> </span>
+    </div>
+    <span class="first"><a href="#">first</a> |</span>
+    <span class="previous"><a href="#">previous</a> |</span>
+    <span class="next"><a href="#">next</a> |</span>
+    <span class="last"><a href="#">last</a></span>
+  </section>
 </section>
 
 <script id="event-list-template" type="x-tmpl-mustache">
