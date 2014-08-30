@@ -13,6 +13,8 @@ from http_control import HttpControl
 from event_control import EventControl
 from util import utc2local, parseutc, DATEFMT, timedelta_total_seconds
 from sites import Site
+from workbooks import WorkbookEntry
+from profile import UserProfile
 
 class HttpRequestEntry(meta.Base, BaseDictMixin):
     __tablename__ = 'http_requests'
@@ -84,7 +86,7 @@ class HttpRequestManager(TableauCacheManager):
             completed_at = utc2local(parseutc(row[9]))
 
             user_id = row[11]
-            site_it = row[17]
+            site_id = row[17]
             system_user_id = users.get(site_id, user_id)
 
             entry = HttpRequestEntry(id=row[0],
@@ -151,6 +153,12 @@ class HttpRequestManager(TableauCacheManager):
         return int(row[0])
 
     def parseuri(self, uri, body):
+        tokens = uri.split('?', 1)
+        if len(tokens) == 2:
+            body['uri'] = uri = tokens[0]
+            body['query_string'] = tokens[1]
+        else:
+            body['uri'] = uri
         tokens = uri[1:].split('/')
         # /views/<workbook>/<viewname>
         if len(tokens) == 3 and tokens[0].lower() == 'views':
@@ -179,14 +187,13 @@ class HttpRequestManager(TableauCacheManager):
                         agent.todict().items() +\
                         entry.todict_all_fields().items())
 
-        uri = entry.controller # ?!
-        self.parseuri(uri, body)
+        self.parseuri(entry.http_request_uri, body)
 
         system_user_id = entry.system_user_id
         if system_user_id != -1:
             body['system_user_id'] = system_user_id
             body['username'] = \
-                self.get_username_from_system_user_id(envtry.envid,
+                self.get_username_from_system_user_id(entry.envid,
                                                       system_user_id)
 
         if 'workbook' in body:
@@ -199,7 +206,7 @@ class HttpRequestManager(TableauCacheManager):
             body['tableau_server_url'] = url
 
         if entry.site_id and 'site' not in body:
-            site = Site.get(envid, entry.site_id)
+            site = Site.get(entry.envid, entry.site_id)
             if site:
                 body['site'] = site.name
 
