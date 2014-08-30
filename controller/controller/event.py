@@ -6,9 +6,10 @@ from sqlalchemy.schema import ForeignKey
 from akiri.framework.ext.sqlalchemy import meta
 
 from manager import Manager
-from util import DATEFMT
+from mixin import BaseMixin, BaseDictMixin
+from util import DATEFMT, utctotimestamp
 
-class EventEntry(meta.Base):
+class EventEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = "events"
 
     eventid = Column(BigInteger, unique=True, nullable=False, \
@@ -27,6 +28,17 @@ class EventEntry(meta.Base):
     siteid = Column(Integer)
     projectid = Column(Integer)
     creation_time = Column(DateTime, server_default=func.now())
+    timestamp = Column(DateTime, server_default=func.now())
+
+    def todict(self, pretty=False, exclude=[]):
+        d = super(EventEntry, self).todict(pretty=pretty, exclude=exclude)
+
+        ts = "%.6f" % utctotimestamp(self.timestamp)
+        if pretty:
+            d['reference-time'] = ts
+        else:
+            d['reference-time'] = ts
+        return d
 
 class EventManager(Manager):
 
