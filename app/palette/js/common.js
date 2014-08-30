@@ -377,8 +377,7 @@ function ($, topic, template)
 
 
     /* MONITOR TIMER */
-//    var interval = 1000; //ms - FIXME: make configurable from the backend.
-    var interval = 5000; //ms - FIXME: make configurable from the backend.
+    var interval = 1000; //ms - FIXME: make configurable from the backend.
     var timer = null;
     var current = null;
 
