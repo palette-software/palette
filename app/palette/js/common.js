@@ -157,7 +157,9 @@ function ($, topic, template)
     /*
      * nextPage()
      */
-    function nextPage() {
+    function nextPage(event) {
+        event.preventDefault();
+        event.stopPropagation();
         if (eventFilter.page < pageCount()) {
             setPage(eventFilter.page+1);
         }
@@ -166,7 +168,9 @@ function ($, topic, template)
     /*
      * prevPage()
      */
-    function prevPage() {
+    function prevPage(event) {
+        event.preventDefault();
+        event.stopPropagation();
         if (eventFilter.page > 1) {
             setPage(eventFilter.page-1);
         }
@@ -175,14 +179,18 @@ function ($, topic, template)
     /*
      * firstPage()
      */
-    function firstPage() {
+    function firstPage(event) {
+        event.preventDefault();
+        event.stopPropagation();
         setPage(1);
     }
 
     /*
      * nextPage()
      */
-    function lastPage() {
+    function lastPage(event) {
+        event.preventDefault();
+        event.stopPropagation();
         setPage(pageCount());
     }
 
@@ -318,10 +326,14 @@ function ($, topic, template)
         var rendered = template.render(event_list_template, data);
         $('#event-list').html(rendered);
 
-        eventFilter.ref = events[0]['reference-time'];
         eventFilter.current['first'] = events[0].eventid;
         eventFilter.current['last'] = events[events.length-1].eventid;
         eventFilter.current['count'] = events.length;
+
+        if (eventFilter.page == 1) {
+            eventFilter.ref = events[0]['reference-time'];
+            console.log(eventFilter.ref);
+        }
     }
 
     /*

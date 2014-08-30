@@ -1,5 +1,6 @@
 import sys, traceback
 import time
+from datetime import datetime
 from mako.template import Template
 from mako import exceptions
 import mako.runtime
@@ -9,6 +10,7 @@ from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
 
+from event import EventEntry
 from profile import UserProfile
 from util import DATEFMT, UNDEFINED
 from mixin import BaseMixin
@@ -182,7 +184,6 @@ class EventControlManager(object):
         self.indented = self.alert_email.indented
         self.log = server.log
         self.envid = server.environment.envid
-        self.event = server.event
 
     def get_event_control_entry(self, key):
         try:
@@ -237,8 +238,9 @@ class EventControlManager(object):
 
         if not 'time' in data:
             if not timestamp:
-                timestamp = time.strftime(DATEFMT)
-            data['time'] = timestamp
+                timestamp = datetime.now()
+            # FIXME: is this needed or used?
+            data['time'] = timestamp.strftime(DATEFMT)
 
         # The userid for extracts is the Tableau "system_users_id".
         # The userid for other events is the "userid".
@@ -292,11 +294,18 @@ class EventControlManager(object):
         if self.server.event_debug:
             event_description = event_description + "--------\n" + str(data)
 
+        summary = timestamp.strftime(DATEFMT)
+
         # Log the event to the database
-        self.event.add(key, subject, event_description, event_entry.level,
-                       event_entry.icon, event_entry.color, 
-                       event_entry.event_type, userid=userid, siteid=siteid,
-                       timestamp=timestamp)
+        session = meta.Session()
+        entry = EventEntry(key=key, envid=self.envid, title=subject,
+                           description=event_description,
+                           level=event_entry.level, icon=event_entry.icon,
+                           color=event_entry.color,
+                           event_type=event_entry.event_type, summary=summary,
+                           userid=userid, siteid=siteid, timestamp=timestamp)
+        session.add(entry)
+        session.commit()
 
         if event_entry.send_email:
             try:

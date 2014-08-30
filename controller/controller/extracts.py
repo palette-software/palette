@@ -147,10 +147,10 @@ class ExtractManager(TableauCacheManager):
 
             if entry.finish_code == 0:
                 self.eventgen(EventControl.EXTRACT_OK, body,
-                              timestamp=completed_at.strftime(DATEFMT))
+                              timestamp=completed_at)
             else:
                 self.eventgen(EventControl.EXTRACT_FAILED, body,
-                              timestamp=completed_at.strftime(DATEFMT))
+                              timestamp=completed_at)
 
             session.add(entry)
 
