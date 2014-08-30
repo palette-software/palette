@@ -9,6 +9,7 @@ from akiri.framework.config import store
 from controller.agentinfo import AgentYmlEntry
 from controller.profile import UserProfile
 from controller.domain import Domain
+from controller.environment import Environment
 from controller.util import success
 from rest import Telnet
 
@@ -23,22 +24,26 @@ class TableauAuthenticator(Authenticator):
             return store.get('palette', 'domainname')
         if name == 'domain':
             return Domain.get_by_name(self.domainname)
+        if name == 'environment':
+            return Environment.get()
+        raise AttributeError(name)
 
     # FIXME: this is a hack since there isn't currently any
-    # concept of agent, environment or domain during login.
+    # concept of agent during login.
     def yml(self, key):
         entry = meta.Session.query(AgentYmlEntry).\
             filter(AgentYmlEntry.key == key).first()
         return entry and entry.value or None
     
     def authenticate(self, username, password, service='login'):
-        entry = UserProfile.get(0) # user '0', likely 'palette'
+        envid = self.environment.envid
+        entry = UserProfile.get(envid, 0) # user '0', likely 'palette'
         if entry and username == entry.name:
             # 'palette' always uses local authentication
-            return UserProfile.verify(username, password)
+            return UserProfile.verify(envid, username, password)
         value = self.yml('wgserver.authenticate')
         if not value or value.lower() != 'activedirectory':
-            return UserProfile.verify(username, password)
+            return UserProfile.verify(envid, username, password)
         cmd = "ad verify " + username + " " + password
         try:
             data = self.telnet.send_cmd(cmd, sync=True)
@@ -50,8 +55,10 @@ class TableauAuthenticator(Authenticator):
 class TableauAuthFilter(AuthFilter):
 
     def __call__(self, environ, start_response):
+        if not hasattr(self, 'envid'):
+            self.envid = Environment.get().envid            
         if 'REMOTE_USER' in environ:
-            user = UserProfile.get_by_name(environ['REMOTE_USER'])
+            user = UserProfile.get_by_name(self.envid, environ['REMOTE_USER'])
             user.timestamp = func.current_timestamp()
             meta.Session.commit()
             environ['REMOTE_USER'] = user

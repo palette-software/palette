@@ -70,8 +70,8 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
         return entry
 
     @classmethod
-    def verify(cls, name, password):
-        entry = cls.get_by_name(name)
+    def verify(cls, envid, name, password):
+        entry = cls.get_by_name(envid, name)
         if not entry:
             return False
         return entry.hashed_password == tableau_hash(password, entry.salt)

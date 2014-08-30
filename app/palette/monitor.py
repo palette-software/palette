@@ -131,10 +131,10 @@ class MonitorApplication(PaletteRESTHandler):
         L = [{'item':'All Publishers', 'id':0}]
         d = {'name':'publisher'}
         for p in ExtractManager.publishers():
-            if p.system_users_id == sysid:
+            if p.system_user_id == sysid:
                 d['value'] = p.friendly_name
-                d['id'] = p.system_users_id
-            L.append({'item':p.friendly_name, 'id':p.system_users_id})
+                d['id'] = p.system_user_id
+            L.append({'item':p.friendly_name, 'id':p.system_user_id})
         if not 'id' in d:
             d['value'] = L[0]['item']
             d['id'] = L[0]['id']
