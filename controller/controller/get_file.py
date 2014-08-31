@@ -88,7 +88,7 @@ class GetFile(object):
                                str(e))
                 raise IOError("get_file: %s" % str(e))
         else:
-            self.primary_dir = self.agent.path.basename(self.full_path)
+            self.primary_dir = self.agent.path.dirname(self.full_path)
 
         self.log.debug("get_file: primary_dir: %s", self.primary_dir)
 
@@ -156,7 +156,7 @@ class GetFile(object):
         body = cloud_cmd(self.agent, "GET", self.source_entry,
                          data_dir, self.full_path)
         if 'error' in body:
-            fmt = "get_file: %s named '%s' GET file '%s' " + \
+            fmt = "get_cloud_file: %s named '%s' GET file '%s' " + \
                 "failed.  Error: %s"
             text = fmt % (self.source_type,
                        self.source_entry.name,
@@ -209,14 +209,14 @@ class GetFile(object):
                             self.agent.agentid, self.primary_dir)
 
         if body.has_key("error"):
-            fmt = "get_file: copy file '%s' " + \
-                  "from agentid %d (%s) '%s' to target agentid %d " + \
-                  "(%s) directory '%s' failed.  Error was: %s"
+            fmt = "get_file: copy file specification '%s' " + \
+                  "from agent '%s' (agentid %d) to target agent '%s' " + \
+                  "(agentid %d) directory '%s' failed.  Error was: %s"
             text = fmt % (copy_source,
-                           self.source_agent.agentid,
                            self.source_agent.displayname,
-                           self.agent.agentid,
+                           self.source_agent.agentid,
                            self.agent.displayname,
+                           self.agent.agentid,
                            self.primary_dir,
                            body['error'])
             self.log.debug(text)

@@ -233,6 +233,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             body = self.delfile_cmd(entry)
             if 'error' in body:
                 info += '\n' + body['error']
+            elif 'stderr' in body and len(body['stderr']):
+                info += '\n' + body['stderr']
             else:
                 if entry.storage_type == FileManager.STORAGE_TYPE_VOL:
                     info += "\nRemoved %s" % entry.name
@@ -648,10 +650,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         data = agent.todict()
         self.event_control.gen(EventControl.RESTORE_STARTED,
                                data, userid=userid)
-
-        # Xyxxy: for testing
-        self.stateman.update(orig_state)
-        return {'fake': 'hi'}
 
         reported_status = self.statusmon.get_reported_status()
 
