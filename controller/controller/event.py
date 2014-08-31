@@ -1,6 +1,7 @@
 import time
 
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
+from sqlalchemy import Index
 from sqlalchemy.schema import ForeignKey
 
 from akiri.framework.ext.sqlalchemy import meta
@@ -40,19 +41,4 @@ class EventEntry(meta.Base, BaseMixin, BaseDictMixin):
             d['reference-time'] = ts
         return d
 
-class EventManager(Manager):
-
-    def add(self, key, title, description, level, icon, color, event_type,
-            userid=None, siteid=None, projectid=None, timestamp=None):
-        if timestamp is None:
-            summary = time.strftime(DATEFMT)
-        else:
-            summary = timestamp
-
-        session = meta.Session()
-        entry = EventEntry(key=key, envid=self.envid, title=title,
-                           description=description, level=level, icon=icon,
-                           color=color, event_type=event_type, summary=summary,
-                           userid=userid)
-        session.add(entry)
-        session.commit()
+Index('idx', EventEntry.envid, EventEntry.timestamp.desc())

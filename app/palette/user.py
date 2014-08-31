@@ -19,7 +19,10 @@ class UserApplication(PaletteRESTHandler):
         return [{'name': x.name, 'id': x.roleid} for x in L]
 
     def users(self):
-        q = meta.Session.query(UserProfile).filter(UserProfile.userid > 0)
+        envid = self.environment.envid
+        q = meta.Session.query(UserProfile).\
+            filter(UserProfile.envid == envid).\
+            filter(UserProfile.userid > 0)
         return q.order_by(UserProfile.friendly_name.asc()).all()
         
     def visited_info(self, d):
@@ -97,7 +100,8 @@ class UserApplication(PaletteRESTHandler):
     @required_role(Role.SUPER_ADMIN)
     @required_parameters('userid', 'roleid')
     def handle_admin(self, req):
-        user = UserProfile.get(int(req.POST['userid']))
+        envid = self.environment.envid
+        user = UserProfile.get(envid, int(req.POST['userid']))
         if not user:
             raise exc.HTTPGone()
         roleid = int(req.POST['roleid'])
@@ -106,7 +110,8 @@ class UserApplication(PaletteRESTHandler):
         return {'roleid':roleid}
 
     def setemail(self, name, value):
-        profile = UserProfile.get_by_name(name)
+        envid = self.environment.envid
+        profile = UserProfile.get_by_name(envid, name)
         profile.email = value
         meta.Session.commit()
         return {'value':value}

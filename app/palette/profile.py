@@ -25,7 +25,7 @@ class ProfileApplication(PaletteRESTHandler):
     def get(self, req):
         # REST handlers don't automatically load profile objects
         user = req.environ['REMOTE_USER']
-        return UserProfile.get_by_name(user)
+        return UserProfile.get_by_name(self.environment.envid, user)
 
     def handle(self, req):
         if not 'REMOTE_USER' in req.environ:
