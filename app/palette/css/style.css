@@ -1576,6 +1576,9 @@ div.refresh {
     cursor: pointer;
     width: 60px;
 }
+.refresh > span.inactive {
+    cursor: auto;
+}
 .refresh i {
     font-size: 19px;
     line-height: 37px;
