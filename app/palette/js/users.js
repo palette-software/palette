@@ -1,6 +1,8 @@
-require(['jquery', 'template', 'common', 'EditBox', 'bootstrap'],
-function ($, template, common, EditBox)
+require(['jquery', 'topic', 'template', 'common', 'EditBox', 'bootstrap'],
+function ($, topic, template, common, EditBox)
 {
+    var active = false;
+
     function ddCallback(node, value) {
         var section = $(node).closest('section');
         section.find('.admin-type').text('Palette '+value);
@@ -36,6 +38,29 @@ function ($, template, common, EditBox)
         });
     }
 
+    function bind() {
+        $('.refresh > span').bind('click', function() {
+            if (active) {
+                refresh();
+            }
+        });
+    }
+
+    topic.subscribe('state', function(message, data) {
+        $().ready(function() {
+            var allowed = data['allowable-actions'];
+            if ($.inArray('user-refresh', allowed) >= 0) {
+                $('.refresh > span').removeClass('inactive');
+                bind();
+                active = true;
+            } else {
+                $('.refresh > span').addClass('inactive');
+                $('.refresh > span').off('click');
+                active = false;
+            }
+        });
+    });
+
     common.startMonitor();
 
     $.ajax({
@@ -45,11 +70,4 @@ function ($, template, common, EditBox)
         },
         error: common.ajaxError,
     });
-
-    $().ready(function() {
-        $('.refresh > span').bind('click', function() {
-            refresh();
-        });
-    });
-
 });

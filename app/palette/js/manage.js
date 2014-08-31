@@ -80,11 +80,6 @@ function ($, topic, template, common)
     }
 
     function updateState(data) {
-        if (!data.hasOwnProperty('allowable-actions')) {
-            console.log("'allowable-actions' missing from JSON data.");
-            return;
-        }
-        
         allowed = data['allowable-actions'];
         for (var action in actions) {
             if ($.inArray(action, allowed) >= 0) {
