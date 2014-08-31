@@ -44,7 +44,7 @@ class PlaceFile(object):
             self.info = \
                     ('Backup file is configured to stay on ' + \
                     'the Tableau primary agent, ' + \
-                    'data directory: %s') % self.dcheck.target_dir
+                    'directory: %s') % self.dcheck.target_dir
 
             self.log.debug(self.info)
             self.delete_local_backup = False

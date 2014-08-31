@@ -43,8 +43,7 @@ class BackupApplication(PaletteRESTHandler):
         filename = req.POST['filename']
 
         backup_entry = FileManager.find_by_name_envid(self.environment.envid,
-                                            filename,
-                                            FileManager.FILE_TYPE_BACKUP)
+                                                      filename)
         if not backup_entry:
             print >> sys.stderr, "Backup not found:", filename
             return {}

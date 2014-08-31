@@ -49,7 +49,7 @@
 "color":"red"
 },
 {
-"state":"STOPPED-BACKUPDEL",
+"state":"STOPPED-FILEDEL",
 "text":"Tableau Stopped",
 "allowable_actions":"",
 "color":"red"
@@ -103,7 +103,7 @@
 "color":"green"
 },
 {
-"state":"STARTED-BACKUPDEL",
+"state":"STARTED-FILEDEL",
 "text":"Tableau Running",
 "allowable_actions":"",
 "color":"green"

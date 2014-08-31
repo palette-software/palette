@@ -493,13 +493,13 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         target = None
         if len(cmd.args) != 1:
-            self.print_usage(self.do_delfile.__usage__)
+            self.print_usage(self.do_deletefile.__usage__)
             return
         filename = cmd.args[0]
 
         entry = self.server.files.find_by_name(filename)
         if not entry:
-            self.error(ERROR_NOT_FOUND, "File not found: %s" + filename)
+            self.error(ERROR_NOT_FOUND, "File not found: %s", filename)
             return
 
         aconn = self.get_aconn(cmd.dict)
@@ -515,9 +515,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         main_state = stateman.get_state()
         if main_state in (StateManager.STATE_STARTED,
                                                 StateManager.STATE_DEGRADED):
-            stateman.update(StateManager.STATE_STARTED_BACKUPDEL)
+            stateman.update(StateManager.STATE_STARTED_FILEDEL)
         elif main_state == StateManager.STATE_STOPPED:
-            stateman.update(StateManager.STATE_STOPPED_BACKUPDEL)
+            stateman.update(StateManager.STATE_STOPPED_FILEDEL)
         else:
             self.error(ERROR_WRONG_STATE,
                                     "FAIL: Main state is %s." % (main_state))
