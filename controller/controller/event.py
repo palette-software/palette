@@ -41,4 +41,4 @@ class EventEntry(meta.Base, BaseMixin, BaseDictMixin):
             d['reference-time'] = ts
         return d
 
-Index('idx', EventEntry.envid, EventEntry.timestamp.desc())
+# Index('idx', EventEntry.envid, EventEntry.timestamp.desc())
