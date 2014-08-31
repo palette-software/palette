@@ -1,6 +1,7 @@
 import ntpath
 
 from storage import StorageConfig
+from files import FileManager
 
 from agentinfo import AgentVolumesEntry
 from agent import Agent
@@ -29,7 +30,7 @@ class DiskCheck(object):
         self.file_type = file_type
 
         # outputs
-        self.target_type = None  # StorageConfig.VOL or CLOUD
+        self.target_type = None  # FileManager.STORAGE_TYPE_VOL or CLOUD
 
         self.target_entry = None
         self.target_agent = None
@@ -94,10 +95,11 @@ class DiskCheck(object):
 
         self.primary_final_dest = False
 
-        if self.storage_config.backup_dest_type == StorageConfig.VOL:
+        if self.storage_config.backup_dest_type == FileManager.STORAGE_TYPE_VOL:
             self.config_vol_target()
             return
-        elif self.storage_config.backup_dest_type == StorageConfig.CLOUD:
+        elif self.storage_config.backup_dest_type == \
+                                                FileManager.STORAGE_TYPE_CLOUD:
             self.config_cloud_target()
         else:
             raise DiskException("diskcheck: Invalid backup dest_type: %s" % \
@@ -114,7 +116,7 @@ class DiskCheck(object):
                     "cloudid not found: %d" % storage_config.backup_dest_id)
 
         self.target_entry = entry
-        self.target_type = StorageConfig.CLOUD
+        self.target_type = FileManager.STORAGE_TYPE_CLOUD
         self.primary_final_dest = False
         # Get the location to backup/ziplogs or stage to
         (self.primary_dir, self.primary_entry) = \
@@ -135,7 +137,7 @@ class DiskCheck(object):
                     "volid not found: %d" % self.storage_config.backup_dest_id)
 
         self.target_entry = entry
-        self.target_type = StorageConfig.VOL
+        self.target_type = FileManager.STORAGE_TYPE_VOL
 
         target_agent = Agent.get_by_id(entry.agentid)
         if not target_agent:

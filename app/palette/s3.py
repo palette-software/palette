@@ -6,7 +6,7 @@ from page import PalettePage, FAKEPW
 from rest import PaletteRESTHandler, required_parameters, required_role
 
 from controller.profile import Role
-from controller.s3 import S3
+from controller.cloud import CloudManager, CloudEntry
 
 __all__ = ["S3Application"]
 
@@ -20,9 +20,12 @@ class S3Application(PaletteRESTHandler):
 
     def get(self):
         self.envid = self.environment.envid
-        entry = S3.get_by_envid_name(self.envid, DEFAULT_NAME)
+        entry = CloudManager.get_by_envid_name(self.envid, DEFAULT_NAME,
+                                               CloudManager.CLOUD_TYPE_S3)
         if entry is None:
-            entry = S3(envid = self.envid)
+            entry = CloudEntry(envid = self.envid,
+                              cloud_type=CloudManager.CLOUD_TYPE_S3)
+
             entry.name = DEFAULT_NAME
             meta.Session.add(entry)
             meta.Session.commit()
@@ -91,9 +94,11 @@ class S3Page(PalettePage):
 
     def render(self, req, obj=None):
         envid = self.environment.envid
-        entry = S3.get_by_envid_name(envid, DEFAULT_NAME)
+        entry = CloudManager.get_by_envid_name(envid, DEFAULT_NAME,
+                                               CloudManager.CLOUD_TYPE_S3)
         if entry is None:
-            entry = S3(envid = envid)
+            entry = CloudEntry(envid = envid,
+                               cloud_type=CloudManager.CLOUD_TYPE_S3)
             entry.name = DEFAULT_NAME
         self.access_key = entry.access_key and entry.access_key or ''
         self.secret = entry.secret and FAKEPW or ''

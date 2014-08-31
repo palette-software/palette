@@ -10,6 +10,7 @@ from mixin import BaseMixin, BaseDictMixin
 
 from manager import Manager
 from storage import StorageConfig
+from files import FileManager
 
 class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'system'
@@ -37,7 +38,7 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
                  'value': '5'},
                 {'envid':1,
                  'key':StorageConfig.BACKUP_DEST_TYPE,
-                 'value': StorageConfig.VOL},
+                 'value': FileManager.STORAGE_TYPE_VOL},
                 {'envid':1,
                  'key':StorageConfig.LOG_ARCHIVE_RETAIN_COUNT,
                  'value': '5'},
