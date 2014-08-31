@@ -16,7 +16,7 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'users'
     userid = Column(BigInteger, unique=True, nullable=False, \
                         autoincrement=True, primary_key=True)
-    # FIXME: add envid
+    envid = Column(BigInteger, ForeignKey("environment.envid"), nullable=False)
     active = Column(Boolean, default=True)
     name = Column(String, unique=True, nullable=False)
     friendly_name = Column(String)
@@ -25,7 +25,7 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     hashed_password = Column(String)
     salt = Column(String)
     roleid = Column(BigInteger, ForeignKey("roles.roleid"), default=0)
-    system_users_id = Column(Integer, unique=True)
+    system_user_id = Column(Integer, unique=True)
     login_at = Column(DateTime)
     licensing_role_id = Column(Integer)
     user_admin_level = Column(Integer)
@@ -38,8 +38,8 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
 
     def __unicode__(self):
         if self.friendly_name:
-            return self.friendly_name
-        return self.name
+            return unicode(self.friendly_name)
+        return unicode(self.name)
 
     def __str__(self):
         return unicode(self).encode('utf-8')
@@ -48,28 +48,20 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
         return unicode(self)
 
     @classmethod
-    def get(cls, userid):
-        try:
-            entry = meta.Session.query(UserProfile).\
-                            filter(UserProfile.userid == userid).one()
-        except NoResultFound, e:
-            entry = None
-        return entry
+    def get(cls, envid, userid):
+        filters = {'envid':envid, 'userid':userid}
+        return cls.get_unique_by_keys(filters, default=None)
 
     @classmethod
-    def get_by_system_users_id(cls, system_users_id):
-        try:
-            q = meta.Session.query(UserProfile)
-            q = q.filter(UserProfile.system_users_id == system_users_id)
-            entry = q.one()
-        except NoResultFound, e:
-            entry = None
-        return entry
+    def get_by_system_user_id(cls, envid, system_user_id):
+        filters = {'envid':envid, 'system_user_id':system_user_id}
+        return cls.get_unique_by_keys(filters, default=None)
 
     @classmethod
-    def get_by_name(cls, name):
+    def get_by_name(cls, envid, name):
         try:
             q = meta.Session.query(UserProfile)
+            q = q.filter(UserProfile.envid == envid).\
             q = q.filter(func.lower(UserProfile.name) == name.lower() and \
                              UserProfile.userid > 0)
             entry = q.one()
@@ -78,16 +70,17 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
         return entry
 
     @classmethod
-    def verify(cls, name, password):
-        entry = cls.get_by_name(name)
+    def verify(cls, envid, name, password):
+        entry = cls.get_by_name(envid, name)
         if not entry:
             return False
         return entry.hashed_password == tableau_hash(password, entry.salt)
 
-    defaults = [{'userid':0, 'name':'palette', 'friendly_name':'Palette',
+    defaults = [{'userid':0, 'envid':1, 'name':'palette',
+                 'friendly_name':'Palette',
                  'email': None, 'salt':'', 'roleid':3, # SUPER_ADMIN
                  'hashed_password':tableau_hash('tableau2014',''),
-                 'system_users_id':0}]
+                 'system_user_id':0}]
 
 class Role(meta.Base, BaseMixin):
     __tablename__ = 'roles'

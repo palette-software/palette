@@ -39,7 +39,8 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
     def getuser_fromdb(self, system_user_id):
         if system_user_id < 0:
             return UNDEFINED
-        user = UserProfile.get_by_system_users_id(system_user_id)
+        envid = self.environment.envid
+        user = UserProfile.get_by_system_user_id(envid, system_user_id)
         if not user:
             return UNDEFINED
         return user.display_name()
@@ -126,7 +127,7 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         if req.remote_user.roleid > Role.NO_ADMIN:
             entries = WorkbookEntry.get_all_by_envid(envid)
         else:
-            system_user_id = req.remote_user.system_users_id
+            system_user_id = req.remote_user.system_user_id
             entries = WorkbookEntry.get_all_by_system_user(envid,
                                                            system_user_id)
 
@@ -229,7 +230,7 @@ class WorkbookData(BaseApplication):
     def check_permission(self, req, update):
         if req.remote_user.roleid > Role.NO_ADMIN:
             return True
-        if req.remote_user.system_users_id == update.workbook.system_user_id:
+        if req.remote_user.system_user_id == update.workbook.system_user_id:
             return True
 
     @translate_remote_user

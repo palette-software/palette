@@ -24,13 +24,15 @@ def required_parameters(*params):
 def required_role(name):
     def wrapper(f):
         def realf(self, req, *args, **kwargs):
+            envid = self.environment.envid
             if isinstance(name, basestring):
                 role = Role.get_by_name(name).roleid
             else:
                 role = Role.get_by_roleid(name)
-            # FIXME: this should have to happen here.
+            # FIXME: this should not have to happen here.
             if isinstance(req.remote_user, basestring):
-                req.remote_user = UserProfile.get_by_name(req.remote_user)
+                profile = UserProfile.get_by_name(envid, req.remote_user)
+                req.remote_user = profile
             if req.remote_user.roleid < role.roleid:
                 raise exc.HTTPForbidden("The '"+role.name+"' role is required.")
             return f(self, req, *args, **kwargs)
@@ -39,8 +41,9 @@ def required_role(name):
 
 def translate_remote_user(f):
     def realf(self, req, *args, **kwargs):
+        envid = self.environment.envid
         if isinstance(req.remote_user, basestring):
-            req.remote_user = UserProfile.get_by_name(req.remote_user)
+            req.remote_user = UserProfile.get_by_name(envid, req.remote_user)
         return f(self, req, *args, **kwargs)
     return realf
 
@@ -55,7 +58,6 @@ class PaletteRESTHandler(RESTApplication):
             return store.get('palette', 'domainname')
         if name == 'domain':
             return Domain.get_by_name(self.domainname)
-        # FIXME: either do this or add envid (not both)
         if name == 'environment':
             return Environment.get()
         if name == 'system':
@@ -91,13 +93,10 @@ class Telnet(object):
 
         if req:
             if isinstance(req.remote_user, basestring):
-                remote_user_profile = UserProfile.get_by_name(req.remote_user)
-            else:
-                # FIXME: in this case remote_user is the profile
-                remote_user_profile = \
-                                UserProfile.get_by_name(req.remote_user.name)
-
-            userid = remote_user_profile.userid
+                envid = self.app.server.environment.envid
+                req.remote_user = UserProfile.get_by_name(envid,
+                                                          req.remote_user)
+            userid = req.remote_user.userid
             preamble += " /userid=%d" % userid
 
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

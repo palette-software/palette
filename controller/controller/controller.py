@@ -43,7 +43,6 @@ from environment import Environment
 from profile import UserProfile, Role
 from state_control import StateControl
 from alert_email import AlertEmail
-from event import EventManager
 from event_control import EventControl, EventControlManager
 from extracts import ExtractManager
 from storage import StorageConfig
@@ -1564,8 +1563,6 @@ def main():
     server.domain = Domain.get_by_name(domainname)
     Environment.populate()
     server.environment = Environment.get()
-
-    server.event = EventManager(server)
 
     server.system = SystemManager(server)
     SystemManager.populate()
