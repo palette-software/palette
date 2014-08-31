@@ -1,3 +1,4 @@
+from files import FileManager
 # This a transitory class - instantiated each time it is needed.
 class StorageConfig(object):
     # Keys for the system table:
@@ -11,9 +12,6 @@ class StorageConfig(object):
 
     WATERMARK_LOW = "disk-watermark-low"
     WATERMARK_HIGH = "disk-watermark-high"
-
-    VOL="vol"
-    CLOUD="cloud"
 
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
@@ -38,8 +36,10 @@ class StorageConfig(object):
         return int(value) # Throws exception if non-digit.
 
     def _backup_dest_type(self):
-        value =  self.system.get(self.BACKUP_DEST_TYPE, default=self.VOL)
-        if value not in (self.VOL, self.CLOUD):
+        value =  self.system.get(self.BACKUP_DEST_TYPE,
+                                 default=FileManager.STORAGE_TYPE_VOL)
+        if value not in (FileManager.STORAGE_TYPE_VOL,
+                         FileManager.STORAGE_TYPE_CLOUD):
             raise ValueError("system '%s' not yet set or corrupted: '%s'." % \
                                  (self.BACKUP_DEST_TYPE, value))
         return value
@@ -86,8 +86,8 @@ class StorageConfig(object):
         if ':' in value:
             tokens = value.split(':')
             value = tokens[0]
-        if value == StorageConfig.VOL:
-            return 'Local Volume'
-        if value == StorageConfig.CLOUD:
+        if value == FileManager.STORAGE_TYPE_VOL:
+            return 'Agent Volume'
+        if value == FileManager.STORAGE_TYPE_CLOUD:
             return 'Cloud Storage'
         raise KeyError(value)

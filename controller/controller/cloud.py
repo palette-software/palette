@@ -35,7 +35,7 @@ class CloudManager(Manager):
         try:
             entry = meta.Session.query(CloudEntry).\
                 filter(CloudEntry.envid == self.envid).\
-                filter(CloudEntry.cloud_type == cloud_type).one().\
+                filter(CloudEntry.cloud_type == cloud_type).\
                 filter(CloudEntry.name == name).one()
             return entry
         except NoResultFound, e:
@@ -82,3 +82,11 @@ class CloudManager(Manager):
             filter_by(envid = envid).\
             order_by('cloud.name').\
             all()
+
+    @classmethod
+    def text(cls, value):
+        if value == CloudManager.CLOUD_TYPE_S3:
+            return 'Amazon S3 Storage'
+        if value == CloudManager.CLOUD_TYPE_GCS:
+            return 'Google Cloud Storage'
+        raise KeyError(value)

@@ -8,7 +8,6 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from agent import Agent
 from agentinfo import AgentVolumesEntry
-from agentmanager import AgentManager
 
 from manager import Manager
 from util import DATEFMT
@@ -48,7 +47,7 @@ class FileEntry(meta.Base):
 
 class FileManager(Manager):
 
-    STORAGE_TYPE_AGENT="agent"
+    STORAGE_TYPE_VOL="vol"
     STORAGE_TYPE_CLOUD="cloud"
 
     FILE_TYPE_BACKUP="backup"
@@ -71,11 +70,10 @@ class FileManager(Manager):
             delete()
         session.commit()
 
-    def find_by_name(self, name, file_type):
+    def find_by_name(self, name):
         try:
             return meta.Session.query(FileEntry).\
                 filter(FileEntry.envid == self.envid).\
-                filter(FileEntry.file_type == file_type).\
                 filter(FileEntry.name == name).\
                 one()
 
@@ -83,12 +81,11 @@ class FileManager(Manager):
             return None
 
     @classmethod
-    def find_by_name_envid(cls, envid, name, file_type):
+    def find_by_name_envid(cls, envid, name):
         try:
             return meta.Session.query(FileEntry).\
                 filter(FileEntry.envid == envid).\
                 filter(FileEntry.name == name).\
-                filter(FileEntry.file_type == file_type).\
                 one()
 
         except NoResultFound, e:

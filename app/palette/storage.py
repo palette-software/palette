@@ -6,6 +6,7 @@ from controller.profile import Role
 from controller.agent import Agent
 from controller.util import sizestr, str2bool
 from controller.storage import StorageConfig
+from controller.files import FileManager
 
 from controller.agentinfo import AgentVolumesEntry
 from controller.cloud import CloudManager
@@ -48,14 +49,14 @@ class StorageApplication(PaletteRESTHandler):
         destid = self.destid()
         for volume in AgentVolumesEntry.get_archives_by_envid(envid):
             item = self.build_item_for_volume(volume)
-            ourid = '%s:%d' % (StorageConfig.VOL, volume.volid)
+            ourid = '%s:%d' % (FileManager.STORAGE_TYPE_VOL, volume.volid)
             options.append({'id': ourid, 'item':item})
             if destid == ourid:
                 value = item
 
         for entry in CloudManager.get_clouds_by_envid(envid):
-            item = sc.text(entry.cloud_type)
-            ourid = '%s:%d' % (entry.cloud_type, entry.cloudid)
+            item = CloudManager.text(entry.cloud_type)
+            ourid = '%s:%d' % (FileManager.STORAGE_TYPE_CLOUD, entry.cloudid)
             options.append({'id': ourid, 'item': item})
 
             if destid == ourid:
@@ -63,8 +64,8 @@ class StorageApplication(PaletteRESTHandler):
 
         if not options:
             # Placeholder until an agent connects.
-            value = sc.text(StorageConfig.VOL)
-            options.append({'id': StorageConfig.VOL,
+            value = sc.text(FileManager.STORAGE_TYPE_VOL)
+            options.append({'id': FileManager.STORAGE_TYPE_VOL,
                             'item': value})
 
         if value is None:

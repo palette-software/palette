@@ -16,10 +16,8 @@ import exc
 from agent import Agent
 from agentmanager import AgentManager
 from agentinfo import AgentYmlEntry
-from backup import BackupManager
 from event_control import EventControl
-from gcs import GCS
-from s3 import S3
+from cloud import CloudManager
 from system import SystemEntry
 from state import StateManager
 from tableau import TableauStatusMonitor, TableauProcess
@@ -489,13 +487,13 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
 
-    @usage('filedel file-name')
-    def do_filedel(self, cmd):
+    @usage('deletefile file-name')
+    def do_deletefile(self, cmd):
         """Delete a file in the 'files' table."""
 
         target = None
         if len(cmd.args) != 1:
-            self.print_usage(self.do_backupdel.__usage__)
+            self.print_usage(self.do_delfile.__usage__)
             return
         filename = cmd.args[0]
 
@@ -527,7 +525,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         self.ack()
-        body = self.server.filedel_cmd(entry)
+        body = self.server.delfile_cmd(entry)
 
         stateman.update(main_state)
 
@@ -1489,7 +1487,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         self.ack()
-        body = server.s3_cmd(agent, action, entry, data_dir, full_path)
+        body = self.server.s3_cmd(agent, action, entry, data_dir, keypath)
 
         self.report_status(body)
 
@@ -1522,7 +1520,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
 
-        body = server.gcs_cmd(agent, action, entry, data_dir, full_path)
+        body = self.server.gcs_cmd(agent, action, entry, data_dir, keypath)
         self.report_status(body)
 
     @usage('gcsdel <gcs-name> <filename>')

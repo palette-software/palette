@@ -1,16 +1,15 @@
 import os
 import time
 
-from storage import StorageConfig
 from cloud import CloudManager
 from files import FileManager
 from agentinfo import AgentVolumesEntry
 
 # This a transitory class - instantiated each time it is needed.
 class PlaceFile(object):
-    """Copies the full_path, if needed from the primary agent to
-       another agent or cloud storage.  If copied successfully, deletes
-       the file."""
+    """Copies the full_path, if needed to the primary agent from
+       another agent or cloud storage for use by commands
+       such as 'tabadmin restore', etc.."""
 
     def __init__(self, server, agent, dcheck, full_path, size, auto):
 
@@ -22,7 +21,7 @@ class PlaceFile(object):
         self.agent = agent
         self.dcheck = dcheck
         self.full_path = full_path
-        self.name_only = os.path.basename(full_path)
+        self.name_only = self.agent.path.basename(full_path)
         self.size = size
         self.auto = auto
 
@@ -37,7 +36,7 @@ class PlaceFile(object):
 
         self.copy_start_time = time.time()
 
-        if self.dcheck.target_type == StorageConfig.CLOUD:
+        if self.dcheck.target_type == FileManager.STORAGE_TYPE_CLOUD:
             self.copy_to_cloud()
         elif self.dcheck.target_agent.agentid != self.agent.agentid:
             self.copy_to_agent()
@@ -47,19 +46,20 @@ class PlaceFile(object):
                     'the Tableau primary agent, ' + \
                     'data directory: %s') % self.dcheck.target_dir
 
+            self.log.debug(self.info)
             self.delete_local_backup = False
             self.copy_failed = False
             self.copied = True
             self.server.files.add(self.full_path,
                             self.dcheck.file_type,
-                            FileManager.STORAGE_TYPE_AGENT,
-                            self.dcheck.target_agent.agentid,
+                            FileManager.STORAGE_TYPE_VOL,
+                            self.dcheck.target_entry.volid,
                             size=self.size,
                             auto=self.auto)
             return
 
         if self.delete_local_backup:
-            remove_body = self.server.delete_agent_file(self.agent,
+            remove_body = self.server.delete_vol_file(self.agent,
                                                         self.full_path)
             # Check if the DEL worked.
             if remove_body.has_key('error'):
@@ -67,6 +67,7 @@ class PlaceFile(object):
                     ("\nDeletion of backup file failed after copy. "+\
                         "File: '%s'. Error was: %s") \
                         % (self.full_path, remove_body['error'])
+                self.log.debug(self.info)
 
     def copy_to_cloud(self):
         if self.dcheck.target_entry.cloud_type == CloudManager.CLOUD_TYPE_S3:
@@ -74,34 +75,41 @@ class PlaceFile(object):
         elif self.dcheck.target_entry.cloud_type == CloudManager.CLOUD_TYPE_GCS:
             cloud_cmd = self.server.gcs_cmd
 
+        data_dir = self.agent.path.dirname(self.full_path)
         storage_body = cloud_cmd(self.agent, "PUT", self.dcheck.target_entry,
-                                 self.full_path)
+                                 data_dir, self.full_path)
 
         if 'error' in storage_body:
-            info = "Copy to %s '%s' failed: %s" % \
-                (self.dcheck.target_type, self.dcheck.target_entry.name,
-                                                    storage_body['error'])
+            self.info = ("Copy to %s bucket '%s' filename '%s' failed: %s." + \
+                    "\nBackup will remain on the primary agent.") % \
+                    (self.dcheck.target_entry.cloud_type,
+                    self.dcheck.target_entry.bucket,
+                    self.full_path,
+                    storage_body['error'])
+            self.log.debug(self.info)
             self.delete_local_backup = False
             self.copied = False
             self.copy_failed = True
             self.server.files.add(self.full_path,
                             self.dcheck.file_type,
-                            FileManager.STORAGE_TYPE_AGENT,
-                            self.dcheck.primary_entry.agentid,
+                            FileManager.STORAGE_TYPE_VOL,
+                            self.dcheck.primary_entry.volid,
                             size=self.size,
                             auto=self.auto)
         else:
             self.copy_elapsed_time = time.time() - self.copy_start_time
-            info = \
-                ("Backup file was copied to %s bucket '%s' " + \
+            self.info = \
+                ("Backup file was copied to %s cloud bucket '%s' " + \
                  "filename '%s'.") % \
-                (self.dcheck.target_type, self.dcheck.target_entry.bucket,
+                (self.dcheck.target_entry.cloud_type,
+                 self.dcheck.target_entry.bucket,
                  self.name_only)
+            self.log.debug(self.info)
             # Backup was copied to gcs or s3
             self.server.files.add(self.name_only,
                             self.dcheck.file_type,
                             FileManager.STORAGE_TYPE_CLOUD,
-                            cloudid,
+                            self.dcheck.target_entry.cloudid,
                             size=self.size,
                             auto=self.auto)
             self.delete_local_backup = True
@@ -152,8 +160,8 @@ class PlaceFile(object):
             # Leave the backup on the primary after all.
             self.server.files.add(self.full_path,
                         self.dcheck.file_type,
-                        FileManager.STORAGE_TYPE_AGENT,
-                        self.dcheck.primary_entry.agentid,
+                        FileManager.STORAGE_TYPE_VOL,
+                        self.dcheck.primary_entry.volid,
                         size=self.size,
                         auto=self.auto)
             self.delete_local_backup = False
@@ -166,13 +174,14 @@ class PlaceFile(object):
                 "Backup file copied to agent '%s', directory: %s." % \
                 (self.dcheck.target_agent.displayname, self.dcheck.target_dir)
 
+            self.log.debug(self.info)
             target_full_path = self.dcheck.target_agent.path.join(
                                         self.dcheck.target_dir, self.name_only)
 
             self.server.files.add(target_full_path,
                             self.dcheck.file_type,
-                            FileManager.STORAGE_TYPE_AGENT,
-                            self.dcheck.target_agent.agentid,
+                            FileManager.STORAGE_TYPE_VOL,
+                            self.dcheck.target_entry.volid,
                             size=self.size,
                             auto=self.auto)
             # Remember to remove the backup file from the primary
