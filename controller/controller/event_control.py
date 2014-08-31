@@ -239,9 +239,10 @@ class EventControlManager(Manager):
             data['exit_status'] = data['exit-status']
             del data['exit-status']
 
+        if not timestamp:
+            timestamp = datetime.now()
+
         if not 'time' in data:
-            if not timestamp:
-                timestamp = datetime.now()
             # FIXME: is this needed or used?
             data['time'] = timestamp.strftime(DATEFMT)
 
