@@ -235,6 +235,11 @@ class EventControlManager(Manager):
             self.log.error("No such event key: %s. data: %s\n", key, str(data))
             return
 
+        # add all system table entries to the data dictionary.
+        data = dict(data.items() + self.server.system.todict().items())
+        
+        self.log.debug("DATA: " + str(data))
+
         if 'exit-status' in data:
             data['exit_status'] = data['exit-status']
             del data['exit-status']
