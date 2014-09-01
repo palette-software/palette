@@ -6,10 +6,10 @@ from controller.profile import Role
 from controller.agent import Agent
 from controller.util import sizestr, str2bool
 from controller.storage import StorageConfig
+from controller.files import FileManager
 
 from controller.agentinfo import AgentVolumesEntry
-from controller.s3 import S3
-from controller.gcs import GCS
+from controller.cloud import CloudManager
 import ntpath, posixpath
 
 from page import PalettePage
@@ -23,10 +23,6 @@ class StorageApplication(PaletteRESTHandler):
     LOW_WATERMARK_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
     HIGH_WATERMARK_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
 
-    def __init__(self, global_conf):
-        super(StorageApplication, self).__init__(global_conf)
-        self.sc = StorageConfig(self.system)
-
     def build_item_for_volume(self, volume):
         fmt = "%s %s %s (%s Unused)"
         name = volume.name
@@ -36,8 +32,7 @@ class StorageApplication(PaletteRESTHandler):
                       sizestr(volume.size), sizestr(volume.available_space))
 
     def handle_get(self, req):
-        envid = self.environment.envid
-        sc = StorageConfig(self.system)
+        sc = StorageConfig(req.system)
         data = {StorageConfig.STORAGE_ENCRYPT: sc.storage_encrypt,
                 StorageConfig.WORKBOOKS_AS_TWB: sc.workbooks_as_twb}
 
@@ -46,29 +41,17 @@ class StorageApplication(PaletteRESTHandler):
         options = []
 
         value = None
-        destid = self.destid()
-        for volume in AgentVolumesEntry.get_archives_by_envid(envid):
+        destid = self.destid(sc)
+        for volume in AgentVolumesEntry.get_archives_by_envid(req.envid):
             item = self.build_item_for_volume(volume)
-            ourid = '%s:%d' % (StorageConfig.VOL, volume.volid)
+            ourid = '%s:%d' % (FileManager.STORAGE_TYPE_VOL, volume.volid)
             options.append({'id': ourid, 'item':item})
             if destid == ourid:
                 value = item
 
-        for entry in S3.get_s3s_by_envid(envid):
-            # fixme: If/when multiple s3 configs are available, distinguish
-            # the s3 items from each other.
-            item = sc.text(StorageConfig.S3)
-            ourid = '%s:%d' % (StorageConfig.S3, entry.s3id)
-            options.append({'id': ourid, 'item': item})
-
-            if destid == ourid:
-                value = item
-
-        for entry in GCS.get_gcss_by_envid(envid):
-            # fixme: If/when multiple gcs configs are available, distinguish
-            # the gcs items from each other.
-            item = sc.text(StorageConfig.GCS)
-            ourid = '%s:%d' % (StorageConfig.GCS, entry.gcsid)
+        for entry in CloudManager.get_clouds_by_envid(req.envid):
+            item = CloudManager.text(entry.cloud_type)
+            ourid = '%s:%d' % (FileManager.STORAGE_TYPE_CLOUD, entry.cloudid)
             options.append({'id': ourid, 'item': item})
 
             if destid == ourid:
@@ -76,12 +59,12 @@ class StorageApplication(PaletteRESTHandler):
 
         if not options:
             # Placeholder until an agent connects.
-            value = sc.text(StorageConfig.VOL)
-            options.append({'id': StorageConfig.VOL,
+            value = sc.text(FileManager.STORAGE_TYPE_VOL)
+            options.append({'id': FileManager.STORAGE_TYPE_VOL,
                             'item': value})
 
         if value is None:
-            value = self.sc.text(destid)
+            value = sc.text(destid)
 
         dest['value'] = value
         dest['options'] = options
@@ -129,12 +112,13 @@ class StorageApplication(PaletteRESTHandler):
     def handle_yesno_POST(self, req, name):
         value = str2bool(req.POST['value'])
         s = value and 'yes' or 'no'
-        self.system.save(name, s)
+        req.system.save(name, s)
         return {'value':value}
 
     def handle_encryption(self, req):
         if req.method == 'GET':
-            return {'value':self.sc.storage_encrypt}
+            sc = StorageConfig(req.system)
+            return {'value':sc.storage_encrypt}
         elif req.method == 'POST':
             return self.handle_yesno_POST(req, StorageConfig.STORAGE_ENCRYPT)
         else:
@@ -149,22 +133,23 @@ class StorageApplication(PaletteRESTHandler):
             raise exc.HTTPBadRequest()
 
         (desttype, destid) = parts
-        self.system.save(StorageConfig.BACKUP_DEST_ID, destid)
-        self.system.save(StorageConfig.BACKUP_DEST_TYPE, desttype)
+        req.system.save(StorageConfig.BACKUP_DEST_ID, destid)
+        req.system.save(StorageConfig.BACKUP_DEST_TYPE, desttype)
         return {'id':value}
 
     # return the id of the current selection (built from StorageConfig)
-    def destid(self):
-        dest_id = self.sc.backup_dest_id
+    def destid(self, sc):
+        dest_id = sc.backup_dest_id
         if dest_id == None:
             dest_id = 0
 
-        value = self.sc.backup_dest_type
-        return "%s:%d" % (self.sc.backup_dest_type, dest_id)
+        value = sc.backup_dest_type
+        return "%s:%d" % (sc.backup_dest_type, dest_id)
 
     def handle_dest(self, req):
+        sc = StorageConfig(req.system)
         if req.method == 'GET':
-            return {'id':self.destid()}
+            return {'id':self.destid(sc)}
         elif req.method == 'POST':
             return self.handle_dest_POST(req)
         else:
@@ -173,12 +158,13 @@ class StorageApplication(PaletteRESTHandler):
     @required_parameters('id')
     def handle_int_POST(self, req, name):
         value = req.POST['id']
-        self.system.save(name, str(value))
+        req.system.save(name, str(value))
         return {'id':value}
 
     def handle_low(self, req):
+        sc = StorageConfig(req.system)
         if req.method == 'GET':
-            return {'value':self.sc.watermark_low}
+            return {'value':sc.watermark_low}
         elif req.method == 'POST':
             d = self.handle_int_POST(req, StorageConfig.WATERMARK_LOW)
             self.telnet.send_cmd('info all', req=req)
@@ -187,8 +173,9 @@ class StorageApplication(PaletteRESTHandler):
             raise exc.HTTPMethodNotAllowed()
 
     def handle_high(self, req):
+        sc = StorageConfig(req.system)
         if req.method == 'GET':
-            return {'value':self.sc.watermark_high}
+            return {'value':sc.watermark_high}
         elif req.method == 'POST':
             d = self.handle_int_POST(req, StorageConfig.WATERMARK_HIGH)
             self.telnet.send_cmd('info all', req=req)
@@ -197,8 +184,9 @@ class StorageApplication(PaletteRESTHandler):
             raise exc.HTTPMethodNotAllowed()
 
     def handle_auto(self, req):
+        sc = StorageConfig(req.system)
         if req.method == 'GET':
-            return {'value':self.sc.backup_auto_retain_count}
+            return {'value':sc.backup_auto_retain_count}
         elif req.method == 'POST':
             return self.handle_int_POST(req,
                                         StorageConfig.BACKUP_AUTO_RETAIN_COUNT)
@@ -206,8 +194,9 @@ class StorageApplication(PaletteRESTHandler):
             raise exc.HTTPMethodNotAllowed()
 
     def handle_user(self, req):
+        sc = StorageConfig(req.system)
         if req.method == 'GET':
-            return {'value':self.sc.backup_user_retain_count}
+            return {'value':sc.backup_user_retain_count}
         elif req.method == 'POST':
             return self.handle_int_POST(req,
                                         StorageConfig.BACKUP_USER_RETAIN_COUNT)
@@ -215,8 +204,9 @@ class StorageApplication(PaletteRESTHandler):
             raise exc.HTTPMethodNotAllowed()
 
     def handle_logs(self, req):
+        sc = StorageConfig(req.system)
         if req.method == 'GET':
-            return {'value':self.sc.log_archive_retain_count}
+            return {'value':sc.log_archive_retain_count}
         elif req.method == 'POST':
             return self.handle_int_POST(req,
                                         StorageConfig.LOG_ARCHIVE_RETAIN_COUNT)
@@ -224,8 +214,9 @@ class StorageApplication(PaletteRESTHandler):
             raise exc.HTTPMethodNotAllowed()
 
     def handle_twb(self, req):
+        sc = StorageConfig(req.system)
         if req.method == 'GET':
-            return {'value':self.sc.workbooks_as_twb}
+            return {'value':sc.workbooks_as_twb}
         elif req.method == 'POST':
             return self.handle_yesno_POST(req, StorageConfig.WORKBOOKS_AS_TWB)
         else:

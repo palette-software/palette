@@ -28,7 +28,7 @@ from controller.event_control import EventControl
 
 from page import PalettePage
 from event import EventApplication
-from rest import PaletteRESTHandler, translate_remote_user
+from rest import PaletteRESTHandler
 
 __all__ = ["MonitorApplication"]
 
@@ -92,10 +92,9 @@ class MonitorApplication(PaletteRESTHandler):
         return d
     
     def site_options(self, req):
-        envid = self.environment.envid
         index = self.getindex(req, 'site')
         L = [{'item':'All Sites', 'id':0}] + \
-            [{'item':x.name, 'id':x.siteid} for x in Site.all(envid)]
+            [{'item':x.name, 'id':x.siteid} for x in Site.all(req.envid)]
         if index >= len(L):
             index = 0
         return {'name':'site',
@@ -107,10 +106,9 @@ class MonitorApplication(PaletteRESTHandler):
         return site[0].name
 
     def project_options(self, req):
-        envid = self.environment.envid
         index = self.getindex(req, 'project')
-        sites = Site.all(envid)
-        projects = Project.all(envid)
+        sites = Site.all(req.envid)
+        projects = Project.all(req.envid)
         L = [{'item':'All Projects', 'id':0}]
         if len(sites) > 1:
             temp = [{'item':'Site: ' + self.get_project_sitename(sites, x.site_id) + ', Project: ' + x.name , 'id':x.projectid} for x in projects]
@@ -141,10 +139,10 @@ class MonitorApplication(PaletteRESTHandler):
         d['options'] = L
         return d
 
-    def disk_watermark(self, name):
+    def disk_watermark(self, req, name):
         """ Threshold for the disk indicator. (low|high) """
         try:
-            v = self.system.get('disk-watermark-'+name)
+            v = req.system.get('disk-watermark-'+name)
         except ValueError:
             return float(100)
         return float(v)
@@ -156,8 +154,9 @@ class MonitorApplication(PaletteRESTHandler):
             return 'yellow'
         return 'green'
 
-    def volume_info(self, agent):
-        (low,high) = self.disk_watermark('low'), self.disk_watermark('high')
+    def volume_info(self, req, agent):
+        low = self.disk_watermark(req, 'low')
+        high = self.disk_watermark(req, 'high')
 
         volumes = []
         q = meta.Session.query(AgentVolumesEntry).\
@@ -213,10 +212,9 @@ class MonitorApplication(PaletteRESTHandler):
 
         return lowest_color_num
 
-    @translate_remote_user
     def handle_monitor(self, req):
         # Get the state
-        main_state = StateManager.get_state_by_envid(self.environment.envid)
+        main_state = StateManager.get_state_by_envid(req.envid)
 
         state_control_entry = StateControl.get_state_control_entry(main_state)
         if not state_control_entry:
@@ -250,7 +248,7 @@ class MonitorApplication(PaletteRESTHandler):
             user_action_in_progress = True
 
         agent_entries = meta.Session.query(Agent).\
-            filter(Agent.envid == self.environment.envid).\
+            filter(Agent.envid == req.envid).\
             order_by(Agent.display_order).\
             order_by(Agent.displayname).\
             all()
@@ -296,7 +294,7 @@ class MonitorApplication(PaletteRESTHandler):
                     if lic_color < agent_color_num:
                         agent_color_num = lic_color
 
-                agent['volumes'] = self.volume_info(entry)
+                agent['volumes'] = self.volume_info(req, entry)
                 agent['ports'] = self.firewall_info(entry)
 
                 vol_lowest_color = self.lowest_color(agent['volumes'])

@@ -10,6 +10,7 @@ from mixin import BaseMixin, BaseDictMixin
 
 from manager import Manager
 from storage import StorageConfig
+from files import FileManager
 
 class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'system'
@@ -37,7 +38,7 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
                  'value': '5'},
                 {'envid':1,
                  'key':StorageConfig.BACKUP_DEST_TYPE,
-                 'value': StorageConfig.VOL},
+                 'value': FileManager.STORAGE_TYPE_VOL},
                 {'envid':1,
                  'key':StorageConfig.LOG_ARCHIVE_RETAIN_COUNT,
                  'value': '5'},
@@ -47,16 +48,17 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
     ]
 
     @classmethod
-    def get_by_key(cls, envid, key):
-        try:
-            entry = meta.Session.query(SystemEntry).\
-                filter(SystemEntry.envid == envid).\
-                filter(SystemEntry.key == key).one()
-        except NoResultFound:
-            return None
-        return entry
+    def get_by_key(cls, envid, key, **kwargs):
+        filters = {'envid':envid, 'key':key}
+        return cls.get_unique_by_keys(filters, **kwargs)
 
-# NOTE: 'server' may be either a Controller or a PaletteRESTHandler
+    @classmethod
+    def get_all(cls, envid):
+        filters = {'envid':envid}
+        return cls.get_all_by_keys(filters)
+
+
+# Merge with 'System' in the webapp.
 class SystemManager(Manager):
 
     # Keys
@@ -70,11 +72,8 @@ class SystemManager(Manager):
         session.merge(entry)
         session.commit()
 
-    def entry(self, key):
-        value = SystemEntry.get_by_key(self.envid, key)
-        if value is None:
-            raise ValueError("No system row found with key=%s" % key)
-        return value
+    def entry(self, key, **kwargs):
+        return SystemEntry.get_by_key(self.envid, key, **kwargs)
 
     def get(self, key, **kwargs):
         if 'default' in kwargs:
@@ -88,7 +87,7 @@ class SystemManager(Manager):
             raise ValueError("Invalid kwargs")
 
         try:
-            entry = self.entry(key, **kwargs)
+            entry = self.entry(key)
         except ValueError, e:
             if have_default:
                 return default
@@ -98,6 +97,18 @@ class SystemManager(Manager):
 
     def getint(self, key, **kwargs):
         return int(self.get(key, **kwargs))
+
+    # entire system table to a dictionary
+    def todict(self, pretty=False):
+        d = {}
+        for entry in SystemEntry.get_all(self.envid):
+            key = entry.key
+            if not pretty:
+                key = key.replace('-','_')
+            else:
+                key = key.replace('_','-')
+            d[key] = entry.value
+        return d
 
     @classmethod
     def populate(cls):

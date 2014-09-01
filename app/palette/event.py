@@ -8,7 +8,6 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from sqlalchemy import and_, or_
 
-from controller.environment import Environment
 from controller.event import EventEntry
 from controller.state_control import StateControl
 from controller.event_control import EventControl
@@ -46,9 +45,8 @@ class EventApplication(PaletteRESTHandler):
             html += line + "<br />" + "\n"
         entry.description = html
 
-    def query_mostrecent(self, status=None, event_type=None,
+    def query_mostrecent(self, envid, status=None, event_type=None,
                          timestamp=None, limit=None):
-        envid = self.environment.envid
         filters = {}
         filters['envid'] = envid
         q = meta.Session.query(EventEntry).filter(EventEntry.envid == envid)
@@ -75,9 +73,8 @@ class EventApplication(PaletteRESTHandler):
         data['count'] = EventEntry.count(filters)
         return data
 
-    def query_page(self, page, limit=None,
+    def query_page(self, envid, page, limit=None,
                    status=None, event_type=None, timestamp=None):
-        envid = self.environment.envid
         filters = {}
         filters['envid'] = envid
         q = meta.Session.query(EventEntry).filter(EventEntry.envid == envid)
@@ -137,12 +134,13 @@ class EventApplication(PaletteRESTHandler):
         if not timestamp is None:
             timestamp = datetime.utcfromtimestamp(timestamp)
         if page is None:
-            return self.query_mostrecent(status=self.get(req,'status'),
+            return self.query_mostrecent(req.envid,
+                                         status=self.get(req,'status'),
                                          event_type=self.get(req, 'type'),
                                          timestamp=timestamp,
                                          limit=self.getint(req, 'limit'))
         else:
-            return self.query_page(page,
+            return self.query_page(req.envid, page,
                                    status=self.get(req,'status'),
                                    event_type=self.get(req, 'type'),
                                    timestamp=timestamp,

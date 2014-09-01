@@ -1,20 +1,17 @@
+from files import FileManager
 # This a transitory class - instantiated each time it is needed.
 class StorageConfig(object):
     # Keys for the system table:
     STORAGE_ENCRYPT="storage-encrypt"       # "yes" or "no"
     BACKUP_AUTO_RETAIN_COUNT="backup-auto-retain-count"
     BACKUP_USER_RETAIN_COUNT="backup-user-retain-count"
-    BACKUP_DEST_TYPE="backup-dest-type"   # "vol", "gcs" or "s3"
+    BACKUP_DEST_TYPE="backup-dest-type"   # "vol" or "cloud"
     BACKUP_DEST_ID="backup-dest-id"
     LOG_ARCHIVE_RETAIN_COUNT="log-archive-retain-count"
     WORKBOOKS_AS_TWB="workbooks-as-twb"
 
     WATERMARK_LOW = "disk-watermark-low"
     WATERMARK_HIGH = "disk-watermark-high"
-
-    VOL="vol"
-    GCS="gcs"
-    S3="s3"
 
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
@@ -39,8 +36,10 @@ class StorageConfig(object):
         return int(value) # Throws exception if non-digit.
 
     def _backup_dest_type(self):
-        value =  self.system.get(self.BACKUP_DEST_TYPE, default=self.VOL)
-        if value not in (self.VOL, self.GCS, self.S3):
+        value =  self.system.get(self.BACKUP_DEST_TYPE,
+                                 default=FileManager.STORAGE_TYPE_VOL)
+        if value not in (FileManager.STORAGE_TYPE_VOL,
+                         FileManager.STORAGE_TYPE_CLOUD):
             raise ValueError("system '%s' not yet set or corrupted: '%s'." % \
                                  (self.BACKUP_DEST_TYPE, value))
         return value
@@ -87,10 +86,8 @@ class StorageConfig(object):
         if ':' in value:
             tokens = value.split(':')
             value = tokens[0]
-        if value == StorageConfig.VOL:
-            return 'Local Volume'
-        if value == StorageConfig.S3:
-            return 'Amazon S3 Storage'
-        if value == StorageConfig.GCS:
-            return 'Google Cloud Storage'
+        if value == FileManager.STORAGE_TYPE_VOL:
+            return 'Agent Volume'
+        if value == FileManager.STORAGE_TYPE_CLOUD:
+            return 'Cloud Storage'
         raise KeyError(value)

@@ -6,7 +6,7 @@ from page import PalettePage, FAKEPW
 from rest import PaletteRESTHandler, required_parameters, required_role
 
 from controller.profile import Role
-from controller.s3 import S3
+from controller.cloud import CloudManager, CloudEntry
 
 __all__ = ["S3Application"]
 
@@ -18,18 +18,20 @@ class S3Application(PaletteRESTHandler):
     def __init__(self, global_conf):
         super(S3Application, self).__init__(global_conf)
 
-    def get(self):
-        self.envid = self.environment.envid
-        entry = S3.get_by_envid_name(self.envid, DEFAULT_NAME)
+    def get(self, envid):
+        entry = CloudManager.get_by_envid_name(envid, DEFAULT_NAME,
+                                               CloudManager.CLOUD_TYPE_S3)
         if entry is None:
-            entry = S3(envid = self.envid)
+            entry = CloudEntry(envid=envid,
+                              cloud_type=CloudManager.CLOUD_TYPE_S3)
+
             entry.name = DEFAULT_NAME
             meta.Session.add(entry)
             meta.Session.commit()
         return entry
 
-    def handle_GET(self):
-        entry = self.get()
+    def handle_GET(self, req):
+        entry = self.get(req.envid)
         d = entry.todict(pretty=True)
         d['secret'] =  entry.secret and FAKEPW or ''
         return d
@@ -90,10 +92,11 @@ class S3Page(PalettePage):
     required_role = Role.MANAGER_ADMIN
 
     def render(self, req, obj=None):
-        envid = self.environment.envid
-        entry = S3.get_by_envid_name(envid, DEFAULT_NAME)
+        entry = CloudManager.get_by_envid_name(req.envid, DEFAULT_NAME,
+                                               CloudManager.CLOUD_TYPE_S3)
         if entry is None:
-            entry = S3(envid = envid)
+            entry = CloudEntry(envid=req.envid,
+                               cloud_type=CloudManager.CLOUD_TYPE_S3)
             entry.name = DEFAULT_NAME
         self.access_key = entry.access_key and entry.access_key or ''
         self.secret = entry.secret and FAKEPW or ''
