@@ -63,13 +63,14 @@ class System(object):
         return entry.value
 
     def save(self, key, value):
-        session = meta.Session()
+        self.tryload()
 
-        if hasattr(self, 'data') and key in self.data:
+        session = meta.Session()
+        if key in self.data:
             entry = self.data[key]
         else:
             entry = SystemEntry(envid=self.envid, key=key, value=value)
-            if hasattr(self, 'data'):
-                self.data[key] = entry
             session.add(entry)
+            self.data[key] = entry
+        entry.value = value
         session.commit()
