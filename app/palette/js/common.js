@@ -223,14 +223,15 @@ function ($, topic, template)
      * Enable the next, previous, etc links.
      */
     function setupEventPagination() {
-        $('#event-pagination .next a').off('click');
-        $('#event-pagination .next a').bind('click', nextPage);
-        $('#event-pagination .previous a').off('click');
-        $('#event-pagination .previous a').bind('click', prevPage);
-        $('#event-pagination .first a').off('click');
-        $('#event-pagination .first a').bind('click', firstPage);
-        $('#event-pagination .last a').off('click');
-        $('#event-pagination .last a').bind('click', lastPage);
+        $('.event-pagination .next a').off('click');
+        $('.event-pagination .next a').bind('click', nextPage);
+        $('.event-pagination .previous a').off('click');
+        $('.event-pagination .previous a').bind('click', prevPage);
+        $('.event-pagination .first a').off('click');
+        $('.event-pagination .first a').bind('click', firstPage);
+        $('.event-pagination .last a').off('click');
+        $('.event-pagination .last a').bind('click', lastPage);
+        $('.event-pagination').show();
     }
     /*
      * setupConfigure
@@ -352,8 +353,8 @@ function ($, topic, template)
         if (count != null) {
             $('#event-count span').html(count);
             eventFilter.count = count;
-            $('#event-pagination .page-number').html(eventFilter.page);
-            $('#event-pagination .page-count').html(pageCount());
+            $('.event-pagination .page-number').html(eventFilter.page);
+            $('.event-pagination .page-count').html(pageCount());
         }
 
         if (eventFilter.page > 1) {
