@@ -22,6 +22,10 @@ class StorageApplication(PaletteRESTHandler):
 
     LOW_WATERMARK_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
     HIGH_WATERMARK_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+    HTTP_LOAD_WARN_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45]
+    HTTP_LOAD_ERROR_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45]
+    HTTP_LOAD_WARN_MAX = 45
+    HTTP_LOAD_ERROR_MAX = 45
 
     def build_item_for_volume(self, volume):
         fmt = "%s %s %s (%s Unused)"
@@ -30,6 +34,13 @@ class StorageApplication(PaletteRESTHandler):
             name = name + ':'
         return fmt % (volume.agent.displayname, name,
                       sizestr(volume.size), sizestr(volume.available_space))
+
+    def build_item_for_web_request(self, x):
+        if x == 0:
+            return 'Do not monitor'
+        if x == 1:
+            return '1 second'
+        return '%d seconds' % x
 
     def handle_get(self, req):
         sc = StorageConfig(req.system)
@@ -104,8 +115,26 @@ class StorageApplication(PaletteRESTHandler):
             options.append({'id':x, 'item': str(x)})
         logs['options'] = options
 
-        data['config'] = [dest, low, high, auto, user, logs]
+        value = self.build_item_for_web_request(sc.http_load_warn)
+        http_load_warn = {'name': StorageConfig.HTTP_LOAD_WARN, 'value': value}
 
+        options = []
+        for x in self.HTTP_LOAD_WARN_RANGE:
+            item = self.build_item_for_web_request(x)
+            options.append({'id':x, 'item': item})
+        http_load_warn['options'] = options
+
+        value = self.build_item_for_web_request(sc.http_load_error)
+        http_load_error = {'name': StorageConfig.HTTP_LOAD_ERROR,
+                           'value': value}
+
+        options = []
+        for x in self.HTTP_LOAD_ERROR_RANGE:
+            item = self.build_item_for_web_request(x)
+            options.append({'id':x, 'item': item})
+        http_load_error['options'] = options
+
+        data['config'] = [dest, low, high, auto, user, logs, http_load_warn, http_load_error]
         return data
 
     @required_parameters('value')
@@ -222,6 +251,24 @@ class StorageApplication(PaletteRESTHandler):
         else:
             raise exc.HTTPMethodNotAllowed()
 
+    def handle_load_warn(self, req):
+        if req.method == 'GET':
+            return {'value':self.sc.http_load_warn}
+        elif req.method == 'POST':
+            d = self.handle_int_POST(req, StorageConfig.HTTP_LOAD_WARN)
+            return d
+        else:
+            raise exc.HTTPMethodNotAllowed()
+
+    def handle_load_error(self, req):
+        if req.method == 'GET':
+            return {'value':self.sc.http_load_error}
+        elif req.method == 'POST':
+            d = self.handle_int_POST(req, StorageConfig.HTTP_LOAD_ERROR)
+            return d
+        else:
+            raise exc.HTTPMethodNotAllowed()
+
     @required_role(Role.MANAGER_ADMIN)
     def handle(self, req):
         path_info = self.base_path_info(req)
@@ -241,6 +288,10 @@ class StorageApplication(PaletteRESTHandler):
             return self.handle_logs(req)
         elif path_info == 'twb':
             return self.handle_twb(req)
+        elif path_info == 'http_load_warn':
+            return self.handle_load_warn(req)
+        elif path_info == 'http_load_error':
+            return self.handle_load_error(req)
 
         if req.method == "GET":
             return self.handle_get(req)

@@ -13,6 +13,9 @@ class StorageConfig(object):
     WATERMARK_LOW = "disk-watermark-low"
     WATERMARK_HIGH = "disk-watermark-high"
 
+    HTTP_LOAD_WARN = "http-load-warn"
+    HTTP_LOAD_ERROR = "http-load-error"
+
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
     def __init__(self, system):
@@ -50,6 +53,18 @@ class StorageConfig(object):
         except:
             return 100
 
+    def _http_load_warn(self, name):
+        try:
+            return int(self.system.get(name))
+        except:
+            return 10
+
+    def _http_load_error(self, name):
+        try:
+            return int(self.system.get(name))
+        except:
+            return 20
+
     def __getattr__(self, name):
         if name == 'watermark_low':
             return self._watermark(self.WATERMARK_LOW)
@@ -69,6 +84,10 @@ class StorageConfig(object):
             return self._getyesno(self.STORAGE_ENCRYPT)
         if name == 'workbooks_as_twb':
             return self._getyesno(self.WORKBOOKS_AS_TWB)
+        if name == 'http_load_warn':
+            return self._http_load_warn(self.HTTP_LOAD_WARN)
+        if name == 'http_load_error':
+            return self._http_load_error(self.HTTP_LOAD_ERROR)
 
     def todict(self):
         return {
@@ -79,7 +98,9 @@ class StorageConfig(object):
             self.BACKUP_DEST_ID: self.backup_dest_id,
             self.WATERMARK_LOW: self.watermark_low,
             self.WATERMARK_HIGH: self.watermark_high,
-            self.LOG_ARCHIVE_RETAIN_COUNT: self.log_archive_retain_count
+            self.LOG_ARCHIVE_RETAIN_COUNT: self.log_archive_retain_count,
+            self.HTTP_LOAD_WARN: self.http_load_warn,
+            self.HTTP_LOAD_ERROR: self.http_load_error,
             }
 
     def text(self, value):
