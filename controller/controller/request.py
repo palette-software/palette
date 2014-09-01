@@ -8,12 +8,12 @@ class XIDEntry(meta.Base):
     __tablename__ = 'xid'
 
     xid =  Column(BigInteger, unique=True, nullable=False, \
-      autoincrement=True, primary_key=True)
+                  autoincrement=True, primary_key=True)
     # FIXME: Enumerate valid state values.
     state = Column(String, default='started')
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
-      server_onupdate=func.current_timestamp())
+                               server_onupdate=func.current_timestamp())
 
 class Request(object):
     """Represents a request.

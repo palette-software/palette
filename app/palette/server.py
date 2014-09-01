@@ -71,8 +71,8 @@ class ServerApplication(PaletteRESTHandler):
 
             servers.append(d)
 
-        return {'servers': servers,
-                'environment' : self.environment.name}
+        name = req.environ['PALETTE_ENVIRONMENT'].name
+        return {'servers': servers, 'environment': name}
 
     @required_role(Role.MANAGER_ADMIN)
     @required_parameters('id', 'value')
