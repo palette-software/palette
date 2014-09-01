@@ -6,7 +6,6 @@ from akiri.framework.config import store
 
 from controller.profile import UserProfile, Role, Publisher, Admin, License
 from controller.auth import AuthManager
-from controller.util import DATEFMT
 
 from page import PalettePage
 from rest import PaletteRESTHandler, required_parameters, required_role
@@ -18,8 +17,7 @@ class UserApplication(PaletteRESTHandler):
         L = meta.Session.query(Role).all()
         return [{'name': x.name, 'id': x.roleid} for x in L]
 
-    def users(self):
-        envid = self.environment.envid
+    def users(self, envid):
         q = meta.Session.query(UserProfile).\
             filter(UserProfile.envid == envid).\
             filter(UserProfile.userid > 0)
@@ -47,12 +45,9 @@ class UserApplication(PaletteRESTHandler):
             return 'Unknown'
         return License.str(d['licensing-role-id'])
 
-    def last_user_import(self):
-        try:
-            entry = self.system.entry(AuthManager.LAST_IMPORT_KEY)
-            return entry.modification_time.strftime(DATEFMT)
-        except ValueError:
-            return 'never'
+    def last_user_import(self, req):
+        modtime = req.system.modification_time(AuthManager.LAST_IMPORT_KEY)
+        return modtime and modtime or 'never'
 
     def handle(self, req):
         path_info = self.base_path_info(req)
@@ -71,7 +66,7 @@ class UserApplication(PaletteRESTHandler):
     def handle_GET(self, req):
         exclude = ['hashed_password', 'salt']
         users = []
-        for user in self.users():
+        for user in self.users(req.envid):
             d = user.todict(pretty=True, exclude=exclude)
             d['admin-type'] = user.role.name;
             d['visited-info'] = self.visited_info(d)
@@ -83,7 +78,7 @@ class UserApplication(PaletteRESTHandler):
             users.append(d)
         return {'users': users,
                 'admin-levels': self.admin_levels(),
-                'last-update': self.last_user_import()}
+                'last-update': self.last_user_import(req)}
 
     # refresh request
     @required_role(Role.MANAGER_ADMIN)
@@ -100,8 +95,7 @@ class UserApplication(PaletteRESTHandler):
     @required_role(Role.SUPER_ADMIN)
     @required_parameters('userid', 'roleid')
     def handle_admin(self, req):
-        envid = self.environment.envid
-        user = UserProfile.get(envid, int(req.POST['userid']))
+        user = UserProfile.get(req.envid, int(req.POST['userid']))
         if not user:
             raise exc.HTTPGone()
         roleid = int(req.POST['roleid'])
@@ -110,8 +104,7 @@ class UserApplication(PaletteRESTHandler):
         return {'roleid':roleid}
 
     def setemail(self, name, value):
-        envid = self.environment.envid
-        profile = UserProfile.get_by_name(envid, name)
+        profile = UserProfile.get_by_name(req.envid, name)
         profile.email = value
         meta.Session.commit()
         return {'value':value}
@@ -122,10 +115,7 @@ class UserApplication(PaletteRESTHandler):
 
     @required_parameters('name', 'value')
     def handle_email(self, req):
-        if isinstance(req.remote_user, basestring):
-            name = req.remote_user
-        else:
-            name = req.remote_user.name
+        name = req.remote_user.name
 
         # any user may update their own email address.
         if name == req.POST['name']:

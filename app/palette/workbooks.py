@@ -7,7 +7,6 @@ from paste.fileapp import FileApp
 from akiri.framework.api import RESTApplication, BaseApplication
 from akiri.framework.ext.sqlalchemy import meta
 
-from controller.environment import Environment
 from controller.workbooks import WorkbookEntry, WorkbookUpdateEntry
 from controller.util import UNDEFINED
 from controller.profile import UserProfile, Role
@@ -19,7 +18,7 @@ from controller.passwd import set_aes_key_file
 
 from page import PalettePage, FAKEPW
 from rest import PaletteRESTHandler
-from rest import translate_remote_user, required_parameters, required_role
+from rest import required_parameters, required_role
 
 __all__ = ["WorkbookApplication"]
 
@@ -28,50 +27,46 @@ class CredentialMixin(object):
     PRIMARY_KEY = 'primary'
     SECONDARY_KEY = 'secondary'
 
-    def get_cred(self, name):
-        envid = self.environment.envid
+    def get_cred(self, envid, name):
         return CredentialEntry.get_by_envid_key(envid, name, default=None)
 
 class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
 
     NAME = 'workbooks'
 
-    def getuser_fromdb(self, system_user_id):
+    def getuser_fromdb(self, envid, system_user_id):
         if system_user_id < 0:
             return UNDEFINED
-        envid = self.environment.envid
         user = UserProfile.get_by_system_user_id(envid, system_user_id)
         if not user:
             return UNDEFINED
         return user.display_name()
 
-    def getuser(self, system_user_id, cache={}):
+    def getuser(self, envid, system_user_id, cache={}):
         if system_user_id in cache:
             return cache[system_user_id]
-        user = self.getuser_fromdb(system_user_id)
+        user = self.getuser_fromdb(envid, system_user_id)
         cache[system_user_id] = user
         return user
 
-    def get_cred(self, name):
-        entry = super(WorkbookApplication, self).get_cred(name)
+    def get_cred(self, envid, name):
+        entry = super(WorkbookApplication, self).get_cred(envid, name)
         if not entry:
-            entry = CredentialEntry(envid=self.environment.envid, key=name)
+            entry = CredentialEntry(envid=envid, key=name)
             meta.Session.add(entry)
         return entry
 
-    def get_site(self, siteid, cache={}):
+    def get_site(self, envid, siteid, cache={}):
         if siteid in cache:
             return cache[siteid]
-        envid = self.environment.envid
         entry = Site.get(envid, siteid, default=None)
         name = entry and entry.name or ''
         cache[siteid] = name
         return name
 
-    def get_project(self, projectid, cache={}):
+    def get_project(self, envid, projectid, cache={}):
         if projectid in cache:
             return cache[projectid]
-        envid = self.environment.envid
         entry = Project.get(envid, projectid, default=None)
         name = entry and entry.name or ''
         cache[projectid] = name
@@ -93,7 +88,7 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_user(self, req, key):
-        cred = self.get_cred(key)
+        cred = self.get_cred(req.envid, key)
         if req.method == 'POST':
             return self.handle_user_POST(req, cred)
         value = cred and cred.user or ''
@@ -101,7 +96,7 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         
     @required_role(Role.MANAGER_ADMIN)
     def handle_passwd(self, req, key):
-        cred = self.get_cred(key)
+        cred = self.get_cred(req.envid, key)
         if req.method == 'POST':
             return self.handle_passwd_POST(req, cred)
         value = cred and FAKEPW or ''
@@ -110,7 +105,7 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
     # GET doesn't have a ready meaning.
     @required_role(Role.MANAGER_ADMIN)
     @required_parameters('id', 'value')
-    def handle_update_note(self, req     ):
+    def handle_update_note(self, req):
         wuid = req.POST['id']
         update = WorkbookUpdateEntry.get_by_id(wuid)
         if not update:
@@ -119,16 +114,13 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         meta.Session.commit()
         return {'value': update.note}
 
-    @translate_remote_user
     def handle_get(self, req):
         users = {}; sites={}; projects={}  # lookup caches
-        envid = self.environment.envid
-
         if req.remote_user.roleid > Role.NO_ADMIN:
-            entries = WorkbookEntry.get_all_by_envid(envid)
+            entries = WorkbookEntry.get_all_by_envid(req.envid)
         else:
             system_user_id = req.remote_user.system_user_id
-            entries = WorkbookEntry.get_all_by_system_user(envid,
+            entries = WorkbookEntry.get_all_by_system_user(req.envid,
                                                            system_user_id)
 
         workbooks = []
@@ -138,7 +130,9 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
             updates = []
             for update in entry.updates:
                 d = update.todict(pretty=True)
-                d['username'] = self.getuser(update.system_user_id, users)
+                d['username'] = self.getuser(req.envid,
+                                             update.system_user_id,
+                                             users)
                 if 'url' not in d or not d['url']:
                     d['url'] = '#'
                 else:
@@ -155,9 +149,10 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
                 data['current-revision'] = current['revision']
                 data['url'] = current['url']
 
-            data['site'] = self.get_site(entry.site_id, cache=sites)
-            data['project'] = self.get_project(entry.project_id, cache=projects)
-
+            data['site'] = self.get_site(req.envid, entry.site_id, cache=sites)
+            data['project'] = self.get_project(req.envid,
+                                               entry.project_id,
+                                               cache=projects)
             workbooks.append(data)
 
         return {'workbooks': workbooks}
@@ -190,13 +185,13 @@ class TabcmdPage(PalettePage, CredentialMixin):
     required_role = Role.MANAGER_ADMIN
 
     def render(self, req, obj=None):
-        primary = self.get_cred(self.PRIMARY_KEY)
+        primary = self.get_cred(req.envid, self.PRIMARY_KEY)
         if primary:
             req.primary_user = primary.user
             req.primary_pw = primary.embedded and FAKEPW or ''
         else:
             req.primary_user = req.primary_pw = ''
-        secondary = self.get_cred(self.SECONDARY_KEY)
+        secondary = self.get_cred(req.envid, self.SECONDARY_KEY)
         if secondary:
             req.secondary_user = secondary.user
             req.secondary_pw = secondary.embedded and FAKEPW or ''
@@ -222,21 +217,13 @@ class WorkbookData(BaseApplication):
         if not os.path.isdir(self.path):
             os.makedirs(self.path)
 
-    def __getattr__(self, name):
-        if name == 'environment':
-            return Environment.get()
-        raise AttributeError(name)
-
     def check_permission(self, req, update):
         if req.remote_user.roleid > Role.NO_ADMIN:
             return True
         if req.remote_user.system_user_id == update.workbook.system_user_id:
             return True
 
-    @translate_remote_user
     def handle(self, req):
-        envid = self.environment.envid
-
         path_info = req.environ['PATH_INFO']
         if path_info.startswith('/'):
             path_info = path_info[1:]

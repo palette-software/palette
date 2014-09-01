@@ -332,7 +332,6 @@ function ($, topic, template)
 
         if (eventFilter.page == 1) {
             eventFilter.ref = events[0]['reference-time'];
-            console.log(eventFilter.ref);
         }
     }
 

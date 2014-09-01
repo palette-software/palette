@@ -22,11 +22,6 @@ class ProfileApplication(PaletteRESTHandler):
     # The REST application will be available at "/rest/profile"
     NAME = 'profile'
 
-    def get(self, req):
-        # REST handlers don't automatically load profile objects
-        user = req.environ['REMOTE_USER']
-        return UserProfile.get_by_name(self.environment.envid, user)
-
     def handle(self, req):
         if not 'REMOTE_USER' in req.environ:
             raise exc.HTTPBadRequest()
@@ -40,23 +35,14 @@ class ProfileApplication(PaletteRESTHandler):
         raise exc.HTTPBadRequest()
 
     def handle_profile_GET(self, req):
-        profile = self.get(req)
-        if not profile:
-            return {}
-
-        self.profile = {}
-        # Convert db entry into a dictionary
-        for key in ['name', 'friendly_name', 'email']:
-            value = getattr(profile, key)
-            if value:
-                self.profile[key.replace('_','-')] = value
+        profile = req.remote_user.todict(pretty=True)
 
         # Add a list of roles the user has
-        self.profile['roles'] = []
-        for role in profile.roles:
-            self.profile['roles'].append(role.name)
+        profile['roles'] = []
+        for role in req.remote_user.roles:
+            profile['roles'].append(role.name)
 
-        return self.profile
+        return profile
 
     def handle_profile(self, req):
         if req.method == 'POST':
