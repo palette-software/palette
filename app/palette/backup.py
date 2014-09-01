@@ -42,22 +42,13 @@ class BackupApplication(PaletteRESTHandler):
 
         filename = req.POST['filename']
 
-        backup_entry = FileManager.find_by_name_envid(self.environment.envid,
-                                                      filename)
+        backup_entry = FileManager.find_by_name_envid(req.envid, filename)
         if not backup_entry:
             print >> sys.stderr, "Backup not found:", filename
             return {}
 
         self.telnet.send_cmd('restore "%s"' % backup_entry.name, req=req)
         return {}
-
-    def get_last_backup(self):
-        last_db = meta.Session.query(FileEntry).\
-            filter(FileEntry.envid == self.environment.envid).\
-            filter(FileEntry.file_type == FileManager.FILE_TYPE_BACKUP).\
-            order_by(FileEntry.creation_time.desc()).\
-            first()
-        return last_db
 
     @required_parameters('action')
     def handle_POST(self, req):
@@ -71,15 +62,16 @@ class BackupApplication(PaletteRESTHandler):
     @required_role(Role.MANAGER_ADMIN)
     @required_parameters('value')
     def handle_archive_POST(self, req):
-        self.system.save('archive-location', req.POST['value'])
-        meta.Session.commit()
-        return {}
+        value = req.POST['value']
+        self.system.save('archive-location', value)
+        return {'value':value}
 
     @required_role(Role.READONLY_ADMIN)
     def handle_GET(self, req):
         L = [x.todict(pretty=True) for x \
-                 in FileManager.all(self.environment.envid,
-                                    FileManager.FILE_TYPE_BACKUP, asc=False)]
+                 in FileManager.all(req.envid,
+                                    FileManager.FILE_TYPE_BACKUP,
+                                    asc=False)]
         # FIXME: convert TIMEZONE
         tomorrow = datetime.date.today() + datetime.timedelta(days=1)
         midnight = datetime.datetime.combine(tomorrow, datetime.time(0,0))

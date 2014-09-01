@@ -5,7 +5,6 @@ from akiri.framework.api import RESTApplication
 from akiri.framework.config import store
 
 from controller.domain import Domain
-from controller.environment import Environment
 from controller.system import SystemManager
 from controller.profile import UserProfile, Role
 
@@ -24,28 +23,15 @@ def required_parameters(*params):
 def required_role(name):
     def wrapper(f):
         def realf(self, req, *args, **kwargs):
-            envid = self.environment.envid
             if isinstance(name, basestring):
                 role = Role.get_by_name(name).roleid
             else:
                 role = Role.get_by_roleid(name)
-            # FIXME: this should not have to happen here.
-            if isinstance(req.remote_user, basestring):
-                profile = UserProfile.get_by_name(envid, req.remote_user)
-                req.remote_user = profile
             if req.remote_user.roleid < role.roleid:
                 raise exc.HTTPForbidden("The '"+role.name+"' role is required.")
             return f(self, req, *args, **kwargs)
         return realf
     return wrapper
-
-def translate_remote_user(f):
-    def realf(self, req, *args, **kwargs):
-        envid = self.environment.envid
-        if isinstance(req.remote_user, basestring):
-            req.remote_user = UserProfile.get_by_name(envid, req.remote_user)
-        return f(self, req, *args, **kwargs)
-    return realf
 
 class PaletteRESTHandler(RESTApplication):
 
@@ -58,10 +44,6 @@ class PaletteRESTHandler(RESTApplication):
             return store.get('palette', 'domainname')
         if name == 'domain':
             return Domain.get_by_name(self.domainname)
-        if name == 'environment':
-            return Environment.get()
-        if name == 'system':
-            return SystemManager(self) # FIXME: very unclean : self != server
         raise AttributeError(name)
 
     def base_path_info(self, req):
@@ -92,10 +74,6 @@ class Telnet(object):
             preamble += '/displayname="%s"' % displayname
 
         if req:
-            if isinstance(req.remote_user, basestring):
-                envid = self.app.server.environment.envid
-                req.remote_user = UserProfile.get_by_name(envid,
-                                                          req.remote_user)
             userid = req.remote_user.userid
             preamble += " /userid=%d" % userid
 

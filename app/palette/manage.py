@@ -12,7 +12,6 @@ from sqlalchemy.schema import ForeignKey
 from akiri.framework.ext.sqlalchemy import meta
 
 from controller.agent import Agent
-from controller.environment import Environment
 from controller.profile import Role
 
 from page import PalettePage

@@ -11,6 +11,7 @@ import manage
 import event
 import workbooks
 import yml
+import request
 
 from page import PalettePageMixin
 
