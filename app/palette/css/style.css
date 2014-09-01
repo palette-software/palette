@@ -797,6 +797,11 @@ ul.processes.visible {
     padding: 0 15px 72px 18px;
     overflow-y: scroll;
 }
+.dynamic-content a, .dynamic-content a:hover {
+    color: #697078;
+    text-decoration: underline;
+}
+
 .secondary-side-bar h2 {
     color:white;
 }
@@ -1487,10 +1492,6 @@ article.event i.help {
     font-size: 1.5em;
     width: inherit;
 }
-article.event a, article.event a:hover {
-    color: #697078;
-    text-decoration: underline;
-}
 article.event a.edit {
     text-decoration: none;
 }
@@ -1766,12 +1767,17 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
     min-width: 85px;
     text-align: right;
 }
-#event-pagination {
+.event-pagination {
+    display: none;
     float: right;
     line-height: 32px;
     font-size: 16px;
 }
-#event-pagination div {
+.event-pagination div {
     display: inline;
     margin-right: 10px;
+}
+
+.top-zone .event-pagination {
+    margin-top:35px;
 }
