@@ -57,7 +57,8 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
         filters = {'envid':envid}
         return cls.get_all_by_keys(filters)
 
-# NOTE: 'server' may be either a Controller or a PaletteRESTHandler
+
+# Merge with 'System' in the webapp.
 class SystemManager(Manager):
 
     # Keys
@@ -96,6 +97,18 @@ class SystemManager(Manager):
 
     def getint(self, key, **kwargs):
         return int(self.get(key, **kwargs))
+
+    # entire system table to a dictionary
+    def todict(self, pretty=False):
+        d = {}
+        for entry in SystemEntry.get_all(self.envid):
+            key = entry.key
+            if not pretty:
+                key = key.replace('-','_')
+            else:
+                key = key.replace('_','-')
+            d[key] = entry.value
+        return d
 
     @classmethod
     def populate(cls):
