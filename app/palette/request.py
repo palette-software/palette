@@ -41,7 +41,7 @@ class System(object):
         self.tryload()
         if not key in self.data:
             return None
-        self.data[key].modification_time.strftime(DATEFMT)
+        return self.data[key].modification_time.strftime(DATEFMT)
         
     def get(self, key, **kwargs):
         if 'default' in kwargs:
