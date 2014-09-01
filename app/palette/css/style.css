@@ -1487,7 +1487,8 @@ article.event i.help {
     font-size: 1.5em;
     width: inherit;
 }
-article.event a {
+article.event a, article.event a:hover {
+    color: #697078;
     text-decoration: underline;
 }
 article.event a.edit {
