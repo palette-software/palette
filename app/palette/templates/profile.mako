@@ -30,6 +30,12 @@
   <h2>Tableau Server User Publisher Role</h2>
   <p>Publisher</p>
 %endif
+  <h2>Email Notifications</h2>
+  <div class="onoffswitch"
+       data-name="${req.remote_user.name}"
+       data-href="/rest/users/email-level">
+    ${req.remote_user.email_level}
+  </div>
 </section>
 
 <script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/profile.js">

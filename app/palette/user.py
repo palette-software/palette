@@ -6,6 +6,7 @@ from akiri.framework.config import store
 
 from controller.profile import UserProfile, Role, Publisher, Admin, License
 from controller.auth import AuthManager
+from controller.util import str2bool
 
 from page import PalettePage
 from rest import PaletteRESTHandler, required_parameters, required_role
@@ -61,6 +62,9 @@ class UserApplication(PaletteRESTHandler):
             return self.handle_admin(req)
         if path_info == 'email':
             return self.handle_email(req)
+        if path_info == 'email-level':
+            return self.handle_email_level(req)
+
         raise exc.HTTPNotFound()
 
     def handle_GET(self, req):
@@ -103,25 +107,52 @@ class UserApplication(PaletteRESTHandler):
         meta.Session.commit()
         return {'roleid':roleid}
 
-    def setemail(self, name, value):
-        profile = UserProfile.get_by_name(req.envid, name)
+    def get_profile(self, req, name):
+        if name == req.remote_user.name:
+            profile = req.remote_user
+        else:
+            profile = UserProfile.get_by_name(req.envid, name)
+        if profile is None:
+            raise exc.HTTPNotFound()
+        return profile
+
+    def set_email(self, req, name, value):
+        profile = self.get_profile(req, name)
         profile.email = value
+        meta.Session.commit()
+        return {'value':value}
+
+    def set_email_level(self, req, name, value):
+        profile = self.get_profile(req, name)
+        profile.email_level = value
         meta.Session.commit()
         return {'value':value}
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_email_other(self, req):
-        return self.setemail(req.POST['name'], req.POST['value'])
+        return self.set_email(req, req.POST['name'], req.POST['value'])
 
     @required_parameters('name', 'value')
     def handle_email(self, req):
-        name = req.remote_user.name
-
         # any user may update their own email address.
-        if name == req.POST['name']:
-            return self.setemail(name, req.POST['value'])
-
+        if req.remote_user.name == req.POST['name']:
+            return self.set_email(req, req.remote_user.name, req.POST['value'])
         return self.handle_email_other(req)
+
+    @required_role(Role.MANAGER_ADMIN)
+    def handle_email_level_other(self, req, name, value):
+        return self.set_email_level(req, name, value)
+
+    @required_parameters('name', 'value')
+    def handle_email_level(self, req):
+        name = req.remote_user.name
+        value = int(str2bool(req.POST['value']))
+
+        # any user may update their own email settings.
+        if name == req.POST['name']:
+            return self.set_email_level(req, name, value)
+
+        return self.handle_email_level_other(req, name, value)
 
 class UserConfig(PalettePage):
     TEMPLATE = "user.mako"
