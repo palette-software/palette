@@ -1,5 +1,5 @@
-require(['jquery', 'topic', 'template', 'common', 'EditBox', 'bootstrap'],
-function ($, topic, template, common, EditBox)
+require(['jquery', 'topic', 'template', 'common', 'EditBox', 'OnOff', 'bootstrap'],
+function ($, topic, template, common, EditBox, OnOff)
 {
     var active = false;
 
@@ -19,6 +19,7 @@ function ($, topic, template, common, EditBox)
             common.bindEvents();
             common.setupDropdowns();
             EditBox.setup();
+            OnOff.setup();
             $('#last-update').html(data['last-update']);
         });
     }

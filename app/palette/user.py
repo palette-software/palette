@@ -145,11 +145,11 @@ class UserApplication(PaletteRESTHandler):
 
     @required_parameters('name', 'value')
     def handle_email_level(self, req):
-        name = req.remote_user.name
+        name = req.POST['name']
         value = int(str2bool(req.POST['value']))
 
         # any user may update their own email settings.
-        if name == req.POST['name']:
+        if name == req.remote_user.name:
             return self.set_email_level(req, name, value)
 
         return self.handle_email_level_other(req, name, value)

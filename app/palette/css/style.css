@@ -1723,24 +1723,31 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
     text-align: right;
 }
 
-.monitor {
+.monitor, .email-level {
     position: relative;
 }
-.monitor .onoffswitch {
+.monitor .onoffswitch, .email-level .onoffswitch {
     width: 52px;
     position: absolute;
     top: 0;
     left: 60px;
     height: 20px;
 }
-.monitor .onoffswitch-inner:after {
+.monitor .onoffswitch {
+    left: 60px;
+}
+.email-level .onoffswitch {
+    left: 85px;
+}
+.monitor .onoffswitch-inner:after, .email-level .onoffswitch-inner:after {
     padding-right: 7px;
 }
-.monitor .onoffswitch-switch {
+.monitor .onoffswitch-switch, .email-level .onoffswitch-switch {
     width: 12px;
     right: 32px;
 }
-.monitor .onoffswitch-inner:before, .monitor .onoffswitch-inner:after {
+.monitor .onoffswitch-inner:before, .monitor .onoffswitch-inner:after,
+.email-level .onoffswitch-inner:before, .email-level .onoffswitch-inner:after {
     height: 16px;
     line-height: inherit;
     font-size: 12px;
