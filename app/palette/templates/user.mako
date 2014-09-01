@@ -30,8 +30,16 @@
           <p>{{visited-info}}</p>
         </div>
         <div class="col2">
-          <div><span class="label">{{tableau-info}}</span></div>
-          <div><span class="label">Palette Role</span><span>{{admin-type}}</span></div>
+          <div>
+            <span class="label">Palette Role</span><span>{{admin-type}}</span>
+          </div>
+          <div class="email-level">
+            <span class="label">Email Alerts</span>
+            <div class="onoffswitch"
+                 data-name="{{name}}" data-href="/rest/users/email-level">
+              {{email-level}}
+            </div>
+          </div>
         </div>
       </div>
       <i class="fa fa-fw fa-angle-down expand"></i>
@@ -42,9 +50,14 @@
           <p class="heading">Tableau User Details</span>
           <article>
             <span class="label">User Name</span>{{name}}
+          </article>
           <article>
             <span class="label">License Level</span>{{license-info}}
           </article>
+          <article>
+            <span class="label">Role</span>{{tableau-info}}
+          </article>
+
           <article><span class="label">Email</span>
 %if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
             <span class="editbox email" 
@@ -61,8 +74,8 @@
           <article>
             <span class="label">Last Tableau Login</span>{{login-at}}
           </article>
-            </div>
-            <div class="col2">
+        </div>
+        <div class="col2">
           <article>
             <span class="label">Palette Admin Permissions</span>
             <i class="fa fa-fw fa-question-circle fa-2x help"></i>
