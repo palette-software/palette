@@ -1,6 +1,7 @@
-require(['jquery', 'template', 'common', 'EditBox', 'bootstrap'],
-function ($, template, common, EditBox)
+require(['jquery', 'template', 'common', 'EditBox', 'OnOff', 'bootstrap'],
+function ($, template, common, EditBox, OnOff)
 {
     EditBox.setup();
+    OnOff.setup();
     common.startMonitor();
 });

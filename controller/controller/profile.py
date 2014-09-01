@@ -60,11 +60,10 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     @classmethod
     def get_by_name(cls, envid, name):
         try:
-            q = meta.Session.query(UserProfile)
-            q = q.filter(UserProfile.envid == envid).\
-            q = q.filter(func.lower(UserProfile.name) == name.lower() and \
-                             UserProfile.userid > 0)
-            entry = q.one()
+            query = meta.Session.query(UserProfile).\
+                    filter(UserProfile.envid == envid).\
+                    filter(func.lower(UserProfile.name) == name.lower())
+            entry = query.one()
         except NoResultFound, e:
             entry = None
         return entry
