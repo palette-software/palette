@@ -66,6 +66,7 @@
 	    <span class="editbox"
 		  data-id="{{wuid}}"
 		  data-href="/rest/workbooks/updates/note">
+          {{note}}
 	    </span>
 	  </div>
         </li>
