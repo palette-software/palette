@@ -2,14 +2,14 @@
 <%inherit file="layout.mako" />
 
 <%block name="title">
-<title>Palette - Storage Configuration</title>
+<title>Palette - General Configuration</title>
 </%block>
 
 <section class="dynamic-content storage-page">
   <section class="top-zone">
     <section class="row">
       <section class="col-xs-12">
-        <h1 class="page-title">Storage</h1>
+        <h1 class="page-title">General Configuration</h1>
       </section>
     </section>
     <section class="row">
@@ -55,6 +55,13 @@
     <h3>Archive Workbooks Only as .twb Files (COMING SOON)</h3>
     <p>Workbook .twb files are just small configuration files, while .twbx are configuration plus extract data which can become very large files</p>
     <div id="workbook-as-twb" class="onoffswitch yesno" data-href="/rest/storage/twb"></div>
+
+    <h2 class="page-subtitle">Tableau Web Requests</h2>
+    <h3>Alert When Tableau Web Requests take longer than These Thresholds</h3>
+    <p>
+      Warning Alert at <span id="http-load-warn" data-href="/rest/storage/http_load_warn" class="btn-group up"></span>
+      &nbsp;Error Alert at <span id="http-load-error" data-href="/rest/storage/http_load_error" class="btn-group up"></span>
+    </p>
 
     </section>
   </section>
