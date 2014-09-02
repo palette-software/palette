@@ -495,6 +495,7 @@ function ($, topic, template)
                 }
             } else {
                 array.push('limit='+this.limit);
+                array.push('ref='+this.ref);
                 
             }
             return array.join('&');
