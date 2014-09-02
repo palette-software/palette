@@ -304,7 +304,24 @@ class MonitorApplication(PaletteRESTHandler):
                 agent['last-disconnect-time'] = \
                     entry.last_disconnect_time.strftime(DATEFMT)
 
-            if entry.connected():
+            if main_state in (StateManager.STATE_DISCONNECTED,
+                              StateManager.STATE_PENDING,
+                              StateManager.STATE_UNKNOWN) and \
+                          entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+                agent_color_num = Colors.RED_NUM
+                if main_state == StateManager.STATE_DISCONNECTED:
+                    # "Tableau Status Unknown"
+                    msg = 'Disconnected'
+                    if 'last-disconnect-time' in agent:
+                        msg = msg + ' ' + agent['last-disconnect-time']
+                elif main_state == StateManager.STATE_PENDING:
+                    # "Retrieving Tableau Status"
+                    msg = "Retrieving Tableau Status"
+                else:
+                    # UNKNOWN: An agent has never connected
+                    msg = 'No agent has ever connected'
+                agent['warnings'] = [{'color':'red', 'message': msg}]
+            elif entry.connected():
                 if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
                     agent['license'] = self.license_info(entry.agentid)
 
