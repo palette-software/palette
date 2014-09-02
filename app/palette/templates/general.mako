@@ -5,7 +5,7 @@
 <title>Palette - General Configuration</title>
 </%block>
 
-<section class="dynamic-content storage-page">
+<section class="dynamic-content general-page">
   <section class="top-zone">
     <section class="row">
       <section class="col-xs-12">
@@ -36,6 +36,20 @@
     <p>Encrypts your Palette generated Tableau backups, logs and workbooks using industry standard encryption adding another level of security.</p>
 
     <div id="storage-encrypt" class="onoffswitch yesno" data-href="/rest/general/encryption"></div>
+
+    <h2 class="page-subtitle">Tabcmd User Credentials</h2>
+    <p>The Tableau Administrator user credentials used to manage the Palette Workbook Archive</p>
+    <h4>Username</h4>
+    <p class="editbox"
+       data-href="/rest/workbooks/primary/user">
+      ${req.primary_user}
+    </p>
+    <h4>Password</h4>
+    <p class="editbox password"
+       data-href="/rest/workbooks/primary/password">
+      ${req.primary_pw}
+    </p>
+
 
     <h2 class="page-subtitle">Backups</h2>
     <h3>Daily Scheduled Backups to Retain</h3>

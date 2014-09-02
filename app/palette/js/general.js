@@ -1,5 +1,5 @@
-require(['jquery', 'template', 'common', 'OnOff', 'bootstrap'],
-function ($, template, common, OnOff)
+require(['jquery', 'template', 'common', 'EditBox', 'OnOff', 'bootstrap'],
+function ($, template, common, EditBox, OnOff)
 {
     common.startMonitor(false);
 
@@ -30,6 +30,7 @@ function ($, template, common, OnOff)
         url: '/rest/general',
         success: function(data) {
             $().ready(function() {
+                EditBox.setup();
                 OnOff.setup();
                 update(data);
             });
