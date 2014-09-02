@@ -1,7 +1,7 @@
 require(['jquery', 'common', 'EditBox', 'bootstrap'],
 function ($, common, EditBox)
 {
-    common.startMonitor();
+    common.startMonitor(false);
 
     $().ready(function() {
         EditBox.setup();

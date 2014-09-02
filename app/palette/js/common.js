@@ -140,6 +140,9 @@ function ($, topic, template)
      * setPage(n)
      */
     function setPage(n) {
+        if (n != eventFilter.page) {
+            eventFilter.seq = 0;
+        }
         eventFilter.page = n;
         /* turn on update for at least one more cycle. */
         eventFilter.liveUpdate = true;
@@ -380,6 +383,7 @@ function ($, topic, template)
     var interval = 1000; //ms - FIXME: make configurable from the backend.
     var timer = null;
     var current = null;
+    var needEvents = true;
 
     function update(data)
     {
@@ -412,6 +416,14 @@ function ($, topic, template)
     }
 
     /*
+     * disableEvents
+     * Don't retrieve events in the monitor for pages that don't use them.
+     */
+    function disableEvents(){
+        needEvents = false;
+    }
+
+    /*
      * ddDataId
      * Get the data-id of the current selection in a particular dropdown.
      * '0' is always 'all' or 'unset'.
@@ -429,6 +441,7 @@ function ($, topic, template)
         page: 1,
         limit: 25,
         count: 0,
+        seq: 0,
         ref: null, /* timestamp as an epoch float, microsecond resolution */
         selectors: {'status':'0', 'type':'0'},
         current: {'first':0,'last':0, 'count':0}, /* currently displayed list */
@@ -436,6 +449,14 @@ function ($, topic, template)
 
         queryString: function () {
             var array = [];
+
+            array.push('seq='+this.seq++);
+
+            if (!needEvents) {
+                array.push('event=false');
+                return array.join('&');
+            }
+
             for (var key in this.selectors) {
                 var value = ddDataId(key);
                 if (typeof(value) == 'undefined') {
@@ -458,6 +479,7 @@ function ($, topic, template)
                 }
             } else {
                 array.push('limit='+this.limit);
+                
             }
             return array.join('&');
         }
@@ -488,10 +510,16 @@ function ($, topic, template)
         if (timer != null) {
             clearTimeout(timer);
         }
+        eventFilter.seq = 0;
         poll();
     }
 
-    function startMonitor() {
+    /*
+     * startMonitor
+     * The optional 'arg' is passed directly to the global needEvents.
+     */
+    function startMonitor(arg) {
+        needEvents = (typeof arg === "undefined") ? true : arg;
         /* 
          * Start a timer that periodically polls the status every
          * 'interval' milliseconds

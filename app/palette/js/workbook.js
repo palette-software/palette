@@ -21,5 +21,5 @@ function ($, template, common, EditBox)
         error: common.ajaxError,
     });
 
-    common.startMonitor();
+    common.startMonitor(false);
 });

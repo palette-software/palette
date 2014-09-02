@@ -19,5 +19,5 @@ function (jquery, template, common)
         error: common.ajaxError,
     });
 
-    common.startMonitor();
+    common.startMonitor(false);
 });

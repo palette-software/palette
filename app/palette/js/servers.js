@@ -42,5 +42,5 @@ function ($, template, common, EditBox, OnOff)
         error: common.ajaxError,
     });
 
-    common.startMonitor();
+    common.startMonitor(false);
 });
