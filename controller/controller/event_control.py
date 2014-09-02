@@ -16,6 +16,9 @@ from util import DATEFMT, UNDEFINED
 from mixin import BaseMixin
 from manager import Manager
 
+from sites import Site
+from projects import Project
+
 mako.runtime.UNDEFINED=UNDEFINED
 
 import re
@@ -269,6 +272,15 @@ class EventControlManager(Manager):
             = self.server.system.get('disk-watermark-low', default='')
         data['disk_watermark_high'] \
             = self.server.system.get('disk-watermark-high', default='')
+
+        if 'site_id' in data and 'site' not in data:
+            site = Site.get_name_by_id(self.envid, data['site_id'])
+            if not site is None:
+                data['site'] = site
+        if 'project_id' in data and 'project' not in data:
+            project = Project.get_name_by_id(self.envid, data['project_id'])
+            if not project is None:
+                data['project'] = project
 
         # Use the data dict for template substitution.
         try:
