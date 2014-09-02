@@ -9,7 +9,7 @@ from akiri.framework.ext.sqlalchemy import meta
 from mixin import BaseMixin, BaseDictMixin
 
 from manager import Manager
-from storage import StorageConfig
+from general import SystemConfig
 from files import FileManager
 
 class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
@@ -26,21 +26,21 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
 
     defaults = [{'envid':1, 'key':'disk-watermark-low', 'value':str(50)},
                 {'envid':1, 'key':'disk-watermark-high', 'value':str(80)},
-                {'envid':1, 'key':StorageConfig.STORAGE_ENCRYPT, 'value': 'no'},
+                {'envid':1, 'key':SystemConfig.STORAGE_ENCRYPT, 'value': 'no'},
                 {'envid':1,
-                 'key':StorageConfig.WORKBOOKS_AS_TWB,
+                 'key':SystemConfig.WORKBOOKS_AS_TWB,
                  'value': 'no'},
                 {'envid':1,
-                 'key':StorageConfig.BACKUP_AUTO_RETAIN_COUNT,
+                 'key':SystemConfig.BACKUP_AUTO_RETAIN_COUNT,
                  'value': '3'},
                 {'envid':1,
-                 'key':StorageConfig.BACKUP_USER_RETAIN_COUNT,
+                 'key':SystemConfig.BACKUP_USER_RETAIN_COUNT,
                  'value': '5'},
                 {'envid':1,
-                 'key':StorageConfig.BACKUP_DEST_TYPE,
+                 'key':SystemConfig.BACKUP_DEST_TYPE,
                  'value': FileManager.STORAGE_TYPE_VOL},
                 {'envid':1,
-                 'key':StorageConfig.LOG_ARCHIVE_RETAIN_COUNT,
+                 'key':SystemConfig.LOG_ARCHIVE_RETAIN_COUNT,
                  'value': '5'},
                 {'envid':1, 'key':'http-load-warn', 'value':str(10)},
                 {'envid':1, 'key':'http-load-error', 'value':str(20)}

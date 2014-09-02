@@ -5,7 +5,7 @@ from akiri.framework.ext.sqlalchemy import meta
 from controller.profile import Role
 from controller.agent import Agent
 from controller.util import sizestr, str2bool
-from controller.storage import StorageConfig
+from controller.general import SystemConfig
 from controller.files import FileManager
 
 from controller.agentinfo import AgentVolumesEntry
@@ -15,17 +15,15 @@ import ntpath, posixpath
 from page import PalettePage
 from rest import PaletteRESTHandler, required_parameters, required_role
 
-__all__ = ["StorageApplication"]
+__all__ = ["GeneralApplication"]
 
-class StorageApplication(PaletteRESTHandler):
-    NAME = 'storage'
+class GeneralApplication(PaletteRESTHandler):
+    NAME = 'general'
 
     LOW_WATERMARK_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
     HIGH_WATERMARK_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
     HTTP_LOAD_WARN_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45]
     HTTP_LOAD_ERROR_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45]
-    HTTP_LOAD_WARN_MAX = 45
-    HTTP_LOAD_ERROR_MAX = 45
 
     def build_item_for_volume(self, volume):
         fmt = "%s %s %s (%s Unused)"
@@ -43,9 +41,9 @@ class StorageApplication(PaletteRESTHandler):
         return '%d seconds' % x
 
     def handle_get(self, req):
-        sc = StorageConfig(req.system)
-        data = {StorageConfig.STORAGE_ENCRYPT: sc.storage_encrypt,
-                StorageConfig.WORKBOOKS_AS_TWB: sc.workbooks_as_twb}
+        sc = SystemConfig(req.system)
+        data = {SystemConfig.STORAGE_ENCRYPT: sc.storage_encrypt,
+                SystemConfig.WORKBOOKS_AS_TWB: sc.workbooks_as_twb}
 
         # populate the storage destination type
         dest = {'name': 'storage-destination'}
@@ -80,21 +78,21 @@ class StorageApplication(PaletteRESTHandler):
         dest['value'] = value
         dest['options'] = options
 
-        low = {'name': StorageConfig.WATERMARK_LOW,
+        low = {'name': SystemConfig.WATERMARK_LOW,
                'value': str(sc.watermark_low)}
         options = []
         for x in self.LOW_WATERMARK_RANGE:
             options.append({'id':x, 'item': str(x)})
         low['options'] = options
 
-        high = {'name': StorageConfig.WATERMARK_HIGH,
+        high = {'name': SystemConfig.WATERMARK_HIGH,
                'value': str(sc.watermark_high)}
         options = []
         for x in self.HIGH_WATERMARK_RANGE:
             options.append({'id':x, 'item': str(x)})
         high['options'] = options
 
-        auto = {'name': StorageConfig.BACKUP_AUTO_RETAIN_COUNT,
+        auto = {'name': SystemConfig.BACKUP_AUTO_RETAIN_COUNT,
                'value': str(sc.backup_auto_retain_count)}
         options = []
         for x in [7,14,21,28]:
@@ -102,13 +100,13 @@ class StorageApplication(PaletteRESTHandler):
         auto['options'] = options
 
         options = []
-        user = {'name': StorageConfig.BACKUP_USER_RETAIN_COUNT,
+        user = {'name': SystemConfig.BACKUP_USER_RETAIN_COUNT,
                'value': str(sc.backup_user_retain_count)}
         for x in range(1,11):
             options.append({'id':x, 'item': str(x)})
         user['options'] = options
 
-        logs = {'name': StorageConfig.LOG_ARCHIVE_RETAIN_COUNT,
+        logs = {'name': SystemConfig.LOG_ARCHIVE_RETAIN_COUNT,
                'value': str(sc.log_archive_retain_count)}
         options = []
         for x in range(1,11):
@@ -116,7 +114,7 @@ class StorageApplication(PaletteRESTHandler):
         logs['options'] = options
 
         value = self.build_item_for_web_request(sc.http_load_warn)
-        http_load_warn = {'name': StorageConfig.HTTP_LOAD_WARN, 'value': value}
+        http_load_warn = {'name': SystemConfig.HTTP_LOAD_WARN, 'value': value}
 
         options = []
         for x in self.HTTP_LOAD_WARN_RANGE:
@@ -125,7 +123,7 @@ class StorageApplication(PaletteRESTHandler):
         http_load_warn['options'] = options
 
         value = self.build_item_for_web_request(sc.http_load_error)
-        http_load_error = {'name': StorageConfig.HTTP_LOAD_ERROR,
+        http_load_error = {'name': SystemConfig.HTTP_LOAD_ERROR,
                            'value': value}
 
         options = []
@@ -146,10 +144,10 @@ class StorageApplication(PaletteRESTHandler):
 
     def handle_encryption(self, req):
         if req.method == 'GET':
-            sc = StorageConfig(req.system)
+            sc = SystemConfig(req.system)
             return {'value':sc.storage_encrypt}
         elif req.method == 'POST':
-            return self.handle_yesno_POST(req, StorageConfig.STORAGE_ENCRYPT)
+            return self.handle_yesno_POST(req, SystemConfig.STORAGE_ENCRYPT)
         else:
             raise exc.HTTPMethodNotAllowed()
 
@@ -162,11 +160,11 @@ class StorageApplication(PaletteRESTHandler):
             raise exc.HTTPBadRequest()
 
         (desttype, destid) = parts
-        req.system.save(StorageConfig.BACKUP_DEST_ID, destid)
-        req.system.save(StorageConfig.BACKUP_DEST_TYPE, desttype)
+        req.system.save(SystemConfig.BACKUP_DEST_ID, destid)
+        req.system.save(SystemConfig.BACKUP_DEST_TYPE, desttype)
         return {'id':value}
 
-    # return the id of the current selection (built from StorageConfig)
+    # return the id of the current selection (built from SystemConfig)
     def destid(self, sc):
         dest_id = sc.backup_dest_id
         if dest_id == None:
@@ -176,7 +174,7 @@ class StorageApplication(PaletteRESTHandler):
         return "%s:%d" % (sc.backup_dest_type, dest_id)
 
     def handle_dest(self, req):
-        sc = StorageConfig(req.system)
+        sc = SystemConfig(req.system)
         if req.method == 'GET':
             return {'id':self.destid(sc)}
         elif req.method == 'POST':
@@ -191,63 +189,63 @@ class StorageApplication(PaletteRESTHandler):
         return {'id':value}
 
     def handle_low(self, req):
-        sc = StorageConfig(req.system)
+        sc = SystemConfig(req.system)
         if req.method == 'GET':
             return {'value':sc.watermark_low}
         elif req.method == 'POST':
-            d = self.handle_int_POST(req, StorageConfig.WATERMARK_LOW)
+            d = self.handle_int_POST(req, SystemConfig.WATERMARK_LOW)
             self.telnet.send_cmd('info all', req=req)
             return d
         else:
             raise exc.HTTPMethodNotAllowed()
 
     def handle_high(self, req):
-        sc = StorageConfig(req.system)
+        sc = SystemConfig(req.system)
         if req.method == 'GET':
             return {'value':sc.watermark_high}
         elif req.method == 'POST':
-            d = self.handle_int_POST(req, StorageConfig.WATERMARK_HIGH)
+            d = self.handle_int_POST(req, SystemConfig.WATERMARK_HIGH)
             self.telnet.send_cmd('info all', req=req)
             return d
         else:
             raise exc.HTTPMethodNotAllowed()
 
     def handle_auto(self, req):
-        sc = StorageConfig(req.system)
+        sc = SystemConfig(req.system)
         if req.method == 'GET':
             return {'value':sc.backup_auto_retain_count}
         elif req.method == 'POST':
             return self.handle_int_POST(req,
-                                        StorageConfig.BACKUP_AUTO_RETAIN_COUNT)
+                                        SystemConfig.BACKUP_AUTO_RETAIN_COUNT)
         else:
             raise exc.HTTPMethodNotAllowed()
 
     def handle_user(self, req):
-        sc = StorageConfig(req.system)
+        sc = SystemConfig(req.system)
         if req.method == 'GET':
             return {'value':sc.backup_user_retain_count}
         elif req.method == 'POST':
             return self.handle_int_POST(req,
-                                        StorageConfig.BACKUP_USER_RETAIN_COUNT)
+                                        SystemConfig.BACKUP_USER_RETAIN_COUNT)
         else:
             raise exc.HTTPMethodNotAllowed()
 
     def handle_logs(self, req):
-        sc = StorageConfig(req.system)
+        sc = SystemConfig(req.system)
         if req.method == 'GET':
             return {'value':sc.log_archive_retain_count}
         elif req.method == 'POST':
             return self.handle_int_POST(req,
-                                        StorageConfig.LOG_ARCHIVE_RETAIN_COUNT)
+                                        SystemConfig.LOG_ARCHIVE_RETAIN_COUNT)
         else:
             raise exc.HTTPMethodNotAllowed()
 
     def handle_twb(self, req):
-        sc = StorageConfig(req.system)
+        sc = SystemConfig(req.system)
         if req.method == 'GET':
             return {'value':sc.workbooks_as_twb}
         elif req.method == 'POST':
-            return self.handle_yesno_POST(req, StorageConfig.WORKBOOKS_AS_TWB)
+            return self.handle_yesno_POST(req, SystemConfig.WORKBOOKS_AS_TWB)
         else:
             raise exc.HTTPMethodNotAllowed()
 
@@ -255,7 +253,7 @@ class StorageApplication(PaletteRESTHandler):
         if req.method == 'GET':
             return {'value':self.sc.http_load_warn}
         elif req.method == 'POST':
-            d = self.handle_int_POST(req, StorageConfig.HTTP_LOAD_WARN)
+            d = self.handle_int_POST(req, SystemConfig.HTTP_LOAD_WARN)
             return d
         else:
             raise exc.HTTPMethodNotAllowed()
@@ -264,7 +262,7 @@ class StorageApplication(PaletteRESTHandler):
         if req.method == 'GET':
             return {'value':self.sc.http_load_error}
         elif req.method == 'POST':
-            d = self.handle_int_POST(req, StorageConfig.HTTP_LOAD_ERROR)
+            d = self.handle_int_POST(req, SystemConfig.HTTP_LOAD_ERROR)
             return d
         else:
             raise exc.HTTPMethodNotAllowed()
@@ -299,11 +297,11 @@ class StorageApplication(PaletteRESTHandler):
         raise exc.HTTPBadRequest()
 
 
-class StoragePage(PalettePage):
-    TEMPLATE = "storage.mako"
-    active = 'storage'
+class GeneralPage(PalettePage):
+    TEMPLATE = "general.mako"
+    active = 'general'
     expanded = True
     required_role = Role.MANAGER_ADMIN
 
-def make_storage(global_conf):
-    return StoragePage(global_conf)
+def make_general(global_conf):
+    return GeneralPage(global_conf)

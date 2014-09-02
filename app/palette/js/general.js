@@ -27,7 +27,7 @@ function ($, template, common, OnOff)
     }
 
     $.ajax({
-        url: '/rest/storage',
+        url: '/rest/general',
         success: function(data) {
             $().ready(function() {
                 OnOff.setup();
