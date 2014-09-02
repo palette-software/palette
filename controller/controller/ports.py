@@ -29,6 +29,8 @@ class PortEntry(meta.Base, BaseMixin):
                                server_onupdate=func.current_timestamp())
 
     # Can do this only if there is a populated database with agentid 1.
+    """
+    # example
     defaults = [
             {
                 "envid":1,
@@ -45,6 +47,7 @@ class PortEntry(meta.Base, BaseMixin):
                 'agentid': 1
             },
     ]
+    """
 
 class PortManager(Manager):
 
