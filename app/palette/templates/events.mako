@@ -2,6 +2,15 @@
   <section class="row">
     <section class="col-xs-12">
       <h1 class="page-title">Events</h1>
+      <div class="event-pagination">
+	<div>
+	  Page <span class="page-number"></span> of <span class="page-count"> </span>
+	</div>
+	<span class="first"><a href="#">first</a> |</span>
+	<span class="previous"><a href="#">previous</a> |</span>
+	<span class="next"><a href="#">next</a> |</span>
+	<span class="last"><a href="#">last</a></span>
+      </div>
     </section>
   </section>
   <section class="row">
@@ -9,15 +18,6 @@
       <div id="event-count"><span>0</span> Events</div>
       <div id="status-dropdown" class="btn-group"></div>
       <div id="type-dropdown" class="btn-group"></div>
-    <div class="event-pagination">
-      <div>
-	Page <span class="page-number"></span> of <span class="page-count"> </span>
-      </div>
-      <span class="first"><a href="#">first</a> |</span>
-      <span class="previous"><a href="#">previous</a> |</span>
-      <span class="next"><a href="#">next</a> |</span>
-      <span class="last"><a href="#">last</a></span>
-    </div>
     </section>
   </section>
 </section>
