@@ -128,11 +128,11 @@ class HttpRequestManager(TableauCacheManager):
                 errorlevel = self.server.system.getint('http-load-error')
                 warnlevel = self.server.system.getint('http-load-warn')
                 if errorlevel != 0 and seconds >= errorlevel:
-                    body = {'duration':seconds}
+                    body =  {'duration':seconds, 'http_status': responses[entry.status]}
                     self.eventgen(EventControl.HTTP_LOAD_ERROR,
                                   agent, entry, body=body)
                 elif warnlevel != 0 and seconds >= warnlevel:
-                    body = {'duration':seconds}
+                    body =  {'duration':seconds, 'http_status': responses[entry.status]}
                     self.eventgen(EventControl.HTTP_LOAD_WARN,
                                   agent, entry, body=body)
             session.add(entry)
