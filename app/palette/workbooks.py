@@ -178,34 +178,6 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
             raise exc.HTTPBadRequest()
 
 
-class TabcmdPage(PalettePage, CredentialMixin):
-    TEMPLATE = "tabcmd.mako"
-    active = 'tabcmd'
-    expanded = True
-    required_role = Role.MANAGER_ADMIN
-
-    def render(self, req, obj=None):
-        primary = self.get_cred(req.envid, self.PRIMARY_KEY)
-        if primary:
-            req.primary_user = primary.user
-            req.primary_pw = primary.embedded and FAKEPW or ''
-        else:
-            req.primary_user = req.primary_pw = ''
-        secondary = self.get_cred(req.envid, self.SECONDARY_KEY)
-        if secondary:
-            req.secondary_user = secondary.user
-            req.secondary_pw = secondary.embedded and FAKEPW or ''
-        else:
-            req.secondary_user = req.secondary_pw = ''
-        return super(TabcmdPage, self).render(req, obj=obj)
-
-def make_tabcmd(global_conf, aes_key_file=None):
-    # FIXME: should be actually global.
-    if aes_key_file:
-        set_aes_key_file(aes_key_file)
-    return TabcmdPage(global_conf)
-
-
 class WorkbookData(BaseApplication):
 
     def __init__(self, global_conf, path=None):

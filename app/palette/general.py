@@ -7,13 +7,14 @@ from controller.agent import Agent
 from controller.util import sizestr, str2bool
 from controller.general import SystemConfig
 from controller.files import FileManager
-
 from controller.agentinfo import AgentVolumesEntry
 from controller.cloud import CloudManager
-import ntpath, posixpath
+from controller.passwd import set_aes_key_file
 
-from page import PalettePage
+from page import PalettePage, FAKEPW
 from rest import PaletteRESTHandler, required_parameters, required_role
+
+from workbooks import CredentialMixin
 
 __all__ = ["GeneralApplication"]
 
@@ -297,11 +298,29 @@ class GeneralApplication(PaletteRESTHandler):
         raise exc.HTTPBadRequest()
 
 
-class GeneralPage(PalettePage):
+class GeneralPage(PalettePage, CredentialMixin):
     TEMPLATE = "general.mako"
     active = 'general'
     expanded = True
     required_role = Role.MANAGER_ADMIN
 
-def make_general(global_conf):
+    def render(self, req, obj=None):
+        primary = self.get_cred(req.envid, self.PRIMARY_KEY)
+        if primary:
+            req.primary_user = primary.user
+            req.primary_pw = primary.embedded and FAKEPW or ''
+        else:
+            req.primary_user = req.primary_pw = ''
+        secondary = self.get_cred(req.envid, self.SECONDARY_KEY)
+        if secondary:
+            req.secondary_user = secondary.user
+            req.secondary_pw = secondary.embedded and FAKEPW or ''
+        else:
+            req.secondary_user = req.secondary_pw = ''
+        return super(GeneralPage, self).render(req, obj=obj)
+
+def make_general(global_conf, aes_key_file=None):
+    # FIXME: should be actually global.
+    if aes_key_file:
+        set_aes_key_file(aes_key_file)
     return GeneralPage(global_conf)
