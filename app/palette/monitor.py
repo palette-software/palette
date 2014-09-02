@@ -68,9 +68,9 @@ class MonitorApplication(PaletteRESTHandler):
 
     def status_options(self, req):
         c = 'status' in req.GET and req.GET['status'] or '0'
-        L = [{'item':'All Status', 'id':0}] + \
-            [{'item':EventControl.level_strings[x], 'id':x} \
-                 for x in EventControl.level_strings]
+        L = [{'item':'All Status', 'id':0}]
+        for x in ['E', 'W', 'I']:
+            L.append({'item':EventControl.level_strings[x], 'id':x})
         value = (c == '0') and L[0]['item'] or EventControl.level_strings[c]
         return {'name':'status', 'value':value, 'id':c, 'options':L}
 

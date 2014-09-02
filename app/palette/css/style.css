@@ -1498,7 +1498,7 @@ article.event.open {
 article.event:hover {
     background-color: #e1e1e1;
 }
-article.event .summary > i {
+article.event .summary > i, article.event .summary > span > i {
     float: left;
     width: 60px;
     display: block;
@@ -1512,9 +1512,17 @@ article.event .summary > i {
     -o-transition: all 0.1s ease-in;
     transition: all 0.1s ease-in;
 }
+article.event .summary > span.fa-stack {
+    float: left;
+}
+article.event .summary i.fa-circle.fa-stack-2x {
+    color: white;
+}
+/*
 article.event:hover .summary i {
     opacity: 1;
 }
+*/
 article.event i.help {
     float: none;
     display: inline-block;
@@ -1540,6 +1548,7 @@ article.event > div.description > div {
     padding: 0 50px 0 0;
 }
 article.event > div.summary {
+    height: 55px;
     cursor: pointer;
 }
 article.event > div.summary > div {
@@ -1812,5 +1821,5 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
 }
 
 .top-zone .event-pagination {
-    margin-top:35px;
+    margin-top:5px;
 }
