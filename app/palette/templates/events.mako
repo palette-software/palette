@@ -38,7 +38,10 @@
   {{#events}}
   <article class="event">
     <div class="summary clearfix">
-      <i class="fa fa-fw {{icon}} {{color}}"></i>
+      <span class="fa-stack">
+	<i class="fa fa-circle fa-stack-2x"></i>
+	<i class="fa fa-fw {{icon}} {{color}}"></i>
+      </span>
       <div>
 	<h3>{{title}}</h3>
 	<p>{{summary}}</p>
