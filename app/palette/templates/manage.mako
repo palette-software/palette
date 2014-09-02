@@ -126,6 +126,20 @@
       <section class="col-xs-12">
         <p>Are you sure want to restore from<br/><span id="restore-timestamp"></span>?</p>
       </section>
+      <section class="col-xs-12">
+      <div class="radio">
+        <p class="radio-text">
+          <input type="radio" name="restore_options" id="data_only" value="data_only" checked>
+          <label for=data_only">Restore Data Only</label>
+        </p>
+      </div>
+      <div class="radio">
+        <p class="radio-text">
+          <input type="radio" name="restore_options" id="config_and_data" value="config_and_data">
+          <label for=config_and_data">Restore Configuration and Data</label>
+        </p>
+      </div>
+      </section>
     </section>
     <section class="row">
       <section class="col-xs-6">
