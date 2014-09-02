@@ -1,6 +1,6 @@
 from files import FileManager
 # This a transitory class - instantiated each time it is needed.
-class StorageConfig(object):
+class SystemConfig(object):
     # Keys for the system table:
     STORAGE_ENCRYPT="storage-encrypt"       # "yes" or "no"
     BACKUP_AUTO_RETAIN_COUNT="backup-auto-retain-count"

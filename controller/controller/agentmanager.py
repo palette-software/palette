@@ -20,7 +20,7 @@ from event_control import EventControl
 from firewall import Firewall
 from odbc import ODBC
 from filemanager import FileManager
-from storage import StorageConfig
+from general import SystemConfig
 from util import sizestr
 
 from sqlalchemy import func, or_
@@ -1208,7 +1208,7 @@ class AgentManager(threading.Thread):
         # If there is no backup configuration BACKUP_DEST_ID yet,
         # create one now.
         try:
-            self.server.system.get(StorageConfig.BACKUP_DEST_ID)
+            self.server.system.get(SystemConfig.BACKUP_DEST_ID)
         except ValueError:
             pass
         else:
@@ -1227,7 +1227,7 @@ class AgentManager(threading.Thread):
             "volid: %d name %s, path %s") % \
             (primary_entry.volid, primary_entry.name, primary_entry.path))
 
-        self.server.system.save(StorageConfig.BACKUP_DEST_ID,
+        self.server.system.save(SystemConfig.BACKUP_DEST_ID,
                                                         primary_entry.volid)
 
     def save_routes(self, agent):

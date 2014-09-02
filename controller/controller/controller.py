@@ -45,7 +45,7 @@ from state_control import StateControl
 from alert_email import AlertEmail
 from event_control import EventControl, EventControlManager
 from extracts import ExtractManager
-from storage import StorageConfig
+from general import SystemConfig
 from workbooks import WorkbookEntry, WorkbookUpdateEntry, WorkbookManager
 
 from sites import Site
@@ -181,7 +181,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """Rotate/delete old auto-generated and then user-generated
            backup files."""
         file_type = FileManager.FILE_TYPE_BACKUP
-        st_config = StorageConfig(self.system)
+        st_config = SystemConfig(self.system)
         find_method = self.files.find_by_auto_envid
         find_name = "scheduled"
 
@@ -198,7 +198,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def rotate_ziplogs(self):
         """Rotate/delete old ziplog files."""
-        st_config = StorageConfig(self.system)
+        st_config = SystemConfig(self.system)
         find_method = self.files.all
         find_name = ""
         file_type = FileManager.FILE_TYPE_ZIPLOG

@@ -58,8 +58,8 @@
         <i class="fa fa-fw fa-angle-${obj.expanded and 'up' or 'down'} expand"></i>
       </a>
       <ul ${obj.expanded and 'class="visible"' or ''}>
-        <li ${obj.active=='storage' and 'class="active"' or ''}>
-          <a href="/configure/storage">
+        <li ${obj.active=='general' and 'class="active"' or ''}>
+          <a href="/configure/general">
             <i class="fa fa-fw fa-edit"></i>
             <span>General</span>
           </a>

@@ -1,6 +1,6 @@
 import ntpath
 
-from storage import StorageConfig
+from general import SystemConfig
 from files import FileManager
 
 from agentinfo import AgentVolumesEntry
@@ -81,7 +81,7 @@ class DiskCheck(object):
         """
 
         try:
-            self.storage_config = StorageConfig(self.server.system)
+            self.storage_config = SystemConfig(self.server.system)
         except ValueError, e:
             raise DiskException(e)
 
@@ -89,7 +89,7 @@ class DiskCheck(object):
         self.set_target_from_config()
 
     def set_target_from_config(self):
-        """Use the user configuration settings from StorageConfig
+        """Use the user configuration settings from SystemConfig
            to set and check a target type and entry, etc.
          """
 
