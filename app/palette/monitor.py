@@ -4,8 +4,9 @@ from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.orm.exc import NoResultFound
 from webob import exc
-import sys
+
 from collections import OrderedDict
+from operator import itemgetter
 
 from akiri.framework.config import store
 
@@ -78,8 +79,8 @@ class MonitorApplication(PaletteRESTHandler):
 
         d = {'name':'type'}
         types = OrderedDict()
-        for key in sorted(EventControl.types().iterkeys()):
-           types[key] = EventControl.types()[key]
+        for key, value in sorted(EventControl.types().items(), key=lambda x: x[1]):
+           types[key] = value
         for t in types:
             if t == c:
                 d['value'] = types[t]
