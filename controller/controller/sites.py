@@ -37,6 +37,13 @@ class Site(meta.Base, BaseMixin):
         return cls.get_unique_by_keys(keys, **kwargs)
 
     @classmethod
+    def get_name_by_id(cls, envid, siteid):
+        entry = cls.get(envid, siteid, default=None)
+        if entry is None:
+            return None
+        return entry.name
+
+    @classmethod
     def all(cls, envid):
         return cls.get_all_by_keys({'envid':envid}, order_by='name')
 
