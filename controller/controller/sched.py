@@ -114,7 +114,7 @@ class Sched(threading.Thread):
         self.add_cron_job(name='extract', minute="3/5")
         self.add_cron_job(name='workbook', minute='3/5')
         self.add_cron_job(name='license_check', minute="4/5")
-        self.add_cron_job(name='checkports', minute="1")
+        self.add_cron_job(name='checkports', minute="1/10")
 
 
 class Crontab(meta.Base, BaseDictMixin):
