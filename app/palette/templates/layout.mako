@@ -66,12 +66,18 @@
 	  License: Tableau
 	</li>
 	{{/license}}
-	{{#ports}}
+	{{#in_ports}}
 	<li>
 	   <i class="fa fa-fw fa-circle {{color}}"></i>
-	   Port: {{name}} ({{num}})
+	   In: {{name}} ({{num}})
 	</li>
-	{{/ports}}
+	{{/in_ports}}
+	{{#out_ports}}
+	<li>
+	   <i class="fa fa-fw fa-circle {{color}}"></i>
+	   Out: {{name}} ({{num}})
+	</li>
+	{{/out_ports}}
 	{{#details}}
 	<li>
 	  <i class="fa fa-fw fa-circle {{color}}"></i>

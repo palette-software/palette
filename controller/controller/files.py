@@ -92,7 +92,16 @@ class FileManager(Manager):
             return None
 
     @classmethod
-    def all(cls, envid, file_type, asc=True):
+    def all(cls, envid, asc=True):
+        q = meta.Session.query(FileEntry)
+        if asc:
+            q = q.order_by(FileEntry.creation_time.asc())
+        else:
+            q = q.order_by(FileEntry.creation_time.desc())
+        return q.all()
+
+    @classmethod
+    def all_by_type(cls, envid, file_type, asc=True):
         q = meta.Session.query(FileEntry).\
             filter(FileEntry.file_type == file_type)
         if asc:

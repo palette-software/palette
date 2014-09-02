@@ -364,6 +364,17 @@
 "event_type":"network"
 },
 {
+"key":"PORT-CONNECTION-FAILED",
+"level":"E",
+"send_email":"t",
+"subject":"ERROR - Port Connection Failed",
+"event_description":"Status: ERROR  \nTime: ${time}  \nServer: ${displayname}\nDetails: ${error}",
+"email_message":"Status: INFO\nTime: ${time}\nServer: ${displayname}\nDetails: ${error}\n\nThis message was sent from your Palette Server at ${server_url}",
+"icon":null,
+"color":"red",
+"event_type":"network"
+},
+{
 "key":"HTTP-BAD-STATUS",
 "level":"E",
 "send_email":"t",

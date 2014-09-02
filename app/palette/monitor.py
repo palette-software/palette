@@ -18,6 +18,7 @@ from controller.agent import Agent
 from controller.agentmanager import AgentManager
 from controller.agentinfo import AgentVolumesEntry
 from controller.firewall_manager import FirewallEntry, FirewallManager
+from controller.ports import PortEntry, PortManager
 from controller.profile import UserProfile, Role
 from controller.state_control import StateControl
 from controller.util import sizestr, DATEFMT
@@ -176,12 +177,12 @@ class MonitorApplication(PaletteRESTHandler):
         return volumes
 
     def firewall_info(self, agent):
-        ports = []
-
         rows = meta.Session.query(FirewallEntry).\
             filter(FirewallEntry.agentid == agent.agentid).\
+            order_by(FirewallEntry.port).\
             all()
 
+        ports = []
         for entry in rows:
             fw_dict = {'name': entry.name,
                         'num': entry.port,
@@ -189,7 +190,23 @@ class MonitorApplication(PaletteRESTHandler):
             }
             ports.append(fw_dict)
 
-        ports = sorted(ports, key=lambda port: port['num'])
+        return ports
+
+    def out_ports(self, agent):
+
+        rows = meta.Session.query(PortEntry).\
+            filter(PortEntry.agentid == agent.agentid).\
+            filter(PortEntry.color != None).\
+            order_by(PortEntry.dest_port).\
+            all()
+
+        ports = []
+        for entry in rows:
+            out_dict = {'name': entry.service_name,
+                        'num': entry.dest_port,
+                        'color': entry.color}
+            ports.append(out_dict)
+
         return ports
 
     def license_info(self, agentid):
@@ -296,15 +313,19 @@ class MonitorApplication(PaletteRESTHandler):
                         agent_color_num = lic_color
 
                 agent['volumes'] = self.volume_info(req, entry)
-                agent['ports'] = self.firewall_info(entry)
+                agent['in_ports'] = self.firewall_info(entry)
+                agent['out_ports'] = self.out_ports(entry)
 
                 vol_lowest_color = self.lowest_color(agent['volumes'])
-                firewall_lowest_color = self.lowest_color(agent['ports'])
+                firewall_lowest_color = self.lowest_color(agent['in_ports'])
+                out_ports_lowest_color = self.lowest_color(agent['out_ports'])
 
                 if vol_lowest_color < agent_color_num:
                     agent_color_num = vol_lowest_color
                 if firewall_lowest_color < agent_color_num:
                     agent_color_num = firewall_lowest_color
+                if out_ports_lowest_color < agent_color_num:
+                    agent_color_num = out_ports_lowest_color
             else:
                 agent_color_num = Colors.RED_NUM
                 msg = 'Disconnected'

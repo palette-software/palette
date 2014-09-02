@@ -1,0 +1,130 @@
+from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
+from sqlalchemy.schema import ForeignKey, UniqueConstraint
+
+from akiri.framework.ext.sqlalchemy import meta
+
+from agent import Agent
+from event_control import EventControl, EventControlManager
+from manager import Manager
+from mixin import BaseDictMixin, BaseMixin
+
+class PortEntry(meta.Base, BaseMixin):
+    __tablename__ = "ports"
+
+    portid = Column(BigInteger, unique=True, nullable=False,
+                             autoincrement=True, primary_key=True)
+
+    envid = Column(BigInteger, ForeignKey("environment.envid"))
+
+
+    dest_host = Column(String, nullable=False)  # host to check
+    dest_port = Column(Integer, nullable=False)  # port to check
+    service_name = Column(String, nullable=False)  # user editable
+    agentid = Column(BigInteger, ForeignKey("agent.agentid"),
+                                                     nullable=False)
+    color = Column(String)   # red or green
+
+    creation_time = Column(DateTime, server_default=func.now())
+    modification_time = Column(DateTime, server_default=func.now(), \
+                               server_onupdate=func.current_timestamp())
+
+    # Can do this only if there is a populated database with agentid 1.
+    defaults = [
+            {
+                "envid":1,
+                "dest_host": "localhost",
+                "dest_port": 80,
+                'service_name': "Localhost port 80",
+                'agentid': 1
+            },
+            {
+                "envid":1,
+                "dest_host": "192.168.2.13",
+                "dest_port": 81,
+                'service_name': "azul port 81",
+                'agentid': 1
+            },
+    ]
+
+class PortManager(Manager):
+
+    def __init__(self, server):
+        super(PortManager, self).__init__(server)
+        self.log = server.log
+
+    def check_ports(self):
+        ports = PortManager.find_by_envid(self.envid)
+
+        report = []
+        for port in ports:
+            port_report = {}
+            state = self.check_port(port)
+            report.append({'state': state,
+                           'dest-host': port.dest_host,
+                           'dest-port': port.dest_port,
+                           'service-name': port.service_name,
+                           'agentid': port.agentid})
+
+        return {'status': 'OK', 'ports': report}
+
+    def check_port(self, entry):
+        """Tests connectivity from an agent to a host/port.
+           Returns "success", "fail", or "unknown" (if agent
+           isn't connected)."""
+
+        agent = self.server.agentmanager.agent_by_agentid(entry.agentid)
+        if not agent:
+            self.log.debug(
+                "check_port: agentid %d not connected.  Will not " + \
+                "check service_name %s dest_host '%s' dest_port '%d'",
+                entry.agentid, entry.service_name, entry.dest_host,
+                entry.dest_port)
+            return "unknown"
+
+        command = "pok %s %d" % (entry.dest_host, entry.dest_port)
+
+        body = self.server.cli_cmd(command, agent)
+
+        if body['exit-status']:
+            self.log.info(
+                "Connection to %s failed (host '%s' port %d)",
+                       entry.service_name, entry.dest_host, entry.dest_port)
+
+            data = agent.todict()
+            data['error'] = "Connection to %s failed (host '%s' port %d)" % \
+                       (entry.service_name, entry.dest_host, entry.dest_port)
+
+            self.server.event_control.gen(
+                                EventControl.PORT_CONNECTION_FAILED, data)
+            color = 'red'
+        else:
+            color = 'green'
+
+        meta.Session.query(PortEntry).\
+            filter(PortEntry.portid == entry.portid).\
+            update({'color': color}, synchronize_session=False)
+
+        meta.Session.commit()
+
+        if body['exit-status']:
+            return 'fail'
+        else:
+            return 'success'
+
+    def populate(self):
+        agent_count = meta.Session.query(Agent).\
+            filter(Agent.envid == self.envid).\
+            count()
+
+        if agent_count:
+            PortEntry.populate()
+
+    @classmethod
+    def find_by_envid(cls, envid):
+        """Return all port entries by envid, sorted by agentid."""
+        return meta.Session.query(PortEntry).\
+            filter(PortEntry.envid == envid).\
+            order_by(PortEntry.agentid).\
+            order_by(PortEntry.dest_port).\
+            all()
+
