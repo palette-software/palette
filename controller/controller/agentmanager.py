@@ -813,6 +813,24 @@ class AgentManager(threading.Thread):
     def all_agents(self):
         return self.agents
 
+    def agent_by_agentid(self, agentid):
+        agents = self.all_agents()
+
+        agent = None
+        for key in agents.keys():
+            self.lock()
+
+            if not agents.has_key(key):
+                # agent is now gone
+                continue
+            agent = agents[key]
+            self.unlock()
+
+            if agent.agentid == agentid:
+                return agent
+
+        return agent
+
     def agent_connected(self, aconn):
         """Check to see if the passed AgentConnection is still connected.
         Returns:

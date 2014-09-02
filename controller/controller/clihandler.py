@@ -17,6 +17,7 @@ from agent import Agent
 from agentmanager import AgentManager
 from agentinfo import AgentYmlEntry
 from event_control import EventControl
+from files import FileManager
 from cloud import CloudManager
 from system import SystemEntry
 from state import StateManager
@@ -777,13 +778,13 @@ class CliHandler(socketserver.StreamRequestHandler):
             agent_dict_list.append(data)
         self.report_status({'agents': agent_dict_list})
 
-    def list_backups(self):
+    def list_files(self):
         s = ''
         # FIXME: per environment
-        backups = []
-        for backup in BackupManager.all(self.server.domain.domainid):
-            backups.append(backup.todict(pretty=True))
-        self.report_status({'backups': backups})
+        files = []
+        for file in FileManager.all(self.server.domain.domainid):
+            files.append(file.todict(pretty=True))
+        self.report_status({'files': files})
 
     @usage('list [agents|backups]')
     def do_list(self, cmd):
@@ -795,8 +796,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         elif len(cmd.args) == 1:
             if cmd.args[0].lower() == 'agents':
                 f = self.list_agents
-            elif cmd.args[0].lower() == 'backups':
-                f = self.list_backups
+            elif cmd.args[0].lower() == 'files':
+                f = self.list_files
         if f is None:
             self.print_usage(self.do_list.__usage__)
             return
@@ -994,6 +995,31 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             self.report_status(body)
         return
+
+    @usage('portcheck')
+    def do_checkports(self, cmd):
+        """Check on all outgoing port connections."""
+
+        if len(cmd.args):
+                self.print_usage(self.do_checkports.__usage__)
+                return
+
+        if self.server.upgrading():
+            self.error(ERROR_WRONG_STATE, "Upgrading")
+            return
+
+        stateman = self.server.stateman
+        main_state = stateman.get_state()
+        if main_state in (StateManager.STATE_PENDING,
+                          StateManager.STATE_DISCONNECTED,
+                          StateManager.STATE_UNKNOWN):
+            self.error(ERROR_WRONG_STATE, main_state)
+            return
+
+        self.ack()
+
+        body = self.server.ports.check_ports()
+        self.report_status(body)
 
     @usage('firewall { status | { enable | disable } port [port] }')
     def do_firewall(self, cmd):
