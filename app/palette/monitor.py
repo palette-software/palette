@@ -361,10 +361,7 @@ class MonitorApplication(PaletteRESTHandler):
         environments = [ { "name": "My Servers", "agents": agents } ]
 
         config = [self.status_options(req),
-                  self.type_options(req),
-                  self.site_options(req),
-                  self.publisher_options(req),
-                  self.project_options(req)]
+                  self.type_options(req)]
 
         monitor_ret = {'state': main_state,
                        'allowable-actions': allowable_actions,
