@@ -62,7 +62,7 @@ function ($, topic, template, common, EditBox, OnOff)
         });
     });
 
-    common.startMonitor();
+    common.startMonitor(false);
 
     $.ajax({
         url: '/rest/users',

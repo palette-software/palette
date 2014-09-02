@@ -1,7 +1,7 @@
 require(['jquery', 'template', 'common', 'OnOff', 'bootstrap'],
 function ($, template, common, OnOff)
 {
-    common.startMonitor();
+    common.startMonitor(false);
 
     var dropdown_template = $('#dropdown-template').html();
     template.parse(dropdown_template);
