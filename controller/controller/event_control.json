@@ -328,7 +328,7 @@
 "email_message":"Status: TEST\nServer: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails: ${info}\nTableau Server URL: ${tableau_server_url}\n\nThis is a test email.\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
-"event_type":"status"
+"event_type":"server"
 },
 {
 "key":"EXTRACT-FAILED",
@@ -361,7 +361,7 @@
 "email_message":"Status: INFO\nTime: ${time}\nServer: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"firewall"
+"event_type":"network"
 },
 {
 "key":"HTTP-BAD-STATUS",
@@ -526,7 +526,7 @@
 "email_message":"Server: ${displayname}\nUsername: ${username}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"server"
 },
 {
 "key":"RESTORE-FAILED",
@@ -570,7 +570,7 @@
 "email_message":"Status: ERROR\nDetails: ${stderr}\nAdditional Details: ${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
-"event_type":"status"
+"event_type":"server"
 },
 {
 "key":"SCHEDULE-JOB-STARTED",
@@ -581,7 +581,7 @@
 "email_message":"Server: ${displayname}\nDetails: ${stdout}\nAdditional Details: ${info}",
 "icon":null,
 "color":"green",
-"event_type":"status"
+"event_type":"server"
 },
 {
 "key":"STATE-DEGRADED",
@@ -691,7 +691,7 @@
 "email_message":"Status: ERROR\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"yellow",
-"event_type":"status"
+"event_type":"server"
 },
 {
 "key":"ZIPLOGS-FAILED",
