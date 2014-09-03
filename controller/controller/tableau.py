@@ -154,10 +154,10 @@ class TableauStatusMonitor(threading.Thread):
             if status == TableauProcess.STATUS_RUNNING:
                 # StateManager calls the state "STARTED"; Tableau calls
                 # it "RUNNING".
-                self.server.event_control.gen(\
+                self.server.event_control.gen(
                     EventControl.INIT_STATE_STARTED, data)
             elif status == TableauProcess.STATUS_STOPPED:
-                self.server.event_control.gen(\
+                self.server.event_control.gen(
                     EventControl.INIT_STATE_STOPPED, data)
             elif status == TableauProcess.STATUS_DEGRADED:
                 self.server.event_control.gen(EventControl.INIT_STATE_DEGRADED,
@@ -168,13 +168,14 @@ class TableauStatusMonitor(threading.Thread):
         # update the main state.
         if main_state == StateManager.STATE_DEGRADED and \
                                 status != TableauProcess.STATUS_DEGRADED:
-            self.stateman.update(status)
             if status == TableauProcess.STATUS_RUNNING:
-                self.server.event_control.gen(\
+                self.stateman.update(status)
+                self.server.event_control.gen(
                     EventControl.STATE_STARTED_AFTER_DEGRADED,
                     agent.todict())
             elif status == TableauProcess.STATUS_STOPPED:
-                self.server.event_control.gen(\
+                self.stateman.update(StateManager.STATE_STOPPED_UNEXPECTED)
+                self.server.event_control.gen(
                     EventControl.STATE_UNEXPECTED_STOPPED_AFTER_DEGRADED,
                     agent.todict())
             else:
@@ -188,13 +189,14 @@ class TableauStatusMonitor(threading.Thread):
                                         status == TableauProcess.STATUS_RUNNING:
             self.log.debug("Updating main state to %s", status)
             self.stateman.update(StateManager.STATE_STARTED)
-            self.server.event_control.gen(\
+            self.server.event_control.gen(
                 EventControl.STATE_UNEXPECTED_STATE_STARTED, data)
         elif main_state == StateManager.STATE_STARTED and \
                 status == TableauProcess.STATUS_STOPPED:
-            self.log.debug("Updating main state to %s", status)
-            self.stateman.update(StateManager.STATE_STOPPED)
-            self.server.event_control.gen(\
+            self.log.debug("Updating main state to %s",
+                                        StateManager.STATE_STOPPED_UNEXPECTED)
+            self.stateman.update(StateManager.STATE_STOPPED_UNEXPECTED)
+            self.server.event_control.gen(
                 EventControl.STATE_UNEXPECTED_STATE_STOPPED, data)
         elif status == TableauProcess.STATUS_DEGRADED and \
                 main_state != TableauProcess.STATUS_DEGRADED:

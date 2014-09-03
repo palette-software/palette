@@ -28,6 +28,12 @@
 "state":"STOPPED",
 "text":"Tableau Stopped",
 "allowable_actions":"start backup restore reset restart",
+"color":"yellow"
+},
+{
+"state":"STOPPED-UNEXPECTED",
+"text":"Tableau Stopped Unexpectedly",
+"allowable_actions":"start backup restore reset restart",
 "color":"red"
 },
 {

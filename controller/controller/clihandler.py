@@ -337,7 +337,9 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         if cmd.args[0] == 'on':
             if main_state not in (StateManager.STATE_STARTED,
-                    StateManager.STATE_STOPPED, StateManager.STATE_DEGRADED,
+                    StateManager.STATE_STOPPED,
+                    StateManager.STATE_STOPPED_UNEXPECTED,
+                    StateManager.STATE_DEGRADED,
                     StateManager.STATE_DISCONNECTED,
                     StateManager.STATE_UPGRADING, StateManager.STATE_UNKNOWN):
 
@@ -405,7 +407,8 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # Backups can be done when Tableau is started, degraded or stopped.
         if main_state not in (StateManager.STATE_STARTED,
-                    StateManager.STATE_DEGRADED, StateManager.STATE_STOPPED):
+                    StateManager.STATE_DEGRADED, StateManager.STATE_STOPPED,
+                    StateManager.STATE_STOPPED_UNEXPECTED):
             self.error(ERROR_BUSY, "FAIL: Can't backup - main state is: %s",
                                                                   main_state)
             self.server.log.debug("Can't backup - main state is: %s",
@@ -517,7 +520,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         if main_state in (StateManager.STATE_STARTED,
                                                 StateManager.STATE_DEGRADED):
             stateman.update(StateManager.STATE_STARTED_FILEDEL)
-        elif main_state == StateManager.STATE_STOPPED:
+        elif main_state in (StateManager.STATE_STOPPED,
+                            StateManager.STATE_STOPPED_UNEXPECTED):
             stateman.update(StateManager.STATE_STOPPED_FILEDEL)
         else:
             self.error(ERROR_WRONG_STATE,
@@ -633,7 +637,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Backups can be done when Tableau is either started, degraded
         # or stopped.
         if main_state not in (StateManager.STATE_STARTED,
-                    StateManager.STATE_DEGRADED, StateManager.STATE_STOPPED):
+                    StateManager.STATE_DEGRADED, StateManager.STATE_STOPPED,
+                    StateManager.STATE_STOPPED_UNEXPECTED):
             self.error(ERROR_WRONG_STATE,
                 "FAIL: Can't backup before restore - main state is: %s",
                                                                   main_state)
@@ -1100,7 +1105,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         main_state = stateman.get_state()
 
         # Start can be done only when Tableau is stopped.
-        if main_state != StateManager.STATE_STOPPED:
+        if main_state not in (StateManager.STATE_STOPPED,
+                              StateManager.STATE_STOPPED_UNEXPECTED):
             self.error(ERROR_WRONG_STATE,
                                 "Can't start - main state is: " + main_state)
             aconn.user_action_unlock()
@@ -1791,7 +1797,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         if main_state in (StateManager.STATE_STARTED,
                                                 StateManager.STATE_DEGRADED):
             stateman.update(StateManager.STATE_STARTED_ZIPLOGS)
-        elif main_state == StateManager.STATE_STOPPED:
+        elif main_state in (StateManager.STATE_STOPPED,
+                            StateManager.STATE_STOPPED_UNEXPECTED):
             stateman.update(StateManager.STATE_STOPPED_ZIPLOGS)
         else:
             self.error(ERROR_WRONG_STATE,
@@ -1837,7 +1844,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         if main_state in (StateManager.STATE_STARTED,
                                         StateManager.STATE_DEGRADED):
             stateman.update(StateManager.STATE_STARTED_CLEANUP)
-        elif main_state == StateManager.STATE_STOPPED:
+        elif main_state in (StateManager.STATE_STOPPED,
+                            StateManager.STATE_STOPPED_UNEXPECTED):
             stateman.update(StateManager.STATE_STOPPED_CLEANUP)
         else:
             self.error(ERROR_WRONG_STATE,
