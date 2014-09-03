@@ -668,7 +668,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.stateman.update(orig_state)
                 return stop_body
 
-            self.event_control.gen(EventControl.STATE_STOPPED, data, userid=userid)
+            self.event_control.gen(EventControl.STATE_STOPPED, data,
+                                   userid=userid)
 
         # 'tabadmin restore ...' starts tableau as part of the
         # restore procedure.
@@ -716,7 +717,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if restore_success:
             self.stateman.update(StateManager.STATE_STARTED)
-            self.event_control.gen(EventControl.STATE_STARTED, data, userid=userid)
+            self.event_control.gen(EventControl.STATE_STARTED, data,
+                                   userid=userid)
         else:
             # On a successful restore, tableau starts itself.
             # fixme: eventually control when tableau is started and
@@ -736,7 +738,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             else:
                 # The "tableau start" succeeded
                 self.stateman.update(StateManager.STATE_STARTED)
-                self.event_control.gen(EventControl.STATE_STARTED, data, userid=userid)
+                self.event_control.gen(EventControl.STATE_STARTED, data,
+                                       userid=userid)
 
         if 'info':
             restore_body['info'] = info.strip()
