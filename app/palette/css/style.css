@@ -11,7 +11,7 @@ html, body {
     position: relative;
 }
 body {
-    background: #ececec;
+    background: #f8f8f8;
 }
 h1 {
     font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
@@ -83,7 +83,7 @@ i.tableau {
     background: #fff;
     position: fixed;
     height: 67px;
-    border-bottom: 7px solid #8D96A3;
+    border-bottom: 3px solid #8D96A3;
     display: block;
     width: 100%;
     top: 0;
@@ -118,10 +118,11 @@ article.popup .popup-body {
     width: 90%;
     max-width: 400px;
     margin:0 auto;
-    background-color: #fff;
+    background-color: #fafafa;
     position: relative;
     z-index: 9999;
 }
+/*
 article.popup .shade {
     content: "";
     display: block;
@@ -135,6 +136,7 @@ article.popup .shade {
     background-color: rgba(0,0,0,0.2);
     z-index: 9998;
 }
+*/
 article.popup p {
     font-size: 17px;
 }
@@ -147,9 +149,8 @@ article.popup p {
     left: 250px;
     width: 300px;
     background-color: #555A60;
-    color: #fff;
+    color: white;
     z-index: 20;
-    color:#fff;
     -webkit-transition: all 0.3s ease-out;
     -moz-transition: all 0.3s ease-out;
     -ms-transition: all 0.3s ease-out;
@@ -161,22 +162,29 @@ article.popup p {
     max-width: 600px;
     white-space: nowrap;
 }
+.secondary-side-bar h1, .secondary-side-bar h2, .secondary-side-bar h3, .secondary-side-bar h4, .secondary-side-bar h5 {
+    color: white;
+}
 .secondary-side-bar.servers {
     width: 0px;
 }
 .secondary-side-bar.servers.servers-visible {
     width: 300px;
 }
-.secondary-side-bar h5, .secondary-side-bar h2 {
+.secondary-side-bar h1, .secondary-side-bar h2, .secondary-side-bar h5 {
     width: 100%;
     padding: 0 0 0 26px;
     overflow: visible;
     white-space: nowrap;
     text-overflow:ellipsis;
-    margin: 38px 0 8px 0;
+    margin: 32px 0 8px 0;
     font-size: 16px;
     font-weight: 300;
     text-transform: uppercase;
+}
+.secondary-side-bar h1 {
+    line-height: 30px;
+    font-size: 28px;
 }
 .secondary-side-bar h2 {
     font-size: 22px;
@@ -184,19 +192,17 @@ article.popup p {
 .secondary-side-bar h5.sub {
     padding: 10px 0 0 26px;
     margin: 0 0 5px 0;
-    color: #D3D3D3;
     font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
     font-size: 14px;
     text-transform: none;
+    
 }
 .secondary-side-bar h5.backup-page, .secondary-side-bar h5.logs-page {
     margin-top: 50px;
-    color: #8e96a3;
 }
 .secondary-side-bar h5 i {
     text-align: left;
     font-size: 28px;
-    color: #8e96a3;
     vertical-align: middle;
 }
 .secondary-side-bar ul {
@@ -209,10 +215,10 @@ article.popup p {
 }
 
 .secondary-side-bar ul > li.backup {
-    color: #d3d3d3;
+    color: white;
     padding: 0;
     margin: 0 0 5px 0;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 500;
 }
 
@@ -222,33 +228,43 @@ article.popup p {
     position: relative;
     display: block;
     padding: 12px 0 12px 25px;
-    color: #fff;
     -webkit-transition: all 0.1s ease-in;
     -moz-transition: all 0.1s ease-in;
     -ms-transition: all 0.1s ease-in;
     -o-transition: all 0.1s ease-in;
     transition: all 0.1s ease-in;
     cursor: pointer;
+    color: white;
+    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+}
+.secondary-side-bar ul > li a span.filename {
+    display: none;
 }
 .secondary-side-bar ul > li a:hover {
-    background-color: rgba(250, 250, 250, 0.1);
-    color: #fff;
+    color: white;
+    background-color: rgba(250,250,250,0.1);
     text-decoration: none;
 }
+/*
 .secondary-side-bar ul > li a.visible {
-    background-color: rgba(250, 250, 250, 0.2);
+    background-color: #fafafa;
 }
+*/
 .secondary-side-bar ul > li a.inactive, .secondary-side-bar ul.actions > li a.inactive, .secondary-side-bar ul.actions > li a.inactive i {
     color: #444;
 }
+/*
 .secondary-side-bar ul > li a.inactive:hover, .secondary-side-bar ul.actions > li a.inactive:hover, .secondary-side-bar ul.actions > li a.inactive:hover i {
     cursor: default;
     background: none;
     color: #444;
 }
+*/
+/*
 .secondary-side-bar ul > li a.inactive:active, .secondary-side-bar ul.actions > li a.inactive:active {
     box-shadow: 0 0;
 }
+*/
 .secondary-side-bar > ul > li > a > i {
     line-height: 40px;
     font-size: 40px;
@@ -257,7 +273,7 @@ article.popup p {
     color: #8E96A3;
     position: relative;
 }
-
+/*
 .secondary-side-bar > ul > li > a > i.warning {
     color: #DC994C;
 }
@@ -267,6 +283,7 @@ article.popup p {
 .secondary-side-bar > ul > li > a > i.stopped {
     color: #EF5455;
 }
+*/
 .secondary-side-bar ul > li h5 {
     position: relative;
     margin: 0 0 10px 0;
@@ -279,7 +296,6 @@ article.popup p {
     white-space: nowrap;
     display: block;
     float: left;
-    color:#c9cbcf;
 }
 .secondary-side-bar ul.server-list > li > a {
     height: 100px;
@@ -294,7 +310,6 @@ article.popup p {
     margin: 0 0 0 0;
     font-size: 16px;
     font-weight: 300;
-    color: #8e96a3;
     vertical-align: bottom;
     width: 100%;
     overflow: hidden;
@@ -317,9 +332,8 @@ article.popup p {
     top: 0;
     left: 240px;
     font-size: 26px;
-    color: #8e96a3;
 }
-
+/*
 .secondary-side-bar ul.Logs li a {
     padding: 0 25px;
     line-height: 32px;
@@ -337,6 +351,7 @@ article.popup p {
 .secondary-side-bar ul.Logs {
     margin-bottom: 15px;
 }
+*/
 .secondary-side-bar ul.actions li.active a {
     background-color:rgba(0,0,0,0.1);
     box-shadow:0 -2px rgba(0,0,0,0.1);
@@ -480,9 +495,10 @@ ul.dropdown-menu a {
     font-weight: 300;
     color: #fff;
 }
+
 ul.dropdown-menu a:hover {
     background-color: rgba(0,0,0,0.1);
-    color: #fff;
+    color: white;
 }
 .main-side-bar {
     height: 100%;
@@ -517,7 +533,7 @@ ul.dropdown-menu a:hover {
     display: block;
     height: 120px;
     background-color: #F8F8F8;
-    border-right: 0px solid #8D96A3;
+    border-right: 1px solid #8D96A3;
 }
 .main-side-bar .status:hover {
     cursor: pointer;
@@ -535,20 +551,20 @@ ul.dropdown-menu a:hover {
     -o-transition: all 0.2s ease-in;
     transition: all 0.2s ease-in;
 }
-.main-side-bar .status h2 {
+.main-side-bar .status h1 {
     position: absolute;
-    top: 27px;
+    top: 32px;
     left: 15px;
     font-size: 28px;
-    line-height: 39px;
+    line-height: 30px;
     margin: 0;
     font-weight: 300;
-    color: #A9A7AC;
+    color: #697078;
 }
 .main-side-bar .status h3 {
     font-family: "Proxima Nova Regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     position: absolute;
-    top: 83px;
+    top: 84px;
     left: 16px;
     display: block;
     color: #697078;
@@ -570,13 +586,15 @@ ul.dropdown-menu a:hover {
 .main-side-bar .status h3.red {
     color: #ef5455;
 }
-
+/*
 .main-side-bar.collapsed {
     width: 64px;
 }
+*/
 .secondary-side-bar.collapsed {
     left: 60px;
 }
+/*
 .dynamic-content.collapsed {
     left: 384px;
 }
@@ -598,6 +616,7 @@ ul.dropdown-menu a:hover {
 .main-side-bar.collapsed .actions li a i {
     display: block;
 }
+*/
 .main-side-bar ul.actions li.active a {
     background-color:rgba(0,0,0,0.1);
     box-shadow:0 -2px rgba(0,0,0,0.1);
@@ -719,7 +738,7 @@ ul.processes.visible {
 }
 
 .main-side-bar > ul.actions li i {
-    color: #b6bbc2;
+    color: #ffffff;
     font-size: 27px;
     line-height: 55px;
     margin: 0 7px 0 15px;
@@ -733,7 +752,7 @@ ul.processes.visible {
     display: block;
     font-size: 16px;
     letter-spacing: .6px;
-    color: #b6bbc2;
+    color: #ffffff;
     vertical-align: top;
     position: relative;
     -webkit-transition: all 0.1s ease-in;
@@ -748,7 +767,6 @@ ul.processes.visible {
 }
 .main-side-bar > ul.actions li a:hover {
     text-decoration: none;
-    background-color: rgba(250, 250, 250, 0.1);
     color: #ffffff;
 }
 .main-side-bar > ul.actions li a:hover i {
@@ -780,7 +798,7 @@ ul.processes.visible {
     list-style-type: none;
 }
 .secondary-side-bar > ul.actions li i {
-    color: #8e96a3;
+    color: #ffffff;
     font-size: 25px;
     line-height: 55px;
     margin: 0 0px 0 4px;
@@ -794,7 +812,7 @@ ul.processes.visible {
     width: 100%;
     display: block;
     font-size: 18px;
-    color: #fff;
+    color: #ffffff;
     font-weight: 500;
     vertical-align: top;
     position: relative;
@@ -808,10 +826,12 @@ ul.processes.visible {
     text-overflow:ellipsis;
     white-space: nowrap;
 }
+/*
 .secondary-side-bar ul.actions li a:active {
     background-color: rgba(0, 0, 0, 0.1);
     box-shadow: 0 -2px rgba(0, 0, 0, 0.1);
 }
+*/
 .secondary-side-bar ul.actions li.divider {
     height: 2px;
     display: block;
@@ -831,19 +851,20 @@ ul.processes.visible {
     color: #697078;
     text-decoration: underline;
 }
-
 .secondary-side-bar h2 {
     color:white;
 }
 .dynamic-content.with-secondary-sidebar {
     left: 550px;
 }
+/*
 .home-events .dynamic-content.servers-visible {
     left: 550px;
 }
 .home-events .dynamic-content.collapsed {
     left: 60px;
 }
+*/
 .secondary-side-bar.servers-visible {
     left: 550px;
 }
@@ -913,11 +934,6 @@ ul.processes.visible {
 .btn-group>.btn, .btn-group-vertical>.btn {
     padding-right: 30px;
 }
-.dynamic-content .top-zone .btn-group, #event-count {
-    display: inline-block;
-    margin:10px 0 25px 10px;
-    white-space: nowrap;
-}
 .dynamic-content .top-zone .btn-group:first-of-type {
     margin-left: 0;
 }
@@ -965,11 +981,15 @@ h1.page-title {
     font-size: 28px;
     display: inline-block;
     line-height: 32px;
-    margin: 35px 0 32px 0;
+    margin: 32px 0 12px 0;
     color: #697078;
     vertical-align: bottom;
     text-transform: uppercase;
 }
+.about-page h1.page-title, .profile-page h1.page-title, .general-page h1.page-title, .integration h1.page-title {
+    margin-bottom: 20px;
+}
+
 #mainNav a.site-id {
     background-image: url('/app/module/palette/images/palette_logo_600dpi-2.png');
     background-size: 100%;
@@ -1629,8 +1649,11 @@ div.refresh {
     font-size: 26px;
     color:#fff;
 }
-.event-dropdowns {
-    height: 67px;
+.filter-dropdowns {
+    margin-bottom: 11px;
+}
+.filter-dropdowns div {
+    margin-right: 10px;
 }
 #type-dropdown, #status-dropdown {
     min-width: 150px;
@@ -1806,8 +1829,12 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
     font-size: 16px;
     position: relative;
     vertical-align: middle;
-    min-width: 85px;
+    min-width: 100px;
     text-align: right;
+    display: inline-block;
+    /*margin:10px 0 25px 10px;*/
+    white-space: nowrap;
+
 }
 .event-pagination {
     display: none;

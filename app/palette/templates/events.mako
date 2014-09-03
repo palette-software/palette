@@ -14,7 +14,7 @@
     </section>
   </section>
   <section class="row">
-    <section class="col-xs-12 event-dropdowns">
+    <section class="col-xs-12 filter-dropdowns">
       <div id="event-count"><span>0</span> Events</div>
       <div id="status-dropdown" class="btn-group"></div>
       <div id="type-dropdown" class="btn-group"></div>

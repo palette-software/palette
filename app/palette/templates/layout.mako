@@ -40,7 +40,7 @@
 
 <script id="server-list-template" type="x-tmpl-mustache">
   {{#environments}}
-  <h2>{{name}}</h2>
+  <h1>{{name}}</h1>
   <ul class="server-list">
     {{#agents}}
     <li>

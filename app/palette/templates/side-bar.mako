@@ -1,7 +1,7 @@
 <section class="main-side-bar">
   <section class="status">
     <img id="status-image" src="/app/module/palette/images/blank.png" />
-    <h2>Status</h2>
+    <h1>STATUS</h1>
     <h3 id="status-text"></h3>
     <i class="fa fa-fw fa-angle-right" id="expand-right"></i>
   </section>
