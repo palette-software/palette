@@ -38,7 +38,7 @@ class GCSApplication(PaletteRESTHandler):
     @required_parameters('value')
     def handle_access_key_POST(self, req):
         v = req.POST['value']
-        entry = self.get()
+        entry = self.get(req.envid)
         entry.access_key = v
         meta.Session.commit()
         return {'value':v}
@@ -46,7 +46,7 @@ class GCSApplication(PaletteRESTHandler):
     @required_parameters('value')
     def handle_secret_POST(self, req):
         v = req.POST['value']
-        entry = self.get()
+        entry = self.get(req.envid)
         entry.secret = v
         meta.Session.commit()
         value = v and FAKEPW or ''
@@ -59,7 +59,7 @@ class GCSApplication(PaletteRESTHandler):
             v = v[5:]
         elif v.find('https://storage.googleapis.com/') == 0:
             v = v[31:]
-        entry = self.get()
+        entry = self.get(req.envid)
         entry.bucket = v
         meta.Session.commit()
         return {'value':v}
