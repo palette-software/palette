@@ -778,21 +778,50 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     (file_entry.storageid, file_entry.name,
                     file_entry.storageid))}
 
+    def move_bucket_subdirs_to_path(self, in_bucket, in_path):
+        """ Given:
+                in_bucket: palette-storage/subdir/dir2
+                in_path:   filename
+            return:
+                bucket:    palette-storage
+                path:      subdir/dir2/filename
+        """
+
+        if in_bucket.find('/') != -1:
+            bucket, rest = in_bucket.split('/', 1)
+            path = os.path.join(rest, in_path)
+        elif in_bucket.find('\\') != -1:
+            bucket, rest = in_bucket.split('\\', 1)
+            path = ntpath.join(rest, in_path)
+        else:
+            bucket = in_bucket
+            path = in_path
+        return (bucket, path)
+
     def delete_s3_file(self, entry, path):
+        # Move any bucket subdirectories to the filename
+        bucket_name, filename = \
+                        self.move_bucket_subdirs_to_path(entry.bucket, path)
+
         # fixme: use temporary token if configured for it
         conn = connection.S3Connection(entry.access_key, entry.secret)
-        bucket = connection.Bucket(conn, entry.bucket)
+
+        bucket = connection.Bucket(conn, bucket_name)
 
         dk = connection.Key(bucket)
-        dk.key = path
+        dk.key = filename
         bucket.delete_key(dk)
 
     def delete_gcs_file(self, entry, path):
+        # Move any bucket subdirectories to the filename
+        bucket_name, filename = \
+                        self.move_bucket_subdirs_to_path(entry.bucket, path)
+
         conn = boto.connect_gs(entry.access_key, entry.secret)
-        bucket = conn.get_bucket(entry.bucket)
+        bucket = conn.get_bucket(bucket_name)
 
         dk = boto.s3.key.Key(bucket)
-        dk.key = path
+        dk.key = filename
 
         try:
             dk.delete()
@@ -800,7 +829,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             raise IOError(
                     ("Failed to delete '%s' from Google Cloud Storage " + \
                     "bucket '%s': %s") % \
-                    (path, entry.bucket, str(e)))
+                    (filename, bucket_name, str(e)))
 
     def gcs_cmd(self, agent, action, cloud_entry, data_dir, full_path):
 
