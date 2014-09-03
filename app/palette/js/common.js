@@ -15,6 +15,46 @@ function ($, topic, template)
     var event_dropdown_template = $('#event-dropdown-template').html();
     template.parse(event_dropdown_template);
 
+    /* MONITOR TIMER */
+    var interval = 1000; //ms - FIXME: make configurable from the backend.
+    var timer = null;
+    var current = null;
+    var needEvents = true;
+
+    var status_color = null;
+    var status_text = null;
+
+    /*
+     * setCookie()
+     */
+    function setCookie(cname, cvalue, exdays) {
+        var value = cname + "=" + cvalue.replace(" ", "_");
+        if (exdays != undefined) {
+            var d = new Date();
+            d.setTime(d.getTime() + (exdays*24*60*60*1000));
+            value += "; expires="+d.toUTCString();
+        }
+        value += '; path=/';
+        document.cookie = value;
+    }
+
+    /*
+     * getCookie()
+     */
+    function getCookie(cname) {
+        var name = cname + "=";
+        var ca = document.cookie.split(';');
+        for(var i=0; i<ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0)==' ') {
+                c = c.substring(1);
+            }
+            if (c.indexOf(name) != -1)
+                return c.substring(name.length, c.length);
+        }
+        return null;
+    }
+
      /*
      * bindStatus()
      * Make the clicking on the status box show the server list.
@@ -312,6 +352,49 @@ function ($, topic, template)
     }
 
     /*
+     * setStatusColor() {
+     */
+    function setStatusColor(color) {
+
+        if (color == status_color)
+            return;
+
+        var $i = $('#status-icon')
+
+        /* FIXME: do this with LESS */
+        if (color == 'green') {
+            $i.removeClass('fa-exclamation-circle yellow');
+            $i.removeClass('fa-times-circle red');
+            $i.addClass('fa-check-circle green');
+        } else if (color == 'yellow') {
+            $i.removeClass('fa-check-circle green');
+            $i.removeClass('fa-times-circle red');
+            $i.addClass('fa-exclamation-circle yellow');
+        } else if (color == 'red') {
+            $i.removeClass('fa-check-circle green');
+            $i.removeClass('fa-exclamation-circle yellow');
+            $i.addClass('fa-times-circle red');
+        } else {
+            return;
+        }
+        status_color = color;
+        setCookie('status_color', color);
+    }
+
+    /*
+     * setStatusText() {
+     */
+    function setStatusText(text) {
+
+        if (text == status_text)
+            return;
+
+        $('#status-text').html(text);
+        status_text = text;
+        setCookie('status_text', text);
+    }
+
+    /*
      * updateEventList
      */
     function updateEventList(data) {
@@ -387,20 +470,6 @@ function ($, topic, template)
         setupEventPagination();
     }
 
-    /* Code run automatically when 'common' is included */
-    $().ready(function() {
-        setupHeaderMenus();
-        setupCategories();
-        bindStatus();
-    });
-
-
-    /* MONITOR TIMER */
-    var interval = 1000; //ms - FIXME: make configurable from the backend.
-    var timer = null;
-    var current = null;
-    var needEvents = true;
-
     function update(data)
     {
         var state = data['state']
@@ -418,12 +487,10 @@ function ($, topic, template)
         current = json;
 
         var text = data['text'] != null ? data['text'] : 'SERVER ERROR';
-        $('#status-text').html(text);
+        setStatusText(text);
 
         var color = data['color'] != null ? data['color'] : 'red';
-        var src = '/app/module/palette/images/status-'+color+'-light.png';
-        $('#status-image').attr('src', src);
-
+        setStatusColor(color);
         updateEvents(data);
 
         var rendered = template.render(server_list_template, data);
@@ -551,7 +618,14 @@ function ($, topic, template)
     function ajaxError(jqXHR, textStatus, errorThrown) {
         alert(this.url + ': ' + jqXHR.status + " (" + errorThrown + ")");
         location.reload();
-    }        
+    }
+
+        /* Code run automatically when 'common' is included */
+    $().ready(function() {
+        setupHeaderMenus();
+        setupCategories();
+        bindStatus();
+    });
 
     return {'state': current,
             'customDataAttributes': customDataAttributes,
