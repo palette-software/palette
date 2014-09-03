@@ -2,20 +2,28 @@
   <section class="row">
     <section class="col-xs-12">
       <h1 class="page-title">Events</h1>
-      <div class="event-pagination">
-	<div>
-	  Page <span class="page-number"></span> of <span class="page-count"> </span>
-	</div>
-	<span class="first"><a href="#">first</a> |</span>
-	<span class="previous"><a href="#">previous</a> |</span>
-	<span class="next"><a href="#">next</a> |</span>
-	<span class="last"><a href="#">last</a></span>
+      <div class="pagenav">
+        <div class="count"><span>0</span> Events</div>
+        <span class="first">
+          <a href="#"><i class="fa fa-angle-double-left"></i></a>&nbsp;
+        </span>
+        <span class="previous">
+          <a href="#"><i class="fa fa-angle-left"></i></a>
+        </span>
+	    <div class="numbering">
+	      &nbsp;Page <span class="page-number"></span> of <span class="page-count"></span>
+	    </div>
+        <span class="next">
+          <a href="#"><i class="fa fa-angle-right"></i></a>&nbsp;
+        </span>
+        <span class="last">
+          <a href="#"><i class="fa fa-angle-double-right"></i></a>
+        </span>
       </div>
     </section>
   </section>
   <section class="row">
     <section class="col-xs-12 filter-dropdowns">
-      <div id="event-count"><span>0</span> Events</div>
       <div id="status-dropdown" class="btn-group"></div>
       <div id="type-dropdown" class="btn-group"></div>
     </section>
@@ -23,15 +31,23 @@
 </section>
 <section class="bottom-zone">
   <section id="event-list"></section>
-  <section class="event-pagination">
-    <div>
-    Page <span class="page-number"></span> of <span class="page-count"> </span>
-    </div>
-    <span class="first"><a href="#">first</a> |</span>
-    <span class="previous"><a href="#">previous</a> |</span>
-    <span class="next"><a href="#">next</a> |</span>
-    <span class="last"><a href="#">last</a></span>
-  </section>
+  <div class="pagenav">
+    <span class="first">
+      <a href="#"><i class="fa fa-angle-double-left"></i></a>&nbsp;
+    </span>
+    <span class="previous">
+      <a href="#"><i class="fa fa-angle-left"></i></a>
+    </span>
+	<div class="numbering">
+	  &nbsp;Page <span class="page-number"></span> of <span class="page-count"></span>
+	</div>
+    <span class="next">
+      <a href="#"><i class="fa fa-angle-right"></i></a>&nbsp;
+    </span>
+    <span class="last">
+      <a href="#"><i class="fa fa-angle-double-right"></i></a>
+    </span>
+  </div>
 </section>
 
 <script id="event-list-template" type="x-tmpl-mustache">
