@@ -66,6 +66,13 @@ class PortManager(Manager):
         report = []
         for port in ports:
             if port.active == False:
+                # update color and notified_color to neutral
+                meta.Session.query(PortEntry).\
+                    filter(PortEntry.portid == port.portid).\
+                    update({'color': None, 'notified_color': None},
+                           synchronize_session=False)
+
+                meta.Session.commit()
                 continue
 
             port_report = {}
