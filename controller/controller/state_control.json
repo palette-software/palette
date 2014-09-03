@@ -40,37 +40,37 @@
 "state":"STOPPED-RESTORE",
 "text":"Tableau Stopped",
 "allowable_actions":"",
-"color":"red"
+"color":"yellow"
 },
 {
 "state":"STOPPED-BACKUP",
 "text":"Tableau Stopped",
 "allowable_actions":"",
-"color":"red"
+"color":"yellow"
 },
 {
 "state":"STOPPED-BACKUP-RESTORE",
 "text":"Tableau Stopped",
 "allowable_actions":"",
-"color":"red"
+"color":"yellow"
 },
 {
 "state":"STOPPED-FILEDEL",
 "text":"Tableau Stopped",
 "allowable_actions":"",
-"color":"red"
+"color":"yellow"
 },
 {
 "state":"STOPPED-ZIPLOGS",
 "text":"Tableau Stopped",
 "allowable_actions":"",
-"color":"red"
+"color":"yellow"
 },
 {
 "state":"STOPPED-CLEANUP",
 "text":"Tableau Stopped",
 "allowable_actions":"",
-"color":"red"
+"color":"yellow"
 },
 {
 "state":"STARTING",
@@ -82,7 +82,7 @@
 "state":"STARTING-RESTORE",
 "text":"Tableau Stopped",
 "allowable_actions":"",
-"color":"red"
+"color":"yellow"
 },
 {
 "state":"STARTED",
