@@ -266,14 +266,14 @@ function ($, topic, template)
      * Enable the next, previous, etc links.
      */
     function setupEventPagination() {
-        $('.event-pagination .next a').off('click');
-        $('.event-pagination .next a').bind('click', nextPage);
-        $('.event-pagination .previous a').off('click');
-        $('.event-pagination .previous a').bind('click', prevPage);
-        $('.event-pagination .first a').off('click');
-        $('.event-pagination .first a').bind('click', firstPage);
-        $('.event-pagination .last a').off('click');
-        $('.event-pagination .last a').bind('click', lastPage);
+        $('.pagenav .next a').off('click');
+        $('.pagenav .next a').bind('click', nextPage);
+        $('.pagenav .previous a').off('click');
+        $('.pagenav .previous a').bind('click', prevPage);
+        $('.pagenav .first a').off('click');
+        $('.pagenav .first a').bind('click', firstPage);
+        $('.pagenav .last a').off('click');
+        $('.pagenav .last a').bind('click', lastPage);
     }
     /*
      * setupConfigure
@@ -341,14 +341,19 @@ function ($, topic, template)
      * showPagination
      */
     function showPagination() {
-        $('.event-pagination').show();
+        $('.pagenav').css('display','inline-block');
+        $('.pagenav .count, .pagenav .first, .pagenav .previous').show();
+        $('.pagenav .numbering, .pagenav .next, .pagenav .last').show();
     }
 
     /*
      * hidePagination
      */
     function hidePagination() {
-        $('.event-pagination').hide();
+        /* always show the item count */
+        $('.pagenav first').hide();
+        $('.pagenav .first, .pagenav .previous').hide();
+        $('.pagenav .numbering, .pagenav .next, .pagenav .last').hide();
     }
 
     /*
@@ -453,10 +458,10 @@ function ($, topic, template)
 
         var count = data['event-count'];
         if (count != null) {
-            $('#event-count span').html(count);
+            $('.pagenav .count span').html(count);
             eventFilter.count = count;
-            $('.event-pagination .page-number').html(eventFilter.page);
-            $('.event-pagination .page-count').html(pageCount());
+            $('.pagenav .page-number').html(eventFilter.page);
+            $('.pagenav .page-count').html(pageCount());
         }
 
         if (eventFilter.page > 1) {
