@@ -5,7 +5,7 @@
 <title>Palette - General Configuration</title>
 </%block>
 
-<section class="dynamic-content general-page">
+<section class="dynamic-content configuration general-page">
   <section class="top-zone">
     <section class="row">
       <section class="col-xs-12">

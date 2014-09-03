@@ -14,7 +14,7 @@
     </section>
     <section class="row">
       <section class="col-xs-12">
-        <div class="btn-group">
+        <div class="btn-group filter-dropdowns">
           <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div>All Sites</div><span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
@@ -41,14 +41,14 @@
       <div>
 	<div class="col2">
           <h3>{{name}}</h3>
-          <p><span class="label">Current Publisher</span>{{last-updated-by}}</p>
+          <p><span class="label">Publisher</span>{{last-updated-by}}</p>
 	</div>
 	<div class="col2">
           <div>
 	    <span class="label">Site</span>{{site}} and <span class="label">Project</span>{{project}}
 	  </div>
           <div>
-	    <span class="label">Last Update</span><a href="{{url}}">rev{{current-revision}} {{last-updated-at}}</a>
+	    <a href="{{url}}">rev{{current-revision}} {{last-updated-at}}</a>
 	  </div>
         </div>
       </div>

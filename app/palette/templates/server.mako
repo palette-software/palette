@@ -5,7 +5,7 @@
 <title>Palette - Server Configuration</title>
 </%block>
 
-<section class="dynamic-content">
+<section class="dynamic-content configuration">
   <h1 class="page-title">Servers</h1>
   <div id="server-detail"></div>
 </section>

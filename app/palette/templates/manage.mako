@@ -6,7 +6,7 @@
 </%block>
 
 <section class="secondary-side-bar">
-  <h2>Actions</h2>
+  <h1>Actions</h1>
   <ul class="actions">
     <li>
       <a name="popupStart" class="popup-link inactive" id="start"> 
@@ -143,12 +143,12 @@
 <script id="backup-list-template" type="x-tmpl-mustache">
   {{#backups}}
   <h5 class="backup-page">{{type}}</h5>
-  <ul class="Logs">
+  <ul>
     {{#items}}
     <li class="backup">
       <a class="inactive">
         <span class="timestamp">{{creation-time}}</span>
-        <span class="filename">{{name}}</span>
+	<span class="filename">{{name}}</span>
       </a>
     </li>
     {{/items}}

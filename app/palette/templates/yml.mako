@@ -5,7 +5,7 @@
 <title>Palette - Tableau Settings</title>
 </%block>
 
-<section class="dynamic-content">
+<section class="dynamic-content configuration">
   <h1 class="page-title">Tableau Settings</h1>
   <div id="yml-list"></div>
 </section>

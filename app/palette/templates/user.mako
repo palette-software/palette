@@ -5,7 +5,7 @@
 <title>Palette - User Configuration</title>
 </%block>
 
-<section class="dynamic-content">
+<section class="dynamic-content configuration">
   <h1 class="page-title">Users</h1>
   <div class="refresh">
 %if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
