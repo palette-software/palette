@@ -1,8 +1,11 @@
 <section class="main-side-bar">
   <section class="status">
-    <img id="status-image" src="/app/module/palette/images/blank.png" />
+    <span class="fa-stack">
+      <i class="fa fa-circle fa-stack-1x"></i>
+      <i id="status-icon" class="fa fa-fw fa-stack-1x ${obj.status_class}"></i>
+    </span>
     <h1>STATUS</h1>
-    <h3 id="status-text"></h3>
+    <h3 id="status-text">${obj.status_text}</h3>
     <i class="fa fa-fw fa-angle-right" id="expand-right"></i>
   </section>
   <ul class="actions">
