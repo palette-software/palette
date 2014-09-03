@@ -34,6 +34,7 @@ from credential import CredentialEntry, CredentialManager
 from diskcheck import DiskCheck, DiskException
 from files import FileManager
 from firewall_manager import FirewallManager
+from ports import PortManager
 from state import StateManager
 from system import SystemManager, LicenseEntry
 from tableau import TableauStatusMonitor, TableauProcess
@@ -1588,6 +1589,9 @@ def main():
     server.cloud = CloudManager(server)
 
     server.firewall_manager = FirewallManager(server)
+
+    server.ports = PortManager(server)
+    server.ports.populate()
 
     server.stateman = StateManager(server)
 

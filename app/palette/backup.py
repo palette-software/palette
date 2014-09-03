@@ -69,7 +69,7 @@ class BackupApplication(PaletteRESTHandler):
     @required_role(Role.READONLY_ADMIN)
     def handle_GET(self, req):
         L = [x.todict(pretty=True) for x \
-                 in FileManager.all(req.envid,
+                 in FileManager.all_by_type(req.envid,
                                     FileManager.FILE_TYPE_BACKUP,
                                     asc=False)]
         # FIXME: convert TIMEZONE

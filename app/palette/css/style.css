@@ -1271,6 +1271,16 @@ p.error {
 .checkbox, .radio {
     padding: 0;
 }
+p.radio-text {
+    font-size: 17px;
+    text-align: left;
+    line-height: 25px;
+    margin-left: 30px;
+}
+p.radio-text label
+{
+    color: #78808A;
+}
 
 ul.checkbox, ul.radio {
     margin: 15px 0;
