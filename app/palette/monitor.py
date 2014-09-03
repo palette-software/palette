@@ -353,6 +353,12 @@ class MonitorApplication(PaletteRESTHandler):
             if entry.agent_type in (AgentManager.AGENT_TYPE_PRIMARY,
                                     AgentManager.AGENT_TYPE_WORKER) and \
                                     main_state == StateManager.STATE_STOPPED:
+                agent_color_num = Colors.YELLOW_NUM
+                agent['warnings'] = [{'color':'yellow',
+                                      'message': 'Tableau stopped'}]
+            elif entry.agent_type in (AgentManager.AGENT_TYPE_PRIMARY,
+                                    AgentManager.AGENT_TYPE_WORKER) and \
+                        main_state == StateManager.STATE_STOPPED_UNEXPECTED:
                 agent_color_num = Colors.RED_NUM
                 agent['warnings'] = [{'color':'red',
                                       'message': 'Tableau stopped'}]
