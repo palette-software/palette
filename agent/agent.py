@@ -91,6 +91,8 @@ class AgentHandler(SimpleHTTPRequestHandler):
                 env = 'env' in req.json and req.json['env'] or {}
                 self.server.processmanager.start(xid, cmd, env, immediate)
                 data = self.server.processmanager.getinfo(xid)
+                if immediate:
+                    self.server.processmanager.cleanup(xid)
             elif action == 'cleanup':
                 self.server.processmanager.cleanup(xid)
                 data = {'xid': xid}
