@@ -539,17 +539,21 @@ ul.dropdown-menu a:hover {
     cursor: pointer;
 }
 
-.main-side-bar .status img {
+.main-side-bar .status span.fa-stack {
     position: absolute;
-    width: 64px;
+    font-size: 64px;
+    line-height: 64px;
     height: 64px;
+    width: 64px;
     top: 15px;
     right: 20px;
+/*
     -webkit-transition: all 0.2s ease-in;
     -moz-transition: all 0.2s ease-in;
     -ms-transition: all 0.2s ease-in;
     -o-transition: all 0.2s ease-in;
     transition: all 0.2s ease-in;
+*/
 }
 .main-side-bar .status h1 {
     position: absolute;

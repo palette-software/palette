@@ -19,10 +19,9 @@ class DashboardPage(MainPage, PalettePageMixin):
     TEMPLATE = 'dashboard.mako'
     active = 'home'
 
-    def __init__(self, global_conf):
-        super(DashboardPage, self).__init__(global_conf)
-        self.next = store.get('backup', 'next',
-                              default='No backup is scheduled.')
+    def render(self, req, obj=None):
+        obj = self.preprocess(req, obj)
+        return super(MainPage, self).render(req, obj=obj)
 
 class Login(LoginPage):
     TEMPLATE = 'login.mako'
