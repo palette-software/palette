@@ -539,17 +539,21 @@ ul.dropdown-menu a:hover {
     cursor: pointer;
 }
 
-.main-side-bar .status img {
+.main-side-bar .status span.fa-stack {
     position: absolute;
-    width: 64px;
+    font-size: 64px;
+    line-height: 64px;
     height: 64px;
+    width: 64px;
     top: 15px;
     right: 20px;
+/*
     -webkit-transition: all 0.2s ease-in;
     -moz-transition: all 0.2s ease-in;
     -ms-transition: all 0.2s ease-in;
     -o-transition: all 0.2s ease-in;
     transition: all 0.2s ease-in;
+*/
 }
 .main-side-bar .status h1 {
     position: absolute;
@@ -634,7 +638,7 @@ ul.dropdown-menu a:hover {
     height: 0;
     border-style: solid;
     border-width: 12px 12px 12px 0;
-    border-color: transparent #ECECEC transparent transparent;
+    border-color: transparent #f8f8f8 transparent transparent;
     display: block;
     -webkit-transition-delay: 0.3s;
     -moz-transition-delay: 0.3s;

@@ -13,12 +13,39 @@ class PalettePageMixin(object):
     expanded = False;
     # Whether or not to show the expanded integration items.
     integration = False
-
-class PalettePage(Page, PalettePageMixin):
+    # minimum capability required
     required_role = None
 
-    def render(self, req, obj=None):
+    def build_status_class(self, color):
+        if color == 'green':
+            return 'fa-check-circle green'
+        if color == 'yellow':
+            return 'fa-exclamation-circle yellow';
+        if color == 'red':
+            return 'fa-times-circle red';
+        return '';
+
+
+    def preprocess(self, req, obj):
         if not self.required_role is None:
             if req.remote_user.roleid < self.required_role:
                 raise exc.HTTPForbidden
+        if obj is None:
+            obj = self
+        if 'status_color' in req.cookies:
+            color = req.cookies['status_color']
+            obj.status_class = self.build_status_class(color);
+        else:
+            obj.status_class = ''
+        if 'status_text' in req.cookies:
+            obj.status_text = req.cookies['status_text'].replace("_", " ");
+        else:
+            obj.status_text = '';
+        import sys; print >> sys.stderr, str(req.cookies)
+        return obj
+
+class PalettePage(Page, PalettePageMixin):
+
+    def render(self, req, obj=None):
+        obj = self.preprocess(req, obj)
         return super(PalettePage, self).render(req, obj=obj)
