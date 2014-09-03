@@ -69,13 +69,13 @@
 	{{#in_ports}}
 	<li>
 	   <i class="fa fa-fw fa-circle {{color}}"></i>
-	   In: {{name}} ({{num}})
+	   NETin: {{name}} ({{num}})
 	</li>
 	{{/in_ports}}
 	{{#out_ports}}
 	<li>
 	   <i class="fa fa-fw fa-circle {{color}}"></i>
-	   Out: {{name}} ({{num}})
+	   NETout: {{name}} ({{num}})
 	</li>
 	{{/out_ports}}
 	{{#details}}

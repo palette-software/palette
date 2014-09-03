@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
+from sqlalchemy import Boolean
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 
 from akiri.framework.ext.sqlalchemy import meta
@@ -23,6 +24,10 @@ class PortEntry(meta.Base, BaseMixin):
     agentid = Column(BigInteger, ForeignKey("agent.agentid"),
                                                      nullable=False)
     color = Column(String)   # red or green
+    notified_color = Column(String) # red or green
+
+    max_time = Column(Integer)
+    active = Column(Boolean, default=True)
 
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
@@ -42,8 +47,8 @@ class PortEntry(meta.Base, BaseMixin):
             {
                 "envid":1,
                 "dest_host": "192.168.2.13",
-                "dest_port": 81,
-                'service_name': "azul port 81",
+                "dest_port": 3000,
+                'service_name': "azul test service",
                 'agentid': 1
             },
     ]
@@ -60,6 +65,9 @@ class PortManager(Manager):
 
         report = []
         for port in ports:
+            if port.active == False:
+                continue
+
             port_report = {}
             state = self.check_port(port)
             report.append({'state': state,
@@ -87,25 +95,36 @@ class PortManager(Manager):
         command = "pok %s %d" % (entry.dest_host, entry.dest_port)
 
         body = self.server.cli_cmd(command, agent)
+        data = agent.todict()
 
         if body['exit-status']:
             self.log.info(
-                "Connection to %s failed (host '%s' port %d)",
+                "Connection to '%s' failed: host '%s', port %d)",
                        entry.service_name, entry.dest_host, entry.dest_port)
 
-            data = agent.todict()
-            data['error'] = "Connection to %s failed (host '%s' port %d)" % \
-                       (entry.service_name, entry.dest_host, entry.dest_port)
-
-            self.server.event_control.gen(
-                                EventControl.PORT_CONNECTION_FAILED, data)
             color = 'red'
         else:
             color = 'green'
 
+        # generate an event if appropriate
+        if color == 'red' and entry.notified_color != 'red':
+            data['error'] = "Connection to '%s' failed: host '%s', port %d" % \
+                       (entry.service_name, entry.dest_host, entry.dest_port)
+
+            self.server.event_control.gen(EventControl.PORT_CONNECTION_FAILED,
+                                          data)
+        elif entry.notified_color == 'red' and color == 'green':
+            data['info'] = \
+                    "Connection to '%s' is now okay: host '%s', port %d" % \
+                    (entry.service_name, entry.dest_host, entry.dest_port)
+
+            self.server.event_control.gen(EventControl.PORT_CONNECTION_OKAY,
+                                          data)
+
         meta.Session.query(PortEntry).\
             filter(PortEntry.portid == entry.portid).\
-            update({'color': color}, synchronize_session=False)
+            update({'color': color, 'notified_color': color},
+                   synchronize_session=False)
 
         meta.Session.commit()
 
