@@ -5,6 +5,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.schema import ForeignKey
 
 from akiri.framework.ext.sqlalchemy import meta
+from httplib import responses
 
 from agentinfo import AgentYmlEntry
 from cache import TableauCacheManager
@@ -120,18 +121,18 @@ class HttpRequestManager(TableauCacheManager):
                     excludes = []
                 # check the URI against the list to be skipped.
                 if not entry.controller in excludes:
-                    body =  {'duration':seconds}
+                    body =  {'duration':seconds, 'http_status': responses[entry.status]}
                     self.eventgen(EventControl.HTTP_BAD_STATUS,
                                   agent, entry, body=body)
             elif entry.action == 'show':
                 errorlevel = self.server.system.getint('http-load-error')
                 warnlevel = self.server.system.getint('http-load-warn')
                 if errorlevel != 0 and seconds >= errorlevel:
-                    body = {'duration':seconds}
+                    body =  {'duration':seconds, 'http_status': responses[entry.status]}
                     self.eventgen(EventControl.HTTP_LOAD_ERROR,
                                   agent, entry, body=body)
                 elif warnlevel != 0 and seconds >= warnlevel:
-                    body = {'duration':seconds}
+                    body =  {'duration':seconds, 'http_status': responses[entry.status]}
                     self.eventgen(EventControl.HTTP_LOAD_WARN,
                                   agent, entry, body=body)
             session.add(entry)

@@ -17,6 +17,7 @@ from agent import Agent
 from agentmanager import AgentManager
 from agentinfo import AgentYmlEntry
 from event_control import EventControl
+from files import FileManager
 from cloud import CloudManager
 from system import SystemEntry
 from state import StateManager
@@ -336,7 +337,9 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         if cmd.args[0] == 'on':
             if main_state not in (StateManager.STATE_STARTED,
-                    StateManager.STATE_STOPPED, StateManager.STATE_DEGRADED,
+                    StateManager.STATE_STOPPED,
+                    StateManager.STATE_STOPPED_UNEXPECTED,
+                    StateManager.STATE_DEGRADED,
                     StateManager.STATE_DISCONNECTED,
                     StateManager.STATE_UPGRADING, StateManager.STATE_UNKNOWN):
 
@@ -404,7 +407,8 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # Backups can be done when Tableau is started, degraded or stopped.
         if main_state not in (StateManager.STATE_STARTED,
-                    StateManager.STATE_DEGRADED, StateManager.STATE_STOPPED):
+                    StateManager.STATE_DEGRADED, StateManager.STATE_STOPPED,
+                    StateManager.STATE_STOPPED_UNEXPECTED):
             self.error(ERROR_BUSY, "FAIL: Can't backup - main state is: %s",
                                                                   main_state)
             self.server.log.debug("Can't backup - main state is: %s",
@@ -516,7 +520,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         if main_state in (StateManager.STATE_STARTED,
                                                 StateManager.STATE_DEGRADED):
             stateman.update(StateManager.STATE_STARTED_FILEDEL)
-        elif main_state == StateManager.STATE_STOPPED:
+        elif main_state in (StateManager.STATE_STOPPED,
+                            StateManager.STATE_STOPPED_UNEXPECTED):
             stateman.update(StateManager.STATE_STOPPED_FILEDEL)
         else:
             self.error(ERROR_WRONG_STATE,
@@ -632,7 +637,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Backups can be done when Tableau is either started, degraded
         # or stopped.
         if main_state not in (StateManager.STATE_STARTED,
-                    StateManager.STATE_DEGRADED, StateManager.STATE_STOPPED):
+                    StateManager.STATE_DEGRADED, StateManager.STATE_STOPPED,
+                    StateManager.STATE_STOPPED_UNEXPECTED):
             self.error(ERROR_WRONG_STATE,
                 "FAIL: Can't backup before restore - main state is: %s",
                                                                   main_state)
@@ -777,13 +783,13 @@ class CliHandler(socketserver.StreamRequestHandler):
             agent_dict_list.append(data)
         self.report_status({'agents': agent_dict_list})
 
-    def list_backups(self):
+    def list_files(self):
         s = ''
         # FIXME: per environment
-        backups = []
-        for backup in BackupManager.all(self.server.domain.domainid):
-            backups.append(backup.todict(pretty=True))
-        self.report_status({'backups': backups})
+        files = []
+        for file in FileManager.all(self.server.domain.domainid):
+            files.append(file.todict(pretty=True))
+        self.report_status({'files': files})
 
     @usage('list [agents|backups]')
     def do_list(self, cmd):
@@ -795,8 +801,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         elif len(cmd.args) == 1:
             if cmd.args[0].lower() == 'agents':
                 f = self.list_agents
-            elif cmd.args[0].lower() == 'backups':
-                f = self.list_backups
+            elif cmd.args[0].lower() == 'files':
+                f = self.list_files
         if f is None:
             self.print_usage(self.do_list.__usage__)
             return
@@ -995,6 +1001,31 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.report_status(body)
         return
 
+    @usage('portcheck')
+    def do_checkports(self, cmd):
+        """Check on all outgoing port connections."""
+
+        if len(cmd.args):
+                self.print_usage(self.do_checkports.__usage__)
+                return
+
+        if self.server.upgrading():
+            self.error(ERROR_WRONG_STATE, "Upgrading")
+            return
+
+        stateman = self.server.stateman
+        main_state = stateman.get_state()
+        if main_state in (StateManager.STATE_PENDING,
+                          StateManager.STATE_DISCONNECTED,
+                          StateManager.STATE_UNKNOWN):
+            self.error(ERROR_WRONG_STATE, main_state)
+            return
+
+        self.ack()
+
+        body = self.server.ports.check_ports()
+        self.report_status(body)
+
     @usage('firewall { status | { enable | disable } port [port] }')
     def do_firewall(self, cmd):
         """Report the status of all ports or enable/disable one or more
@@ -1074,7 +1105,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         main_state = stateman.get_state()
 
         # Start can be done only when Tableau is stopped.
-        if main_state != StateManager.STATE_STOPPED:
+        if main_state not in (StateManager.STATE_STOPPED,
+                              StateManager.STATE_STOPPED_UNEXPECTED):
             self.error(ERROR_WRONG_STATE,
                                 "Can't start - main state is: " + main_state)
             aconn.user_action_unlock()
@@ -1765,7 +1797,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         if main_state in (StateManager.STATE_STARTED,
                                                 StateManager.STATE_DEGRADED):
             stateman.update(StateManager.STATE_STARTED_ZIPLOGS)
-        elif main_state == StateManager.STATE_STOPPED:
+        elif main_state in (StateManager.STATE_STOPPED,
+                            StateManager.STATE_STOPPED_UNEXPECTED):
             stateman.update(StateManager.STATE_STOPPED_ZIPLOGS)
         else:
             self.error(ERROR_WRONG_STATE,
@@ -1811,7 +1844,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         if main_state in (StateManager.STATE_STARTED,
                                         StateManager.STATE_DEGRADED):
             stateman.update(StateManager.STATE_STARTED_CLEANUP)
-        elif main_state == StateManager.STATE_STOPPED:
+        elif main_state in (StateManager.STATE_STOPPED,
+                            StateManager.STATE_STOPPED_UNEXPECTED):
             stateman.update(StateManager.STATE_STOPPED_CLEANUP)
         else:
             self.error(ERROR_WRONG_STATE,
