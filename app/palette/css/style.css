@@ -1838,29 +1838,20 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
     min-width: 370px;
 }
 
-#event-count {
-    line-height: 32px;
-    font-size: 16px;
-    position: relative;
-    vertical-align: middle;
-    min-width: 100px;
-    text-align: right;
-    display: inline-block;
-    /*margin:10px 0 25px 10px;*/
-    white-space: nowrap;
-
-}
-.event-pagination {
+.pagenav {
     display: none;
     float: right;
     line-height: 32px;
     font-size: 16px;
 }
-.event-pagination div {
+.pagenav div {
     display: inline;
     margin-right: 10px;
 }
+.pagenav i {
+    font-weight: 900;
+}
 
-.top-zone .event-pagination {
+.top-zone .pagenav {
     margin-top:5px;
 }
