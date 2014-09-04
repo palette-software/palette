@@ -1277,10 +1277,11 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.server.log.debug("-----------------Stopping Tableau-------------------")
         # fixme: Reply with "OK" only after the agent received the command?
+        envid = self.server.environment.envid
 
         body = self.server.cli_cmd('tabadmin stop', agent)
         if success(body) and start_maint:
-            port = AgentYmlEntry.get(agent, 'gateway.public.port', default=None)
+            port = AgentYmlEntry.get(envid, 'gateway.public.port', default=None)
             if port is None:
                 port = -1
             else:
@@ -1683,7 +1684,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             agent = self.get_agent(cmd.dict)
             if not agent:
                 return
-            windomain = AgentYmlEntry.get(agent,
+            windomain = AgentYmlEntry.get(self.server.environment.envid,
                                           "wgserver.domain.fqdn",
                                           default=None)
             if not windomain:

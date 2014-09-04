@@ -72,6 +72,7 @@ class Project(meta.Base, BaseMixin):
             entry.special = row[8]
             ids.append(entry.projectid)
 
+        # FIXME: don't delete - mark inactive.
         session.query(Project).\
             filter(not_(Project.projectid.in_(ids))).\
             delete(synchronize_session='fetch')

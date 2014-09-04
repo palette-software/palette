@@ -10,7 +10,6 @@ from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
 
-from agentinfo import AgentYmlEntry
 from event import EventEntry
 from profile import UserProfile
 from util import DATEFMT, UNDEFINED
@@ -272,11 +271,9 @@ class EventControlManager(Manager):
         data['server_url'] = self.server.system.get('server-url',
                                                     default='localhost')
 
-#        url = AgentYmlEntry.get(agent,
-#                                'svcmonitor.notification.smtp.canonical_url',
-#                                default=None)
-#        if url:
-#            body['tableau_server_url'] = url
+        url = self.server.public_url()
+        if url:
+            data['tableau_server_url'] = url
 
         data['disk_watermark_low'] \
             = self.server.system.get('disk-watermark-low', default='')
