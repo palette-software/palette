@@ -1841,15 +1841,20 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
 .pagenav {
     display: none;
     float: right;
+    font-size: 18px;
+    height: 32px;
+    line-height: 18px;
+    vertical-align: middle;
+}
+.pagenav > span, .pagenav > span a {
     line-height: 32px;
-    font-size: 16px;
+    vertical-align: middle;
 }
-.pagenav div {
-    display: inline;
-    margin-right: 10px;
+.pagenav > span {
+    padding-right: 5px;
 }
-.pagenav i {
-    font-weight: 900;
+.pagenav a {
+    font-size: 32px;
 }
 
 .top-zone .pagenav {
