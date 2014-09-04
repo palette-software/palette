@@ -45,6 +45,7 @@ i.expand {
 i.tableau {
     background:url(/app/module/palette/images/tableau.svg);
     background-repeat: no-repeat;
+    background-size: 100%;
     height: 28px;
     width: 28px;
     margin: 13px 14px 13px 17px !important;
