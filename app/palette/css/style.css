@@ -1,6 +1,7 @@
 /*
- * #5e646b; main-side-bar selected li, main-side-bar hover
+ * #5e646b; main-side-bar selected li, main-side-bar hover, button hover.
  * #697078; main-side-bar background, dropdowns, secondary-side-bar hover
+ * #8d96a4; button background.
  */
 
 html {
@@ -1067,7 +1068,7 @@ button.login {
     font-family: "Proxima Nova Regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     color: #fff;
     border-radius: 0px;
-    background-color: #a2adbd;
+    background-color: #8d96a4;
     width: 100%;
     font-size: 20px;
     font-weight: 500;
@@ -1083,7 +1084,7 @@ button.login {
     -webkit-appearance: none;
 }
 button.login:hover, input[type="submit"].login:hover {
-    background-color: #b3bbc8;
+    background-color: #5e646b;
 }
 button.login:active, input[type="submit"].login:active {
     background-color: #666666;
@@ -1194,7 +1195,7 @@ label:first-of-type {
 /* FIXME: popup button, merge with bootstrap .btn class */
 .p-btn {
     color: #fff;
-    background-color: #697078;
+    background-color: #8d96a4;
     width: 100%;
     font-weight: 500;
     padding: 9px 0;
