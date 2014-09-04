@@ -267,6 +267,8 @@ class EventControlManager(Manager):
         if not 'username' in data:
             data['username'] = mako.runtime.UNDEFINED
 
+        data['event_type'] = event_entry.event_type
+
         # set server-url(s)
         data['server_url'] = self.server.system.get('server-url',
                                                     default='localhost')

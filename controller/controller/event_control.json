@@ -543,7 +543,7 @@
 "key":"PORT-CONNECTION-OKAY",
 "level":"I",
 "send_email":"t",
-"subject":"INFO - Port Connection to %s(service_name)s Port %(dest_port)s Now OK",
+"subject":"INFO - Port Connection to %(service_name)s Port %(dest_port)s Now OK",
 "event_description":"Status: INFO  \nTime: ${time}  \nServer: ${displayname}\nDetails: ${info}",
 "email_message":"Status: INFO\nTime: ${time}\nServer: ${displayname}\nDetails: ${info}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,

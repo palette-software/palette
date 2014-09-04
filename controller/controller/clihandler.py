@@ -1021,10 +1021,18 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error(ERROR_WRONG_STATE, main_state)
             return
 
+        if not self.server.ports.check_ports_lock(blocking=False):
+            self.error(ERROR_BUSY,
+                   "Port check is already running on behalf of another request")
+            return
+
         self.ack()
 
         body = self.server.ports.check_ports()
+        self.server.ports.check_ports_unlock()
+
         self.report_status(body)
+
 
     @usage('firewall { status | { enable | disable } port [port] }')
     def do_firewall(self, cmd):
