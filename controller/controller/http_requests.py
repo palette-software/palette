@@ -7,7 +7,6 @@ from sqlalchemy.schema import ForeignKey
 from akiri.framework.ext.sqlalchemy import meta
 from httplib import responses
 
-from agentinfo import AgentYmlEntry
 from cache import TableauCacheManager
 from mixin import BaseDictMixin
 from http_control import HttpControl
@@ -199,12 +198,6 @@ class HttpRequestManager(TableauCacheManager):
 
         if 'workbook' in body:
             self.translate_workbook(body)
-
-        url = AgentYmlEntry.get(agent,
-                                'svcmonitor.notification.smtp.canonical_url',
-                                default=None)
-        if url:
-            body['tableau_server_url'] = url
 
         if entry.site_id and 'site' not in body:
             site = Site.get(entry.envid, entry.site_id)
