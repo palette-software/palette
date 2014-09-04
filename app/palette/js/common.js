@@ -459,7 +459,7 @@ function ($, topic, template)
 
         var count = data['event-count'];
         if (count != null) {
-            $('.pagenav .count span span').html(count);
+            $('.pagenav span.count span').html(count);
             eventFilter.count = count;
             $('.pagenav .page-number').html(eventFilter.page);
             $('.pagenav .page-count').html(pageCount());
