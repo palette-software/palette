@@ -108,7 +108,7 @@ class Role(meta.Base, BaseMixin):
             entry = None
         return entry
 
-    defaults = [{'roleid':NO_ADMIN, 'name':"No Admin"},
+    defaults = [{'roleid':NO_ADMIN, 'name':"None"},
                 {'roleid':READONLY_ADMIN, 'name':"Read-Only Admin"},
                 {'roleid':MANAGER_ADMIN, 'name':"Manager Admin"},
                 {'roleid':SUPER_ADMIN, 'name':"Super Admin"}]
