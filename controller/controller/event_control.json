@@ -364,28 +364,6 @@
 "event_type":"network"
 },
 {
-"key":"PORT-CONNECTION-FAILED",
-"level":"E",
-"send_email":"t",
-"subject":"ERROR - Port Connection Failed",
-"event_description":"Status: ERROR  \nTime: ${time}  \nServer: ${displayname}\nDetails: ${error}",
-"email_message":"Status: INFO\nTime: ${time}\nServer: ${displayname}\nDetails: ${error}\n\nThis message was sent from your Palette Server at ${server_url}",
-"icon":null,
-"color":"red",
-"event_type":"network"
-},
-{
-"key":"PORT-CONNECTION-OKAY",
-"level":"I",
-"send_email":"t",
-"subject":"INFO - Port Connection Now OK",
-"event_description":"Status: INFO  \nTime: ${time}  \nServer: ${displayname}\nDetails: ${info}",
-"email_message":"Status: INFO\nTime: ${time}\nServer: ${displayname}\nDetails: ${info}\n\nThis message was sent from your Palette Server at ${server_url}",
-"icon":null,
-"color":"green",
-"event_type":"network"
-},
-{
 "key":"HTTP-BAD-STATUS",
 "level":"E",
 "send_email":"t",
@@ -549,6 +527,28 @@
 "icon":null,
 "color":"red",
 "event_type":"server"
+},
+{
+"key":"PORT-CONNECTION-FAILED",
+"level":"E",
+"send_email":"t",
+"subject":"ERROR - Network Connection to %(service_name)s Port %(dest_port)s Failed",
+"event_description":"Status: ERROR  \n\nServer: ${displayname}\nDetails: ${error}",
+"email_message":"Status: INFO\nTime: ${time}\nServer: ${displayname}\nDetails: ${error}\n\nThis message was sent from your Palette Server at ${server_url}",
+"icon":null,
+"color":"red",
+"event_type":"network"
+},
+{
+"key":"PORT-CONNECTION-OKAY",
+"level":"I",
+"send_email":"t",
+"subject":"INFO - Port Connection to %s(service_name)s Port %(dest_port)s Now OK",
+"event_description":"Status: INFO  \nTime: ${time}  \nServer: ${displayname}\nDetails: ${info}",
+"email_message":"Status: INFO\nTime: ${time}\nServer: ${displayname}\nDetails: ${info}\n\nThis message was sent from your Palette Server at ${server_url}",
+"icon":null,
+"color":"green",
+"event_type":"network"
 },
 {
 "key":"RESTORE-FAILED",
