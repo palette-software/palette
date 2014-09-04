@@ -46,10 +46,13 @@ class EventApplication(PaletteRESTHandler):
         entry.description = html
 
     def query_mostrecent(self, envid, status=None, event_type=None,
-                         timestamp=None, limit=None):
+                         timestamp=None, limit=None, publisher=None):
         filters = {}
         filters['envid'] = envid
         q = meta.Session.query(EventEntry).filter(EventEntry.envid == envid)
+        if not publisher is None:
+            filters['userid'] = publisher
+            q = q.filter(EventEntry.userid == publisher)
         if status:
             filters['level'] = status
             q = q.filter(EventEntry.level == status)
@@ -73,11 +76,14 @@ class EventApplication(PaletteRESTHandler):
         data['count'] = EventEntry.count(filters)
         return data
 
-    def query_page(self, envid, page, limit=None,
-                   status=None, event_type=None, timestamp=None):
+    def query_page(self, envid, page, status=None, event_type=None,
+                   limit=None, timestamp=None, publisher=None):
         filters = {}
         filters['envid'] = envid
         q = meta.Session.query(EventEntry).filter(EventEntry.envid == envid)
+        if not publisher is None:
+            filters['userid'] = publisher
+            q = q.filter(EventEntry.userid == publisher)
         if status:
             filters['level'] = status
             q = q.filter(EventEntry.level == status)
@@ -129,22 +135,29 @@ class EventApplication(PaletteRESTHandler):
 
     # ts is epoch seconds as a float.
     def handle_get(self, req):
-        page = self.getint(req, 'page')
         timestamp = self.getfloat(req, 'ts')
         if not timestamp is None:
             timestamp = datetime.utcfromtimestamp(timestamp)
+
+        publisher = None
+        if req.remote_user.roleid == Role.NO_ADMIN:
+            publisher = req.remote_user.system_user_id
+
+        page = self.getint(req, 'page')
         if page is None:
             return self.query_mostrecent(req.envid,
                                          status=self.get(req,'status'),
                                          event_type=self.get(req, 'type'),
                                          timestamp=timestamp,
-                                         limit=self.getint(req, 'limit'))
+                                         limit=self.getint(req, 'limit'),
+                                         publisher=publisher)
         else:
             return self.query_page(req.envid, page,
                                    status=self.get(req,'status'),
                                    event_type=self.get(req, 'type'),
                                    timestamp=timestamp,
-                                   limit=self.getint(req, 'limit'))
+                                   limit=self.getint(req, 'limit'),
+                                   publisher=publisher)
 
     def handle(self, req):
         if req.method == "GET":
