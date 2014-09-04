@@ -15,7 +15,6 @@ from files import FileManager
 class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'system'
 
-    # FIXME: integer
     envid = Column(BigInteger, ForeignKey("environment.envid"),
                    primary_key=True)
     key = Column(String, unique=True, nullable=False, primary_key=True)
