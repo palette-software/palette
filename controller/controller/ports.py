@@ -103,6 +103,9 @@ class PortManager(Manager):
 
         body = self.server.cli_cmd(command, agent)
         data = agent.todict()
+        data['service_name'] = entry.service_name
+        data['dest_port'] = entry.dest_port
+        data['dest_hostname'] = entry.dest_host
 
         if body['exit-status']:
             self.log.info(
