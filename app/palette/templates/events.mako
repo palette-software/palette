@@ -3,18 +3,20 @@
     <section class="col-xs-12">
       <h1 class="page-title">Events</h1>
       <div class="pagenav">
-        <div class="count"><span>0</span> Events</div>
+        <span class="count">
+          <span>0</span> Events
+        </span>
         <span class="first">
-          <a href="#"><i class="fa fa-angle-double-left"></i></a>&nbsp;
+          <a href="#"><i class="fa fa-angle-double-left"></i></a>
         </span>
         <span class="previous">
-          <a href="#"><i class="fa fa-angle-left"></i></a>
+          <a class="previous" href="#"><i class="fa fa-angle-left"></i></a>
         </span>
-	    <div class="numbering">
-	      &nbsp;Page <span class="page-number"></span> of <span class="page-count"></span>
-	    </div>
+	    <span class="numbering">
+	      <span class="page-number"></span> of <span class="page-count"></span>
+	    </span>
         <span class="next">
-          <a href="#"><i class="fa fa-angle-right"></i></a>&nbsp;
+          <a href="#"><i class="fa fa-angle-right"></i></a>
         </span>
         <span class="last">
           <a href="#"><i class="fa fa-angle-double-right"></i></a>
@@ -33,16 +35,16 @@
   <section id="event-list"></section>
   <div class="pagenav">
     <span class="first">
-      <a href="#"><i class="fa fa-angle-double-left"></i></a>&nbsp;
+      <a href="#"><i class="fa fa-angle-double-left"></i></a>
     </span>
     <span class="previous">
-      <a href="#"><i class="fa fa-angle-left"></i></a>
+      <a class="previous" href="#"><i class="fa fa-angle-left"></i></a>
     </span>
-	<div class="numbering">
-	  &nbsp;Page <span class="page-number"></span> of <span class="page-count"></span>
-	</div>
+	<span class="numbering">
+	  <span class="page-number"></span> of <span class="page-count"></span>
+	</span>
     <span class="next">
-      <a href="#"><i class="fa fa-angle-right"></i></a>&nbsp;
+      <a href="#"><i class="fa fa-angle-right"></i></a>
     </span>
     <span class="last">
       <a href="#"><i class="fa fa-angle-double-right"></i></a>
