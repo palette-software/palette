@@ -253,9 +253,10 @@ function ($, topic, template)
     function setupEventDropdowns() {
         $('.dropdown-menu li').off('click');
         $('.dropdown-menu li').bind('click', ddClick);
-        $('.event-dropdowns div.btn-group').each(function () {
+        $('.filter-dropdowns div.btn-group').each(function () {
             $(this).data('callback', function(node, value) {
-                eventFilter.page = 1;
+                setPage(1);
+                console.log('set page 1');
                 resetPoll();
             });
         });
