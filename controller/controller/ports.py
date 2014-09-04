@@ -1,3 +1,7 @@
+import threading
+
+import cli_errors
+
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy import Boolean
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
@@ -59,6 +63,20 @@ class PortManager(Manager):
     def __init__(self, server):
         super(PortManager, self).__init__(server)
         self.log = server.log
+
+        # A lock to allow only one port check to be done at a time.
+        # Otherwise: 1) We can send the same 'failed to connect' event
+        # from two separate threads (though we could make the lock
+        # around just the check-event/send-event code) and 2) We don't
+        # really want multiple threads checking the same ports at the
+        # same time.
+        self.port_lock_obj = threading.RLock()
+
+    def check_ports_lock(self, blocking=False):
+        return self.port_lock_obj.acquire(blocking)
+
+    def check_ports_unlock(self):
+        self.port_lock_obj.release()
 
     def check_ports(self):
         ports = PortManager.find_by_envid(self.envid)
