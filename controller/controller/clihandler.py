@@ -1499,16 +1499,20 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_s3(self, cmd):
         """Send a file to or receive a file from an S3 bucket"""
 
+        if len(cmd.args) != 4:
+            self.print_usage(self.do_s3.__usage__)
+            return
+
         agent = self.get_agent(cmd.dict)
         if not agent:
             return
 
         aconn = agent.connection
-        if len(cmd.args) != 4:
-            self.print_usage(self.do_s3.__usage__)
-            return
 
         action = cmd.args[0].upper()
+        if action not in ('GET', 'PUT'):
+            self.error(ERROR_COMMAND_SYNTAX_ERROR, "Invalid action: %s", action)
+            return
         name = cmd.args[1]
         keypath = cmd.args[2]
         data_dir = cmd.args[3]
@@ -1527,16 +1531,20 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_gcs(self, cmd):
         """Send a file to or receive a file from a GCP bucket"""
 
+        if len(cmd.args) != 4:
+            self.print_usage(self.do_gcs.__usage__)
+            return
+
         agent = self.get_agent(cmd.dict)
         if not agent:
             return
 
         aconn = agent.connection
-        if len(cmd.args) != 4:
-            self.print_usage(self.do_gcs.__usage__)
-            return
 
         action = cmd.args[0].upper()
+        if action not in ('GET', 'PUT'):
+            self.error(ERROR_COMMAND_SYNTAX_ERROR, "Invalid action: %s", action)
+            return
         name = cmd.args[1]
         keypath = cmd.args[2]
         data_dir = cmd.args[3]
