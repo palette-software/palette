@@ -1563,10 +1563,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_usage(self.do_gcsdel.__usage__)
             return
 
+        name = cmd.args[0]
         entry = self.server.cloud.get_by_name(name, CloudManager.CLOUD_TYPE_GCS)
         if not entry:
             self.error(ERROR_NOT_FOUND,
                                     "gcs entry '" + name + "' not found.")
+            return
 
         self.ack()
 
@@ -1586,6 +1588,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_usage(self.do_s3del.__usage__)
             return
 
+        name = cmd.args[0]
         entry = self.server.cloud.get_by_name(name, CloudManager.CLOUD_TYPE_S3)
         if not entry:
             self.error(ERROR_NOT_FOUND, "s3 instance '" + name + "' not found.")
