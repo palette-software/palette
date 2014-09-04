@@ -272,11 +272,11 @@ class EventControlManager(Manager):
         data['server_url'] = self.server.system.get('server-url',
                                                     default='localhost')
 
-        url = AgentYmlEntry.get(agent,
-                                'svcmonitor.notification.smtp.canonical_url',
-                                default=None)
-        if url:
-            body['tableau_server_url'] = url
+#        url = AgentYmlEntry.get(agent,
+#                                'svcmonitor.notification.smtp.canonical_url',
+#                                default=None)
+#        if url:
+#            body['tableau_server_url'] = url
 
         data['disk_watermark_low'] \
             = self.server.system.get('disk-watermark-low', default='')
