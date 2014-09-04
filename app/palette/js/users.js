@@ -2,6 +2,7 @@ require(['jquery', 'topic', 'template', 'common', 'EditBox', 'OnOff', 'bootstrap
 function ($, topic, template, common, EditBox, OnOff)
 {
     var active = false;
+    var refresh_unavailable_text = 'Refresh not currently possible.';
 
     function ddCallback(node, value) {
         var section = $(node).closest('section');
@@ -21,6 +22,7 @@ function ($, topic, template, common, EditBox, OnOff)
             EditBox.setup();
             OnOff.setup();
             $('#last-update').html(data['last-update']);
+            $('.refresh p').show();
         });
     }
 
@@ -51,12 +53,14 @@ function ($, topic, template, common, EditBox, OnOff)
         $().ready(function() {
             var allowed = data['allowable-actions'];
             if ($.inArray('user-refresh', allowed) >= 0) {
-                $('.refresh > span').removeClass('inactive');
-                bind();
+                $('.refresh > span.fa-stack').removeClass('inactive');
+                $('.refresh > p > span.message').html('');
                 active = true;
+                bind();
             } else {
-                $('.refresh > span').addClass('inactive');
-                $('.refresh > span').off('click');
+                $('.refresh > span.fa-stack').addClass('inactive');
+                $('.refresh > span.fa-stack').off('click');
+                $('.refresh > p > span.message').html(refresh_unavailable_text);
                 active = false;
             }
         });
