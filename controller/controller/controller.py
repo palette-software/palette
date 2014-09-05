@@ -1327,7 +1327,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # Place the file where it belongs (different agent, cloud, etc.)
             place = PlaceFile(self, agent, dcheck, ziplogs_full_path,
                               ziplog_size, auto)
-            body['info'] += place.info
+            body['info'] += '\n' + place.info
 
             rotate_info = self.rotate_ziplogs()
             body['info'] += rotate_info
