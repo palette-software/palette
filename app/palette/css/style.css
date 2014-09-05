@@ -128,7 +128,6 @@ article.popup .popup-body {
     position: relative;
     z-index: 9999;
 }
-/*
 article.popup .shade {
     content: "";
     display: block;
@@ -142,8 +141,8 @@ article.popup .shade {
     background-color: rgba(0,0,0,0.2);
     z-index: 9998;
 }
-*/
 article.popup p {
+    font-family: "Proxima Nova Regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: 17px;
 }
 
@@ -793,9 +792,11 @@ ul.processes.visible {
     height: 75px;
 }
 */
+/*
 .secondary-side-bar .padding {
     padding: 0 25px;
 }
+*/
 .secondary-side-bar > ul.actions {
     margin: 0;
     padding:0;
@@ -897,6 +898,7 @@ ul.processes.visible {
 .dynamic-content .top-zone .row {
     height: auto !important;
 }
+/*
 .dynamic-content .top-zone a.alert {
     font-size: 16px;
     margin: 0 0 25px 10px;
@@ -935,6 +937,7 @@ ul.processes.visible {
 .dynamic-content .top-zone a.alert.errors span {
     background-color: #EF5455;
 }
+*/
 .btn-group>.btn, .btn-group-vertical>.btn {
     padding-right: 30px;
 }
@@ -1003,11 +1006,13 @@ h1.page-title {
     background-repeat: no-repeat;
     margin-left: 15px;
 }
+/*
 nav img.site-id {
     color: #111111;
     margin-top: -5px;
     margin-right: 5px;
 }
+*/
 #mainNav .arrow-down {
     left: 7px;
     border-top: 7px solid #fff;
@@ -1028,15 +1033,17 @@ nav img.site-id {
 p.large {
     margin: 0;
 }
+/*
 .spacer {
     margin: 0 60px 0 0;
 }
+*/
 .margin-top {
     margin-top: 12px !important;
 }
 /* login page styles */
 .login-box {
-    background-color: #fff;
+    background-color: white;
 }
 .center-box {
     text-align: center;
@@ -1051,7 +1058,7 @@ input[type="text"].login, input[type="password"].login {
     font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
     border: 1px solid #d9d9d9;
     border-radius: 0px;
-    color: #666666;
+    color: #666666; /* FIXME */
     font-size: 19px;
     outline: 0;
     height: 48px;
@@ -1062,7 +1069,7 @@ input[type="text"].login, input[type="password"].login {
 }
 button.login {
     font-family: "Proxima Nova Regular","Helvetica Neue",Helvetica,Arial,sans-serif;
-    color: #fff;
+    color: white;
     border-radius: 0px;
     background-color: #8d96a4;
     width: 100%;
@@ -1079,9 +1086,10 @@ button.login {
     display: inline-block;
     -webkit-appearance: none;
 }
-button.login:hover, input[type="submit"].login:hover {
+button.login:hover, input[type="submit"].login:hover, button.login:active, input[type="submit"].login:active, button.login:focus, input[type="submit"].login:focus {
     background-color: #5e646b;
 }
+/*
 button.login:active, input[type="submit"].login:active {
     background-color: #666666;
     color: #d9d9d9;
@@ -1092,6 +1100,7 @@ button.login:focus, input[type="submit"].login:focus {
     color: #d9d9d9;
     outline: none;
 }
+*/
 input[type="text"].login:-webkit-autofill {
    -webkit-box-shadow: 0 0 0px 1000px white inset;
 }
@@ -1127,9 +1136,11 @@ input[type="text"].login:-webkit-autofill {
     margin-top: 25px;
 }
 /* other styles*/
+/*
 .big {
     width: 150px;
 }
+*/
 a.button {
     text-decoration: none;
     -webkit-touch-callout: none;
@@ -1147,6 +1158,7 @@ a.button {
 input[type="submit"].login:active {
     top: 1px;
 }
+/* FIXME: merge with active/inactive */
 .disabled {
     top: 0 !important;
     color: #aaa !important;
@@ -1155,6 +1167,7 @@ input[type="submit"].login:active {
     text-shadow: 1px 1px 0 #fff;
     cursor: not-allowed;
 }
+/*
 .padtop {
     padding: 1.5em 0 0;
 }
@@ -1164,6 +1177,7 @@ input[type="submit"].login:active {
 .doublepadtop {
     padding-top: 4em;
 }
+*/
 .full-size-box {
     position: absolute;
     top: 0;
@@ -1276,6 +1290,7 @@ ul.checkbox li, ul.radio li {
 }
 
 ul.checkbox li label, ul.radio li label {
+    font-family: "Proxima Nova Light","Helvetica Neue",Helvetica,Arial,sans-serif;
     margin-bottom: 0;
     margin-top: 7px;
     display: inline-block;
@@ -1352,10 +1367,12 @@ ul.checkbox li input[type="checkbox"]:checked + label span:after, ul.radio li in
     color: #fff;
     font-size: 12px;
 }
+/*
 #status p {
     padding: 1em 0 2em 0;
     text-align: center;
 }
+*/
 ul.title-area > li > h1 > a {
     color: #fff;
     font-weight: 100;
@@ -1489,7 +1506,7 @@ article.event {
     display: block;
     min-height: 55px;
     width: 100%;
-    color: #697078;
+    color: #5F6670;
     font-size: 14px;
     margin-bottom: 8px;
     -webkit-transition: all 0.3s ease-in;
@@ -1639,7 +1656,7 @@ div.refresh {
 }
 .refresh i.fa-stack-2x {
     font-size: 26px;
-    color:#fff;
+    color: white;
 }
 .filter-dropdowns {
     margin-bottom: 11px;
