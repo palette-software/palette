@@ -2,6 +2,7 @@
  * #5e646b; main-side-bar selected li, main-side-bar hover, button hover.
  * #697078; main-side-bar background, dropdowns, secondary-side-bar hover
  * #8d96a4; button background.
+ * #5f6670; font color
  */
 
 html {
@@ -1006,26 +1007,6 @@ nav img.site-id {
     font-size: 11px;
     font-weight: 500;
 }
-.green-light, .yellow-light, .orange-light, .red-light {
-    width: 130px;
-    height: 128px;
-    margin: 10px auto;
-    background: url(/app/module/palette/images/status-green-light.png);
-    background-size: 100%;
-    background-repeat: no-repeat;
-}
-.yellow-light {
-    background: url(/app/module/palette/images/status-yellow-light.png);
-    background-size: 100%;
-}
-.orange-light {
-    background: url(/app/module/palette/images/status-orange-light.png);
-    background-size: 100%;
-}
-.red-light {
-    background: url(/app/module/palette/images/status-red-light.png);
-    background-size: 100%;
-}
 .large {
     font-size: 2em;
 }
@@ -1517,7 +1498,6 @@ article.event .summary > i, article.event .summary > span > i {
     text-align: center;
     line-height: 55px;
     font-size: 28px;
-    opacity: 0.8;
     -webkit-transition: all 0.1s ease-in;
     -moz-transition: all 0.1s ease-in;
     -ms-transition: all 0.1s ease-in;
@@ -1527,7 +1507,7 @@ article.event .summary > i, article.event .summary > span > i {
 article.event .summary > span.fa-stack {
     float: left;
 }
-article.event .summary i.fa-circle.fa-stack-2x {
+article.event .summary i.fa-circle.fa-stack-1x {
     color: white;
 }
 article.event .summary i.expand {
