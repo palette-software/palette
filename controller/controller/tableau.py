@@ -272,7 +272,7 @@ class TableauStatusMonitor(threading.Thread):
             try:
                 entry = session.query(Agent).\
                     filter(Agent.envid == self.envid).\
-                    filter(Agent.hostname == host).\
+                    filter(Agent.ip_address == host).\
                     one()
                 return entry.agentid;
             except NoResultFound, e:
