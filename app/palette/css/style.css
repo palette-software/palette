@@ -1,6 +1,7 @@
 /*
  * #5e646b; main-side-bar selected li, main-side-bar hover, button hover.
  * #697078; main-side-bar background, dropdowns, secondary-side-bar hover
+ * #555A60; secondary-side-bar background;
  * #8d96a4; button background.
  * #5f6670; font color
  */
@@ -13,7 +14,7 @@ html, body {
     font-family: "Proxima Nova regular",Helvetica,Arial,sans-serif;
     height: 100%;
     height: 100%;
-    color: #697078;
+    color: #5f6670;
     overflow: hidden;
     position: relative;
 }
@@ -22,22 +23,24 @@ body {
 }
 h1 {
     font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
-    color: #5f6670;
+/*  color: #5f6670;*/
 }
 h2, h3, h4, h5, h6 {
     font-family: "Proxima Nova regular",Helvetica,Arial,sans-serif;
-    color: #5f6670;
+/*  color: #5f6670; */
     font-size: 17px;
 }
 p {
     font-family: "proxima nova light",Helvetica,Arial,sans-serif;
     line-height: 20px;
     font-size: 16px;
-    color: #78808A;
+/*    color: #78808A;*/
 }
+/*
 a {
     color: #b6bbc2;
 }
+*/
 a img {
     border: 0 !important;
     outline: 0;
@@ -270,7 +273,7 @@ article.popup p {
     font-size: 40px;
     text-align: center;
     width: 40px;
-    color: #8E96A3;
+/*    color: #8E96A3;*/
     position: relative;
 }
 /*
@@ -352,10 +355,11 @@ article.popup p {
     margin-bottom: 15px;
 }
 */
+/*
 .secondary-side-bar ul.actions li.active a {
     background-color:rgba(0,0,0,0.1);
     box-shadow:0 -10px rgba(0,0,0,0.1);
-}
+}*/
 .secondary-side-bar ul.actions li.active a:after {
     content:"";
     position: absolute;
@@ -369,9 +373,11 @@ article.popup p {
     border-color: transparent #ececec transparent transparent;
     display: block;
 }
+/*
 .secondary-side-bar.collapsed .actions li.active a {
     background-color: #ececec;
 }
+*/
 .secondary-side-bar ul.actions li a {
     padding: 0 12px;
 }
@@ -469,11 +475,12 @@ ul.dropdown-menu a {
     position: relative;
     display: block;
     font-weight: 300;
-    color: #fff;
+    color: white;
 }
 
 ul.dropdown-menu a:hover {
-    background-color: rgba(0,0,0,0.1);
+    background-color: #5e646b;
+/*    background-color: rgba(0,0,0,0.1);*/
     color: white;
 }
 .main-side-bar {
@@ -508,6 +515,7 @@ ul.dropdown-menu a:hover {
     width: 100%;
     display: block;
     height: 120px;
+    color: #5f6670;
     background-color: #F8F8F8;
     border-right: 1px solid #8D96A3;
 }
@@ -516,7 +524,6 @@ ul.dropdown-menu a:hover {
 }
 .main-side-bar .status > i {
     position: absolute;
-    color: #A9A7AC;
     display: block;
     top: 78px;
     font-size: 28px;
@@ -530,6 +537,8 @@ ul.dropdown-menu a:hover {
     width: 64px;
     top: 15px;
     right: 20px;
+    color: white;
+
 /*
     -webkit-transition: all 0.2s ease-in;
     -moz-transition: all 0.2s ease-in;
@@ -554,7 +563,7 @@ ul.dropdown-menu a:hover {
     top: 84px;
     left: 16px;
     display: block;
-    color: #697078;
+/*    color: #697078;*/
     font-size: 18px;
     font-weight: 300;
     width: 220px;
@@ -649,11 +658,14 @@ ul.dropdown-menu a:hover {
     background-color: #4D5257;
 }
 */
+
+/* FIXME: background? */
 ul.processes {
     display: none;
     background-color: rgba(0,0,0,0.1);
     border-bottom: 1px solid rgba(0,0,0,0.2);
 }
+/*
 ul.processes i.running {
     color:#75E25A;
 }
@@ -663,11 +675,11 @@ ul.processes i.warning {
 ul.processes i.stopped {
     color:#EF5455;
 }
-
+*/
 ul.processes.visible {
     display: block;
 }
-
+/*
 .secondary-side-bar > ul > li > a > i span {
     display: block;
     background-color: #fff;
@@ -684,7 +696,8 @@ ul.processes.visible {
     display: none;
     top: 20px;
 }
-
+*/
+/*
 .secondary-side-bar > ul > li > a  > i.warning span.warnings {
     display: block;
 }
@@ -704,7 +717,7 @@ ul.processes.visible {
     color: #fff;
     left: 18px;
 }
-
+*/
 .secondary-side-bar ul.processes > li {
     padding: 4px 15px 4px 15px;
     font-size: 14px;
@@ -736,7 +749,7 @@ ul.processes.visible {
     display: block;
     font-size: 16px;
     letter-spacing: .6px;
-    color: #ffffff;
+    color: white;
     vertical-align: top;
     position: relative;
     -webkit-transition: all 0.1s ease-in;
@@ -771,6 +784,7 @@ ul.processes.visible {
     background-color: rgba(0, 0, 0, 0.1);
 }
 */
+/*
 .secondary-side-bar .header {
     position: relative;
     top: 0;
@@ -778,6 +792,7 @@ ul.processes.visible {
     display: block;
     height: 75px;
 }
+*/
 .secondary-side-bar .padding {
     padding: 0 25px;
 }
