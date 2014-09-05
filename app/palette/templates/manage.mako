@@ -26,6 +26,25 @@
         <span>Backup</span>
       </a>
     </li>
+    <li>
+      <a name="popupRestart" class="popup-link inactive" id="restart">
+        <i class="fa fa-fw fa-power-off"></i>
+        <span>Restart</span>
+      </a>
+    </li>
+    <li>
+      <a name="popupRepairLicense" class="popup-link inactive" id="repair-license">
+        <i class="fa fa-fw fa-gavel"></i>
+        <span>Repair License</span>
+      </a>
+    </li>
+    <li>
+      <a name="popupZiplogs" class="popup-link inactive" id="ziplogs">
+        <i class="fa fa-fw fa-archive"></i>
+        <span>Ziplogs</span>
+      </a>
+    </li>
+
   </ul>
 
   <h5 class="backup-page">Next Scheduled Backup</h5>
@@ -42,7 +61,7 @@
   <section class="popup-body">
     <section class="row">
       <section class="col-xs-12">
-        <p>Are you sure want to start the <br/>Tableau Server?</p>
+        <p>Are you sure you want to start the <br/>Tableau Server?</p>
       </section>
     </section>
     <section class="row">
@@ -61,7 +80,7 @@
   <section class="popup-body">
     <section class="row">
       <section class="col-xs-12">
-        <p>Are you sure want to stop the <br/>Tableau Server?</p>
+        <p>Are you sure you want to stop the <br/>Tableau Server?</p>
       </section>
     </section>
     <section class="row">
@@ -105,7 +124,7 @@
   <section class="popup-body">
     <section class="row">
       <section class="col-xs-12">
-        <p>Are you sure want to backup?</p>
+        <p>Are you sure you want to backup?</p>
       </section>
     </section>
     <section class="row">
@@ -114,6 +133,63 @@
       </section>
       <section class="col-xs-6">
         <button id="backup-ok" class="p-btn">OK</button>
+      </section>
+    </section>
+  </section>
+  <div class="shade">&nbsp;</div>
+</article>
+
+<article class="popup" id="popupRestart">
+  <section class="popup-body">
+    <section class="row">
+      <section class="col-xs-12">
+        <p>Are you sure you want to restart?</p>
+      </section>
+    </section>
+    <section class="row">
+      <section class="col-xs-6">
+        <button class="p-btn popup-close">Cancel</button>
+      </section>
+      <section class="col-xs-6">
+        <button id="restart-ok" class="p-btn">OK</button>
+      </section>
+    </section>
+  </section>
+  <div class="shade">&nbsp;</div>
+</article>
+
+<article class="popup" id="popupRepairLicense">
+  <section class="popup-body">
+    <section class="row">
+      <section class="col-xs-12">
+        <p>Are you sure want to repair the license?</p>
+      </section>
+    </section>
+    <section class="row">
+      <section class="col-xs-6">
+        <button class="p-btn popup-close">Cancel</button>
+      </section>
+      <section class="col-xs-6">
+        <button id="repair-license-ok" class="p-btn">OK</button>
+      </section>
+    </section>
+  </section>
+  <div class="shade">&nbsp;</div>
+</article>
+
+<article class="popup" id="popupZiplogs">
+  <section class="popup-body">
+    <section class="row">
+      <section class="col-xs-12">
+        <p>Are you sure want to run ziplogs?</p>
+      </section>
+    </section>
+    <section class="row">
+      <section class="col-xs-6">
+        <button class="p-btn popup-close">Cancel</button>
+      </section>
+      <section class="col-xs-6">
+        <button id="ziplogs-ok" class="p-btn">OK</button>
       </section>
     </section>
   </section>
@@ -129,14 +205,14 @@
       <section class="col-xs-12">
       <div class="radio">
         <p class="radio-text">
-          <input type="radio" name="restore_options" id="config_and_data" value="config_and_data" checked>
-          <label for=config_and_data">Restore data and configuration</label>
+          <input type="radio" name="restore_options" id="config_and_data" value="config_and_data" checked />
+          <label for="config_and_data">Restore data and configuration</label>
         </p>
       </div>
       <div class="radio">
         <p class="radio-text">
           <input type="radio" name="restore_options" id="data_only" value="data_only">
-          <label for=data_only">Restore data only</label>
+          <label for="data_only">Restore data only</label>
         </p>
       </div>
       </section>
