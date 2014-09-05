@@ -60,11 +60,11 @@ class ServerApplication(PaletteRESTHandler):
                     d['tableau-license-capacity'] = capacity
 
             if server.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-                version = AgentYmlEntry.get(server,
+                version = AgentYmlEntry.get(req.envid,
                                             'version.external',
                                             default=None)
                 if version: d['tableau-version'] = version
-                bitness = AgentYmlEntry.get(server,
+                bitness = AgentYmlEntry.get(req.envid,
                                             'version.bitness',
                                             default=None)
                 if bitness: d['tableau-bitness'] = bitness
