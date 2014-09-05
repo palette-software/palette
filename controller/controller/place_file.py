@@ -42,7 +42,7 @@ class PlaceFile(object):
             self.copy_to_agent()
         elif self.dcheck.target_agent.agentid == self.agent.agentid:
             self.info = \
-                    ('Backup file is configured to stay on ' + \
+                    ('File is configured to stay on ' + \
                     'the Tableau primary agent, ' + \
                     'directory: %s') % self.dcheck.target_dir
 
@@ -64,7 +64,7 @@ class PlaceFile(object):
             # Check if the DEL worked.
             if remove_body.has_key('error'):
                 self.info += \
-                    ("\nDeletion of backup file failed after copy. "+\
+                    ("\nDeletion of file failed after copy. "+\
                         "File: '%s'. Error was: %s") \
                         % (self.full_path, remove_body['error'])
                 self.log.debug(self.info)
@@ -99,7 +99,7 @@ class PlaceFile(object):
         else:
             self.copy_elapsed_time = time.time() - self.copy_start_time
             self.info = \
-                ("Backup file was copied to %s cloud bucket '%s' " + \
+                ("File was copied to %s cloud bucket '%s' " + \
                  "filename '%s'.") % \
                 (self.dcheck.target_entry.cloud_type,
                  self.dcheck.target_entry.bucket,
@@ -149,7 +149,7 @@ class PlaceFile(object):
                     self.dcheck.target_agent.agentid, self.dcheck.target_dir)
 
         if copy_body.has_key('error'):
-            msg = (u"Copy of backup file '%s' to agent '%s:%s' failed. "+\
+            msg = (u"Copy of file '%s' to agent '%s:%s' failed. "+\
                 "Will leave the backup file on the primary agent. " + \
                 "Error was: %s") \
                 % (self.full_path, self.dcheck.target_agent.displayname, 
@@ -171,7 +171,7 @@ class PlaceFile(object):
             # The copy succeeded.
             self.copy_elapsed_time = time.time() - self.copy_start_time
             self.info += \
-                "Backup file copied to agent '%s', directory: %s." % \
+                "File copied to agent '%s', directory: %s." % \
                 (self.dcheck.target_agent.displayname, self.dcheck.target_dir)
 
             self.log.debug(self.info)
@@ -184,7 +184,7 @@ class PlaceFile(object):
                             self.dcheck.target_entry.volid,
                             size=self.size,
                             auto=self.auto)
-            # Remember to remove the backup file from the primary
+            # Remember to remove the file from the primary
             self.delete_local_backup = True
             self.copy_failed = False
             self.copied = True
