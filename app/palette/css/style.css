@@ -11,7 +11,7 @@ html {
 }
 html, body {
     min-width: 0 !important;
-    font-family: "Proxima Nova regular",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     height: 100%;
     height: 100%;
     color: #5f6670;
@@ -22,16 +22,16 @@ body {
     background: #f8f8f8;
 }
 h1 {
-    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
 /*  color: #5f6670;*/
 }
 h2, h3, h4, h5, h6 {
-    font-family: "Proxima Nova regular",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
 /*  color: #5f6670; */
     font-size: 17px;
 }
 p {
-    font-family: "proxima nova light",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
     line-height: 20px;
     font-size: 16px;
 /*    color: #78808A;*/
@@ -142,7 +142,7 @@ article.popup .shade {
     z-index: 9998;
 }
 article.popup p {
-    font-family: "Proxima Nova Regular","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: 17px;
 }
 
@@ -197,7 +197,7 @@ article.popup p {
 .secondary-side-bar h5.sub {
     padding: 10px 0 0 26px;
     margin: 0 0 5px 0;
-    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: 14px;
     text-transform: none;
     
@@ -240,7 +240,7 @@ article.popup p {
     transition: all 0.1s ease-in;
     cursor: pointer;
     color: white;
-    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 .secondary-side-bar ul > li a span.filename {
     display: none;
@@ -557,7 +557,7 @@ ul.dropdown-menu a:hover {
     color: #697078;
 }
 .main-side-bar .status h3 {
-    font-family: "Proxima Nova Regular","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     position: absolute;
     top: 84px;
     left: 16px;
@@ -720,7 +720,7 @@ ul.processes.visible {
 .secondary-side-bar ul.processes > li {
     padding: 4px 15px 4px 15px;
     font-size: 14px;
-    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 .main-side-bar > ul.actions {
     margin: 0;
@@ -741,7 +741,7 @@ ul.processes.visible {
     vertical-align: middle;
 }
 .main-side-bar > ul.actions li a {
-    font-family: "Proxima Nova Semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
     text-transform: uppercase;
     line-height: 55px;
     width: 100%;
@@ -949,7 +949,7 @@ ul.processes.visible {
 }
 .dynamic-content .key, .dynamic-content .label {
     display: inline;
-    font-family: "Proxima Nova semibold";
+    font-family: "Proxima Nova semibold";"Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: inherit;
     color: #5f6670;
     text-align: left;
@@ -971,7 +971,7 @@ ul.processes.visible {
     border-bottom: 2px solid #5F6670;
     padding: 10px 0 0 0;
     margin: 0;
-    font-family: "Proxima Nova Semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: 14px;
     color: #5F6670;
     text-transform: uppercase;
@@ -1055,7 +1055,7 @@ p.large {
     padding: 0px 0px 55px 0px;
 }
 input[type="text"].login, input[type="password"].login {
-    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
     border: 1px solid #d9d9d9;
     border-radius: 0px;
     color: #666666; /* FIXME */
@@ -1068,7 +1068,7 @@ input[type="text"].login, input[type="password"].login {
     margin-top: 0px;
 }
 button.login {
-    font-family: "Proxima Nova Regular","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     color: white;
     border-radius: 0px;
     background-color: #8d96a4;
@@ -1106,7 +1106,7 @@ input[type="text"].login:-webkit-autofill {
 }
 .login-label {
     text-align: left;
-    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: 19px;
     line-height: 19px;
     padding-bottom: 4px;
@@ -1290,7 +1290,7 @@ ul.checkbox li, ul.radio li {
 }
 
 ul.checkbox li label, ul.radio li label {
-    font-family: "Proxima Nova Light","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
     margin-bottom: 0;
     margin-top: 7px;
     display: inline-block;
@@ -1449,7 +1449,7 @@ ul.title-area > li > h1 > a {
     color: #697078;
     margin-left: 5px;
     text-transform: uppercase;
-    font-family: "Proxima Nova Semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 #mainNav ul.nav li > a i {
     font-size: 22px;
@@ -1590,7 +1590,7 @@ article.event > div.summary div.col2 {
     padding: 0 10px 0 0;
 }
 article.event > div.summary h3 {
-    font-family: "Proxima Nova Semibold";
+    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
     line-height: 20px;
     font-size: 15px;
     margin: 0;
@@ -1704,7 +1704,7 @@ div.refresh {
 }
 h2.page-subtitle {
     text-transform: uppercase;
-    font-family: "Proxima Nova semibold",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
     color: #5f6670;
     font-size: 17px;
     margin-top: 30px;
@@ -1753,7 +1753,7 @@ h2.page-subtitle {
     line-height: 22px;
     font-size: 14px;
     color: white;
-    font-family: Trebuchet, Arial, sans-serif;
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     font-weight: bold;
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
