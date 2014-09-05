@@ -120,18 +120,19 @@ class HttpRequestManager(TableauCacheManager):
                     excludes = []
                 # check the URI against the list to be skipped.
                 if not entry.controller in excludes:
-                    body =  {'duration':seconds, 'http_status': responses[entry.status]}
+                    body =  {'duration':seconds}
                     self.eventgen(EventControl.HTTP_BAD_STATUS,
                                   agent, entry, body=body)
-            elif entry.action == 'show':
+            elif entry.action == 'show' and \
+                 entry.http_request_uri.startswith('/views/'):
                 errorlevel = self.server.system.getint('http-load-error')
                 warnlevel = self.server.system.getint('http-load-warn')
                 if errorlevel != 0 and seconds >= errorlevel:
-                    body =  {'duration':seconds, 'http_status': responses[entry.status]}
+                    body =  {'duration':seconds}
                     self.eventgen(EventControl.HTTP_LOAD_ERROR,
                                   agent, entry, body=body)
                 elif warnlevel != 0 and seconds >= warnlevel:
-                    body =  {'duration':seconds, 'http_status': responses[entry.status]}
+                    body =  {'duration':seconds}
                     self.eventgen(EventControl.HTTP_LOAD_WARN,
                                   agent, entry, body=body)
             session.add(entry)
@@ -188,6 +189,8 @@ class HttpRequestManager(TableauCacheManager):
                         entry.todict().items())
 
         self.parseuri(entry.http_request_uri, body)
+
+        body['http_status'] = responses[entry.status]
 
         system_user_id = entry.system_user_id
         if system_user_id != -1:

@@ -79,11 +79,11 @@
           </article>
         </div>
         <div class="col2">
+%if req.remote_user.roleid == req.remote_user.role.SUPER_ADMIN:
           <article>
             <span class="label">Palette Admin Permissions</span>
             <i class="fa fa-fw fa-question-circle fa-2x help"></i>
           </article>
-%if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
           <div class="btn-group dropdown">
             <button type="button" class="btn btn-default dropdown-toggle"
                     data-toggle="dropdown">
@@ -96,8 +96,6 @@
                   {{/admin-levels}}
             </ul>
           </div>
-%else:
-	  <div>{{admin-type}}</div>
 %endif
         </div>
       </div>

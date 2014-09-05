@@ -1,7 +1,9 @@
 /*
  * #5e646b; main-side-bar selected li, main-side-bar hover, button hover.
  * #697078; main-side-bar background, dropdowns, secondary-side-bar hover
+ * #555A60; secondary-side-bar background;
  * #8d96a4; button background.
+ * #5f6670; font color
  */
 
 html {
@@ -9,10 +11,10 @@ html {
 }
 html, body {
     min-width: 0 !important;
-    font-family: "Proxima Nova regular",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     height: 100%;
     height: 100%;
-    color: #697078;
+    color: #5f6670;
     overflow: hidden;
     position: relative;
 }
@@ -20,23 +22,25 @@ body {
     background: #f8f8f8;
 }
 h1 {
-    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
-    color: #5f6670;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
+/*  color: #5f6670;*/
 }
 h2, h3, h4, h5, h6 {
-    font-family: "Proxima Nova regular",Helvetica,Arial,sans-serif;
-    color: #5f6670;
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
+/*  color: #5f6670; */
     font-size: 17px;
 }
 p {
-    font-family: "proxima nova light",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
     line-height: 20px;
     font-size: 16px;
-    color: #78808A;
+/*    color: #78808A;*/
 }
+/*
 a {
     color: #b6bbc2;
 }
+*/
 a img {
     border: 0 !important;
     outline: 0;
@@ -124,7 +128,6 @@ article.popup .popup-body {
     position: relative;
     z-index: 9999;
 }
-/*
 article.popup .shade {
     content: "";
     display: block;
@@ -138,8 +141,8 @@ article.popup .shade {
     background-color: rgba(0,0,0,0.2);
     z-index: 9998;
 }
-*/
 article.popup p {
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: 17px;
 }
 
@@ -194,7 +197,7 @@ article.popup p {
 .secondary-side-bar h5.sub {
     padding: 10px 0 0 26px;
     margin: 0 0 5px 0;
-    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: 14px;
     text-transform: none;
     
@@ -237,7 +240,7 @@ article.popup p {
     transition: all 0.1s ease-in;
     cursor: pointer;
     color: white;
-    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 .secondary-side-bar ul > li a span.filename {
     display: none;
@@ -269,7 +272,7 @@ article.popup p {
     font-size: 40px;
     text-align: center;
     width: 40px;
-    color: #8E96A3;
+/*    color: #8E96A3;*/
     position: relative;
 }
 /*
@@ -351,10 +354,11 @@ article.popup p {
     margin-bottom: 15px;
 }
 */
+/*
 .secondary-side-bar ul.actions li.active a {
     background-color:rgba(0,0,0,0.1);
     box-shadow:0 -10px rgba(0,0,0,0.1);
-}
+}*/
 .secondary-side-bar ul.actions li.active a:after {
     content:"";
     position: absolute;
@@ -368,9 +372,11 @@ article.popup p {
     border-color: transparent #ececec transparent transparent;
     display: block;
 }
+/*
 .secondary-side-bar.collapsed .actions li.active a {
     background-color: #ececec;
 }
+*/
 .secondary-side-bar ul.actions li a {
     padding: 0 12px;
 }
@@ -468,11 +474,12 @@ ul.dropdown-menu a {
     position: relative;
     display: block;
     font-weight: 300;
-    color: #fff;
+    color: white;
 }
 
 ul.dropdown-menu a:hover {
-    background-color: rgba(0,0,0,0.1);
+    background-color: #5e646b;
+/*    background-color: rgba(0,0,0,0.1);*/
     color: white;
 }
 .main-side-bar {
@@ -507,6 +514,7 @@ ul.dropdown-menu a:hover {
     width: 100%;
     display: block;
     height: 120px;
+    color: #5f6670;
     background-color: #F8F8F8;
     border-right: 1px solid #8D96A3;
 }
@@ -515,7 +523,6 @@ ul.dropdown-menu a:hover {
 }
 .main-side-bar .status > i {
     position: absolute;
-    color: #A9A7AC;
     display: block;
     top: 78px;
     font-size: 28px;
@@ -529,6 +536,8 @@ ul.dropdown-menu a:hover {
     width: 64px;
     top: 15px;
     right: 20px;
+    color: white;
+
 /*
     -webkit-transition: all 0.2s ease-in;
     -moz-transition: all 0.2s ease-in;
@@ -548,12 +557,12 @@ ul.dropdown-menu a:hover {
     color: #697078;
 }
 .main-side-bar .status h3 {
-    font-family: "Proxima Nova Regular","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     position: absolute;
     top: 84px;
     left: 16px;
     display: block;
-    color: #697078;
+/*    color: #697078;*/
     font-size: 18px;
     font-weight: 300;
     width: 220px;
@@ -648,11 +657,14 @@ ul.dropdown-menu a:hover {
     background-color: #4D5257;
 }
 */
+
+/* FIXME: background? */
 ul.processes {
     display: none;
     background-color: rgba(0,0,0,0.1);
     border-bottom: 1px solid rgba(0,0,0,0.2);
 }
+/*
 ul.processes i.running {
     color:#75E25A;
 }
@@ -662,11 +674,11 @@ ul.processes i.warning {
 ul.processes i.stopped {
     color:#EF5455;
 }
-
+*/
 ul.processes.visible {
     display: block;
 }
-
+/*
 .secondary-side-bar > ul > li > a > i span {
     display: block;
     background-color: #fff;
@@ -683,7 +695,8 @@ ul.processes.visible {
     display: none;
     top: 20px;
 }
-
+*/
+/*
 .secondary-side-bar > ul > li > a  > i.warning span.warnings {
     display: block;
 }
@@ -703,11 +716,11 @@ ul.processes.visible {
     color: #fff;
     left: 18px;
 }
-
+*/
 .secondary-side-bar ul.processes > li {
     padding: 4px 15px 4px 15px;
     font-size: 14px;
-    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 .main-side-bar > ul.actions {
     margin: 0;
@@ -728,14 +741,14 @@ ul.processes.visible {
     vertical-align: middle;
 }
 .main-side-bar > ul.actions li a {
-    font-family: "Proxima Nova Semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
     text-transform: uppercase;
     line-height: 55px;
     width: 100%;
     display: block;
     font-size: 16px;
     letter-spacing: .6px;
-    color: #ffffff;
+    color: white;
     vertical-align: top;
     position: relative;
     -webkit-transition: all 0.1s ease-in;
@@ -770,6 +783,7 @@ ul.processes.visible {
     background-color: rgba(0, 0, 0, 0.1);
 }
 */
+/*
 .secondary-side-bar .header {
     position: relative;
     top: 0;
@@ -777,9 +791,12 @@ ul.processes.visible {
     display: block;
     height: 75px;
 }
+*/
+/*
 .secondary-side-bar .padding {
     padding: 0 25px;
 }
+*/
 .secondary-side-bar > ul.actions {
     margin: 0;
     padding:0;
@@ -881,6 +898,7 @@ ul.processes.visible {
 .dynamic-content .top-zone .row {
     height: auto !important;
 }
+/*
 .dynamic-content .top-zone a.alert {
     font-size: 16px;
     margin: 0 0 25px 10px;
@@ -919,6 +937,7 @@ ul.processes.visible {
 .dynamic-content .top-zone a.alert.errors span {
     background-color: #EF5455;
 }
+*/
 .btn-group>.btn, .btn-group-vertical>.btn {
     padding-right: 30px;
 }
@@ -930,7 +949,7 @@ ul.processes.visible {
 }
 .dynamic-content .key, .dynamic-content .label {
     display: inline;
-    font-family: "Proxima Nova semibold";
+    font-family: "Proxima Nova semibold";"Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: inherit;
     color: #5f6670;
     text-align: left;
@@ -952,7 +971,7 @@ ul.processes.visible {
     border-bottom: 2px solid #5F6670;
     padding: 10px 0 0 0;
     margin: 0;
-    font-family: "Proxima Nova Semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: 14px;
     color: #5F6670;
     text-transform: uppercase;
@@ -987,11 +1006,13 @@ h1.page-title {
     background-repeat: no-repeat;
     margin-left: 15px;
 }
+/*
 nav img.site-id {
     color: #111111;
     margin-top: -5px;
     margin-right: 5px;
 }
+*/
 #mainNav .arrow-down {
     left: 7px;
     border-top: 7px solid #fff;
@@ -1006,41 +1027,23 @@ nav img.site-id {
     font-size: 11px;
     font-weight: 500;
 }
-.green-light, .yellow-light, .orange-light, .red-light {
-    width: 130px;
-    height: 128px;
-    margin: 10px auto;
-    background: url(/app/module/palette/images/status-green-light.png);
-    background-size: 100%;
-    background-repeat: no-repeat;
-}
-.yellow-light {
-    background: url(/app/module/palette/images/status-yellow-light.png);
-    background-size: 100%;
-}
-.orange-light {
-    background: url(/app/module/palette/images/status-orange-light.png);
-    background-size: 100%;
-}
-.red-light {
-    background: url(/app/module/palette/images/status-red-light.png);
-    background-size: 100%;
-}
 .large {
     font-size: 2em;
 }
 p.large {
     margin: 0;
 }
+/*
 .spacer {
     margin: 0 60px 0 0;
 }
+*/
 .margin-top {
     margin-top: 12px !important;
 }
 /* login page styles */
 .login-box {
-    background-color: #fff;
+    background-color: white;
 }
 .center-box {
     text-align: center;
@@ -1052,10 +1055,10 @@ p.large {
     padding: 0px 0px 55px 0px;
 }
 input[type="text"].login, input[type="password"].login {
-    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
     border: 1px solid #d9d9d9;
     border-radius: 0px;
-    color: #666666;
+    color: #666666; /* FIXME */
     font-size: 19px;
     outline: 0;
     height: 48px;
@@ -1065,8 +1068,8 @@ input[type="text"].login, input[type="password"].login {
     margin-top: 0px;
 }
 button.login {
-    font-family: "Proxima Nova Regular","Helvetica Neue",Helvetica,Arial,sans-serif;
-    color: #fff;
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
+    color: white;
     border-radius: 0px;
     background-color: #8d96a4;
     width: 100%;
@@ -1083,9 +1086,10 @@ button.login {
     display: inline-block;
     -webkit-appearance: none;
 }
-button.login:hover, input[type="submit"].login:hover {
+button.login:hover, input[type="submit"].login:hover, button.login:active, input[type="submit"].login:active, button.login:focus, input[type="submit"].login:focus {
     background-color: #5e646b;
 }
+/*
 button.login:active, input[type="submit"].login:active {
     background-color: #666666;
     color: #d9d9d9;
@@ -1096,12 +1100,13 @@ button.login:focus, input[type="submit"].login:focus {
     color: #d9d9d9;
     outline: none;
 }
+*/
 input[type="text"].login:-webkit-autofill {
    -webkit-box-shadow: 0 0 0px 1000px white inset;
 }
 .login-label {
     text-align: left;
-    font-family: "Proxima Nova light",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: 19px;
     line-height: 19px;
     padding-bottom: 4px;
@@ -1131,9 +1136,11 @@ input[type="text"].login:-webkit-autofill {
     margin-top: 25px;
 }
 /* other styles*/
+/*
 .big {
     width: 150px;
 }
+*/
 a.button {
     text-decoration: none;
     -webkit-touch-callout: none;
@@ -1151,6 +1158,7 @@ a.button {
 input[type="submit"].login:active {
     top: 1px;
 }
+/* FIXME: merge with active/inactive */
 .disabled {
     top: 0 !important;
     color: #aaa !important;
@@ -1159,6 +1167,7 @@ input[type="submit"].login:active {
     text-shadow: 1px 1px 0 #fff;
     cursor: not-allowed;
 }
+/*
 .padtop {
     padding: 1.5em 0 0;
 }
@@ -1168,6 +1177,7 @@ input[type="submit"].login:active {
 .doublepadtop {
     padding-top: 4em;
 }
+*/
 .full-size-box {
     position: absolute;
     top: 0;
@@ -1254,22 +1264,18 @@ p.error {
 .checkbox, .radio {
     padding: 0;
 }
-p.radio-text {
+article.popup p.radio-text {
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: 17px;
     text-align: left;
     line-height: 25px;
     margin-left: 30px;
-}
-p.radio-text label
-{
-    color: #78808A;
 }
 
 ul.checkbox, ul.radio {
     margin: 15px 0;
     list-style-type: none;
 }
-
 ul.checkbox li, ul.radio li {
     position: relative;
     height: 28px;
@@ -1280,6 +1286,7 @@ ul.checkbox li, ul.radio li {
 }
 
 ul.checkbox li label, ul.radio li label {
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
     margin-bottom: 0;
     margin-top: 7px;
     display: inline-block;
@@ -1356,10 +1363,12 @@ ul.checkbox li input[type="checkbox"]:checked + label span:after, ul.radio li in
     color: #fff;
     font-size: 12px;
 }
+/*
 #status p {
     padding: 1em 0 2em 0;
     text-align: center;
 }
+*/
 ul.title-area > li > h1 > a {
     color: #fff;
     font-weight: 100;
@@ -1436,7 +1445,7 @@ ul.title-area > li > h1 > a {
     color: #697078;
     margin-left: 5px;
     text-transform: uppercase;
-    font-family: "Proxima Nova Semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 #mainNav ul.nav li > a i {
     font-size: 22px;
@@ -1493,7 +1502,7 @@ article.event {
     display: block;
     min-height: 55px;
     width: 100%;
-    color: #697078;
+    color: #5F6670;
     font-size: 14px;
     margin-bottom: 8px;
     -webkit-transition: all 0.3s ease-in;
@@ -1517,7 +1526,6 @@ article.event .summary > i, article.event .summary > span > i {
     text-align: center;
     line-height: 55px;
     font-size: 28px;
-    opacity: 0.8;
     -webkit-transition: all 0.1s ease-in;
     -moz-transition: all 0.1s ease-in;
     -ms-transition: all 0.1s ease-in;
@@ -1527,7 +1535,7 @@ article.event .summary > i, article.event .summary > span > i {
 article.event .summary > span.fa-stack {
     float: left;
 }
-article.event .summary i.fa-circle.fa-stack-2x {
+article.event .summary i.fa-circle.fa-stack-1x {
     color: white;
 }
 article.event .summary i.expand {
@@ -1578,7 +1586,7 @@ article.event > div.summary div.col2 {
     padding: 0 10px 0 0;
 }
 article.event > div.summary h3 {
-    font-family: "Proxima Nova Semibold";
+    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
     line-height: 20px;
     font-size: 15px;
     margin: 0;
@@ -1644,7 +1652,7 @@ div.refresh {
 }
 .refresh i.fa-stack-2x {
     font-size: 26px;
-    color:#fff;
+    color: white;
 }
 .filter-dropdowns {
     margin-bottom: 11px;
@@ -1692,7 +1700,7 @@ div.refresh {
 }
 h2.page-subtitle {
     text-transform: uppercase;
-    font-family: "Proxima Nova semibold",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
     color: #5f6670;
     font-size: 17px;
     margin-top: 30px;
@@ -1741,7 +1749,7 @@ h2.page-subtitle {
     line-height: 22px;
     font-size: 14px;
     color: white;
-    font-family: Trebuchet, Arial, sans-serif;
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     font-weight: bold;
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;

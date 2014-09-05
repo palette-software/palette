@@ -27,13 +27,13 @@
 {
 "state":"STOPPED",
 "text":"Tableau Stopped",
-"allowable_actions":"start backup restore reset restart",
+"allowable_actions":"start backup restore restart repair-license ziplogs",
 "color":"yellow"
 },
 {
 "state":"STOPPED-UNEXPECTED",
 "text":"Tableau Stopped Unexpectedly",
-"allowable_actions":"start backup restore reset restart",
+"allowable_actions":"start backup restore restart repair-license ziplogs",
 "color":"red"
 },
 {
@@ -87,7 +87,7 @@
 {
 "state":"STARTED",
 "text":"Tableau Running",
-"allowable_actions":"stop backup restore reset restart user-refresh",
+"allowable_actions":"stop backup restore restart repair-license ziplogs user-refresh",
 "color":"green"
 },
 {
@@ -129,7 +129,7 @@
 {
 "state":"DEGRADED",
 "text":"Tableau Partially Degraded",
-"allowable_actions":"start backup restore reset restart user-refresh",
+"allowable_actions":"start backup restore restart repair-license ziplogs user-refresh",
 "color":"red"
 },
 {

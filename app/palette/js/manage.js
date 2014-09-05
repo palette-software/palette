@@ -3,7 +3,11 @@ function ($, topic, template, common)
 {
     var actions = {'start': start,
                    'stop': stop,
-                   'backup': backup};
+                   'backup': backup,
+                   'restart': ok,
+                   'repair-license': ok,
+                   'ziplogs': ok,
+                  };
 
     var templates = {'backup-list-template': null,
                      'archive-backup-template': null};
@@ -15,6 +19,14 @@ function ($, topic, template, common)
         for (var action in actions) {
             $('#'+action).addClass('inactive');
         }
+    }
+
+    /*
+     * ok()
+     * Generic 'OK' handler for placeholder actions.
+     */
+    function ok() {
+        updateState();
     }
 
     function start() {
@@ -79,8 +91,11 @@ function ($, topic, template, common)
         });
     }
 
-    function updateState(data) {
-        allowed = data['allowable-actions'];
+    /*
+     * updateState()
+     * Enable/Disable actions based on the 'allowed' list.
+     */
+    function updateState() {
         for (var action in actions) {
             if ($.inArray(action, allowed) >= 0) {
                 $('#'+action).removeClass('inactive');
@@ -156,13 +171,16 @@ function ($, topic, template, common)
                 return;
             }
             disableAll();
-            f();
+            if (f) {
+                f();
+            }
             $('article.popup').removeClass('visible');
         });
     }
 
     topic.subscribe('state', function(message, data) {
-        updateState(data);
+        allowed = data['allowable-actions'];
+        updateState();
     });
 
     $().ready(function() {
