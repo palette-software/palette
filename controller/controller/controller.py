@@ -357,17 +357,29 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return cli_body
 
-    def localurl(self, agent):
-        """ Generate a url for Tableau that the agent can use internally"""
+    def public_url(self):
+        """ Generate a url for Tableau that is reportable to a user."""
         url = self.system.get('tableau-server-url', default=None)
         if url: return url
 
+        envid = self.environment.envid
+
         key = 'svcmonitor.notification.smtp.canonical_url'
-        url = AgentYmlEntry.get(agent, key, default=None)
+        url = AgentYmlEntry.get(envid, key, default=None)
         if url: return url
 
+        return None
+
+    def local_url(self):
+        """ Generate a url for Tableau that the agent can use internally"""
+
+        url = self.public_url();
+        if url: return url
+
+        envid = self.environment.envid
+
         key = 'datacollector.apache.url'
-        url = AgentYmlEntry.get(agent, key, default=None)
+        url = AgentYmlEntry.get(envid, key, default=None)
         if url:
             tokens = url.split('/', 3)
             if len(tokens) >= 3:
@@ -387,7 +399,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             errmsg = 'Invalid credentials.'
             self.log.error('tabcmd: ' + errmsg)
             return {'error': errmsg}
-        url = self.localurl(agent)
+        url = self.local_url(agent)
         if not url:
             errmsg = 'No local URL available.'
             return {'error': errmsg}
@@ -1109,7 +1121,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         path = agent.path.join(agent.tableau_data_dir, "data", "tabsvc",
                                "config", "workgroup.yml")
         yml = agent.filemanager.get(path)
-        body = self.agentmanager.update_agent_yml(agent.agentid, yml)
+        body = AgentYmlEntry.sync(self.environment.envid, yml)
         return body
 
     def sync_cmd(self, agent, check_odbc_state=True):

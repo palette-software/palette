@@ -89,6 +89,7 @@ class Site(meta.Base, BaseMixin):
             entry.query_limit = row[14]
             ids.append(entry.siteid)
 
+        # FIXME: don't delete
         session.query(Site).\
             filter(not_(Site.siteid.in_(ids))).\
             delete(synchronize_session='fetch')
