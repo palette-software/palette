@@ -21,7 +21,7 @@ from firewall import Firewall
 from odbc import ODBC
 from filemanager import FileManager
 from general import SystemConfig
-from util import sizestr
+from util import sizestr, is_ip
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
@@ -396,7 +396,7 @@ class AgentManager(threading.Thread):
                         AgentManager.WORKER_START)
 
             # If the value is anything we're known by, then use it
-            if self.is_ip(query.value):
+            if is_ip(query.value):
                 if query.value != new_agent.ip_address:
                     continue
             else:
@@ -721,7 +721,7 @@ class AgentManager(threading.Thread):
             hostname = agent.hostname[:dot]
 
         for worker in hosts[1:]:
-            if self.is_ip(worker):
+            if is_ip(worker):
                 if worker == agent.ip_address:
                     return True
             else:
@@ -732,13 +732,6 @@ class AgentManager(threading.Thread):
                 if worker.upper() == hostname.upper():
                     return True
         return False
-
-    def is_ip(self, spec):
-        try:
-            ip = socket.inet_aton(spec)
-            return True
-        except socket.error:
-            return False
 
     def get_worker_hosts(self):
         """Get the value 'worker.hosts' from the yml file and return
