@@ -1264,22 +1264,18 @@ p.error {
 .checkbox, .radio {
     padding: 0;
 }
-p.radio-text {
+article.popup p.radio-text {
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: 17px;
     text-align: left;
     line-height: 25px;
     margin-left: 30px;
-}
-p.radio-text label
-{
-    color: #78808A;
 }
 
 ul.checkbox, ul.radio {
     margin: 15px 0;
     list-style-type: none;
 }
-
 ul.checkbox li, ul.radio li {
     position: relative;
     height: 28px;
