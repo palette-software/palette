@@ -30,9 +30,10 @@ function ($, template, common, EditBox, OnOff)
         url: '/rest/general',
         success: function(data) {
             $().ready(function() {
+                update(data);
                 EditBox.setup();
                 OnOff.setup();
-                update(data);
+                common.setupDropdowns();
             });
         },
         error: common.ajaxError,

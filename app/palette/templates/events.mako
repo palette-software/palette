@@ -57,8 +57,8 @@
   <article class="event">
     <div class="summary clearfix">
       <span class="fa-stack">
-	<i class="fa fa-circle fa-stack-2x"></i>
-	<i class="fa fa-fw {{icon}} {{color}}"></i>
+	<i class="fa fa-circle fa-stack-1x"></i>
+	<i class="fa fa-fw fa-stack-1x {{icon}} {{color}}"></i>
       </span>
       <div>
 	<h3>{{title}}</h3>

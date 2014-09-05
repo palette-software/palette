@@ -72,9 +72,9 @@ class UserApplication(PaletteRESTHandler):
         users = []
         for user in self.users(req.envid):
             d = user.todict(pretty=True, exclude=exclude)
-            d['admin-type'] = user.role.name;
+            d['admin-type'] = user.role.name; # FIXME
             d['visited-info'] = self.visited_info(d)
-            d['tableau-info'] = self.tableau_info(d)
+            d['tableau-info'] = self.tableau_info(d) # FIXME
             d['license-info'] = self.license_info(d)
             if 'login-at' not in d:
                 d['login-at'] = user.name == 'palette' and 'N/A' or 'never'
