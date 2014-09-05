@@ -29,6 +29,7 @@ class PlaceFile(object):
         self.delete_locale_backup = False
         self.copied = False
         self.info = ""
+        self.placed_file_entry = None
 
         self.do_copy()
 
@@ -50,7 +51,7 @@ class PlaceFile(object):
             self.delete_local_backup = False
             self.copy_failed = False
             self.copied = True
-            self.server.files.add(self.full_path,
+            self.placed_file_entry = self.server.files.add(self.full_path,
                             self.dcheck.file_type,
                             FileManager.STORAGE_TYPE_VOL,
                             self.dcheck.target_entry.volid,
@@ -90,7 +91,7 @@ class PlaceFile(object):
             self.delete_local_backup = False
             self.copied = False
             self.copy_failed = True
-            self.server.files.add(self.full_path,
+            self.placed_file_entry = self.server.files.add(self.full_path,
                             self.dcheck.file_type,
                             FileManager.STORAGE_TYPE_VOL,
                             self.dcheck.primary_entry.volid,
@@ -106,7 +107,7 @@ class PlaceFile(object):
                  self.name_only)
             self.log.debug(self.info)
             # Backup was copied to gcs or s3
-            self.server.files.add(self.name_only,
+            self.placed_file_entry = self.server.files.add(self.name_only,
                             self.dcheck.file_type,
                             FileManager.STORAGE_TYPE_CLOUD,
                             self.dcheck.target_entry.cloudid,
@@ -158,7 +159,7 @@ class PlaceFile(object):
             self.info += msg
             # Something was wrong with the copy to the non-primary agent.
             # Leave the backup on the primary after all.
-            self.server.files.add(self.full_path,
+            self.placed_file_entry = self.server.files.add(self.full_path,
                         self.dcheck.file_type,
                         FileManager.STORAGE_TYPE_VOL,
                         self.dcheck.primary_entry.volid,
@@ -178,7 +179,7 @@ class PlaceFile(object):
             target_full_path = self.dcheck.target_agent.path.join(
                                         self.dcheck.target_dir, self.name_only)
 
-            self.server.files.add(target_full_path,
+            self.placed_file_entry = self.server.files.add(target_full_path,
                             self.dcheck.file_type,
                             FileManager.STORAGE_TYPE_VOL,
                             self.dcheck.target_entry.volid,
