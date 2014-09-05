@@ -361,6 +361,8 @@ class AgentManager(threading.Thread):
            We look for the "workerX.host" entry that has
            our ip address."""
 
+        envid = self.server.environment.envid
+
         try:
             hosts = self.get_worker_hosts()
         except ValueError, e:
@@ -387,28 +389,27 @@ class AgentManager(threading.Thread):
             # Get entry for "worker%d.host".  Its value is worker's IP address.
             worker_key = "worker%d.host" % worker_num
 
-            query = session.query(AgentYmlEntry).\
-                filter(AgentYmlEntry.key == worker_key).first()
-            if not query:
+            value = AgentYmlEntry.get(envid, worker_key, default=None)
+            if not value:
                 self.log.error("calc_worker_name: Missing yml key: %s",
                                worker_key)
                 return (AgentManager.WORKER_TEMPLATE % 0,
                         AgentManager.WORKER_START)
 
             # If the value is anything we're known by, then use it
-            if is_ip(query.value):
-                if query.value != new_agent.ip_address:
+            if is_ip(value):
+                if value != new_agent.ip_address:
                     continue
             else:
-                dot = query.value.find('.')
+                dot = value.find('.')
                 if dot != -1:
-                    worker = query.value[:dot]
+                    worker = value[:dot]
                 else:
-                    worker = query.value
+                    worker = value
                 if worker.upper() != hostname.upper():
                     continue
             self.log.debug("calc_worker_name: We are %s (%s)",
-                           worker_key, query.value)
+                           worker_key, value)
             return (AgentManager.WORKER_TEMPLATE % worker_num,
                         AgentManager.WORKER_START + worker_num)
 
@@ -433,25 +434,6 @@ class AgentManager(threading.Thread):
 
         return ("UNNAMED NON-WORKER/PRIMARY", AgentManager.WORKER_START)
 
-    def update_agent_yml(self, agentid, yml):
-        """update the agent_yml table with this agent's yml contents."""
-        session = meta.Session()
-
-        # FIXME: do an update instead of a delete all
-        # First delete any old entries for this agent
-        entry = session.query(AgentYmlEntry).\
-            filter(AgentYmlEntry.agentid == agentid).delete()
-
-        d = {}
-        # This the first line ('---')
-        for line in yml.strip().split('\n')[1:]:
-            key, value = line.split(":", 1)
-            value = value.strip()
-            entry = AgentYmlEntry(agentid=agentid, key=key, value=value)
-            session.add(entry)
-            d[key] = value
-        session.commit()
-        return d
 
     def update_agent_pinfo_dirs(self, agent, pinfo):
         """Update the directory information returned from pinfo.
@@ -737,18 +719,15 @@ class AgentManager(threading.Thread):
         """Get the value 'worker.hosts' from the yml file and return
            the list of hosts there."""
 
-        session = meta.Session()
-        query = session.query(AgentYmlEntry).\
-            filter(AgentYmlEntry.key == "worker.hosts").first()
-
-        if not query:
-            raise ValueError('worker.hosts not found.')
+        # get() raises ValueError if not found.
+        envid = self.server.environment.envid;
+        value= AgentYmlEntry.get(envid, 'worker.hosts');
 
         # The value is in the format:
         #       "DEV-PRIMARY, 10.0.0.102"
         # where the first host is the primary and the remaining are
         # Tableau workers.
-        hosts = [x.strip() for x in query.value.split(',')]
+        hosts = [x.strip() for x in value.split(',')]
         return hosts
 
     def set_displayname(self, aconn, uuid, displayname):

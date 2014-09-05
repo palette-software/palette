@@ -1,6 +1,7 @@
 /*
- * #5e646b; main-side-bar selected li, main-side-bar hover
+ * #5e646b; main-side-bar selected li, main-side-bar hover, button hover.
  * #697078; main-side-bar background, dropdowns, secondary-side-bar hover
+ * #8d96a4; button background.
  */
 
 html {
@@ -43,7 +44,7 @@ a img {
 i.expand {
     position: absolute;
     right: 0;
-    color: white !important;
+    color: white;
     font-size: 26px !important;
     clear: none !important;
 }
@@ -115,7 +116,6 @@ article.popup.visible {
 article.popup .popup-body {
     margin: 0 auto;
     display: inline-block;
-    border-radius: 10px;
     padding: 25px 60px;
     width: 90%;
     max-width: 400px;
@@ -1068,7 +1068,7 @@ button.login {
     font-family: "Proxima Nova Regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     color: #fff;
     border-radius: 0px;
-    background-color: #a2adbd;
+    background-color: #8d96a4;
     width: 100%;
     font-size: 20px;
     font-weight: 500;
@@ -1084,7 +1084,7 @@ button.login {
     -webkit-appearance: none;
 }
 button.login:hover, input[type="submit"].login:hover {
-    background-color: #b3bbc8;
+    background-color: #5e646b;
 }
 button.login:active, input[type="submit"].login:active {
     background-color: #666666;
@@ -1192,10 +1192,10 @@ label:first-of-type {
     margin: 0 0 4px 0;
 }
 */
+/* FIXME: popup button, merge with bootstrap .btn class */
 .p-btn {
-    border-radius: 5px;
     color: #fff;
-    background-color: #a2adbd;
+    background-color: #8d96a4;
     width: 100%;
     font-weight: 500;
     padding: 9px 0;
@@ -1205,7 +1205,7 @@ label:first-of-type {
     max-width: 320px;
 }
 .p-btn:hover {
-    box-shadow: 0 0 0 9001px rgba(250,250,250,0.2) inset;
+    background-color: #5e646b;
 }
 input[type="text"], input[type="password"], input[type="email"] {
     margin: 5px 0 15px 0;
@@ -1490,7 +1490,6 @@ ul.title-area > li > h1 > a {
 }
 article.event {
     background-color: #e5e5e5;
-    border-radius: 5px;
     display: block;
     min-height: 55px;
     width: 100%;
@@ -1530,6 +1529,9 @@ article.event .summary > span.fa-stack {
 }
 article.event .summary i.fa-circle.fa-stack-2x {
     color: white;
+}
+article.event .summary i.expand {
+    color: #5f6670;
 }
 /*
 article.event:hover .summary i {

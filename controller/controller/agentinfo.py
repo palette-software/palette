@@ -1,6 +1,7 @@
 import os
 
 from sqlalchemy import Column, String, BigInteger, Integer, Boolean, asc
+from sqlalchemy import not_, UniqueConstraint
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm.exc import NoResultFound
@@ -9,23 +10,26 @@ from akiri.framework.ext.sqlalchemy import meta
 from util import sizestr
 from mixin import BaseMixin, BaseDictMixin
 
-# FIXME: move these classes to agent.py
+# FIXME: this class needs to be in another module since YML is not treated
+# like the system table, i.e. it's tied to an environment, not the agent.
 class AgentYmlEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = "agent_yml"
 
     ymlid = Column(Integer, unique=True, nullable=False, primary_key=True)
-
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False)
+    envid = Column(BigInteger, ForeignKey("environment.envid"),
+                   primary_key=True)
     key = Column(String)
     value = Column(String)
 
+    __table_args__ = (UniqueConstraint('envid', 'key'),)
+
     @classmethod
-    def entry(cls, agent, key, **kwargs):
-        filters = {'agentid':agent.agentid, 'key':key}
+    def entry(cls, envid, key, **kwargs):
+        filters = {'envid':envid, 'key':key}
         return cls.get_unique_by_keys(filters, **kwargs)
 
     @classmethod
-    def get(cls, agent, key, **kwargs):
+    def get(cls, envid, key, **kwargs):
         if 'default' in kwargs:
             default = kwargs['default']
             have_default = True
@@ -37,7 +41,7 @@ class AgentYmlEntry(meta.Base, BaseMixin, BaseDictMixin):
             raise ValueError("Invalid kwargs")
 
         try:
-            entry = cls.entry(agent, key, **kwargs)
+            entry = cls.entry(envid, key, **kwargs)
         except ValueError, e:
             if have_default:
                 return default
@@ -45,6 +49,36 @@ class AgentYmlEntry(meta.Base, BaseMixin, BaseDictMixin):
                 raise e
         return entry.value
 
+    @classmethod
+    def sync(cls, envid, yml):
+        """
+        Replace all YML entries for a particular environment with passed list.
+        The new contents are then returned as a dictionary.
+        """
+        session = meta.Session()
+
+        d = {}
+        # This is the first line ('---')
+        for line in yml.strip().split('\n')[1:]:
+            key, value = line.split(":", 1)
+            value = value.strip()
+
+            entry = cls.entry(envid, key, default=None)
+            if entry is None:
+                entry = AgentYmlEntry(envid=envid, key=key)
+            entry.value = value
+            session.add(entry)
+            d[key] = value
+
+        session.query(AgentYmlEntry).\
+            filter(not_(AgentYmlEntry.key.in_(d.keys()))).\
+            delete(synchronize_session='fetch')
+
+        session.commit()
+        return d
+
+
+# FIXME: move these classes to agent.py
 class AgentVolumesEntry(meta.Base, BaseDictMixin):
     __tablename__ = "agent_volumes"
 
