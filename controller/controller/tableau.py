@@ -14,6 +14,7 @@ from state import StateManager
 from agentmanager import AgentManager
 from agent import Agent
 from event_control import EventControl
+from util import is_ip, hostname_only
 
 class TableauProcess(meta.Base):
     __tablename__ = 'tableau_processes'
@@ -262,37 +263,38 @@ class TableauStatusMonitor(threading.Thread):
         self.check_status_with_connection(agent)
 
     def get_agent_id_from_host(self, host):
-        # FIXME: As an optimization, look in the acon list before looking
-        #        in the database.
+        """ Given a hostname, fully qualified domain name or IP address,
+            return an agentid.  If no agentid is found, return None.
+            Hostname is treated as case insensitive."""
 
-        # Note: The passed host may be a hostname or an IP address.
-
-        agentid = None;
-
-        # FIXME: Should the caller pass us a session?
         session = meta.Session()
-
-        try:
-            entry = session.query(Agent).\
-              filter(Agent.hostname == host).\
-              one()
-            agentid = entry.agentid;
-        except NoResultFound, e:
+        if is_ip(host):
             try:
                 entry = session.query(Agent).\
-                  filter(Agent.ip_address == host).\
-                  one()
-                agentid = entry.agentid;
+                    filter(Agent.envid == self.envid).\
+                    filter(Agent.hostname == host).\
+                    one()
+                return entry.agentid;
             except NoResultFound, e:
-                pass
+                return None
             except MultipleResultsFound, e:
                 # FIXME: log error
                 pass
+            return None
+
+        hostname = hostname_only(host).upper()
+
+        try:
+            entry = session.query(Agent).\
+                filter(Agent.envid == self.envid).\
+                filter(func.upper(Agent.hostname) == hostname).\
+                one()
+            return entry.agentid;
+        except NoResultFound, e:
+            return None
         except MultipleResultsFound, e:
             # FIXME: log error
-            pass
-
-        return agentid
+            return None
 
     def check_status_with_connection(self, agent):
         agentid = agent.agentid
@@ -353,7 +355,6 @@ class TableauStatusMonitor(threading.Thread):
             else:
                 host = parts[0].strip().replace(':','')
                 agentid = self.get_agent_id_from_host(host)
-
 
         self.set_main_state(system_status, agent, body)
         self.log.debug("Logging main status: %s", system_status)

@@ -1,4 +1,5 @@
 import subprocess
+import socket
 from datetime import datetime
 from dateutil import tz
 
@@ -102,3 +103,22 @@ def safecmd(cmd):
             L.append(x)
         obscure = False
     return ' '.join(L)
+
+def is_ip(spec):
+    """Returns True if passed 'spec' is an IP address and False if not."""
+
+    try:
+        ip = socket.inet_aton(spec)
+        return True
+    except socket.error:
+        return False
+
+def hostname_only(hostname):
+    """If hostname is a fqdn, returns only the hostname.
+       If hostname is passed without a domain, returns hostname unchanged."""
+
+    dot = hostname.find('.')
+    if dot != -1:
+        return hostname[:dot]
+    else:
+        return hostname
