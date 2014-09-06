@@ -21,15 +21,15 @@
       </a>
     </li>
     <li>
-      <a name="popupBackup" class="popup-link inactive" id="backup"> 
-        <i class="fa fa-fw fa-upload"></i>
-        <span>Backup</span>
+      <a name="popupRestart" class="popup-link inactive" id="restart">
+        <i class="fa fa-fw fa-power-off"></i>
+        <span>Restart Application</span>
       </a>
     </li>
     <li>
-      <a name="popupRestart" class="popup-link inactive" id="restart">
-        <i class="fa fa-fw fa-power-off"></i>
-        <span>Restart</span>
+      <a name="popupBackup" class="popup-link inactive" id="backup"> 
+        <i class="fa fa-fw fa-upload"></i>
+        <span>Backup</span>
       </a>
     </li>
     <li>
@@ -41,7 +41,7 @@
     <li>
       <a name="popupZiplogs" class="popup-link inactive" id="ziplogs">
         <i class="fa fa-fw fa-archive"></i>
-        <span>Ziplogs</span>
+        <span>Make Ziplogs</span>
       </a>
     </li>
 
@@ -143,9 +143,34 @@
   <section class="popup-body">
     <section class="row">
       <section class="col-xs-12">
-        <p>Are you sure you want to restart?</p>
+        <p>Are you sure you want to restart the <br/>Tableau Server?</p>
       </section>
     </section>
+    <section class="row">
+      <section class="col-xs-12">
+        <ul class="checkbox">
+          <li>
+            <input name="license" type="checkbox" checked/>
+            <label class="checkbox">
+              Also perform license check
+            </label>
+          </li>
+          <li>
+            <input name="backup" type="checkbox" checked/>
+            <label class="checkbox">
+              Also perform safety backup
+            </label>
+          </li>
+          <li>
+            <input name="maint" type="checkbox" checked/>
+            <label class="checkbox">
+              Also start maintenance webserver
+            </label>
+          </li>
+        </ul>
+      </section>
+    </section>
+
     <section class="row">
       <section class="col-xs-6">
         <button class="p-btn popup-close">Cancel</button>
