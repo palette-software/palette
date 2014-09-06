@@ -5,8 +5,16 @@ function ($, topic, template, common, EditBox, OnOff)
     var refresh_unavailable_text = 'Refresh not currently possible.';
 
     function ddCallback(node, value) {
-        var section = $(node).closest('section');
-        section.find('.admin-type').text('Palette '+value);
+        var $section = $(node).closest('article');
+        var old = $('.display-role', $section).html();
+        if (/Publisher/i.test(old)) {
+            if (value.toLowerCase() == 'none') {
+                value = 'Publisher';
+            } else {
+                value = 'Publisher & ' + value;
+            }
+        }
+        $('.display-role', $section).html(value);
     }
 
     function update(data) {

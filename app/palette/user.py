@@ -76,6 +76,7 @@ class UserApplication(PaletteRESTHandler):
             d['visited-info'] = self.visited_info(d)
             d['tableau-info'] = self.tableau_info(d) # FIXME
             d['license-info'] = self.license_info(d)
+            d['palette-display-role'] = user.display_role()
             if 'login-at' not in d:
                 d['login-at'] = user.name == 'palette' and 'N/A' or 'never'
 

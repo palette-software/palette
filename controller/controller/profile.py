@@ -47,6 +47,14 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     def display_name(self):
         return unicode(self)
 
+    def display_role(self):
+        if self.publisher:
+            if self.roleid == Role.NO_ADMIN:
+                return u'Publisher'
+            return u'Publisher & ' + self.role.name
+        else:
+            return self.role.name
+
     @classmethod
     def get(cls, envid, userid):
         filters = {'envid':envid, 'userid':userid}
