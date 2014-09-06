@@ -263,6 +263,8 @@ class EventControlManager(Manager):
 
         if not profile is None:
             data['username'] = profile.display_name()
+            if profile.email:
+                data['email'] = profile.email
 
         if not 'username' in data:
             data['username'] = mako.runtime.UNDEFINED

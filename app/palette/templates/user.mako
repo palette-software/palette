@@ -34,7 +34,8 @@
         </div>
         <div class="col2">
           <div>
-            <span class="label">Palette Role</span><span>{{admin-type}}</span>
+            <span class="label">Palette Role</span>
+            <span class="display-role">{{palette-display-role}}</span>
           </div>
           <div class="email-level">
             <span class="label">Email Alerts</span>
