@@ -11,7 +11,11 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from mixin import BaseMixin, BaseDictMixin
 from cache import TableauCacheManager
-from util import odbc2dt, failed
+from util import odbc2dt, failed, success
+
+from diskcheck import DiskCheck, DiskException
+from place_file import PlaceFile
+from files import FileManager
 
 # NOTE: system_user_id is maintained in two places.  This is not ideal from
 # a db design perspective but makes the find-by-current-owner code clearer.
@@ -86,6 +90,7 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
                   autoincrement=True, primary_key=True)
     workbookid = Column(BigInteger, ForeignKey("workbooks.workbookid"))
     revision = Column(String, nullable=False)
+    fileid = Column(Integer, ForeignKey("files.fileid"))
     timestamp = Column(DateTime, nullable=False)
     system_user_id = Column(Integer)
     url = Column(String)  # FIXME: make this unique.
@@ -128,6 +133,9 @@ class WorkbookManager(TableauCacheManager):
 
     # really sync *and* load
     def load(self, agent):
+        if not self.cred_check():
+            return {u'error': 'Can not load workbooks: missing credentials.'}
+
         envid = self.server.environment.envid
         users = self.load_users(agent)
 
@@ -159,9 +167,10 @@ class WorkbookManager(TableauCacheManager):
         schema = self.schema(data)
 
         if 'error' in data or '' not in data:
+            self.log.debug("workbooks load: bad data: %s", str(data))
             return data
 
-        self.server.log.debug(data)
+        self.log.debug(data)
 
         for row in data['']:
             wbid = row[0]
@@ -226,6 +235,9 @@ class WorkbookManager(TableauCacheManager):
                 session.add(wbu)
                 updates.append(wbu)
 
+            self.log.debug("workbooks load name '%s', revision %s",
+                                  name, revision)
+
         session.commit()
 
         # Second pass - build the archive files.
@@ -233,11 +245,12 @@ class WorkbookManager(TableauCacheManager):
             session.refresh(update)
             filename = self.retrieve_workbook(update, agent)
             if not filename:
-                self.server.log.error('Failed to retrieve workbook: %s %s',
+                self.log.error('Failed to retrieve workbook: %s %s',
                                       update.workbook.repository_url,
                                       update.revision)
                 continue
             update.url = filename
+            self.log.debug("workbooks load: update.url: %s", filename)
             # retrieval is a long process, so commit after each.
             session.commit()
 
@@ -245,23 +258,28 @@ class WorkbookManager(TableauCacheManager):
                 u'schema': schema,
                 u'updates':str(len(updates))}
 
-    # FIXME: DiskCheck.get_primary_loc(agent, self.LOG_DIR)
-    def agent_tmpdir(self, agent):
-        return 'C:\\'
-
     # returns the filename *on the agent* or None on error.
     def build_workbook(self, update, agent):
-        tmpdir = self.agent_tmpdir(agent)
+        try:
+            # fixme: Specify a minimum disk space required other than 0?
+            dcheck = DiskCheck(self.server, agent, self.server.WORKBOOKS_DIR,
+                               FileManager.FILE_TYPE_WORKBOOK, 0)
+        except DiskException, e:
+            self.log.error("build_workbook disk check error: %s", str(e))
+            return None
+
+        tmpdir = dcheck.primary_dir
         name = update.basename()
         ext = update.workbook.fileext()
         url = '/workbooks/' + update.workbook.repository_url + '.' + ext
         dst = agent.path.join(tmpdir, name + '.' + ext)
         cmd = 'get %s -f "%s"' % (url, dst)
 
-        self.server.log.debug('building workbook archive : ' + dst)
+        self.log.debug('building workbook archive: ' + dst)
 
         body = self.server.tabcmd(cmd, agent)
         if failed(body):
+            self.log.debug('failed to get workbook archive: %s', body)
             return None
         if ext == 'twbx':
             cmd = 'ptwbx ' + '"' + dst + '"'
@@ -270,17 +288,36 @@ class WorkbookManager(TableauCacheManager):
                 agent.filemanager.delete(dst)
                 return None
             dst = agent.path.join(tmpdir, name + '.twb')
-        # FIXME: move twbx/twb to backup location.
+        # move twbx/twb to resting location.
+        file_size_body = agent.filemanager.filesize(dst)
+        if not success(file_size_body):
+            self.log.error(
+                "build_workbook: Failed to get size of workbook file %s: %s", 
+                dst, file_size_body['error'])
+            file_size = 0
+        else:
+            file_size = file_size_body['size']
+
+        auto = True
+        place = PlaceFile(self.server, agent, dcheck, dst, file_size, auto)
+        self.log.debug("build_workbook: %s", place.info)
+        # Remember the fileid
+        update.fileid = place.placed_file_entry.fileid
         return dst
 
     # returns the filename - in self.path - or None on error.
     def retrieve_workbook(self, update, agent):
         path = self.build_workbook(update, agent)
         if not path:
+            self.log.debug('Error retrieving workbook: Path is empty')
             return None
+        self.log.debug('Retrieving workbook: %s', path)
         body = agent.filemanager.save(path, target=self.path)
         if failed(body):
+            self.log.debug('Error retrieving workbook: Failed to save %s', path)
             return None
+        else:
+            self.log.debug('Retrieved workbook: %s', path)
         agent.filemanager.delete(path)
         return agent.path.basename(path)
 
@@ -292,3 +329,12 @@ class WorkbookManager(TableauCacheManager):
             return None
         return str(value)
 
+    def cred_check(self):
+        """Returns None if there are credentials and Non-None/False
+           if there are credentials."""
+
+        cred = self.server.cred.get('primary', default=None)
+        if not cred:
+            cred = self.server.cred.get('secondary', default=None)
+
+        return cred

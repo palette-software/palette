@@ -80,7 +80,8 @@ class AgentConnection(object):
         try:
             self.httpconn.request(method, uri, body, headers)
             res = self.httpconn.getresponse()
-            if res.status != httplib.OK:
+            # GONE can be returned from filemanager
+            if res.status not in (httplib.OK, httplib.GONE):
                 self.httpexc(res, method=method)
             return res.read()
         finally:

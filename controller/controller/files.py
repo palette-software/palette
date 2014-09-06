@@ -52,6 +52,7 @@ class FileManager(Manager):
 
     FILE_TYPE_BACKUP="backup"
     FILE_TYPE_ZIPLOG="ziplog"
+    FILE_TYPE_WORKBOOK="workbook"
 
     def add(self, name, file_type, storage_type, storageid,
                                         size=0, auto=True, encrypted=False):
@@ -61,6 +62,7 @@ class FileManager(Manager):
                           auto=auto, encrypted=encrypted)
         session.add(entry)
         session.commit()
+        return entry
 
     def remove(self, fileid):
         session = meta.Session()
