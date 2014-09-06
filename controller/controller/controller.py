@@ -399,7 +399,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             errmsg = 'Invalid credentials.'
             self.log.error('tabcmd: ' + errmsg)
             return {'error': errmsg}
-        url = self.local_url(agent)
+        url = self.local_url()
         if not url:
             errmsg = 'No local URL available.'
             return {'error': errmsg}
@@ -1318,8 +1318,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if success(body):
             ziplog_size_body = agent.filemanager.filesize(ziplogs_full_path)
             if not success(ziplog_size_body):
-                self.log.error("Failed to get size of ziplogs file %s: %s" %\
-                            (ziplog_full_path, ziplog_size_body['error']))
+                self.log.error("Failed to get size of ziplogs file %s: %s",
+                               ziplog_full_path, ziplog_size_body['error'])
                 ziplog_size = 0
             else:
                 ziplog_size = ziplog_size_body['size']
