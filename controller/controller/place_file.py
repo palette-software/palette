@@ -11,7 +11,8 @@ class PlaceFile(object):
        another agent or cloud storage for use by commands
        such as 'tabadmin restore', etc.."""
 
-    def __init__(self, server, agent, dcheck, full_path, size, auto):
+    def __init__(self, server, agent, dcheck, full_path, size, auto,
+                 enable_delete=True):
 
         self.server = server
         self.log = server.log
@@ -26,7 +27,9 @@ class PlaceFile(object):
         self.auto = auto
 
         self.copy_failed = False
-        self.delete_locale_backup = False
+        self.delete_local_backup = False
+        # Ignore delete_local_backup if "enable_delete" is False
+        self.enable_delete = enable_delete
         self.copied = False
         self.info = ""
         self.placed_file_entry = None
@@ -59,7 +62,7 @@ class PlaceFile(object):
                             auto=self.auto)
             return
 
-        if self.delete_local_backup:
+        if self.enable_delete and self.delete_local_backup:
             remove_body = self.server.delete_vol_file(self.agent,
                                                         self.full_path)
             # Check if the DEL worked.
