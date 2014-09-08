@@ -299,7 +299,8 @@ class WorkbookManager(TableauCacheManager):
             file_size = file_size_body['size']
 
         auto = True
-        place = PlaceFile(self.server, agent, dcheck, dst, file_size, auto)
+        place = PlaceFile(self.server, agent, dcheck, dst, file_size, auto,
+                          enable_delete=False)
         self.log.debug("build_workbook: %s", place.info)
         # Remember the fileid
         update.fileid = place.placed_file_entry.fileid
