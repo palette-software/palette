@@ -200,7 +200,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def rotate_ziplogs(self):
         """Rotate/delete old ziplog files."""
         st_config = SystemConfig(self.system)
-        find_method = self.files.all
+        find_method = self.files.all_by_type
         find_name = ""
         file_type = FileManager.FILE_TYPE_ZIPLOG
 
