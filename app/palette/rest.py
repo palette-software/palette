@@ -5,17 +5,16 @@ from akiri.framework.api import RESTApplication
 from akiri.framework.config import store
 
 from controller.domain import Domain
-from controller.system import SystemManager
-from controller.profile import UserProfile, Role
+from controller.profile import Role
 
 def required_parameters(*params):
     def wrapper(f):
         def realf(self, req, *args, **kwargs):
             if req.method != 'POST':
                 raise exc.HTTPMethodNotAllowed(req.method)
-            for p in params:
-                if p not in req.POST:
-                    raise exc.HTTPBadRequest("'" + p + "' missing")
+            for param in params:
+                if param not in req.POST:
+                    raise exc.HTTPBadRequest("'" + param + "' missing")
             return f(self, req, *args, **kwargs)
         return realf
     return wrapper

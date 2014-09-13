@@ -1,22 +1,22 @@
 import os
-import socket
 
 from webob import exc
 from paste.fileapp import FileApp
 
-from akiri.framework.api import RESTApplication, BaseApplication
+from akiri.framework.api import BaseApplication
+
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from controller.workbooks import WorkbookEntry, WorkbookUpdateEntry
 from controller.util import UNDEFINED
 from controller.profile import UserProfile, Role
 from controller.credential import CredentialEntry
-from controller.util import DATEFMT
 from controller.sites import Site
 from controller.projects import Project
-from controller.passwd import set_aes_key_file
 
-from page import PalettePage, FAKEPW
+from page import FAKEPW
 from rest import PaletteRESTHandler
 from rest import required_parameters, required_role
 
@@ -42,7 +42,9 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
             return UNDEFINED
         return user.display_name()
 
-    def getuser(self, envid, system_user_id, cache={}):
+    def getuser(self, envid, system_user_id, cache=None):
+        if cache is None:
+            cache = {}
         if system_user_id in cache:
             return cache[system_user_id]
         user = self.getuser_fromdb(envid, system_user_id)
@@ -56,7 +58,9 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
             meta.Session.add(entry)
         return entry
 
-    def get_site(self, envid, siteid, cache={}):
+    def get_site(self, envid, siteid, cache=None):
+        if cache is None:
+            cache = {}
         if siteid in cache:
             return cache[siteid]
         entry = Site.get(envid, siteid, default=None)
@@ -64,7 +68,9 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         cache[siteid] = name
         return name
 
-    def get_project(self, envid, projectid, cache={}):
+    def get_project(self, envid, projectid, cache=None):
+        if cache is None:
+            cache = {}
         if projectid in cache:
             return cache[projectid]
         entry = Project.get(envid, projectid, default=None)
@@ -73,6 +79,7 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         return name
 
     @required_parameters('value')
+    # pylint: disable=invalid-name
     def handle_user_POST(self, req, cred):
         value = req.POST['value']
         cred.user = value
@@ -80,6 +87,7 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         return {'value':value}
 
     @required_parameters('value')
+    # pylint: disable=invalid-name
     def handle_passwd_POST(self, req, cred):
         value = req.POST['value']
         cred.setpasswd(value)
@@ -93,7 +101,7 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
             return self.handle_user_POST(req, cred)
         value = cred and cred.user or ''
         return {'value': value}
-        
+
     @required_role(Role.MANAGER_ADMIN)
     def handle_passwd(self, req, key):
         cred = self.get_cred(req.envid, key)
@@ -115,7 +123,8 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         return {'value': update.note}
 
     def handle_get(self, req):
-        users = {}; sites={}; projects={}  # lookup caches
+        # pylint: disable=multiple-statements
+        users = {}; sites = {}; projects = {}  # lookup caches
         if req.remote_user.roleid > Role.NO_ADMIN:
             entries = WorkbookEntry.get_all_by_envid(req.envid)
         else:

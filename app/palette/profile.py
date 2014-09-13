@@ -1,14 +1,5 @@
-import os
-
-from akiri.framework.api import RESTApplication
-from akiri.framework.config import store
-
-from akiri.framework.ext.sqlalchemy import meta
-
-from paste import fileapp
 from webob import exc
 
-from controller.profile import UserProfile
 from page import PalettePage
 from rest import PaletteRESTHandler
 
@@ -32,9 +23,11 @@ class ProfileApplication(PaletteRESTHandler):
         raise exc.HTTPNotFound()
 
     def handle_profile_POST(self, req):
+        # pylint: disable=invalid-name
+        # pylint: disable=unused-argument
         raise exc.HTTPBadRequest()
 
-    def handle_profile_GET(self, req):
+    def handle_GET(self, req):
         profile = req.remote_user.todict(pretty=True)
 
         # Add a list of roles the user has
@@ -48,6 +41,6 @@ class ProfileApplication(PaletteRESTHandler):
         if req.method == 'POST':
             return self.handle_profile_POST(req)
         elif req.method == 'GET':
-            return self.handle_profile_GET(req)
+            return self.handle_GET(req)
         raise exc.HTTPMethodNotAllowed()
 

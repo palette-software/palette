@@ -2,15 +2,13 @@ from webob import exc
 
 from akiri.framework.api import Page
 
-from controller.profile import Role
-
 FAKEPW = '********'
 
 class PalettePageMixin(object):
     # The active page on the mainNav
     active = ''
     # Whether or not to show the expanded configure items.
-    expanded = False;
+    expanded = False
     # Whether or not to show the expanded integration items.
     integration = False
     # minimum capability required
@@ -20,13 +18,13 @@ class PalettePageMixin(object):
         if color == 'green':
             return 'fa-check-circle green'
         if color == 'yellow':
-            return 'fa-exclamation-circle yellow';
+            return 'fa-exclamation-circle yellow'
         if color == 'red':
-            return 'fa-times-circle red';
-        return '';
-
+            return 'fa-times-circle red'
+        return ''
 
     def preprocess(self, req, obj):
+        # pylint: disable=attribute-defined-outside-init
         if not self.required_role is None:
             if req.remote_user.roleid < self.required_role:
                 raise exc.HTTPForbidden
@@ -34,14 +32,13 @@ class PalettePageMixin(object):
             obj = self
         if 'status_color' in req.cookies:
             color = req.cookies['status_color']
-            obj.status_class = self.build_status_class(color);
+            obj.status_class = self.build_status_class(color)
         else:
             obj.status_class = ''
         if 'status_text' in req.cookies:
-            obj.status_text = req.cookies['status_text'].replace("_", " ");
+            obj.status_text = req.cookies['status_text'].replace("_", " ")
         else:
-            obj.status_text = '';
-        import sys; print >> sys.stderr, str(req.cookies)
+            obj.status_text = ''
         return obj
 
 class PalettePage(Page, PalettePageMixin):
