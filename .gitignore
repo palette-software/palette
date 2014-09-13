@@ -8,6 +8,7 @@
 *.dsc
 *.orig.tar.gz
 *.changes
+*.log
 *substvars*
 *debhelper*
 tags
