@@ -1,6 +1,6 @@
 import sys, traceback
 import time
-from datetime import datetime
+import datetime
 from mako.template import Template
 from mako import exceptions
 import mako.runtime
@@ -250,7 +250,7 @@ class EventControlManager(Manager):
             del data['exit-status']
 
         if not timestamp:
-            timestamp = datetime.now()
+            timestamp = datetime.datetime.now()
 
         if not 'time' in data:
             # FIXME: is this needed or used?

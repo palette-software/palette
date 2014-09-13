@@ -3,14 +3,13 @@
 import sys
 import os
 import SocketServer as socketserver
-import socket
 
 import json
 import time
 import datetime
 
 import exc
-from request import *
+from request import CliStartRequest, CleanupRequest
 
 import httplib
 import ntpath
@@ -18,14 +17,19 @@ import ntpath
 import boto
 
 from boto.s3 import connection
-from boto.gs.connection import GSConnection
+#from boto.gs.connection import GSConnection
 
-from boto.exception import AWSConnectionError, BotoClientError, BotoServerError
+#from boto.exception import BotoClientError, BotoServerError
 
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker, scoped_session
-from akiri.framework.ext.sqlalchemy import meta
 
+# pylint: disable=import-error,no-name-in-module
+from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
+
+# These are need for create_all().
+# pylint: disable=unused-import
 from agentmanager import AgentManager
 from agent import Agent
 from agentinfo import AgentVolumesEntry, AgentYmlEntry
@@ -34,6 +38,7 @@ from credential import CredentialEntry, CredentialManager
 from diskcheck import DiskCheck, DiskException
 from files import FileManager
 from firewall_manager import FirewallManager
+from http_requests import HttpRequestEntry, HttpRequestManager
 from ports import PortManager
 from state import StateManager
 from system import SystemManager, LicenseEntry
@@ -47,22 +52,26 @@ from alert_email import AlertEmail
 from event_control import EventControl, EventControlManager
 from extracts import ExtractManager
 from general import SystemConfig
+from sched import Sched, Crontab
 from workbooks import WorkbookEntry, WorkbookUpdateEntry, WorkbookManager
+#pylint: enable=unused-import
 
 from sites import Site
 from projects import Project
 from data_connections import DataConnection
-from http_requests import HttpRequestEntry, HttpRequestManager
 
 from place_file import PlaceFile
 from get_file import GetFile
 from cloud import CloudManager
 
-from sched import Sched, Crontab # needed for create_all()
 from clihandler import CliHandler
-from util import version, success, failed, sizestr, safecmd
+from util import version, success, sizestr, safecmd
+
+# pylint: disable=no-self-use
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    # pylint: disable=too-many-public-methods
+    # pylint: disable=too-many-instance-attributes
 
     CLI_URI = "/cli"
     LOGGER_NAME = "main"
@@ -80,6 +89,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def backup_cmd(self, agent, userid):
         """Perform a backup - not including any necessary migration."""
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-return-statements
 
         if userid == None:
             auto = True     # It is an 'automatic/scheduled' backup
@@ -91,9 +103,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # Disk space check.
         try:
             dcheck = DiskCheck(self, agent, self.BACKUP_DIR,
-                    FileManager.FILE_TYPE_BACKUP, min_disk_needed)
-        except DiskException, e:
-            return self.error(str(e))
+                               FileManager.FILE_TYPE_BACKUP, min_disk_needed)
+        except DiskException, ex:
+            return self.error(str(ex))
 
         if dcheck.target_type == FileManager.STORAGE_TYPE_CLOUD:
             self.log.debug("Backup will copy to cloud storage type %s " + \
@@ -116,9 +128,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # Example name: 20140127_162225.tsbak
         backup_name = time.strftime(self.FILENAME_FMT) + ".tsbak"
 
-        # Example: "c:/ProgramData/Palette/Data/tableau-backups/20140127_162225.tsbak"
+        # Example: "c:/ProgramData/Palette/Data/tableau-backups/<name>.tsbak"
 
-        # e.g. E:\\ProgramData\Palette\Data\tableau-backups\2014Jan27_162225.tsbak
+        # e.g. E:\\ProgramData\Palette\Data\tableau-backups\<name>.tsbak
         backup_full_path = agent.path.join(dcheck.primary_dir, backup_name)
 
         cmd = 'tabadmin backup \\\"%s\\\"' % backup_full_path
@@ -251,20 +263,21 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return info
 
     def seconds_to_str(self, seconds):
-            return str(datetime.timedelta(seconds=int(seconds)))
+        return str(datetime.timedelta(seconds=int(seconds)))
 
     def delfile_cmd(self, entry):
         """Delete a file, wherever it is
             Argument:
                     entry   The file entry.
         """
+        # pylint: disable=too-many-return-statements
 
         # Delete a file from the cloud
         if entry.storage_type == FileManager.STORAGE_TYPE_CLOUD:
             try:
                 self.delete_cloud_file(entry)
-            except IOError as e:
-                return {'error': str(e)}
+            except IOError as ex:
+                return {'error': str(ex)}
             try:
                 self.files.remove(entry.fileid)
             except sqlalchemy.orm.exc.NoResultFound:
@@ -277,7 +290,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         vol_entry = AgentVolumesEntry.get_vol_entry_by_volid(entry.storageid)
         if not vol_entry:
             return {"error": "volid not found: %d" % entry.storageid}
-            
+
         target_agent = None
         agents = self.agentmanager.all_agents()
         for key in agents.keys():
@@ -321,6 +334,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             3) Sends cleanup.
             4) Returns body from the status.
         """
+        # pylint: disable=too-many-return-statements
 
         body = self._send_cli(command, agent, env=env, immediate=immediate)
 
@@ -360,21 +374,24 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def public_url(self):
         """ Generate a url for Tableau that is reportable to a user."""
         url = self.system.get('tableau-server-url', default=None)
-        if url: return url
+        if url:
+            return url
 
         envid = self.environment.envid
 
         key = 'svcmonitor.notification.smtp.canonical_url'
         url = AgentYmlEntry.get(envid, key, default=None)
-        if url: return url
+        if url:
+            return url
 
         return None
 
     def local_url(self):
         """ Generate a url for Tableau that the agent can use internally"""
 
-        url = self.public_url();
-        if url: return url
+        url = self.public_url()
+        if url:
+            return url
 
         envid = self.environment.envid
 
@@ -413,6 +430,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """Send a "cli" command to an Agent.
             Returns a body with the results.
             Called without the connection lock."""
+        # pylint: disable=too-many-return-statements
 
         self.log.debug("_send_cli")
 
@@ -452,13 +470,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                       displayname=agent.displayname,
                                       uri=uri, body=body_json)
 
-        except (httplib.HTTPException, EnvironmentError) as e:
+        except (httplib.HTTPException, EnvironmentError) as ex:
             self.log.error(\
                 "_send_cli: command '%s' failed with httplib.HTTPException: %s",
-                           safecmd(cli_command), str(e))
+                           safecmd(cli_command), str(ex))
             self.remove_agent(agent, EventControl.AGENT_COMM_LOST) # bad agent
             return self.error("_send_cli: '%s' command failed with: %s" %
-                              (safecmd(cli_command), str(e)))
+                              (safecmd(cli_command), str(ex)))
         finally:
             aconn.unlock()
 
@@ -470,7 +488,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not body.has_key('xid'):
             return self.error("POST /cli response was missing the xid", body)
         if req.xid != body['xid']:
-            return self.error("POST /cli xid expected: %d but was %d" % (req.xid, body['xid']), body)
+            return self.error("POST /cli xid expected: %d but was %d" % \
+                              (req.xid, body['xid']), body)
 
         if not body.has_key('run-status'):
             return self.error("POST /cli response missing 'run-status'", body)
@@ -499,7 +518,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         headers = {"Content-Type": "application/json"}
         uri = self.CLI_URI
 
-        self.log.debug('about to send the cleanup command, xid %d',  xid)
+        self.log.debug('about to send the cleanup command, xid %d', xid)
         try:
             aconn.httpconn.request('POST', uri, req.send_body, headers)
             self.log.debug('sent cleanup command')
@@ -511,8 +530,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.error("_send_cleanup: POST %s for cmd '%s' failed,"
                                "%d %s : %s", uri, orig_cli_command,
                                res.status, res.reason, body_json)
-                alert = "Command to agent failed with status: " + \
-                                                            str(res.status)
+                alert = "Agent command failed with status: " + str(res.status)
                 self.remove_agent(agent, alert)
                 return self.httperror(res, method="POST",
                                       displayname=agent.displayname,
@@ -521,14 +539,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.debug("headers: " + str(res.getheaders()))
             self.log.debug("_send_cleanup reading...")
 
-        except (httplib.HTTPException, EnvironmentError) as e:
+        except (httplib.HTTPException, EnvironmentError) as ex:
             # bad agent
             self.log.error("_send_cleanup: POST %s for '%s' failed with: %s",
-                           uri, orig_cli_command, str(e))
+                           uri, orig_cli_command, str(ex))
             self.remove_agent(agent, "Command to agent failed. " \
-                                  + "Error: " + str(e))
+                                  + "Error: " + str(ex))
             return self.error("'%s' failed for command '%s' with: %s" % \
-                                  (uri, orig_cli_command, str(e)), {})
+                                  (uri, orig_cli_command, str(ex)), {})
         finally:
             # Must call aconn.unlock() even after self.remove_agent(),
             # since another thread may waiting on the lock.
@@ -538,7 +556,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.log.debug("done reading.")
         body = json.loads(body_json)
         if body == None:
-            return self.error("POST /%s getresponse returned null body" % uri, {})
+            return self.error("POST /%s getresponse returned null body" % uri,
+                              return_dict={})
         return body
 
     def copy_cmd(self, source_agentid, source_path, target_agentid, target_dir):
@@ -549,7 +568,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                phttp.exe GET https://primary-ip:192.168.1.1/file dir/
            and sends it as a cli command to agent:
                 target-agentid
-           Returns the body dictionary from the status."""
+           Returns the body dictionary from the status.
+        """
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-locals
 
         if not len(source_path):
             return self.error("[ERROR] Invalid source path with no length.")
@@ -605,7 +627,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
        # Make sure the target directory on the target agent exists.
         try:
             dst.filemanager.mkdirs(target_dir)
-        except (IOError, ValueError) as e:
+        except (IOError, ValueError):
             self.log.error(\
                 "copycmd: Could not create directory: '%s'" % target_dir)
             return self.error(\
@@ -624,7 +646,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 filter(Agent.agentid == src.agentid).\
                 one()
         except sqlalchemy.orm.exc.NoResultFound:
-            self.log.err("Source agent not found!  agentid: %d", src.agentid)
+            self.log.error("Source agent not found!  agentid: %d", src.agentid)
             return self.error("Source agent not found in agent table: %d " % \
                                                                 src.agentid)
 
@@ -647,18 +669,21 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
            Returns a body with the results/status.
         """
+        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-statements
 
-        # If the backup file is not on the primary agent, 
+        # If the backup file is not on the primary agent,
         # from to a staging area on the primary from:
         #   1) another agent
         # or
         #   2) cloud storage
         try:
             got = GetFile(self, agent, backup_full_path)
-        except IOError as e:
-           self.stateman.update(orig_state)
-           return self.error("restore_cmd failure: %s" % str(e))
-            
+        except IOError as ex:
+            self.stateman.update(orig_state)
+            return self.error("restore_cmd failure: %s" % str(ex))
+
         # The restore file is now on the Primary Agent.
         data = agent.todict()
         self.event_control.gen(EventControl.RESTORE_STARTED,
@@ -669,7 +694,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if reported_status == TableauProcess.STATUS_RUNNING:
             # Restore can run only when tableau is stopped.
             self.stateman.update(StateManager.STATE_STOPPING_RESTORE)
-            self.log.debug("------------Stopping Tableau for restore-------------")
+            self.log.debug("----------Stopping Tableau for restore-----------")
             stop_body = self.cli_cmd("tabadmin stop", agent)
             if stop_body.has_key('error'):
                 self.log.info("Restore: tabadmin stop failed")
@@ -703,8 +728,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             cmd = 'tabadmin restore \\\"%s\\\"' % got.primary_full_path
             self.log.debug("restore sending command: %s", cmd)
             restore_body = self.cli_cmd(cmd, agent)
-        except httplib.HTTPException, e:
-            restore_body = { "error": "HTTP Exception: " + str(e) }
+        except httplib.HTTPException, ex:
+            restore_body = {"error": "HTTP Exception: " + str(ex)}
 
         if restore_body.has_key('error'):
             restore_success = False
@@ -780,12 +805,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         elif cloud_entry.cloud_type == CloudManager.CLOUD_TYPE_GCS:
             self.delete_gcs_file(cloud_entry, file_entry.name)
         else:
-            self.log.error("delete_cloud_file: Unknown cloud_type: %s " + \
-                           "for file: %s" % (cloud_entry.cloud_type,
-                           file_entry.name))
-            raise IOError("delete_cloud_file: Unknown cloud_type %s " + \
-                           "for file: %s" % (cloud_entry.cloud_type,
-                            file_entry.name))
+            msg = "delete_cloud_file: Unknown cloud_type %s for file: %s" % \
+                  (cloud_entry.cloud_type, file_entry.name)
+            self.log.error(msg)
+            raise IOError(msg)
         try:
             self.files.remove(file_entry.storageid)
         except sqlalchemy.orm.exc.NoResultFound:
@@ -823,9 +846,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         bucket = connection.Bucket(conn, bucket_name)
 
-        dk = connection.Key(bucket)
-        dk.key = filename
-        bucket.delete_key(dk)
+        s3key = connection.Key(bucket)
+        s3key.key = filename
+        bucket.delete_key(s3key)
 
     def delete_gcs_file(self, entry, path):
         # Move any bucket subdirectories to the filename
@@ -835,22 +858,21 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         conn = boto.connect_gs(entry.access_key, entry.secret)
         bucket = conn.get_bucket(bucket_name)
 
-        dk = boto.s3.key.Key(bucket)
-        dk.key = filename
+        s3key = boto.s3.key.Key(bucket)
+        s3key.key = filename
 
         try:
-            dk.delete()
-        except boto.exception.BotoServerError, e:
+            s3key.delete()
+        except boto.exception.BotoServerError, ex:
             raise IOError(
                     ("Failed to delete '%s' from Google Cloud Storage " + \
                     "bucket '%s': %s") % \
-                    (filename, bucket_name, str(e)))
+                    (filename, bucket_name, str(ex)))
 
     def gcs_cmd(self, agent, action, cloud_entry, data_dir, full_path):
+        # pylint: disable=too-many-arguments
 
         # fixme: sanity check on data-dir on the primary?
-
-        filename = agent.path.basename(full_path)
 
         # FIXME: We don't really want to send our real keys and
         #        secrets to the agents, but while boto.connect_gs
@@ -868,12 +890,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return self.cli_cmd(gcs_command, agent, env=env)
 
     def s3_cmd(self, agent, action, cloud_entry, data_dir, full_path):
-
+        # pylint: disable=too-many-arguments
         # fixme: sanity check on data-dir on the primary?
 
         #fixme: create the path first
         filename = agent.path.basename(full_path)
 
+        # pylint: disable=pointless-string-statement
         """
         # fixme: Not all users have authorization to do this.
         resource = os.path.basename(filename)
@@ -896,7 +919,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         s3_command = 'ps3 %s %s "%s"' % (action, cloud_entry.bucket, filename)
 
-        self.log.debug("s3_command: '%s', data_dir: '%s', full_path: '%s'", 
+        self.log.debug("s3_command: '%s', data_dir: '%s', full_path: '%s'",
                        s3_command, data_dir, full_path)
 
         # Send the s3 command to the agent
@@ -913,8 +936,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             we keep requesting status until the command is
             finished and that could be a long time.
         """
-
-        status = False
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-return-statements
 
 #        debug for testing agent disconnects
 #        print "sleeping"
@@ -1003,16 +1026,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                             body['run-status'])    # bad agent
                     return self.error("Unknown run-status: %s.  Will not " + \
                                             "retry." % body['run-status'], body)
-            except httplib.HTTPException, e:
-                    self.remove_agent(agent,
-                        "HTTP communication failure with agent: " + \
-                                                        str(e))    # bad agent
-                    return self.error("GET %s failed with HTTPException: %s" \
-                                                                % (uri, str(e)))
-            except EnvironmentError, e:
-                    self.remove_agent(agent, "Communication failure with " + \
-                            "agent. Unexpected error: " + str(e))    # bad agent
-                    return self.error("GET %s failed with: %s" % (uri, str(e)))
+            except httplib.HTTPException, ex:
+                self.remove_agent(agent,
+                            "HTTP communication failure with agent: " + str(ex))
+                return self.error("GET %s failed with HTTPException: %s" % \
+                                  (uri, str(ex)))
+            except EnvironmentError, ex:
+                self.remove_agent(agent, "Communication failure with " + \
+                                  "agent. Unexpected error: " + str(ex))
+                return self.error("GET %s failed with: %s" % (uri, str(ex)))
 
     def odbc_ok(self):
         """Reports back True if odbc commands can be run now to
@@ -1046,7 +1068,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.info("get_pinfo: Failing due to UPGRADING")
             raise exc.InvalidStateError("Cannot run command while UPGRADING")
 
-        aconn = agent.connection
         body = self.cli_cmd('pinfo', agent, immediate=True)
         # FIXME: add a function to test cli success (cli_success?)
         if not 'exit-status' in body:
@@ -1057,11 +1078,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         json_str = body['stdout']
         try:
             pinfo = json.loads(json_str)
-        except ValueError, e:
+        except ValueError, ex:
             self.log.error("Bad json from pinfo. Error: %s, json: %s", \
-                               str(e), json_str)
+                           str(ex), json_str)
             raise IOError("Bad json from pinfo.  Error: %s, json: %s" % \
-                (str(e), json_str))
+                          (str(ex), json_str))
         if pinfo is None:
             self.log.error("Bad pinfo output: %s", json_str)
             raise IOError("Bad pinfo output: %s" % json_str)
@@ -1077,7 +1098,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             else:
                 self.log.error(\
                     "get_pinfo: Could not update agent: unknown " + \
-                                    "displayname.  uuid: %s",  agent.uuid)
+                                    "displayname.  uuid: %s", agent.uuid)
                 raise IOError("get_pinfo: Could not update agent: unknown " + \
                         "displayname.  uuid: %s" % agent.uuid)
 
@@ -1144,14 +1165,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         body = Project.sync(agent)
         if 'error' in body:
-            if error_msg: error_msg += ", "
+            if error_msg:
+                error_msg += ", "
             error_msg += "Project sync failure: " + body['error']
         else:
             sync_dict['projects'] = body['count']
 
         body = DataConnection.sync(agent)
         if 'error' in body:
-            if error_msg: error_msg += ", "
+            if error_msg:
+                error_msg += ", "
             error_msg += "DataConnection sync failure: " + body['error']
         else:
             sync_dict['data-connections'] = body['count']
@@ -1263,14 +1286,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 body = json.loads(rawbody)
             else:
                 body = {}
-        except (httplib.HTTPException, EnvironmentError) as e:
+        except (httplib.HTTPException, EnvironmentError) as ex:
             self.log.error("Agent send_immediate command %s %s failed: %s",
-                                        method, uri, str(e))    # bad agent
+                           method, uri, str(ex))
             self.remove_agent(agent, \
                     "Agent send_immediate command %s %s failed: %s" % \
-                                        (method, uri, str(e)))    # bad agent
-            return self.error("send_immediate for method %s, uri %s failed: %s" % \
-                                                    (method, uri, str(e)))
+                              (method, uri, str(ex)))
+            return self.error("send_immediate method %s, uri %s failed: %s" % \
+                              (method, uri, str(ex)))
         finally:
             aconn.unlock()
 
@@ -1285,15 +1308,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         self.agentmanager.set_displayname(aconn, uuid, displayname)
 
-    def ziplogs_cmd(self, agent, target=None, userid=None):
+    def ziplogs_cmd(self, agent, userid=None):
         """Run tabadmin ziplogs."""
+        # pylint: disable=too-many-locals
 
         if userid == None:
             auto = True     # It is an 'automatic/scheduled' backup
         else:
             auto = False    # It was requested by a specific user
-
-        aconn = agent.connection
 
         # fixme: get more accurate estimate of ziplog size
         min_disk_needed = agent.tableau_data_size * .3
@@ -1301,16 +1323,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         try:
             dcheck = DiskCheck(self, agent, self.LOG_DIR,
                                FileManager.FILE_TYPE_ZIPLOG, min_disk_needed)
-        except DiskException, e:
-            self.log.error("ziplogs_cmd: %s", str(e))
-            return self.error("ziplogs_cmd: %s" % str(e))
+        except DiskException, ex:
+            self.log.error("ziplogs_cmd: %s", str(ex))
+            return self.error("ziplogs_cmd: %s" % str(ex))
 
         data = agent.todict()
         self.event_control.gen(EventControl.ZIPLOGS_STARTED,
                                data, userid=userid)
-                               
+
         ziplogs_name = time.strftime(self.FILENAME_FMT) + ".logs.zip"
-        ziplogs_full_path= agent.path.join(dcheck.primary_dir, ziplogs_name)
+        ziplogs_full_path = agent.path.join(dcheck.primary_dir, ziplogs_name)
         cmd = 'tabadmin ziplogs -f -l -n -a \\\"%s\\\"' % ziplogs_full_path
         body = self.cli_cmd(cmd, agent)
         body[u'info'] = unicode(cmd)
@@ -1319,7 +1341,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             ziplog_size_body = agent.filemanager.filesize(ziplogs_full_path)
             if not success(ziplog_size_body):
                 self.log.error("Failed to get size of ziplogs file %s: %s",
-                               ziplog_full_path, ziplog_size_body['error'])
+                               ziplogs_full_path, ziplog_size_body['error'])
                 ziplog_size = 0
             else:
                 ziplog_size = ziplog_size_body['size']
@@ -1340,10 +1362,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                    dict(body.items() + data.items()))
         return body
 
-    def cleanup_cmd(self, agent, target=None, userid=None):
+    def cleanup_cmd(self, agent, userid=None):
         """Run tabadmin cleanup'."""
-
-        aconn = agent.connection
 
         data = agent.todict()
         self.event_control.gen(EventControl.CLEANUP_STARTED, data,
@@ -1359,33 +1379,36 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                    userid=userid)
         return body
 
-    def error(self, msg, return_dict={}):
+    # FIXME: allow this to take *args
+    def error(self, msg, return_dict=None):
         """Returns error dictionary in standard format.  If passed
            a return_dict, then adds to it, otherwise a new return_dict
            is created."""
-
+        if return_dict is None:
+            return_dict = {}
         return_dict['error'] = unicode(msg)
         return return_dict
 
     def httperror(self, res, error='HTTP failure',
                   displayname=None, method='GET', uri=None, body=None):
         """Returns a dict representing a non-OK HTTP response."""
+        # pylint: disable=too-many-arguments
         if body is None:
             body = res.read()
-        d = {
+        data = {
             'error': error,
             'status-code': res.status,
             'reason-phrase': res.reason,
             }
         if method:
-            d['method'] = method
+            data['method'] = method
         if uri:
-            d['uri'] = uri
+            data['uri'] = uri
         if body:
-            d['body'] = body
+            data['body'] = body
         if displayname:
-            d['agent'] = displayname
-        return d;
+            data['agent'] = displayname
+        return data
 
     def init_new_agent(self, agent):
         """Agent-related configuration on agent connect.
@@ -1396,24 +1419,22 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 False:  The agent responded incorrectly.
         """
 
-        TABLEAU_INSTALL_DIR="tableau-install-dir"
-        YML_CONFIG_FILE_PART=agent.path.join("data", "tabsvc",
-                                             "config", "workgroup.yml")
-
+        tableau_install_dir = "tableau-install-dir"
         aconn = agent.connection
 
         pinfo = self.get_pinfo(agent, update_agent=False)
 
-        self.log.debug("info returned from %s: %s", aconn.displayname, str(pinfo))
+        self.log.debug("info returned from %s: %s",
+                       aconn.displayname, str(pinfo))
         # Set the type of THIS agent.
-        if TABLEAU_INSTALL_DIR in pinfo:
+        if tableau_install_dir in pinfo:
             # FIXME: don't duplicate the data
             agent.agent_type = aconn.agent_type \
                 = AgentManager.AGENT_TYPE_PRIMARY
 
-            if pinfo[TABLEAU_INSTALL_DIR].find(':') == -1:
+            if pinfo[tableau_install_dir].find(':') == -1:
                 self.log.error("agent %s is missing ':': %s for %s",
-                               aconn.displayname, TABLEAU_INSTALL_DIR,
+                               aconn.displayname, tableau_install_dir,
                                agent.tableau_install_dir)
                 return False
         else:
@@ -1543,13 +1564,16 @@ class StreamLogger(object):
             self.writeln(line)
 
     def close(self):
-        self.flush(self)
+        self.flush()
 
     def flush(self):
         self.writeln(self.buf)
         self.buf = ''
 
 def main():
+    # pylint: disable=too-many-statements,too-many-locals
+    # pylint: disable=attribute-defined-outside-init
+
     import argparse
     import logger
 
@@ -1561,11 +1585,9 @@ def main():
     args = parser.parse_args()
 
     config = Config(args.config)
-    host = config.get('controller', 'host', default='localhost');
-    port = config.getint('controller', 'port', default=9000);
-    agent_port = config.getint('controller', 'agent_port', default=22);
-
-
+    host = config.get('controller', 'host', default='localhost')
+    port = config.getint('controller', 'port', default=9000)
+    agent_port = config.getint('controller', 'agent_port', default=22)
 
     # loglevel is entirely controlled by the INI file.
     logger.make_loggers(config)
@@ -1665,4 +1687,5 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         print "\nInterrupted.  Exiting."
+        # pylint: disable=protected-access
         os._exit(1)
