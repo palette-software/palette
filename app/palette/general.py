@@ -1,9 +1,6 @@
 from webob import exc
 
-from akiri.framework.ext.sqlalchemy import meta
-
 from controller.profile import Role
-from controller.agent import Agent
 from controller.util import sizestr, str2bool
 from controller.general import SystemConfig
 from controller.files import FileManager
@@ -42,16 +39,19 @@ class GeneralApplication(PaletteRESTHandler):
         return '%d seconds' % x
 
     def handle_get(self, req):
-        sc = SystemConfig(req.system)
-        data = {SystemConfig.STORAGE_ENCRYPT: sc.storage_encrypt,
-                SystemConfig.WORKBOOKS_AS_TWB: sc.workbooks_as_twb}
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-statements
+        scfg = SystemConfig(req.system)
+        data = {SystemConfig.STORAGE_ENCRYPT: scfg.storage_encrypt,
+                SystemConfig.WORKBOOKS_AS_TWB: scfg.workbooks_as_twb}
 
         # populate the storage destination type
         dest = {'name': 'storage-destination'}
         options = []
 
         value = None
-        destid = self.destid(sc)
+        destid = self.destid(scfg)
         for volume in AgentVolumesEntry.get_archives_by_envid(req.envid):
             item = self.build_item_for_volume(volume)
             ourid = '%s:%d' % (FileManager.STORAGE_TYPE_VOL, volume.volid)
@@ -69,52 +69,52 @@ class GeneralApplication(PaletteRESTHandler):
 
         if not options:
             # Placeholder until an agent connects.
-            value = sc.text(FileManager.STORAGE_TYPE_VOL)
+            value = scfg.text(FileManager.STORAGE_TYPE_VOL)
             options.append({'id': FileManager.STORAGE_TYPE_VOL,
                             'item': value})
 
         if value is None:
-            value = sc.text(destid)
+            value = scfg.text(destid)
 
         dest['value'] = value
         dest['options'] = options
 
         low = {'name': SystemConfig.WATERMARK_LOW,
-               'value': str(sc.watermark_low)}
+               'value': str(scfg.watermark_low)}
         options = []
         for x in self.LOW_WATERMARK_RANGE:
             options.append({'id':x, 'item': str(x)})
         low['options'] = options
 
         high = {'name': SystemConfig.WATERMARK_HIGH,
-               'value': str(sc.watermark_high)}
+               'value': str(scfg.watermark_high)}
         options = []
         for x in self.HIGH_WATERMARK_RANGE:
             options.append({'id':x, 'item': str(x)})
         high['options'] = options
 
         auto = {'name': SystemConfig.BACKUP_AUTO_RETAIN_COUNT,
-               'value': str(sc.backup_auto_retain_count)}
+               'value': str(scfg.backup_auto_retain_count)}
         options = []
-        for x in [7,14,21,28]:
+        for x in [7, 14, 21, 28]:
             options.append({'id':x, 'item': str(x)})
         auto['options'] = options
 
         options = []
         user = {'name': SystemConfig.BACKUP_USER_RETAIN_COUNT,
-               'value': str(sc.backup_user_retain_count)}
-        for x in range(1,11):
+               'value': str(scfg.backup_user_retain_count)}
+        for x in range(1, 11):
             options.append({'id':x, 'item': str(x)})
         user['options'] = options
 
         logs = {'name': SystemConfig.LOG_ARCHIVE_RETAIN_COUNT,
-               'value': str(sc.log_archive_retain_count)}
+               'value': str(scfg.log_archive_retain_count)}
         options = []
-        for x in range(1,11):
+        for x in range(1, 11):
             options.append({'id':x, 'item': str(x)})
         logs['options'] = options
 
-        value = self.build_item_for_web_request(sc.http_load_warn)
+        value = self.build_item_for_web_request(scfg.http_load_warn)
         http_load_warn = {'name': SystemConfig.HTTP_LOAD_WARN, 'value': value}
 
         options = []
@@ -123,7 +123,7 @@ class GeneralApplication(PaletteRESTHandler):
             options.append({'id':x, 'item': item})
         http_load_warn['options'] = options
 
-        value = self.build_item_for_web_request(sc.http_load_error)
+        value = self.build_item_for_web_request(scfg.http_load_error)
         http_load_error = {'name': SystemConfig.HTTP_LOAD_ERROR,
                            'value': value}
 
@@ -133,26 +133,28 @@ class GeneralApplication(PaletteRESTHandler):
             options.append({'id':x, 'item': item})
         http_load_error['options'] = options
 
-        data['config'] = [dest, low, high, auto, user, logs, http_load_warn, http_load_error]
+        data['config'] = [dest, low, high, auto, user, logs,
+                          http_load_warn, http_load_error]
         return data
 
     @required_parameters('value')
+    # pylint: disable=invalid-name
     def handle_yesno_POST(self, req, name):
         value = str2bool(req.POST['value'])
-        s = value and 'yes' or 'no'
-        req.system.save(name, s)
+        req.system.save(name)
         return {'value':value}
 
     def handle_encryption(self, req):
         if req.method == 'GET':
-            sc = SystemConfig(req.system)
-            return {'value':sc.storage_encrypt}
+            scfg = SystemConfig(req.system)
+            return {'value':scfg.storage_encrypt}
         elif req.method == 'POST':
             return self.handle_yesno_POST(req, SystemConfig.STORAGE_ENCRYPT)
         else:
             raise exc.HTTPMethodNotAllowed()
 
     @required_parameters('id')
+    # pylint: disable=invalid-name
     def handle_dest_POST(self, req):
         value = req.POST['id']
         parts = value.split(':')
@@ -166,33 +168,33 @@ class GeneralApplication(PaletteRESTHandler):
         return {'id':value}
 
     # return the id of the current selection (built from SystemConfig)
-    def destid(self, sc):
-        dest_id = sc.backup_dest_id
+    def destid(self, scfg):
+        dest_id = scfg.backup_dest_id
         if dest_id == None:
             dest_id = 0
 
-        value = sc.backup_dest_type
-        return "%s:%d" % (sc.backup_dest_type, dest_id)
+        return "%s:%d" % (scfg.backup_dest_type, dest_id)
 
     def handle_dest(self, req):
-        sc = SystemConfig(req.system)
+        scfg = SystemConfig(req.system)
         if req.method == 'GET':
-            return {'id':self.destid(sc)}
+            return {'id':self.destid(scfg)}
         elif req.method == 'POST':
             return self.handle_dest_POST(req)
         else:
             raise exc.HTTPMethodNotAllowed()
 
     @required_parameters('id')
+    # pylint: disable=invalid-name
     def handle_int_POST(self, req, name):
         value = req.POST['id']
         req.system.save(name, str(value))
         return {'id':value}
 
     def handle_low(self, req):
-        sc = SystemConfig(req.system)
+        scfg = SystemConfig(req.system)
         if req.method == 'GET':
-            return {'value':sc.watermark_low}
+            return {'value':scfg.watermark_low}
         elif req.method == 'POST':
             d = self.handle_int_POST(req, SystemConfig.WATERMARK_LOW)
             self.telnet.send_cmd('info all', req=req)
@@ -201,9 +203,9 @@ class GeneralApplication(PaletteRESTHandler):
             raise exc.HTTPMethodNotAllowed()
 
     def handle_high(self, req):
-        sc = SystemConfig(req.system)
+        scfg = SystemConfig(req.system)
         if req.method == 'GET':
-            return {'value':sc.watermark_high}
+            return {'value':scfg.watermark_high}
         elif req.method == 'POST':
             d = self.handle_int_POST(req, SystemConfig.WATERMARK_HIGH)
             self.telnet.send_cmd('info all', req=req)
@@ -212,9 +214,9 @@ class GeneralApplication(PaletteRESTHandler):
             raise exc.HTTPMethodNotAllowed()
 
     def handle_auto(self, req):
-        sc = SystemConfig(req.system)
+        scfg = SystemConfig(req.system)
         if req.method == 'GET':
-            return {'value':sc.backup_auto_retain_count}
+            return {'value':scfg.backup_auto_retain_count}
         elif req.method == 'POST':
             return self.handle_int_POST(req,
                                         SystemConfig.BACKUP_AUTO_RETAIN_COUNT)
@@ -222,9 +224,9 @@ class GeneralApplication(PaletteRESTHandler):
             raise exc.HTTPMethodNotAllowed()
 
     def handle_user(self, req):
-        sc = SystemConfig(req.system)
+        scfg = SystemConfig(req.system)
         if req.method == 'GET':
-            return {'value':sc.backup_user_retain_count}
+            return {'value':scfg.backup_user_retain_count}
         elif req.method == 'POST':
             return self.handle_int_POST(req,
                                         SystemConfig.BACKUP_USER_RETAIN_COUNT)
@@ -232,9 +234,9 @@ class GeneralApplication(PaletteRESTHandler):
             raise exc.HTTPMethodNotAllowed()
 
     def handle_logs(self, req):
-        sc = SystemConfig(req.system)
+        scfg = SystemConfig(req.system)
         if req.method == 'GET':
-            return {'value':sc.log_archive_retain_count}
+            return {'value':scfg.log_archive_retain_count}
         elif req.method == 'POST':
             return self.handle_int_POST(req,
                                         SystemConfig.LOG_ARCHIVE_RETAIN_COUNT)
@@ -242,17 +244,18 @@ class GeneralApplication(PaletteRESTHandler):
             raise exc.HTTPMethodNotAllowed()
 
     def handle_twb(self, req):
-        sc = SystemConfig(req.system)
+        scfg = SystemConfig(req.system)
         if req.method == 'GET':
-            return {'value':sc.workbooks_as_twb}
+            return {'value':scfg.workbooks_as_twb}
         elif req.method == 'POST':
             return self.handle_yesno_POST(req, SystemConfig.WORKBOOKS_AS_TWB)
         else:
             raise exc.HTTPMethodNotAllowed()
 
     def handle_load_warn(self, req):
+        scfg = SystemConfig(req.system)
         if req.method == 'GET':
-            return {'value':self.sc.http_load_warn}
+            return {'value':scfg.http_load_warn}
         elif req.method == 'POST':
             d = self.handle_int_POST(req, SystemConfig.HTTP_LOAD_WARN)
             return d
@@ -260,8 +263,9 @@ class GeneralApplication(PaletteRESTHandler):
             raise exc.HTTPMethodNotAllowed()
 
     def handle_load_error(self, req):
+        scfg = SystemConfig(req.system)
         if req.method == 'GET':
-            return {'value':self.sc.http_load_error}
+            return {'value':scfg.http_load_error}
         elif req.method == 'POST':
             d = self.handle_int_POST(req, SystemConfig.HTTP_LOAD_ERROR)
             return d
@@ -270,6 +274,7 @@ class GeneralApplication(PaletteRESTHandler):
 
     @required_role(Role.MANAGER_ADMIN)
     def handle(self, req):
+        # pylint: disable=too-many-return-statements
         path_info = self.base_path_info(req)
         if path_info == 'encryption':
             return self.handle_encryption(req)

@@ -1,22 +1,10 @@
 import time
 import sys
-import os
-import socket
 import datetime
 
 from webob import exc
 
-from akiri.framework.config import store
-
-from sqlalchemy.orm.exc import NoResultFound
-
-from akiri.framework.config import store
-from akiri.framework.ext.sqlalchemy import meta
-
-from controller.files import FileEntry, FileManager
-from controller.agentinfo import AgentVolumesEntry
-from controller.agent import Agent
-from controller.domain import Domain
+from controller.files import FileManager
 from controller.util import DATEFMT
 from controller.profile import Role
 
@@ -32,7 +20,7 @@ class BackupApplication(PaletteRESTHandler):
     def handle_backup(self, req):
         self.telnet.send_cmd("backup", req=req)
         now = time.strftime('%A, %B %d at %I:%M %p')
-        return {'last': now }
+        return {'last': now}
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_restore(self, req):
@@ -61,6 +49,7 @@ class BackupApplication(PaletteRESTHandler):
 
     @required_role(Role.MANAGER_ADMIN)
     @required_parameters('value')
+    # pylint: disable=invalid-name
     def handle_archive_POST(self, req):
         value = req.POST['value']
         self.system.save('archive-location', value)
@@ -68,13 +57,13 @@ class BackupApplication(PaletteRESTHandler):
 
     @required_role(Role.READONLY_ADMIN)
     def handle_GET(self, req):
-        L = [x.todict(pretty=True) for x \
+        items = [x.todict(pretty=True) for x \
                  in FileManager.all_by_type(req.envid,
-                                    FileManager.FILE_TYPE_BACKUP,
-                                    asc=False)]
+                                            FileManager.FILE_TYPE_BACKUP,
+                                            asc=False)]
         # FIXME: convert TIMEZONE
         tomorrow = datetime.date.today() + datetime.timedelta(days=1)
-        midnight = datetime.datetime.combine(tomorrow, datetime.time(0,0))
+        midnight = datetime.datetime.combine(tomorrow, datetime.time(0, 0))
         scheduled = midnight.strftime(DATEFMT)
 
         options = [{'item': 'Palette Cloud Storage'},
@@ -83,7 +72,7 @@ class BackupApplication(PaletteRESTHandler):
             'config': [{'name': 'archive-backup',
                         'options': options,
                         'value': options[1]['item']}],
-            'backups': {'type': 'Restore From', 'items': L},
+            'backups': {'type': 'Restore From', 'items': items},
             'next': scheduled
             }
 
