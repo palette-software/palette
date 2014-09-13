@@ -8,6 +8,11 @@ controller:
 	make -C controller all
 .PHONY: controller
 
+pylint:
+	make -C controller pylint
+	make -C app pylint
+.PHONY: pylint
+
 clean:
 	make -C app clean
 	make -C controller clean
@@ -15,3 +20,4 @@ clean:
 
 build-setup:
 	sudo apt-get install -y debhelper python-setuptools pylint
+.PHONY: build-setup
