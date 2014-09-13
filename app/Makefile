@@ -7,7 +7,15 @@ all: pylint
 
 pylint:
 	$(PYLINT) palette/__init__.py
+	$(PYLINT) palette/about.py
+	$(PYLINT) palette/activity.py
 	$(PYLINT) palette/auth.py
+	$(PYLINT) palette/backup.py
+	$(PYLINT) palette/billing.py
+	$(PYLINT) palette/environment.py
+	$(PYLINT) palette/event.py
+	$(PYLINT) palette/gcs.py
+	$(PYLINT) palette/general.py
 	$(PYLINT) palette/passwd.py
 	$(PYLINT) palette/request.py
 .PHONY: pylint

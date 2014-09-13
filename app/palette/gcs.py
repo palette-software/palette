@@ -1,9 +1,11 @@
 from webob import exc
-from sqlalchemy.orm.exc import NoResultFound
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
+
 from page import PalettePage, FAKEPW
-from rest import PaletteRESTHandler, required_parameters, required_role
+from rest import PaletteRESTHandler, required_parameters
 
 from controller.profile import Role
 from controller.cloud import CloudManager, CloudEntry
@@ -32,37 +34,40 @@ class GCSApplication(PaletteRESTHandler):
     def handle_GET(self, req):
         entry = self.get(req.envid)
         d = entry.todict(pretty=True)
-        d['secret'] =  entry.secret and FAKEPW or ''
+        d['secret'] = entry.secret and FAKEPW or ''
         return d
 
     @required_parameters('value')
+    # pylint: disable=invalid-name
     def handle_access_key_POST(self, req):
-        v = req.POST['value']
+        value = req.POST['value']
         entry = self.get(req.envid)
-        entry.access_key = v
+        entry.access_key = value
         meta.Session.commit()
-        return {'value':v}
-
-    @required_parameters('value')
-    def handle_secret_POST(self, req):
-        v = req.POST['value']
-        entry = self.get(req.envid)
-        entry.secret = v
-        meta.Session.commit()
-        value = v and FAKEPW or ''
         return {'value':value}
 
     @required_parameters('value')
-    def handle_bucket_POST(self, req):
-        v = req.POST['value']
-        if v.find('gs://') == 0:
-            v = v[5:]
-        elif v.find('https://storage.googleapis.com/') == 0:
-            v = v[31:]
+    # pylint: disable=invalid-name
+    def handle_secret_POST(self, req):
+        value = req.POST['value']
         entry = self.get(req.envid)
-        entry.bucket = v
+        entry.secret = value
         meta.Session.commit()
-        return {'value':v}
+        value = value and FAKEPW or ''
+        return {'value':value}
+
+    @required_parameters('value')
+    # pylint: disable=invalid-name
+    def handle_bucket_POST(self, req):
+        value = req.POST['value']
+        if value.find('gs://') == 0:
+            value = value[5:]
+        elif value.find('https://storage.googleapis.com/') == 0:
+            value = value[31:]
+        entry = self.get(req.envid)
+        entry.bucket = value
+        meta.Session.commit()
+        return {'value':value}
 
     @required_parameters('value')
     def handle_POST(self, req):
@@ -78,7 +83,7 @@ class GCSApplication(PaletteRESTHandler):
 
     def handle(self, req):
         if req.method == 'GET':
-            return self.handle_GET()
+            return self.handle_GET(req)
         elif req.method == 'POST':
             return self.handle_POST(req)
         else:
@@ -91,6 +96,7 @@ class GCSPage(PalettePage):
     required_role = Role.MANAGER_ADMIN
 
     def render(self, req, obj=None):
+        # pylint: disable=attribute-defined-outside-init
         entry = CloudManager.get_by_envid_name(req.envid, DEFAULT_NAME,
                                                CloudManager.CLOUD_TYPE_GCS)
         if entry is None:

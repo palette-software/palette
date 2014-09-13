@@ -34,7 +34,6 @@ class TableauAuthenticator(Authenticator):
     # FIXME: this is a hack since there isn't currently any
     # concept of agent during login.
     def yml(self, key):
-        # pylint: disable=no-self-use
         entry = meta.Session.query(AgentYmlEntry).\
             filter(AgentYmlEntry.key == key).first()
         return entry and entry.value or None
