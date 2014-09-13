@@ -1,6 +1,9 @@
 import json
 from sqlalchemy import func
+
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from akiri.framework.api import Authenticator
 from akiri.framework.auth import AuthFilter
@@ -31,10 +34,11 @@ class TableauAuthenticator(Authenticator):
     # FIXME: this is a hack since there isn't currently any
     # concept of agent during login.
     def yml(self, key):
+        # pylint: disable=no-self-use
         entry = meta.Session.query(AgentYmlEntry).\
             filter(AgentYmlEntry.key == key).first()
         return entry and entry.value or None
-    
+
     def authenticate(self, username, password, service='login'):
         envid = self.environment.envid
         entry = UserProfile.get(envid, 0) # user '0', likely 'palette'
@@ -56,7 +60,8 @@ class TableauAuthFilter(AuthFilter):
 
     def __call__(self, environ, start_response):
         if not hasattr(self, 'envid'):
-            self.envid = Environment.get().envid            
+            # pylint: disable=attribute-defined-outside-init
+            self.envid = Environment.get().envid
         if 'REMOTE_USER' in environ:
             user = UserProfile.get_by_name(self.envid, environ['REMOTE_USER'])
             user.timestamp = func.current_timestamp()
