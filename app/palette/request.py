@@ -1,5 +1,8 @@
 from akiri.framework.api import Request as apiRequest
+
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from controller.environment import Environment
 from controller.profile import UserProfile
@@ -8,6 +11,7 @@ from controller.util import DATEFMT
 
 class Request(apiRequest):
     """ This class may be called more than once in the WSGI Pipeline. """
+    # pylint: disable=too-many-public-methods
     def __init__(self, environ):
         super(Request, self).__init__(environ)
         if not 'PALETTE_ENVIRONMENT' in environ:
@@ -27,11 +31,12 @@ class Request(apiRequest):
 
 # FIXME: merge with SystemManager.
 class System(object):
-    
+
     def __init__(self, envid):
         self.envid = envid
 
     def tryload(self):
+        # pylint: disable=attribute-defined-outside-init
         if not hasattr(self, 'data'):
             self.data = {}
             for entry in SystemEntry.get_all(self.envid):
@@ -42,7 +47,7 @@ class System(object):
         if not key in self.data:
             return None
         return self.data[key].modification_time.strftime(DATEFMT)
-        
+
     def get(self, key, **kwargs):
         if 'default' in kwargs:
             default = kwargs['default']

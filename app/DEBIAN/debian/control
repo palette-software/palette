@@ -10,7 +10,7 @@ Package: palette
 Architecture: all
 Depends:
  python (>= 2.7), ${misc:Depends},
- python-docutils, python-sphinx, postgresql,
+ python-docutils, python-sphinx, python-passlib, postgresql,
  python-sqlalchemy, python-psycopg2, telnet, controller,
  apache2, libapache2-mod-wsgi,
  akiri.framework-sqlalchemy,

@@ -1,12 +1,15 @@
 include ../pylint.mk
 
-all:
+all: pylint
 	python setup.py bdist
 	make -C DEBIAN all
 .PHONY: all
 
 pylint:
 	$(PYLINT) palette/__init__.py
+	$(PYLINT) palette/auth.py
+	$(PYLINT) palette/passwd.py
+	$(PYLINT) palette/request.py
 .PHONY: pylint
 
 clean:
