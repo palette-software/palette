@@ -1,6 +1,8 @@
 from webob import exc
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from page import PalettePage
 from rest import PaletteRESTHandler, required_parameters, required_role
@@ -9,7 +11,7 @@ from controller.agent import Agent
 from controller.agentmanager import AgentManager
 from controller.agentinfo import AgentVolumesEntry, AgentYmlEntry
 from controller.profile import Role
-from controller.util import sizestr, str2bool
+from controller.util import str2bool
 
 from controller.system import LicenseEntry
 
@@ -43,11 +45,11 @@ class ServerApplication(PaletteRESTHandler):
 
     def handle_GET(self, req):
         exclude = ['username', 'password']
-        L = meta.Session.query(Agent).order_by(Agent.display_order).\
-                order_by(Agent.displayname).all()
+        query = meta.Session.query(Agent)
+        query = query.order_by(Agent.display_order).order_by(Agent.displayname)
 
         servers = []
-        for server in L:
+        for server in query.all():
             d = server.todict(pretty=True, exclude=exclude)
             d['volumes'] = self.volumes(server)
             d['type-name'] = AgentManager.get_type_name(server.agent_type)
@@ -63,11 +65,13 @@ class ServerApplication(PaletteRESTHandler):
                 version = AgentYmlEntry.get(req.envid,
                                             'version.external',
                                             default=None)
-                if version: d['tableau-version'] = version
+                if version:
+                    d['tableau-version'] = version
                 bitness = AgentYmlEntry.get(req.envid,
                                             'version.bitness',
                                             default=None)
-                if bitness: d['tableau-bitness'] = bitness
+                if bitness:
+                    d['tableau-bitness'] = bitness
 
             servers.append(d)
 
@@ -98,6 +102,7 @@ class ServerApplication(PaletteRESTHandler):
 
     @required_role(Role.MANAGER_ADMIN)
     @required_parameters('id', 'value')
+    # pylint: disable=invalid-name
     def handle_monitor_POST(self, req):
         entry = Agent.get_by_id(req.POST['id'])
         if entry is None:

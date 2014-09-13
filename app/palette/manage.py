@@ -1,17 +1,5 @@
-import socket
-
 from webob import exc
 
-from akiri.framework.api import RESTApplication
-from akiri.framework.config import store
-
-import sqlalchemy
-from sqlalchemy import Column, Integer, String, DateTime, func
-from sqlalchemy.schema import ForeignKey
-
-from akiri.framework.ext.sqlalchemy import meta
-
-from controller.agent import Agent
 from controller.profile import Role
 
 from page import PalettePage
@@ -24,12 +12,12 @@ class ManageApplication(PaletteRESTHandler):
     # This method also implicity checks for missing parameters.
     def getbool(self, req, name):
         try:
-            s = req.POST[name].lower()
-            if s == 'true' or s == '1':
+            value = req.POST[name].lower()
+            if value == 'true' or value == '1':
                 return True
-            if s == 'false' or s == '0':
+            if value == 'false' or value == '0':
                 return False
-        except:
+        except (TypeError, ValueError):
             pass
         raise exc.HTTPBadRequest("Invalid or missing parameter '"+name+"'")
 
@@ -39,7 +27,7 @@ class ManageApplication(PaletteRESTHandler):
         return {}
 
     @required_role(Role.MANAGER_ADMIN)
-    def handle_stop(self, req):        
+    def handle_stop(self, req):
         cmd = 'stop'
         if not self.getbool(req, 'backup'):
             cmd = cmd + ' nobackup'

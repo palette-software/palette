@@ -1,43 +1,35 @@
-import sqlalchemy
-from sqlalchemy import Column, Integer, String, DateTime, func, or_
-from sqlalchemy import ForeignKey, UniqueConstraint
-from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy import or_
 from webob import exc
 
 from collections import OrderedDict
-from operator import itemgetter
 
-from akiri.framework.config import store
-
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from controller.tableau import TableauProcess
 from controller.state import StateManager
 from controller.agent import Agent
 from controller.agentmanager import AgentManager
 from controller.agentinfo import AgentVolumesEntry
-from controller.firewall_manager import FirewallEntry, FirewallManager
-from controller.ports import PortEntry, PortManager
-from controller.profile import UserProfile, Role
+from controller.firewall_manager import FirewallEntry
+from controller.ports import PortEntry
+from controller.profile import Role
 from controller.state_control import StateControl
 from controller.util import sizestr, DATEFMT
 from controller.system import LicenseEntry
-from controller.sites import Site
-from controller.projects import Project
 from controller.extracts import ExtractManager
 from controller.event_control import EventControl
 
-from page import PalettePage
 from event import EventApplication
 from rest import PaletteRESTHandler
 
 __all__ = ["MonitorApplication"]
 
 class Colors(object):
-    RED_NUM=1
-    YELLOW_NUM=2
-    GREEN_NUM=3
+    RED_NUM = 1
+    YELLOW_NUM = 2
+    GREEN_NUM = 3
 
     color_to_str = {
         RED_NUM: "red",
@@ -62,92 +54,66 @@ class MonitorApplication(PaletteRESTHandler):
     def getindex(self, req, name):
         try:
             return int(req.GET[name])
-        except:
+        except (TypeError, ValueError):
             pass
         return 0
 
     def status_options(self, req):
-        c = 'status' in req.GET and req.GET['status'] or '0'
-        L = [{'item':'All Status', 'id':0}]
+        current_key = 'status' in req.GET and req.GET['status'] or '0'
+        options = [{'item':'All Status', 'id':0}]
         for x in ['E', 'W', 'I']:
-            L.append({'item':EventControl.level_strings[x], 'id':x})
-        value = (c == '0') and L[0]['item'] or EventControl.level_strings[c]
-        return {'name':'status', 'value':value, 'id':c, 'options':L}
+            options.append({'item':EventControl.level_strings[x], 'id':x})
+        if current_key == '0':
+            value = options[0]['item']
+        else:
+            value = EventControl.level_strings[current_key]
+        return {'name':'status', 'value':value,
+                'id':current_key, 'options':options}
 
     def type_options(self, req):
-        c = 'type' in req.GET and req.GET['type'] or '0'
-        L = [{'item':'All Types', 'id':0}]
+        current_key = 'type' in req.GET and req.GET['type'] or '0'
+        options = [{'item':'All Types', 'id':0}]
 
         d = {'name':'type'}
         types = OrderedDict()
-        for key, value in sorted(EventControl.types().items(), key=lambda x: x[1]):
-           types[key] = value
-        for t in types:
-            if t == c:
-                d['value'] = types[t]
-                d['id'] = t
-            L.append({'item':types[t], 'id':t})
+        items = sorted(EventControl.types().items(), key=lambda x: x[1])
+        for key, value in items:
+            types[key] = value
+        for key in types:
+            if key == current_key:
+                d['value'] = types[key]
+                d['id'] = key
+            options.append({'item':types[key], 'id':key})
         if 'id' not in d:
-            d['value'] = L[0]['item']
+            d['value'] = options[0]['item']
             d['id'] = 0
-        d['options'] = L
+        d['options'] = options
         return d
-    
-    def site_options(self, req):
-        index = self.getindex(req, 'site')
-        L = [{'item':'All Sites', 'id':0}] + \
-            [{'item':x.name, 'id':x.siteid} for x in Site.all(req.envid)]
-        if index >= len(L):
-            index = 0
-        return {'name':'site',
-                'value':L[index]['item'], 'id':L[index]['id'], 
-                'options':L}
-
-    def get_project_sitename(self, sites, siteid):
-        site = [s for s in sites if s.siteid == siteid]
-        return site[0].name
-
-    def project_options(self, req):
-        index = self.getindex(req, 'project')
-        sites = Site.all(req.envid)
-        projects = Project.all(req.envid)
-        L = [{'item':'All Projects', 'id':0}]
-        if len(sites) > 1:
-            temp = [{'item':'Site: ' + self.get_project_sitename(sites, x.site_id) + ', Project: ' + x.name , 'id':x.projectid} for x in projects]
-            temp = sorted(temp, key=lambda k: k['item'])
-            L = L + temp
-        else:
-            L = L + [{'item':x.name , 'id':x.projectid} for x in projects]
-
-        if index >= len(L):
-            index = 0
-        return {'name':'project',
-                'value':L[index]['item'], 'id':L[index]['id'], 
-                'options':L}
 
     def publisher_options(self, req):
         sysid = self.getindex(req, 'publisher')
-        publishers = ExtractManager.publishers()
-        L = [{'item':'All Publishers', 'id':0}]
+
+        options = [{'item':'All Publishers', 'id':0}]
         d = {'name':'publisher'}
-        for p in ExtractManager.publishers():
-            if p.system_user_id == sysid:
-                d['value'] = p.friendly_name
-                d['id'] = p.system_user_id
-            L.append({'item':p.friendly_name, 'id':p.system_user_id})
+        for publisher in ExtractManager.publishers():
+            if publisher.system_user_id == sysid:
+                d['value'] = publisher.friendly_name
+                d['id'] = publisher.system_user_id
+            options.append({'item':publisher.friendly_name,
+                      'id':publisher.system_user_id})
         if not 'id' in d:
-            d['value'] = L[0]['item']
-            d['id'] = L[0]['id']
-        d['options'] = L
+            d['value'] = options[0]['item']
+            d['id'] = options[0]['id']
+        d['options'] = options
         return d
 
     def disk_watermark(self, req, name):
         """ Threshold for the disk indicator. (low|high) """
         try:
-            v = req.system.get('disk-watermark-'+name)
+            value = req.system.get('disk-watermark-'+name)
         except ValueError:
             return float(100)
-        return float(v)
+        return float(value)
 
     def disk_color(self, used, size, low, high):
         if used > high / 100 * size:
@@ -161,19 +127,18 @@ class MonitorApplication(PaletteRESTHandler):
         high = self.disk_watermark(req, 'high')
 
         volumes = []
-        q = meta.Session.query(AgentVolumesEntry).\
+        query = meta.Session.query(AgentVolumesEntry).\
             filter(AgentVolumesEntry.agentid == agent.agentid)
         if agent.iswin:
-            q = q.filter(or_(AgentVolumesEntry.vol_type == 'Fixed',
+            query = query.filter(or_(AgentVolumesEntry.vol_type == 'Fixed',
                              AgentVolumesEntry.vol_type == 'Network'))
-        L = q.order_by(AgentVolumesEntry.name).all()
-        for v in L:
-            if not v.size or v.available_space is None:
+        for vol in query.order_by(AgentVolumesEntry.name).all():
+            if not vol.size or vol.available_space is None:
                 continue
-            used = v.size - v.available_space
-            value = '%s used of %s' % (sizestr(used), sizestr(v.size))
-            color = self.disk_color(used, v.size, low, high)
-            volumes.append({'name': v.name, 'value': value, 'color': color})
+            used = vol.size - vol.available_space
+            value = '%s used of %s' % (sizestr(used), sizestr(vol.size))
+            color = self.disk_color(used, vol.size, low, high)
+            volumes.append({'name': vol.name, 'value': value, 'color': color})
         return volumes
 
     def firewall_info(self, agent):
@@ -231,6 +196,9 @@ class MonitorApplication(PaletteRESTHandler):
         return lowest_color_num
 
     def handle_monitor(self, req):
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-statements
         # Get the state
         main_state = StateManager.get_state_by_envid(req.envid)
 
@@ -403,7 +371,7 @@ class MonitorApplication(PaletteRESTHandler):
             if agent_color_num < color_num:
                 color_num = agent_color_num
 
-        environments = [ { "name": "My Servers", "agents": agents } ]
+        environments = [{"name": "My Servers", "agents": agents}]
 
         config = [self.status_options(req),
                   self.type_options(req)]
@@ -431,12 +399,3 @@ class MonitorApplication(PaletteRESTHandler):
         if req.environ['PATH_INFO'] == '/monitor':
             return self.handle_monitor(req)
         raise exc.HTTPBadRequest()
-
-class ConfigureMonitor(PalettePage):
-
-    TEMPLATE = "configure_monitor.mako"
-    def handle(self, req):
-        return None
-
-def make_configure_monitor(global_conf):
-    return ConfigureMonitor(global_conf)

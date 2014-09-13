@@ -1,20 +1,22 @@
 from webob import exc
 
-from akiri.framework.api import RESTApplication
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from controller.agentinfo import AgentYmlEntry
 from controller.profile import Role
 
 from page import PalettePage
+from rest import PaletteRESTHandler
 
-class YMLApplication(RESTApplication):
-    NAME='yml'
+class YMLApplication(PaletteRESTHandler):
+    NAME = 'yml'
 
     def handle(self, req):
         if req.method != 'GET':
-            raise exc.HTTPBadRequest();
-        
+            raise exc.HTTPBadRequest()
+
         # FIXME: filter by agentid of the primary.
         query = meta.Session.query(AgentYmlEntry).\
             order_by(AgentYmlEntry.key.asc())

@@ -1,9 +1,11 @@
 from webob import exc
-from sqlalchemy.orm.exc import NoResultFound
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
+
 from page import PalettePage, FAKEPW
-from rest import PaletteRESTHandler, required_parameters, required_role
+from rest import PaletteRESTHandler, required_parameters
 
 from controller.profile import Role
 from controller.cloud import CloudManager, CloudEntry
@@ -33,10 +35,11 @@ class S3Application(PaletteRESTHandler):
     def handle_GET(self, req):
         entry = self.get(req.envid)
         d = entry.todict(pretty=True)
-        d['secret'] =  entry.secret and FAKEPW or ''
+        d['secret'] = entry.secret and FAKEPW or ''
         return d
 
     @required_parameters('value')
+    # pylint: disable=invalid-name
     def handle_access_key_POST(self, req):
         v = req.POST['value']
         entry = self.get(req.envid)
@@ -45,25 +48,27 @@ class S3Application(PaletteRESTHandler):
         return {'value':v}
 
     @required_parameters('value')
+    # pylint: disable=invalid-name
     def handle_secret_POST(self, req):
-        v = req.POST['value']
+        value = req.POST['value']
         entry = self.get(req.envid)
-        entry.secret = v
+        entry.secret = value
         meta.Session.commit()
-        value = v and FAKEPW or ''
-        return {'value':v}
+        retval = value and FAKEPW or ''
+        return {'value':retval}
 
     @required_parameters('value')
+    # pylint: disable=invalid-name
     def handle_bucket_POST(self, req):
-        v = req.POST['value']
-        if v.find('s3://') == 0:
-           v = v[5:]
-        elif v.find('https://s3.amazonaws.com/') == 0:
-           v = v[25:]
+        value = req.POST['value']
+        if value.find('s3://') == 0:
+            value = value[5:]
+        elif value.find('https://s3.amazonaws.com/') == 0:
+            value = value[25:]
         entry = self.get(req.envid)
-        entry.bucket = v
+        entry.bucket = value
         meta.Session.commit()
-        return {'value':v}
+        return {'value':value}
 
     @required_parameters('value')
     def handle_POST(self, req):
@@ -79,7 +84,7 @@ class S3Application(PaletteRESTHandler):
 
     def handle(self, req):
         if req.method == 'GET':
-            return self.handle_GET()
+            return self.handle_GET(req)
         elif req.method == 'POST':
             return self.handle_POST(req)
         else:
@@ -92,6 +97,7 @@ class S3Page(PalettePage):
     required_role = Role.MANAGER_ADMIN
 
     def render(self, req, obj=None):
+        # pylint: disable=attribute-defined-outside-init
         entry = CloudManager.get_by_envid_name(req.envid, DEFAULT_NAME,
                                                CloudManager.CLOUD_TYPE_S3)
         if entry is None:

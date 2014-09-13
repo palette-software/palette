@@ -1,10 +1,10 @@
-import calendar
 from webob import exc
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
-from akiri.framework.config import store
+# pylint: enable=import-error,no-name-in-module
 
-from controller.profile import UserProfile, Role, Publisher, Admin, License
+from controller.profile import UserProfile, Role, Admin, License
 from controller.auth import AuthManager
 from controller.util import str2bool
 
@@ -15,15 +15,15 @@ class UserApplication(PaletteRESTHandler):
     NAME = 'users'
 
     def admin_levels(self):
-        L = meta.Session.query(Role).all()
-        return [{'name': x.name, 'id': x.roleid} for x in L]
+        roles = meta.Session.query(Role).all()
+        return [{'name': x.name, 'id': x.roleid} for x in roles]
 
     def users(self, envid):
-        q = meta.Session.query(UserProfile).\
+        query = meta.Session.query(UserProfile).\
             filter(UserProfile.envid == envid).\
             filter(UserProfile.userid > 0)
-        return q.order_by(UserProfile.friendly_name.asc()).all()
-        
+        return query.order_by(UserProfile.friendly_name.asc()).all()
+
     def visited_info(self, d):
         if not 'timestamp' in d or not d['timestamp']:
             return 'Never logged in'
@@ -34,7 +34,6 @@ class UserApplication(PaletteRESTHandler):
             return 'Palette System User'
         system_admin_level = d['system-admin-level']
         user_admin_level = d['user-admin-level']
-        publisher = d['publisher']
         info = 'Tableau '
         if d['publisher']:
             info += 'Publisher & '
@@ -72,7 +71,7 @@ class UserApplication(PaletteRESTHandler):
         users = []
         for user in self.users(req.envid):
             d = user.todict(pretty=True, exclude=exclude)
-            d['admin-type'] = user.role.name; # FIXME
+            d['admin-type'] = user.role.name # FIXME
             d['visited-info'] = self.visited_info(d)
             d['tableau-info'] = self.tableau_info(d) # FIXME
             d['license-info'] = self.license_info(d)
