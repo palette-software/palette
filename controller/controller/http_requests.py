@@ -1,5 +1,4 @@
-from sqlalchemy import Column, String, DateTime
-from sqlalchemy import Integer, BigInteger
+from sqlalchemy import Column, String, DateTime, Integer, BigInteger
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.schema import ForeignKey
 
@@ -10,17 +9,17 @@ from akiri.framework.ext.sqlalchemy import meta
 from httplib import responses
 
 from cache import TableauCacheManager
-from mixin import BaseDictMixin
+from mixin import BaseMixin, BaseDictMixin
 from http_control import HttpControl
 from event_control import EventControl
-from util import odbc2dt, timedelta_total_seconds
+from util import timedelta_total_seconds
 from sites import Site
 from workbooks import WorkbookEntry
 from profile import UserProfile
+from odbc import ODBC
 
-class HttpRequestEntry(meta.Base, BaseDictMixin):
+class HttpRequestEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'http_requests'
-
 
     reqid = Column(BigInteger, unique=True, nullable=False,
                    autoincrement=True, primary_key=True)
@@ -49,104 +48,77 @@ class HttpRequestEntry(meta.Base, BaseDictMixin):
     __table_args__ = (UniqueConstraint('envid', 'id'),)
 
     @classmethod
-    def get_lastid(cls):
-        entry = meta.Session.query(HttpRequestEntry).\
-            order_by(HttpRequestEntry.id.desc()).first()
-        if entry:
-            return str(entry.id)
-        return None
+    def maxid(cls, envid):
+        return cls.max('id', filters={'envid':envid})
+
 
 class HttpRequestManager(TableauCacheManager):
 
     def load(self, agent):
-        # pylint: disable=too-many-locals
         envid = self.server.environment.envid
-        self.prune(agent)
-
-        stmt = \
-            'SELECT id, controller, action, http_referer, http_user_agent, '+\
-            'http_request_uri, remote_ip, created_at, session_id, ' +\
-            'completed_at, port, user_id, worker, status, '+\
-            'user_cookie, user_ip, vizql_session, site_id, currentsheet '+\
-            'FROM http_requests '
+        self._prune(agent)
 
         session = meta.Session()
 
         controldata = HttpControl.info()
-        users = self.load_users(agent)
-        lastid = HttpRequestEntry.get_lastid()
-        if not lastid is None:
-            stmt += 'WHERE id > ' + str(lastid)
+        userdata = self.load_users(agent)
 
-        data = agent.odbc.execute(stmt)
-        if 'error' in data:
-            return data
-        if '' not in data:
-            data['error'] = "Missing '' key in query response."
+        maxid = HttpRequestEntry.maxid(envid)
+        if maxid is None:
+            # our table is empty, just pull in one placeholder record.
+            stmt = 'SELECT * FROM http_requests '+\
+                   'WHERE id = (SELECT MAX(id) FROM http_requests)'
+        else:
+            stmt = 'SELECT * FROM http_requests WHERE id > ' + str(maxid)
 
-        for row in data['']:
-            created_at = odbc2dt(row[7])
-            completed_at = odbc2dt(row[9])
+        datadict = agent.odbc.execute(stmt)
+        if 'error' in datadict:
+            return datadict
+        if '' not in datadict:
+            datadict['error'] = "Missing '' key in query response."
+            return datadict
 
-            user_id = row[11]
-            site_id = row[17]
-            system_user_id = users.get(site_id, user_id)
-
-            entry = HttpRequestEntry(id=row[0],
-                                     controller=row[1],
-                                     action=row[2],
-                                     http_referer=row[3],
-                                     http_user_agent=row[4],
-                                     http_request_uri=row[5],
-                                     remote_ip=row[6],
-                                     created_at=created_at,
-                                     session_id=row[8],
-                                     completed_at=completed_at,
-                                     port=row[10],
-                                     user_id=user_id,
-                                     worker=row[12],
-                                     status=row[13],
-                                     user_cookie=row[14],
-                                     user_ip=row[15],
-                                     vizql_session=row[16],
-                                     site_id=site_id,
-                                     currentsheet=row[18])
-
+        for odbcdata in ODBC.load(datadict):
+            entry = HttpRequestEntry()
             entry.envid = envid
+            odbcdata.copyto(entry)
+
+            system_user_id = userdata.get(entry.site_id, entry.user_id)
             entry.system_user_id = system_user_id
-            seconds = int(timedelta_total_seconds(completed_at, created_at))
 
-            if entry.status >= 400 and entry.action == 'show':
-                if entry.status in controldata:
-                    excludes = controldata[entry.status]
-                else:
-                    excludes = []
-                # check the URI against the list to be skipped.
-                if not entry.controller in excludes:
-                    body = {'duration':seconds}
-                    self.eventgen(EventControl.HTTP_BAD_STATUS,
-                                  agent, entry, body=body)
-            elif entry.action == 'show' and \
-                 entry.http_request_uri.startswith('/views/'):
-                errorlevel = self.server.system.getint('http-load-error')
-                warnlevel = self.server.system.getint('http-load-warn')
-                if errorlevel != 0 and seconds >= errorlevel:
-                    body = {'duration':seconds}
-                    self.eventgen(EventControl.HTTP_LOAD_ERROR,
-                                  agent, entry, body=body)
-                elif warnlevel != 0 and seconds >= warnlevel:
-                    body = {'duration':seconds}
-                    self.eventgen(EventControl.HTTP_LOAD_WARN,
-                                  agent, entry, body=body)
+            if not maxid is None: # i.e. not the first import...
+                self._test_for_alerts(entry, agent, controldata)
             session.add(entry)
-
         session.commit()
 
-        d = {u'status': 'OK', u'count': len(data[''])}
+        d = {u'status': 'OK', u'count': len(datadict[''])}
         return d
 
+    def _test_for_alerts(self, entry, agent, controldata):
+        seconds = int(timedelta_total_seconds(entry.completed_at,
+                                              entry.created_at))
+        body = {'duration':seconds}
+        if entry.status >= 400 and entry.action == 'show':
+            if entry.status in controldata:
+                excludes = controldata[entry.status]
+            else:
+                excludes = []
+            # check the URI against the list to be skipped.
+            if not entry.controller in excludes or '*' in excludes:
+                self._eventgen(EventControl.HTTP_BAD_STATUS,
+                               agent, entry, body=body)
+        elif entry.action == 'show' and \
+             entry.http_request_uri.startswith('/views/'):
+            errorlevel = self.server.system.getint('http-load-error')
+            warnlevel = self.server.system.getint('http-load-warn')
+            if errorlevel != 0 and seconds >= errorlevel:
+                self._eventgen(EventControl.HTTP_LOAD_ERROR,
+                               agent, entry, body=body)
+            elif warnlevel != 0 and seconds >= warnlevel:
+                self._eventgen(EventControl.HTTP_LOAD_WARN,
+                               agent, entry, body=body)
 
-    def get_last_http_requests_id(self, agent):
+    def _get_last_http_requests_id(self, agent):
         stmt = "SELECT MAX(id) FROM http_requests"
         data = agent.odbc.execute(stmt)
         if not data or not '' in data or data[''][0] is None:
@@ -156,7 +128,7 @@ class HttpRequestManager(TableauCacheManager):
             return 0
         return int(row[0])
 
-    def parseuri(self, uri, body):
+    def _parseuri(self, uri, body):
         tokens = uri.split('?', 1)
         if len(tokens) == 2:
             body['uri'] = uri = tokens[0]
@@ -175,7 +147,7 @@ class HttpRequestManager(TableauCacheManager):
             body['view'] = tokens[4]
 
     # translate workbook.name -> system_user_id -> owner
-    def translate_workbook(self, body):
+    def _translate_workbook(self, body):
         envid = self.server.environment.envid
         name = body['workbook']
         workbook = WorkbookEntry.get(envid, name, default=None)
@@ -186,14 +158,14 @@ class HttpRequestManager(TableauCacheManager):
             return
         body['owner'] = user.display_name()
 
-    def eventgen(self, key, agent, entry, body=None):
+    def _eventgen(self, key, agent, entry, body=None):
         if body is None:
             body = {}
         body = dict(body.items() +\
                         agent.todict().items() +\
                         entry.todict().items())
 
-        self.parseuri(entry.http_request_uri, body)
+        self._parseuri(entry.http_request_uri, body)
 
         body['http_status'] = responses[entry.status]
 
@@ -205,7 +177,7 @@ class HttpRequestManager(TableauCacheManager):
                                                       system_user_id)
 
         if 'workbook' in body:
-            self.translate_workbook(body)
+            self._translate_workbook(body)
 
         if entry.site_id and 'site' not in body:
             site = Site.get(entry.envid, entry.site_id)
@@ -217,8 +189,8 @@ class HttpRequestManager(TableauCacheManager):
                                       userid=system_user_id,
                                       timestamp=completed_at)
 
-    def prune(self, agent):
-        maxid = self.get_last_http_requests_id(agent)
+    def _prune(self, agent):
+        maxid = self._get_last_http_requests_id(agent)
         meta.Session.query(HttpRequestEntry).\
             filter(HttpRequestEntry.id > maxid).\
             delete(synchronize_session='fetch')
