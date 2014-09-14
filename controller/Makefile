@@ -6,6 +6,10 @@ all: pylint
 
 pylint:
 	$(PYLINT) controller/controller.py
+	$(PYLINT) controller/auth.py
+	$(PYLINT) controller/extracts.py
+	$(PYLINT) controller/http_requests.py
+	$(PYLINT) controller/util.py
 #	find . -name \*.py -exec pylint $(PYLINT_OPTS) '{}'  ';'
 .PHONY: pylint
 

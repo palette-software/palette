@@ -2,13 +2,16 @@ import subprocess
 import socket
 from datetime import datetime
 from dateutil import tz
+import dateutil.parser
 
 UTCFMT = "%Y-%m-%d %H:%M:%SZ"
 DATEFMT = "%I:%M%p PDT %b %d, %Y"
 SIZEFMT = "%(value).1f%(symbol)s"
 SYMBOLS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
 
-UNDEFINED="*UNDEFINED*"
+UNDEFINED = "*UNDEFINED*"
+
+# pylint: disable=invalid-name
 
 def success(body):
     return not failed(body)
@@ -25,25 +28,29 @@ def sizestr(n, fmt=SIZEFMT):
         prefix[s] = 1 << (i+1)*10
     for symbol in reversed(SYMBOLS[1:]):
         if n >= prefix[symbol]:
-            value = float(n) / prefix[symbol]
+            # pylint: disable=unused-variable
+            value = float(n) / prefix[symbol] # used by locals()
             return fmt % locals()
     return fmt % dict(symbol=SYMBOLS[0], value=n)
 
 def parseutc(s):
-    if s is None: return None
-    return datetime.strptime(s, UTCFMT)
+    if s is None:
+        return None
+    return dateutil.parser.parse(s)
 
 def utc2local(t):
     t = t.replace(tzinfo=tz.tzutc())
     return t.astimezone(tz.tzlocal())
 
 def odbc2dt(s):
-    if s is None: return None
+    if s is None:
+        return None
     dt = parseutc(s)
     return dt.replace(tzinfo=None)
 
 def version():
     try:
+        # pylint: disable=import-error
         from version import VERSION
         return VERSION
     except ImportError:
@@ -52,7 +59,7 @@ def version():
     try:
         head = subprocess.check_output(cmd, shell=True).strip()
     except subprocess.CalledProcessError:
-        return UNKNOWN
+        return 'UNKNOWN'
 
     cmd = 'git name-rev --tags --name-only --no-undefined '+head+' 2>/dev/null'
     try:
@@ -64,6 +71,7 @@ def version():
 
 def builddate():
     try:
+        # pylint: disable=import-error
         from version import DATE
         return DATE
     except ImportError:
@@ -77,7 +85,7 @@ def str2bool(s):
     if s == 'true' or s == '1' or s == "yes":
         return True
     return False
-    
+
 # analoguous to the 2.7 functionality
 # https://docs.python.org/2/library/datetime.html#datetime.timedelta.total_seconds
 # returns a float.
@@ -86,29 +94,30 @@ def timedelta_total_seconds(t2, t1):
     return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 1e6
 
 # reverse of dateime.utcfromtimestamp()
-def utctotimestamp(dt, epoch=datetime(1970,1,1)):
+def utctotimestamp(dt, epoch=datetime(1970, 1, 1)):
     return timedelta_total_seconds(dt, epoch)
 
 def safecmd(cmd):
     """Hackish function to obscure passwords in debug output (e.g. tabcmd)"""
-    L = []; obscure = False
+    tokens = []
+    obscure = False
     for x in cmd.split():
         if x == '--password':
             obscure = True
-            L.append(x)
+            tokens.append(x)
             continue
         if obscure:
-            L.append('<>')
+            tokens.append('<>')
         else:
-            L.append(x)
+            tokens.append(x)
         obscure = False
-    return ' '.join(L)
+    return ' '.join(tokens)
 
 def is_ip(spec):
     """Returns True if passed 'spec' is an IP address and False if not."""
 
     try:
-        ip = socket.inet_aton(spec)
+        socket.inet_aton(spec)
         return True
     except socket.error:
         return False
