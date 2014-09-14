@@ -7,6 +7,8 @@ all: pylint
 pylint:
 	$(PYLINT) controller/controller.py
 	$(PYLINT) controller/auth.py
+	$(PYLINT) controller/clihandler.py
+	$(PYLINT) controller/clierror.py
 	$(PYLINT) controller/extracts.py
 	$(PYLINT) controller/http_requests.py
 	$(PYLINT) controller/odbc.py
