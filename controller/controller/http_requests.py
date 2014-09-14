@@ -56,9 +56,7 @@ class HttpRequestManager(TableauCacheManager):
 
     def load(self, agent):
         envid = self.server.environment.envid
-        self._prune(agent)
-
-        session = meta.Session()
+        self._prune(agent, envid)
 
         controldata = HttpControl.info()
         userdata = self.load_users(agent)
@@ -78,6 +76,7 @@ class HttpRequestManager(TableauCacheManager):
             datadict['error'] = "Missing '' key in query response."
             return datadict
 
+        session = meta.Session()
         for odbcdata in ODBC.load(datadict):
             entry = HttpRequestEntry()
             entry.envid = envid
@@ -189,8 +188,9 @@ class HttpRequestManager(TableauCacheManager):
                                       userid=system_user_id,
                                       timestamp=completed_at)
 
-    def _prune(self, agent):
+    def _prune(self, agent, envid):
         maxid = self._get_last_http_requests_id(agent)
         meta.Session.query(HttpRequestEntry).\
+            filter(HttpRequestEntry.envid == envid).\
             filter(HttpRequestEntry.id > maxid).\
             delete(synchronize_session='fetch')
