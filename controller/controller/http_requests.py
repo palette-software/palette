@@ -1,17 +1,19 @@
-from sqlalchemy import Column, String, DateTime, Boolean
-from sqlalchemy import Integer, BigInteger, SmallInteger
-from sqlalchemy import func, UniqueConstraint, not_
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy import Column, String, DateTime
+from sqlalchemy import Integer, BigInteger
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.schema import ForeignKey
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
+
 from httplib import responses
 
 from cache import TableauCacheManager
 from mixin import BaseDictMixin
 from http_control import HttpControl
 from event_control import EventControl
-from util import utc2local, parseutc, DATEFMT, timedelta_total_seconds
+from util import odbc2dt, timedelta_total_seconds
 from sites import Site
 from workbooks import WorkbookEntry
 from profile import UserProfile
@@ -57,6 +59,7 @@ class HttpRequestEntry(meta.Base, BaseDictMixin):
 class HttpRequestManager(TableauCacheManager):
 
     def load(self, agent):
+        # pylint: disable=too-many-locals
         envid = self.server.environment.envid
         self.prune(agent)
 
@@ -82,8 +85,8 @@ class HttpRequestManager(TableauCacheManager):
             data['error'] = "Missing '' key in query response."
 
         for row in data['']:
-            created_at = utc2local(parseutc(row[7]))
-            completed_at = utc2local(parseutc(row[9]))
+            created_at = odbc2dt(row[7])
+            completed_at = odbc2dt(row[9])
 
             user_id = row[11]
             site_id = row[17]
@@ -91,7 +94,7 @@ class HttpRequestManager(TableauCacheManager):
 
             entry = HttpRequestEntry(id=row[0],
                                      controller=row[1],
-                                     action = row[2],
+                                     action=row[2],
                                      http_referer=row[3],
                                      http_user_agent=row[4],
                                      http_request_uri=row[5],
@@ -120,7 +123,7 @@ class HttpRequestManager(TableauCacheManager):
                     excludes = []
                 # check the URI against the list to be skipped.
                 if not entry.controller in excludes:
-                    body =  {'duration':seconds}
+                    body = {'duration':seconds}
                     self.eventgen(EventControl.HTTP_BAD_STATUS,
                                   agent, entry, body=body)
             elif entry.action == 'show' and \
@@ -128,11 +131,11 @@ class HttpRequestManager(TableauCacheManager):
                 errorlevel = self.server.system.getint('http-load-error')
                 warnlevel = self.server.system.getint('http-load-warn')
                 if errorlevel != 0 and seconds >= errorlevel:
-                    body =  {'duration':seconds}
+                    body = {'duration':seconds}
                     self.eventgen(EventControl.HTTP_LOAD_ERROR,
                                   agent, entry, body=body)
                 elif warnlevel != 0 and seconds >= warnlevel:
-                    body =  {'duration':seconds}
+                    body = {'duration':seconds}
                     self.eventgen(EventControl.HTTP_LOAD_WARN,
                                   agent, entry, body=body)
             session.add(entry)
@@ -183,7 +186,9 @@ class HttpRequestManager(TableauCacheManager):
             return
         body['owner'] = user.display_name()
 
-    def eventgen(self, key, agent, entry, body={}):
+    def eventgen(self, key, agent, entry, body=None):
+        if body is None:
+            body = {}
         body = dict(body.items() +\
                         agent.todict().items() +\
                         entry.todict().items())
@@ -208,7 +213,6 @@ class HttpRequestManager(TableauCacheManager):
                 body['site'] = site.name
 
         completed_at = entry.completed_at
-        timestamp=completed_at.strftime(DATEFMT)
         self.server.event_control.gen(key, body,
                                       userid=system_user_id,
                                       timestamp=completed_at)

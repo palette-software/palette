@@ -1,21 +1,20 @@
-import time
-from datetime import datetime
-
 from sqlalchemy import Column, BigInteger, Integer, String, DateTime
 from sqlalchemy.schema import ForeignKey
-from sqlalchemy.orm.exc import NoResultFound
+
 from sqlalchemy import UniqueConstraint
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from event_control import EventControl
 from profile import UserProfile
 from mixin import BaseMixin, BaseDictMixin
-from util import utc2local, parseutc, DATEFMT
+from util import odbc2dt, parseutc
 from cache import TableauCacheManager
 
-def to_hhmmss(td):
-    seconds = td.seconds
+def to_hhmmss(timedelta):
+    seconds = timedelta.seconds
     hours = seconds // (60*60)
     seconds %= (60*60)
     minutes = seconds // 60
@@ -45,7 +44,9 @@ class ExtractEntry(meta.Base, BaseMixin, BaseDictMixin):
 
 class ExtractManager(TableauCacheManager):
 
-    def workbook_update(self, agent, entry, users, cache={}):
+    def workbook_update(self, agent, entry, users, cache=None):
+        if cache is None:
+            cache = {}
         title = entry.title.replace("'", "''")
         stmt = \
             "SELECT owner_id, site_id, project_id " +\
@@ -64,7 +65,9 @@ class ExtractManager(TableauCacheManager):
         entry.project_id = int(row[2])
 
     # FIXME: merge the update functions
-    def datasource_update(self, agent, entry, users, cache={}):
+    def datasource_update(self, agent, entry, users, cache=None):
+        if cache is None:
+            cache = {}
         title = entry.title.replace("'", "''")
         stmt = \
             "SELECT owner_id, site_id, project_id " +\
@@ -83,6 +86,7 @@ class ExtractManager(TableauCacheManager):
         entry.project_id = int(row[2])
 
     def load(self, agent, check_odbc_state=True):
+        # pylint: disable=too-many-locals
         envid = self.server.environment.envid
 
         # FIXME
@@ -116,8 +120,8 @@ class ExtractManager(TableauCacheManager):
         users = self.load_users(agent)
 
         for row in data['']:
-            started_at = utc2local(parseutc(row[3]))
-            completed_at = utc2local(parseutc(row[4]))
+            started_at = odbc2dt(row[3])
+            completed_at = odbc2dt(row[4])
             entry = ExtractEntry(id=row[0],
                                  finish_code=row[1],
                                  notes=row[2],
