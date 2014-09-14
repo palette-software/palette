@@ -10,11 +10,11 @@ from akiri.framework.ext.sqlalchemy import meta
 from event_control import EventControl
 from profile import UserProfile
 from mixin import BaseMixin, BaseDictMixin
-from util import odbc2dt, parseutc
 from cache import TableauCacheManager
+from odbc import ODBC
+from util import timedelta_total_seconds
 
-def to_hhmmss(timedelta):
-    seconds = timedelta.seconds
+def to_hhmmss(seconds):
     hours = seconds // (60*60)
     seconds %= (60*60)
     minutes = seconds // 60
@@ -86,7 +86,6 @@ class ExtractManager(TableauCacheManager):
         entry.project_id = int(row[2])
 
     def load(self, agent, check_odbc_state=True):
-        # pylint: disable=too-many-locals
         envid = self.server.environment.envid
 
         # FIXME
@@ -94,77 +93,72 @@ class ExtractManager(TableauCacheManager):
             return {"error": "Cannot run command while in state: %s" % \
                         self.server.stateman.get_state()}
 
-        self.prune(agent)
+        self._prune(agent, envid)
 
         stmt = "SELECT id, finish_code, notes, started_at, completed_at, "+\
             "title, subtitle, site_id, job_name " +\
-            "FROM background_jobs " +\
-            "WHERE (job_name = 'Refresh Extracts' "+\
-            " OR job_name = 'Increment Extracts') AND progress = 100"
+            "FROM background_jobs "
 
-        session = meta.Session()
-
-        lastid = self.get_lastid(envid)
-        if not lastid is None:
-            stmt += " AND id > " + str(lastid)
-
+        maxid = self._maxid(envid)
+        if maxid is None:
+            stmt += "WHERE id = (" +\
+                    " SELECT MAX(id) FROM background_jobs " +\
+                    " WHERE (job_name = 'Refresh Extracts' "+\
+                    "        OR job_name = 'Increment Extracts') "+\
+                    "  AND progress = 100)"
+        else:
+            stmt += "WHERE (job_name = 'Refresh Extracts' "+\
+                    "       OR job_name = 'Increment Extracts') "+\
+                    " AND progress = 100 AND id > " + str(maxid)
         stmt += " ORDER BY id ASC"
 
-        data = agent.odbc.execute(stmt)
 
-        if 'error' in data or '' not in data:
-            return data
+        datadict = agent.odbc.execute(stmt)
+
+        if 'error' in datadict or '' not in datadict:
+            return datadict
 
         datasources = {}
         workbooks = {}
-        users = self.load_users(agent)
+        userdata = self.load_users(agent)
 
-        for row in data['']:
-            started_at = odbc2dt(row[3])
-            completed_at = odbc2dt(row[4])
-            entry = ExtractEntry(id=row[0],
-                                 finish_code=row[1],
-                                 notes=row[2],
-                                 started_at=started_at,
-                                 completed_at=completed_at,
-                                 title=row[5],
-                                 subtitle=row[6],
-                                 site_id=row[7],
-                                 job_name=row[8])
+        session = meta.Session()
+        for odbcdata in ODBC.load(datadict):
+            entry = ExtractEntry()
             entry.envid = envid
+            odbcdata.copyto(entry)
 
             # Placeholder to be set by the next functions.
             entry.system_user_id = -1
 
             if entry.subtitle == 'Workbook':
-                self.workbook_update(agent, entry, users, cache=workbooks)
+                self.workbook_update(agent, entry, userdata, cache=workbooks)
             if entry.subtitle == 'Data Source':
-                self.datasource_update(agent, entry, users, cache=datasources)
-
+                self.datasource_update(agent, entry, userdata,
+                                       cache=datasources)
             body = dict(agent.todict().items() + entry.todict().items())
 
-            if row[3] is not None and row[4] is not None:
-                duration = parseutc(row[4]) - parseutc(row[3])
-                body['duration'] = duration.seconds
-                duration_hms = to_hhmmss(duration)
-                body['duration_hms'] = str(duration_hms)
+            if entry.completed_at is not None and entry.started_at is not None:
+                duration = timedelta_total_seconds(entry.completed_at,
+                                                   entry.started_at)
+                body['duration'] = duration
+                body['duration_hms'] = to_hhmmss(duration)
 
             if entry.finish_code == 0:
-                self.eventgen(EventControl.EXTRACT_OK, body,
-                              timestamp=completed_at)
+                self._eventgen(EventControl.EXTRACT_OK, body,
+                               timestamp=entry.completed_at)
             else:
-                self.eventgen(EventControl.EXTRACT_FAILED, body,
-                              timestamp=completed_at)
+                self._eventgen(EventControl.EXTRACT_FAILED, body,
+                               timestamp=entry.completed_at)
 
             session.add(entry)
 
         session.commit()
 
-        return {u'status': 'OK',
-                u'count': len(data[''])}
+        return {u'status': 'OK', u'count': len(datadict[''])}
 
     # Returns None if the table is empty.
-    def get_lastid(self, envid):
+    def _maxid(self, envid):
         return ExtractEntry.max('id', filters={'envid':envid})
 
     def get_last_background_jobs_id(self, agent):
@@ -177,18 +171,19 @@ class ExtractManager(TableauCacheManager):
             return 0
         return int(row[0])
 
-    def prune(self, agent):
+    def _prune(self, agent, envid):
         """
         If the Tableau Server was restored, there may be events in the
         Controller database that no longer exist: remove them.
         """
         maxid = self.get_last_background_jobs_id(agent)
         meta.Session.query(ExtractEntry).\
+            filter(ExtractEntry.envid == envid).\
             filter(ExtractEntry.extractid > maxid).\
             delete(synchronize_session='fetch')
 
     # FIXME: add project_id? maybe job_name?
-    def eventgen(self, key, data, timestamp=None):
+    def _eventgen(self, key, data, timestamp=None):
         envid = self.server.environment.envid
         system_user_id = data['system_user_id']
         data['username'] = \
