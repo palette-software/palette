@@ -13,6 +13,7 @@ pylint:
 	$(PYLINT) controller/http_requests.py
 	$(PYLINT) controller/odbc.py
 	$(PYLINT) controller/util.py
+	$(PYLINT) controller/event.py
 #	find . -name \*.py -exec pylint $(PYLINT_OPTS) '{}'  ';'
 .PHONY: pylint
 
