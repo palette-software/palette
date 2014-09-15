@@ -119,14 +119,14 @@ class EventApplication(PaletteRESTHandler):
     def getint(self, req, name):
         try:
             return int(req.GET[name])
-        except (TypeError, ValueError):
+        except StandardError:
             pass
         return None
 
     def getfloat(self, req, name):
         try:
             return float(req.GET[name])
-        except (TypeError, ValueError):
+        except StandardError:
             pass
         return None
 
@@ -158,7 +158,7 @@ class EventApplication(PaletteRESTHandler):
 
     def handle(self, req):
         if req.method == "GET":
-            return self.handle_get(req)
+            return self.handle_GET(req)
         else:
             raise exc.HTTPBadRequest()
 

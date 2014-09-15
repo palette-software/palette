@@ -389,7 +389,7 @@ class MonitorApplication(PaletteRESTHandler):
         if not 'event' in req.GET or \
            ('event' in req.GET and req.GET['event'] != 'false'):
 
-            events = self.event.handle_get(req)
+            events = self.event.handle_GET(req)
             monitor_ret['events'] = events['events']
             monitor_ret['event-count'] = events['count']
 
