@@ -32,13 +32,13 @@ class EventEntry(meta.Base, BaseMixin, BaseDictMixin):
     timestamp = Column(DateTime, server_default=func.now())
 
     def todict(self, pretty=False, exclude=[]):
-        d = super(EventEntry, self).todict(pretty=pretty, exclude=exclude)
+        data = super(EventEntry, self).todict(pretty=pretty, exclude=exclude)
 
-        ts = "%.6f" % utctotimestamp(self.timestamp)
+        time_stamp = "%.6f" % utctotimestamp(self.timestamp)
         if pretty:
-            d['reference-time'] = ts
+            data['reference-time'] = time_stamp
         else:
-            d['reference-time'] = ts
-        return d
+            data['reference-time'] = time_stamp
+        return data
 
 # Index('idx', EventEntry.envid, EventEntry.timestamp.desc())
