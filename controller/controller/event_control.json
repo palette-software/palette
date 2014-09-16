@@ -467,8 +467,8 @@
 "level":"I",
 "send_email":"t",
 "subject":"INFO - \"Down for Maintenance\" Web Page Deactivated",
-"event_description":"Status: INFO",
-"email_message":"Status: INFO\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nVisits to your Tableau Server will now see a \"Tableau Server Down for Maintenance\" Page instead of receiving an HTTP 404 \"Page Not Found\" Error.\n\nDetails: \n${stdout}${stderr}\n${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}\n",
+"event_description":"Status: INFO\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nVisits to your Tableau Server will now show the Tableau Server Web Interface.\n\nThis message was sent from your Palette Server at ${server_url}\n",
+"email_message":"Status: INFO\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nVisits to your Tableau Server will now show the Tableau Server Web Interface.\n\nThis message was sent from your Palette Server at ${server_url}\n",
 "icon":null,
 "color":"green",
 "event_type":"maintentance"
@@ -478,8 +478,8 @@
 "level":"I",
 "send_email":"t",
 "subject":"INFO - \"Down for Maintenance\" Web Page Activated",
-"event_description":"Status: INFO\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nVisits to your Tableau Server will now see a \"Tableau Server Down for Maintenance\" Page instead of receiving an HTTP 404 \"Page Not Found\" Error.\n\nDetails: \n${stdout}${stderr}\n${info}${error}\n",
-"email_message":"Status: INFO\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nVisits to your Tableau Server will now see a \"Tableau Server Down for Maintenance\" Page instead of receiving an HTTP 404 \"Page Not Found\" Error.\n\nDetails: \n${stdout}${stderr}\n${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}\n",
+"event_description":"Status: INFO\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nVisits to your Tableau Server will now see a \"Tableau Server Down for Maintenance\" Page instead of receiving an HTTP 404 \"Page Not Found\" Error.\n\n",
+"email_message":"Status: INFO\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nVisits to your Tableau Server will now see a \"Tableau Server Down for Maintenance\" Page instead of receiving an HTTP 404 \"Page Not Found\" Error.\n\nThis message was sent from your Palette Server at ${server_url}\n",
 "icon":null,
 "color":"green",
 "event_type":"maintentance"
