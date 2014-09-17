@@ -38,6 +38,12 @@ class ManageApplication(PaletteRESTHandler):
         self.telnet.send_cmd(cmd, req=req)
         return {}
 
+    @required_role(Role.MANAGER_ADMIN)
+    def handle_ziplogs(self, req):
+        cmd = 'ziplogs'
+        self.telnet.send_cmd(cmd, req=req)
+        return {}
+
     @required_parameters('action')
     def handle(self, req):
         if req.method != "POST":
@@ -47,6 +53,8 @@ class ManageApplication(PaletteRESTHandler):
             return self.handle_start(req)
         elif action == 'stop':
             return self.handle_stop(req)
+        elif action == 'ziplogs':
+            return self.handle_ziplogs(req)
         raise exc.HTTPBadRequest()
 
 
