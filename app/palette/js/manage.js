@@ -6,7 +6,7 @@ function ($, topic, template, common)
                    'backup': backup,
                    'restart': ok,
                    'repair-license': ok,
-                   'ziplogs': ok,
+                   'ziplogs': ziplogs,
                   };
 
     var templates = {'backup-list-template': null,
@@ -53,6 +53,19 @@ function ($, topic, template, common)
             type: 'POST',
             url: '/rest/manage',
             data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function(data) {},
+            error: common.ajaxError,
+        });
+    }
+
+    function ziplogs() {
+        $.ajax({
+            type: 'POST',
+            url: '/rest/manage',
+            data: {'action': 'ziplogs'},
             dataType: 'json',
             async: false,
 
