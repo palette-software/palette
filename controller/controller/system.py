@@ -1,13 +1,12 @@
-import re
-
-from sqlalchemy import Column, String, Integer, BigInteger, DateTime, Boolean
+from sqlalchemy import Column, String, BigInteger, DateTime
 from sqlalchemy import func
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.schema import ForeignKey, UniqueConstraint
+from sqlalchemy.schema import ForeignKey
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
-from mixin import BaseMixin, BaseDictMixin
+# pylint: enable=import-error,no-name-in-module
 
+from mixin import BaseMixin, BaseDictMixin
 from manager import Manager
 from general import SystemConfig
 from files import FileManager
@@ -87,11 +86,11 @@ class SystemManager(Manager):
 
         try:
             entry = self.entry(key)
-        except ValueError, e:
+        except ValueError, ex:
             if have_default:
                 return default
             else:
-                raise e
+                raise ex
         return entry.value
 
     def getint(self, key, **kwargs):
@@ -103,83 +102,12 @@ class SystemManager(Manager):
         for entry in SystemEntry.get_all(self.envid):
             key = entry.key
             if not pretty:
-                key = key.replace('-','_')
+                key = key.replace('-', '_')
             else:
-                key = key.replace('_','-')
+                key = key.replace('_', '-')
             d[key] = entry.value
         return d
 
     @classmethod
     def populate(cls):
         SystemEntry.populate()
-
-class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
-    __tablename__ = 'license'
-
-    licenseid = Column(BigInteger, primary_key=True)
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"),
-                     nullable=False, unique=True)
-    interactors = Column(Integer)
-    viewers = Column(Integer)
-    notified = Column(Boolean, nullable=False, default=False)
-    creation_time = Column(DateTime, server_default=func.now())
-    modification_time = Column(DateTime, server_default=func.now(),
-                               onupdate=func.current_timestamp())
-
-    @classmethod
-    def get_by_agentid(cls, agentid):
-        try:
-            entry = meta.Session.query(LicenseEntry).\
-                filter(LicenseEntry.agentid == agentid).\
-                one()
-        except NoResultFound, e:
-            return None
-        return entry
-
-    @classmethod
-    def get(cls, agentid, interactors=None, viewers=None):
-        session = meta.Session()
-        entry = cls.get_by_agentid(agentid)
-        if not entry:
-            entry = LicenseEntry(agentid=agentid)
-            session.add(entry)
-
-        entry.interactors = interactors
-        entry.viewers = viewers
-
-        # If the entry is valid, reset the notification field.
-        if entry.valid():
-            entry.notified = False
-
-        return entry
-
-    @classmethod
-    def parse(cls, output):
-        pattern = '(?P<interactors>\d+) interactors, (?P<viewers>\d+) viewers'
-        m = re.search(pattern, output)
-        if not m:
-            return {}
-        return m.groupdict()
-
-    def invalid(self):
-        if self.interactors is None:
-            return False
-        self.interactors = int(self.interactors)
-        if self.viewers is None:
-            return False
-        self.viewers = int(self.viewers)
-        return self.interactors == 0 and self.viewers == 0
-
-    def valid(self):
-        return not self.invalid()
-
-    def gettype(self):
-        if self.interactors is None and self.viewers is None:
-            return "Core"
-        else:
-            return "Named-user"
-
-    def capacity(self):
-        if self.interactors is None and self.viewers is None:
-            return None
-        return "%d interactors, %d viewers" % (self.interactors, self.viewers)

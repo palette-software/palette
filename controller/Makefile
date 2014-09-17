@@ -6,14 +6,19 @@ all: pylint
 
 pylint:
 	$(PYLINT) controller/controller.py
+	$(PYLINT) controller/agentmanager.py
 	$(PYLINT) controller/auth.py
 	$(PYLINT) controller/clihandler.py
 	$(PYLINT) controller/clierror.py
+	$(PYLINT) controller/event.py
 	$(PYLINT) controller/extracts.py
 	$(PYLINT) controller/http_requests.py
+	$(PYLINT) controller/licensing.py
 	$(PYLINT) controller/odbc.py
+	$(PYLINT) controller/system.py
+	$(PYLINT) controller/system.py
+	$(PYLINT) controller/tableau.py
 	$(PYLINT) controller/util.py
-	$(PYLINT) controller/event.py
 #	find . -name \*.py -exec pylint $(PYLINT_OPTS) '{}'  ';'
 .PHONY: pylint
 

@@ -452,10 +452,32 @@
 "event_type":"license"
 },
 {
-"key":"LICENSE-RENEWAL",
+"key":"LICENSE-REPAIR-STARTED",
+"level":"I",
+"send_email":"f",
+"subject":"INFO - Tableau Server License Repair Started",
+"event_description":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}",
+"email_message":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
+"icon":null,
+"color":"green",
+"event_type":"license"
+},
+{
+"key":"LICENSE-REPAIR-FINISHED",
+"level":"I",
+"send_email":"f",
+"subject":"INFO - Tableau Server License Repair Finished",
+"event_description":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}",
+"email_message":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
+"icon":null,
+"color":"green",
+"event_type":"license"
+},
+{
+"key":"LICENSE-REPAIR-FAILED",
 "level":"E",
 "send_email":"t",
-"subject":"ERROR - Tableau Server License Renewal",
+"subject":"ERROR - Tableau Server License Repair Failed",
 "event_description":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}",
 "email_message":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
@@ -650,7 +672,7 @@
 "event_type":"tableau"
 },
 {
-"key":"STATE-UNEXPECTED-STATE-STARTED",
+"key":"STATE-UNEXPECTED-STARTED",
 "level":"I",
 "send_email":"t",
 "subject":"INFO - Tableau Server OK Again After Unexpected Stop",
@@ -661,7 +683,7 @@
 "event_type":"tableau"
 },
 {
-"key":"STATE-UNEXPECTED-STATE-STOPPED",
+"key":"STATE-UNEXPECTED-STOPPED",
 "level":"E",
 "send_email":"t",
 "subject":"ERROR - Tableau Server Stopped Unexpectedly",

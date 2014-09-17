@@ -5,7 +5,7 @@ function ($, topic, template, common)
                    'stop': stop,
                    'backup': backup,
                    'restart': ok,
-                   'repair-license': ok,
+                   'repair-license': repair_license,
                    'ziplogs': ok,
                   };
 
@@ -74,6 +74,21 @@ function ($, topic, template, common)
         });
     }
 
+    function repair_license() {
+        $.ajax({
+            type: 'POST',
+            url: '/rest/manage',
+            data: {'action': 'repair-license'},
+            dataType: 'json',
+            async: false,
+            
+            success: function(data) {
+                updateActions();
+            },
+            error: common.ajaxError,
+        });
+    }
+
     function restore() {
         var ts = $('#restore-timestamp').html();
         var filename = $('#restore-filename').val();
@@ -92,10 +107,10 @@ function ($, topic, template, common)
     }
 
     /*
-     * updateState()
+     * updateActions()
      * Enable/Disable actions based on the 'allowed' list.
      */
-    function updateState() {
+    function updateActions() {
         for (var action in actions) {
             if ($.inArray(action, allowed) >= 0) {
                 $('#'+action).removeClass('inactive');
@@ -103,7 +118,13 @@ function ($, topic, template, common)
                 $('#'+action).addClass('inactive');
             }
         }
+    }
 
+    /*
+     * updateState()
+     */
+    function updateState() {
+        updateActions();
         updateBackups();
     }
 

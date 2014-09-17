@@ -29,30 +29,32 @@ from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
 # These are need for create_all().
+# FIXME: these should logically go in __init__.py.
 # pylint: disable=unused-import
 from agentmanager import AgentManager
 from agent import Agent
 from agentinfo import AgentVolumesEntry, AgentYmlEntry
+from alert_email import AlertEmail
 from auth import AuthManager
+from config import Config
 from credential import CredentialEntry, CredentialManager
 from diskcheck import DiskCheck, DiskException
-from files import FileManager
-from firewall_manager import FirewallManager
-from http_requests import HttpRequestEntry, HttpRequestManager
-from ports import PortManager
-from state import StateManager
-from system import SystemManager, LicenseEntry
-from tableau import TableauStatusMonitor, TableauProcess
-from config import Config
 from domain import Domain
 from environment import Environment
-from profile import UserProfile, Role
-from state_control import StateControl
-from alert_email import AlertEmail
 from event_control import EventControl, EventControlManager
 from extracts import ExtractManager
+from files import FileManager
+from firewall_manager import FirewallManager
 from general import SystemConfig
+from http_requests import HttpRequestEntry, HttpRequestManager
+from licensing import LicenseManager, LicenseEntry
+from ports import PortManager
+from profile import UserProfile, Role
 from sched import Sched, Crontab
+from state import StateManager
+from state_control import StateControl
+from system import SystemManager
+from tableau import TableauStatusMonitor, TableauProcess
 from workbooks import WorkbookEntry, WorkbookUpdateEntry, WorkbookManager
 #pylint: enable=unused-import
 
@@ -681,7 +683,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         try:
             got = GetFile(self, agent, backup_full_path)
         except IOError as ex:
-            self.stateman.update(orig_state)
+            self.state_manager.update(orig_state)
             return self.error("restore_cmd failure: %s" % str(ex))
 
         # The restore file is now on the Primary Agent.
@@ -693,7 +695,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if reported_status == TableauProcess.STATUS_RUNNING:
             # Restore can run only when tableau is stopped.
-            self.stateman.update(StateManager.STATE_STOPPING_RESTORE)
+            self.state_manager.update(StateManager.STATE_STOPPING_RESTORE)
             self.log.debug("----------Stopping Tableau for restore-----------")
             stop_body = self.cli_cmd("tabadmin stop", agent)
             if stop_body.has_key('error'):
@@ -702,7 +704,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     # If the file was copied to the Primary, delete
                     # the temporary backup file we copied to the Primary.
                     self.delete_vol_file(agent, got.primary_full_path)
-                self.stateman.update(orig_state)
+                self.state_manager.update(orig_state)
                 return stop_body
 
             self.event_control.gen(EventControl.STATE_STOPPED, data,
@@ -723,7 +725,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 maint_msg = "Restore: maint stop failed.  Error was: %s" \
                                                     % maint_body['error']
 
-        self.stateman.update(StateManager.STATE_STARTING_RESTORE)
+        self.state_manager.update(StateManager.STATE_STARTING_RESTORE)
         try:
             cmd = 'tabadmin restore \\\"%s\\\"' % got.primary_full_path
             self.log.debug("restore sending command: %s", cmd)
@@ -753,7 +755,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 info += '\n' + delete_body['error']
 
         if restore_success:
-            self.stateman.update(StateManager.STATE_STARTED)
+            self.state_manager.update(StateManager.STATE_STARTED)
             self.event_control.gen(EventControl.STATE_STARTED, data,
                                    userid=userid)
         else:
@@ -771,10 +773,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 info += "\n" + msg
 
                  # The "tableau start" failed.  Go back to the "STOPPED" state.
-                self.stateman.update(StateManager.STATE_STOPPED)
+                self.state_manager.update(StateManager.STATE_STOPPED)
             else:
                 # The "tableau start" succeeded
-                self.stateman.update(StateManager.STATE_STARTED)
+                self.state_manager.update(StateManager.STATE_STARTED)
                 self.event_control.gen(EventControl.STATE_STARTED, data,
                                        userid=userid)
 
@@ -1044,7 +1046,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
               stopped when tableau is stopped.
             * When in "UPGRADE" mode.
         """
-        main_state = self.stateman.get_state()
+        main_state = self.state_manager.get_state()
         if main_state in (StateManager.STATE_STARTED,
                                             StateManager.STATE_DEGRADED):
             return True
@@ -1057,7 +1059,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return json.loads(body)
 
     def upgrading(self):
-        main_state = self.stateman.get_state()
+        main_state = self.state_manager.get_state()
         if main_state == StateManager.STATE_UPGRADING:
             return True
         else:
@@ -1104,40 +1106,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return pinfo
 
-    def license(self, agent):
-        if self.upgrading():
-            self.log.info("get_pinfo: Failing due to UPGRADING")
-            return {"error": "Cannot run command while UPGRADING"}
-
-        body = self.cli_cmd('tabadmin license', agent)
-
-        if not 'exit-status' in body or body['exit-status'] != 0:
-            return body
-        if not 'stdout' in body:
-            return body
-
-        session = meta.Session()
-
-        output = body['stdout']
-        d = LicenseEntry.parse(output)
-        entry = LicenseEntry.get(agentid=agent.agentid, **d)
-        session.commit()
-
-        if entry.invalid():
-            if not entry.notified:
-                # Generate an event
-                data = agent.todict()
-                data['error'] = "interactors: %s, viewers: %s" % \
-                    (entry.interactors, entry.viewers)
-                self.event_control.gen(EventControl.LICENSE_INVALID, data)
-                entry.notified = True
-                session.commit()
-            return self.error(\
-                "License invalid on '%s': interactors: %s, viewers: %s" % \
-                    (agent.displayname, entry.interactors, entry.viewers))
-
-        return d
-
     def yml(self, agent):
         path = agent.path.join(agent.tableau_data_dir, "data", "tabsvc",
                                "config", "workgroup.yml")
@@ -1149,7 +1117,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """sync/copy tables from tableau to here."""
 
         if check_odbc_state and not self.odbc_ok():
-            main_state = self.stateman.get_state()
+            main_state = self.state_manager.get_state()
             self.log.info("Failed.  Current state: %s", main_state)
             raise exc.InvalidStateError(
                 "Cannot run command while in state: %s" % main_state)
@@ -1649,17 +1617,14 @@ def main():
     server.event_control = EventControlManager(server)
 
     server.workbooks = WorkbookManager(server)
-
     server.files = FileManager(server)
-
     server.cloud = CloudManager(server)
-
     server.firewall_manager = FirewallManager(server)
+    server.license_manager = LicenseManager(server)
+    server.state_manager = StateManager(server)
 
     server.ports = PortManager(server)
     server.ports.populate()
-
-    server.stateman = StateManager(server)
 
     manager = AgentManager(server, port=agent_port)
     server.agentmanager = manager

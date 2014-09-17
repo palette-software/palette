@@ -61,8 +61,10 @@ class EventControl(meta.Base, BaseMixin):
     STATE_STOPPED="STATE-STOPPED"
     STATE_DEGRADED="STATE-DEGRADED"
     STATE_STARTED_AFTER_DEGRADED="STATE-STARTED-AFTER-DEGRADED"
-    STATE_UNEXPECTED_STATE_STOPPED="STATE-UNEXPECTED-STATE-STOPPED"
-    STATE_UNEXPECTED_STATE_STARTED="STATE-UNEXPECTED-STATE-STARTED"
+    STATE_UNEXPECTED_STATE_STOPPED="STATE-UNEXPECTED-STOPPED"
+    STATE_UNEXPECTED_STATE_STARTED="STATE-UNEXPECTED-STARTED"
+    STATE_UNEXPECTED_STOPPED_AFTER_DEGRADED=\
+                                    "STATE-UNEXPECTED-STOPPED-AFTER-DEGRADED"
 
     BACKUP_STARTED="BACKUP-STARTED"
     BACKUP_FINISHED="BACKUP-FINISHED"
@@ -111,7 +113,10 @@ class EventControl(meta.Base, BaseMixin):
     #
     LICENSE_INVALID="LICENSE-INVALID"
     LICENSE_EXPIRED="LICENSE-EXPIRED"
-    LICENSE_RENEWAL="LICENSE-RENEWAL"
+    LICENSE_REPAIR_STARTED="LICENSE-REPAIR-STARTED"
+    LICENSE_REPAIR_FINISHED="LICENSE-REPAIR-FINISHED"
+    LICENSE_REPAIR_FAILED="LICENSE-REPAIR-FAILED"
+
     PERMISSION="PERMISSION"
     AGENT_COMMUNICATION="AGENT-COMMUNICATION"
     MAINT_WEB="MAINT-WEB"
@@ -243,7 +248,7 @@ class EventControlManager(Manager):
         # add all system table entries to the data dictionary.
         data = dict(data.items() + self.server.system.todict().items())
         
-        self.log.debug("DATA: " + str(data))
+        self.log.debug(key + " DATA: " + str(data))
 
         if 'exit-status' in data:
             data['exit_status'] = data['exit-status']

@@ -313,7 +313,7 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_upgrade(self, cmd):
         # pylint: disable=too-many-return-statements
         # pylint: disable=too-many-branches
-        stateman = self.server.stateman
+        stateman = self.server.state_manager
 
         if not len(cmd.args):
             main_state = stateman.get_state()
@@ -414,7 +414,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # Check to see if we're in a state to backup
-        stateman = self.server.stateman
+        stateman = self.server.state_manager
         main_state = stateman.get_state()
 
         # Backups can be done when Tableau is started, degraded or stopped.
@@ -523,7 +523,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error(clierror.ERROR_BUSY)
             return
 
-        stateman = self.server.stateman
+        stateman = self.server.state_manager
         main_state = stateman.get_state()
         if main_state in (StateManager.STATE_STARTED,
                                                 StateManager.STATE_DEGRADED):
@@ -559,7 +559,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         if not self.server.odbc_ok():
-            state = self.server.stateman.get_state()
+            state = self.server.state_manager.get_state()
             self.error(clierror.ERROR_WRONG_STATE,
                        "FAIL: Main state is %s." % state)
             return
@@ -583,7 +583,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         if not self.server.odbc_ok():
-            state = self.server.stateman.get_state()
+            state = self.server.state_manager.get_state()
             self.error(clierror.ERROR_WRONG_STATE,
                        "FAIL: Main state is " + state)
             return
@@ -607,7 +607,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         if not self.server.odbc_ok():
-            state = self.server.stateman.get_state()
+            state = self.server.state_manager.get_state()
             self.error(clierror.ERROR_WRONG_STATE,
                        "FAIL: Main state is " + state)
             return
@@ -646,7 +646,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # Check to see if we're in a state to restore
-        stateman = self.server.stateman
+        stateman = self.server.state_manager
         main_state = stateman.get_state()
 
         # Backups can be done when Tableau is either started, degraded
@@ -903,7 +903,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         if not self.server.odbc_ok():
-            state = self.server.stateman.get_state()
+            state = self.server.state_manager.get_state()
             self.error(clierror.ERROR_WRONG_STATE,
                        "FAIL: Main state is " + state)
             return
@@ -938,26 +938,37 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status({"info": pinfos})
 
-    @usage('license')
+    @usage('license [repair]')
     def do_license(self, cmd):
         """Run license check."""
-        if len(cmd.args):
+        repair = False
+        if len(cmd.args) > 1:
             self.print_usage(self.do_license.__usage__)
             return
+        if len(cmd.args) == 1:
+            action = cmd.args[0].lower()
+            if action == 'repair':
+                repair = True
+            elif action != 'check':
+                self.print_usage(self.do_license.__usage__)
+                return
 
         agent = self.get_agent(cmd.dict)
         if not agent:
             return
 
         if not self.server.odbc_ok():
-            state = self.server.stateman.get_state()
+            state = self.server.state_manager.get_state()
             self.error(clierror.ERROR_WRONG_STATE,
                        "FAIL: Main state is " + state)
             return
 
         self.ack()
-        d = self.server.license(agent)
-        self.report_status(d)
+        if repair:
+            body = self.server.license_manager.repair(agent)
+        else:
+            body = self.server.license_manager.check(agent)
+        self.report_status(body)
 
     @usage('yml')
     def do_yml(self, cmd):
@@ -1024,7 +1035,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error(clierror.ERROR_WRONG_STATE, "Upgrading")
             return
 
-        stateman = self.server.stateman
+        stateman = self.server.state_manager
         main_state = stateman.get_state()
         if main_state in (StateManager.STATE_PENDING,
                           StateManager.STATE_DISCONNECTED,
@@ -1120,7 +1131,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # Check to see if we're in a state to start
-        stateman = self.server.stateman
+        stateman = self.server.state_manager
         main_state = stateman.get_state()
 
         # Start can be done only when Tableau is stopped.
@@ -1218,7 +1229,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # Check to see if we're in a state to stop
-        stateman = self.server.stateman
+        stateman = self.server.state_manager
         main_state = stateman.get_state()
 
         # Stop can be done only if tableau is started
@@ -1742,7 +1753,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         if not self.server.odbc_ok():
-            state = self.server.stateman.get_state()
+            state = self.server.state_manager.get_state()
             self.error(clierror.ERROR_WRONG_STATE,
                        "FAIL: Main state is " + state)
             return
@@ -1833,7 +1844,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error(clierror.ERROR_WRONG_STATE)
             return
 
-        stateman = self.server.stateman
+        stateman = self.server.state_manager
         main_state = stateman.get_state()
         if main_state in (StateManager.STATE_STARTED,
                                                 StateManager.STATE_DEGRADED):
@@ -1879,7 +1890,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error(clierror.ERROR_BUSY)
             return
 
-        stateman = self.server.stateman
+        stateman = self.server.state_manager
         main_state = stateman.get_state()
         if main_state in (StateManager.STATE_STARTED,
                                         StateManager.STATE_DEGRADED):

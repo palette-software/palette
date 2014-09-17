@@ -91,7 +91,7 @@ class ExtractManager(TableauCacheManager):
         # FIXME
         if check_odbc_state and not self.server.odbc_ok():
             return {"error": "Cannot run command while in state: %s" % \
-                        self.server.stateman.get_state()}
+                        self.server.state_manager.get_state()}
 
         self._prune(agent, envid)
 

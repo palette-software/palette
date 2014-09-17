@@ -17,7 +17,7 @@ from controller.ports import PortEntry
 from controller.profile import Role
 from controller.state_control import StateControl
 from controller.util import sizestr, DATEFMT
-from controller.system import LicenseEntry
+from controller.licensing import LicenseEntry
 from controller.extracts import ExtractManager
 from controller.event_control import EventControl
 
