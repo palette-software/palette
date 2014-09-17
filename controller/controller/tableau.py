@@ -1,14 +1,14 @@
-import logging
 import logger
 import string
-import time
 import threading
-import platform
 
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from state import StateManager
 from agentmanager import AgentManager
@@ -17,13 +17,15 @@ from event_control import EventControl
 from util import is_ip, hostname_only
 
 class TableauProcess(meta.Base):
+    # pylint: disable=no-init
+    # NOTE: the above warning is erroneous generated for this class.
     __tablename__ = 'tableau_processes'
 
-    ###Possible status as reported by "tabadmin status [...]"
-    STATUS_RUNNING="RUNNING"
-    STATUS_STOPPED="STOPPED"
-    STATUS_DEGRADED="DEGRADED"
-    STATUS_UNKNOWN="UNKNOWN"    # We set this if we don't know yet.
+    ### Possible status as reported by "tabadmin status [...]"
+    STATUS_RUNNING = "RUNNING"
+    STATUS_STOPPED = "STOPPED"
+    STATUS_DEGRADED = "DEGRADED"
+    STATUS_UNKNOWN = "UNKNOWN"    # We set this if we don't know yet.
 
     name = Column(String, nullable=False, primary_key=True)
     agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False,\
@@ -32,7 +34,7 @@ class TableauProcess(meta.Base):
     status = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
-      server_onupdate=func.current_timestamp())
+                               server_onupdate=func.current_timestamp())
     UniqueConstraint('agentid', 'name')
 
 class TableauStatusMonitor(threading.Thread):
@@ -50,7 +52,7 @@ class TableauStatusMonitor(threading.Thread):
         super(TableauStatusMonitor, self).__init__()
         self.server = server
         self.config = self.server.config
-        self.manager = manager
+        self.manager = manager # AgentManager instance
         self.log = logger.get(self.LOGGER_NAME)
         self.envid = self.server.environment.envid
 
@@ -65,10 +67,12 @@ class TableauStatusMonitor(threading.Thread):
         self.stateman = StateManager(self.server)
 
         # Start fresh: state table
-        #self.stateman.update(StateEntry.STATE_TYPE_MAIN, StateEntry.STATE_MAIN_UNKNOWN)
+        #self.stateman.update(StateEntry.STATE_TYPE_MAIN,
+        #                     StateEntry.STATE_MAIN_UNKNOWN)
         # fixme: We could check to see if the user had started
         # a backup or restore?
-        #self.stateman.update(StateEntry.STATE_TYPE_BACKUP, StateEntry.STATE_BACKUP_NONE))
+        #self.stateman.update(StateEntry.STATE_TYPE_BACKUP,
+        #                     StateEntry.STATE_BACKUP_NONE))
 
     # Remove all entries to get ready for new status info.
     def remove_all_status(self):
@@ -108,7 +112,8 @@ class TableauStatusMonitor(threading.Thread):
         """
 
         session = meta.Session()
-        entry = TableauProcess(agentid=agentid, name=name, pid=pid, status=status)
+        entry = TableauProcess(agentid=agentid, name=name,
+                               pid=pid, status=status)
         session.add(entry)
 
     def get_all_status(self):
@@ -125,10 +130,11 @@ class TableauStatusMonitor(threading.Thread):
                 filter(Agent.agent_type == 'primary').\
                 filter(TableauProcess.name == 'Status').\
                 one().status
-        except NoResultFound, e:
+        except NoResultFound:
             return TableauProcess.STATUS_UNKNOWN
 
     def set_main_state_from_tableau_status(self):
+        # pylint: disable=invalid-name
         tableau_status = self.get_reported_status()
 
         if tableau_status not in self.statemap:
@@ -274,10 +280,10 @@ class TableauStatusMonitor(threading.Thread):
                     filter(Agent.envid == self.envid).\
                     filter(Agent.ip_address == host).\
                     one()
-                return entry.agentid;
-            except NoResultFound, e:
+                return entry.agentid
+            except NoResultFound:
                 return None
-            except MultipleResultsFound, e:
+            except MultipleResultsFound:
                 # FIXME: log error
                 pass
             return None
@@ -289,14 +295,15 @@ class TableauStatusMonitor(threading.Thread):
                 filter(Agent.envid == self.envid).\
                 filter(func.upper(Agent.hostname) == hostname).\
                 one()
-            return entry.agentid;
-        except NoResultFound, e:
+            return entry.agentid
+        except NoResultFound:
             return None
-        except MultipleResultsFound, e:
+        except MultipleResultsFound:
             # FIXME: log error
             return None
 
     def check_status_with_connection(self, agent):
+        # pylint: disable=too-many-locals
         agentid = agent.agentid
 
         body = self.server.status_cmd(agent)
@@ -315,7 +322,7 @@ class TableauStatusMonitor(threading.Thread):
         # Do not commit until after the table is added to.
         # Otherwise, the table could be empty temporarily.
 
-        system_status = None;
+        system_status = None
         for line in lines:
             parts = line.strip().split(' ')
 
@@ -328,7 +335,7 @@ class TableauStatusMonitor(threading.Thread):
                     pid_str = pid_part[1:-1]   # "1764"
                     try:
                         pid = int(pid_str)
-                    except:
+                    except StandardError:
                         self.log.error("Bad PID: " + pid_str)
                         continue
 
@@ -353,7 +360,7 @@ class TableauStatusMonitor(threading.Thread):
                     # FIXME: log error
                     pass
             else:
-                host = parts[0].strip().replace(':','')
+                host = parts[0].strip().replace(':', '')
                 agentid = self.get_agent_id_from_host(host)
 
         self.set_main_state(system_status, agent, body)

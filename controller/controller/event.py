@@ -1,14 +1,13 @@
-import time
-
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
-from sqlalchemy import Index
+# from sqlalchemy import Index
 from sqlalchemy.schema import ForeignKey
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
-from manager import Manager
 from mixin import BaseMixin, BaseDictMixin
-from util import DATEFMT, utctotimestamp
+from util import utctotimestamp
 
 class EventEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = "events"
@@ -31,7 +30,9 @@ class EventEntry(meta.Base, BaseMixin, BaseDictMixin):
     creation_time = Column(DateTime, server_default=func.now())
     timestamp = Column(DateTime, server_default=func.now())
 
-    def todict(self, pretty=False, exclude=[]):
+    def todict(self, pretty=False, exclude=None):
+        if exclude is None:
+            exclude = []
         data = super(EventEntry, self).todict(pretty=pretty, exclude=exclude)
 
         time_stamp = "%.6f" % utctotimestamp(self.timestamp)

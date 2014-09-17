@@ -1,11 +1,8 @@
-import sys
 import os
 import socket
 import ssl
-import select
 import threading
 import time
-import traceback
 from httplib import HTTPConnection
 import json
 
@@ -28,13 +25,16 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm.session import make_transient
 #from sqlalchemy.inspection import inspect
+
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 # The Controller's Agent Manager.
 # Communicates with the Agent.
 # fixme: maybe combine with the Agent class.
 class AgentConnection(object):
-
+    # pylint: disable=too-many-instance-attributes
     _CID = 1
 
     def __init__(self, server, conn, addr, peername):
@@ -68,13 +68,15 @@ class AgentConnection(object):
         if AgentConnection._CID == 0:
             AgentConnection._CID += 1
 
-    def httpexc(self, res, method='GET', body=None):
+    def _httpexc(self, res, method='GET', body=None):
         if body is None:
             body = res.read()
         raise exc.HTTPException(res.status, res.reason,
                                 method=method, body=body)
 
-    def http_send(self, method, uri, body=None, headers={}):
+    def http_send(self, method, uri, body=None, headers=None):
+        if headers is None:
+            headers = {}
         # Check to see if state is not PENDING or DISCONNECTED?
         self.lock()
         try:
@@ -82,13 +84,13 @@ class AgentConnection(object):
             res = self.httpconn.getresponse()
             # GONE can be returned from filemanager
             if res.status not in (httplib.OK, httplib.GONE):
-                self.httpexc(res, method=method)
+                self._httpexc(res, method=method)
             return res.read()
         finally:
             self.unlock()
 
-    def http_send_json(self, uri, data, headers={}):
-        if not headers:
+    def http_send_json(self, uri, data, headers=None):
+        if headers is None:
             headers = {}
         headers['Content-Type'] = 'application/json'
         body = json.dumps(data)
@@ -106,32 +108,35 @@ class AgentConnection(object):
     def user_action_unlock(self):
         self.user_action_lockobj.release()
 
-class AgentManager(threading.Thread):
+# FIXME: prefix private method names with an '_'.
+# pylint: disable=too-many-public-methods
 
+class AgentManager(threading.Thread):
+    # pylint: disable=too-many-instance-attributes
     PORT = 22
 
     SSL_HANDSHAKE_TIMEOUT_DEFAULT = 5
 
     # Agent types
-    AGENT_TYPE_PRIMARY="primary"
-    AGENT_TYPE_WORKER="worker"
-    AGENT_TYPE_ARCHIVE="archive"
+    AGENT_TYPE_PRIMARY = "primary"
+    AGENT_TYPE_WORKER = "worker"
+    AGENT_TYPE_ARCHIVE = "archive"
 
     AGENT_TYPE_NAMES = {AGENT_TYPE_PRIMARY:'Tableau Primary Server',
                        AGENT_TYPE_WORKER: 'Tableau Worker Server',
                        AGENT_TYPE_ARCHIVE:'Non Tableau Server'}
 
     # Displayname templates
-    PRIMARY_TEMPLATE="Tableau Primary" # not a template since only 1
-    WORKER_TEMPLATE="Tableau Worker %d"
+    PRIMARY_TEMPLATE = "Tableau Primary" # not a template since only 1
+    WORKER_TEMPLATE = "Tableau Worker %d"
 
     # Starting point for worker/archive displayname numbers.
-    WORKER_START=100
-    ARCHIVE_START=200
+    WORKER_START = 100
+    ARCHIVE_START = 200
 
     @classmethod
-    def get_type_name(self, t):
-        return AgentManager.AGENT_TYPE_NAMES[t]
+    def get_type_name(cls, key):
+        return AgentManager.AGENT_TYPE_NAMES[key]
 
     def __init__(self, server, host='0.0.0.0', port=0):
         super(AgentManager, self).__init__()
@@ -150,19 +155,23 @@ class AgentManager(threading.Thread):
         # the unique 'conn_id'.
         self.agents = {}
 
-        self.socket_timeout = self.config.getint('controller','socket_timeout', default=60)
+        self.socket_timeout = self.config.getint('controller',
+                                                 'socket_timeout',
+                                                 default=60)
 
-        self.ssl = self.config.getboolean('controller','ssl', default=True)
+        self.ssl = self.config.getboolean('controller', 'ssl', default=True)
         if self.ssl:
             self.ssl_handshake_timeout = self.config.getint('controller',
                 'ssl_handshake_timeout',
                             default=AgentManager.SSL_HANDSHAKE_TIMEOUT_DEFAULT)
             if not self.config.has_option('controller', 'ssl_cert_file'):
-                self.log.critical("Missing 'ssl_cert_file' certificate file specification")
-                raise IOError("Missing 'ssl_cert_file' certificate file specification")
+                msg = "Missing 'ssl_cert_file' certificate file specification"
+                self.log.critical(msg)
+                raise IOError(msg)
             self.cert_file = self.config.get('controller', 'ssl_cert_file')
             if not os.path.exists(self.cert_file):
-                self.log.critical("ssl enabled, but ssl certificate file does not exist: %s", self.cert_file)
+                self.log.critical("ssl enabled, but no ssl certificate: %s",
+                                  self.cert_file)
                 raise IOError("Certificate file not found: " + self.cert_file)
 
     def update_last_disconnect_time(self):
@@ -197,11 +206,11 @@ class AgentManager(threading.Thread):
         if (agent.displayname is None or agent.displayname == "") or \
            (new_agent_type == AgentManager.AGENT_TYPE_WORKER and \
               orig_agent_type == AgentManager.AGENT_TYPE_ARCHIVE and \
-              self.displayname_changeable(agent)):
+              self._displayname_changeable(agent)):
             self.log.debug("register: setting or changing displayname for %s",
                             str(agent.displayname))
 
-            (displayname, display_order) = self.calc_new_displayname(agent)
+            (displayname, display_order) = self._calc_new_displayname(agent)
             agent.displayname = displayname
             agent.display_order = display_order
 
@@ -209,23 +218,23 @@ class AgentManager(threading.Thread):
         # don't allow two agents with the same name to be connected.
         # Keep the newest one.
         for key in self.agents:
-            a = self.agents[key]
-            if a.uuid == agent.uuid:
+            atmp = self.agents[key]
+            if atmp.uuid == agent.uuid:
                 self.log.info("Agent already connected with uuid '%s': " + \
                     "will remove it and use the new connection.", agent.uuid)
-                self.remove_agent(a, ("An agent is already connected " + \
+                self.remove_agent(atmp, ("An agent is already connected " + \
                     "with uuid '%s': will remove it and use the new " + \
                         "connection.") % (agent.uuid), gen_event=False)
                 break
             elif new_agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
-                        a.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-                    self.log.info("A primary agent is already connected: " + \
+                        atmp.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+                self.log.info("A primary agent is already connected: " + \
                         "Will remove it and keep the new primary agent " + \
                         "connection.")
-                    self.remove_agent(a,
-                            "A primary agent is already connected: Will " + \
-                            "remove it and keep the new primary agent " + \
-                            "connection.", gen_event=False)
+                self.remove_agent(atmp,
+                        "A primary agent is already connected: Will " + \
+                        "remove it and keep the new primary agent " + \
+                        "connection.", gen_event=False)
 
         # If a previously connected agent was removed, above,
         # in "remove_agent()", the agent's last_disconnect_time was
@@ -242,13 +251,13 @@ class AgentManager(threading.Thread):
                        str(orig_agent_type), new_agent_type)
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug("register: Initializing state entries on connect")
-            self.server.stateman.update(StateManager.STATE_PENDING)
+            self.server.state_manager.update(StateManager.STATE_PENDING)
 
             # Check to see if we need to reclassify archive agents as
             # worker agents.  For example, a worker may have
             # connected before the primary ever connected with its
             # yml file that tells us the ip addresses of workers.
-            self.set_all_agent_types()
+            self._set_all_agent_types()
 
             # Tell the status thread to start getting status on
             # the new primary.
@@ -257,7 +266,7 @@ class AgentManager(threading.Thread):
         self.unlock()
         return True
 
-    def set_all_agent_types(self):
+    def _set_all_agent_types(self):
         """Look through the list of agents and reclassify archive agents as
         worker agents if needed.  For example, a worker may have
         connected and set as "archive" before the primary ever connected
@@ -291,19 +300,19 @@ class AgentManager(threading.Thread):
                     continue
 
                 # Possibly correct displayname.
-                if self.displayname_changeable(entry):
+                if self._displayname_changeable(entry):
                     (displayname, display_order) = \
-                                            self.calc_new_displayname(entry)
+                                            self._calc_new_displayname(entry)
                     entry.displayname = displayname
                     entry.display_order = display_order
 
         session.commit()
 
-    def displayname_changeable(self, agent):
+    def _displayname_changeable(self, agent):
         """Determine whether or not we can change the displayname.
            We can change the displayname if the displayname isn't set yet.
            Otherwise, we can't unless the displayname unless it
-           looks like the default displayname that we created (not the user) 
+           looks like the default displayname that we created (not the user)
            is still being used that was set when a worker was classified
            and named the hostname.
         """
@@ -329,7 +338,7 @@ class AgentManager(threading.Thread):
         else:
             return False
 
-    def calc_new_displayname(self, new_agent):
+    def _calc_new_displayname(self, new_agent):
         """
             Returns (agent-display-name, agent-display-order)
             The current naming scheme:
@@ -348,16 +357,16 @@ class AgentManager(threading.Thread):
             return (AgentManager.PRIMARY_TEMPLATE, 1)
 
         if new_agent.agent_type == AgentManager.AGENT_TYPE_ARCHIVE:
-            return self.calc_archive_name(new_agent)
+            return self._calc_archive_name(new_agent)
 
         if new_agent.agent_type == AgentManager.AGENT_TYPE_WORKER:
-            return self.calc_worker_name(new_agent)
+            return self._calc_worker_name(new_agent)
 
         self.log.error("calc_new_displayname: INVALID agent type: %s",
                         new_agent.agent_type)
         return ("INVALID AGENT TYPE: %s" % new_agent.agent_type, 0)
 
-    def calc_worker_name(self, new_agent):
+    def _calc_worker_name(self, new_agent):
         """Calculate the worker name and display order.
            We look for the "workerX.host" entry that has
            our ip address."""
@@ -366,8 +375,8 @@ class AgentManager(threading.Thread):
 
         try:
             hosts = self.get_worker_hosts()
-        except ValueError, e:
-            self.log.error("calc_worker_name: %s", str(e))
+        except ValueError, ex:
+            self.log.error("calc_worker_name: %s", str(ex))
             return (AgentManager.WORKER_TEMPLATE % 0,
                     AgentManager.WORKER_START)
 
@@ -385,7 +394,6 @@ class AgentManager(threading.Thread):
             # Remove domain name
             hostname = new_agent.hostname[:dot]
 
-        session = meta.Session()
         for worker_num in range(1, len(hosts)+1):
             # Get entry for "worker%d.host".  Its value is worker's IP address.
             worker_key = "worker%d.host" % worker_num
@@ -422,7 +430,7 @@ class AgentManager(threading.Thread):
         return (AgentManager.WORKER_TEMPLATE % 0,
                 AgentManager.WORKER_START)
 
-    def calc_archive_name(self, new_agent):
+    def _calc_archive_name(self, new_agent):
         """Choose the archive name and initial display order."""
 
         if new_agent.hostname != None and new_agent.fqdn != "":
@@ -446,10 +454,7 @@ class AgentManager(threading.Thread):
            is known and has been set."""
 
         if not agent.agent_type:
-            self.log.error("Unknown agent type for agent: %s",
-                                                    agent.displayname)
-
-        agentid = agent.agentid
+            self.log.error("Unknown agent type for agent: " + agent.displayname)
 
         # FIXME: make automagic based on self.__table__.columns
         # Below are the only ones really needed as the others come
@@ -473,6 +478,9 @@ class AgentManager(threading.Thread):
 
            If displayname is sent, then disk-usage events will
            not be sent since the event needs that."""
+        # pylint: disable=too-many-statements
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-locals
 
         if not agent.agent_type:
             self.log.error("Unknown agent type for agent: %s",
@@ -501,22 +509,18 @@ class AgentManager(threading.Thread):
                     self.log.error("Bad format for tableau-install-dir: %s",
                                    pinfo['tableau-data-dir'])
                     return False
-                tableau_data_dir_vol_name = parts[0].upper()
 
             # fixme
             parts = agent.data_dir.split(':')
             if len(parts) != 2:
-                self.log.error("Bad format for data-dir: %s",
-                                                       agent.data_dir)
+                self.log.error("Bad format for data-dir: %s", agent.data_dir)
                 return False
             palette_data_dir = agent.path.join(parts[1], self.server.DATA_DIR)
         else:
-            # tableau_data_dir_vol_name is never used for linux agents, below,
-            # since it is only for primaries with Tableau installed.
             palette_data_dir = agent.path.join(agent.data_dir,
                                                self.server.DATA_DIR)
 
-        (low_water,high_water) = \
+        (low_water, high_water) = \
             self.disk_watermark('low'), self.disk_watermark('high')
 
         if 'volumes' in pinfo:
@@ -541,7 +545,7 @@ class AgentManager(threading.Thread):
                         filter(AgentVolumesEntry.agentid == agentid).\
                         filter(AgentVolumesEntry.name == name).\
                         one()
-                except NoResultFound, e:
+                except NoResultFound:
                     entry = None
 
                 if not entry is None:
@@ -666,10 +670,10 @@ class AgentManager(threading.Thread):
     def disk_watermark(self, name):
         """ Threshold for the disk indicator. (low|high) """
         try:
-            v = self.server.system.get('disk-watermark-'+name)
+            value = self.server.system.get('disk-watermark-'+name)
         except ValueError:
             return float(100)
-        return float(v)
+        return float(value)
 
     def disk_color(self, used, size, low, high):
         if used > high / 100 * size:
@@ -690,7 +694,7 @@ class AgentManager(threading.Thread):
 
         try:
             hosts = self.get_worker_hosts()
-        except ValueError, e:
+        except ValueError:
             return False
 
         if len(hosts) == 1:
@@ -721,8 +725,8 @@ class AgentManager(threading.Thread):
            the list of hosts there."""
 
         # get() raises ValueError if not found.
-        envid = self.server.environment.envid;
-        value= AgentYmlEntry.get(envid, 'worker.hosts');
+        envid = self.server.environment.envid
+        value = AgentYmlEntry.get(envid, 'worker.hosts')
 
         # The value is in the format:
         #       "DEV-PRIMARY, 10.0.0.102"
@@ -740,7 +744,7 @@ class AgentManager(threading.Thread):
             session.commit()
             if aconn:
                 aconn.displayname = displayname
-        except NoResultFound, e:
+        except NoResultFound:
             raise ValueError('No agent found with uuid=%s' % (uuid))
 
     def forget(self, agent):
@@ -758,11 +762,12 @@ class AgentManager(threading.Thread):
 
         session = meta.Session()
         try:
-            entry = session.query(Agent).\
+            # FIXME: make this a method of Agent.
+            session.query(Agent).\
                 filter(Agent.agentid == agent.agentid).\
                 filter(Agent.conn_id == agent.conn_id).\
                 one()
-        except NoResultFound, e:
+        except NoResultFound:
             self.log.debug(
                 ("forget: Not found (was probably recently updated with a " + \
                 "new conn_id by a new thread).  agentid: %d, conn_id: %d") % \
@@ -903,7 +908,7 @@ class AgentManager(threading.Thread):
                             reason)
 
             if gen_event:
-                # get the latest from the DB just incase the display name changed
+                # get the latest from the DB incase the display name changed
                 temp_agent = Agent.get_by_id(agent.agentid)
                 data = temp_agent.todict()
                 data['error'] = reason
@@ -931,15 +936,15 @@ class AgentManager(threading.Thread):
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.log.debug(
                         "remove_agent: Initializing state entries on removal")
-            self.server.stateman.update(StateManager.STATE_DISCONNECTED)
+            self.server.state_manager.update(StateManager.STATE_DISCONNECTED)
             # Note: We don't update/clear the "reported" state from
             # a previous agent, so the user will see the last
             # real state.
 
         try:
             session.expunge(agent)      # Removes the other one
-        except InvalidRequestError, e:
-            self.log.error("remove_agent expunge error: %s", str(e))
+        except InvalidRequestError, ex:
+            self.log.error("remove_agent expunge error: %s", str(ex))
         #make_transient(agent)  # done above
         self.log.error("after expunge: %s", str(agent.todict()))
         self.unlock()
@@ -948,8 +953,8 @@ class AgentManager(threading.Thread):
         try:
             sock.shutdown(socket.SHUT_RDWR)
             sock.close()
-        except socket.error as e:
-            self.log.debug("agentmanager._close socket failure: " + str(e))
+        except socket.error as ex:
+            self.log.debug("agentmanager._close socket failure: " + str(ex))
             return False
         return True
 
@@ -962,13 +967,15 @@ class AgentManager(threading.Thread):
         self.lockobj.release()
 
     def run(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             sock.bind((self.host, self.port))
-        except socket.error as e:
-            self.log.error(\
-                "Fatal error: Could not bind to port %d: %s", self.port, str(e))
+        except socket.error as ex:
+            self.log.error("Fatal error: Could not bind to port %d: %s",
+                           self.port, str(ex))
+            # NOTE: this call to _exit is correct.
+            # pylint: disable=protected-access
             os._exit(99)
 
         sock.listen(8)
@@ -978,29 +985,30 @@ class AgentManager(threading.Thread):
         asocketmon.start()
 
         session = meta.Session()
-        self.server.stateman.update(StateManager.STATE_DISCONNECTED)
+        self.server.state_manager.update(StateManager.STATE_DISCONNECTED)
         session.commit()
 
         while True:
-            if self.server.stateman.get_state() == StateManager.STATE_UPGRADING:
+            stateman = self.server.state_manager
+            if stateman.get_state() == StateManager.STATE_UPGRADING:
                 self.log.debug("AgentManager: UPGRADING: Not " + \
                                     "listening for new agent connections.")
                 time.sleep(10)
                 continue
             try:
                 conn, addr = sock.accept()
-            except socket.error as e:
+            except socket.error:
                 self.log.debug("Accept failed.")
                 continue
 
-            if self.server.stateman.get_state() == StateManager.STATE_UPGRADING:
+            if stateman.get_state() == StateManager.STATE_UPGRADING:
                 self.log.debug("AgentManager: UPGRADING: Not " + \
-                                    "handling the agent connection.")
+                               "handling the agent connection.")
                 self._close(conn)
                 continue
 
             tobj = threading.Thread(target=self.handle_agent_connection,
-                                 args=(conn, addr))
+                                    args=(conn, addr))
             # Spawn a thread to handle the new agent connection
             tobj.start()
 
@@ -1010,29 +1018,33 @@ class AgentManager(threading.Thread):
         except EnvironmentError:
             pass
 
-    def socket_fd_closed(self, fd):
+    def socket_fd_closed(self, filedes):
         """called with agentmanager lock"""
         for key in self.agents:
             agent = self.agents[key]
             self.log.debug("agent fileno to close: %d", agent.socket.fileno())
-            if agent.connection.socket.fileno() == fd:
+            if agent.connection.socket.fileno() == filedes:
                 self.log.debug("Agent closed connection for: %s", key)
                 agent.socket.close()
                 del self.agents[key]
                 return
 
-        self.log.error("Couldn't find agent with fd: %d", fd)
+        self.log.error("Couldn't find agent with fd: %d", filedes)
 
     # thread function: spawned on a new connection from an agent.
     def handle_agent_connection(self, conn, addr):
+        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-return-statements
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-statements
         if self.ssl:
             conn.settimeout(self.ssl_handshake_timeout)
             try:
                 ssl_sock = ssl.wrap_socket(conn, server_side=True,
                                            certfile=self.cert_file)
                 conn = ssl_sock
-            except (ssl.SSLError, socket.error), e:
-                self.log.info("Exception with ssl wrap: %s", str(e))
+            except (ssl.SSLError, socket.error), ex:
+                self.log.info("Exception with ssl wrap: %s", str(ex))
                 # http://bugs.python.org/issue9211, though takes
                 # a while to garbage collect and close the fd.
                 self._shutdown(conn)
@@ -1040,8 +1052,8 @@ class AgentManager(threading.Thread):
 
         try:
             peername = conn.getpeername()[0]
-        except socket.error, e:
-            peername = "Unknown peername: %s" % str(e)
+        except socket.error, ex:
+            peername = "Unknown peername: %s" % str(ex)
 
         conn.settimeout(self.socket_timeout)
 
@@ -1056,7 +1068,7 @@ class AgentManager(threading.Thread):
             # sleep for 100ms to prevent:
             #  'An existing connection was forcibly closed by the remote host'
             # on the Windows client when the agent tries to connect.
-            time.sleep(.1);
+            time.sleep(.1)
 
             aconn.httpconn = ReverseHTTPConnection(conn)
             # FIXME: why is this a POST?
@@ -1116,10 +1128,10 @@ class AgentManager(threading.Thread):
             try:
                 pinfo = self.server.init_new_agent(agent)
             except (IOError, ValueError, exc.InvalidStateError,
-                    exc.HTTPException, httplib.HTTPException) as e:
+                    exc.HTTPException, httplib.HTTPException) as ex:
                 self.log.error(
                     "Bad agent with uuid: '%s'.  Disconnecting.  Error: %s",
-                    uuid, str(e))
+                    uuid, str(ex))
                 self._close(conn)
                 return
 
@@ -1174,17 +1186,17 @@ class AgentManager(threading.Thread):
             session = meta.Session()
             session.commit()
 
-        except socket.error, e:
-            self.log.debug("Socket error: " + str(e))
+        except socket.error, ex:
+            self.log.debug("Socket error: " + str(ex))
             self._close(conn)
-        except Exception, e:
+        except Exception:
             self.log.exception('handle_agent_connection exception:')
         finally:
             try:
                 # Use " ifinspect(agent).session" when we go to sqlalchemy
                 # > 0.8
                 make_transient(agent)
-            except:
+            except StandardError:
                 pass
 
             session.rollback()
@@ -1207,10 +1219,12 @@ class AgentManager(threading.Thread):
             return
 
         try:
+            # FIXME: create another method in DiskCheck to avoid this warning.
+            # pylint: disable=unused-variable
             (primary_dir, primary_entry) = \
                     DiskCheck.get_primary_loc(agent, "")
-        except DiskException, e:
-            self.log.error("set_default_backup_destid: %s", str(e))
+        except DiskException, ex:
+            self.log.error("set_default_backup_destid: %s", str(ex))
             return
 
         self.log.debug(
@@ -1241,10 +1255,9 @@ class AgentManager(threading.Thread):
             agent.filemanager.put(route_path, lines)
         except (exc.HTTPException, \
                     httplib.HTTPException, \
-                    EnvironmentError) as e:
-            self.log.error(\
-                "filemanager.put(%s) on %s failed with: %s",
-                agent.displayname, route_path, str(e))
+                    EnvironmentError) as ex:
+            self.log.error("filemanager.put(%s) on %s failed with: %s",
+                           agent.displayname, route_path, str(ex))
             return False
 
         self.log.debug("Saved agent file '%s' with contents: %s",
@@ -1272,7 +1285,9 @@ class AgentHealthMonitor(threading.Thread):
         self.server = manager.server
         self.log = log
         self.config = self.manager.config
-        self.ping_interval = self.config.getint('status', 'ping_request_interval', default=10)
+        self.ping_interval = self.config.getint('status',
+                                                'ping_request_interval',
+                                                default=10)
 
     def run(self):
 
@@ -1314,10 +1329,11 @@ class AgentHealthMonitor(threading.Thread):
                            agent.displayname, agent.agent_type, agent.uuid,
                             key)
 
+            stateman = self.server.state_manager
+
             body = self.server.ping(agent)
             if body.has_key('error'):
-                if self.server.stateman.get_state() == \
-                                            StateManager.STATE_UPGRADING:
+                if stateman.get_state() == StateManager.STATE_UPGRADING:
                     self.log.info(
                         ("Ping During UPDATE: Agent '%s', type '%s', " + \
                         "uuid '%s', conn_id %d did  not respond to a " + \
@@ -1335,5 +1351,5 @@ class AgentHealthMonitor(threading.Thread):
             else:
                 self.log.debug(
                     "Ping: Reply from agent '%s', type '%s', uuid %s, " + \
-                    "conn_id %d", 
+                    "conn_id %d",
                         agent.displayname, agent.agent_type, agent.uuid, key)

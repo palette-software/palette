@@ -13,7 +13,7 @@ from controller.agentinfo import AgentVolumesEntry, AgentYmlEntry
 from controller.profile import Role
 from controller.util import str2bool
 
-from controller.system import LicenseEntry
+from controller.licensing import LicenseEntry
 
 class ServerApplication(PaletteRESTHandler):
     NAME = 'servers'
