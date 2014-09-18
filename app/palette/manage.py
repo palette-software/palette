@@ -41,6 +41,11 @@ class ManageApplication(PaletteRESTHandler):
     @required_role(Role.MANAGER_ADMIN)
     def handle_repair_license(self, req):
         self.telnet.send_cmd('license repair', req=req)
+
+    @required_role(Role.MANAGER_ADMIN)
+    def handle_ziplogs(self, req):
+        cmd = 'ziplogs'
+        self.telnet.send_cmd(cmd, req=req)
         return {}
 
     @required_parameters('action')
@@ -54,6 +59,8 @@ class ManageApplication(PaletteRESTHandler):
             return self.handle_stop(req)
         elif action == 'repair-license':
             return self.handle_repair_license(req)
+        elif action == 'ziplogs':
+            return self.handle_ziplogs(req)
         raise exc.HTTPBadRequest()
 
 

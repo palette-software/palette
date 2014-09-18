@@ -6,7 +6,7 @@ function ($, topic, template, common)
                    'backup': backup,
                    'restart': ok,
                    'repair-license': repair_license,
-                   'ziplogs': ok,
+                   'ziplogs': ziplogs,
                   };
 
     var templates = {'backup-list-template': null,
@@ -57,6 +57,21 @@ function ($, topic, template, common)
             async: false,
 
             success: function(data) {},
+            error: common.ajaxError,
+        });
+    }
+
+    function ziplogs() {
+        $.ajax({
+            type: 'POST',
+            url: '/rest/manage',
+            data: {'action': 'ziplogs'},
+            dataType: 'json',
+            async: false,
+
+            success: function(data) {
+                //updateActions();
+            },
             error: common.ajaxError,
         });
     }
