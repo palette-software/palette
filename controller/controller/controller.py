@@ -662,7 +662,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return copy_body
 
     def restore_cmd(self, agent, backup_full_path, orig_state,
-                    userid=None):
+                    no_config=False, userid=None):
         """Do a tabadmin restore for the backup_full_path.
            The backup_full_path may be in cloud storage, or a volume
            on some agent.
@@ -726,8 +726,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                                     % maint_body['error']
 
         self.state_manager.update(StateManager.STATE_STARTING_RESTORE)
+
+        cmd = 'tabadmin restore \\\"%s\\\"' % got.primary_full_path
+        if no_config:
+            cmd += ' --no-config'
+
         try:
-            cmd = 'tabadmin restore \\\"%s\\\"' % got.primary_full_path
             self.log.debug("restore sending command: %s", cmd)
             restore_body = self.cli_cmd(cmd, agent)
         except httplib.HTTPException, ex:

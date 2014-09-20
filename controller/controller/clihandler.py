@@ -297,7 +297,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         data = {
             "displayname": "Test email displayname",
-            "info": "Test  email info",
+            "info": "Test email info",
         }
 
         try:
@@ -617,7 +617,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
 
-    @usage('restore backup-name')
+    @usage('[/no-config] restore backup-name')
     def do_restore(self, cmd):
         """Restore.
         The "name" is not a full path-name, but is the backup
@@ -684,6 +684,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             userid = None
 
+        if cmd.dict.has_key('no-config'):
+            no_config = True
+        else:
+            no_config = False
+
         data = agent.todict()
         self.server.event_control.gen(\
             EventControl.BACKUP_BEFORE_RESTORE_STARTED, data, userid=userid)
@@ -692,7 +697,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # Before we do anything, do a license check, which automatically
         # sends an event if appropriate.
-        license_body = self.server.license(agent)
+        license_body = self.server.license_manager.check(agent)
         if failed(license_body):
             stateman.update(main_state)
             self.report_status(license_body)
@@ -734,7 +739,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # success of backup, copy, stop, restore, etc.
         try:
             body = self.server.restore_cmd(agent, backup_name, main_state,
-                                                                userid=userid)
+                                            no_config=no_config, userid=userid)
         except StandardError:
             self.server.log.exception("Restore Exception:")
             line = "Restore Error: Traceback: %s" % self.traceback()
@@ -1253,7 +1258,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Before we do anything, do a license check, which automatically
         # sends an event if appropriate.
         if license_check:
-            license_body = self.server.license(agent)
+            license_body = self.server.license_manager.check(agent)
             if failed(license_body):
                 stateman.update(main_state)
                 self.report_status(license_body)
@@ -1659,7 +1664,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         if not self.server.odbc_ok():
-            state = self.server.stateman.get_state()
+            state = self.server.state_manager.get_state()
             self.error(clierror.ERROR_WRONG_STATE,
                        "FAIL: Main state is " + state)
             return

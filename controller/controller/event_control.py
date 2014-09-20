@@ -38,11 +38,16 @@ class EventControl(meta.Base, BaseMixin):
     # Whether or not to send email for this event
     send_email = Column(Boolean)
 
-    # subject is a python key-value substitution template for the subject
+    # subject is a python key-value substitution template for the
+    # event's subject
     subject = Column(String)
 
     # event_description is a mako template for the event description
     event_description = Column(String)
+
+    # email_subject is a python key-value substitution template for
+    # the email message's subject
+    email_subject = Column(String)
 
     # email_message is a mako template for the email_message
     email_message = Column(String)
@@ -305,6 +310,7 @@ class EventControlManager(Manager):
             subject = "Template subject conversion failure: " + str(e) + \
                       "subject: " + subject + \
                       ", data: " + str(data)
+
         if event_description:
             try:
                 mako_template = Template(event_description)

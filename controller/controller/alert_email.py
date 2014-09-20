@@ -125,9 +125,12 @@ class AlertEmail(object):
                 data:   A Dictionary with the event information.
         """
 
-        subject = event_entry.subject
+        subject = event_entry.email_subject
+        if subject == None:
+            subject = event_entry.subject
+
         if subject.find("%") != -1:
-            # Use the data dict it for template substitution.
+            # Use the data dict for template substitution.
             try:
                 subject = subject % data
             except (ValueError, KeyError) as e:

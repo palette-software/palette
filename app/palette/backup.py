@@ -35,7 +35,11 @@ class BackupApplication(PaletteRESTHandler):
             print >> sys.stderr, "Backup not found:", filename
             return {}
 
-        self.telnet.send_cmd('restore "%s"' % backup_entry.name, req=req)
+        cmd = 'restore "%s"' % backup_entry.name
+        if req.POST['restore_type'] == 'data_only':
+            cmd = '/no-config ' + cmd
+
+        self.telnet.send_cmd(cmd, req=req)
         return {}
 
     @required_parameters('action')
