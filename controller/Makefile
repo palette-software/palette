@@ -12,6 +12,7 @@ pylint:
 	$(PYLINT) controller/clihandler.py
 	$(PYLINT) controller/clierror.py
 	$(PYLINT) controller/event.py
+	$(PYLINT) controller/event_control.py
 	$(PYLINT) controller/extracts.py
 	$(PYLINT) controller/http_requests.py
 	$(PYLINT) controller/licensing.py
