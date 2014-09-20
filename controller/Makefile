@@ -6,6 +6,7 @@ all: pylint
 
 pylint:
 	$(PYLINT) controller/controller.py
+	$(PYLINT) controller/agentinfo.py
 	$(PYLINT) controller/agentmanager.py
 	$(PYLINT) controller/auth.py
 	$(PYLINT) controller/clihandler.py
@@ -14,6 +15,7 @@ pylint:
 	$(PYLINT) controller/extracts.py
 	$(PYLINT) controller/http_requests.py
 	$(PYLINT) controller/licensing.py
+	$(PYLINT) controller/mixin.py
 	$(PYLINT) controller/odbc.py
 	$(PYLINT) controller/ports.py
 	$(PYLINT) controller/system.py
