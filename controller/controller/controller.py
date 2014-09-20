@@ -663,6 +663,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def restore_cmd(self, agent, backup_full_path, orig_state,
                     no_config=False, userid=None):
+        # pylint: disable=too-many-arguments
         """Do a tabadmin restore for the backup_full_path.
            The backup_full_path may be in cloud storage, or a volume
            on some agent.
