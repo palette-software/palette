@@ -47,6 +47,7 @@ function ($, topic, template, common)
         $('#popupStop input[type=checkbox]').each(
             function(index, item){
                 data[item.name] = item.checked;
+                console.log('item.name = ' + item.name);
             }
         );
         $.ajax({
@@ -107,12 +108,20 @@ function ($, topic, template, common)
     function restore() {
         var ts = $('#restore-timestamp').html();
         var filename = $('#restore-filename').val();
+        data = {'action': 'restore',
+               'filename': filename}
+
+        $('#restore-dialog input[type=radio]:checked').each(
+            function() {
+                var value = $(this).val();
+                data['restore_type'] = value;
+            }
+        );
 
         $.ajax({
             type: 'POST',
             url: '/rest/backup',
-            data: {'action': 'restore',
-                   'filename': filename},
+            data: data,
             dataType: 'json',
             async: false,
             
