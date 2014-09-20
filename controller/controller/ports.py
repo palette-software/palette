@@ -1,17 +1,17 @@
 import threading
 
-import cli_errors
-
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy import Boolean
-from sqlalchemy.schema import ForeignKey, UniqueConstraint
+from sqlalchemy.schema import ForeignKey
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from agent import Agent
-from event_control import EventControl, EventControlManager
+from event_control import EventControl
 from manager import Manager
-from mixin import BaseDictMixin, BaseMixin
+from mixin import BaseMixin
 
 class PortEntry(meta.Base, BaseMixin):
     __tablename__ = "ports"
@@ -38,25 +38,24 @@ class PortEntry(meta.Base, BaseMixin):
                                server_onupdate=func.current_timestamp())
 
     # Can do this only if there is a populated database with agentid 1.
-    """
+
     # example
-    defaults = [
-            {
-                "envid":1,
-                "dest_host": "localhost",
-                "dest_port": 80,
-                'service_name': "Localhost port 80",
-                'agentid': 1
-            },
-            {
-                "envid":1,
-                "dest_host": "192.168.2.13",
-                "dest_port": 3000,
-                'service_name': "azul test service",
-                'agentid': 1
-            },
-    ]
-    """
+    # defaults = [
+    #        {
+    #            "envid":1,
+    #            "dest_host": "localhost",
+    #            "dest_port": 80,
+    #            'service_name': "Localhost port 80",
+    #            'agentid': 1
+    #        },
+    #        {
+    #            "envid":1,
+    #            "dest_host": "192.168.2.13",
+    #            "dest_port": 3000,
+    #            'service_name': "azul test service",
+    #            'agentid': 1
+    #        },
+    #]
 
 class PortManager(Manager):
 
@@ -93,7 +92,6 @@ class PortManager(Manager):
                 meta.Session.commit()
                 continue
 
-            port_report = {}
             state = self.check_port(port)
             report.append({'state': state,
                            'dest-host': port.dest_host,
