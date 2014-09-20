@@ -1172,6 +1172,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if port > 0:
             send_body["port"] = port
 
+        # FIXME:
+        send_body["https"] = True
+
         body = self.send_immediate(agent, "POST", "/maint", send_body)
 
         if body.has_key("error"):

@@ -1681,7 +1681,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         action = cmd.args[0].lower()
 
         if not self.server.odbc_ok():
-            state = self.server.stateman.get_state()
+            state = self.server.state_manager.get_state()
             self.error(clierror.ERROR_WRONG_STATE,
                        "FAIL: Main state is " + state)
             return

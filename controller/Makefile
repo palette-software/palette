@@ -15,6 +15,7 @@ pylint:
 	$(PYLINT) controller/http_requests.py
 	$(PYLINT) controller/licensing.py
 	$(PYLINT) controller/odbc.py
+	$(PYLINT) controller/ports.py
 	$(PYLINT) controller/system.py
 	$(PYLINT) controller/system.py
 	$(PYLINT) controller/tableau.py
