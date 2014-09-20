@@ -5,7 +5,10 @@ from sqlalchemy import not_, UniqueConstraint
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm.exc import NoResultFound
+
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from util import sizestr
 from mixin import BaseMixin, BaseDictMixin
@@ -42,11 +45,11 @@ class AgentYmlEntry(meta.Base, BaseMixin, BaseDictMixin):
 
         try:
             entry = cls.entry(envid, key, **kwargs)
-        except ValueError, e:
+        except ValueError, ex:
             if have_default:
                 return default
             else:
-                raise e
+                raise ex
         return entry.value
 
     @classmethod
@@ -95,8 +98,8 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
     size = Column(BigInteger)
     available_space = Column(BigInteger)
 
-    # Last notification about disk low or high watermark: "r" (red), "y" (yellow)
-    # or null.
+    # Last notification about disk low or high watermark:
+    #  "r" (red), "y" (yellow) or null.
     watermark_notified_color = Column(String(1))
 
     system = Column(Boolean)    # The OS/system is installed on this volume
@@ -112,24 +115,26 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
                          )
     UniqueConstraint('agentid', 'name')
 
-    def todict(self, pretty=False):
+    def todict(self, pretty=False, exclude=None):
         d = super(AgentVolumesEntry, self).todict(pretty=pretty)
         if not self.size is None and not self.available_space is None:
             d['used'] = self.size - self.available_space
         if not pretty:
             return d
-        if 'size' in d: d['size-readable'] = sizestr(d['size'])
+        if 'size' in d:
+            d['size-readable'] = sizestr(d['size'])
         if 'available-space' in d:
             d['available-readable'] = sizestr(d['available-space'])
-        if 'used' in d: d['used-readable'] = sizestr(d['used'])
+        if 'used' in d:
+            d['used-readable'] = sizestr(d['used'])
         return d
 
     @classmethod
     def build(cls, agent, volume, install_data_dir):
-
-        name = None; path = None; vol_type = None; label = None;
-        drive_format = None; archive = False; archive_limit = None;
-        size = None; available_space = None;
+        # pylint: disable=multiple-statements
+        name = None; path = None; vol_type = None; label = None
+        drive_format = None; archive = False; archive_limit = None
+        size = None; available_space = None
 
         if volume.has_key("name"):
             name = volume['name']
@@ -170,7 +175,7 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
 
         return AgentVolumesEntry(agentid=agent.agentid, name=name, path=path,
             vol_type=vol_type, label=label, drive_format=drive_format,
-            archive=archive, archive_limit=archive_limit, size=size, 
+            archive=archive, archive_limit=archive_limit, size=size,
             available_space=available_space, active=True)
 
     @classmethod
@@ -187,46 +192,50 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
                     filter(AgentVolumesEntry.active == True).\
                     filter(AgentVolumesEntry.available_space >= min_needed).\
                     filter(AgentVolumesEntry.size - \
-                                AgentVolumesEntry.available_space + 
+                                AgentVolumesEntry.available_space +
                                 min_needed < AgentVolumesEntry.archive_limit).\
                     one()   # for now, choosen any one - no particular order.
 
-        except NoResultFound, e:
+        except NoResultFound:
             return False
 
     @classmethod
     def get_vol_entry_by_agentid_vol_name(cls, agentid, vol_name):
+        # pylint: disable=invalid-name
         try:
             return meta.Session.query(AgentVolumesEntry).\
                 filter(AgentVolumesEntry.agentid == agentid).\
                 filter(AgentVolumesEntry.name == vol_name).\
                 one()
-        except NoResultFound, e:
+        except NoResultFound:
             return None
 
     @classmethod
     def get_vol_entry_by_volid(cls, volid):
+        # pylint: disable=invalid-name
         try:
             return meta.Session.query(AgentVolumesEntry).\
                 filter(AgentVolumesEntry.volid == volid).\
                 one()
-        except NoResultFound, e:
+        except NoResultFound:
             return None
     get_by_id = get_vol_entry_by_volid
 
     @classmethod
     def get_vol_entry_with_agent_by_volid(cls, volid):
+        # pylint: disable=invalid-name
         try:
             return meta.Session.query(AgentVolumesEntry).\
                 filter(AgentVolumesEntry.volid == volid).\
                 join('agent').\
-                filter_by(agentid = AgentVolumesEntry.agentid).\
+                filter_by(agentid=AgentVolumesEntry.agentid).\
                 one()
-        except NoResultFound, e:
+        except NoResultFound:
             return None
 
     @classmethod
     def get_vol_archive_entries_by_agentid(cls, agentid):
+        # pylint: disable=invalid-name
         return meta.Session.query(AgentVolumesEntry).\
             filter(AgentVolumesEntry.archive == True).\
             filter(AgentVolumesEntry.agentid == agentid).\
@@ -236,8 +245,8 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
     @classmethod
     def get_archives_by_envid(cls, envid):
         return meta.Session.query(AgentVolumesEntry).\
-            filter_by(archive = True).\
+            filter_by(archive=True).\
             join('agent').\
-            filter_by(envid = envid).\
+            filter_by(envid=envid).\
             order_by(asc('agent.display_order'), asc('name')).\
             all()
