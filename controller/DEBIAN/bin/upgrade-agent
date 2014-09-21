@@ -29,8 +29,13 @@ class Upgrade(object):
         parser.add_argument('--envid', dest='envid', type=int, default=1)
 
         parser.add_argument('--target-dir', '-t', dest='target_dir')
-        parser.add_argument('--source-dir', '-s', dest='source_dir',
-                            required=True)
+
+        # The user must specify either a source directory (all files
+        # will be upgraded) or a source file (only that file will
+        # be upgraded).
+        group1 = parser.add_mutually_exclusive_group(required=True)
+        group1.add_argument('--source-dir', '-s', dest='source_dir')
+        group1.add_argument('--source-file', '-f', dest='source_file')
 
         group2 = parser.add_mutually_exclusive_group()
         group2.add_argument('--displayname', dest='displayname')
@@ -65,14 +70,22 @@ class Upgrade(object):
         self.comm.send_cmd("file listdir '%s'" % self.normal_target_dir)
         self.target_files = self.comm.result['files']
 
-        source_files =  [f for f in os.listdir(self.args.source_dir) if \
-                        os.path.isfile(os.path.join(self.args.source_dir, f))]
+        if self.args.source_file:
+            # Upgrading only one file that was specified on the command line
+            if not os.path.isfile(self.args.source_file):
+                raise UpgradeException("No such file: %s" % self.args.source_file)
+            source_files = [os.path.basename(self.args.source_file)]
+            source_dir = os.path.dirname(self.args.source_file)
+        else:
+            source_dir = self.args.source_dir
+            source_files =  [f for f in os.listdir(source_dir) if \
+                        os.path.isfile(os.path.join(source_dir, f))]
 
         source_files = sorted(source_files)
         if self.args.verbose:
             print "agent:", agent['displayname']
             print "agent target_dir:",  self.normal_target_dir
-            print "local source_dir:", self.args.source_dir
+            print "local source_dir:", source_dir
             print "Source files to upgrade:", ', '.join(source_files)
             if self.args.dry_run:
                 print "DRY RUN - WILL NOT UPDATE"
@@ -98,7 +111,7 @@ class Upgrade(object):
         for filename_only in source_files:
 
             # Checksum source file
-            source_full_pathname = os.path.join(self.args.source_dir,
+            source_full_pathname = os.path.join(source_dir,
                                                 filename_only)
             source_checksum = self.comm.checksum(source_full_pathname)
 
