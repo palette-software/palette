@@ -1,5 +1,3 @@
-import os
-import sys
 import socket
 import json
 import hashlib
@@ -11,10 +9,16 @@ class UpgradeException(Exception):
         Exception.__init__(self, errmsg)
 
 class UpgradeHandler(object):
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, args):
         self.args = args
 
         self.connected = False
+        self.sock = None
+        self.conn = None
+        self.command = ""
+        self.result = ""
+        self.response = ""
 
         self.preamble = "/envid=%d" % (args.envid)
 
@@ -35,36 +39,35 @@ class UpgradeHandler(object):
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             self.conn.connect((self.args.hostname, self.args.port))
-        except socket.error, e:
+        except socket.error, ex:
             raise UpgradeException(\
                 ("Could not connect to host '%s', port '%d': %s") %
-                                (self.args.hostname, self.args.port, e))
+                                (self.args.hostname, self.args.port, ex))
 
         self.sock = self.conn.makefile('w+', 1)
         self.connected = True
 
-    def send_cmd(self, cmd, sync=False):
+    def send_cmd(self, cmd):
 
         if not self.connected:
             self.connect()
 
         self.command = cmd
-        self.ack = ""
+        ack = ""
         self.response = ""
         self.result = {}
-        self.status = ""
 
         if self.args.verbose > 2:
             print "Sending command:", cmd
-        self.full_command = self.preamble + ' ' + cmd
-        self.sock.write(self.full_command +'\n')
+        full_command = self.preamble + ' ' + cmd
+        self.sock.write(full_command +'\n')
         self.sock.flush()
-        self.ack = self.sock.readline().strip()
+        ack = self.sock.readline().strip()
         if self.args.verbose > 2:
-            print "Acknowledgment response:", self.ack
-        if self.ack != 'OK':
+            print "Acknowledgment response:", ack
+        if ack != 'OK':
             raise UpgradeException("Command '%s' failed: %s" % \
-                                        (self.command, self.ack))
+                                        (self.command, ack))
 
         if self.args.verbose > 2:
             print "Reading command response."
@@ -72,10 +75,10 @@ class UpgradeHandler(object):
 
         try:
             self.result = json.loads(self.response)
-        except ValueError as e:
+        except ValueError as ex:
             raise UpgradeException(\
                 ("Can't decode input from command '%s' from " + \
-                "response: '%s': %s") % (self.command, self.response, str(e)))
+                "response: '%s': %s") % (self.command, self.response, str(ex)))
         finally:
             self._close()
 
@@ -85,19 +88,19 @@ class UpgradeHandler(object):
         if 'error' in self.result:
             raise UpgradeException(\
                 ('Error in command ("%s") response: %s') % \
-                            (self.full_command, self.result['error']))
+                            (full_command, self.result['error']))
 
         if not 'status' in self.result:
             raise UpgradeException(\
                 ('Error in command ("%s").  Missing "status" in ' + \
                   'response: %s') % \
-                            (self.full_command, str(self.result)))
+                            (full_command, str(self.result)))
 
         if self.result['status'] != "OK":
             raise UpgradeException(\
                 ('Error in command ("%s").  status not "OK" in ' + \
                   'response: %s') % \
-                            (self.full_command, self.result['status']))
+                            (full_command, self.result['status']))
 
 
     def _close(self):
@@ -106,19 +109,19 @@ class UpgradeHandler(object):
             self.conn.shutdown(socket.SHUT_RDWR)
             self.conn.close()
             self.sock.close()
-        except socket.error as e:
+        except socket.error:
             print "Couldn't close socket. Ignoring."
-            
+
     def checksum(self, path, buf_size=2**16):
         sha = hashlib.sha256()
-        fd = open(path, "r")
+        fobj = open(path, "r")
         while True:
-            data = fd.read(buf_size)
+            data = fobj.read(buf_size)
             if not data:
                 break
             sha.update(data)
 
-        fd.close()
+        fobj.close()
         return sha.hexdigest()
 
     def get_agent_info(self):
