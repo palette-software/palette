@@ -230,14 +230,14 @@
       <section class="col-xs-12">
       <div class="radio">
         <p class="radio-text">
-          <input type="radio" name="restore_options" id="config_and_data" value="config_and_data" checked />
-          <label for="config_and_data">Restore data and configuration</label>
+          <input type="radio" name="restoreOptions" id="config-and-data" value="config-and-data" checked />
+          <label for="config-and-data">Restore data and configuration</label>
         </p>
       </div>
       <div class="radio">
         <p class="radio-text">
-          <input type="radio" name="restore_options" id="data_only" value="data_only">
-          <label for="data_only">Restore data only</label>
+          <input type="radio" name="restoreOptions" id="data-only" value="data-only">
+          <label for="data-only">Restore data only</label>
         </p>
       </div>
       </section>

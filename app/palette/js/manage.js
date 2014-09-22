@@ -111,12 +111,7 @@ function ($, topic, template, common)
         data = {'action': 'restore',
                'filename': filename}
 
-        $('#restore-dialog input[type=radio]:checked').each(
-            function() {
-                var value = $(this).val();
-                data['restore_type'] = value;
-            }
-        );
+        data['restore-type'] = $('#restore-dialog input[type=radio]:checked').val();
 
         $.ajax({
             type: 'POST',

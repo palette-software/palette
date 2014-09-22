@@ -36,7 +36,7 @@ class BackupApplication(PaletteRESTHandler):
             return {}
 
         cmd = 'restore "%s"' % backup_entry.name
-        if req.POST['restore_type'] == 'data_only':
+        if req.POST['restore-type'] == 'data-only':
             cmd = '/no-config ' + cmd
 
         self.telnet.send_cmd(cmd, req=req)
