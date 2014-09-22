@@ -769,6 +769,17 @@
 "icon":null,
 "color":"green",
 "event_type":"logs"
+},
+{
+"key":"SYSTEM-EXCEPTION",
+"level":"E",
+"send_email":"t",
+"subject":"ERROR - System Exception",
+"event_description":"System Exception:\nDetails: ${error}",
+"email_message":"Status - ERROR\nDetails: ${error}\n\nThis message was sent from your Palette Server at ${server_url}",
+"icon":null,
+"color":"red",
+"event_type":"server"
 }
 ]
 }
