@@ -35,11 +35,11 @@ class EventEntry(meta.Base, BaseMixin, BaseDictMixin):
             exclude = []
         data = super(EventEntry, self).todict(pretty=pretty, exclude=exclude)
 
-        time_stamp = "%.6f" % utctotimestamp(self.timestamp)
+        timestamp = "%.6f" % utctotimestamp(self.timestamp)
         if pretty:
-            data['reference-time'] = time_stamp
+            data['reference-time'] = timestamp
         else:
-            data['reference-time'] = time_stamp
+            data['reference_time'] = timestamp
         return data
 
 # Index('idx', EventEntry.envid, EventEntry.timestamp.desc())

@@ -7,19 +7,26 @@ import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
+
 from sqlalchemy.orm.exc import NoResultFound
 
+from event_control import EventControl
 from profile import UserProfile
+from util import UNDEFINED
 
 from mako.template import Template
 from mako import exceptions
 import mako.runtime
-mako.runtime.UNDEFINED="*UNDEFINED*"
-
-from event_control import EventControl
+mako.runtime.UNDEFINED = UNDEFINED
 
 class AlertEmail(object):
+    #pylint: disable=too-many-instance-attributes
+
+    DEFAULT_ALERT_LEVEL = 1
+    DEFAULT_MAX_SUBJECT_LEN = 1000
 
     def __init__(self, server, standalone=False):
         if standalone:
@@ -48,13 +55,11 @@ class AlertEmail(object):
                                     default="localhost")
         self.smtp_port = self.config.getint("alert", "smtp_port", default=25)
 
-        DEFAULT_ALERT_LEVEL = 1
         self.alert_level = self.config.getint("alert", "alert_level",
-                                              default=DEFAULT_ALERT_LEVEL)
+                                        default=self.DEFAULT_ALERT_LEVEL)
 
-        DEFAULT_MAX_SUBJECT_LEN = 1000
         self.max_subject_len = self.config.getint("alert", "max_subject_len",
-                                                  default=DEFAULT_MAX_SUBJECT_LEN)
+                                        default=self.DEFAULT_MAX_SUBJECT_LEN)
 
         diagnostics_email = self.config.get("alert", "diagnostics_email",
                                             default="")
@@ -63,8 +68,8 @@ class AlertEmail(object):
 
         if self.alert_level < 1:
             self.log.error("Invalid alert level: %d, setting to %d",
-                                    self.alert_level, DEFAULT_ALERT_LEVEL)
-            self.alert_level = DEFAULT_ALERT_LEVEL
+                           self.alert_level, self.DEFAULT_ALERT_LEVEL)
+            self.alert_level = self.DEFAULT_ALERT_LEVEL
 
     def add_diagnostics_email(self, diagnostics_email):
         """If the palette user (userid 0) has an empty email address,
@@ -76,7 +81,8 @@ class AlertEmail(object):
             return
 
         if entry.email:
-            self.log.debug("alert diag: already has a diag email: %s", entry.email)
+            self.log.debug("alert diag: already has a diag email: %s",
+                           entry.email)
             return  # It already has an email address
 
         entry.email = diagnostics_email
@@ -113,7 +119,7 @@ class AlertEmail(object):
                 filter(UserProfile.system_user_id == data['system_user_id']).\
                 filter(UserProfile.email != "").\
                 one()
-        except NoResultFound, e:
+        except NoResultFound:
             return []
 
         return [entry.email]
@@ -124,6 +130,9 @@ class AlertEmail(object):
                 key:    The key to look up.
                 data:   A Dictionary with the event information.
         """
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-statements
 
         subject = event_entry.email_subject
         if subject == None:
@@ -133,8 +142,8 @@ class AlertEmail(object):
             # Use the data dict for template substitution.
             try:
                 subject = subject % data
-            except (ValueError, KeyError) as e:
-                subject = "Template subject conversion failure: " + str(e) + \
+            except (ValueError, KeyError) as ex:
+                subject = "Template subject conversion failure: " + str(ex) + \
                     "subject: " + subject + \
                     ", data: " + str(data)
 
@@ -143,13 +152,13 @@ class AlertEmail(object):
             try:
                 mako_template = Template(message)
                 message = mako_template.render(**data)
-            except:
+            except StandardError:
                 message = "Mako template message conversion failure: " + \
                     exceptions.text_error_template().render() + \
                     "\ntemplate: " + message + \
                         "\ndata: " + str(data)
         else:
-           message = self.make_default_message(event_entry, subject, data)
+            message = self.make_default_message(event_entry, subject, data)
 
         if not message:
             # message is empty, set it to be the subject
@@ -185,12 +194,14 @@ class AlertEmail(object):
         message = message.encode('utf-8')    # prevent unicode exception
         try:
             msg = MIMEText(message, "plain", "utf-8")
-        except Exception, e:
+        except StandardError:
+            # pylint: disable=unused-variable
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            tb = ''.join(traceback.format_tb(exc_traceback))
-            report = "Error: %s.  Traceback: %s." % (sys.exc_info()[1], tb)
+            tbstr = ''.join(traceback.format_tb(exc_traceback))
+            report = "Error: %s.  Traceback: %s." % (sys.exc_info()[1], tbstr)
             self.log.error("alert send: MIMEText() failed for message." + \
-                             "will not send message: '%s'. %s" % (message, report))
+                           "will not send message: '%s'. %s" % \
+                           (message, report))
 
             return
 
@@ -215,11 +226,11 @@ class AlertEmail(object):
             mail_server = smtplib.SMTP(self.smtp_server, self.smtp_port)
             mail_server.sendmail(self.from_email, all_to, msg_str)
             mail_server.quit()
-        except (smtplib.SMTPException, EnvironmentError) as e:
+        except (smtplib.SMTPException, EnvironmentError) as ex:
             self.log.error(\
                 "Email send failed, text: %s, exception: %s, server: %s," + \
                 " port: %d",
-                message, e, self.smtp_server, self.smtp_port)
+                message, ex, self.smtp_server, self.smtp_port)
             return
 
         self.log.info("Emailed alert: Subject: '%s', message: '%s'",
@@ -243,9 +254,10 @@ class AlertEmail(object):
             Arguments:
                 subject  The subject for the alert message.
                 data     The 'data' dictionary which is a response
-                         from the agent or well-known key-value pairs (see below)
+                         from the agent or well-known key-value pairs
+                         (see below)
         """
-
+        # pylint: disable=too-many-branches
 
         message = ""
         if self.alert_level < 1:   # too minimal, not even errors included.
@@ -325,15 +337,20 @@ class AlertEmail(object):
 
 class EventFake(object):
     def __init__(self):
+        #pylint: disable=line-too-long
         self.subject = u"ERROR - Tableau Server Partial Process Failure"
-        self.email_message = u"Status: ERROR\n\nPlease review the output below to find which Tableau Process is “Stopped.” Sometimes a Tableau Process will stop running momentarily to restart itself which can cause this alert to be triggered. Normally, Tableau Server will recover in less than 5 minutes. If not, please inspect the Server browser by clicking on the Status box in the top left corner to help you troubleshoot further. \n\nDetails: ${stdout}"
+        self.email_message = u"""Status: ERROR\n\nPlease review the output below to find which Tableau Process is “Stopped.” Sometimes a Tableau Process will stop running momentarily to restart itself which can cause this alert to be triggered. Normally, Tableau Server will recover in less than 5 minutes. If not, please inspect the Server browser by clicking on the Status box in the top left corner to help you troubleshoot further. \n\nDetails: ${stdout}"""
 
         self.key = EventControl.STATE_DEGRADED
         self.level = EventControl.LEVEL_ERROR
 
-if __name__ == "__main__":
+def test():
     alert_email = AlertEmail(1, standalone=True)
     entry = EventFake()
 
     data = {'stdout': 'This is the stdout contents'}
     alert_email.send(entry, data)
+
+if __name__ == "__main__":
+    # FIXME: make a test email alert in the cli (and remove this)
+    test()
