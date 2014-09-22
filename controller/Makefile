@@ -8,6 +8,8 @@ pylint:
 	$(PYLINT) controller/controller.py
 	$(PYLINT) controller/agentinfo.py
 	$(PYLINT) controller/agentmanager.py
+	$(PYLINT) controller/agent.py
+	$(PYLINT) controller/alert_email.py
 	$(PYLINT) controller/auth.py
 	$(PYLINT) controller/clihandler.py
 	$(PYLINT) controller/clierror.py
