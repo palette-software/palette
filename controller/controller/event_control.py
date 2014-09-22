@@ -162,6 +162,8 @@ class EventControl(meta.Base, BaseMixin):
 
     EMAIL_TEST = "EMAIL-TEST"
 
+    SYSTEM_EXCEPTION = "SYSTEM-EXCEPTION"
+
     # levels
     LEVEL_ERROR = "E"
     LEVEL_WARNING = "W"

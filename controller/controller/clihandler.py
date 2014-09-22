@@ -1958,6 +1958,29 @@ class CliHandler(socketserver.StreamRequestHandler):
                                                   exc_traceback)).\
                                                   replace('\n', '')
 
+    def handle_exception(self, before_state, telnet_command):
+        self.server.log.exception("Command Failed with Exception:")
+        line = "Command Failed with Exception.\n" + \
+            "Command: '%s'\n" % telnet_command
+
+        if before_state in (StateManager.STATE_STARTED,
+                            StateManager.STATE_DEGRADED,
+                            StateManager.STATE_STOPPED,
+                            StateManager.STATE_STOPPED_UNEXPECTED):
+            stateman = self.server.state_manager
+            now_state = stateman.get_state()
+            if now_state == before_state:
+                line += "State remaining at  '%s'.\n" % now_state
+            else:
+                line += "Changing state from '%s' back to '%s'.\n" % \
+                                                (now_state, before_state)
+                stateman.update(before_state)
+
+        line += "Traceback: %s" % self.traceback()
+        self.error(clierror.ERROR_COMMAND_FAILED, line)
+        self.server.event_control.gen(EventControl.SYSTEM_EXCEPTION,
+                                      {'error': line})
+
     # DEPRECATED
     def get_aconn(self, opts):
         # FIXME: This method is a temporary hack while we
@@ -1979,6 +2002,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                 break
 
             self.server.log.debug("telnet command: '%s'", data)
+            stateman = self.server.state_manager
+            before_state = stateman.get_state()
 
             try:
                 cmd = Command(self.server, data)
@@ -1986,9 +2011,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                 self.error(clierror.ERROR_COMMAND_SYNTAX_ERROR, str(ex))
                 continue
             except Exception:
-                self.server.log.exception("Cli CommandException:")
-                line = "Cli Exception.  Traceback: %s" % self.traceback()
-                self.error(clierror.ERROR_COMMAND_FAILED, line)
+                self.handle_exception(before_state, data)
                 continue
 
             if not hasattr(self, 'do_'+cmd.name):
@@ -2004,17 +2027,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             # fixme on exceptions: reset state?
             except exc.InvalidStateError, ex:
                 self.error(clierror.ERROR_WRONG_STATE, ex.message)
-            except (IOError, ValueError):
-                self.server.log.exception(\
-                    "Cli IOError or ValueError Exception for cmd '%s':" % cmd)
-                line = "Traceback: %s" % self.traceback()
-                self.error(clierror.ERROR_COMMAND_FAILED, line)
             except Exception:
-                self.server.log.exception("Cli Exception for command '%s':" % \
-                                          cmd.name)
-                line = "Traceback: %s" % self.traceback()
-                self.error(clierror.ERROR_COMMAND_FAILED, line)
+                self.handle_exception(before_state, data)
             finally:
                 session.rollback()
                 meta.Session.remove()
-
