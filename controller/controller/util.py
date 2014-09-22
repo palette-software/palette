@@ -33,11 +33,12 @@ def sizestr(n, fmt=SIZEFMT):
             return fmt % locals()
     return fmt % dict(symbol=SYMBOLS[0], value=n)
 
-def parseutc(s):
+def _parseutc(s):
     if s is None:
         return None
     return dateutil.parser.parse(s)
 
+# WARNING: deprecated, don't use in new code.
 def utc2local(t):
     t = t.replace(tzinfo=tz.tzutc())
     return t.astimezone(tz.tzlocal())
@@ -45,7 +46,7 @@ def utc2local(t):
 def odbc2dt(s):
     if s is None:
         return None
-    dt = parseutc(s)
+    dt = _parseutc(s)
     return dt.replace(tzinfo=None)
 
 def version():
