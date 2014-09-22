@@ -4,16 +4,19 @@ from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import reconstructor
 from sqlalchemy.orm.exc import NoResultFound
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
-from mixin import BaseDictMixin
+# pylint: enable=import-error,no-name-in-module
 
 from agentinfo import AgentVolumesEntry
+from mixin import BaseDictMixin
 from util import sizestr
 
 import ntpath
 import posixpath
 
 class Agent(meta.Base, BaseDictMixin):
+    # pylint: disable=too-many-instance-attributes
     __tablename__ = 'agent'
 
     agentid = Column(BigInteger, unique=True, nullable=False, \
@@ -53,9 +56,11 @@ class Agent(meta.Base, BaseDictMixin):
     def __init__(self, *args, **kwargs):
         super(Agent, self).__init__(*args, **kwargs)
         self.reconstruct()
+        self.path = None
 
     @reconstructor
     def reconstruct(self):
+        # pylint: disable=attribute-defined-outside-init
         self.server = None
         self.connection = None
         self.odbc = None
@@ -122,67 +127,69 @@ class Agent(meta.Base, BaseDictMixin):
             filter(Agent.agentid == vol_entry.agentid).\
             one()
 
-    def todict(self, pretty=False, exclude=[]):
+    def todict(self, pretty=False, exclude=None):
+        if exclude is None:
+            exclude = []
         d = super(Agent, self).todict(pretty=pretty, exclude=exclude)
-        if 'username' in d: del d['username']
-        if 'password' in d: del d['password']
+        if 'username' in d:
+            del d['username']
+        if 'password' in d:
+            del d['password']
         if pretty:
             fmt = "%(value).0f%(symbol)s"
             d['installed-memory-readable'] = \
                 sizestr(self.installed_memory, fmt=fmt)
-        return d        
+        return d
 
     @classmethod
     def build(cls, envid, aconn):
-         """Create an agent from a new connection."""
-         body = aconn.auth
-         session = meta.Session()
+        """Create an agent from a new connection."""
+        body = aconn.auth
+        session = meta.Session()
 
-         uuid = body['uuid']
+        uuid = body['uuid']
 
-         entry = Agent.get_by_uuid(envid, uuid)
-         if entry:
-             # Make a copy of the object
-             entry = session.merge(entry)
-             # but points at the same aconn...
-         else:
-             entry = Agent(envid=envid, uuid=uuid)
-             session.add(entry)
+        entry = Agent.get_by_uuid(envid, uuid)
+        if entry:
+            # Make a copy of the object
+            entry = session.merge(entry)
+            # but points at the same aconn...
+        else:
+            entry = Agent(envid=envid, uuid=uuid)
+            session.add(entry)
 
-         entry.conn_id = aconn.conn_id
-         entry.version=body['version']
-         entry.os_version=body['os-version']
-         entry.processor_type=body['processor-type']
-         entry.processor_count=body['processor-count']
-         entry.installed_memory=body['installed-memory']
-         entry.hostname=body['hostname']
-         entry.fqdn=body['fqdn']
-         entry.ip_address=body['ip-address']
-         entry.peername=aconn.peername
-         entry.listen_port=body['listen-port']
-         # Note: Do not set agent_type here since 1) We need to know
-         # what the agent_type was in the case where the row existed, and
-         # 2) the agent_type isn't known yet at the time we are called anyway.
-         entry.username=u'palette'# fixme
-         entry.password=u'tableau2014'
+        entry.conn_id = aconn.conn_id
+        entry.version = body['version']
+        entry.os_version = body['os-version']
+        entry.processor_type = body['processor-type']
+        entry.processor_count = body['processor-count']
+        entry.installed_memory = body['installed-memory']
+        entry.hostname = body['hostname']
+        entry.fqdn = body['fqdn']
+        entry.ip_address = body['ip-address']
+        entry.peername = aconn.peername
+        entry.listen_port = body['listen-port']
 
-         entry.install_dir=body['install-dir']
+        # Note: Do not set agent_type here since 1) We need to know
+        # what the agent_type was in the case where the row existed, and
+        # 2) the agent_type isn't known yet at the time we are called anyway.
+        entry.username = u'palette'# fixme
+        entry.password = u'tableau2014'
 
+        entry.install_dir = body['install-dir']
 
-         # FIXME: make required when all agents are updated.
-         if 'os-bitness' in body:
-             entry.bitness = body['os-bitness']
+        # FIXME: make required when all agents are updated.
+        if 'os-bitness' in body:
+            entry.bitness = body['os-bitness']
 
-         entry.last_connection_time = func.now()
-         session.commit()
+        entry.last_connection_time = func.now()
+        session.commit()
 
-         if entry.iswin:
-             entry.path = ntpath
-             parts = body['data-dir'].split(':')
-             entry.data_dir = ntpath.join(parts[0].upper() + ':',
-                                          parts[1])
-         else:
-             entry.path = posixpath
-             entry.data_dir=body['data-dir']
-
-         return entry
+        if entry.iswin:
+            entry.path = ntpath
+            parts = body['data-dir'].split(':')
+            entry.data_dir = ntpath.join(parts[0].upper() + ':', parts[1])
+        else:
+            entry.path = posixpath
+            entry.data_dir = body['data-dir']
+        return entry
