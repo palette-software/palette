@@ -1,5 +1,6 @@
 import sys, traceback
 import datetime
+from dateutil import tz
 from mako.template import Template
 from mako import exceptions
 from mako.exceptions import MakoException
@@ -7,11 +8,14 @@ import mako.runtime
 
 from sqlalchemy import Column, BigInteger, String, Boolean
 from sqlalchemy.orm.exc import NoResultFound
+
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from event import EventEntry
 from profile import UserProfile
-from util import DATEFMT, UNDEFINED
+from util import DATEFMT, UNDEFINED, utc2local
 from mixin import BaseMixin
 from manager import Manager
 
@@ -267,12 +271,14 @@ class EventControlManager(Manager):
             data['exit_status'] = data['exit-status']
             del data['exit-status']
 
-        if not timestamp:
-            timestamp = datetime.datetime.now()
+        # FIXME: remove when browser-aware timezone support is available.
+        if timestamp is None:
+            timestamp = datetime.datetime.now(tz=tz.tzlocal())
+            self.log.debug(key + " timestamp : " + timestamp.strftime(DATEFMT))
 
-        if not 'time' in data:
-            # FIXME: is this needed or used?
-            data['time'] = timestamp.strftime(DATEFMT)
+        #if not 'time' in data:
+        #    # FIXME: is this needed or used?
+        #    data['time'] = timestamp.strftime(DATEFMT)
 
         # The userid for other events is the Palette "userid".
         profile = None
@@ -339,7 +345,12 @@ class EventControlManager(Manager):
         if self.server.event_debug:
             event_description = event_description + "--------\n" + str(data)
 
-        summary = timestamp.strftime(DATEFMT)
+        # FIXME: remove when browser-aware timezone support is available.
+        if timestamp.tzinfo is None:
+            # if not timezone is specified, assume UTC.
+            summary = utc2local(timestamp).strftime(DATEFMT)
+        else:
+            summary = timestamp.strftime(DATEFMT)
 
         # Log the event to the database
         session = meta.Session()

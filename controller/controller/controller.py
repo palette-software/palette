@@ -1175,10 +1175,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         send_body = {"action": action}
         if port > 0:
-            send_body["port"] = port
+            send_body["listen-port"] = port
 
-        # FIXME:
-        send_body["https"] = True
+        # FIXME: add ssl-listen-port and other SSL information from YML.
 
         body = self.send_immediate(agent, "POST", "/maint", send_body)
 
