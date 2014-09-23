@@ -11,6 +11,7 @@ pylint:
 	$(PYLINT) controller/agent.py
 	$(PYLINT) controller/alert_email.py
 	$(PYLINT) controller/auth.py
+	$(PYLINT) controller/cache.py
 	$(PYLINT) controller/clihandler.py
 	$(PYLINT) controller/clierror.py
 	$(PYLINT) controller/event.py
@@ -18,6 +19,7 @@ pylint:
 	$(PYLINT) controller/extracts.py
 	$(PYLINT) controller/http_requests.py
 	$(PYLINT) controller/licensing.py
+	$(PYLINT) controller/manager.py
 	$(PYLINT) controller/mixin.py
 	$(PYLINT) controller/odbc.py
 	$(PYLINT) controller/ports.py
@@ -25,6 +27,7 @@ pylint:
 	$(PYLINT) controller/system.py
 	$(PYLINT) controller/tableau.py
 	$(PYLINT) controller/util.py
+	$(PYLINT) controller/workbooks.py
 #	find . -name \*.py -exec pylint $(PYLINT_OPTS) '{}'  ';'
 .PHONY: pylint
 
