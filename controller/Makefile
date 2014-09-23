@@ -22,6 +22,7 @@ pylint:
 	$(PYLINT) controller/manager.py
 	$(PYLINT) controller/mixin.py
 	$(PYLINT) controller/odbc.py
+	$(PYLINT) controller/palapi.py
 	$(PYLINT) controller/ports.py
 	$(PYLINT) controller/system.py
 	$(PYLINT) controller/system.py

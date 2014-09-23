@@ -164,6 +164,8 @@ class EventControl(meta.Base, BaseMixin):
 
     WORKBOOK_ARCHIVE_FAILED = "WORKBOOK-ARCHIVE-FAILED"
 
+    SYSTEM_EXCEPTION = "SYSTEM-EXCEPTION"
+
     # levels
     LEVEL_ERROR = "E"
     LEVEL_WARNING = "W"
