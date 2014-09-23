@@ -28,12 +28,23 @@ class ExtractEntry(meta.Base, BaseMixin, BaseDictMixin):
                        primary_key=True)
     envid = Column(BigInteger, ForeignKey("environment.envid"), nullable=False)
     id = Column(BigInteger, nullable=False)
-    finish_code = Column(Integer, nullable=False)
+    args = Column(String)
     notes = Column(String)
+    finish_code = Column(Integer, nullable=False)
+    priority = Column(Integer)
+    updated_at = Column(DateTime)
+    created_at = Column(DateTime)
     started_at = Column(DateTime)
     completed_at = Column(DateTime)
     title = Column(String)
+    created_on_worker = Column(String)
+    processed_on_worker = Column(String)
+    link = Column(String)
+    lock_version = Column(String)
+    backgrounder_id = Column(String)
     subtitle = Column(String)
+    language = Column(String)
+    locale = Column(String)
     site_id = Column(Integer)
     project_id = Column(Integer)
     system_user_id = Column(Integer)
@@ -93,10 +104,17 @@ class ExtractManager(TableauCacheManager):
             return {"error": "Cannot run command while in state: %s" % \
                         self.server.state_manager.get_state()}
 
+        if not self.lock(blocking=False):
+            return {u'error': 'Can not load extracts: busy.'}
+
         self._prune(agent, envid)
 
-        stmt = "SELECT id, finish_code, notes, started_at, completed_at, "+\
-            "title, subtitle, site_id, job_name " +\
+        stmt = \
+            "SELECT id, args, notes, finish_code, priority, updated_at, " +\
+            " created_at, started_at, completed_at, "+\
+            " title, created_on_worker, processed_on_worker, link, " +\
+            " lock_version, backgrounder_id, subtitle, language, " +\
+            " locale, site_id, job_name " +\
             "FROM background_jobs "
 
         maxid = self._maxid(envid)
@@ -116,6 +134,7 @@ class ExtractManager(TableauCacheManager):
         datadict = agent.odbc.execute(stmt)
 
         if 'error' in datadict or '' not in datadict:
+            self.unlock()
             return datadict
 
         datasources = {}
@@ -155,6 +174,7 @@ class ExtractManager(TableauCacheManager):
 
         session.commit()
 
+        self.unlock()
         return {u'status': 'OK', u'count': len(datadict[''])}
 
     # Returns None if the table is empty.
