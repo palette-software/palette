@@ -745,7 +745,7 @@
 "event_description":"Status: ERROR\n${error}",
 "email_message":"Status: ERROR\n${error}",
 "icon":null,
-"color":"green",
+"color":"red",
 "event_type":"workbook"
 },
 {
