@@ -32,10 +32,12 @@
       &nbsp;<span>Error Alert at <span id="disk-watermark-high" data-href="/rest/general/high" class="btn-group"></span> %</span>
     </p>
 
+<!--
     <h3>Encrypt Palette Generated Files (COMING SOON)</h3>
     <p>Encrypts your Palette generated Tableau backups, logs and workbooks using industry standard encryption adding another level of security.</p>
 
     <div id="storage-encrypt" class="onoffswitch yesno" data-href="/rest/general/encryption"></div>
+-->
 
     <h2 class="page-subtitle">Tabcmd User Credentials</h2>
     <p>The Tableau Administrator user credentials used to manage the Palette Workbook Archive</p>
@@ -65,10 +67,12 @@
     <p>The number of Tableau logfile archives you want Palette to keep in storage</p>
     <p><span id="log-archive-retain-count" data-href="/rest/general/logs" class="btn-group"></span> Log Archives</p>
 
+<!--
     <h2 class="page-subtitle">Workbooks</h2>
     <h3>Archive Workbooks Only as .twb Files (COMING SOON)</h3>
     <p>Workbook .twb files are just small configuration files, while .twbx are configuration plus extract data which can become very large files</p>
     <div id="workbook-as-twb" class="onoffswitch yesno" data-href="/rest/general/twb"></div>
+-->
 
     <h2 class="page-subtitle">Tableau Web Requests</h2>
     <h3>Alert When Tableau Web Requests take longer than These Thresholds</h3>
