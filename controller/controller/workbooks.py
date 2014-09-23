@@ -288,7 +288,12 @@ class WorkbookManager(TableauCacheManager):
             # build_workbook prints errors and calls _eventgen().
             return None
         self.log.debug('Retrieving workbook: %s', path)
-        body = agent.filemanager.save(path, target=self.path)
+        try:
+            body = agent.filemanager.save(path, target=self.path)
+        except IOError as ex:
+            self.log.debug("Error saving workbook '%s': %s", path, str(ex))
+            return None
+
         if failed(body):
             self._eventgen(self, update, data=body)
             return None
