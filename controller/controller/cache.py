@@ -43,6 +43,7 @@ class TableauCacheManager(Manager):
 
     # translate a system_user_id value to the 'username' used by eventgen.
     def get_username_from_system_user_id(self, envid, system_user_id):
+        # pylint: disable=invalid-name
         profile = UserProfile.get_by_system_user_id(envid, system_user_id)
         if profile:
             return profile.display_name()
@@ -51,5 +52,5 @@ class TableauCacheManager(Manager):
             return UNDEFINED
 
     def schema(self, data):
-        L = data["$schema"]["Info"]
-        return [L[i+1:i+3] for i in xrange(0, len(L), 3)]
+        info = data["$schema"]["Info"]
+        return [info[i+1:i+3] for i in xrange(0, len(info), 3)]

@@ -738,6 +738,17 @@
 "event_type":"server"
 },
 {
+"key":"WORKBOOK-ARCHIVE-FAILED",
+"level":"E",
+"send_email":"t",
+"subject":"ERROR - Workbook Archive Failed for %(name)s rev%(revision)s",
+"event_description":"Status: ERROR\n${error}",
+"email_message":"Status: ERROR\n${error}",
+"icon":null,
+"color":"green",
+"event_type":"workbook"
+},
+{
 "key":"ZIPLOGS-FAILED",
 "level":"E",
 "send_email":"f",

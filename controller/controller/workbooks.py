@@ -1,19 +1,21 @@
 import os
-import time
 
 from sqlalchemy import Column, BigInteger, Integer, Boolean, String, DateTime
-from sqlalchemy import func, UniqueConstraint
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy.orm.exc import NoResultFound
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from mixin import BaseMixin, BaseDictMixin
 from cache import TableauCacheManager
-from util import odbc2dt, failed, success
+from util import failed, success
+from odbc import ODBC
 
 from diskcheck import DiskCheck, DiskException
+from event_control import EventControl
 from place_file import PlaceFile
 from files import FileManager
 
@@ -60,7 +62,7 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
     assert_key_id = Column(Integer)
     document_version = Column(String)
 
-    __table_args__ = (UniqueConstraint('envid', 'id'), 
+    __table_args__ = (UniqueConstraint('envid', 'id'),
                       UniqueConstraint('envid', 'name'))
 
     def fileext(self):
@@ -107,6 +109,7 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
 
     # ideally: site-project-name-rev.twb
     def basename(self):
+        # pylint: disable=no-member
         return self.workbook.repository_url + '-rev' + self.revision
 
     @classmethod
@@ -133,8 +136,13 @@ class WorkbookManager(TableauCacheManager):
 
     # really sync *and* load
     def load(self, agent):
+        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-statements
         if not self.cred_check():
             return {u'error': 'Can not load workbooks: missing credentials.'}
+
+        if not self.lock(blocking=False):
+            return {u'error': 'Can not load workbooks: busy.'}
 
         envid = self.server.environment.envid
         users = self.load_users(agent)
@@ -168,75 +176,44 @@ class WorkbookManager(TableauCacheManager):
 
         if 'error' in data or '' not in data:
             self.log.debug("workbooks load: bad data: %s", str(data))
+            self.unlock()
             return data
 
         self.log.debug(data)
 
-        for row in data['']:
-            wbid = row[0]
-            name = row[1]
-            revision = row[22]
-            updated_at = odbc2dt(row[5])
+        for odbcdata in ODBC.load(data):
+            name = odbcdata.data['name']
+            revision = odbcdata.data['revision']
 
-            wb = WorkbookEntry.get(envid, name, default=None)
-            if wb is None:
-                wb = WorkbookEntry(envid=envid, id=wbid, name=name)
-                session.add(wb)
-            else:
-                wb.id = wbid  # id is updated with each revision.
+            wbe = WorkbookEntry.get(envid, name, default=None)
+            if wbe is None:
+                wbe = WorkbookEntry(envid=envid, name=name)
+                session.add(wbe)
 
-            wb.repository_url = row[2]
-            wb.description = row[3]
-            wb.created_at = odbc2dt(row[4])
-            wb.updated_at = updated_at
-            wb.owner_id = row[6]
-            wb.project_id = row[7]
-            wb.view_count = row[8]
-            wb.size = row[9]
-            wb.embedded = row[10]
-            wb.thumb_user = row[11]
-            wb.refreshable_extracts = row[12]
-            wb.extracts_refreshed_at = odbc2dt(row[13])
-            wb.lock_version = row[14]
-            wb.state = row[15]
-            wb.version = row[16]
-            wb.checksum = row[17]
-            wb.display_tabs = row[18]
-            wb.data_engine_extracts = row[19]
-            wb.incrementable_extracts = row[20]
-            wb.site_id = row[21]
-            wb.repository_data_id = row[23]
-            wb.repository_extract_data_id = row[24]
-            wb.first_published_at = odbc2dt(row[25])
-            wb.primary_content_url = row[26]
-            wb.share_description = row[27]
-            wb.show_toolbar = row[28]
-            wb.extracts_incremented_at = odbc2dt(row[29])
-            wb.default_view_index = row[30]
-            wb.luid = row[31]
-            wb.asset_key_id = row[32]
-            wb.document_version = row[33]
+            # NOTE: id is updated with each revision.
+            odbcdata.copyto(wbe, excludes=['revision'])
 
-            system_user_id = users.get(wb.site_id, wb.owner_id)
-            wb.system_user_id = system_user_id;
+            system_user_id = users.get(wbe.site_id, wbe.owner_id)
+            wbe.system_user_id = system_user_id
 
             # must commit here so that update foreign keys work.
             session.commit()
 
-            wbu = WorkbookUpdateEntry.get(wb.workbookid, revision, default=None)
+            wbu = WorkbookUpdateEntry.get(wbe.workbookid,
+                                          revision,
+                                          default=None)
             if not wbu:
                 # A new row is created each time in the Tableau database,
                 # so the created_at time is actually the publish time.
-                wbu = WorkbookUpdateEntry(workbookid=wb.workbookid,
+                wbu = WorkbookUpdateEntry(workbookid=wbe.workbookid,
                                           revision=revision,
-                                          system_user_id = system_user_id,
-                                          timestamp=wb.created_at,
+                                          system_user_id=system_user_id,
+                                          timestamp=wbe.created_at,
                                           url='')
                 session.add(wbu)
                 updates.append(wbu)
 
-            self.log.debug("workbooks load name '%s', revision %s",
-                                  name, revision)
+            self.log.debug("workbook update '%s', revision %s", name, revision)
 
         session.commit()
 
@@ -246,53 +223,51 @@ class WorkbookManager(TableauCacheManager):
             filename = self.retrieve_workbook(update, agent)
             if not filename:
                 self.log.error('Failed to retrieve workbook: %s %s',
-                                      update.workbook.repository_url,
-                                      update.revision)
+                               update.workbook.repository_url, revision)
                 continue
             update.url = filename
             self.log.debug("workbooks load: update.url: %s", filename)
             # retrieval is a long process, so commit after each.
             session.commit()
 
+        self.unlock()
         return {u'status': 'OK',
                 u'schema': schema,
                 u'updates':str(len(updates))}
 
     # returns the filename *on the agent* or None on error.
     def build_workbook(self, update, agent):
+        # pylint: disable=too-many-statements
         try:
             # fixme: Specify a minimum disk space required other than 0?
             dcheck = DiskCheck(self.server, agent, self.server.WORKBOOKS_DIR,
                                FileManager.FILE_TYPE_WORKBOOK, 0)
-        except DiskException, e:
-            self.log.error("build_workbook disk check error: %s", str(e))
+        except DiskException, ex:
+            self._eventgen(update, "build_workbook disk check : " + str(ex))
             return None
 
         tmpdir = dcheck.primary_dir
-        name = update.basename()
         ext = update.workbook.fileext()
         url = '/workbooks/' + update.workbook.repository_url + '.' + ext
-        dst = agent.path.join(tmpdir, name + '.' + ext)
+        dst = agent.path.join(tmpdir, update.basename() + '.' + ext)
         cmd = 'get %s -f "%s"' % (url, dst)
 
         self.log.debug('building workbook archive: ' + dst)
 
         body = self.server.tabcmd(cmd, agent)
         if failed(body):
-            self.log.debug('failed to get workbook archive: %s', body)
+            self._eventgen(update, data=body)
             return None
         if ext == 'twbx':
-            cmd = 'ptwbx ' + '"' + dst + '"'
-            body = self.server.cli_cmd(cmd, agent)
-            if failed(body):
-                agent.filemanager.delete(dst)
+            dst = self._extract_twb_from_twbx(agent, update, tmpdir, dst)
+            if not dst:
+                # _extract_twb_from_twbx generates an event on failure.
                 return None
-            dst = agent.path.join(tmpdir, name + '.twb')
         # move twbx/twb to resting location.
         file_size_body = agent.filemanager.filesize(dst)
         if not success(file_size_body):
             self.log.error(
-                "build_workbook: Failed to get size of workbook file %s: %s", 
+                "build_workbook: Failed to get size of workbook file %s: %s",
                 dst, file_size_body['error'])
             file_size = 0
         else:
@@ -310,12 +285,12 @@ class WorkbookManager(TableauCacheManager):
     def retrieve_workbook(self, update, agent):
         path = self.build_workbook(update, agent)
         if not path:
-            self.log.debug('Error retrieving workbook: Path is empty')
+            # build_workbook prints errors and calls _eventgen().
             return None
         self.log.debug('Retrieving workbook: %s', path)
         body = agent.filemanager.save(path, target=self.path)
         if failed(body):
-            self.log.debug('Error retrieving workbook: Failed to save %s', path)
+            self._eventgen(self, update, data=body)
             return None
         else:
             self.log.debug('Retrieved workbook: %s', path)
@@ -339,3 +314,29 @@ class WorkbookManager(TableauCacheManager):
             cred = self.server.cred.get('secondary', default=None)
 
         return cred
+
+    # A twbx file is just a zipped twb + associated tde files.
+    # Extract the twb and return the path.
+    def _extract_twb_from_twbx(self, agent, update, tmpdir, dst):
+        cmd = 'ptwbx ' + '"' + dst + '"'
+        body = self.server.cli_cmd(cmd, agent)
+        if failed(body):
+            self._eventgen(update, data=body)
+            agent.filemanager.delete(dst)
+            return None
+        dst = agent.path.join(tmpdir, update.basename() + '.twb')
+        return dst
+
+    def _eventgen(self, update, error=None, data=None):
+        key = EventControl.WORKBOOK_ARCHIVE_FAILED
+        if data is None:
+            data = {}
+        data = dict(update.workbook.todict().items() + \
+                    update.todict().items() + \
+                    data.items())
+        if 'embedded' in data:
+            del data['embedded']
+        if error:
+            self.log.error(error)
+            data['error'] = error
+        return self.server.event_control.gen(key, data)
