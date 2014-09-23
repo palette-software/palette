@@ -5,7 +5,6 @@ all: pylint
 .PHONY: all
 
 pylint:
-	$(PYLINT) controller/palapi.py
 	$(PYLINT) controller/controller.py
 	$(PYLINT) controller/agentinfo.py
 	$(PYLINT) controller/agentmanager.py
@@ -21,6 +20,7 @@ pylint:
 	$(PYLINT) controller/licensing.py
 	$(PYLINT) controller/mixin.py
 	$(PYLINT) controller/odbc.py
+	$(PYLINT) controller/palapi.py
 	$(PYLINT) controller/ports.py
 	$(PYLINT) controller/system.py
 	$(PYLINT) controller/system.py
