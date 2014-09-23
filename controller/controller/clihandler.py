@@ -1524,6 +1524,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                 body['method'] = ex.method
             if ex.body:
                 body['body'] = ex.body
+        except IOError, ex:
+            body = {'error': str(ex)}
 
         self.report_status(body)
 

@@ -313,7 +313,12 @@ class WorkbookManager(TableauCacheManager):
             self.log.debug('Error retrieving workbook: Path is empty')
             return None
         self.log.debug('Retrieving workbook: %s', path)
-        body = agent.filemanager.save(path, target=self.path)
+        try:
+            body = agent.filemanager.save(path, target=self.path)
+        except IOError as ex:
+            self.log.debug("Error saving workbook '%s': %s", path, str(ex))
+            return None
+
         if failed(body):
             self.log.debug('Error retrieving workbook: Failed to save %s', path)
             return None
