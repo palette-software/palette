@@ -1,59 +1,48 @@
 #!/usr/bin/env python
 
+#pylint: disable=invalid-name
 import os
 import sys
 import time
-import argparse
 
-from controller.palapi import UpgradeHandler, UpgradeException
+#pylint: disable=import-error
+from controller.palapi import CommHandlerArgs, CommException
 
 class Upgrade(object):
 
-    CONSOLE_AGENT="ConsoleAgent.exe"
+    CONSOLE_AGENT = "ConsoleAgent.exe"
 
     def __init__(self):
-        parser = argparse.ArgumentParser(sys.argv[0])
+        # Sets up the parser with required arguments.
+        self.comm = CommHandlerArgs()
 
-        group1 = parser.add_mutually_exclusive_group()
+        # Add arguments specific to upgrade
+        self.comm.parser.add_argument('--dry-run', dest='dry_run',
+                                 action='store_true', default=False)
 
-        group1.add_argument('-v', '--verbose', dest='verbose', type=int,
-                            default=1)
-        group1.add_argument('-q', '--quiet', dest='quiet',
-                                        action='store_true', default=False)
-
-        parser.add_argument('--dry-run', dest='dry_run', action='store_true',
-                            default=False)
-
-        parser.add_argument('--hostname', dest='hostname', default='localhost')
-        parser.add_argument('--port', dest='port', type=int, default=9000)
-        parser.add_argument('--envid', dest='envid', type=int, default=1)
-
-        parser.add_argument('--target-dir', '-t', dest='target_dir')
+        self.comm.parser.add_argument('--target-dir', '-t', dest='target_dir')
 
         # The user must specify either a source directory (all files
         # will be upgraded) or a source file (only that file will
         # be upgraded).
-        group1 = parser.add_mutually_exclusive_group(required=True)
+        group1 = self.comm.parser.add_mutually_exclusive_group(required=True)
         group1.add_argument('--source-dir', '-s', dest='source_dir')
         group1.add_argument('--source-file', '-f', dest='source_file')
 
-        group2 = parser.add_mutually_exclusive_group()
-        group2.add_argument('--displayname', dest='displayname')
-        group2.add_argument('--uuid', dest='uuid')
-        group2.add_argument('--type', dest='agent_type', default='primary')
-
-        self.args = parser.parse_args()
-
-        self.comm = UpgradeHandler(self.args)
+        self.comm.parse_args()
 
         # State of the controller and its upgrade mode.
         self.state_upgrade = False
 
+        self.initial_state = None
+        self.target_files = []
+        self.normal_target_dir = None
+
         try:
             self.upgrade()
 
-        except UpgradeException, e:
-            self.error(e)
+        except CommException, ex:
+            self.error(ex)
             self.upgrade_back()
 
         except KeyboardInterrupt:
@@ -61,33 +50,36 @@ class Upgrade(object):
             self.upgrade_back()
 
     def upgrade(self):
+        #pylint: disable=too-many-branches
+        #pylint: disable=too-many-statements
         agent = self.comm.get_agent_info()
-        if self.args.target_dir:
-            self.normal_target_dir = self.args.target_dir
+        if self.comm.args.target_dir:
+            self.normal_target_dir = self.comm.args.target_dir
         else:
             self.normal_target_dir = agent['path'].join(agent['install-dir'])
 
         self.comm.send_cmd("file listdir '%s'" % self.normal_target_dir)
         self.target_files = self.comm.result['files']
 
-        if self.args.source_file:
+        if self.comm.args.source_file:
             # Upgrading only one file that was specified on the command line
-            if not os.path.isfile(self.args.source_file):
-                raise UpgradeException("No such file: %s" % self.args.source_file)
-            source_files = [os.path.basename(self.args.source_file)]
-            source_dir = os.path.dirname(self.args.source_file)
+            if not os.path.isfile(self.comm.args.source_file):
+                raise CommException(
+                            "No such file: %s" % self.comm.args.source_file)
+            source_files = [os.path.basename(self.comm.args.source_file)]
+            source_dir = os.path.dirname(self.comm.args.source_file)
         else:
-            source_dir = self.args.source_dir
-            source_files =  [f for f in os.listdir(source_dir) if \
+            source_dir = self.comm.args.source_dir
+            source_files = [f for f in os.listdir(source_dir) if \
                         os.path.isfile(os.path.join(source_dir, f))]
 
         source_files = sorted(source_files)
-        if self.args.verbose:
+        if self.comm.verbose:
             print "agent:", agent['displayname']
-            print "agent target_dir:",  self.normal_target_dir
+            print "agent target_dir:", self.normal_target_dir
             print "local source_dir:", source_dir
             print "Source files to upgrade:", ', '.join(source_files)
-            if self.args.dry_run:
+            if self.comm.args.dry_run:
                 print "DRY RUN - WILL NOT UPDATE"
 
         # Find out if the controller is already in UPGRADING state and
@@ -95,11 +87,11 @@ class Upgrade(object):
         self.comm.send_cmd("upgrade")
         self.initial_state = self.comm.result['main-state']
         if self.initial_state != 'UPGRADING':
-            if self.args.verbose:
+            if self.comm.verbose:
                 print "Enabling UPGRADE state"
-            if not self.args.dry_run:
+            if not self.comm.args.dry_run:
                 self.comm.send_cmd("upgrade on")
-            if self.args.verbose:
+            if self.comm.verbose:
                 print "Sleeping for 2 seconds after entering upgrade state."
             time.sleep(2)
 
@@ -121,18 +113,18 @@ class Upgrade(object):
                     agent['path'].join(self.normal_target_dir, filename_only)
                 self.comm.send_cmd("file sha256 '%s'" % target_checksum_file)
                 if not 'hash' in self.comm.result:
-                    raise UpgradeException("sha256 command on file " +
+                    raise CommException("sha256 command on file " +
                         "'%s' failed.  Missing 'hash': %s",
                         target_checksum_file, self.comm.result)
 
                 if self.comm.result['hash'] == source_checksum:
-                    if self.args.verbose:
+                    if self.comm.verbose:
                         print "Skipping - same checksum:", filename_only
                     continue
 
                 upgrade_count += 1
 
-                if self.args.dry_run:
+                if self.comm.args.dry_run:
                     print "Would update if not DRY-RUN:", source_full_pathname
                     continue
 
@@ -146,19 +138,19 @@ class Upgrade(object):
 
         time.sleep(1)   # Give time to finish
         if console_updated:
-            if self.args.verbose:
+            if self.comm.verbose:
                 print "Sending 'hup' for update to", self.CONSOLE_AGENT
             self.comm.send_cmd("hup")
 
         if self.initial_state != 'UPGRADING':
-            if self.args.verbose:
+            if self.comm.verbose:
                 print "Disabling UPGRADE state"
-            if not self.args.dry_run:
+            if not self.comm.args.dry_run:
                 self.comm.send_cmd("upgrade off")
 
-        if self.args.dry_run:
+        if self.comm.args.dry_run:
             print "DRY-RUN: Would have upgraded:", upgrade_count, "file(s)."
-        elif self.args.verbose:
+        elif self.comm.verbose:
             if not upgrade_count:
                 print "No files upgraded."
             else:
@@ -194,7 +186,7 @@ class Upgrade(object):
         # Get the agent file's checksum we just PUT.
         self.comm.send_cmd("file sha256 '%s'" % target_path_tmp)
         if not 'hash' in self.comm.result:
-            raise UpgradeException("sha256 command on file " +
+            raise CommException("sha256 command on file " +
                 "'%s' failed.  Missing 'hash': %s",
                 target_path_tmp, self.comm.result)
 
@@ -204,7 +196,7 @@ class Upgrade(object):
         # it's a fatal error.
         if source_checksum != agent_checksum:
             self.comm.send_cmd("file delete '%s'" % target_path_tmp)
-            raise UpgradeException(
+            raise CommException(
                 "Checksum on controller (%s) didn't match agent (%s)." % \
                     (source_checksum, agent_checksum))
 
@@ -224,17 +216,17 @@ class Upgrade(object):
         self.comm.send_cmd("file move '%s' '%s'" % (target_path_tmp,
                                                         target_full_pathname))
 
-        if self.args.verbose:
+        if self.comm.args.verbose:
             print "Upgraded %s to %s..." % (target_full_pathname,
                                         source_checksum[:10])
 
     def upgrade_back(self):
         if self.state_upgrade and self.initial_state != 'UPGRADING':
             try:
-                if not self.args.dry_run:
+                if not self.comm.args.dry_run:
                     self.comm.send_cmd("upgrade off")
-            except UpgradeException, e:
-                print >> sys.stderr, "%s: %s" % (sys.argv[0], e)
+            except CommException, ex:
+                print >> sys.stderr, "%s: %s" % (sys.argv[0], ex)
 
     def error(self, msg):
         print >> sys.stderr, "%s: %s" % (sys.argv[0], msg)
