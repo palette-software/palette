@@ -25,6 +25,12 @@
 "color":"yellow"
 },
 {
+"state":"RESTARTING",
+"text":"Tableau Restarting",
+"allowable_actions":"",
+"color":"yellow"
+},
+{
 "state":"STOPPED",
 "text":"Tableau Stopped",
 "allowable_actions":"start backup restore restart repair-license ziplogs",
@@ -104,6 +110,12 @@
 },
 {
 "state":"STARTED-BACKUP-STOP",
+"text":"Tableau Running",
+"allowable_actions":"",
+"color":"green"
+},
+{
+"state":"STARTED-BACKUP-RESTART",
 "text":"Tableau Running",
 "allowable_actions":"",
 "color":"green"
