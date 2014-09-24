@@ -23,7 +23,7 @@ class ManageApplication(PaletteRESTHandler):
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_start(self, req):
-        self.telnet.send_cmd('start', req=req)
+        self.commapp.send_cmd('start', req=req, read_response=False)
         return {}
 
     @required_role(Role.MANAGER_ADMIN)
@@ -35,17 +35,29 @@ class ManageApplication(PaletteRESTHandler):
             cmd = cmd + ' nolicense'
         if not self.getbool(req, 'maint'):
             cmd = cmd + ' nomaint'
-        self.telnet.send_cmd(cmd, req=req)
+        self.commapp.send_cmd(cmd, req=req, read_response=False)
+        return {}
+
+    @required_role(Role.MANAGER_ADMIN)
+    def handle_restart(self, req):
+        cmd = 'restart'
+        if not self.getbool(req, 'backup'):
+            cmd = cmd + ' nobackup'
+        if not self.getbool(req, 'license'):
+            cmd = cmd + ' nolicense'
+        if not self.getbool(req, 'maint'):
+            cmd = cmd + ' nomaint'
+        self.commapp.send_cmd(cmd, req=req, read_response=False)
         return {}
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_repair_license(self, req):
-        self.telnet.send_cmd('license repair', req=req)
+        self.commapp.send_cmd('license repair', req=req, read_response=False)
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_ziplogs(self, req):
         cmd = 'ziplogs'
-        self.telnet.send_cmd(cmd, req=req)
+        self.commapp.send_cmd(cmd, req=req, read_response=False)
         return {}
 
     @required_parameters('action')
@@ -57,6 +69,8 @@ class ManageApplication(PaletteRESTHandler):
             return self.handle_start(req)
         elif action == 'stop':
             return self.handle_stop(req)
+        elif action == 'restart':
+            return self.handle_restart(req)
         elif action == 'repair-license':
             return self.handle_repair_license(req)
         elif action == 'ziplogs':

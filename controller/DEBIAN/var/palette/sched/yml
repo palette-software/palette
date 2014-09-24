@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import sys
 
-from commhandler import CommHandler
+from controller.palapi import CommHandlerCmd
 
 if __name__ == "__main__":
-    comm = CommHandler()
-    comm.send_cmd("yml", skip_on_wrong_state=True)
+    comm = CommHandlerCmd()
+    comm.send_cmd("yml", skip_on_wrong_state=True, read_response=False)
     sys.exit(0)

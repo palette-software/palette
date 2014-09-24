@@ -24,10 +24,11 @@ pylint:
 	$(PYLINT) controller/odbc.py
 	$(PYLINT) controller/palapi.py
 	$(PYLINT) controller/ports.py
-	$(PYLINT) controller/system.py
+	$(PYLINT) controller/sched.py
 	$(PYLINT) controller/system.py
 	$(PYLINT) controller/tableau.py
 	$(PYLINT) controller/util.py
+	$(PYLINT) DEBIAN/bin/upgrade-agent
 	$(PYLINT) controller/workbooks.py
 #	find . -name \*.py -exec pylint $(PYLINT_OPTS) '{}'  ';'
 .PHONY: pylint

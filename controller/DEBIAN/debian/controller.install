@@ -14,4 +14,3 @@ var/palette/sched/http_request    /var/palette/sched
 var/palette/sched/workbook    /var/palette/sched
 var/palette/sched/sync    /var/palette/sched
 var/palette/sched/yml    /var/palette/sched
-var/palette/sched/commhandler.py    /var/palette/sched

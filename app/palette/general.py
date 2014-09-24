@@ -197,7 +197,7 @@ class GeneralApplication(PaletteRESTHandler):
             return {'value':scfg.watermark_low}
         elif req.method == 'POST':
             d = self.handle_int_POST(req, SystemConfig.WATERMARK_LOW)
-            self.telnet.send_cmd('info all', req=req)
+            self.commapp.send_cmd('info all', req=req, read_response=False)
             return d
         else:
             raise exc.HTTPMethodNotAllowed()
@@ -208,7 +208,7 @@ class GeneralApplication(PaletteRESTHandler):
             return {'value':scfg.watermark_high}
         elif req.method == 'POST':
             d = self.handle_int_POST(req, SystemConfig.WATERMARK_HIGH)
-            self.telnet.send_cmd('info all', req=req)
+            self.commapp.send_cmd('info all', req=req, read_response=False)
             return d
         else:
             raise exc.HTTPMethodNotAllowed()
