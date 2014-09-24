@@ -1,9 +1,10 @@
 from sqlalchemy import Column, BigInteger, String
 from sqlalchemy.orm.exc import NoResultFound
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
-from state import StateManager
 from mixin import BaseMixin
 
 class StateControl(meta.Base, BaseMixin):
@@ -19,17 +20,17 @@ class StateControl(meta.Base, BaseMixin):
     color = Column(String)  # icon color: e.g. red, green, yellow
 
     # Allowable actions:
-    ACTION_START="start"
-    ACTION_STOP="stop"
-    ACTION_BACKUP="backup"
-    ACTION_RESTORE="restore"
-    ACTION_RESET="reset"
-    ACTION_RESTART="restart"
-    ACTION_NONE=""
+    ACTION_START = "start"
+    ACTION_STOP = "stop"
+    ACTION_BACKUP = "backup"
+    ACTION_RESTORE = "restore"
+    ACTION_RESET = "reset"
+    ACTION_RESTART = "restart"
+    ACTION_NONE = ""
 
-    COLOR_RED="red"
-    COLOR_GREEN="green"
-    COLOR_YELLOW="yellow"
+    COLOR_RED = "red"
+    COLOR_GREEN = "green"
+    COLOR_YELLOW = "yellow"
 
     @classmethod
     def get_state_control_entry(cls, state):
@@ -37,9 +38,9 @@ class StateControl(meta.Base, BaseMixin):
         try:
             entry = meta.Session.query(StateControl).\
                 filter(StateControl.state == state).one()
-        except NoResultFound, e:
+        except NoResultFound:
             return None
 
         return entry
 
-    defaults_filename  = 'state_control.json'
+    defaults_filename = 'state_control.json'
