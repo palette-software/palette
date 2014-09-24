@@ -570,12 +570,16 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
 
-    @usage('workbook IMPORT')
+    @usage('workbook [IMPORT|FIXUP]')
     def do_workbook(self, cmd):
-        """Import workbooks table from Tableau"""
+        """Import workbooks table from Tableau or fixup a previous import"""
 
-        # Reserved for later expansion
-        if len(cmd.args) != 1 or cmd.args[0].upper() != 'IMPORT':
+        if len(cmd.args) != 1:
+            self.print_usage(self.do_workbook.__usage__)
+            return
+
+        action = cmd.args[0].lower()
+        if action != 'import' and action != 'fixup':
             self.print_usage(self.do_workbook.__usage__)
             return
 
@@ -590,7 +594,10 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         self.ack()
-        body = self.server.workbooks.load(agent)
+        if action == 'import':
+            body = self.server.workbooks.load(agent)
+        elif action == 'fixup':
+            body = self.server.workbooks.fixup(agent)
         self.report_status(body)
 
 
