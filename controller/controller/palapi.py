@@ -6,6 +6,7 @@ import hashlib
 import ntpath
 import posixpath
 from akiri.framework.config import store
+import clierror
 
 class CommException(Exception):
     def __init__(self, errmsg):
@@ -76,9 +77,16 @@ class CommBase(object):
             if len(parts) < 2 or not parts[1].isdigit():
                 raise CommException("Command '%s' failed: %s" % \
                                         (self.command, ack))
+            print 'we are here'
             errnum = int(parts[1])
             # Skip on BUSY or WRONG_STATE if requested
-            if skip_on_wrong_state and (errnum == 20 or errnum == 21):
+            print errnum
+            if skip_on_wrong_state and errnum in \
+                            (clierror.ERROR_AGENT_NOT_FOUND,
+                             clierror.ERROR_AGENT_NOT_CONNECTED,
+                             clierror.ERROR_BUSY,
+                             clierror.ERROR_WRONG_STATE,
+                             clierror.ERROR_AGENT_NOT_FOUND):
                 print >> sys.stderr, \
                     "Skipping command due to wrong state: '%s': %s" % \
                                                                     (cmd, ack)
