@@ -8,7 +8,10 @@ from datetime import datetime
 
 from sqlalchemy import Column, String, BigInteger, DateTime
 from sqlalchemy.orm.exc import NoResultFound
+
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from mixin import BaseDictMixin
 from event_control import EventControl
