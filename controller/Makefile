@@ -25,6 +25,7 @@ pylint:
 	$(PYLINT) controller/palapi.py
 	$(PYLINT) controller/ports.py
 	$(PYLINT) controller/sched.py
+	$(PYLINT) controller/state.py
 	$(PYLINT) controller/system.py
 	$(PYLINT) controller/tableau.py
 	$(PYLINT) controller/util.py

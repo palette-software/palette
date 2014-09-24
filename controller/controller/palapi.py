@@ -77,10 +77,8 @@ class CommBase(object):
             if len(parts) < 2 or not parts[1].isdigit():
                 raise CommException("Command '%s' failed: %s" % \
                                         (self.command, ack))
-            print 'we are here'
             errnum = int(parts[1])
             # Skip on BUSY or WRONG_STATE if requested
-            print errnum
             if skip_on_wrong_state and errnum in \
                             (clierror.ERROR_AGENT_NOT_FOUND,
                              clierror.ERROR_AGENT_NOT_CONNECTED,
