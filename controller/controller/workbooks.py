@@ -137,7 +137,6 @@ class WorkbookManager(TableauCacheManager):
     # really sync *and* load
     def load(self, agent):
         # pylint: disable=too-many-locals
-        # pylint: disable=too-many-statements
         if not self.cred_check():
             return {u'error': 'Can not load workbooks: missing credentials.'}
 
@@ -172,7 +171,6 @@ class WorkbookManager(TableauCacheManager):
         data = agent.odbc.execute(stmt)
 
         updates = []
-        schema = self.schema(data)
 
         if 'error' in data or '' not in data:
             self.log.debug("workbooks load: bad data: %s", str(data))
@@ -220,24 +218,46 @@ class WorkbookManager(TableauCacheManager):
         # Second pass - build the archive files.
         for update in updates:
             session.refresh(update)
-            filename = self.retrieve_workbook(update, agent)
-            if not filename:
-                self.log.error('Failed to retrieve workbook: %s %s',
-                               update.workbook.repository_url, revision)
-                continue
-            update.url = filename
-            self.log.debug("workbooks load: update.url: %s", filename)
-            # retrieval is a long process, so commit after each.
-            session.commit()
+            self._archive_twb(agent, update)
 
         self.unlock()
         return {u'status': 'OK',
-                u'schema': schema,
-                u'updates':str(len(updates))}
+                u'schema': self.schema(data),
+                u'updates': len(updates)}
+
+
+    def fixup(self, agent):
+
+        if not self.lock(blocking=False):
+            return {u'error': 'Can not fixup workbooks: busy.'}
+
+        connection = meta.engine.connect()
+
+        stmt = \
+            "SELECT wuid FROM workbook_updates " +\
+            "WHERE ((workbookid, revision) IN " +\
+            "  (SELECT workbookid, revision FROM workbooks)) AND " +\
+            "    ((url = '') OR (url IS NULL))"
+
+        ids = [x['wuid'] for x in connection.execute(stmt)]
+        self.log.debug('workbook fixup : ' + str(ids))
+        connection.close()
+
+        session = meta.Session()
+
+        if ids:
+            # potentially serveral thousand?
+            updates = session.query(WorkbookUpdateEntry).\
+                      filter(WorkbookUpdateEntry.wuid.in_(ids)).all()
+
+            for update in updates:
+                self._archive_twb(agent, update)
+
+        return {u'status': 'OK',
+                u'updates': len(updates)}
 
     # returns the filename *on the agent* or None on error.
-    def build_workbook(self, update, agent):
-        # pylint: disable=too-many-statements
+    def _build_twb(self, agent, update):
         try:
             # fixme: Specify a minimum disk space required other than 0?
             dcheck = DiskCheck(self.server, agent, self.server.WORKBOOKS_DIR,
@@ -277,9 +297,9 @@ class WorkbookManager(TableauCacheManager):
         update.fileid = place.placed_file_entry.fileid
         return dst
 
-    # returns the filename - in self.path - or None on error.
-    def retrieve_workbook(self, update, agent):
-        path = self.build_workbook(update, agent)
+    # returns the filename or None on error.
+    def _retrieve_twb(self, agent, update):
+        path = self._build_twb(agent, update)
         if not path:
             # build_workbook prints errors and calls _eventgen().
             return None
@@ -298,6 +318,19 @@ class WorkbookManager(TableauCacheManager):
         agent.filemanager.delete(path)
         return agent.path.basename(path)
 
+    # Retrieve the twb file of an update and set the url.
+    def _archive_twb(self, agent, update):
+        filename = self._retrieve_twb(agent, update)
+        if not filename:
+            self.log.error('Failed to retrieve twb: %s %s',
+                           update.workbook.repository_url, update.revision)
+            return
+        update.url = filename
+        self.log.debug("workbooks load: update.url: %s", filename)
+
+        # retrieval is a long process, so commit after each.
+        meta.Session.commit()
+
     # This is the time the last revision was created.
     # returns a UTC string or None
     def last_created_at(self, envid):
@@ -306,6 +339,7 @@ class WorkbookManager(TableauCacheManager):
             return None
         return str(value)
 
+    # See if credentials exist.
     def cred_check(self):
         """Returns None if there are credentials and Non-None/False
            if there are credentials."""
@@ -349,8 +383,6 @@ class WorkbookManager(TableauCacheManager):
             return None
         dst = dst[0:-1] # drop the trailing 'x' from the file extension.
         return dst
-
-
 
     # Generate an event in case of a failure.
     def _eventgen(self, update, error=None, data=None):
