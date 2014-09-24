@@ -1,14 +1,16 @@
 from sqlalchemy import Column, String, DateTime, Boolean
 from sqlalchemy import Integer, BigInteger, SmallInteger
-from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import not_, UniqueConstraint
 from sqlalchemy.schema import ForeignKey
 
+# pylint: disable=import-error,no-name-in-module
+from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
+
 from mixin import BaseMixin
 
-from akiri.framework.ext.sqlalchemy import meta
-
 class Site(meta.Base, BaseMixin):
+    #pylint: disable=too-many-instance-attributes
     __tablename__ = 'sites'
 
     # FIXME: BigInteger
