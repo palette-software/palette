@@ -18,7 +18,7 @@ class BackupApplication(PaletteRESTHandler):
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_backup(self, req):
-        self.telnet.send_cmd("backup", req=req)
+        self.commapp.send_cmd("backup", req=req, read_response=False)
         now = time.strftime('%A, %B %d at %I:%M %p')
         return {'last': now}
 
@@ -39,7 +39,7 @@ class BackupApplication(PaletteRESTHandler):
         if req.POST['restore-type'] == 'data-only':
             cmd = '/no-config ' + cmd
 
-        self.telnet.send_cmd(cmd, req=req)
+        self.commapp.send_cmd(cmd, req=req, read_response=False)
         return {}
 
     @required_parameters('action')

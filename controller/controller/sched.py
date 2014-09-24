@@ -1,13 +1,12 @@
 import os
 import time
 import subprocess
-import sys
 import threading
 import re
 
 from datetime import datetime
 
-from sqlalchemy import Column, String, BigInteger, DateTime, LargeBinary
+from sqlalchemy import Column, String, BigInteger, DateTime
 from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework.ext.sqlalchemy import meta
 
@@ -42,7 +41,7 @@ class Sched(threading.Thread):
         self.start()
 
     def run(self):
-        while True:      
+        while True:
             now = time.time()
             nexttime = 61 +  now - (now % 60) # start of the minute
 
@@ -50,15 +49,16 @@ class Sched(threading.Thread):
                 self.server.log.debug("JOB: " + str(job))
                 try:
                     self.handler(job.name)
-                except Exception, e:
-                    self.server.error("Job '%s':" + str(e))
+                except StandardError, ex:
+                    self.server.error("Job '%s':" + str(ex))
                 job.set_next_run_time()
 
             meta.Session.commit()
             time.sleep(nexttime - now)
 
+    # pylint: disable=too-many-arguments
     def add_cron_job(self, name,
-                     minute="*", hour="*", day_of_month="*", 
+                     minute="*", hour="*", day_of_month="*",
                      month="*", day_of_week="*"):
 
         entry = Crontab.get(name)
@@ -90,9 +90,9 @@ class Sched(threading.Thread):
             if isinstance(names, basestring):
                 names = [names]
             body['deleted'] = names
-        except Exception, e:
+        except StandardError, ex:
             body['status'] = 'FAILED'
-            body['error'] = str(e)
+            body['error'] = str(ex)
         return body
 
     def populate(self):
@@ -132,22 +132,22 @@ class Crontab(meta.Base, BaseDictMixin):
 
     # convert X/Y format to comma delimetted list
     def commafy(self, s, maxval=60):
-        m = self.slash_re.match(s)
-        if not m:
+        mat = self.slash_re.match(s)
+        if not mat:
             return s
-        x,y = int(m.group(1)), int(m.group(2))
+        xvar, yvar = int(mat.group(1)), int(mat.group(2))
 
         retval = ''
-        while x < maxval:
+        while xvar < maxval:
             if retval:
                 retval = retval + ','
-            retval = retval + str(x)
-            x = x + y
+            retval = retval + str(xvar)
+            xvar = xvar + yvar
         return retval
 
     def __str__(self):
         s = ' '.join([self.minute, self.hour,
-                      self.day_of_month,self.month, self.day_of_week])
+                      self.day_of_month, self.month, self.day_of_week])
         return '[' + self.name + '] ' + s
 
     def expr(self):
@@ -156,12 +156,12 @@ class Crontab(meta.Base, BaseDictMixin):
                          self.day_of_month, self.month, self.day_of_week])
 
     def set_next_run_time(self):
-        itr = Croniter(self.expr(), start_time = datetime.utcnow())
-        t =  itr.get_next()
-        self.next_run_time = datetime.fromtimestamp(t)
+        itr = Croniter(self.expr(), start_time=datetime.utcnow())
+        tnext = itr.get_next()
+        self.next_run_time = datetime.fromtimestamp(tnext)
 
     @classmethod
-    def get(self, name):
+    def get(cls, name):
         try:
             entry = meta.Session.query(Crontab).\
                 filter(Crontab.name == name).one()
@@ -183,12 +183,12 @@ class Crontab(meta.Base, BaseDictMixin):
 
     @classmethod
     def delete(cls, arg):
-        q = meta.Session.query(Crontab)
+        entry = meta.Session.query(Crontab)
         if isinstance(arg, basestring):
-            q = q.filter(Crontab.name == arg)
+            entry = entry.filter(Crontab.name == arg)
         else:
-            q = q.filter(Crontab.name.in_(arg))
-        q.delete(synchronize_session='fetch')
+            entry = entry.filter(Crontab.name.in_(arg))
+        entry.delete(synchronize_session='fetch')
         meta.Session.commit()
 
 
@@ -212,10 +212,10 @@ class JobHandler(object):
             self.server.log.error("sched job: No such command: %s", path)
             self.server.event_control.gen(\
                 EventControl.SCHEDULED_JOB_FAILED,
-                { 'error': "No such command: '%s'" % name})
+                {'error': "No such command: '%s'" % name})
             return
 
-        cmd = [ path,
+        cmd = [path,
                 '--hostname', self.scheduler.telnet_hostname,
                 '--port', str(self.scheduler.telnet_port),
                 '--envid', str(self.server.environment.envid)
@@ -224,10 +224,10 @@ class JobHandler(object):
         try:
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE, close_fds=True)
-        except Exception as e:
+        except StandardError as ex:
             self.server.event_control.gen(\
                 EventControl.SCHEDULED_JOB_FAILED,
-                { 'error': "Could not start job '%s': %s" % (cmd, e.__doc__) })
+                {'error': "Could not start job '%s': %s" % (cmd, ex.__doc__)})
             return
 
         stdout, stderr = process.communicate()
@@ -235,4 +235,4 @@ class JobHandler(object):
         self.server.log.debug("cmd '%s' exit status: %d, "
                               "stdout: '%s', stderr: %s'",
                               path, process.returncode, stdout, stderr)
-        return    
+        return

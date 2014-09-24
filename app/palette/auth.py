@@ -14,13 +14,13 @@ from controller.profile import UserProfile
 from controller.domain import Domain
 from controller.environment import Environment
 from controller.util import success
-from rest import Telnet
+from controller.palapi import CommHandlerApp
 
 class TableauAuthenticator(Authenticator):
 
     def __init__(self, global_conf):
         super(TableauAuthenticator, self).__init__(global_conf)
-        self.telnet = Telnet(self)
+        self.commapp = CommHandlerApp(self)
 
     def __getattr__(self, name):
         if name == 'domainname':
@@ -49,7 +49,7 @@ class TableauAuthenticator(Authenticator):
             return UserProfile.verify(envid, username, password)
         cmd = "ad verify " + username + " " + password
         try:
-            data = self.telnet.send_cmd(cmd, sync=True)
+            data = self.commapp.send_cmd(cmd, read_response=True)
         except RuntimeError:
             return False
         return success(json.loads(data))
