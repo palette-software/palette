@@ -62,7 +62,7 @@ class ODBCData(object):
             ctype = self.schema[column]
             value = row[i]
             if ctype == 'DateTime':
-                if value.endswith('Z'): # HACK
+                if value and value.endswith('Z'): # HACK
                     # convert to true iso8601
                     value = value.replace(' ', 'T')
                 self.data[column] = odbc2dt(value)
@@ -70,9 +70,12 @@ class ODBCData(object):
                 self.data[column] = value
             i += 1
 
-    def copyto(self, obj):
+    def copyto(self, obj, excludes=None):
+        if excludes is None:
+            excludes = []
         for name in self.schema:
-            setattr(obj, name, self.data[name])
+            if not name in excludes:
+                setattr(obj, name, self.data[name])
         return obj
 
     def __repr__(self):
