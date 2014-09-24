@@ -24,6 +24,7 @@ pylint:
 	$(PYLINT) controller/odbc.py
 	$(PYLINT) controller/palapi.py
 	$(PYLINT) controller/ports.py
+	$(PYLINT) controller/request.py
 	$(PYLINT) controller/sched.py
 	$(PYLINT) controller/sites.py
 	$(PYLINT) controller/state_control.py
