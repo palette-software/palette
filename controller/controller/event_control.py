@@ -162,6 +162,8 @@ class EventControl(meta.Base, BaseMixin):
 
     EMAIL_TEST = "EMAIL-TEST"
 
+    WORKBOOK_ARCHIVE_FAILED = "WORKBOOK-ARCHIVE-FAILED"
+
     SYSTEM_EXCEPTION = "SYSTEM-EXCEPTION"
 
     # levels
@@ -191,7 +193,9 @@ class EventControl(meta.Base, BaseMixin):
         'restore' : 'Tableau Restore',
         'server' : 'Palette Server',
         'storage' : 'Storage',
-        'tableau' : 'Tableau App'}
+        'tableau' : 'Tableau App',
+        'workbook' : 'Workbooks'
+    }
 
     @classmethod
     def types(cls):

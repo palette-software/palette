@@ -50,6 +50,7 @@ class AuthManager(Manager):
                 cache[sysid] = obj
         return cache
 
+    # FIXME: take the manager lock.
     def load(self, agent, check_odbc_state=True):
         # pylint: disable=too-many-locals
         envid = self.server.environment.envid
