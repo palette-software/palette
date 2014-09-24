@@ -248,21 +248,17 @@ class WorkbookManager(TableauCacheManager):
 
         tmpdir = dcheck.primary_dir
         ext = update.workbook.fileext()
-        url = '/workbooks/' + update.workbook.repository_url + '.' + ext
-        dst = agent.path.join(tmpdir, update.basename() + '.' + ext)
-        cmd = 'get %s -f "%s"' % (url, dst)
 
-        self.log.debug('building workbook archive: ' + dst)
-
-        body = self.server.tabcmd(cmd, agent)
-        if failed(body):
-            self._eventgen(update, data=body)
+        dst = self._tabcmd_get(agent, update, tmpdir, ext)
+        if dst is None:
+            # _tabcmd_get generates an event on failure.
             return None
         if ext == 'twbx':
-            dst = self._extract_twb_from_twbx(agent, update, tmpdir, dst)
+            dst = self._extract_twb_from_twbx(agent, update, dst)
             if not dst:
                 # _extract_twb_from_twbx generates an event on failure.
                 return None
+
         # move twbx/twb to resting location.
         file_size_body = agent.filemanager.filesize(dst)
         if not success(file_size_body):
@@ -320,18 +316,43 @@ class WorkbookManager(TableauCacheManager):
 
         return cred
 
+    # Run 'tabcmd get' on the agent to retrieve the twb/twbx file
+    # then return its path or None in the case of an error.
+    def _tabcmd_get(self, agent, update, tmpdir, ext):
+        url = '/workbooks/' + update.workbook.repository_url + '.' + ext
+        dst = agent.path.join(tmpdir, update.basename() + '.' + ext)
+        cmd = 'get %s -f "%s"' % (url, dst)
+
+        self.log.debug('building workbook archive: ' + dst)
+
+        for _ in range(3):
+            body = self.server.tabcmd(cmd, agent)
+            if failed(body):
+                if 'stderr' in body and 'Service Unavailable' in body['stderr']:
+                    # 503 error, retry
+                    self.log.debug(cmd + ' : 503 Service Unavailable, retrying')
+                    continue
+                break
+            else:
+                return dst
+        self._eventgen(update, data=body)
+        return None
+
     # A twbx file is just a zipped twb + associated tde files.
     # Extract the twb and return the path.
-    def _extract_twb_from_twbx(self, agent, update, tmpdir, dst):
+    def _extract_twb_from_twbx(self, agent, update, dst):
         cmd = 'ptwbx ' + '"' + dst + '"'
         body = self.server.cli_cmd(cmd, agent)
         if failed(body):
             self._eventgen(update, data=body)
             agent.filemanager.delete(dst)
             return None
-        dst = agent.path.join(tmpdir, update.basename() + '.twb')
+        dst = dst[0:-1] # drop the trailing 'x' from the file extension.
         return dst
 
+
+
+    # Generate an event in case of a failure.
     def _eventgen(self, update, error=None, data=None):
         key = EventControl.WORKBOOK_ARCHIVE_FAILED
         if data is None:
