@@ -1,9 +1,10 @@
-import boto
-
 from sqlalchemy import Column, BigInteger, String
-from akiri.framework.ext.sqlalchemy import meta
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import ForeignKey, UniqueConstraint
+
+# pylint: disable=import-error,no-name-in-module
+from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from mixin import BaseDictMixin, OnlineMixin
 from manager import Manager
@@ -28,9 +29,10 @@ class CloudEntry(meta.Base, BaseDictMixin, OnlineMixin):
 
 class CloudManager(Manager):
 
-    CLOUD_TYPE_S3='s3'
-    CLOUD_TYPE_GCS='gcs'
+    CLOUD_TYPE_S3 = 's3'
+    CLOUD_TYPE_GCS = 'gcs'
 
+    # FIXME: use get_unique_by_keys()
     def get_by_name(self, name, cloud_type):
         try:
             entry = meta.Session.query(CloudEntry).\
@@ -38,48 +40,47 @@ class CloudManager(Manager):
                 filter(CloudEntry.cloud_type == cloud_type).\
                 filter(CloudEntry.name == name).one()
             return entry
-        except NoResultFound, e:
+        except NoResultFound:
             return None
 
+    # FIXME: use get_unique_by_keys()
     def get_by_cloudid(self, cloudid):
         try:
             entry = meta.Session.query(CloudEntry).\
                 filter(CloudEntry.envid == self.envid).\
                 filter(CloudEntry.cloudid == cloudid).one()
             return entry
-        except NoResultFound, e:
+        except NoResultFound:
             return None
-
-    def get_s3_token(self, resource):
-        c = boto.connect_sts(aws_access_key_id=str(self.access_key),
-                             aws_secret_access_key=str(self.secret))
-        return c.get_federation_token(resource, policy=S3_POLICY)
 
     @classmethod
     def get_by_cloudid_envid(cls, cloudid, envid):
+        # FIXME: use get_unique_by_keys()
         try:
             entry = meta.Session.query(CloudEntry).\
                 filter(CloudEntry.envid == envid).\
                 filter(CloudEntry.cloudid == cloudid).one()
             return entry
-        except NoResultFound, e:
+        except NoResultFound:
             return None
 
     @classmethod
     def get_by_envid_name(cls, envid, name, cloud_type):
+        # FIXME: use get_unique_by_keys()
         try:
             entry = meta.Session.query(CloudEntry).\
                 filter(CloudEntry.envid == envid).\
                 filter(CloudEntry.cloud_type == cloud_type).\
                 filter(CloudEntry.name == name).one()
             return entry
-        except NoResultFound, e:
+        except NoResultFound:
             return None
 
     @classmethod
     def get_clouds_by_envid(cls, envid):
+        # FIXME: use get_all_by_keys()
         return meta.Session.query(CloudEntry).\
-            filter_by(envid = envid).\
+            filter_by(envid=envid).\
             order_by('cloud.name').\
             all()
 
