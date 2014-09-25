@@ -10,7 +10,7 @@ class StateManager(Manager):
     STATE_STOPPING = "STOPPING"
     STATE_STOPPING_RESTORE = "STOPPING-RESTORE"
 
-    STATE_STOPPED = "STOPPED"         # reported from tabadmin
+    STATE_STOPPED = "STOPPED"     # reported from tabadmin
 
     # The user stopped tableau outside of palette
     STATE_STOPPED_UNEXPECTED = "STOPPED-UNEXPECTED"
@@ -42,9 +42,9 @@ class StateManager(Manager):
     STATE_STARTED_CLEANUP = "STARTED-CLEANUP"
     STATE_STOPPED_CLEANUP = "STOPPED-CLEANUP"
 
-    STATE_DEGRADED = "DEGRADED"       # reported from tabadmin
+    STATE_DEGRADED = "DEGRADED"   # reported from tabadmin
 
-    STATE_UPGRADING = "UPGRADING"       # agent or controller is upgrading
+    STATE_UPGRADING = "UPGRADING" # agent or controller is upgrading
 
     STATE_UNKNOWN = "UNKNOWN"     # no primary ever connected to the controller
 
