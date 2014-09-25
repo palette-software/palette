@@ -58,6 +58,8 @@ class EventApplication(PaletteRESTHandler):
 
         events = []
         for event in query.all():
+            if not event.complete:
+                continue
             self.convert_description_to_html(event)
             self.fixup_icon(event)
             events.append(event.todict(pretty=True))
