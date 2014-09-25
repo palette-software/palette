@@ -1,13 +1,13 @@
-from sqlalchemy import Column, Integer, BigInteger, String, Boolean
-from sqlalchemy.schema import ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, BigInteger, String
+from sqlalchemy.schema import ForeignKey
 
 from akiri.framework.ext.sqlalchemy import meta
 
 from agentmanager import AgentManager
-from event_control import EventControl, EventControlManager
-from mixin import BaseDictMixin
+from event_control import EventControl
 
 class FirewallEntry(meta.Base):
+    # pylint: disable=no-init
     __tablename__ = "firewall"
 
     firewallid = Column(BigInteger, unique=True, nullable=False,
@@ -56,7 +56,7 @@ class FirewallManager(object):
         # It was empty so add the initial default set.
 
         # First the listen_port
-        entry = FirewallEntry(agentid=agent.agentid, 
+        entry = FirewallEntry(agentid=agent.agentid,
                 name="Palette Agent", port=agent.listen_port, color="red")
         session.add(entry)
 
@@ -88,8 +88,8 @@ class FirewallManager(object):
                     (str(ports), agent.displayname, body['error']))
             data = agent.todict()
             data['error'] = body['error']
-            data['info'] = "Ports: " + str(port)
-            self.server.event_control.gen(\
+            data['info'] = "Ports: " + str(ports)
+            self.server.event_control.gen(
                 EventControl.FIREWALL_OPEN_FAILED, data)
             success = False
             color = 'red'
