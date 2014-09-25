@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
+from sqlalchemy import Boolean
 # from sqlalchemy import Index
 from sqlalchemy.schema import ForeignKey
 
@@ -16,6 +17,9 @@ class EventEntry(meta.Base, BaseMixin, BaseDictMixin):
                                    autoincrement=True, primary_key=True)
 
     envid = Column(BigInteger, ForeignKey("environment.envid"))
+    # Whether or not the event row is complete/valid.
+    complete = Column(Boolean, default=False)
+
     key = Column(String, nullable=False)
     title = Column(String)
     summary = Column(String)
