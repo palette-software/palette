@@ -4,7 +4,7 @@ function ($, topic, template, common)
     var actions = {'start': start,
                    'stop': stop,
                    'backup': backup,
-                   'restart': ok,
+                   'restart': restart,
                    'repair-license': repair_license,
                    'ziplogs': ziplogs,
                   };
@@ -47,7 +47,25 @@ function ($, topic, template, common)
         $('#popupStop input[type=checkbox]').each(
             function(index, item){
                 data[item.name] = item.checked;
-                console.log('item.name = ' + item.name);
+            }
+        );
+        $.ajax({
+            type: 'POST',
+            url: '/rest/manage',
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function(data) {},
+            error: common.ajaxError,
+        });
+    }
+
+    function restart() {
+        data = {'action': 'restart'}
+        $('#popupRestart input[type=checkbox]').each(
+            function(index, item){
+                data[item.name] = item.checked;
             }
         );
         $.ajax({
