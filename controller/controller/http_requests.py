@@ -55,6 +55,10 @@ class HttpRequestEntry(meta.Base, BaseMixin, BaseDictMixin):
 class HttpRequestManager(TableauCacheManager):
 
     def load(self, agent):
+
+        if not self.lock(blocking=False):
+            return {u'error': 'Can not load http_requests: busy.'}
+
         envid = self.server.environment.envid
         self._prune(agent, envid)
 
@@ -71,8 +75,10 @@ class HttpRequestManager(TableauCacheManager):
 
         datadict = agent.odbc.execute(stmt)
         if 'error' in datadict:
+            self.unlock()
             return datadict
         if '' not in datadict:
+            self.unlock()
             datadict['error'] = "Missing '' key in query response."
             return datadict
 
@@ -90,8 +96,8 @@ class HttpRequestManager(TableauCacheManager):
             session.add(entry)
         session.commit()
 
-        d = {u'status': 'OK', u'count': len(datadict[''])}
-        return d
+        self.unlock()
+        return {u'status': 'OK', u'count': len(datadict[''])}
 
     def _test_for_alerts(self, entry, agent, controldata):
         seconds = int(timedelta_total_seconds(entry.completed_at,
@@ -135,25 +141,29 @@ class HttpRequestManager(TableauCacheManager):
         else:
             body['uri'] = uri
         tokens = uri[1:].split('/')
-        # /views/<workbook>/<viewname>
+        # /views/<workbook.repository_url>/<viewname>
         if len(tokens) == 3 and tokens[0].lower() == 'views':
-            body['workbook'] = tokens[1]
+            body['repository_url'] = tokens[1]
             body['view'] = tokens[2]
-        # /t/<site>/views/<workbook>/<viewname>
+        # /t/<site>/views/<workbook.repository_url>/<viewname>
         elif len(tokens) == 5 and tokens[0].lower() == 't':
             body['site'] = tokens[1]
-            body['workbook'] = tokens[3]
+            body['repository_url'] = tokens[3]
             body['view'] = tokens[4]
 
-    # translate workbook.name -> system_user_id -> owner
+    # translate workbook.repository_url -> system_user_id -> owner
     def _translate_workbook(self, body):
         envid = self.server.environment.envid
-        name = body['workbook']
-        workbook = WorkbookEntry.get(envid, name, default=None)
+        url = body['repository_url']
+        workbook = WorkbookEntry.get_by_url(envid, url, default=None)
         if not workbook:
+            self.server.log.warning("repository_url '%s' Not Found.", url)
             return
+        body['workbook'] = workbook.name
         user = UserProfile.get_by_system_user_id(envid, workbook.system_user_id)
         if not user:
+            self.server.log.warning("system user '%d' Not Found.",
+                                    workbook.system_user_id)
             return
         body['owner'] = user.display_name()
 
@@ -175,7 +185,7 @@ class HttpRequestManager(TableauCacheManager):
                 self.get_username_from_system_user_id(entry.envid,
                                                       system_user_id)
 
-        if 'workbook' in body:
+        if 'repository_url' in body:
             self._translate_workbook(body)
 
         if entry.site_id and 'site' not in body:

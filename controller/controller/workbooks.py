@@ -62,8 +62,7 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
     assert_key_id = Column(Integer)
     document_version = Column(String)
 
-    __table_args__ = (UniqueConstraint('envid', 'id'),
-                      UniqueConstraint('envid', 'name'))
+    __table_args__ = (UniqueConstraint('envid', 'id'),)
 
     def fileext(self):
         if self.data_engine_extracts:
@@ -71,8 +70,15 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
         return 'twb'
 
     @classmethod
-    def get(cls, envid, name, **kwargs):
-        keys = {'envid':envid, 'name':name}
+    def get(cls, envid, name, siteid, projectid, **kwargs):
+        keys = {'envid':envid, 'name':name,
+                'site_id':siteid, 'project_id':projectid}
+        return cls.get_unique_by_keys(keys, **kwargs)
+
+    @classmethod
+    def get_by_url(cls, envid, url, **kwargs):
+        # technically the Tableau database does not guarantee uniqueness.
+        keys = {'envid':envid, 'repository_url': url}
         return cls.get_unique_by_keys(keys, **kwargs)
 
     @classmethod
@@ -182,10 +188,14 @@ class WorkbookManager(TableauCacheManager):
         for odbcdata in ODBC.load(data):
             name = odbcdata.data['name']
             revision = odbcdata.data['revision']
+            siteid = odbcdata.data['site_id']
+            projectid = odbcdata.data['project_id']
 
-            wbe = WorkbookEntry.get(envid, name, default=None)
+            wbe = WorkbookEntry.get(envid, name, siteid, projectid,
+                                    default=None)
             if wbe is None:
-                wbe = WorkbookEntry(envid=envid, name=name)
+                wbe = WorkbookEntry(envid=envid, name=name,
+                                    site_id=siteid, project_id=projectid)
                 session.add(wbe)
 
             # NOTE: id is updated with each revision.
@@ -252,9 +262,13 @@ class WorkbookManager(TableauCacheManager):
 
             for update in updates:
                 self._archive_twb(agent, update)
+            count = len(updates)
+        else:
+            count = 0
 
+        self.unlock()
         return {u'status': 'OK',
-                u'updates': len(updates)}
+                u'updates': count}
 
     # returns the filename *on the agent* or None on error.
     def _build_twb(self, agent, update):
