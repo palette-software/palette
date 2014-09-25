@@ -332,6 +332,15 @@ class EventControlManager(Manager):
             if not project is None:
                 data['project'] = project
 
+        # Create the row to get the eventid before doing subject/description
+        # substitution.
+        session = meta.Session()
+        entry = EventEntry(complete=False, key='incomplete')
+        session.add(entry)
+        session.commit()
+
+        data['eventid'] = entry.eventid
+
         # Use the data dict for template substitution.
         try:
             subject = subject % data
@@ -368,14 +377,21 @@ class EventControlManager(Manager):
             summary = timestamp.strftime(DATEFMT)
 
         # Log the event to the database
-        session = meta.Session()
-        entry = EventEntry(key=key, envid=self.envid, title=subject,
-                           description=event_description,
-                           level=event_entry.level, icon=event_entry.icon,
-                           color=event_entry.color,
-                           event_type=event_entry.event_type, summary=summary,
-                           userid=userid, siteid=siteid, timestamp=timestamp)
-        session.add(entry)
+        entry.complete = True
+        entry.key = key
+        entry.envid = self.envid
+        entry.title = subject
+        entry.description = event_description
+        entry.level = event_entry.level
+        entry.icon = event_entry.icon
+        entry.color = event_entry.color
+        entry.event_type = event_entry.event_type
+        entry.summary = summary
+        entry.userid = userid
+        entry.siteid = siteid
+        entry.timestamp = timestamp
+
+        session.merge(entry)
         session.commit()
 
         if event_entry.send_email:
