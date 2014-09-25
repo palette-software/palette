@@ -1,13 +1,15 @@
-from sqlalchemy import Column, String, DateTime, Boolean
-from sqlalchemy import Integer, BigInteger, SmallInteger
+from sqlalchemy import Column, String, DateTime, Integer
 from sqlalchemy import not_, UniqueConstraint
-from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.schema import ForeignKey
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
+
 from mixin import BaseMixin
 
 class Project(meta.Base, BaseMixin):
+    #pylint: disable=too-many-instance-attributes
     __tablename__ = 'projects'
 
     # FIXME: BigInteger
@@ -76,7 +78,7 @@ class Project(meta.Base, BaseMixin):
         session.query(Project).\
             filter(not_(Project.projectid.in_(ids))).\
             delete(synchronize_session='fetch')
-    
+
         session.commit()
 
         d = {u'status': 'OK', u'count': len(data[''])}
