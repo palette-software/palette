@@ -1,3 +1,10 @@
+# This is third-party code, do as little as possible to pass pylint.
+# pylint: disable=superfluous-parens
+# pylint: disable=invalid-name
+# pylint: disable=bad-builtin
+# pylint: disable=too-many-branches
+# pylint: disable=too-many-locals
+
 from __future__ import absolute_import, print_function
 import re
 from time import time, mktime
@@ -106,7 +113,7 @@ class Croniter(object):
 
                     try:
                         t = int(t)
-                    except:
+                    except StandardError:
                         pass
 
                     if t in self.LOWMAP[i]:
@@ -203,6 +210,7 @@ class Croniter(object):
         offset = len(expanded) == 6 and 1 or 60
         dst = now = datetime.datetime.fromtimestamp(now + sign * offset)
 
+        # pylint: disable=unused-variable
         day, month, year = dst.day, dst.month, dst.year
         current_year = now.year
         DAYS = self.DAYS
@@ -309,13 +317,13 @@ class Croniter(object):
                  proc_second]
 
         while abs(year - current_year) <= 1:
-            next = False
+            next_ = False
             for proc in procs:
                 (changed, dst) = proc(dst)
                 if changed:
-                    next = True
+                    next_ = True
                     break
-            if next:
+            if next_:
                 continue
             return mktime(dst.timetuple())
 
@@ -336,7 +344,7 @@ class Croniter(object):
         return small[0]
 
     def _get_next_nearest_diff(self, x, to_check, range_val):
-        for i, d in enumerate(to_check):
+        for _, d in enumerate(to_check):
             if d == "l":
                 # if 'l' then it is the last day of month
                 # => its value of range_val

@@ -1,13 +1,13 @@
-from sqlalchemy import Column, BigInteger, Integer, Boolean, String, DateTime
+from sqlalchemy import Column, BigInteger, Integer, String, DateTime
 from sqlalchemy import func, UniqueConstraint
 from sqlalchemy.schema import ForeignKey
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from mixin import BaseMixin, BaseDictMixin
 from manager import Manager
-from cache import TableauCacheManager
-from util import odbc2dt
 
 from passwd import aes_encrypt, aes_decrypt, set_aes_key_file
 
