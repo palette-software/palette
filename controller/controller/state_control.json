@@ -141,7 +141,7 @@
 {
 "state":"DEGRADED",
 "text":"Tableau Partially Degraded",
-"allowable_actions":"start backup restore restart repair-license ziplogs user-refresh",
+"allowable_actions":"stop backup restore restart repair-license ziplogs user-refresh",
 "color":"red"
 },
 {
