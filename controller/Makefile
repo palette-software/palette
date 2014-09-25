@@ -14,6 +14,10 @@ pylint:
 	$(PYLINT) controller/cache.py
 	$(PYLINT) controller/clihandler.py
 	$(PYLINT) controller/clierror.py
+	$(PYLINT) controller/cloud.py
+	$(PYLINT) controller/config.py
+	$(PYLINT) controller/credential.py
+	$(PYLINT) controller/croniter.py
 	$(PYLINT) controller/event.py
 	$(PYLINT) controller/event_control.py
 	$(PYLINT) controller/extracts.py

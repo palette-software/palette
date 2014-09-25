@@ -25,10 +25,10 @@ class Config(object):
         try:
             f = getattr(self.parser, name)
             return f(section, option, **kwargs)
-        except (configparser.NoSectionError, configparser.NoOptionError) as e:
+        except (configparser.NoSectionError, configparser.NoOptionError) as ex:
             if have_default:
                 return default
-            raise e
+            raise ex
 
     def get(self, section, option, **kwargs):
         return self._get('get', section, option, **kwargs)
