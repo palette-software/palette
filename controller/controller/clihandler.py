@@ -20,6 +20,7 @@ from files import FileManager
 from cloud import CloudManager
 from system import SystemEntry
 from state import StateManager
+from state_control import StateControl
 from tableau import TableauProcess
 
 #from cli_errors import *
@@ -1206,6 +1207,177 @@ class CliHandler(socketserver.StreamRequestHandler):
         # STARTED is set by the status monitor since it really knows the status.
         self.report_status(body)
 
+    def pre_stop(self, action, agent, userid, license_check, backup_first):
+        # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-statements
+        """Do license check and backup as specified in the command line
+           arguments.  This is used by do_stop() and do_restart().
+           Must be called with the user_action_lock().
+           Will unlock it on failure.
+
+           Returns:
+                True on success
+                Fail on failure with the user_action_lock unlocked.
+        """
+
+        aconn = agent.connection
+
+        # Check to see if we're in a state to stop
+        stateman = self.server.state_manager
+        main_state = stateman.get_state()
+
+        # Stop can be done only if tableau is started
+        if main_state not in \
+                (StateManager.STATE_STARTED, StateManager.STATE_DEGRADED):
+            self.error(clierror.ERROR_WRONG_STATE,
+                       "can't stop - main state is: " + main_state)
+            aconn.user_action_unlock()
+            return False
+
+        reported_status = self.server.statusmon.get_reported_status()
+        if reported_status not in (TableauProcess.STATUS_RUNNING,
+                                   TableauProcess.STATUS_DEGRADED):
+            msg = "Can't stop/restart - reported status is: " + reported_status
+            self.error(clierror.ERROR_WRONG_STATE, "FAIL: " + msg)
+            self.server.log.debug(msg)
+            aconn.user_action_unlock()
+            return False
+
+        self.ack()
+        # Before we do anything, do a license check, which automatically
+        # sends an event if appropriate.
+        if license_check:
+            license_body = self.server.license_manager.check(agent)
+            if failed(license_body):
+                stateman.update(main_state)
+                self.report_status(license_body)
+                aconn.user_action_unlock()
+                return False
+
+        if action == StateControl.ACTION_STOP:
+            state_started = StateManager.STATE_STARTED_BACKUP_STOP
+
+            event_started = EventControl.BACKUP_BEFORE_STOP_STARTED
+            event_finished = EventControl.BACKUP_BEFORE_STOP_FINISHED
+            event_copy_failed = \
+                        EventControl.BACKUP_BEFORE_STOP_FINISHED_COPY_FAILED
+            event_backup_failed = EventControl.BACKUP_BEFORE_STOP_FAILED
+        else:
+            state_started = StateManager.STATE_STARTED_BACKUP_RESTART
+
+            event_started = EventControl.BACKUP_BEFORE_RESTART_STARTED
+            event_finished = EventControl.BACKUP_BEFORE_RESTART_FINISHED
+            event_copy_failed = \
+                        EventControl.BACKUP_BEFORE_RESTART_FINISHED_COPY_FAILED
+            event_backup_failed = EventControl.BACKUP_BEFORE_RESTART_FAILED
+
+        if backup_first:
+            self.server.log.debug(
+                "------------Starting Backup before %s---------------" % action)
+            stateman.update(state_started)
+
+            data = agent.todict()
+            self.server.event_control.gen(event_started, data, userid=userid)
+
+            body = self.server.backup_cmd(agent, userid)
+
+            if success(body):
+                if 'copy-failed' in body:
+                    real_event = event_copy_failed
+                else:
+                    real_event = event_finished
+                self.server.event_control.gen(real_event,
+                    dict(body.items() + data.items()),
+                    userid=userid)
+            else:
+                self.server.event_control.gen(event_backup_failed,
+                    dict(body.items() + data.items()),
+                    userid=userid)
+
+                # Backup failed.  Will not attempt stop
+                msg = 'Backup failed.  Will not attempt stop'
+                if 'info' in body:
+                    body['info'] += '\n' + msg
+                else:
+                    body['info'] = msg
+                self.report_status(body)
+                aconn.user_action_unlock()
+                return False
+
+        return True
+
+    @usage('restart [no-backup|nobackup] [no-license|nolicense]')
+    def do_restart(self, cmd):
+        backup_first = True
+        license_check = True
+
+        for arg in cmd.args:
+            arg = arg.lower()
+            if arg == "no-backup" or arg == "nobackup":
+                backup_first = False
+            elif arg == "no-license" or arg == "nolicense":
+                license_check = False
+            else:
+                self.print_usage(self.do_restart.__usage__)
+                return
+
+        if cmd.dict.has_key('userid'):
+            userid = int(cmd.dict['userid'])
+        else:
+            userid = None
+
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            return
+
+        aconn = agent.connection
+
+        # lock to ensure against two simultaneous user actions
+        if not aconn.user_action_lock(blocking=False):
+            self.error(clierror.ERROR_BUSY)
+            return
+
+        # Do the license check and backup, if appropriate
+        if not self.pre_stop(StateControl.ACTION_RESTART, agent, userid,
+                             license_check, backup_first):
+            return
+
+        stateman = self.server.state_manager
+        # Note: Make sure to set the state in the database before
+        # we report "OK" back to the client since "OK" to the UI client
+        # results in an immediate check of the state.
+        stateman.update(StateManager.STATE_RESTARTING)
+
+        self.server.log.debug("-------------Restarting Tableau----------------")
+        # fixme: Reply with "OK" only after the agent received the command?
+        body = self.server.cli_cmd('tabadmin restart', agent)
+
+        data = agent.todict()
+
+        if failed(body):
+            # We set the state to stop, even though the stop failed.
+            # This will be corrected by the 'tabadmin status -v' processing
+            # later.
+            stateman.update(StateManager.STATE_STOPPED)
+            self.server.event_control.gen(EventControl.RESTART_FAILED,
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
+        else:
+            stateman.update(StateManager.STATE_STARTED)
+            self.server.event_control.gen(EventControl.RESTART_FINISHED,
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
+
+        # Get the latest status from tabadmin which sets the main state.
+        self.server.statusmon.check_status_with_connection(agent)
+
+        aconn.user_action_unlock()
+
+        # fixme: check & report status to see if it really stopped?
+        self.report_status(body)
+
     @usage('stop [no-backup|nobackup] [no-license|nolicense]' +\
            ' [no-maint|nomaint]')
     def do_stop(self, cmd):
@@ -1229,6 +1401,11 @@ class CliHandler(socketserver.StreamRequestHandler):
                 self.print_usage(self.do_stop.__usage__)
                 return
 
+        if cmd.dict.has_key('userid'):
+            userid = int(cmd.dict['userid'])
+        else:
+            userid = None
+
         agent = self.get_agent(cmd.dict)
         if not agent:
             return
@@ -1240,85 +1417,16 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error(clierror.ERROR_BUSY)
             return
 
-        # Check to see if we're in a state to stop
+        # Do the license check and backup, if appropriate
+        if not self.pre_stop(StateControl.ACTION_STOP, agent, userid,
+                             license_check, backup_first):
+            return
+
         stateman = self.server.state_manager
-        main_state = stateman.get_state()
-
-        # Stop can be done only if tableau is started
-        if main_state not in \
-                (StateManager.STATE_STARTED, StateManager.STATE_DEGRADED):
-            self.error(clierror.ERROR_WRONG_STATE,
-                       "can't stop - main state is: " + main_state)
-            aconn.user_action_unlock()
-            return
-
-        reported_status = self.server.statusmon.get_reported_status()
-        if reported_status not in (TableauProcess.STATUS_RUNNING,
-                                   TableauProcess.STATUS_DEGRADED):
-            msg = "Can't start - reported status is: " + reported_status
-            self.error(clierror.ERROR_WRONG_STATE, "FAIL: " + msg)
-            self.server.log.debug(msg)
-            aconn.user_action_unlock()
-            return
-
-        self.ack()
-        # Before we do anything, do a license check, which automatically
-        # sends an event if appropriate.
-        if license_check:
-            license_body = self.server.license_manager.check(agent)
-            if failed(license_body):
-                stateman.update(main_state)
-                self.report_status(license_body)
-                aconn.user_action_unlock()
-                return
-
-        if cmd.dict.has_key('userid'):
-            userid = int(cmd.dict['userid'])
-        else:
-            userid = None
-
-        if backup_first:
-            self.server.log.debug(\
-                "------------Starting Backup for Stop---------------")
-            stateman.update(StateManager.STATE_STARTED_BACKUP_STOP)
-
-            data = agent.todict()
-            self.server.event_control.gen( \
-                EventControl.BACKUP_BEFORE_STOP_STARTED, data, userid=userid)
-
-            body = self.server.backup_cmd(agent, userid)
-
-            if success(body):
-                if 'copy-failed' in body:
-                    real_event = \
-                            EventControl.BACKUP_BEFORE_STOP_FINISHED_COPY_FAILED
-                else:
-                    real_event = EventControl.BACKUP_BEFORE_STOP_FINISHED
-                self.server.event_control.gen(real_event,
-                    dict(body.items() + data.items()),
-                    userid=userid)
-            else:
-                self.server.event_control.gen( \
-                    EventControl.BACKUP_BEFORE_STOP_FAILED,
-                    dict(body.items() + data.items()),
-                    userid=userid)
-
-                # Backup failed.  Will not attempt stop
-                msg = 'Backup failed.  Will not attempt stop'
-                if 'info' in body:
-                    body['info'] += '\n' + msg
-                else:
-                    body['info'] = msg
-                self.report_status(body)
-                aconn.user_action_unlock()
-                return
-
         # Note: Make sure to set the state in the database before
         # we report "OK" back to the client since "OK" to the UI client
         # results in an immediate check of the state.
         stateman.update(StateManager.STATE_STOPPING)
-
-        # FIXME: end backup
 
         self.server.log.debug("--------------Stopping Tableau-----------------")
         # fixme: Reply with "OK" only after the agent received the command?

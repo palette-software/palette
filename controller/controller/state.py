@@ -26,12 +26,15 @@ class StateManager(Manager):
     STATE_STARTING = "STARTING"
     STATE_STARTING_RESTORE = "STARTING-RESTORE"
 
-    STATE_STARTED = "STARTED"     # reported as "running" from tabadmin
+    STATE_STARTED = "STARTED"         # reported as "running" from tabadmin
     STATE_STARTED_BACKUP = "STARTED-BACKUP"
     # backup for/before restore
     STATE_STARTED_BACKUP_RESTORE = "STARTED-BACKUP-RESTORE"
     # backup for/before stop
     STATE_STARTED_BACKUP_STOP = "STARTED-BACKUP-STOP"
+    # backup for/before restart
+    STATE_STARTED_BACKUP_RESTART = "STARTED-BACKUP-RESTART"
+    STATE_RESTARTING = "RESTARTING"
 
     STATE_STARTED_FILEDEL = "STARTED-FILEDEL"
     STATE_STARTED_ZIPLOGS = "STARTED-ZIPLOGS"

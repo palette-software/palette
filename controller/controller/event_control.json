@@ -166,6 +166,50 @@
 "event_type":"backup"
 },
 {
+"key":"BACKUP-BEFORE-RESTART-FAILED",
+"level":"E",
+"send_email":"t",
+"subject":"ERROR - Safety Backup Failed",
+"event_description":"Status: ERROR\nDetails: ${error}",
+"email_message":"Status: ERROR\nDetails: ${error}\n\nThis message was sent from your Palette Server at ${server_url}",
+"icon":null,
+"color":"red",
+"event_type":"backup"
+},
+{
+"key":"BACKUP-BEFORE-RESTART-FINISHED",
+"level":"I",
+"send_email":"f",
+"subject":"INFO - Safety Backup Completed",
+"event_description":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"email_message":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"icon":null,
+"color":"green",
+"event_type":"backup"
+},
+{
+"key":"BACKUP-BEFORE-RESTART-FINISHED-COPY-FAILED",
+"level":"W",
+"send_email":"t",
+"subject":"WARNING - Safety Backup Completed, But Copy Failed",
+"event_description":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"email_message":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"icon":null,
+"color":"yellow",
+"event_type":"backup"
+},
+{
+"key":"BACKUP-BEFORE-RESTART-STARTED",
+"level":"I",
+"send_email":"f",
+"subject":"INFO - Safety Backup Initiated by Restart Request",
+"event_description":"Status: INFO",
+"email_message":"Status: INFO",
+"icon":null,
+"color":"green",
+"event_type":"backup"
+},
+{
 "key":"BACKUP-FAILED",
 "level":"E",
 "send_email":"t",
@@ -604,6 +648,28 @@
 "icon":null,
 "color":"green",
 "event_type":"restore"
+},
+{
+"key":"RESTART-FAILED",
+"level":"E",
+"send_email":"t",
+"subject":"ERROR - Restart Requested by %(username)s Failed",
+"event_description":"Status: ERROR\nRequesting User: ${username}\nDetails: ${stdout}${stderr}\nAdditional Details: ${error}",
+"email_message":"Status: ERROR\nTime:${time}\nRequesting User: ${username}\nDetails: ${stdout}${stderr}\nAdditional Details: ${error}\n\nThis message was sent from your Palette Server at ${server_url}",
+"icon":null,
+"color":"red",
+"event_type":"tableau"
+},
+{
+"key":"RESTART-FINISHED",
+"level":"I",
+"send_email":"f",
+"subject":"INFO - Restart Requested by %(username)s Completed",
+"event_description":"Status: INFO\nRequesting User: ${username}\nDetails: ${stdout}${stderr}",
+"email_message":"Status: INFO\nRequesting User: ${username}\nDetails: ${stdout}${stderr}",
+"icon":null,
+"color":"green",
+"event_type":"tableau"
 },
 {
 "key":"SCHEDULE-JOB-FAILED",

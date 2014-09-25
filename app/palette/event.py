@@ -1,5 +1,6 @@
 from datetime import datetime
 from webob import exc
+import cgi
 
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
@@ -29,16 +30,10 @@ class EventApplication(PaletteRESTHandler):
         entry.icon = icon
 
     def convert_description_to_html(self, entry):
-        html = ""
-        for line in entry.description.split('\n'):
-            # Replace each leading space with '&nbsp;'
-            line_lstripped = line.lstrip(' ')
-            lspace_count = len(line) - len(line_lstripped)
-            line = '&nbsp;' * lspace_count + line_lstripped
-
-            # Add a break at each line
-            html += line + "<br />" + "\n"
-        entry.description = html
+        html = cgi.escape(entry.description)
+        html = html.replace('\n', '<br>')
+        entry.description = html.replace(' ', '&nbsp;')
+        return
 
     def query_mostrecent(self, envid, status=None, event_type=None,
                          timestamp=None, limit=None, publisher=None):
