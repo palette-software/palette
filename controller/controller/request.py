@@ -2,13 +2,16 @@ import json
 
 from sqlalchemy import Column, String, BigInteger, DateTime, func
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 class XIDEntry(meta.Base):
+    #pylint: disable=no-init
     __tablename__ = 'xid'
 
-    xid =  Column(BigInteger, unique=True, nullable=False, \
-                  autoincrement=True, primary_key=True)
+    xid = Column(BigInteger, unique=True, nullable=False, \
+                 autoincrement=True, primary_key=True)
     # FIXME: Enumerate valid state values.
     state = Column(String, default='started')
     creation_time = Column(DateTime, server_default=func.now())
@@ -23,9 +26,10 @@ class Request(object):
         body: <body>
     """
 
-    def __init__(self, action, send_body_dict={}, xid=None):
-        session = meta.Session()
+    def __init__(self, action, send_body_dict=None, xid=None):
+        self.action = action
 
+        session = meta.Session()
         entry = None
         if xid:
             entry = session.query(XIDEntry).\
@@ -37,6 +41,8 @@ class Request(object):
             session.commit()
         self.xid = entry.xid
 
+        if send_body_dict is None:
+            send_body_dict = {}
         send_body_dict["action"] = action
         send_body_dict["xid"] = self.xid
         self.send_body = json.dumps(send_body_dict)
