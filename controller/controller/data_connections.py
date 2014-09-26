@@ -1,11 +1,14 @@
-from sqlalchemy import Column, String, DateTime, Boolean
-from sqlalchemy import Integer, BigInteger, SmallInteger
+from sqlalchemy import Column, String, DateTime, Boolean, Integer
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import not_
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 class DataConnection(meta.Base):
+    # pylint: disable=no-init
+    # pylint: disable=too-many-instance-attributes
     __tablename__ = 'data_connections'
 
     # FIXME: BigInteger
@@ -32,7 +35,7 @@ class DataConnection(meta.Base):
         try:
             entry = meta.Session.query(DataConnection).\
                 filter(DataConnection.dcid == dcid).one()
-        except NoResultFound, e:
+        except NoResultFound:
             entry = None
         return entry
 

@@ -18,9 +18,13 @@ pylint:
 	$(PYLINT) controller/config.py
 	$(PYLINT) controller/credential.py
 	$(PYLINT) controller/croniter.py
+	$(PYLINT) controller/data_connections.py
+	$(PYLINT) controller/environment.py
 	$(PYLINT) controller/event.py
 	$(PYLINT) controller/event_control.py
 	$(PYLINT) controller/extracts.py
+	$(PYLINT) controller/exc.py
+	$(PYLINT) controller/firewall.py
 	$(PYLINT) controller/firewall_manager.py
 	$(PYLINT) controller/http_requests.py
 	$(PYLINT) controller/licensing.py

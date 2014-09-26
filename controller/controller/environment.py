@@ -1,7 +1,9 @@
 from sqlalchemy import Column, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from mixin import BaseMixin
 

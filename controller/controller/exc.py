@@ -1,6 +1,6 @@
 import httplib
 
-__all__ = [ "HTTPException" ]
+__all__ = ["HTTPException"]
 
 class HTTPException(httplib.HTTPException):
     def __init__(self, status, reason, method='GET', body=None):
