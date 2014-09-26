@@ -1068,6 +1068,8 @@ class AgentManager(threading.Thread):
 
         session = meta.Session()
 
+        agent_done = False
+
         try:
             aconn = AgentConnection(self.server, conn, addr, peername)
             self.log.debug(
@@ -1195,7 +1197,8 @@ class AgentManager(threading.Thread):
             session = meta.Session()
             session.commit()
 
-            self.ping_check(agent)
+            agent_done = True
+
 
         except socket.error, ex:
             self.log.debug("Socket error: " + str(ex))
@@ -1212,6 +1215,10 @@ class AgentManager(threading.Thread):
 
             session.rollback()
             meta.Session.remove()
+
+        if agent_done:
+            # Do after the make_transient(agent)
+            self.ping_check(agent)
 
     def set_default_backup_destid(self, agent):
         if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
