@@ -1299,7 +1299,7 @@ class AgentManager(threading.Thread):
 
             self.log.debug("ping: check for agent '%s', type '%s', " + \
                            "uuid '%s', conn_id %d, last heard from: " + \
-                           "%d seconds ago (> %d).",
+                           "%d seconds ago (>= %d).",
                            agent.displayname, agent.agent_type, agent.uuid,
                            conn_id, elapsed, self.ping_interval)
 
@@ -1352,16 +1352,16 @@ class ReverseHTTPConnection(HTTPConnection):
 #        HTTPConnection.debuglevel = 1
         self.sock = sock
         self.aconn = aconn
-        self.last_activity = time.time()    # update for ping check
+        self.aconn.last_activity = time.time()    # update for ping check
 
     def getresponse(self, buffering=False):
-        self.last_activity = time.time()    # update for ping check
+        self.aconn.ast_activity = time.time()    # update for ping check
         return HTTPConnection.getresponse(self, buffering)
 
     def request(self, method, url, body=None, headers=None):
         if headers is None:
             headers = {}
-        self.last_activity = time.time()    # update for ping check
+        self.aconn.last_activity = time.time()    # update for ping check
         HTTPConnection.request(self, method, url, body, headers)
 
     def connect(self):
