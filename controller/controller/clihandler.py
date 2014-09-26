@@ -1231,7 +1231,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         if action == StateControl.ACTION_RESTART:
             # Restart can also be done when Tableau is stopped.
             good_states += [StateManager.STATE_STOPPED,
-                           StateManager.STATE_STOPPED_UNEXPECTED]
+                            StateManager.STATE_STOPPED_UNEXPECTED]
 
             good_reported_status.append(TableauProcess.STATUS_STOPPED)
 
