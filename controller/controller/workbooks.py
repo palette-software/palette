@@ -143,7 +143,7 @@ class WorkbookManager(TableauCacheManager):
     # really sync *and* load
     def load(self, agent):
         # pylint: disable=too-many-locals
-        if not self.cred_check():
+        if not self._cred_check():
             return {u'error': 'Can not load workbooks: missing credentials.'}
 
         if not self.lock(blocking=False):
@@ -167,11 +167,8 @@ class WorkbookManager(TableauCacheManager):
 
         session = meta.Session()
 
-        last_created_at = self.last_created_at(envid)
+        last_created_at = self._last_created_at(envid)
         if last_created_at:
-            # NOTE: the precision of the updated_at timestamp on windows
-            # is greater than that on linux so this where clause often
-            # returns at least one entry (if the table is non-empty)
             stmt += " WHERE created_at > '" + last_created_at + "'"
 
         data = agent.odbc.execute(stmt)
@@ -345,16 +342,17 @@ class WorkbookManager(TableauCacheManager):
         # retrieval is a long process, so commit after each.
         meta.Session.commit()
 
-    # This is the time the last revision was created.
+    # This is the time the last revision was created - each revision is a new
+    # row, so created_at works (instead of updated_at).
     # returns a UTC string or None
-    def last_created_at(self, envid):
+    def _last_created_at(self, envid):
         value = WorkbookEntry.max('created_at', filters={'envid':envid})
         if value is None:
             return None
         return str(value)
 
     # See if credentials exist.
-    def cred_check(self):
+    def _cred_check(self):
         """Returns None if there are credentials and Non-None/False
            if there are credentials."""
 

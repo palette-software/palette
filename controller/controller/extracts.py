@@ -117,8 +117,8 @@ class ExtractManager(TableauCacheManager):
             " locale, site_id, job_name " +\
             "FROM background_jobs "
 
-        maxid = self._maxid(envid)
-        if maxid is None:
+        last_completed_at = self._last_completed_at(envid)
+        if last_completed_at is None:
             stmt += "WHERE id = (" +\
                     " SELECT MAX(id) FROM background_jobs " +\
                     " WHERE (job_name = 'Refresh Extracts' "+\
@@ -127,7 +127,8 @@ class ExtractManager(TableauCacheManager):
         else:
             stmt += "WHERE (job_name = 'Refresh Extracts' "+\
                     "       OR job_name = 'Increment Extracts') "+\
-                    " AND progress = 100 AND id > " + str(maxid)
+                    " AND progress = 100 AND completed_at > '"+\
+                    last_completed_at + "'"
         stmt += " ORDER BY id ASC"
 
 
@@ -178,10 +179,14 @@ class ExtractManager(TableauCacheManager):
         return {u'status': 'OK', u'count': len(datadict[''])}
 
     # Returns None if the table is empty.
-    def _maxid(self, envid):
-        return ExtractEntry.max('id', filters={'envid':envid})
+    def _last_completed_at(self, envid):
+        value = ExtractEntry.max('completed_at', filters={'envid':envid})
+        if value is None:
+            return None
+        return str(value)
 
-    def get_last_background_jobs_id(self, agent):
+
+    def _last_background_jobs_id(self, agent):
         stmt = "SELECT MAX(id) FROM background_jobs"
         data = agent.odbc.execute(stmt)
         if not data or not '' in data or data[''][0] is None:
@@ -196,7 +201,7 @@ class ExtractManager(TableauCacheManager):
         If the Tableau Server was restored, there may be events in the
         Controller database that no longer exist: remove them.
         """
-        maxid = self.get_last_background_jobs_id(agent)
+        maxid = self._last_background_jobs_id(agent)
         meta.Session.query(ExtractEntry).\
             filter(ExtractEntry.envid == envid).\
             filter(ExtractEntry.extractid > maxid).\
