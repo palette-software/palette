@@ -1365,7 +1365,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         data = agent.todict()
 
         if failed(body):
-            # We set the state to stop, even though the stop failed.
+            # We set the state to stopped, even though the stop failed.
             # This will be corrected by the 'tabadmin status -v' processing
             # later.
             stateman.update(StateManager.STATE_STOPPED)
