@@ -30,27 +30,26 @@
         <img class="login" src="/app/module/palette/images/palette_logo.png">
       </a>
       <form method="POST" action="/login" id="form">
-        <div class="login-label">Tableau Server Username</div>
-        <input class="login" type="text" name="username" id="username">
-        <div class="login-spacer"></div>
-        <div class="login-label">Tableau Server Password</div>
-        <input class="login" type="password" name="password" id="password">
+        <label for="username">Tableau Server Username</label>
+        <input type="text" name="username" id="username">
+        <label for="password">Tableau Server Password</label>
+        <input type="password" name="password" id="password">
         <section class="row">
           <section class="col-xs-12">
-            <button type="submit" name="login" id="login"
-                    class="login">Login
+            <button type="submit" name="login" id="login">
+	      Login
             </button>
           </section>
         </section>
-        %if 'AUTH_ERROR' in req.environ:
-        <section class="hidden" id="auth-error"></section>
-        %endif
-        <p class="hidden error" id="error">
-          <b>Unrecognized Username or Password</b>
-        </p>
-        <p class="login-instructions">If you forgot your Tableau Server Username or Password, please contact your organization's Tableau Server Administrator.</p>
       </form>
+      %if 'AUTH_ERROR' in req.environ:
+      <section class="hidden" id="auth-error"></section>
+      %endif
+      <p class="hidden error" id="error">
+        <b>Unrecognized Username or Password</b>
+      </p>
     </div>
+    <p>If you forgot your Tableau Server Username or Password,<br/>please contact your organization's Tableau Server Administrator.</p>
   </section>
 </body>
 </html>

@@ -761,10 +761,10 @@ p.large {
     margin-right: auto;
     display: block;
     width: 455px;
-    height: 486px;
-    padding: 0px 0px 55px 0px;
+    height: 465px;
+    padding: 0;
 }
-input[type="text"].login, input[type="password"].login {
+.login-box input[type="text"], .login-box input[type="password"] {
     font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
     border: 1px solid #d9d9d9;
     border-radius: 0px;
@@ -777,7 +777,10 @@ input[type="text"].login, input[type="password"].login {
     margin-bottom:0px;
     margin-top: 0px;
 }
-button.login {
+.login-box input[type="text"] {
+    margin-bottom: 25px;
+}
+.login-box button {
     font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     color: white;
     border-radius: 0px;
@@ -796,22 +799,19 @@ button.login {
     display: inline-block;
     -webkit-appearance: none;
 }
-button.login:hover, input[type="submit"].login:hover, button.login:active, input[type="submit"].login:active, button.login:focus, input[type="submit"].login:focus {
+.login-box button:hover, .login-box input[type="submit"]:hover, .login-box button:active, .login-box input[type="submit"]:active, .login-box button:focus, .login-box input[type="submit"]:focus {
     background-color: #5e646b;
 }
 input[type="text"].login:-webkit-autofill {
    -webkit-box-shadow: 0 0 0px 1000px white inset;
 }
-.login-label {
+.login-box label {
     text-align: left;
     font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: 19px;
     line-height: 19px;
     padding-bottom: 4px;
     margin: 0;
-}
-.login-spacer {
-    height: 25px;
 }
 .login-box {
     width: 33%;
@@ -830,8 +830,9 @@ input[type="text"].login:-webkit-autofill {
     max-width: 320px;
     margin: 0 auto 39px auto;
 }
-.login-instructions {
-    margin-top: 25px;
+
+.login-box p {
+    text-align: center;
 }
 
 /* other styles*/
