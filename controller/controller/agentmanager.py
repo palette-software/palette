@@ -156,19 +156,27 @@ class AgentManager(threading.Thread):
         # the unique 'conn_id'.
         self.agents = {}
 
-        self.socket_timeout = self.config.getint('controller',
-                                                 'socket_timeout',
-                                                 default=60)
+        try:
+            self.socket_timeout = \
+                                int(self.server.system.get('socket-timeout'))
+        except ValueError:
+            self.socket_timeout = 60    # default
 
-        self.ping_interval = self.config.getint('status',
-                                                'ping_request_interval',
-                                                default=10)
+        try:
+            self.ping_interval = \
+                        int(self.server.system.get('ping-request-interval'))
+        except ValueError:
+            self.ping_interval = 30 # default
 
         self.ssl = self.config.getboolean('controller', 'ssl', default=True)
         if self.ssl:
-            self.ssl_handshake_timeout = self.config.getint('controller',
-                'ssl_handshake_timeout',
-                            default=AgentManager.SSL_HANDSHAKE_TIMEOUT_DEFAULT)
+            try:
+                self.ssl_handshake_timeout = \
+                        int(self.server.system.get('ssl-handshake-timeout'))
+            except ValueError:
+                self.ssl_handshake_timeout = \
+                                    AgentManager.SSL_HANDSHAKE_TIMEOUT_DEFAULT
+
             if not self.config.has_option('controller', 'ssl_cert_file'):
                 msg = "Missing 'ssl_cert_file' certificate file specification"
                 self.log.critical(msg)

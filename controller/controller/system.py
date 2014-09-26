@@ -41,7 +41,10 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
                  'key':SystemConfig.LOG_ARCHIVE_RETAIN_COUNT,
                  'value': '5'},
                 {'envid':1, 'key':'http-load-warn', 'value':str(10)},
-                {'envid':1, 'key':'http-load-error', 'value':str(20)}
+                {'envid':1, 'key':'http-load-error', 'value':str(20)},
+                {'envid':1, 'key':'ping-request-interval', 'value':str(10)},
+                {'envid':1, 'key':'socket-timeout', 'value':str(60)},
+                {'envid':1, 'key':'ssl-handshake-timeout', 'value':str(5)}
         # Note: No default volid set.
     ]
 
