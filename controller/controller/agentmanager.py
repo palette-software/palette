@@ -50,6 +50,7 @@ class AgentConnection(object):
         self.agent_type = None
         self.yml_contents = None    # only valid if agent is a primary
         self.initting = True
+        self.last_activity = time.time()
 
         # Each agent connection has its own lock to allow only
         # one thread to send/recv  on the agent socket at a time.
@@ -158,6 +159,10 @@ class AgentManager(threading.Thread):
         self.socket_timeout = self.config.getint('controller',
                                                  'socket_timeout',
                                                  default=60)
+
+        self.ping_interval = self.config.getint('status',
+                                                'ping_request_interval',
+                                                default=10)
 
         self.ssl = self.config.getboolean('controller', 'ssl', default=True)
         if self.ssl:
@@ -980,10 +985,6 @@ class AgentManager(threading.Thread):
 
         sock.listen(8)
 
-        # Start socket monitor check thread
-        asocketmon = AgentHealthMonitor(self, self.log)
-        asocketmon.start()
-
         session = meta.Session()
         self.server.state_manager.update(StateManager.STATE_DISCONNECTED)
         session.commit()
@@ -1070,7 +1071,7 @@ class AgentManager(threading.Thread):
             # on the Windows client when the agent tries to connect.
             time.sleep(.1)
 
-            aconn.httpconn = ReverseHTTPConnection(conn)
+            aconn.httpconn = ReverseHTTPConnection(conn, aconn)
             # FIXME: why is this a POST?
             body_json = aconn.http_send('POST', '/auth')
             if body_json:
@@ -1186,6 +1187,8 @@ class AgentManager(threading.Thread):
             session = meta.Session()
             session.commit()
 
+            self.ping_check(agent)
+
         except socket.error, ex:
             self.log.debug("Socket error: " + str(ex))
             self._close(conn)
@@ -1264,92 +1267,97 @@ class AgentManager(threading.Thread):
                        route_path, lines)
         return True
 
+    def ping_check(self, agent):
+        """Each agent has a ping thread that starts out as the initial
+           thread processing a new agent's connection.  This thread
+           periodically pings the agent to let the agent know we're
+           still here and to let us know the agent is still there."""
+
+        aconn = agent.connection
+        conn_id = aconn.conn_id
+        while not self.server.noping:
+            if conn_id not in self.all_agents():
+                self.log.info("ping_check: agent with connid %d is now gone",
+                               conn_id)
+                return  # end ping thread
+
+            now = time.time()
+            elapsed = now - aconn.last_activity
+            if elapsed < self.ping_interval:
+                # There was recent activity with this agent, so don't
+                # need to ping.
+                time.sleep(self.ping_interval - elapsed)
+                continue
+
+            self.log.debug("ping: check for agent '%s', type '%s', " + \
+                           "uuid '%s', conn_id %d, last heard from: " + \
+                           "%d seconds ago (> %d).",
+                           agent.displayname, agent.agent_type, agent.uuid,
+                           conn_id, elapsed, self.ping_interval)
+
+            if not self.do_ping(agent):
+                self.log.info("ping: failed. agent with conn_id %d is gone",
+                               conn_id)
+                return
+            time.sleep(self.ping_interval)
+
+    def do_ping(self, agent):
+        """Send a ping to an agent. Returns:
+                True:   The ping succeeded
+                False:  The ping failed
+            """
+
+        stateman = self.server.state_manager
+
+        body = self.server.ping(agent)
+        if body.has_key('error'):
+            if stateman.get_state() == StateManager.STATE_UPGRADING:
+                self.log.info(
+                    ("Ping During UPDATE: Agent '%s', type '%s', " + \
+                    "uuid '%s', conn_id %d did  not respond to a " + \
+                    "ping.  Ignoring while UPGRADING.") %
+                    (agent.displayname, agent.agent_type, agent.uuid,
+                    agent.conn_id))
+                return True     # considered a success
+
+            else:
+                self.log.info(
+                    "Ping: Agent '%s', type '%s', uuid '%s', " + \
+                    "conn_id %d, did not respond to a ping.  Removing.",
+                    agent.displayname, agent.agent_type, agent.uuid,
+                    agent.conn_id)
+
+                self.remove_agent(agent, "Lost contact with an agent")
+                return False
+        else:
+            self.log.debug(
+                "Ping: Reply from agent '%s', type '%s', uuid %s, " + \
+                "conn_id %d",
+                    agent.displayname, agent.agent_type, agent.uuid,
+                    agent.conn_id)
+            return True
+
 class ReverseHTTPConnection(HTTPConnection):
 
-    def __init__(self, sock):
+    def __init__(self, sock, aconn):
         HTTPConnection.__init__(self, 'agent')
 #        HTTPConnection.debuglevel = 1
         self.sock = sock
+        self.aconn = aconn
+        self.last_activity = time.time()    # update for ping check
+
+    def getresponse(self, buffering=False):
+        self.last_activity = time.time()    # update for ping check
+        return HTTPConnection.getresponse(self, buffering)
+
+    def request(self, method, url, body=None, headers=None):
+        if headers is None:
+            headers = {}
+        self.last_activity = time.time()    # update for ping check
+        HTTPConnection.request(self, method, url, body, headers)
 
     def connect(self):
         pass
 
     def close(self):
         pass
-
-class AgentHealthMonitor(threading.Thread):
-
-    def __init__(self, manager, log):
-        super(AgentHealthMonitor, self).__init__()
-        self.manager = manager
-        self.server = manager.server
-        self.log = log
-        self.config = self.manager.config
-        self.ping_interval = self.config.getint('status',
-                                                'ping_request_interval',
-                                                default=10)
-
-    def run(self):
-
-        self.log.debug("Starting agent health monitor.")
-
-        while not self.server.noping:
-            if len(self.manager.agents) == 0:
-                # no agents to check on
-                # self.log.debug("no agents to ping")
-                time.sleep(self.ping_interval)
-                continue
-
-            session = meta.Session()
-            try:
-                self.check()
-            finally:
-                session.rollback()
-                meta.Session.remove()
-
-            time.sleep(self.ping_interval)
-
-    def check(self):
-        agents = self.manager.all_agents()
-        self.log.debug("about to ping %d agent(s)", len(agents))
-
-        for key in agents.keys():
-            self.manager.lock()
-            if not agents.has_key(key):
-                self.log.debug("agent with conn_id %d, is now gone and " + \
-                               "won't be checked.", key)
-                self.manager.unlock()
-                continue
-            agent = agents[key]
-            self.manager.unlock()
-
-            self.log.debug(
-                "Ping: check for agent '%s', type '%s', uuid '%s', " + \
-                "conn_id %d.",
-                           agent.displayname, agent.agent_type, agent.uuid,
-                            key)
-
-            stateman = self.server.state_manager
-
-            body = self.server.ping(agent)
-            if body.has_key('error'):
-                if stateman.get_state() == StateManager.STATE_UPGRADING:
-                    self.log.info(
-                        ("Ping During UPDATE: Agent '%s', type '%s', " + \
-                        "uuid '%s', conn_id %d did  not respond to a " + \
-                        "ping.  Ignoring while UPGRADING.") %
-                    (agent.displayname, agent.agent_type, agent.uuid, key))
-
-                else:
-                    self.log.info(
-                        "Ping: Agent '%s', type '%s', uuid '%s', " + \
-                        "conn_id %d, did not respond to a ping.  Removing.",
-                        agent.displayname, agent.agent_type, agent.uuid, key)
-
-                    self.manager.remove_agent(agent,
-                                              "Lost contact with an agent")
-            else:
-                self.log.debug(
-                    "Ping: Reply from agent '%s', type '%s', uuid %s, " + \
-                    "conn_id %d",
-                        agent.displayname, agent.agent_type, agent.uuid, key)
