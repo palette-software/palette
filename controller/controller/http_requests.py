@@ -48,7 +48,7 @@ class HttpRequestEntry(meta.Base, BaseMixin, BaseDictMixin):
     __table_args__ = (UniqueConstraint('envid', 'id'),)
 
     @classmethod
-    def maxid(cls, envid):
+    def max_reqid(cls, envid):
         return cls.max('id', filters={'envid':envid})
 
 
@@ -65,7 +65,7 @@ class HttpRequestManager(TableauCacheManager):
         controldata = HttpControl.info()
         userdata = self.load_users(agent)
 
-        maxid = HttpRequestEntry.maxid(envid)
+        maxid = HttpRequestEntry.max_reqid(envid)
         if maxid is None:
             # our table is empty, just pull in one placeholder record.
             stmt = 'SELECT * FROM http_requests '+\
