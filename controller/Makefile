@@ -21,6 +21,7 @@ pylint:
 	$(PYLINT) controller/event.py
 	$(PYLINT) controller/event_control.py
 	$(PYLINT) controller/extracts.py
+	$(PYLINT) controller/firewall_manager.py
 	$(PYLINT) controller/http_requests.py
 	$(PYLINT) controller/licensing.py
 	$(PYLINT) controller/manager.py

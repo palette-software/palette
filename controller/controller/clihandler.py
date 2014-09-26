@@ -429,7 +429,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         reported_status = self.server.statusmon.get_reported_status()
-        # The reported status from tableau needs to be running or stopped
+        # The reported status from Tableau needs to be running or stopped
         # to do a backup.
         if reported_status in (TableauProcess.STATUS_RUNNING,
                                         TableauProcess.STATUS_DEGRADED):
@@ -669,7 +669,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         reported_status = self.server.statusmon.get_reported_status()
-        # The reported status from tableau needs to be running or stopped
+        # The reported status from Tableau needs to be running or stopped
         # to do a backup.  If it is, set our state to
         # STATE_*_BACKUP_RESTORE.
         if reported_status in (TableauProcess.STATUS_RUNNING,
@@ -1224,21 +1224,29 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         aconn = agent.connection
 
-        # Check to see if we're in a state to stop
+        # Stop can be done only if Tableau is started
+        good_states = [StateManager.STATE_STARTED, StateManager.STATE_DEGRADED]
+        good_reported_status = [TableauProcess.STATUS_RUNNING,
+                                TableauProcess.STATUS_DEGRADED]
+        if action == StateControl.ACTION_RESTART:
+            # Restart can also be done when Tableau is stopped.
+            good_states += [StateManager.STATE_STOPPED,
+                            StateManager.STATE_STOPPED_UNEXPECTED]
+
+            good_reported_status.append(TableauProcess.STATUS_STOPPED)
+
+        # Check to see if we're in a state to stop or restart
         stateman = self.server.state_manager
         main_state = stateman.get_state()
 
-        # Stop can be done only if tableau is started
-        if main_state not in \
-                (StateManager.STATE_STARTED, StateManager.STATE_DEGRADED):
+        if main_state not in good_states:
             self.error(clierror.ERROR_WRONG_STATE,
                        "can't stop - main state is: " + main_state)
             aconn.user_action_unlock()
             return False
 
         reported_status = self.server.statusmon.get_reported_status()
-        if reported_status not in (TableauProcess.STATUS_RUNNING,
-                                   TableauProcess.STATUS_DEGRADED):
+        if reported_status not in good_reported_status:
             msg = "Can't stop/restart - reported status is: " + reported_status
             self.error(clierror.ERROR_WRONG_STATE, "FAIL: " + msg)
             self.server.log.debug(msg)
