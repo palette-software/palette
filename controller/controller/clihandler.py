@@ -2088,14 +2088,21 @@ class CliHandler(socketserver.StreamRequestHandler):
         line = "Command Failed with Exception.\n" + \
             "Command: '%s'\n" % telnet_command
 
+        stateman = self.server.state_manager
+        now_state = stateman.get_state()
+
         if before_state in (StateManager.STATE_STARTED,
                             StateManager.STATE_DEGRADED,
                             StateManager.STATE_STOPPED,
                             StateManager.STATE_STOPPED_UNEXPECTED):
-            stateman = self.server.state_manager
-            now_state = stateman.get_state()
+
             if now_state == before_state:
                 line += "State remaining at  '%s'.\n" % now_state
+            elif now_state in (StateManager.STATE_DISCONNECTED,
+                               StateManager.STATE_UNKNOWN,
+                               StateManager.STATE_UPGRADING):
+                line += "Won't change state from '%s' back to '%s'.\n" % \
+                    (now_state, before_state)
             else:
                 line += "Changing state from '%s' back to '%s'.\n" % \
                                                 (now_state, before_state)
