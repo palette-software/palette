@@ -2,6 +2,8 @@ from manager import Manager
 from profile import UserProfile
 from util import UNDEFINED
 
+# FIXME: merge with mixin
+
 # Holds a cache of system_ids per site_id/user_id
 class TableauUserCache(object):
 
@@ -20,7 +22,6 @@ class TableauUserCache(object):
         if key in self.data:
             return self.data[key]
         return -1
-
 
 class TableauCacheManager(Manager):
 
