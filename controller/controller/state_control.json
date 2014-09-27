@@ -38,7 +38,7 @@
 },
 {
 "state":"STOPPED-UNEXPECTED",
-"text":"Tableau Stopped Unexpectedly",
+"text":"Unplanned Tableau Stop",
 "allowable_actions":"start backup restore restart repair-license ziplogs",
 "color":"red"
 },
