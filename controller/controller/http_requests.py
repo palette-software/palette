@@ -9,6 +9,7 @@ from akiri.framework.ext.sqlalchemy import meta
 from httplib import responses
 
 from cache import TableauCacheManager
+from manager import synchronized
 from mixin import BaseMixin, BaseDictMixin
 from http_control import HttpControl
 from event_control import EventControl
@@ -54,10 +55,8 @@ class HttpRequestEntry(meta.Base, BaseMixin, BaseDictMixin):
 
 class HttpRequestManager(TableauCacheManager):
 
+    @synchronized('http_requests')
     def load(self, agent):
-
-        if not self.lock(blocking=False):
-            return {u'error': 'Can not load http_requests: busy.'}
 
         envid = self.server.environment.envid
         self._prune(agent, envid)
@@ -75,10 +74,8 @@ class HttpRequestManager(TableauCacheManager):
 
         datadict = agent.odbc.execute(stmt)
         if 'error' in datadict:
-            self.unlock()
             return datadict
         if '' not in datadict:
-            self.unlock()
             datadict['error'] = "Missing '' key in query response."
             return datadict
 
@@ -96,7 +93,6 @@ class HttpRequestManager(TableauCacheManager):
             session.add(entry)
         session.commit()
 
-        self.unlock()
         return {u'status': 'OK', u'count': len(datadict[''])}
 
     def _test_for_alerts(self, entry, agent, controldata):

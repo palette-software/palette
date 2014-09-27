@@ -10,7 +10,8 @@ from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
 from mixin import BaseMixin, BaseDictMixin
-from cache import TableauCacheManager
+from cache import TableauCacheManager #FIXME
+from manager import synchronized
 from util import failed, success
 from odbc import ODBC
 
@@ -141,13 +142,11 @@ class WorkbookManager(TableauCacheManager):
         self.path = os.path.abspath(path)
 
     # really sync *and* load
+    @synchronized('workbooks')
     def load(self, agent):
         # pylint: disable=too-many-locals
         if not self._cred_check():
             return {u'error': 'Can not load workbooks: missing credentials.'}
-
-        if not self.lock(blocking=False):
-            return {u'error': 'Can not load workbooks: busy.'}
 
         envid = self.server.environment.envid
         users = self.load_users(agent)
@@ -177,7 +176,6 @@ class WorkbookManager(TableauCacheManager):
 
         if 'error' in data or '' not in data:
             self.log.debug("workbooks load: bad data: %s", str(data))
-            self.unlock()
             return data
 
         self.log.debug(data)
@@ -227,16 +225,13 @@ class WorkbookManager(TableauCacheManager):
             session.refresh(update)
             self._archive_twb(agent, update)
 
-        self.unlock()
         return {u'status': 'OK',
                 u'schema': self.schema(data),
                 u'updates': len(updates)}
 
 
+    @synchronized('workbook.fixup')
     def fixup(self, agent):
-
-        if not self.lock(blocking=False):
-            return {u'error': 'Can not fixup workbooks: busy.'}
 
         connection = meta.engine.connect()
 
@@ -263,7 +258,6 @@ class WorkbookManager(TableauCacheManager):
         else:
             count = 0
 
-        self.unlock()
         return {u'status': 'OK',
                 u'updates': count}
 

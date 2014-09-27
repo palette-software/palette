@@ -1,5 +1,21 @@
 import threading
 
+def synchronized(label=None):
+    def wrapper(f):
+        def realf(self, *args, **kwargs):
+            if not self.lock(blocking=False):
+                if label is None:
+                    error = 'load: busy.'
+                else:
+                    error = '%s: busy' % label
+                return {u'error', error}
+            try:
+                return f(self, *args, **kwargs)
+            finally:
+                self.unlock()
+        return realf
+    return wrapper
+
 class Manager(object):
 
     def __init__(self, server):
@@ -13,3 +29,4 @@ class Manager(object):
 
     def unlock(self):
         self._lock.release()
+

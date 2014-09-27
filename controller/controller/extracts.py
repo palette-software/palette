@@ -11,6 +11,7 @@ from event_control import EventControl
 from profile import UserProfile
 from mixin import BaseMixin, BaseDictMixin
 from cache import TableauCacheManager
+from manager import synchronized
 from odbc import ODBC
 from util import timedelta_total_seconds
 
@@ -96,6 +97,7 @@ class ExtractManager(TableauCacheManager):
         entry.system_user_id = users.get(row[1], row[0])
         entry.project_id = int(row[2])
 
+    @synchronized('extracts')
     def load(self, agent, check_odbc_state=True):
         envid = self.server.environment.envid
 
@@ -103,9 +105,6 @@ class ExtractManager(TableauCacheManager):
         if check_odbc_state and not self.server.odbc_ok():
             return {"error": "Cannot run command while in state: %s" % \
                         self.server.state_manager.get_state()}
-
-        if not self.lock(blocking=False):
-            return {u'error': 'Can not load extracts: busy.'}
 
         self._prune(agent, envid)
 
@@ -135,7 +134,6 @@ class ExtractManager(TableauCacheManager):
         datadict = agent.odbc.execute(stmt)
 
         if 'error' in datadict or '' not in datadict:
-            self.unlock()
             return datadict
 
         datasources = {}
@@ -174,8 +172,6 @@ class ExtractManager(TableauCacheManager):
             session.add(entry)
 
         session.commit()
-
-        self.unlock()
         return {u'status': 'OK', u'count': len(datadict[''])}
 
     # Returns None if the table is empty.
