@@ -51,6 +51,7 @@ class AgentConnection(object):
         self.yml_contents = None    # only valid if agent is a primary
         self.initting = True
         self.last_activity = time.time()
+        self.sent_disconnect_event = False
 
         # Each agent connection has its own lock to allow only
         # one thread to send/recv  on the agent socket at a time.
@@ -904,6 +905,8 @@ class AgentManager(threading.Thread):
                 gen_event:   True or False.  If True, generates an event.
                              If False does not generate an event.
         """
+        gen_event = True    # Force it for now (fixme)
+
         if reason == "":
             reason = "Agent communication failure"
 
@@ -929,8 +932,14 @@ class AgentManager(threading.Thread):
                                 "Agent connection-id: %d\n" + \
                                 "Agent uuid %s") % \
                                 (temp_agent.displayname, conn_id, uuid)
-                self.server.event_control.gen(EventControl.AGENT_DISCONNECT,
-                                              data)
+                if not agent.connection.sent_disconnect_event:
+                    self.server.event_control.gen(EventControl.AGENT_DISCONNECT,
+                                                  data)
+                    agent.connection.sent_disconnect_event = True
+                else:
+                    self.log.debug(
+                            "Already sent the disconnect event for conn_id %d",
+                            conn_id)
             forgot = self.forget(agent)
             self.log.debug("remove_agent: closing agent socket.")
             if self._close(agent.connection.socket):
