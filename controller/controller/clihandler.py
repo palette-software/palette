@@ -383,7 +383,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         # Set it back to the real state
-        self.server.statusmon.set_main_state_from_tableau_status()
+        self.server.statusmon.set_state_from_tableau_status()
 
         if aconn:
             aconn.user_action_unlock()

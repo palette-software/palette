@@ -1,6 +1,7 @@
 import logger
 import string
 import threading
+import time
 
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
@@ -15,6 +16,7 @@ from agentmanager import AgentManager
 from agent import Agent
 from event_control import EventControl
 from util import is_ip, hostname_only
+from state_transitions import TRANSITIONS
 
 class TableauProcess(meta.Base):
     # pylint: disable=no-init
@@ -28,16 +30,25 @@ class TableauProcess(meta.Base):
     STATUS_UNKNOWN = "UNKNOWN"    # We set this if we don't know yet.
 
     name = Column(String, nullable=False, primary_key=True)
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False,\
-      primary_key=True)
+    agentid = Column(BigInteger, ForeignKey("agent.agentid"),
+                     nullable=False, primary_key=True)
     pid = Column(Integer)
     status = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
-    modification_time = Column(DateTime, server_default=func.now(), \
+    modification_time = Column(DateTime, server_default=func.now(),
                                server_onupdate=func.current_timestamp())
     UniqueConstraint('agentid', 'name')
 
 class TableauStatusMonitor(threading.Thread):
+
+    # Note: If there is a value in the system table, it is
+    # used instead of these defaults.
+    # Default interval for checking tableau status (in seconds)
+    STATUS_REQUEST_INTERVAL_DEFAULT = 10
+
+    # Minimum amount of time that must elapse while DEGRADED
+    # before sending out the DEGRADED event.
+    EVENT_DEGRADED_MIN_DEFAULT = 120    # in seconds
 
     LOGGER_NAME = "status"
 
@@ -51,13 +62,12 @@ class TableauStatusMonitor(threading.Thread):
     def __init__(self, server, manager):
         super(TableauStatusMonitor, self).__init__()
         self.server = server
-        self.config = self.server.config
         self.manager = manager # AgentManager instance
         self.log = logger.get(self.LOGGER_NAME)
         self.envid = self.server.environment.envid
 
-        self.status_request_interval = self.config.getint('status', \
-                                        'status_request_interval', default=10)
+        self.first_degraded_time = None
+        self.sent_degraded_event = False
 
         # Start fresh: status table
         session = meta.Session()
@@ -65,14 +75,6 @@ class TableauStatusMonitor(threading.Thread):
         session.commit()
 
         self.stateman = StateManager(self.server)
-
-        # Start fresh: state table
-        #self.stateman.update(StateEntry.STATE_TYPE_MAIN,
-        #                     StateEntry.STATE_MAIN_UNKNOWN)
-        # fixme: We could check to see if the user had started
-        # a backup or restore?
-        #self.stateman.update(StateEntry.STATE_TYPE_BACKUP,
-        #                     StateEntry.STATE_BACKUP_NONE))
 
     # Remove all entries to get ready for new status info.
     def remove_all_status(self):
@@ -104,7 +106,7 @@ class TableauStatusMonitor(threading.Thread):
         # rows to be available until the new rows are inserted and
         # committed.
 
-    def add(self, agentid, name, pid, status):
+    def _add(self, agentid, name, pid, status):
         """Note a session is passed.  When updating the status table, we
         do remove_all_status, then slowly add in the new status before
         doing the commit, so the table is not every empty/building if
@@ -115,12 +117,6 @@ class TableauStatusMonitor(threading.Thread):
         entry = TableauProcess(agentid=agentid, name=name,
                                pid=pid, status=status)
         session.add(entry)
-
-    def get_all_status(self):
-        return meta.Session().query(TableauProcess).\
-            join(Agent).\
-            filter(Agent.envid == self.envid).\
-            all()
 
     def get_reported_status(self):
         try:
@@ -133,8 +129,7 @@ class TableauStatusMonitor(threading.Thread):
         except NoResultFound:
             return TableauProcess.STATUS_UNKNOWN
 
-    def set_main_state_from_tableau_status(self):
-        # pylint: disable=invalid-name
+    def set_state_from_tableau_status(self):
         tableau_status = self.get_reported_status()
 
         if tableau_status not in self.statemap:
@@ -145,80 +140,112 @@ class TableauStatusMonitor(threading.Thread):
             main_state = self.statemap[tableau_status]
             self.stateman.update(main_state)
 
-    def set_main_state(self, status, agent, body):
-        main_state = self.stateman.get_state()
-        if status not in \
-            (TableauProcess.STATUS_RUNNING, TableauProcess.STATUS_STOPPED,
-                                                TableauProcess.STATUS_DEGRADED):
-            self.log.error("Unknown reported status from tableau: %s. " + \
-                                        "main_state: %s", status, main_state)
+    def _set_main_state(self, tableau_status, agent, body):
+        old_state = self.stateman.get_state()
+
+        if tableau_status not in (TableauProcess.STATUS_RUNNING,
+                                  TableauProcess.STATUS_STOPPED,
+                                  TableauProcess.STATUS_DEGRADED):
+            self.log.error("Unknown reported tableau_status from " + \
+                "tableau: %s.  old_state: %s", tableau_status, old_state)
             return  # fixme: do something more drastic than return?
 
-        # The last state was PENDING.
-        if main_state == StateManager.STATE_PENDING:
-            self.stateman.update(status)
+        if old_state not in TRANSITIONS:
+            self.log.error("Old state unexpected: %s", old_state)
+            return  # fixme: do something more drastic than return?
+
+        # Get our new state and events to send based on the old
+        # state and new tableau status.
+        new_state_info = TRANSITIONS[old_state][tableau_status]
+
+        self.log.debug("old state: %s, new state info: %s", old_state,
+                       str(new_state_info))
+
+        if 'state' in new_state_info:
+            self.stateman.update(new_state_info['state'])
+
+        if 'events' not in new_state_info:
+            events = []
+        else:
+            events = new_state_info['events']
+        if type(events) == type(EventControl.INIT_STATE_STARTED):
+            events = [events]
+
+        self._send_events(events, agent, body)
+
+    def _send_events(self, events, agent, body):
+        """Send the events according to the old and new states.
+           However, don't send DEGRADED-related events until
+           Tableau has a chance to recover, since that's what it does."""
+        if events:
             data = agent.todict()
-            if status == TableauProcess.STATUS_RUNNING:
-                # StateManager calls the state "STARTED"; Tableau calls
-                # it "RUNNING".
-                self.server.event_control.gen(
-                    EventControl.INIT_STATE_STARTED, data)
-            elif status == TableauProcess.STATUS_STOPPED:
-                self.server.event_control.gen(
-                    EventControl.INIT_STATE_STOPPED, data)
-            elif status == TableauProcess.STATUS_DEGRADED:
-                self.server.event_control.gen(EventControl.INIT_STATE_DEGRADED,
-                                              dict(body.items() + data.items()))
-            return
 
-        # If the main state was DEGRADED but status isn't DEGRADED any more,
-        # update the main state.
-        if main_state == StateManager.STATE_DEGRADED and \
-                                status != TableauProcess.STATUS_DEGRADED:
-            if status == TableauProcess.STATUS_RUNNING:
-                self.stateman.update(status)
-                self.server.event_control.gen(
-                    EventControl.STATE_STARTED_AFTER_DEGRADED,
-                    agent.todict())
-            elif status == TableauProcess.STATUS_STOPPED:
-                self.stateman.update(StateManager.STATE_STOPPED_UNEXPECTED)
-                self.server.event_control.gen(
-                    EventControl.STATE_UNEXPECTED_STOPPED_AFTER_DEGRADED,
-                    agent.todict())
-            else:
-                self.log.error("Unexpected transition from DEGRADED to: %s",
-                               status)
-            return
+        new_degraded_event = False
+        for event in events:
+            if event == EventControl.STATE_STARTED_AFTER_DEGRADED and \
+                                        not self.sent_degraded_event:
+                # We were degraded, and are running now, but never
+                # sent out a degraded event, so don't send a
+                # "no more degraded" event either.
+                continue
 
-        # If the main state is wrong, correct it.
-        data = agent.todict()
-        if main_state == StateManager.STATE_STOPPED and \
-                                        status == TableauProcess.STATUS_RUNNING:
-            self.log.debug("Updating main state to %s", status)
-            self.stateman.update(StateManager.STATE_STARTED)
-            self.server.event_control.gen(
-                EventControl.STATE_UNEXPECTED_STATE_STARTED, data)
-        elif main_state == StateManager.STATE_STARTED and \
-                status == TableauProcess.STATUS_STOPPED:
-            self.log.debug("Updating main state to %s",
-                                        StateManager.STATE_STOPPED_UNEXPECTED)
-            self.stateman.update(StateManager.STATE_STOPPED_UNEXPECTED)
-            self.server.event_control.gen(
-                EventControl.STATE_UNEXPECTED_STATE_STOPPED, data)
-        elif status == TableauProcess.STATUS_DEGRADED and \
-                main_state != TableauProcess.STATUS_DEGRADED:
-            self.log.debug("Updating main state to %s", status)
-            self.stateman.update(StateManager.STATE_DEGRADED)
-            self.server.event_control.gen(EventControl.STATE_DEGRADED,
-                                          dict(body.items() + data.items()))
-        self.log.info("set_main_state: No change. main_state %s, state: %s",
-                           main_state, status)
+            if event != EventControl.STATE_DEGRADED:
+                self.server.event_control.gen(event, data)
+
+                if event == EventControl.INIT_STATE_DEGRADED:
+                    # If this is an "INIT_STATE_*" event, we send it,
+                    # even if it is degraded.
+                    self.sent_degraded_event = False
+                continue
+
+            new_degraded_event = True
+
+            # Don't send the DEGRADED event until a minimum period of time
+            # has elapsed with the state still DEGRADED.
+            if not self.first_degraded_time:
+                # Remember the time of the first DEGRADED state.
+                self.first_degraded_time = time.time()
+                continue
+
+            if self.sent_degraded_event:
+                # Already sent the degraded event
+                continue
+
+            try:
+                event_degraded_min = \
+                    int(self.server.system.get('event-degraded-min'))
+            except ValueError:
+                event_degraded_min = self.EVENT_DEGRADED_MIN_DEFAULT
+
+            now = time.time()
+            self.log.debug("now %d, first %d, min %d, diff %d",
+                           now, self.first_degraded_time,
+                           event_degraded_min,
+                           now - self.first_degraded_time)
+            if now - self.first_degraded_time >= event_degraded_min:
+                self.log.debug("Sending degraded")
+                self.server.event_control.gen(event,
+                                      dict(body.items() + data.items()))
+                self.sent_degraded_event = True
+
+        if not new_degraded_event:
+            self.first_degraded_time = None
+            self.sent_degraded_event = False
+
     def run(self):
         while True:
-            self.log.debug("status-check: About to timeout or wait for a " + \
-                                                    "new primary to connect")
-            new_primary = self.manager.new_primary_event.wait(\
-                                                self.status_request_interval)
+            self.log.debug("status-check: About to timeout or " + \
+                           "wait for a new primary to connect")
+            try:
+                status_request_interval = \
+                    int(self.server.system.get('status-request-interval'))
+            except ValueError:
+                status_request_interval = \
+                                self.STATUS_REQUEST_INTERVAL_DEFAULT
+
+            new_primary = self.manager.new_primary_event.wait(
+                                        status_request_interval)
+
             self.log.debug("status-check: new_primary: %s", new_primary)
             if new_primary:
                 self.manager.new_primary_event.clear()
@@ -242,8 +269,8 @@ class TableauStatusMonitor(threading.Thread):
         aconn = agent.connection
         if not aconn:
             session = meta.Session()
-            self.log.debug(\
-                        "status thread: No primary agent currently connected.")
+            self.log.debug(
+                    "status thread: No primary agent currently connected.")
             self.remove_all_status()
             session.commit()
             return
@@ -258,7 +285,8 @@ class TableauStatusMonitor(threading.Thread):
 
         main_state = self.stateman.get_state()
         if main_state == StateManager.STATE_UPGRADING:
-            self.log.debug("main state is UPGRADING: skipping status check.")
+            self.log.debug(
+                        "main state is UPGRADING: skipping status check.")
             aconn.user_action_unlock()
             return
 
@@ -308,9 +336,11 @@ class TableauStatusMonitor(threading.Thread):
 
         body = self.server.status_cmd(agent)
         if not body.has_key('stdout'):
-            # fixme: Probably update the status table to say something's wrong.
-            self.log.error(\
-                    "No output received for status monitor. body:" + str(body))
+            # fixme: Probably update the status table to say
+            # something's wrong.
+            self.log.error(
+                    "No output received for status monitor. body: " + \
+                    str(body))
             return
 
         stdout = body['stdout']
@@ -343,9 +373,10 @@ class TableauStatusMonitor(threading.Thread):
                     del parts[-3:]  # Remove ['(1764)', 'is', 'running.']
                     name = ' '.join(parts)  # "Repository Database'"
                     if name[-1:] == "'":
-                        name = name[:-1]    # Cut off trailing single quote (')
+                        # Cut off trailing single quote (')
+                        name = name[:-1]
 
-                    self.add(agentid, name, pid, status)
+                    self._add(agentid, name, pid, status)
                     self.log.debug("logged: %s, %d, %s", name, pid, status)
                 else:
                     # FIXME: log error
@@ -353,7 +384,7 @@ class TableauStatusMonitor(threading.Thread):
             elif parts[0] == 'Status:':
                 server_status = parts[1].strip()
                 if agentid:
-                    self.add(agentid, "Status", 0, server_status)
+                    self._add(agentid, "Status", 0, server_status)
                     if system_status == None or server_status == 'DEGRADED':
                         system_status = server_status
                 else:
@@ -363,18 +394,7 @@ class TableauStatusMonitor(threading.Thread):
                 host = parts[0].strip().replace(':', '')
                 agentid = self.get_agent_id_from_host(host)
 
-        self.set_main_state(system_status, agent, body)
+        self._set_main_state(system_status, agent, body)
         self.log.debug("Logging main status: %s", system_status)
 
         session.commit()
-
-        # debug - try to get it back
-        #self.log.debug("--------current status---------------")
-        #all_status = self.get_all_status()
-        #for status in all_status:
-        #    self.log.debug("status: %s (%d) %s", status.name, status.pid,
-        #                                                        status.status)
-        #
-        #reported_status = self.get_reported_status()
-        #self.log.debug("reported_status: %s: %s", reported_status.name,
-        #                                            reported_status.status)

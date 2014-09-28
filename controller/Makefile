@@ -38,6 +38,7 @@ pylint:
 	$(PYLINT) controller/sites.py
 	$(PYLINT) controller/state_control.py
 	$(PYLINT) controller/state.py
+	$(PYLINT) controller/state_transitions.py
 	$(PYLINT) controller/system.py
 	$(PYLINT) controller/tableau.py
 	$(PYLINT) controller/util.py
