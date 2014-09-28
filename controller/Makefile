@@ -19,6 +19,8 @@ pylint:
 	$(PYLINT) controller/credential.py
 	$(PYLINT) controller/croniter.py
 	$(PYLINT) controller/data_connections.py
+	$(PYLINT) controller/domain.py
+	$(PYLINT) controller/diskcheck.py
 	$(PYLINT) controller/environment.py
 	$(PYLINT) controller/event.py
 	$(PYLINT) controller/event_control.py
