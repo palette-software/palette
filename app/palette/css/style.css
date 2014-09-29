@@ -396,7 +396,7 @@ ul.dropdown-menu a:hover {
     position: fixed;
     left: 0;
     width: 250px;
-    top: 67px;
+    top: 63px;
     background-color: #697078;
     color: white;
     z-index: 100;
@@ -624,6 +624,10 @@ ul.processes.visible {
 .dynamic-content a, .dynamic-content a:hover {
     color: #697078;
     text-decoration: underline;
+}
+.dynamic-content .letters a {
+    cursor: pointer;
+    text-decoration: none;
 }
 .secondary-side-bar h2 {
     color:white;
@@ -1289,38 +1293,38 @@ article.event li {
 article.event article {
     padding-top: 5px;
 }
+
+/* Refresh bar(s) */
 div.refresh {
+    float: right;
     height: 36px;
-    background: #CFD0D0;
     margin: 0 0 3px 0;
 }
-.refresh p, .refresh > span {
+.refresh p, .refresh > i {
     float: right;
     height: 36px;
 }
 .refresh p {
     display: none;
     font-size: 13px;
+    font-weight: bold;
     line-height: 36px;
-    padding: 0 12px 0 0;
+    padding: 0 3px 0 0;
 }
-.refresh > span {
-    cursor: pointer;
-    width: 36px;
-    margin-right: 12px;
-}
-.refresh > span.inactive {
+.refresh > i.inactive {
     cursor: auto;
     display: none;
 }
 .refresh i {
+    cursor: pointer;
     font-size: 19px;
     line-height: 36px;
-    width: 100%;
+    width: 36px;
+    margin-right: 3px;
 }
-.refresh i.fa-stack-2x {
-    font-size: 26px;
-    color: white;
+.refresh i.inactive {
+    cursor: auto;
+    display: none;
 }
 .filter-dropdowns {
     margin-bottom: 11px;
