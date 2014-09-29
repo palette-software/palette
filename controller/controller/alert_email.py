@@ -13,6 +13,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from sqlalchemy.orm.exc import NoResultFound
 
+from general import SystemConfig
 from event_control import EventControl
 from profile import UserProfile
 from util import UNDEFINED
@@ -25,6 +26,7 @@ mako.runtime.UNDEFINED = UNDEFINED
 class AlertEmail(object):
     #pylint: disable=too-many-instance-attributes
 
+    DEFAULT_ALERTS_ENABLED = False
     DEFAULT_ALERT_LEVEL = 1
     DEFAULT_MAX_SUBJECT_LEN = 1000
 
@@ -47,8 +49,28 @@ class AlertEmail(object):
         self.envid = server.environment.envid
         self.standalone = False
         self.config = server.config
+        self.system = server.system
+        self.st_config = SystemConfig(server.system)
         self.log = server.log
-        self.enabled = self.config.getboolean('alert', 'enabled', default=False)
+        self.server = server
+
+        # Check to see if alert enabled/disabled is configured in the
+        # system table.  If not, 1) Use the *ini file or if not there,
+        # 2) default value and set that value in the system table.
+        try:
+            self.enabled = self.st_config.alerts_enabled
+        except ValueError:
+            # Alerts aren't in the system table, so check the *ini file.
+            self.enabled = self.config.getboolean('alert', 'enabled',
+                                       default=self.DEFAULT_ALERTS_ENABLED)
+
+            # Set this value in the system table.
+            if self.enabled:
+                value = 'yes'
+            else:
+                value = 'no'
+            self.system.save(SystemConfig.ALERTS_ENABLED, value)
+
         self.from_email = self.config.get('alert', 'from_email',
                                      default="alerts@palette-software.com")
         self.smtp_server = self.config.get('alert', 'smtp_server',
@@ -164,8 +186,13 @@ class AlertEmail(object):
             # message is empty, set it to be the subject
             message = subject
 
+        try:
+            self.enabled = self.st_config.alerts_enabled
+        except ValueError:
+            self.enabled = self.DEFAULT_ALERTS_ENABLED
+
         if not self.enabled:
-            self.log.info(\
+            self.log.info(
                 "Alerts disabled.  Not sending: Subject: %s, Message: %s",
                 subject, message)
             return
