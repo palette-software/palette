@@ -8,6 +8,7 @@ from files import FileManager
 
 # This a transitory class - instantiated each time it is needed.
 class GetFile(object):
+    # pylint: disable=too-many-instance-attributes
     """Copies the full_path file, if needed, to the primary agent from
        another agent or cloud storage for use by commands
        such as 'tabadmin restore', etc."""
@@ -20,6 +21,7 @@ class GetFile(object):
         self.agent = agent
         self.full_path = full_path  # incoming
 
+        self.file_entry = None
 
         self.source_type = None
         self.source_entry = None
@@ -37,42 +39,42 @@ class GetFile(object):
         # file after the restore, etc. finishes or an error.
         self.copied = False
 
-        self.get_file()
+        self._get_file()
 
-    def get_file(self):
+    def _get_file(self):
         self.file_entry = self.files.find_by_name(self.full_path)
         if not self.file_entry:
             raise IOError("File not found: %s" % self.full_path)
 
         # Sets self.source_type/entry.  Also sets self.agent if the
         # file is on an agent.
-        self.set_source()
+        self._set_source()
 
         # The case where the file is not on the primary.
         # Find a place to stage the file.
-        self.set_primary()
+        self._set_primary()
 
-        self.mkdir()
+        self._mkdir()
 
         if self.source_type == FileManager.STORAGE_TYPE_CLOUD:
-            self.get_cloud_file()
+            self._get_cloud_file()
 
         elif self.source_type == FileManager.STORAGE_TYPE_VOL and \
                         self.source_agent.agentid != self.agent.agentid:
-            self.get_agent_file()
+            self._get_agent_file()
 
-    def mkdir(self):
+    def _mkdir(self):
         """Make sure the primary agent directory exists."""
         try:
             self.agent.filemanager.mkdirs(self.primary_dir)
-        except (IOError, ValueError) as e:
+        except (IOError, ValueError) as ex:
             self.log.error(
                 "get_file.mkdirs: Could not create directory: '%s': %s",
-                self.primary_dir, str(e))
+                self.primary_dir, str(ex))
             raise IOError("Could not create directory '%s': %s" % \
-                                (self.primary_dir, str(e)))
+                                (self.primary_dir, str(ex)))
 
-    def set_primary(self):
+    def _set_primary(self):
         """The case where the file is not on the primary.
            Find a place to stage the file."""
         if self.source_type == FileManager.STORAGE_TYPE_CLOUD or \
@@ -83,16 +85,16 @@ class GetFile(object):
                     DiskCheck.get_primary_loc(self.agent,
                                               self.server.STAGING_DIR,
                                               self.file_entry.size)
-            except DiskException, e:
+            except DiskException, ex:
                 self.log.error("get_file: get_primary_loc failed: %s",
-                               str(e))
-                raise IOError("get_file: %s" % str(e))
+                               str(ex))
+                raise IOError("get_file: %s" % str(ex))
         else:
             self.primary_dir = self.agent.path.dirname(self.full_path)
 
         self.log.debug("get_file: primary_dir: %s", self.primary_dir)
 
-    def set_source(self):
+    def _set_source(self):
         """Set:
             self.source_type: FileManager.STORAGE_CLOUD or
                               FileManager.STORAGE_TYPE_VOL
@@ -120,16 +122,16 @@ class GetFile(object):
             self.source_agent = Agent.get_by_id(self.source_entry.agentid)
             if not self.source_agent:
                 raise IOError((
-                    "get_file: No such agentid %d referenced by " + \
+                    "_get_file: No such agentid %d referenced by " + \
                     "files entry %d and name %s") % \
                         (self.source_entry.agentid, self.file_entry.storageid,
                                             self.file_entry.name))
         else:
-            raise IOError(("get_file: Unknown file storage type " + \
+            raise IOError(("_get_file: Unknown file storage type " + \
                               "'%s' for file '%s'") % \
                               (self.file_entry.storage_type, self.full_path))
 
-    def get_cloud_file(self):
+    def _get_cloud_file(self):
         """The file is on cloud storage: s3 or gcs.
             Copy it to a staging area.
         """
@@ -156,7 +158,7 @@ class GetFile(object):
         body = cloud_cmd(self.agent, "GET", self.source_entry,
                          data_dir, self.full_path)
         if 'error' in body:
-            fmt = "get_cloud_file: %s named '%s' GET file '%s' " + \
+            fmt = "_get_cloud_file: %s named '%s' GET file '%s' " + \
                 "failed.  Error: %s"
             text = fmt % (self.source_type,
                        self.source_entry.name,
@@ -168,7 +170,7 @@ class GetFile(object):
 
         self.copied = True
 
-    def get_agent_file(self):
+    def _get_agent_file(self):
         # The file isn't on the Primary agent or cloud storage.
         # We need to copy the file to the Primary.
         # copy_cmd arguments:
@@ -190,7 +192,7 @@ class GetFile(object):
         # end up with:
         #   \tableau-backups\2014.gone.tsbak
 
-        (vol_ignored, path_spec) = self.full_path.split(':',1)
+        (_, path_spec) = self.full_path.split(':', 1)
 
         common = os.path.commonprefix([path_spec,
                                       self.source_entry.path])
@@ -199,9 +201,9 @@ class GetFile(object):
             path_spec = path_spec[len(common):]
 
         copy_source = "%s%s" % (self.source_entry.name, path_spec)
-                    
+
         self.log.debug("get_file: Sending copy command to " + \
-                       "agentid %d (%s) to get: %s", 
+                       "agentid %d (%s) to get: %s",
                        self.source_agent.agentid, self.source_agent.displayname,
                        copy_source)
 
