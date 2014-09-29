@@ -1,4 +1,3 @@
-import json
 from sqlalchemy import func
 
 # pylint: disable=import-error,no-name-in-module
@@ -13,7 +12,6 @@ from controller.agentinfo import AgentYmlEntry
 from controller.profile import UserProfile
 from controller.domain import Domain
 from controller.environment import Environment
-from controller.util import success
 from controller.palapi import CommHandlerApp
 
 class TableauAuthenticator(Authenticator):
