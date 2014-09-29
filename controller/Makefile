@@ -22,6 +22,8 @@ pylint:
 	$(PYLINT) controller/credential.py
 	$(PYLINT) controller/croniter.py
 	$(PYLINT) controller/data_connections.py
+	$(PYLINT) controller/domain.py
+	$(PYLINT) controller/diskcheck.py
 	$(PYLINT) controller/environment.py
 	$(PYLINT) controller/event.py
 	$(PYLINT) controller/event_control.py
@@ -41,6 +43,7 @@ pylint:
 	$(PYLINT) controller/sites.py
 	$(PYLINT) controller/state_control.py
 	$(PYLINT) controller/state.py
+	$(PYLINT) controller/state_transitions.py
 	$(PYLINT) controller/system.py
 	$(PYLINT) controller/tableau.py
 	$(PYLINT) controller/util.py
