@@ -1,6 +1,6 @@
 include ../pylint.mk
 
-all: pylint build
+all: pylint debian
 .PHONY: all
 
 debian:
