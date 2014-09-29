@@ -49,10 +49,11 @@ class TableauAuthenticator(Authenticator):
             return UserProfile.verify(envid, username, password)
         cmd = "ad verify " + username + " " + password
         try:
-            data = self.commapp.send_cmd(cmd, read_response=True)
-        except RuntimeError:
+            self.commapp.send_cmd(cmd, read_response=True)
+        except StandardError:
             return False
-        return success(json.loads(data))
+        # if no exception was thrown, then authentication was successful.
+        return True
 
 
 class TableauAuthFilter(AuthFilter):

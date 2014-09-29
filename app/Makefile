@@ -1,9 +1,12 @@
 include ../pylint.mk
 
-all: pylint
+all: pylint debian
+.PHONY: all
+
+debian:
 	python setup.py bdist
 	make -C DEBIAN all
-.PHONY: all
+.PHONY: debian
 
 pylint:
 	$(PYLINT) palette

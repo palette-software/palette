@@ -1,8 +1,11 @@
 include ../pylint.mk
 
-all: pylint
-	make -C DEBIAN all
+all: pylint build
 .PHONY: all
+
+debian:
+	make -C DEBIAN all
+.PHONY: debian
 
 pylint:
 	$(PYLINT) controller/controller.py
