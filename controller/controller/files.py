@@ -1,18 +1,15 @@
-from mixin import BaseDictMixin
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func, or_
 from sqlalchemy import ForeignKey, UniqueConstraint, Boolean
-from sqlalchemy.orm import relationship
 from sqlalchemy.orm.exc import NoResultFound
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
-
-from agent import Agent
-from agentinfo import AgentVolumesEntry
+# pylint: enable=import-error,no-name-in-module
 
 from manager import Manager
-from util import DATEFMT
+from mixin import BaseDictMixin
 
-class FileEntry(meta.Base):
+class FileEntry(meta.Base, BaseDictMixin):
     __tablename__ = 'files'
 
     fileid = Column(Integer, unique=True, nullable=False, primary_key=True)
@@ -29,37 +26,24 @@ class FileEntry(meta.Base):
                                server_onupdate=func.current_timestamp())
     UniqueConstraint('envid', 'name')
 
-    # FIXME: make this a mixin
-    def todict(self, pretty=False):
-        d = { 'fileid': self.fileid,
-              'storagetype': self.storage_type,
-              'storageid': self.storageid,
-              'size': self.size,
-              'auto': self.auto,
-              'name': self.name}
-        if pretty:
-            d['creation-time'] = self.creation_time.strftime(DATEFMT)
-            d['modification-time'] = self.modification_time.strftime(DATEFMT)
-        else:
-            d['creation_time'] = str(self.creation_time)
-            d['modification_time'] = str(self.modification_time)
-        return d
 
 class FileManager(Manager):
 
-    STORAGE_TYPE_VOL="vol"
-    STORAGE_TYPE_CLOUD="cloud"
+    STORAGE_TYPE_VOL = "vol"
+    STORAGE_TYPE_CLOUD = "cloud"
 
-    FILE_TYPE_BACKUP="backup"
-    FILE_TYPE_ZIPLOG="ziplog"
-    FILE_TYPE_WORKBOOK="workbook"
+    FILE_TYPE_BACKUP = "backup"
+    FILE_TYPE_ZIPLOG = "ziplog"
+    FILE_TYPE_WORKBOOK = "workbook"
 
+    # FIXME: replace this with kwargs variant.
     def add(self, name, file_type, storage_type, storageid,
-                                        size=0, auto=True, encrypted=False):
+            size=0, auto=True, encrypted=False):
+        # pylint: disable=too-many-arguments
         session = meta.Session()
         entry = FileEntry(envid=self.envid, name=name, file_type=file_type,
-                          storage_type=storage_type, storageid=storageid, size=size,
-                          auto=auto, encrypted=encrypted)
+                          storage_type=storage_type, storageid=storageid,
+                          size=size, auto=auto, encrypted=encrypted)
         session.add(entry)
         session.commit()
         return entry
@@ -79,7 +63,7 @@ class FileManager(Manager):
                 filter(FileEntry.name == name).\
                 one()
 
-        except NoResultFound, e:
+        except NoResultFound:
             return None
 
     @classmethod
@@ -90,27 +74,29 @@ class FileManager(Manager):
                 filter(FileEntry.name == name).\
                 one()
 
-        except NoResultFound, e:
+        except NoResultFound:
             return None
 
     @classmethod
     def all(cls, envid, asc=True):
-        q = meta.Session.query(FileEntry)
+        query = meta.Session.query(FileEntry).\
+            filter(FileEntry.envid == envid)
         if asc:
-            q = q.order_by(FileEntry.creation_time.asc())
+            query = query.order_by(FileEntry.creation_time.asc())
         else:
-            q = q.order_by(FileEntry.creation_time.desc())
-        return q.all()
+            query = query.order_by(FileEntry.creation_time.desc())
+        return query.all()
 
     @classmethod
     def all_by_type(cls, envid, file_type, asc=True):
-        q = meta.Session.query(FileEntry).\
+        query = meta.Session.query(FileEntry).\
+            filter(FileEntry.envid == envid).\
             filter(FileEntry.file_type == file_type)
         if asc:
-            q = q.order_by(FileEntry.creation_time.asc())
+            query = query.order_by(FileEntry.creation_time.asc())
         else:
-            q = q.order_by(FileEntry.creation_time.desc())
-        return q.all()
+            query = query.order_by(FileEntry.creation_time.desc())
+        return query.all()
 
     @classmethod
     def find_by_auto_envid(cls, envid, file_type):
