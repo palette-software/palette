@@ -2,13 +2,13 @@ from files import FileManager
 # This a transitory class - instantiated each time it is needed.
 class SystemConfig(object):
     # Keys for the system table:
-    STORAGE_ENCRYPT="storage-encrypt"       # "yes" or "no"
-    BACKUP_AUTO_RETAIN_COUNT="backup-auto-retain-count"
-    BACKUP_USER_RETAIN_COUNT="backup-user-retain-count"
-    BACKUP_DEST_TYPE="backup-dest-type"   # "vol" or "cloud"
-    BACKUP_DEST_ID="backup-dest-id"
-    LOG_ARCHIVE_RETAIN_COUNT="log-archive-retain-count"
-    WORKBOOKS_AS_TWB="workbooks-as-twb"
+    STORAGE_ENCRYPT = "storage-encrypt"       # "yes" or "no"
+    BACKUP_AUTO_RETAIN_COUNT = "backup-auto-retain-count"
+    BACKUP_USER_RETAIN_COUNT = "backup-user-retain-count"
+    BACKUP_DEST_TYPE = "backup-dest-type"   # "vol" or "cloud"
+    BACKUP_DEST_ID = "backup-dest-id"
+    LOG_ARCHIVE_RETAIN_COUNT = "log-archive-retain-count"
+    WORKBOOKS_AS_TWB = "workbooks-as-twb"
 
     WATERMARK_LOW = "disk-watermark-low"
     WATERMARK_HIGH = "disk-watermark-high"
@@ -41,7 +41,7 @@ class SystemConfig(object):
         return int(value) # Throws exception if non-digit.
 
     def _backup_dest_type(self):
-        value =  self.system.get(self.BACKUP_DEST_TYPE,
+        value = self.system.get(self.BACKUP_DEST_TYPE,
                                  default=FileManager.STORAGE_TYPE_VOL)
         if value not in (FileManager.STORAGE_TYPE_VOL,
                          FileManager.STORAGE_TYPE_CLOUD):
