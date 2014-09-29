@@ -1,5 +1,3 @@
-import ntpath
-
 from general import SystemConfig
 from files import FileManager
 
@@ -13,6 +11,7 @@ class DiskException(Exception):
 
 # This a transitory class - instantiated each time it is needed.
 class DiskCheck(object):
+    # pylint: disable=too-many-instance-attributes
     """Sets the location for:
         - the initial command (if staging is needed)
         - The target/location (if a different final location is needed,
@@ -20,7 +19,10 @@ class DiskCheck(object):
         - Make directories on the primary that are referenced here.
     """
 
-    def __init__(self, server, agent, parent_dir, file_type, min_disk_needed):
+    def __init__(self, server, agent, parent_dir, file_type,
+                 min_disk_needed):
+        # pylint: disable=too-many-arguments
+
         # inputs
         self.server = server
         self.log = server.log
@@ -47,48 +49,22 @@ class DiskCheck(object):
         # Whether or not the primary agent is the final destination.
         self.primary_final_dest = True
 
-        self.set_locs()
-
-        self.mkdirs()
-
-    def mkdirs(self):
-        """Make sure the primary agent directories exists."""
-
         try:
-            self.agent.filemanager.mkdirs(self.primary_dir)
-        except (IOError, ValueError) as e:
-            self.log.error(
-                "diskcheck.mkdirs: Could not create directory: '%s': %s",
-                self.primary_dir, str(e))
-            raise DiskException("Could not create directory '%s': %s" % \
-                                (self.primary_dir, str(e)))
+            self.storage_config = SystemConfig(self.server.system)
+        except ValueError, ex:
+            raise DiskException(ex)
 
-        if self.target_dir and (self.primary_dir != self.target_dir):
-            # Make sure the target directory on the primary exists, too.
-            try:
-                self.agent.filemanager.mkdirs(self.target_dir)
-            except (IOError, ValueError) as e:
-                self.log.error("diskcheck.mkdirs: Could not create " + \
-                               "target directory: '%s': %s",
-                                self.target_dir, str(e))
-                raise DiskException(
-                    ("Could not create target directory " + \
-                                 "'%s': %s") % (self.target_dir, str(e)))
+        # Determine the target info.
+        self._set_target_from_config()
 
-    def set_locs(self):
+        self._mkdirs()
+
+    def _set_locs(self):
         """Set file agent/volume location based on free disk and volumes
            available.
         """
 
-        try:
-            self.storage_config = SystemConfig(self.server.system)
-        except ValueError, e:
-            raise DiskException(e)
-
-        # Determine the target info.
-        self.set_target_from_config()
-
-    def set_target_from_config(self):
+    def _set_target_from_config(self):
         """Use the user configuration settings from SystemConfig
            to set and check a target type and entry, etc.
          """
@@ -105,6 +81,30 @@ class DiskCheck(object):
             raise DiskException("diskcheck: Invalid backup dest_type: %s" % \
                                 self.storage_config.backup_dest_type)
 
+    def _mkdirs(self):
+        """Make sure the primary agent directories exists."""
+
+        try:
+            self.agent.filemanager.mkdirs(self.primary_dir)
+        except (IOError, ValueError) as ex:
+            self.log.error(
+                "diskcheck.mkdirs: Could not create directory: '%s': %s",
+                self.primary_dir, str(ex))
+            raise DiskException("Could not create directory '%s': %s" % \
+                                (self.primary_dir, str(ex)))
+
+        if self.target_dir and (self.primary_dir != self.target_dir):
+            # Make sure the target directory on the primary exists, too.
+            try:
+                self.agent.filemanager.mkdirs(self.target_dir)
+            except (IOError, ValueError) as ex:
+                self.log.error("diskcheck.mkdirs: Could not create " + \
+                               "target directory: '%s': %s",
+                                self.target_dir, str(ex))
+                raise DiskException(
+                    ("Could not create target directory " + \
+                                 "'%s': %s") % (self.target_dir, str(ex)))
+
 
     def config_cloud_target(self):
         """File is configured to go to the cloud."""
@@ -112,8 +112,8 @@ class DiskCheck(object):
                                             self.storage_config.backup_dest_id)
 
         if not entry:
-            raise DiskException(
-                    "cloudid not found: %d" % storage_config.backup_dest_id)
+            raise DiskException("cloudid not found: %d" % \
+                                 self.storage_config.backup_dest_id)
 
         self.target_entry = entry
         self.target_type = FileManager.STORAGE_TYPE_CLOUD
@@ -126,12 +126,11 @@ class DiskCheck(object):
         self.log.debug("cloud: primary_dir: %s", self.primary_dir)
         return
 
-
     def config_vol_target(self):
         # File is configured to go to an agent.
         entry = AgentVolumesEntry.get_vol_entry_by_volid(
-                                        self.storage_config.backup_dest_id)
-        
+                                    self.storage_config.backup_dest_id)
+
         if not entry:
             raise DiskException(
                     "volid not found: %d" % self.storage_config.backup_dest_id)
@@ -166,10 +165,10 @@ class DiskCheck(object):
                 "Allowed/archive limit: %s") % \
                 (entry.volid, sizestr(self.min_disk_needed),
                 sizestr(entry.size - entry.available_space + \
-                            self.min_disk_needed), sizestr(entry.archive_limit)))
+                            self.min_disk_needed),
+                            sizestr(entry.archive_limit)))
 
         self.target_agent = target_agent
-        self.target_vol = entry.name
         # fixme: agent.path...
         self.target_dir = entry.name + ":" +  entry.path + \
                                                "\\" + self.parent_dir
