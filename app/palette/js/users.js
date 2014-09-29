@@ -1,8 +1,12 @@
 require(['jquery', 'topic', 'template', 'common', 'EditBox', 'OnOff', 'bootstrap'],
 function ($, topic, template, common, EditBox, OnOff)
 {
+    var LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
     var active = false;
     var refresh_unavailable_text = 'Refresh not currently possible.';
+
+    var startswith = null;
 
     function ddCallback(node, value) {
         var $section = $(node).closest('article');
@@ -30,7 +34,6 @@ function ($, topic, template, common, EditBox, OnOff)
             EditBox.setup();
             OnOff.setup();
             $('#last-update').html(data['last-update']);
-            $('.refresh p').show();
         });
     }
 
@@ -49,11 +52,26 @@ function ($, topic, template, common, EditBox, OnOff)
         });
     }
 
-    function bind() {
-        $('.refresh > span').bind('click', function() {
+    function bind_refresh() {
+        $('.refresh > i').bind('click', function() {
             if (active) {
                 refresh();
             }
+        });
+    }
+
+    function query(letter) {
+        var url = '/rest/users';
+        if (letter != null) {
+            url += '?startswith=' + letter;
+        }
+        $.ajax({
+            url: url,
+            success: function(data) {
+                startswith = letter;
+                update(data);
+            },
+            error: common.ajaxError,
         });
     }
 
@@ -61,26 +79,35 @@ function ($, topic, template, common, EditBox, OnOff)
         $().ready(function() {
             var allowed = data['allowable-actions'];
             if ($.inArray('user-refresh', allowed) >= 0) {
-                $('.refresh > span.fa-stack').removeClass('inactive');
+                $('.refresh > i').removeClass('inactive');
                 $('.refresh > p > span.message').html('');
                 active = true;
-                bind();
+                bind_refresh();
             } else {
-                $('.refresh > span.fa-stack').addClass('inactive');
-                $('.refresh > span.fa-stack').off('click');
+                $('.refresh > i').addClass('inactive');
+                $('.refresh > i').off('click');
                 $('.refresh > p > span.message').html(refresh_unavailable_text);
                 active = false;
             }
+            $('.refresh p').show();
         });
     });
 
     common.startMonitor(false);
+    query();
 
-    $.ajax({
-        url: '/rest/users',
-        success: function(data) {
-            update(data);
-        },
-        error: common.ajaxError,
+    $().ready(function() {
+        var html = '';        
+	for(var i=0; i<LETTERS.length; i++)
+	{
+            if (i > 0) {
+                html += "&nbsp;:\n";
+            }
+	    html += "<a>" + LETTERS.charAt(i) + "</a>";
+        }
+        $('.letters').html(html + "\n");
+        $('.letters a').bind('click', function() {
+            query($(this).html());
+        });
     });
 });

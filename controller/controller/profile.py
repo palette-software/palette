@@ -32,7 +32,9 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     system_admin_level = Column(Integer)
     publisher = Column(Boolean)
     system_created_at = Column(DateTime)
-    timestamp = Column(DateTime)
+    timestamp = Column(DateTime) # last active time (in Palette)
+    modification_time = Column(DateTime, server_default=func.now(),
+                               onupdate=func.current_timestamp())
 
     role = relationship("Role")
 
@@ -82,6 +84,10 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
         if not entry:
             return False
         return entry.hashed_password == tableau_hash(password, entry.salt)
+
+    @classmethod
+    def last_modification_time(cls, envid):
+        return cls.max('modification_time', filters={'envid': envid})
 
     defaults = [{'userid':0, 'envid':1, 'name':'palette',
                  'friendly_name':'Palette',

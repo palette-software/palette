@@ -1,12 +1,12 @@
 from webob import exc
+from sqlalchemy import func
 
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
 from controller.profile import UserProfile, Role, Admin, License
-from controller.auth import AuthManager
-from controller.util import str2bool
+from controller.util import str2bool, DATEFMT, utc2local
 
 from page import PalettePage
 from rest import PaletteRESTHandler, required_parameters, required_role
@@ -18,11 +18,18 @@ class UserApplication(PaletteRESTHandler):
         roles = meta.Session.query(Role).all()
         return [{'name': x.name, 'id': x.roleid} for x in roles]
 
-    def users(self, envid):
+    def users(self, envid, startswith=None):
         query = meta.Session.query(UserProfile).\
             filter(UserProfile.envid == envid).\
             filter(UserProfile.userid > 0)
+        if startswith:
+            regex = startswith.upper() + '%'
+            query = query.filter(\
+                func.upper(UserProfile.friendly_name).like(regex))
         return query.order_by(UserProfile.friendly_name.asc()).all()
+
+    def user_count(self, envid):
+        return UserProfile.count(filters={'envid':envid})
 
     def visited_info(self, d):
         if not 'timestamp' in d or not d['timestamp']:
@@ -46,8 +53,11 @@ class UserApplication(PaletteRESTHandler):
         return License.str(d['licensing-role-id'])
 
     def last_user_import(self, req):
-        modtime = req.system.modification_time(AuthManager.LAST_IMPORT_KEY)
-        return modtime and modtime or 'never'
+        modtime = UserProfile.last_modification_time(req.envid)
+        if modtime is None:
+            return 'never'
+        modtime = utc2local(modtime)
+        return modtime.strftime(DATEFMT)
 
     def handle(self, req):
         path_info = self.base_path_info(req)
@@ -67,9 +77,18 @@ class UserApplication(PaletteRESTHandler):
         raise exc.HTTPNotFound()
 
     def handle_GET(self, req):
+        count = None
+        startswith = None
+        if 'startswith' in req.GET:
+            startswith = req.GET['startswith']
+        else:
+            # estimated: < 10K
+            count = self.user_count(req.envid)
+            if count > 25:
+                startswith = 'A'
         exclude = ['hashed_password', 'salt']
         users = []
-        for user in self.users(req.envid):
+        for user in self.users(req.envid, startswith=startswith):
             d = user.todict(pretty=True, exclude=exclude)
             d['admin-type'] = user.role.name # FIXME
             d['visited-info'] = self.visited_info(d)
@@ -80,9 +99,12 @@ class UserApplication(PaletteRESTHandler):
                 d['login-at'] = user.name == 'palette' and 'N/A' or 'never'
 
             users.append(d)
-        return {'users': users,
+        data = {'users': users,
                 'admin-levels': self.admin_levels(),
                 'last-update': self.last_user_import(req)}
+        if not count is None:
+            data['count'] = count
+        return data
 
     # refresh request
     @required_role(Role.MANAGER_ADMIN)

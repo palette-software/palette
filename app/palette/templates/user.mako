@@ -9,16 +9,14 @@
   <h1 class="page-title">Users</h1>
   <div class="refresh">
 %if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
-    <span class="fa-stack inactive">
-      <i class="fa fa-circle fa-stack-2x"></i>
-      <i class="fa fa-fw fa-stack-1x fa-refresh"></i>
-    </span>
+    <i class="fa fa-fw fa-refresh inactive"></i>
 %endif
     <p>
       <span class="message"></span>
-      Last updated <span id="last-update"></span>
+      Updated <span id="last-update"></span>
     </p>
   </div>
+  <div class="letters"></div>
   <div id="user-list"></div>
 </section>
 

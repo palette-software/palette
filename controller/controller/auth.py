@@ -1,15 +1,13 @@
-import time
-
 from sqlalchemy import not_
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
-from manager import Manager
+from manager import Manager, synchronized
 from profile import UserProfile, Publisher, License
-from util import DATEFMT, odbc2dt
+from util import odbc2dt
 
-# TableauCacheManager is not used since a different 'load_users' is needed.
+# FIXME: use the ODBC class here instead.
 class AuthManager(Manager):
 
     LAST_IMPORT_KEY = 'last-user-import'
@@ -50,7 +48,7 @@ class AuthManager(Manager):
                 cache[sysid] = obj
         return cache
 
-    # FIXME: take the manager lock.
+    @synchronized('auth')
     def load(self, agent, check_odbc_state=True):
         # pylint: disable=too-many-locals
         envid = self.server.environment.envid
@@ -86,15 +84,12 @@ class AuthManager(Manager):
             sysid = row[7]
             names.append(name)
 
-            email = row[1]
-
             entry = UserProfile.get_by_name(envid, name)
             if not entry:
                 entry = UserProfile(envid=envid, name=name)
                 session.add(entry)
-            if email:
-                # If an email was entered in Tableau - it wins.
-                entry.email = email
+
+            entry.email = row[1]
             entry.hashed_password = row[2]
             entry.salt = row[3]
             entry.friendly_name = row[4]
@@ -102,7 +97,6 @@ class AuthManager(Manager):
             entry.system_created_at = row[6]
             entry.system_user_id = sysid
 
-            obj = None
             if sysid in cache:
                 obj = cache[sysid]
                 entry.login_at = obj.login_at
@@ -116,9 +110,6 @@ class AuthManager(Manager):
         session.query(UserProfile).\
             filter(not_(UserProfile.name.in_(names))).\
             update({'active': False}, synchronize_session='fetch')
-
-        now = time.strftime(DATEFMT)
-        self.server.system.save(self.LAST_IMPORT_KEY, now)
 
         d = {u'status': 'OK', u'count': len(data[''])}
         self.server.log.debug("auth load returning: %s", str(d))
