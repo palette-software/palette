@@ -33,6 +33,7 @@ pylint:
 	$(PYLINT) controller/files.py
 	$(PYLINT) controller/firewall.py
 	$(PYLINT) controller/firewall_manager.py
+	$(PYLINT) controller/get_file.py
 	$(PYLINT) controller/http_requests.py
 	$(PYLINT) controller/licensing.py
 	$(PYLINT) controller/manager.py
