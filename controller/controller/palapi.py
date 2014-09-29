@@ -8,9 +8,8 @@ import posixpath
 from akiri.framework.config import store
 import clierror
 
-class CommException(Exception):
-    def __init__(self, errmsg):
-        Exception.__init__(self, errmsg)
+class CommException(StandardError):
+    pass
 
 class CommBase(object):
     # pylint: disable=too-many-instance-attributes
