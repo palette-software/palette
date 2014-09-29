@@ -46,7 +46,8 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
                 {'envid':1, 'key':'socket-timeout', 'value':str(60)},
                 {'envid':1, 'key':'ssl-handshake-timeout', 'value':str(5)},
                 {'envid':1, 'key':'event-degraded-min', 'value':str(120)},
-                {'envid':1, 'key':'status-request-interval', 'value':str(10)}
+                {'envid':1, 'key':'status-request-interval', 'value':str(10)},
+                {'envid':1, 'key': SystemConfig.ALERTS_ENABLED, 'value':'no'}
         # Note: No default volid set.
     ]
 

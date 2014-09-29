@@ -16,6 +16,8 @@ class SystemConfig(object):
     HTTP_LOAD_WARN = "http-load-warn"
     HTTP_LOAD_ERROR = "http-load-error"
 
+    ALERTS_ENABLED = "alerts-enabled"
+
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
     def __init__(self, system):
@@ -88,6 +90,8 @@ class SystemConfig(object):
             return self._http_load_warn(self.HTTP_LOAD_WARN)
         if name == 'http_load_error':
             return self._http_load_error(self.HTTP_LOAD_ERROR)
+        if name == 'alerts_enabled':
+            return self._getyesno(self.ALERTS_ENABLED)
 
     def todict(self):
         return {
