@@ -1,9 +1,6 @@
 import os
-import httplib
 import urllib
 import json
-
-import exc
 
 class FileManager(object):
 
@@ -44,12 +41,13 @@ class FileManager(object):
     def put(self, path, data):
         self.checkpath(path)
         uri = self.uri(path)
-        h = {}
+        headers = {}
         if not data:
             # http://bugs.python.org/issue14721
-            h['content-length'] = 0
+            headers['content-length'] = 0
         self.server.log.debug("FileManager PUT %s: %d", uri, len(data))
-        return self.agent.connection.http_send('PUT', uri, data, headers=h)
+        return self.agent.connection.http_send('PUT', uri, data,
+                                               headers=headers)
 
     def sha256(self, path):
         data = {'action':'SHA256', 'path':path}

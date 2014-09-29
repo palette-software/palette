@@ -23,7 +23,6 @@ from state import StateManager
 from state_control import StateControl
 from tableau import TableauProcess
 
-#from cli_errors import *
 import exc
 import clierror
 from util import success, failed

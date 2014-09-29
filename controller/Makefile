@@ -29,6 +29,8 @@ pylint:
 	$(PYLINT) controller/event_control.py
 	$(PYLINT) controller/extracts.py
 	$(PYLINT) controller/exc.py
+	$(PYLINT) controller/filemanager.py
+	$(PYLINT) controller/files.py
 	$(PYLINT) controller/firewall.py
 	$(PYLINT) controller/firewall_manager.py
 	$(PYLINT) controller/http_requests.py
