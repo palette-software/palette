@@ -151,6 +151,12 @@
 "color":"red"
 },
 {
+"state":"PRIMARY-NOT-ENABLED",
+"text":"Primary Disabled",
+"allowable_actions":"",
+"color":"red"
+},
+{
 "state":"UPGRADING",
 "text":"Upgrading Palette Software",
 "allowable_actions":"",

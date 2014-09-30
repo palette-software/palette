@@ -72,11 +72,11 @@ class DiskCheck(object):
         self.primary_final_dest = False
 
         if self.storage_config.backup_dest_type == FileManager.STORAGE_TYPE_VOL:
-            self.config_vol_target()
+            self._config_vol_target()
             return
         elif self.storage_config.backup_dest_type == \
                                                 FileManager.STORAGE_TYPE_CLOUD:
-            self.config_cloud_target()
+            self._config_cloud_target()
         else:
             raise DiskException("diskcheck: Invalid backup dest_type: %s" % \
                                 self.storage_config.backup_dest_type)
@@ -106,7 +106,7 @@ class DiskCheck(object):
                                  "'%s': %s") % (self.target_dir, str(ex)))
 
 
-    def config_cloud_target(self):
+    def _config_cloud_target(self):
         """File is configured to go to the cloud."""
         entry = self.server.cloud.get_by_cloudid(
                                             self.storage_config.backup_dest_id)
@@ -126,7 +126,7 @@ class DiskCheck(object):
         self.log.debug("cloud: primary_dir: %s", self.primary_dir)
         return
 
-    def config_vol_target(self):
+    def _config_vol_target(self):
         # File is configured to go to an agent.
         entry = AgentVolumesEntry.get_vol_entry_by_volid(
                                     self.storage_config.backup_dest_id)
@@ -144,6 +144,11 @@ class DiskCheck(object):
                 "No such agentid %d referenced by volid %d in backupid %d" % \
                 (entry.agentid, entry.volid,
                                         self.storage_config.backup_dest_id))
+
+        if not target_agent.enabled:
+            raise DiskException(("Cannot save to Storage Location on " + \
+                                "agent '%s': agent is disabled.") % \
+                                target_agent.displayname)
 
         # Check to see if this volume has enough available disk space.
         if entry.available_space < self.min_disk_needed:

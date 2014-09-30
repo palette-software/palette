@@ -19,7 +19,7 @@ class Agent(meta.Base, BaseDictMixin):
     # pylint: disable=too-many-instance-attributes
     __tablename__ = 'agent'
 
-    agentid = Column(BigInteger, unique=True, nullable=False, \
+    agentid = Column(BigInteger, unique=True, nullable=False,
                          autoincrement=True, primary_key=True)
     conn_id = Column(BigInteger)
     envid = Column(BigInteger, ForeignKey("environment.envid"))

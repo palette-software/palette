@@ -243,10 +243,14 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
             all()
 
     @classmethod
-    def get_archives_by_envid(cls, envid):
-        return meta.Session.query(AgentVolumesEntry).\
+    def get_archives_by_envid(cls, envid, enabled_agents_only=True):
+        query = meta.Session.query(AgentVolumesEntry).\
             filter_by(archive=True).\
             join('agent').\
-            filter_by(envid=envid).\
-            order_by(asc('agent.display_order'), asc('name')).\
+            filter_by(envid=envid)
+
+        if enabled_agents_only:
+            query = query.filter_by(enabled=True)
+
+        return query.order_by(asc('agent.display_order'), asc('name')).\
             all()
