@@ -240,6 +240,7 @@ class MonitorApplication(PaletteRESTHandler):
             color_num = Colors.RED_NUM
 
         if main_state in (StateManager.STATE_STOPPED,
+                StateManager.STATE_STOPPED_UNEXPECTED,
                 StateManager.STATE_STARTED, StateManager.STATE_DEGRADED,
                 StateManager.STATE_PENDING, StateManager.STATE_DISCONNECTED,
                                                     StateManager.STATE_UNKNOWN):
@@ -247,6 +248,7 @@ class MonitorApplication(PaletteRESTHandler):
         else:
             user_action_in_progress = True
 
+        agent_worker_stopped = False
         agents = []
         for entry in agent_entries:
             if not entry.enabled:
@@ -332,12 +334,16 @@ class MonitorApplication(PaletteRESTHandler):
                 agent_color_num = Colors.YELLOW_NUM
                 agent['warnings'] = [{'color':'yellow',
                                       'message': 'Tableau stopped'}]
+                if entry.agent_type == AgentManager.AGENT_TYPE_WORKER:
+                    agent_worker_stopped = True
             elif entry.agent_type in (AgentManager.AGENT_TYPE_PRIMARY,
                                     AgentManager.AGENT_TYPE_WORKER) and \
                         main_state == StateManager.STATE_STOPPED_UNEXPECTED:
                 agent_color_num = Colors.RED_NUM
                 agent['warnings'] = [{'color':'red',
                                       'message': 'Tableau stopped'}]
+                if entry.agent_type == AgentManager.AGENT_TYPE_WORKER:
+                    agent_worker_stopped = True
 
             if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY or \
                         entry.agent_type == AgentManager.AGENT_TYPE_WORKER:
@@ -378,6 +384,21 @@ class MonitorApplication(PaletteRESTHandler):
             # Set the overall status lower if this agent status was lower.
             if agent_color_num < color_num:
                 color_num = agent_color_num
+
+        # If the primary is running and any worker is stopped, set
+        # the status to DEGRADED.
+        if main_state == StateManager.STATE_STARTED and agent_worker_stopped:
+            main_state = StateManager.STATE_DEGRADED
+            # allowable_actions are the same for STARTED and DEGRADED, so
+            # we don't need to update.
+            state_control_entry = \
+                            StateControl.get_state_control_entry(main_state)
+            if not state_control_entry:
+                print "UNKNOWN STATE.  State:", main_state
+                # fixme: stop everything?  Log this somewhere?
+                return
+
+            color_num = Colors.RED_NUM
 
         environments = [{"name": "My Servers", "agents": agents}]
 
