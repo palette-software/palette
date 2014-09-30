@@ -1186,14 +1186,6 @@ class AgentManager(threading.Thread):
         agent.odbc = ODBC(agent)
         agent.filemanager = FileManager(agent)
 
-        if agent.displayname is None or agent.displayname == "":
-            displayname_needed_setting = True
-            # Temporary displayname in case there is an event that
-            # requires a displayname before the real displayname is set
-            agent.displayname = agent.hostname
-        else:
-            displayname_needed_setting = False
-
         orig_agent_type = agent.agent_type
 
         try:
@@ -1207,6 +1199,11 @@ class AgentManager(threading.Thread):
 
         if agent.agent_type is None:
             agent.agent_type = aconn.agent_type
+
+        if agent.displayname is None or agent.displayname == "":
+            displayname_needed_setting = True
+        else:
+            displayname_needed_setting = False
 
         # Now that we know the agent type, we can update the
         # volume information from pinfo.

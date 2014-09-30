@@ -131,6 +131,13 @@ class Agent(meta.Base, BaseDictMixin):
         if exclude is None:
             exclude = []
         d = super(Agent, self).todict(pretty=pretty, exclude=exclude)
+        if not 'displayname' in d:
+            # We may need the displayname to exist for events, even
+            # before the agent has a displayname.
+            if 'hostname' in d:
+                d['displayname'] = d['hostname']
+            else:
+                d['displayname'] = d['uuid']
         if 'username' in d:
             del d['username']
         if 'password' in d:
