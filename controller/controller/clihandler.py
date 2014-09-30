@@ -7,6 +7,7 @@ import json
 import traceback
 
 import sqlalchemy
+from sqlalchemy.orm.session import make_transient
 
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
@@ -17,6 +18,7 @@ from agentmanager import AgentManager
 from agentinfo import AgentYmlEntry
 from event_control import EventControl
 from files import FileManager
+from get_file import GetFile
 from cloud import CloudManager
 from system import SystemEntry
 from state import StateManager
@@ -284,12 +286,12 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         event_control = self.server.event_control
 
-        event_entry = event_control.get_event_control_entry(\
+        event_entry = event_control.get_event_control_entry(
                       EventControl.EMAIL_TEST)
 
         if not event_entry:
             self.error(clierror.ERROR_INTERNAL,
-                       "Missing test email event '%s'!" %  \
+                       "Missing test email event '%s'!" % \
                        EventControl.EMAIL_TEST)
             return
 
@@ -514,7 +516,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error(clierror.ERROR_NOT_FOUND, "File not found: %s", filename)
             return
 
-        aconn = self.get_aconn(cmd.dict)
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            return
+
+        aconn = agent.connection
+
         if not aconn:
             self.error(clierror.ERROR_AGENT_NOT_FOUND)
             return
@@ -647,6 +654,11 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         aconn = agent.connection
 
+        if cmd.dict.has_key('userid'):
+            userid = int(cmd.dict['userid'])
+        else:
+            userid = None
+
         # lock to ensure against two simultaneous user actions
         if not aconn.user_action_lock(blocking=False):
             self.error(clierror.ERROR_BUSY)
@@ -664,6 +676,25 @@ class CliHandler(socketserver.StreamRequestHandler):
             msg = "Can't backup before restore - main state is: " + main_state
             self.error(clierror.ERROR_WRONG_STATE, "FAIL: " + msg)
             self.server.log.debug(msg)
+            aconn.user_action_unlock()
+            return
+
+        data = agent.todict()
+
+        # Do a quick check to make sure the file to restore from
+        # is available.  In particular, make sure the file is
+        # available and if the file is on an agent, make sure the agent
+        # is enabled.
+        try:
+            GetFile(self.server, agent, backup_name, check_only=True)
+        except IOError as ex:
+            self.error(clierror.ERROR_COMMAND_FAILED, str(ex))
+            self.server.log.debug(str(ex))
+            body = {'stderr': ex, 'stdout':"", "error":""}
+            self.server.event_control.gen(EventControl.RESTORE_FAILED,
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
+
             aconn.user_action_unlock()
             return
 
@@ -686,18 +717,12 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Do a backup before we try to do a restore.
         #FIXME: refactor do_backup() into do_backup() and backup()
         self.server.log.debug("----------Starting Backup for Restore----------")
-        if cmd.dict.has_key('userid'):
-            userid = int(cmd.dict['userid'])
-        else:
-            userid = None
-
         if cmd.dict.has_key('no-config'):
             no_config = True
         else:
             no_config = False
 
-        data = agent.todict()
-        self.server.event_control.gen(\
+        self.server.event_control.gen(
             EventControl.BACKUP_BEFORE_RESTORE_STARTED, data, userid=userid)
 
         self.ack()
@@ -719,7 +744,6 @@ class CliHandler(socketserver.StreamRequestHandler):
             line = "Backup For Restore Error. Traceback: %s" % self.traceback()
             body = {'error': line}
 
-        data = agent.todict()
         if success(body):
             if 'copy-failed' in body:
                 real_event = \
@@ -730,7 +754,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                 dict(body.items() + data.items()),
                 userid=userid)
         else:
-            self.server.event_control.gen(\
+            self.server.event_control.gen(
                 EventControl.BACKUP_BEFORE_RESTORE_FAILED,
                 dict(body.items() + data.items()),
                 userid=userid)
@@ -1995,6 +2019,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
 
         body = self.server.ziplogs_cmd(agent, userid=userid)
+        if failed(body):
+            data = agent.todict()
+            self.server.event_control.gen(EventControl.ZIPLOGS_FAILED,
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
 
         stateman.update(main_state)
         aconn.user_action_unlock()
@@ -2065,8 +2094,9 @@ class CliHandler(socketserver.StreamRequestHandler):
             uuid = opts['uuid'] # may be None
             if uuid:
                 agent = self.server.agentmanager.agent_by_uuid(uuid)
-                if not agent and error_on_no_agent:
-                    self.error(clierror.ERROR_AGENT_NOT_CONNECTED,
+                if error_on_no_agent:
+                    if not agent:
+                        self.error(clierror.ERROR_AGENT_NOT_CONNECTED,
                                "No connected agent with uuid=%s" % (uuid))
             elif error_on_no_agent:
                 self.error(clierror.ERROR_AGENT_NOT_SPECIFIED)
@@ -2074,13 +2104,31 @@ class CliHandler(socketserver.StreamRequestHandler):
             if error_on_no_agent:
                 self.error(clierror.ERROR_AGENT_NOT_SPECIFIED)
 
+        if agent:
+            temp_agent = Agent.get_by_uuid(opts['envid'], agent.uuid)
+            make_transient(temp_agent)
+            if temp_agent == None:
+                self.error(clierror.ERROR_AGENT_NOT_FOUND, "uuid: %s" % uuid)
+                agent = None
+            elif not temp_agent.enabled:
+                agent = None
+                if error_on_no_agent:
+                    self.error(clierror.ERROR_AGENT_NOT_ENABLED,
+                               "Agent disabled with uuid=%s" % (uuid))
+
         return agent
 
-    def traceback(self):
+
+    def traceback(self, all_on_one_line=True):
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        return ''.join(traceback.format_exception(exc_type, exc_value,
-                                                  exc_traceback)).\
-                                                  replace('\n', '')
+        tback = traceback.format_exception(exc_type, exc_value, exc_traceback)
+
+        tback = ''.join(tback)
+
+        if all_on_one_line:
+            return tback.replace('\n', '')
+        else:
+            return tback
 
     def handle_exception(self, before_state, telnet_command):
         self.server.log.exception("Command Failed with Exception:")
@@ -2107,18 +2155,10 @@ class CliHandler(socketserver.StreamRequestHandler):
                                                 (now_state, before_state)
                 stateman.update(before_state)
 
-        line += "Traceback: %s" % self.traceback()
+        line += self.traceback(all_on_one_line=False)
         self.error(clierror.ERROR_COMMAND_FAILED, line)
         self.server.event_control.gen(EventControl.SYSTEM_EXCEPTION,
                                       {'error': line})
-
-    # DEPRECATED
-    def get_aconn(self, opts):
-        # FIXME: This method is a temporary hack while we
-        #        clean up the telnet commands
-        # FIXME: TBD: Should this be farmed out to another class?
-        agent = self.get_agent(opts)
-        return agent and agent.connection or None
 
     def handle(self):
         while True:

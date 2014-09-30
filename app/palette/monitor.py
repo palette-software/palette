@@ -200,7 +200,21 @@ class MonitorApplication(PaletteRESTHandler):
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-statements
         # Get the state
-        main_state = StateManager.get_state_by_envid(req.envid)
+
+        agent_entries = meta.Session.query(Agent).\
+            filter(Agent.envid == req.envid).\
+            order_by(Agent.display_order).\
+            order_by(Agent.displayname).\
+            all()
+
+        main_state = None
+        for entry in agent_entries:
+            if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
+                                                            not entry.enabled:
+                main_state = StateManager.STATE_PRIMARY_NOT_ENABLED
+
+        if not main_state:
+            main_state = StateManager.get_state_by_envid(req.envid)
 
         state_control_entry = StateControl.get_state_control_entry(main_state)
         if not state_control_entry:
@@ -210,7 +224,7 @@ class MonitorApplication(PaletteRESTHandler):
 
         allowable_actions = []
         if req.remote_user.roleid >= Role.MANAGER_ADMIN:
-            # Convert the space-sparated string to a list, e.g.
+            # Convert the space-separated string to a list, e.g.
             # "start stop reset" --> ["start", "stop", "reset"]
             s = state_control_entry.allowable_actions
             if s:
@@ -232,12 +246,6 @@ class MonitorApplication(PaletteRESTHandler):
             user_action_in_progress = False
         else:
             user_action_in_progress = True
-
-        agent_entries = meta.Session.query(Agent).\
-            filter(Agent.envid == req.envid).\
-            order_by(Agent.display_order).\
-            order_by(Agent.displayname).\
-            all()
 
         agents = []
         for entry in agent_entries:

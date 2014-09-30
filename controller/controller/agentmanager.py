@@ -1077,8 +1077,6 @@ class AgentManager(threading.Thread):
 
         session = meta.Session()
 
-        agent_done = False
-
         try:
             aconn = AgentConnection(self.server, conn, addr, peername)
             self.log.debug(
@@ -1134,86 +1132,42 @@ class AgentManager(threading.Thread):
                     return
 
             aconn.auth = body
-            uuid = aconn.auth['uuid']
 
             agent = Agent.build(self.envid, aconn)
             agent.connection = aconn
-            agent.server = self.server
-            agent.firewall = Firewall(agent)
-            agent.odbc = ODBC(agent)
-            agent.filemanager = FileManager(agent)
-
-            orig_agent_type = agent.agent_type
-
-            try:
-                pinfo = self.server.init_new_agent(agent)
-            except (IOError, ValueError, exc.InvalidStateError,
-                    exc.HTTPException, httplib.HTTPException) as ex:
-                self.log.error(
-                    "Bad agent with uuid: '%s'.  Disconnecting.  Error: %s",
-                    uuid, str(ex))
-                self._close(conn)
-                return
-
-            if agent.agent_type is None:
-                agent.agent_type = aconn.agent_type
-
-            if agent.displayname is None or agent.displayname == "":
-                displayname_needed_setting = True
+            if agent.enabled:
+                self.setup_agent(agent)
             else:
-                displayname_needed_setting = False
-
-            # Now that we know the agent type, we can update the
-            # volume information from pinfo.
-            if not self.update_agent_pinfo_vols(agent, pinfo):
-                self.log.error(
-                    "pinfo vols bad for agent with uuid: '%s'.  " \
-                        "Disconnecting.", uuid)
-                self._close(conn)
-                return
-
-            if not self.register(agent, orig_agent_type):
-                self.log.error("Bad agent with uuid: %s'.  Disconnecting.",
-                                                                        uuid)
-                self._close(conn)
-                return
-
-            #fixme: not a great place to do this
-            #aconn.displayname = agent.displayname
-
-            self.save_routes(agent) # fixme: check return value?
-            aconn.initting = False
-
-            self.server.event_control.gen(\
-                EventControl.AGENT_COMMUNICATION, agent.todict())
-
-            if displayname_needed_setting:
-                # Go through the vols again to send any disk events
-                # since the agent previously didn't have a displayname
-                # and will only send events if it has a displayname.
-                # Do this after we send the "AGENT_COMMUNICATION" event
-                # or the event order looks wrong.
-                if not self.update_agent_pinfo_vols(agent, pinfo):
-                    self.log.error(
-                        "pinfo vols failed second time for agent with " + \
-                        "uuid: '%s'.  Disconnecting.", uuid)
-                    self._close(conn)
+                # If the agent isn't enabled, only ping and don't go through
+                # all of the agent initialization until/if the agent is enabled
+                # by the user.
+                if self.ping_check(agent, init_enabled=False):
+                    # The agent has been enabled and is still there,
+                    # so continue on with the initialization.
+                    agent = Agent.build(self.envid, aconn)
+                    agent.connection = aconn
+                    self.setup_agent(agent)
+                else:
+                    self.log.debug(
+                        "handle_agent_connection: unmonitored agent " + \
+                        "with displayname %s, uuid %s, conn_id %d" + \
+                        "has disconnected.",
+                        str(agent.displayname), agent.uuid,
+                        agent.connection.conn_id)
                     return
-
-            if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-                self.set_default_backup_destid(agent)
 
             session = meta.Session()
             session.commit()
 
-            agent_done = True
+            make_transient(agent)
 
+            self.ping_check(agent)
 
-        except socket.error, ex:
-            self.log.debug("Socket error: " + str(ex))
-            self._close(conn)
-        except Exception:
-            self.log.exception('handle_agent_connection exception:')
+        except (socket.error, IOError) as ex:
+            self.log.debug("handle_agent_connection_error: " + str(ex))
+            self._close(aconn.socket)
+        except Exception as ex:
+            self.log.exception('handle_agent_connection exception:' + str(ex))
         finally:
             try:
                 # Use " ifinspect(agent).session" when we go to sqlalchemy
@@ -1222,12 +1176,69 @@ class AgentManager(threading.Thread):
             except StandardError:
                 pass
 
-            session.rollback()
-            meta.Session.remove()
+            meta.Session.remove()   # does a rollback()
 
-        if agent_done:
-            # Do after the make_transient(agent)
-            self.ping_check(agent)
+    def setup_agent(self, agent):
+        aconn = agent.connection
+        uuid = aconn.auth['uuid']
+        agent.server = self.server
+        agent.firewall = Firewall(agent)
+        agent.odbc = ODBC(agent)
+        agent.filemanager = FileManager(agent)
+
+        orig_agent_type = agent.agent_type
+
+        try:
+            pinfo = self.server.init_new_agent(agent)
+        except (IOError, ValueError, exc.InvalidStateError,
+                exc.HTTPException, httplib.HTTPException) as ex:
+            self._close(aconn.socket)
+            raise IOError(
+                "Bad agent with uuid: '%s', Disconnecting. Error: %s",
+                uuid, str(ex))
+
+        if agent.agent_type is None:
+            agent.agent_type = aconn.agent_type
+
+        if agent.displayname is None or agent.displayname == "":
+            displayname_needed_setting = True
+        else:
+            displayname_needed_setting = False
+
+        # Now that we know the agent type, we can update the
+        # volume information from pinfo.
+        if not self.update_agent_pinfo_vols(agent, pinfo):
+            self._close(aconn.socket)
+            raise IOError(("pinfo vols bad for agent with uuid: '%s'.  " +
+                    "Disconnecting.") % uuid)
+
+        if not self.register(agent, orig_agent_type):
+            self._close(aconn.socket)
+            raise IOError("Bad agent with uuid: %s'.  Disconnecting." % uuid)
+
+        #fixme: not a great place to do this
+        #aconn.displayname = agent.displayname
+
+        self.save_routes(agent) # fixme: check return value?
+        aconn.initting = False
+
+        self.server.event_control.gen(
+            EventControl.AGENT_COMMUNICATION, agent.todict())
+
+        if displayname_needed_setting:
+            # Go through the vols again to send any disk events
+            # since the agent previously didn't have a displayname
+            # and will only send events if it has a displayname.
+            # Do this after we send the "AGENT_COMMUNICATION" event
+            # or the event order looks wrong.
+            if not self.update_agent_pinfo_vols(agent, pinfo):
+                self._close(aconn.socket)
+                raise IOError(
+                    "pinfo vols failed second time for agent with " + \
+                    "uuid: '%s'.  Disconnecting." % uuid)
+
+        if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+            self.set_default_backup_destid(agent)
 
     def set_default_backup_destid(self, agent):
         if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
@@ -1291,41 +1302,73 @@ class AgentManager(threading.Thread):
                        route_path, lines)
         return True
 
-    def ping_check(self, agent):
+    def ping_check(self, agent, init_enabled=True):
         """Each agent has a ping thread that starts out as the initial
            thread processing a new agent's connection.  This thread
            periodically pings the agent to let the agent know we're
-           still here and to let us know the agent is still there."""
+           still here and to let us know the agent is still there.
+
+           We are called with 'init_enabled=False' when the
+           agent is disabled on initial connection.  In this case,
+           we periodically check to see if the agent is now enabled
+           and if so, return True which allows continuation of the agent
+           initialization.
+
+           Returns:
+                True:   Agent is alive.
+                False:  Agent did not responsd
+            """
 
         aconn = agent.connection
         conn_id = aconn.conn_id
         while not self.server.noping:
-            if conn_id not in self.all_agents():
-                self.log.info("ping_check: agent with connid %d is now gone",
-                               conn_id)
-                return  # end ping thread
+            if agent.enabled:
+                if conn_id not in self.all_agents():
+                    self.log.info(
+                            "ping_check: agent with connid %d is now gone",
+                            conn_id)
+                    return False    # end ping thread
+
+            # Check to see if the agent is enabled.  If so,
+            # return True to continue on the agent initialization.
+            temp_agent = Agent.get_by_uuid(self.envid, agent.uuid)
+            make_transient(temp_agent)
+            if temp_agent == None:
+                self.log.error(
+                    "ping_check: Agent no longer exists with uuid: %s",
+                    agent.uuid)
+                return False
+
+            if init_enabled == False and temp_agent.enabled == True:
+                # It was disabled on initial connection, but is now enabled,
+                # so return to continue the agent initialization.
+                self.log.debug("ping_check: Initially disabled agent " +
+                                "'%s', is now enabled.", agent.displayname)
+                return True
 
             now = time.time()
             elapsed = now - aconn.last_activity
             if elapsed < self.ping_interval:
-                # There was recent activity with this agent, so don't
+                # There was recent activity with this agent, so we don't
                 # need to ping.
                 time.sleep(self.ping_interval - elapsed)
                 continue
 
             self.log.debug("ping: check for agent '%s', type '%s', " + \
                            "uuid '%s', conn_id %d, last heard from: " + \
-                           "%d seconds ago (>= %d).",
-                           agent.displayname, agent.agent_type, agent.uuid,
-                           conn_id, elapsed, self.ping_interval)
+                           "%d seconds ago (>= %d), enabled %s.",
+                           str(temp_agent.displayname),
+                           str(temp_agent.agent_type),
+                           agent.uuid, conn_id, elapsed, self.ping_interval,
+                           str(temp_agent.enabled))
 
-            if not self.do_ping(agent):
+            if not self.ping_agent(agent):
                 self.log.info("ping: failed. agent with conn_id %d is gone",
                                conn_id)
-                return
+                return False
             time.sleep(self.ping_interval)
 
-    def do_ping(self, agent):
+    def ping_agent(self, agent):
         """Send a ping to an agent. Returns:
                 True:   The ping succeeded
                 False:  The ping failed
@@ -1351,7 +1394,18 @@ class AgentManager(threading.Thread):
                     agent.displayname, agent.agent_type, agent.uuid,
                     agent.conn_id)
 
-                self.remove_agent(agent, "Lost contact with an agent")
+                # Check to see if the agent still exists and is enabled.
+                # It could have taken some time for the ping to fail,
+                # so maybe the agent is gone or disabled now.
+                temp_agent = Agent.get_by_uuid(self.envid, agent.uuid)
+                make_transient(temp_agent)
+                if temp_agent == None:
+                    self.log.error(
+                        "ping_check: Agent no longer exists with uuid: %s",
+                        agent.uuid)
+                    return False
+                if temp_agent.enabled:
+                    self.remove_agent(temp_agent, "Lost contact with an agent")
                 return False
         else:
             self.log.debug(

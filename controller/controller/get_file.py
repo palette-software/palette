@@ -13,7 +13,7 @@ class GetFile(object):
        another agent or cloud storage for use by commands
        such as 'tabadmin restore', etc."""
 
-    def __init__(self, server, agent, full_path):
+    def __init__(self, server, agent, full_path, check_only=False):
         self.server = server
         self.log = server.log
         self.files = server.files
@@ -39,9 +39,9 @@ class GetFile(object):
         # file after the restore, etc. finishes or an error.
         self.copied = False
 
-        self._get_file()
+        self._get_file(check_only)
 
-    def _get_file(self):
+    def _get_file(self, check_only):
         self.file_entry = self.files.find_by_name(self.full_path)
         if not self.file_entry:
             raise IOError("File not found: %s" % self.full_path)
@@ -49,6 +49,9 @@ class GetFile(object):
         # Sets self.source_type/entry.  Also sets self.agent if the
         # file is on an agent.
         self._set_source()
+
+        if check_only:
+            return
 
         # The case where the file is not on the primary.
         # Find a place to stage the file.
@@ -126,6 +129,11 @@ class GetFile(object):
                     "files entry %d and name %s") % \
                         (self.source_entry.agentid, self.file_entry.storageid,
                                             self.file_entry.name))
+            if not self.source_agent.enabled:
+                raise IOError(("Cannot retrieve file '%s' from agent " + \
+                               "'%s': agent is disabled.") % \
+                               (self.file_entry.name,
+                               self.source_agent.displayname))
         else:
             raise IOError(("_get_file: Unknown file storage type " + \
                               "'%s' for file '%s'") % \

@@ -48,6 +48,10 @@ class StateManager(Manager):
 
     STATE_UNKNOWN = "UNKNOWN"     # no primary ever connected to the controller
 
+    # Not a real state, but used for displaying this state information
+    # when the primary is not enabled.
+    STATE_PRIMARY_NOT_ENABLED = "PRIMARY-NOT-ENABLED"
+
     def __init__(self, server):
         super(StateManager, self).__init__(server)
         self.system = self.server.system
