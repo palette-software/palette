@@ -332,6 +332,7 @@ class TableauStatusMonitor(threading.Thread):
 
     def check_status_with_connection(self, agent):
         # pylint: disable=too-many-locals
+        # pylint: disable=too-many-branches
         agentid = agent.agentid
 
         body = self.server.status_cmd(agent)
@@ -391,8 +392,15 @@ class TableauStatusMonitor(threading.Thread):
                     # FIXME: log error
                     pass
             else:
-                host = parts[0].strip().replace(':', '')
-                agentid = self.get_agent_id_from_host(host)
+                line = line.strip()
+                if line[-1:] == ':':
+                    # A hostname or IP address is specified: new section
+                    host = parts[0].strip().replace(':', '')
+                    agentid = self.get_agent_id_from_host(host)
+                else:
+                    # Example: "Connection error contacting worker 1"
+                    self._add(agentid, line, -1, 'error')
+                    self.log.debug("logged: %s, %d, %s", line, -1, 'error')
 
         self._set_main_state(system_status, agent, body)
         self.log.debug("Logging main status: %s", system_status)
