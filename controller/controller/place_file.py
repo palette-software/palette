@@ -10,10 +10,11 @@ class PlaceFile(object):
     """Copies the full_path, if needed to the primary agent from
        another agent or cloud storage for use by commands
        such as 'tabadmin restore', etc.."""
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, server, agent, dcheck, full_path, size, auto,
                  enable_delete=True):
-
+        # pylint: disable=too-many-arguments
         self.server = server
         self.log = server.log
 
@@ -33,6 +34,7 @@ class PlaceFile(object):
         self.copied = False
         self.info = ""
         self.placed_file_entry = None
+        self.copy_start_time = None
 
         self.do_copy()
 
@@ -122,7 +124,8 @@ class PlaceFile(object):
 
     def copy_to_agent(self):
         # Copy the file to a non-primary agent
-        # Example: "Tableau Archive #202:D/palette-backups/20140127_162225.tsbak"
+        # Example:
+        #   "Tableau Archive 202:D/palette-backups/20140127_162225.tsbak"
 
         (backup_vol, backup_path) = self.full_path.split(':', 1)
 
@@ -131,7 +134,7 @@ class PlaceFile(object):
             AgentVolumesEntry.get_vol_entry_by_agentid_vol_name(
                                                 self.agent.agentid, backup_vol)
         if not source_agent_vol_entry:
-            return self.error(
+            return self.server.error(
                 (u"Could not find backup volume '%s' for agentid %d. " + \
                 "Backup will remain on the primary agent.") % \
                 (backup_vol, self.agent.agentid))
@@ -148,7 +151,7 @@ class PlaceFile(object):
             backup_path = backup_path[len(common):]
 
         source_path = "%s%s" % (backup_vol, backup_path)
-        copy_start_time = time.time()
+        self.copy_start_time = time.time()
         copy_body = self.server.copy_cmd(self.agent.agentid, source_path,
                     self.dcheck.target_agent.agentid, self.dcheck.target_dir)
 
@@ -156,7 +159,7 @@ class PlaceFile(object):
             msg = (u"Copy of file '%s' to agent '%s:%s' failed. "+\
                 "Will leave the backup file on the primary agent. " + \
                 "Error was: %s") \
-                % (self.full_path, self.dcheck.target_agent.displayname, 
+                % (self.full_path, self.dcheck.target_agent.displayname,
                                 self.dcheck.target_dir, copy_body['error'])
             self.log.info(msg)
             self.info += msg

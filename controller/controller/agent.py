@@ -57,6 +57,7 @@ class Agent(meta.Base, BaseDictMixin):
         super(Agent, self).__init__(*args, **kwargs)
         self.reconstruct()
         self.path = None
+        self.connection = None # fixes an erroneous pylint error.
 
     @reconstructor
     def reconstruct(self):

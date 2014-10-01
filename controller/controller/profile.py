@@ -4,7 +4,9 @@ from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.exc import NoResultFound
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from passwd import tableau_hash
 from mixin import BaseMixin, BaseDictMixin
@@ -50,6 +52,7 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
         return unicode(self)
 
     def display_role(self):
+        # pylint: disable=no-member
         if self.publisher:
             if self.roleid == Role.NO_ADMIN:
                 return u'Publisher'
@@ -74,7 +77,7 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
                     filter(UserProfile.envid == envid).\
                     filter(func.lower(UserProfile.name) == name.lower())
             entry = query.one()
-        except NoResultFound, e:
+        except NoResultFound:
             entry = None
         return entry
 
@@ -91,8 +94,8 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
 
     defaults = [{'userid':0, 'envid':1, 'name':'palette',
                  'friendly_name':'Palette',
-                 'email': None, 'salt':'', 'roleid':3, # SUPER_ADMIN
-                 'hashed_password':tableau_hash('tableau2014',''),
+                 'email':None, 'salt':'', 'roleid':3, # SUPER_ADMIN
+                 'hashed_password':tableau_hash('tableau2014', ''),
                  'system_user_id':0}]
 
 class Role(meta.Base, BaseMixin):
@@ -110,7 +113,7 @@ class Role(meta.Base, BaseMixin):
     def get_by_name(cls, name):
         try:
             entry = meta.Session.query(Role).filter(Role.name == name).one()
-        except NoResultFound, e:
+        except NoResultFound:
             entry = None
         return entry
 
@@ -118,7 +121,7 @@ class Role(meta.Base, BaseMixin):
     def get_by_roleid(cls, roleid):
         try:
             entry = meta.Session.query(Role).filter(Role.roleid == roleid).one()
-        except NoResultFound, e:
+        except NoResultFound:
             entry = None
         return entry
 
@@ -133,14 +136,14 @@ class License(object):
     VIEWER = 1
 
     @classmethod
-    def str(cls, n):
-        if n == License.UNLICENSED:
+    def str(cls, val):
+        if val == License.UNLICENSED:
             return 'Unlicensed'
-        if n == License.INTERACTOR:
+        if val == License.INTERACTOR:
             return 'Interactor'
-        if n == License.VIEWER:
+        if val == License.VIEWER:
             return 'Viewer'
-        return 'Unknown('+str(n)+')'
+        return 'Unknown('+str(val)+')'
 
 class Publisher(object):
     DENY = 0
@@ -148,14 +151,14 @@ class Publisher(object):
     GRANTED = 2
 
     @classmethod
-    def str(cls, n):
-        if n == Publisher.DENY:
+    def str(cls, val):
+        if val == Publisher.DENY:
             return 'Deny'
-        if n == Publisher.IMPLICIT:
+        if val == Publisher.IMPLICIT:
             return 'Allow (Implicit)'
-        if n == Publisher.GRANTED:
+        if val == Publisher.GRANTED:
             return 'Allow (Granted)'
-        return 'Unknown('+str(n)+')'
+        return 'Unknown('+str(val)+')'
 
 class Admin(object):
 
