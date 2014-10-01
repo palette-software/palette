@@ -1,4 +1,5 @@
 from files import FileManager
+
 # This a transitory class - instantiated each time it is needed.
 class SystemConfig(object):
     # Keys for the system table:
@@ -52,22 +53,23 @@ class SystemConfig(object):
     def _watermark(self, name):
         try:
             return int(self.system.get(name))
-        except:
+        except StandardError:
             return 100
 
     def _http_load_warn(self, name):
         try:
             return int(self.system.get(name))
-        except:
+        except StandardError:
             return 10
 
     def _http_load_error(self, name):
         try:
             return int(self.system.get(name))
-        except:
+        except StandardError:
             return 20
 
     def __getattr__(self, name):
+        # pylint: disable=too-many-return-statements
         if name == 'watermark_low':
             return self._watermark(self.WATERMARK_LOW)
         if name == 'watermark_high':

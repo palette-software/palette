@@ -7,6 +7,7 @@ function ($, topic, template, common, EditBox, OnOff)
     var refresh_unavailable_text = 'Refresh not currently possible.';
 
     var startswith = null;
+    var counts = null;
 
     function ddCallback(node, value) {
         var $section = $(node).closest('article');
@@ -21,11 +22,39 @@ function ($, topic, template, common, EditBox, OnOff)
         $('.display-role', $section).html(value);
     }
 
+    function setup_letters() {
+        
+        var html = '';
+        if (total <= 100) {
+            html = '<a>All</a>';
+        }
+	    for(var i=0; i<LETTERS.length; i++)
+	    {
+            var letter = LETTERS.charAt(i);
+            if (!(letter in counts)) {
+                continue;
+            }
+            if (html.length > 0) {
+                html += "&nbsp;:\n";
+            }
+	        html += "<a>" + LETTERS.charAt(i) + "</a>";
+        }
+        $('.letters').html(html + "\n");
+        $('.letters a').bind('click', function() {
+            query($(this).html());
+        });
+    }
+
     function update(data) {
         $().ready(function() {
             var t = $('#user-list-template').html();
             var rendered = template.render(t, data);
             $('#user-list').html(rendered);
+            
+            counts = data['counts']
+            total = counts['__total__']
+            setup_letters();
+
             $('div.dropdown').each(function () {
                 $(this).data('callback', ddCallback);
             });
@@ -60,15 +89,17 @@ function ($, topic, template, common, EditBox, OnOff)
         });
     }
 
-    function query(letter) {
+    function query(val) {
         var url = '/rest/users';
-        if (letter != null) {
-            url += '?startswith=' + letter;
+        if (val != null && val.toLowerCase() != 'all') {
+            url += '?startswith=' + val;
         }
         $.ajax({
             url: url,
             success: function(data) {
-                startswith = letter;
+                if (val != null && val.toLowerCase() != 'all') {
+                    startswith = val;
+                }
                 update(data);
             },
             error: common.ajaxError,
@@ -95,19 +126,4 @@ function ($, topic, template, common, EditBox, OnOff)
 
     common.startMonitor(false);
     query();
-
-    $().ready(function() {
-        var html = '';        
-	for(var i=0; i<LETTERS.length; i++)
-	{
-            if (i > 0) {
-                html += "&nbsp;:\n";
-            }
-	    html += "<a>" + LETTERS.charAt(i) + "</a>";
-        }
-        $('.letters').html(html + "\n");
-        $('.letters a').bind('click', function() {
-            query($(this).html());
-        });
-    });
 });
