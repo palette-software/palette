@@ -801,12 +801,36 @@ class AgentManager(threading.Thread):
         session.commit()
         return True
 
-    # Return the list of all agents
-    def all_agents(self):
-        return self.agents
+    def all_agents(self, enabled_only=True):
+        """Return the list of connected agents.
+           Argument enabled_only:  If True, return only enabled agents.
+        """
+
+        if not enabled_only:
+            return self.agents
+
+        # Return only enabled agents
+        enabled_agents = {}
+        for key in self.agents.keys():
+            agent = self.agents[key]
+
+            temp_agent = Agent.get_by_uuid(self.envid, agent.uuid)
+            make_transient(temp_agent)
+            if temp_agent == None:
+                self.log.info("all_agents: agent unexpected gone from db: %s",
+                               agent.displayname)
+                continue
+
+            if not temp_agent.enabled:
+                continue
+
+            enabled_agents[key] = agent
+
+        return enabled_agents
 
     def agent_by_agentid(self, agentid):
-        agents = self.all_agents()
+
+        agents = self.all_agents()  # gets the list of ENABLED agents
 
         agent = None
         for key in agents.keys():
@@ -825,6 +849,8 @@ class AgentManager(threading.Thread):
 
     def agent_connected(self, aconn):
         """Check to see if the passed AgentConnection is still connected.
+            The agent may be disabled.
+
         Returns:
             True if still conencted.
             False if not connected.
@@ -832,11 +858,13 @@ class AgentManager(threading.Thread):
         return aconn.conn_id in self.agents
 
     def agent_by_type(self, agent_type):
-        """Returns an instance of an agent of the requested type.
+        """Returns an instance of an agent of the requested type
+           if the agent is connected and enabled.
 
-        Returns None if no agents of that type are connected."""
+            Returns None if no agents of that type are connected.
+        """
 
-        for key in self.agents:
+        for key in self.all_agents():   # The list of ENABLED agents
             if self.agents[key].agent_type == agent_type:
                 agent = self.agents[key]
                 return agent
@@ -848,34 +876,12 @@ class AgentManager(threading.Thread):
         or a list of instances if more than one agent of that type
         is connected.
 
+        Only ENABLED agents are returned.
+
         Returns None if no agents of that type are connected."""
 
-        for key in self.agents:
+        for key in self.all_agents():
             if self.agents[key].agent_type == agent_type:
-                return self.agents[key].connection
-
-        return None
-
-    def agent_conn_by_displayname(self, target):
-        """Search for a connected agent with a displayname of the
-        passed target.
-
-        Return an instance of it, or None if none match."""
-
-        for key in self.agents:
-            if self.agents[key].displayname == target:
-                return self.agents[key].connection
-
-        return None
-
-    def agent_conn_by_hostname(self, target):
-        """Search for a connected agent with a hostname of the
-        passed target.
-
-        Return an instance of it, or None if none match."""
-
-        for key in self.agents:
-            if self.agents[key].connection.auth['hostname'] == target:
                 return self.agents[key].connection
 
         return None
@@ -884,7 +890,7 @@ class AgentManager(threading.Thread):
         """Search for agents with the given uuid.
             Return an instance of it, or None if none match.
         """
-        for key in self.agents:
+        for key in self.all_agents():   # Returns ENABLED agents
             if self.agents[key].uuid == uuid:
                 return self.agents[key]
         return None
@@ -1323,7 +1329,7 @@ class AgentManager(threading.Thread):
         conn_id = aconn.conn_id
         while not self.server.noping:
             if agent.enabled:
-                if conn_id not in self.all_agents():
+                if conn_id not in self.all_agents(enabled_only=False):
                     self.log.info(
                             "ping_check: agent with connid %d is now gone",
                             conn_id)

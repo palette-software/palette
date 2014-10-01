@@ -262,19 +262,8 @@ class TableauStatusMonitor(threading.Thread):
         # FIXME: Tie agent to domain.
         agent = self.manager.agent_by_type(AgentManager.AGENT_TYPE_PRIMARY)
         if not agent:
-            self.log.debug("check_status: The primary agent is not " + \
-                           "connected or enabled.")
-            return
-
-        # "agent" is the in-memory version.
-        # Check the database version to see if the agent is enabled.
-        agent_temp = Agent.get_by_uuid(self.envid, agent.uuid)
-        if not agent_temp:
-            self.log.info("check_status: Primary agent is not in db.")
-            return
-
-        if not agent_temp.enabled:
-            self.log.info("check_status: Primary agent is disabled.")
+            self.log.debug("check_status: The primary agent is either " + \
+                           "not connected or not enabled.")
             return
 
         aconn = agent.connection

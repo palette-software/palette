@@ -1168,7 +1168,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not agent:
             agent = manager.agent_by_type(AgentManager.AGENT_TYPE_PRIMARY)
             if not agent:
-                return self.error("maint: no primary agent is known.")
+                return self.error(
+                            "maint: no primary agent is known and enabled.")
 
             elif not agent.connection:
                 return self.error("maint: no primary agent is connected.")
