@@ -474,6 +474,10 @@ class CliHandler(socketserver.StreamRequestHandler):
             line = "Backup Error. Traceback: %s" % self.traceback()
             body = {'error': line}
 
+        # delete/rotate old backups
+        rotate_info = self.server.rotate_backups()
+        body['info'] += rotate_info
+
         data = agent.todict()
         if success(body):
             if 'copy-failed' in body:
@@ -781,6 +785,21 @@ class CliHandler(socketserver.StreamRequestHandler):
         # are sent in restore_cmd().
         data = agent.todict()
         if success(body):
+            # Delete/rotate old backups AFTER the restore succeeded.
+            #
+            # If the restore failed, we could end up with more than
+            # the configured number of backups saved, due to the
+            # auto-backup-before-restore adding one.  But, it is
+            # better to have too many backups than deleting
+            # a backup that could be needed while the user is wanting
+            # to do a restore.
+
+            rotate_info = self.server.rotate_backups()
+            if 'stdout' in body:
+                body['stdout'] += rotate_info
+            else:
+                body['stdout'] = rotate_info
+
             # Restore finished successfully.  The main state has.
             # already been set.
             self.server.event_control.gen(EventControl.RESTORE_FINISHED,
