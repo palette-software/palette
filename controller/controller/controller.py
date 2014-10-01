@@ -186,10 +186,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             stats += '\n'
 
         body['info'] += '\n' + stats
-
-        # Delete/rotate old backups.
-        rotate_info = self.rotate_backups()
-        body['info'] += rotate_info
         return body
 
     def rotate_backups(self):
@@ -785,7 +781,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.event_control.gen(EventControl.STATE_STARTED, data,
                                        userid=userid)
 
-        if 'info':
+        if info:
             restore_body['info'] = info.strip()
 
         return restore_body
@@ -855,7 +851,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         s3key = connection.Key(bucket)
         s3key.key = filename
-        bucket.delete_key(s3key)
+        try:
+            bucket.delete_key(s3key)
+        except boto.exception.BotoServerError as ex:
+            raise IOError(
+                    ("Failed to delete '%s' from S3 Cloud Storage " + \
+                    "bucket '%s'. %s: %s") % \
+                    (filename, bucket_name, ex.reason, ex.message))
 
     def delete_gcs_file(self, entry, path):
         # Move any bucket subdirectories to the filename
@@ -870,7 +872,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         try:
             s3key.delete()
-        except boto.exception.BotoServerError, ex:
+        except boto.exception.BotoServerError as ex:
             raise IOError(
                     ("Failed to delete '%s' from Google Cloud Storage " + \
                     "bucket '%s': %s") % \
