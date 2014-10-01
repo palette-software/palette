@@ -27,7 +27,7 @@ from tableau import TableauProcess
 
 import exc
 import clierror
-from util import success, failed
+from util import success, failed, traceback_string
 
 # pylint: disable=too-many-public-methods
 
@@ -306,7 +306,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.server.event_control.alert_email.send(event_entry, data)
         except StandardError:
             self.server.log.exception('CliHandler exception:')
-            self.error(clierror.ERROR_COMMAND_FAILED, self.traceback())
+            self.error(clierror.ERROR_COMMAND_FAILED, traceback_string())
             return
 
         self.report_status({})
@@ -471,7 +471,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = self.server.backup_cmd(agent, userid)
         except StandardError:
             self.server.log.exception("Backup Exception:")
-            line = "Backup Error. Traceback: %s" % self.traceback()
+            line = "Backup Error. Traceback: %s" % traceback_string()
             body = {'error': line}
 
         # delete/rotate old backups
@@ -745,7 +745,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = self.server.backup_cmd(agent, userid)
         except StandardError:
             self.server.log.exception("Backup for Restore Exception:")
-            line = "Backup For Restore Error. Traceback: %s" % self.traceback()
+            line = "Backup For Restore Error. Traceback: %s" % \
+                    traceback_string()
             body = {'error': line}
 
         if success(body):
@@ -777,7 +778,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                                             no_config=no_config, userid=userid)
         except StandardError:
             self.server.log.exception("Restore Exception:")
-            line = "Restore Error: Traceback: %s" % self.traceback()
+            line = "Restore Error: Traceback: %s" % traceback_string()
             body = {'error': line}
 
         # The final RESTORE_FINISHED/RESTORE_FAILED alert is sent only here and
@@ -2119,17 +2120,6 @@ class CliHandler(socketserver.StreamRequestHandler):
         return agent
 
 
-    def traceback(self, all_on_one_line=True):
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        tback = traceback.format_exception(exc_type, exc_value, exc_traceback)
-
-        tback = ''.join(tback)
-
-        if all_on_one_line:
-            return tback.replace('\n', '')
-        else:
-            return tback
-
     def handle_exception(self, before_state, telnet_command):
         self.server.log.exception("Command Failed with Exception:")
         line = "Command Failed with Exception.\n" + \
@@ -2155,7 +2145,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                                                 (now_state, before_state)
                 stateman.update(before_state)
 
-        line += self.traceback(all_on_one_line=False)
+        line += traceback_string(all_on_one_line=False)
         self.error(clierror.ERROR_COMMAND_FAILED, line)
         self.server.event_control.gen(EventControl.SYSTEM_EXCEPTION,
                                       {'error': line})

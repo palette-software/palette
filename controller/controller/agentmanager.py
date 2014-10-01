@@ -18,7 +18,7 @@ from firewall import Firewall
 from odbc import ODBC
 from filemanager import FileManager
 from general import SystemConfig
-from util import sizestr, is_ip
+from util import sizestr, is_ip, traceback_string
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
@@ -1031,7 +1031,7 @@ class AgentManager(threading.Thread):
                 self._close(conn)
                 continue
 
-            tobj = threading.Thread(target=self.handle_agent_connection,
+            tobj = threading.Thread(target=self.handle_agent_connection_pre,
                                     args=(conn, addr))
             # Spawn a thread to handle the new agent connection
             tobj.start()
@@ -1056,6 +1056,14 @@ class AgentManager(threading.Thread):
         self.log.error("Couldn't find agent with fd: %d", filedes)
 
     # thread function: spawned on a new connection from an agent.
+    def handle_agent_connection_pre(self, conn, addr):
+        try:
+            self.handle_agent_connection(conn, addr)
+        except StandardError:
+            line = traceback_string(all_on_one_line=False)
+            self.server.event_control.gen(EventControl.SYSTEM_EXCEPTION,
+                                      {'error': line})
+
     def handle_agent_connection(self, conn, addr):
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-return-statements
