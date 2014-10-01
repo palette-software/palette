@@ -11,6 +11,7 @@ from mixin import BaseMixin, BaseDictMixin
 from util import utctotimestamp
 
 class EventEntry(meta.Base, BaseMixin, BaseDictMixin):
+    # pylint: disable=too-many-instance-attributes
     __tablename__ = "events"
 
     eventid = Column(BigInteger, unique=True, nullable=False, \

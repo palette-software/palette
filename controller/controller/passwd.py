@@ -9,16 +9,18 @@ AES_KEY_BITS = 256
 AES_KEY_BYTES = (AES_KEY_BITS/8)
 AES_KEY_FILE_DEFAULT = os.path.abspath(os.path.expanduser('~/.aes'))
 
+# pylint: disable=invalid-name
 aes_key_file = AES_KEY_FILE_DEFAULT
+# pylint: enable=invalid-name
 
-""" 
-  This is the Tableau password storage algorithm. 
-  NOTE: str() is called to convert from unicode.
-"""
+#  This is the Tableau password storage algorithm.
+#  NOTE: str() is called to convert from unicode.
 def tableau_hash(password, salt):
     return hashlib.sha1(str(password) + "fnord" + str(salt)).hexdigest()
 
 def set_aes_key_file(path):
+    # pylint: disable=global-statement
+    # pylint: disable=invalid-name
     global aes_key_file
     aes_key_file = path
     if not os.path.isfile(aes_key_file):
@@ -42,13 +44,13 @@ def aeskey():
 
 def aes_encrypt(cleartext):
     key = aeskey()
-    iv = Random.new().read(AES.block_size)
-    cipher = AES.new(key, AES.MODE_CFB, iv)
-    return base64.b16encode(iv + cipher.encrypt(cleartext))
+    ivec = Random.new().read(AES.block_size)
+    cipher = AES.new(key, AES.MODE_CFB, ivec)
+    return base64.b16encode(ivec + cipher.encrypt(cleartext))
 
 def aes_decrypt(ciphertext):
     key = aeskey()
     msg = base64.b16decode(ciphertext)
-    iv =  msg[0:AES.block_size]
-    cipher = AES.new(key, AES.MODE_CFB, iv)
+    ivec = msg[0:AES.block_size]
+    cipher = AES.new(key, AES.MODE_CFB, ivec)
     return cipher.decrypt(msg[AES.block_size:])

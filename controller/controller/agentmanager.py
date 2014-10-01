@@ -1151,6 +1151,7 @@ class AgentManager(threading.Thread):
                     # The agent has been enabled and is still there,
                     # so continue on with the initialization.
                     agent = Agent.build(self.envid, aconn)
+                    # conneciton is initialized in reconstruct().
                     agent.connection = aconn
                     self.setup_agent(agent)
                 else:

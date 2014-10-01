@@ -1,8 +1,11 @@
 from sqlalchemy import Column, String, Integer, BigInteger, DateTime
 from sqlalchemy import func
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
-from mixin import BaseMixin, BaseDictMixin
+# pylint: enable=import-error,no-name-in-module
+
+from mixin import BaseMixin
 
 class HttpControl(meta.Base, BaseMixin):
     __tablename__ = "http_control"

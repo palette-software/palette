@@ -12,13 +12,13 @@ def make_logger(name, config):
         section = 'logger:'+name
     else:
         section = name
-        x, name = section.split(':', 1)
+        _, name = section.split(':', 1)
 
     level = getattr(logging, config.get(section, 'level', default='INFO'))
     filename = config.get(section, 'filename', default=None)
 
     if filename and filename.lower() == 'stderr':
-            filename = None
+        filename = None
 
     fmt = config.get(section, 'format', raw=True, default=LOGGING_FORMAT)
     datefmt = config.get(section, 'datefmt', raw=True, default=LOGGING_DATEFMT)
