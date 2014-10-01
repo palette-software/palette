@@ -1,5 +1,7 @@
 import subprocess
 import socket
+import sys
+import traceback
 from datetime import datetime
 from dateutil import tz
 import dateutil.parser
@@ -133,3 +135,14 @@ def hostname_only(hostname):
         return hostname[:dot]
     else:
         return hostname
+
+def traceback_string(all_on_one_line=True):
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    tback = traceback.format_exception(exc_type, exc_value, exc_traceback)
+
+    tback = ''.join(tback)
+
+    if all_on_one_line:
+        return tback.replace('\n', '')
+    else:
+        return tback
