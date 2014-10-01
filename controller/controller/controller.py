@@ -1159,7 +1159,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return sync_dict
 
-    def maint(self, action, port=-1, agent=None, send_alert=True):
+    def maint(self, action, agent=None, send_alert=True):
         if action not in ("start", "stop"):
             self.log.error("Invalid maint action: %s", action)
             return self.error("Bad maint action: %s" % action)
@@ -1176,13 +1176,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             elif not agent.connection:
                 return self.error("maint: no primary agent is connected.")
 
-        send_body = {"action": action}
-        if port > 0:
-            send_body["listen-port"] = port
+        send_maint_body = self.set_maint_body(action)
 
-        # FIXME: add ssl-listen-port and other SSL information from YML.
-
-        body = self.send_immediate(agent, "POST", "/maint", send_body)
+        body = self.send_immediate(agent, "POST", "/maint", send_maint_body)
 
         if body.has_key("error"):
             data = agent.todict()
@@ -1202,6 +1198,43 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.event_control.gen(EventControl.MAINT_OFFLINE, agent.todict())
 
         return body
+
+    def set_maint_body(self, action):
+        envid = self.environment.envid
+        send_body = {"action": action}
+
+        gateway_ports = AgentYmlEntry.get(envid, 'gateway.ports', default=None)
+        if gateway_ports:
+            ports = gateway_ports.split(';')
+            try:
+                listen_port = int(ports[0])
+                send_body["listen-port"] = listen_port
+            except StandardError:
+                self.log.error("Invalid yml entry for 'gatway.ports': %s",
+                                gateway_ports)
+
+        ssl_port = AgentYmlEntry.get(envid, 'ssl.listen.port', default=None)
+        if ssl_port:
+            try:
+                ssl_port = int(ssl_port)
+                send_body['ssl-listen-port'] = ssl_port
+            except StandardError:
+                self.log.error("Invalid yml entry for 'ssl.listen.port': %s",
+                                ssl_port)
+
+        # Mapping from the yml file to the json to send.
+        file_map = {'ssl.cert.file': 'ssl-cert-file',
+                    'ssl.key.file': 'ssl-cert-key-file',
+                    'ssl.chain.file': 'ssl-cert-chain-file'}
+
+        for key in file_map.keys():
+            value = AgentYmlEntry.get(envid, key, default=None)
+            if not value:
+                continue
+
+            send_body[file_map[key]] = value
+
+        return send_body
 
     def archive(self, agent, action, port=-1):
         send_body = {"action": action}

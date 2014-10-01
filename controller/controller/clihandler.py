@@ -1480,21 +1480,11 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.server.log.debug("--------------Stopping Tableau-----------------")
         # fixme: Reply with "OK" only after the agent received the command?
-        envid = self.server.environment.envid
-
         body = self.server.cli_cmd('tabadmin stop', agent)
         if success(body) and start_maint:
-            port = AgentYmlEntry.get(envid, 'gateway.public.port', default=None)
-            if port is None:
-                port = -1
-            else:
-                try:
-                    port = int(port)
-                except StandardError:
-                    port = -1
             # Start the maintenance server only after Tableau has stopped
             # and reqlinquished the web server port.
-            maint_body = self.server.maint("start", port=port, agent=agent)
+            maint_body = self.server.maint("start", agent=agent)
             if failed(maint_body):
                 msg = "maint start failed: " + str(maint_body)
                 if not 'info' in body:
@@ -1527,7 +1517,7 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_maint(self, cmd):
         """Start or Stop the maintenance webserver on the agent."""
 
-        if len(cmd.args) < 1 or len(cmd.args) > 2:
+        if len(cmd.args) != 1:
             self.print_usage(self.do_maint.__usage__)
             return
 
@@ -1536,18 +1526,9 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_usage(self.do_maint.__usage__)
             return
 
-        port = -1
-        if len(cmd.args) == 2:
-            try:
-                port = int(cmd.args[1])
-            except ValueError:
-                self.error(clierror.ERROR_INVALID_PORT,
-                           "invalid port '%s', number required.", cmd.args[1])
-                return
-
         self.ack()
 
-        body = self.server.maint(action, port)
+        body = self.server.maint(action)
         self.report_status(body)
 
     @usage('archive [start|stop] [port]')
