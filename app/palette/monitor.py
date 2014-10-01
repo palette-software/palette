@@ -361,6 +361,17 @@ class MonitorApplication(PaletteRESTHandler):
                     if entry.pid == 0:
                         continue
 
+                    if entry.pid == -1:
+                        # Special case: Error such as
+                        # ""Connection error contacting worker 1"
+                        agent_color_num = Colors.RED_NUM
+                        agent['warnings'] = [{'color':'red',
+                                               'message': entry.name}]
+                        # This is close to the truth and results in
+                        # the main state being set to DEGRADED.
+                        agent_worker_stopped = True
+                        continue
+
                     proc['pid'] = entry.pid
                     proc['name'] = entry.name
                     proc['status'] = entry.status
