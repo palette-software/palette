@@ -6,7 +6,7 @@ from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
 from controller.profile import UserProfile, Role, Admin, License
-from controller.util import str2bool, DATEFMT, utc2local
+from controller.util import str2bool, DATEFMT, utc2local, LETTERS
 
 from page import PalettePage
 from rest import PaletteRESTHandler, required_parameters, required_role
@@ -18,6 +18,26 @@ class UserApplication(PaletteRESTHandler):
         roles = meta.Session.query(Role).all()
         return [{'name': x.name, 'id': x.roleid} for x in roles]
 
+    def alpha_count(self, envid):
+        data = {}
+        connection = meta.engine.connect()
+
+        stmt = \
+            "SELECT UPPER(SUBSTR(friendly_name, 1, 1)) AS alpha, " +\
+            "       COUNT(*) AS count FROM users " +\
+            "WHERE envid = " + str(envid) + " AND userid > 0 " +\
+            "GROUP BY UPPER(SUBSTR(friendly_name, 1, 1))"
+
+        total = 0
+        for row in connection.execute(stmt):
+            count = int(row['count'])
+            if count == 0:
+                continue
+            data[row['alpha']] = count
+            total += count
+        data['__total__'] = total
+        return data
+
     def users(self, envid, startswith=None):
         query = meta.Session.query(UserProfile).\
             filter(UserProfile.envid == envid).\
@@ -27,9 +47,6 @@ class UserApplication(PaletteRESTHandler):
             query = query.filter(\
                 func.upper(UserProfile.friendly_name).like(regex))
         return query.order_by(UserProfile.friendly_name.asc()).all()
-
-    def user_count(self, envid):
-        return UserProfile.count(filters={'envid':envid})
 
     def visited_info(self, d):
         if not 'timestamp' in d or not d['timestamp']:
@@ -76,20 +93,27 @@ class UserApplication(PaletteRESTHandler):
 
         raise exc.HTTPNotFound()
 
+    def first_populated_letter(self, counts):
+        for letter in LETTERS:
+            if letter in counts and counts[letter] > 0:
+                return letter
+        return None
+
     def handle_GET(self, req):
-        count = None
+        counts = self.alpha_count(req.envid)
+
         startswith = None
         if 'startswith' in req.GET:
             startswith = req.GET['startswith']
         else:
             # estimated: < 10K
-            count = self.user_count(req.envid)
+            count = counts['__total__']
             if count > 25:
-                startswith = 'A'
-        exclude = ['hashed_password', 'salt']
+                startswith = self.first_populated_letter(counts)
+
         users = []
         for user in self.users(req.envid, startswith=startswith):
-            d = user.todict(pretty=True, exclude=exclude)
+            d = user.todict(pretty=True, exclude=['hashed_password', 'salt'])
             d['admin-type'] = user.role.name # FIXME
             d['visited-info'] = self.visited_info(d)
             d['tableau-info'] = self.tableau_info(d) # FIXME
@@ -101,9 +125,9 @@ class UserApplication(PaletteRESTHandler):
             users.append(d)
         data = {'users': users,
                 'admin-levels': self.admin_levels(),
-                'last-update': self.last_user_import(req)}
-        if not count is None:
-            data['count'] = count
+                'last-update': self.last_user_import(req),
+                'counts': counts
+        }
         return data
 
     # refresh request

@@ -1,6 +1,8 @@
 from sqlalchemy import Column, String, BigInteger, DateTime, func
 
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+# pylint: enable=import-error,no-name-in-module
 
 from mixin import BaseMixin
 
