@@ -39,6 +39,7 @@ from auth import AuthManager
 from config import Config
 from credential import CredentialEntry, CredentialManager
 from diskcheck import DiskCheck, DiskException
+from data_source_types import DataSourceTypes
 from domain import Domain
 from environment import Environment
 from event_control import EventControl, EventControlManager
@@ -1644,6 +1645,8 @@ def main():
     SystemManager.populate()
 
     StateControl.populate()
+
+    DataSourceTypes.populate()
 
     server.auth = AuthManager(server)
     server.cred = CredentialManager(server)

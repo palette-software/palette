@@ -1,0 +1,66 @@
+{
+"RECORDS":[
+{
+"data_source":"MySQL",
+"standard_port":3060,
+"dbclass":"dataengine"
+},
+{
+"data_source":"Microsoft SQL",
+"standard_port":1434,
+"dbclass":"dataengine"
+},
+{
+"data_source":"PostgreSQL",
+"standard_port":5432,
+"dbclass":"dataengine"
+},
+{
+"data_source":"Datadata",
+"standard_port":1025,
+"dbclass":"dataengine"
+},
+{
+"data_source":"Amazon Redshift",
+"standard_port":5439,
+"dbclass":"dataengine"
+},
+{
+"data_source":"Cloudera Hadoop",
+"standard_port":10000,
+"dbclass":"dataengine"
+},
+{
+"data_source":"HP Vertica",
+"standard_port":5433,
+"dbclass":"dataengine"
+},
+{
+"data_source":"Google BigQuery",
+"standard_port":443,
+"standard_host":"googleapis.com/bigquery",
+"dbclass":"dataengine"
+},
+{
+"data_source":"Salesforce",
+"standard_port":443,
+"standard_host":"login.salesforce.com",
+"dbclass":"dataengine"
+},
+{
+"data_source":"Aster Database",
+"standard_port":2406,
+"dbclass":"dataengine"
+},
+{
+"data_source":"Splunk",
+"standard_port":8089,
+"dbclass":"dataengine"
+},
+{
+"data_source":"IBM Netezza",
+"standard_port":5480,
+"dbclass":"dataengine"
+}
+]
+}
