@@ -30,6 +30,16 @@ from sqlalchemy.orm.session import make_transient
 from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
+def protected(f):
+    """Decorater."""
+    def realf(self, *args, **kwargs):
+        self.lock()
+        try:
+            return f(self, *args, **kwargs)
+        finally:
+            self.unlock()
+    return realf
+
 # The Controller's Agent Manager.
 # Communicates with the Agent.
 # fixme: maybe combine with the Agent class.
@@ -148,6 +158,7 @@ class AgentManager(threading.Thread):
         self.domainid = self.server.domain.domainid
         self.envid = self.server.environment.envid
         self.daemon = True
+        # This agent is now gone
         self.lockobj = threading.RLock()
         self.new_primary_event = threading.Event() # a primary connected
         self.host = host
@@ -203,6 +214,7 @@ class AgentManager(threading.Thread):
         session.commit()
 
 
+    @protected
     def register(self, agent, orig_agent_type):
         """
            - Checks agent uuid and type against already connected agents.
@@ -211,7 +223,6 @@ class AgentManager(threading.Thread):
            - Makes agent transient with respect to the database.
        """
 
-        self.lock()
         self.log.debug("register: new agent name %s, uuid %s, conn_id %d", \
                        agent.hostname, agent.uuid, agent.connection.conn_id)
 
@@ -277,7 +288,6 @@ class AgentManager(threading.Thread):
             # the new primary.
             self.new_primary_event.set()
 
-        self.unlock()
         return True
 
     def _set_all_agent_types(self):
@@ -834,13 +844,12 @@ class AgentManager(threading.Thread):
 
         agent = None
         for key in agents.keys():
-            self.lock()
 
-            if not agents.has_key(key):
-                # agent is now gone
+            try:
+                agent = agents[key]
+            except KeyError:
+                # This agent is now gone
                 continue
-            agent = agents[key]
-            self.unlock()
 
             if agent.agentid == agentid:
                 return agent
@@ -903,6 +912,7 @@ class AgentManager(threading.Thread):
         agent = self.agent_by_uuid(uuid)
         return agent and agent.connection or None
 
+    @protected
     def remove_agent(self, agent, reason="", gen_event=True):
         """Remove an agent.
             Args:
@@ -916,7 +926,6 @@ class AgentManager(threading.Thread):
         if reason == "":
             reason = "Agent communication failure"
 
-        self.lock()
         session = meta.Session()
         make_transient(agent)
 
@@ -958,7 +967,6 @@ class AgentManager(threading.Thread):
             self.log.debug("remove_agent: No agent with conn_id %d", conn_id)
 
         if not forgot:
-            self.unlock()
             return False
 
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
@@ -975,7 +983,6 @@ class AgentManager(threading.Thread):
             self.log.error("remove_agent expunge error: %s", str(ex))
         #make_transient(agent)  # done above
         self.log.error("after expunge: %s", str(agent.todict()))
-        self.unlock()
 
     def _close(self, sock):
         try:
@@ -1181,8 +1188,6 @@ class AgentManager(threading.Thread):
         except (socket.error, IOError) as ex:
             self.log.debug("handle_agent_connection_error: " + str(ex))
             self._close(aconn.socket)
-        except Exception as ex:
-            self.log.exception('handle_agent_connection exception:' + str(ex))
         finally:
             try:
                 # Use " ifinspect(agent).session" when we go to sqlalchemy
@@ -1303,7 +1308,8 @@ class AgentManager(threading.Thread):
         lines = ''.join(lines)
         route_path = agent.path.join(agent.data_dir, "archive", "routes.txt")
 
-        self.log.debug("save_routes: saving to %s: '%s'", route_path, lines)
+        self.log.debug("save_routes: agent hostname '%s': saving to %s: '%s'",
+                                    agent.hostname, route_path, lines)
         try:
             agent.filemanager.put(route_path, lines)
         except (exc.HTTPException, \
@@ -1420,7 +1426,9 @@ class AgentManager(threading.Thread):
                         agent.uuid)
                     return False
                 if temp_agent.enabled:
-                    self.remove_agent(temp_agent, "Lost contact with an agent")
+                    # Note we used agent, not temp_agent, since
+                    # remove_agent needs the agent.connection.aconn
+                    self.remove_agent(agent, "Lost contact with an agent")
                 return False
         else:
             self.log.debug(
