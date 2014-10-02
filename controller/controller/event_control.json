@@ -857,6 +857,28 @@
 "icon":null,
 "color":"red",
 "event_type":"server"
+},
+{
+"key":"PALETTE-UPDATED",
+"level":"I",
+"send_email":"f",
+"subject":"Palette Software Updated",
+"event_description":"Palette software has been updated.\nVersion: ${version_current}\n",
+"email_message":"Status - INFO\nVersion: ${version_current}}\n\nThis message was sent from your Palette Server at ${server_url}",
+"icon":null,
+"color":"green",
+"event_type":"server"
+},
+{
+"key":"CONTROLLER-STARTED",
+"level":"I",
+"send_email":"f",
+"subject":"Palette Controller Started",
+"event_description":"Palette controller started\nVersion: ${version_current}\n",
+"email_message":"Status - INFO\nPalette controller started\nVersion: ${version_current}}\n\nThis message was sent from your Palette Server at ${server_url}",
+"icon":null,
+"color":"green",
+"event_type":"server"
 }
 ]
 }

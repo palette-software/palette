@@ -19,6 +19,8 @@ class SystemConfig(object):
 
     ALERTS_ENABLED = "alerts-enabled"
 
+    PALETTE_VERSION = "palette-version"
+
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
     def __init__(self, system):
@@ -107,6 +109,8 @@ class SystemConfig(object):
             self.LOG_ARCHIVE_RETAIN_COUNT: self.log_archive_retain_count,
             self.HTTP_LOAD_WARN: self.http_load_warn,
             self.HTTP_LOAD_ERROR: self.http_load_error,
+            self.ALERTS_ENABLED: self.alerts_enabled,
+            self.PALETTE_VERSION: self.palette_version,
             }
 
     def text(self, value):
