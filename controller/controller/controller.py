@@ -1401,6 +1401,24 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return_dict['error'] = unicode(msg)
         return return_dict
 
+    def controller_init_events(self):
+        """Generate an event if we are running a new version."""
+        current_version = version()
+        last_version = self.system.get(SystemConfig.PALETTE_VERSION,
+                                       default=None)
+
+        body = {'version_previous': last_version,
+                'version_current': current_version}
+
+        self.event_control.gen(EventControl.CONTROLLER_STARTED, body)
+
+        if current_version == last_version:
+            return
+
+        self.system.save(SystemConfig.PALETTE_VERSION, current_version)
+
+        self.event_control.gen(EventControl.PALETTE_UPDATED, body)
+
     def httperror(self, res, error='HTTP failure',
                   displayname=None, method='GET', uri=None, body=None):
         """Returns a dict representing a non-OK HTTP response."""
@@ -1656,11 +1674,14 @@ def main():
     Role.populate()
     UserProfile.populate()
 
-    # Must be done after auth, since it use the users table.
+    # Must be done after auth, since it uses the users table.
     server.alert_email = AlertEmail(server)
 
     EventControl.populate()
     server.event_control = EventControlManager(server)
+
+    # Send controller started and potentially "new version" events.
+    server.controller_init_events()
 
     server.workbooks = WorkbookManager(server)
     server.files = FileManager(server)
