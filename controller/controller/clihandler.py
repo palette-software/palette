@@ -958,12 +958,6 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_usage(self.do_info.__usage__)
             return
 
-        if not self.server.odbc_ok():
-            state = self.server.state_manager.get_state()
-            self.error(clierror.ERROR_WRONG_STATE,
-                       "FAIL: Main state is " + state)
-            return
-
         if not len(cmd.args):
             agent = self.get_agent(cmd.dict)
             if not agent:

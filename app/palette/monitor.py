@@ -355,27 +355,27 @@ class MonitorApplication(PaletteRESTHandler):
                     all()
 
                 tableau_procs = []
-                for entry in status_entries:
+                for tab_entry in status_entries:
                     proc = {}
 
-                    if entry.pid == 0:
+                    if tab_entry.pid == 0:
                         continue
 
-                    if entry.pid == -1:
+                    if tab_entry.pid == -1:
                         # Special case: Error such as
                         # ""Connection error contacting worker 1"
                         agent_color_num = Colors.RED_NUM
                         agent['warnings'] = [{'color':'red',
-                                               'message': entry.name}]
+                                              'message': tab_entry.name}]
                         # This is close to the truth and results in
                         # the main state being set to DEGRADED.
                         agent_worker_stopped = True
                         continue
 
-                    proc['pid'] = entry.pid
-                    proc['name'] = entry.name
-                    proc['status'] = entry.status
-                    if entry.status == 'running':
+                    proc['pid'] = tab_entry.pid
+                    proc['name'] = tab_entry.name
+                    proc['status'] = tab_entry.status
+                    if tab_entry.status == 'running':
                         proc['color'] = 'green'
                     else:
                         proc['color'] = 'red'
@@ -385,6 +385,23 @@ class MonitorApplication(PaletteRESTHandler):
                     tableau_procs.append(proc)
 
                 agent['details'] = tableau_procs
+
+                if entry.agent_type == AgentManager.AGENT_TYPE_WORKER and \
+                                                    not len(status_entries):
+                    # If a worker doesn't have any Tableau processes listed,
+                    # then make the worker RED with a message.
+                    # This is probably due to the primary not being
+                    # connected or not receiving tableau status yet.
+                    warning = {'color': 'red',
+                               'message': 'Tableau processes unavailable'}
+
+                    if 'warnings' in agent:
+                        agent['warnings'].append(warning)
+                    else:
+                        agent['warnings'] = warning
+
+                    agent_color_num = Colors.RED_NUM
+
             else:
                 # For now, only primaries and workers have details
                 agent['details'] = []
