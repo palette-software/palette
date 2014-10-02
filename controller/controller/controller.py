@@ -1114,11 +1114,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return pinfo
 
-    def yml(self, agent):
+    def yml(self, agent, set_agent_types=True):
         path = agent.path.join(agent.tableau_data_dir, "data", "tabsvc",
                                "config", "workgroup.yml")
-        yml = agent.filemanager.get(path)
-        body = AgentYmlEntry.sync(self.environment.envid, yml)
+        yml_contents = agent.filemanager.get(path)
+        body = AgentYmlEntry.sync(self.environment.envid, yml_contents)
+
+        if set_agent_types:
+            # See if any worker agents need to be reclassified as
+            # archive agents or vice versa.
+            self.agentmanager.set_all_agent_types()
+
         return body
 
     def sync_cmd(self, agent, check_odbc_state=True):
@@ -1490,7 +1496,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # Note: Don't call this before update_agent_pinfo_dirs()
         # (needed for agent.tableau_data_dir).
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-            self.yml(agent)     # raises an exception on fail
+            self.yml(agent, set_agent_types=False) # raises an exception on fail
             if not self.upgrading():
                 # These can all fail as long as they don't get an IOError.
                 # For example, if tableau is stopped, these will fail,
