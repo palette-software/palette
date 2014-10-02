@@ -282,7 +282,7 @@ class AgentManager(threading.Thread):
             # worker agents.  For example, a worker may have
             # connected before the primary ever connected with its
             # yml file that tells us the ip addresses of workers.
-            self._set_all_agent_types()
+            self.set_all_agent_types()
 
             # Tell the status thread to start getting status on
             # the new primary.
@@ -290,7 +290,7 @@ class AgentManager(threading.Thread):
 
         return True
 
-    def _set_all_agent_types(self):
+    def set_all_agent_types(self):
         """Look through the list of agents and reclassify archive agents as
         worker agents if needed.  For example, a worker may have
         connected and set as "archive" before the primary ever connected
