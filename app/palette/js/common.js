@@ -3,17 +3,14 @@
  * templates and should be named accordingly.
  */
 
-define(['jquery', 'topic', 'template'],
-function ($, topic, template)
+define(['jquery', 'topic', 'template', 'items', 'paging'],
+function ($, topic, template, items, paging)
 {
     var server_list_template = $('#server-list-template').html();
     template.parse(server_list_template);
 
     var event_list_template = $('#event-list-template').html();
     template.parse(event_list_template);
-
-    var event_dropdown_template = $('#event-dropdown-template').html();
-    template.parse(event_dropdown_template);
 
     /* MONITOR TIMER */
     var interval = 1000; //ms - FIXME: make configurable from the backend.
@@ -25,6 +22,59 @@ function ($, topic, template)
     var status_text = null;
 
     /*
+     * EventFilter
+     * pseudo-class for maintaining the selected events
+     */
+    var eventFilter = {
+        seq: 0,
+        ref: null, /* timestamp as an epoch float, microsecond resolution */
+        selectors: {'status':'0', 'type':'0'},
+        /* currently displayed list */
+        first: 0,
+        last: 0,
+        count: 0,
+        liveUpdate: true, /* update events on next poll cycle? */
+
+        queryString: function () {
+            var array = [];
+
+            array.push('seq='+this.seq++);
+
+            if (!needEvents) {
+                array.push('event=false');
+                return array.join('&');
+            }
+
+            for (var key in this.selectors) {
+                var value = ddDataId(key);
+                if (typeof(value) == 'undefined') {
+                    continue;
+                } else if (value != this.selectors[key]) {
+                    this.selectors[key] = value;
+                }
+                if (value != '0') {
+                    array.push(key+'='+value)
+                }
+            }
+
+            if (paging.getPageNumber() > 1 ) {
+                if (eventFilter.liveUpdate) {
+                    array.push('limit='+paging.limit);
+                    array.push('page='+paging.getPageNumber());
+                    array.push('ref='+this.ref);
+                } else {
+                    array.push('event=false');
+                }
+            } else {
+                array.push('limit='+paging.limit);
+                array.push('ref='+this.ref);
+            }
+            return array.join('&');
+        }
+    }
+
+
+    /*
      * setCookie()
      */
     function setCookie(cname, cvalue, exdays) {
@@ -34,7 +84,7 @@ function ($, topic, template)
             d.setTime(d.getTime() + (exdays*24*60*60*1000));
             value += "; expires="+d.toUTCString();
         }
-        value += '; path=/';
+        value += "; path=/";
         document.cookie = value;
     }
 
@@ -62,27 +112,18 @@ function ($, topic, template)
     function bindStatus() {
         $('.main-side-bar .status').off('click');
         $('.main-side-bar .status').bind('click', function() {
-            $('.main-side-bar li.active, .secondary-side-bar, .dynamic-content, .secondary-side-bar.servers').toggleClass('servers-visible');
+            $('.main-side-bar li.active, ' +
+              '.secondary-side-bar, .dynamic-content, ' +
+              '.secondary-side-bar.servers').toggleClass('servers-visible');
             if ($('#expand-right').hasClass('fa-angle-right')) {
                 $('#expand-right').removeClass('fa-angle-right');
                 $('#expand-right').addClass('fa-angle-left');
+                $('.filter-dropdowns').addClass('hidden');
             } else {
                 $('#expand-right').removeClass('fa-angle-left');
                 $('#expand-right').addClass('fa-angle-right');
+                $('.filter-dropdowns').removeClass('hidden');
             }
-        });
-    }
-
-    /*
-     * bindEvents()
-     * Expand/contract the individual events on user click.
-     * NOTE: Must be run after the AJAX request which populates the list.
-     */
-    function bindEvents() {
-        $('.event > div.summary').off('click');
-        $('.event > div.summary').bind('click', function() {
-            $(this).parent().toggleClass('open');
-            $(this).find('i.expand').toggleClass("fa-angle-up fa-angle-down");
         });
     }
 
@@ -177,64 +218,16 @@ function ($, topic, template)
     }
 
     /*
-     * setPage(n)
+     * eventPageCallback(n)
+     * To be called by the paging module when the current page is changed.
      */
-    function setPage(n) {
-        if (n != eventFilter.page) {
+    function eventPageCallback(n) {
+        if (n != paging.getPageNumber()) {
             eventFilter.seq = 0;
         }
-        eventFilter.page = n;
         /* turn on update for at least one more cycle. */
         eventFilter.liveUpdate = true;
         resetPoll();
-    }
-
-    /*
-     * pageCount()
-     */
-    function pageCount() {
-        n = (eventFilter.count + eventFilter.limit -1) / eventFilter.limit;
-        return Math.floor(n);
-    }
-
-    /*
-     * nextPage()
-     */
-    function nextPage(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        if (eventFilter.page < pageCount()) {
-            setPage(eventFilter.page+1);
-        }
-    }
-
-    /*
-     * prevPage()
-     */
-    function prevPage(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        if (eventFilter.page > 1) {
-            setPage(eventFilter.page-1);
-        }
-    }
-
-    /*
-     * firstPage()
-     */
-    function firstPage(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        setPage(1);
-    }
-
-    /*
-     * nextPage()
-     */
-    function lastPage(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        setPage(pageCount());
     }
 
     /*
@@ -251,31 +244,15 @@ function ($, topic, template)
      * Enable the Event filters - if present.
      */
     function setupEventDropdowns() {
-        $('.dropdown-menu li').off('click');
-        $('.dropdown-menu li').bind('click', ddClick);
+        setupDropdowns()
         $('.filter-dropdowns div.btn-group').each(function () {
             $(this).data('callback', function(node, value) {
-                setPage(1);
-                console.log('set page 1');
+                paging.set(1);
                 resetPoll();
             });
         });
     }
 
-    /*
-     * setupEventPagination()
-     * Enable the next, previous, etc links.
-     */
-    function setupEventPagination() {
-        $('.pagenav .next a').off('click');
-        $('.pagenav .next a').bind('click', nextPage);
-        $('.pagenav .previous a').off('click');
-        $('.pagenav .previous a').bind('click', prevPage);
-        $('.pagenav .first a').off('click');
-        $('.pagenav .first a').bind('click', firstPage);
-        $('.pagenav .last a').off('click');
-        $('.pagenav .last a').bind('click', lastPage);
-    }
     /*
      * setupConfigure
      * Enable the configure expansion item on main sidebar.
@@ -339,25 +316,6 @@ function ($, topic, template)
     }
 
     /*
-     * showPagination
-     */
-    function showPagination() {
-        $('.pagenav').css('display','inline-block');
-        $('.pagenav .count, .pagenav .first, .pagenav .previous').show();
-        $('.pagenav .numbering, .pagenav .next, .pagenav .last').show();
-    }
-
-    /*
-     * hidePagination
-     */
-    function hidePagination() {
-        /* always show the item count */
-        $('.pagenav first').hide();
-        $('.pagenav .first, .pagenav .previous').hide();
-        $('.pagenav .numbering, .pagenav .next, .pagenav .last').hide();
-    }
-
-    /*
      * setStatusColor() {
      */
     function setStatusColor(color) {
@@ -412,19 +370,19 @@ function ($, topic, template)
 
         if (events.length == 0) {
             eventFilter.ref = null;
-            eventFilter.current['first'] = 0;
-            eventFilter.current['last'] = 0;
-            eventFilter.current['count'] = 0;
+            eventFilter.first = 0;
+            eventFilter.last = 0;
+            eventFilter.count = 0;
             $('#event-list').html('');
-            hidePagination();
+            paging.hide();
             return;
         }
 
         /* checking the first eventid, the last eventid and the count is
            enough to tell if anything has changed (since events are ordered) */
-        if ((events[0].eventid == eventFilter.current['first']) && 
-            (events[events.length-1].eventid == eventFilter.current['last']) &&
-            (events.length = eventFilter.current['count']))
+        if ((events[0].eventid == eventFilter.first) && 
+            (events[events.length-1].eventid == eventFilter.last) &&
+            (events.length = eventFilter.count))
         {
             /* same values found. */
             return;
@@ -433,50 +391,38 @@ function ($, topic, template)
         var rendered = template.render(event_list_template, data);
         $('#event-list').html(rendered);
 
-        eventFilter.current['first'] = events[0].eventid;
-        eventFilter.current['last'] = events[events.length-1].eventid;
-        eventFilter.current['count'] = events.length;
+        eventFilter.first = events[0].eventid;
+        eventFilter.last = events[events.length-1].eventid;
+        eventFilter.count = events.length;
 
-        if (eventFilter.page == 1) {
+        if (paging.getPageNumber() == 1) {
             eventFilter.ref = events[0]['reference-time'];
         }
 
-        showPagination();
+        paging.show();
     }
 
     /*
-     * updateEvents
+     * monitorUpdateEvents
      */
-    function updateEvents(data) {
-
+    function monitorUpdateEvents(data)
+    {
         updateEventList(data);
+        items.configFilters(data);
+        paging.config(data);
 
-        for (var i in data['config']) {
-            var d = data['config'][i];
-            rendered = template.render(event_dropdown_template, d);
-            $('#'+d['name']+'-dropdown').html(rendered);
-        }
-
-        var count = data['event-count'];
-        if (count != null) {
-            $('.pagenav span.count span').html(count);
-            eventFilter.count = count;
-            $('.pagenav .page-number').html(eventFilter.page);
-            $('.pagenav .page-count').html(pageCount());
-        }
-
-        if (eventFilter.page > 1) {
+        if (paging.getPageNumber() > 1) {
             eventFilter.liveUpdate = false;
         }
 
-        bindEvents();
+        items.bind();
 
         /* FIXME: do these once. */
         setupEventDropdowns();
-        setupEventPagination();
+        paging.bind(eventPageCallback);
     }
 
-    function update(data)
+    function monitorUpdate(data)
     {
         var state = data['state']
         var json = JSON.stringify(data);
@@ -497,11 +443,16 @@ function ($, topic, template)
 
         var color = data['color'] != null ? data['color'] : 'red';
         setStatusColor(color);
-        updateEvents(data);
+
+        /* FIXME: break above into separate monitorUpdateStatus() function. */
 
         var rendered = template.render(server_list_template, data);
         $('#server-list').html(rendered);
         setupServerList();
+
+        if (needEvents) {
+            monitorUpdateEvents(data);
+        }
     }
 
     /*
@@ -522,73 +473,20 @@ function ($, topic, template)
         return $(selector).attr('data-id');
     }
 
-    /*
-     * EventFilter
-     * pseudo-class for maintaining the selected events
-     */
-    var eventFilter = {
-        page: 1,
-        limit: 25,
-        count: 0,
-        seq: 0,
-        ref: null, /* timestamp as an epoch float, microsecond resolution */
-        selectors: {'status':'0', 'type':'0'},
-        current: {'first':0,'last':0, 'count':0}, /* currently displayed list */
-        liveUpdate: true, /* update events on next poll cycle? */
-
-        queryString: function () {
-            var array = [];
-
-            array.push('seq='+this.seq++);
-
-            if (!needEvents) {
-                array.push('event=false');
-                return array.join('&');
-            }
-
-            for (var key in this.selectors) {
-                var value = ddDataId(key);
-                if (typeof(value) == 'undefined') {
-                    continue;
-                } else if (value != this.selectors[key]) {
-                    this.selectors[key] = value;
-                }
-                if (value != '0') {
-                    array.push(key+'='+value)
-                }
-            }
-
-            if (this.page > 1 ) {
-                if (eventFilter.liveUpdate) {
-                    array.push('limit='+this.limit);
-                    array.push('page='+this.page);
-                    array.push('ref='+this.ref);
-                } else {
-                    array.push('event=false');
-                }
-            } else {
-                array.push('limit='+this.limit);
-                array.push('ref='+this.ref);
-                
-            }
-            return array.join('&');
-        }
-    }
-
     function poll() {
         var url = '/rest/monitor?'+eventFilter.queryString();
 
         $.ajax({
             url: url,
             success: function(data) {
-                update(data);
+                monitorUpdate(data);
             },
             error: function(req, textStatus, errorThrown)
             {
                 var data = {}
                 data['text'] = 'Browser Disconnected';
                 data['color'] = 'yellow';
-                update(data);
+                monitorUpdate(data);
             },
             complete: function() {
                 timer = setTimeout(poll, interval);
@@ -626,20 +524,16 @@ function ($, topic, template)
         location.reload();
     }
 
-        /* Code run automatically when 'common' is included */
+    /* Code run automatically when 'common' is included */
     $().ready(function() {
         setupHeaderMenus();
         setupCategories();
         bindStatus();
     });
 
-    return {'state': current,
-            'customDataAttributes': customDataAttributes,
-            'startMonitor': startMonitor,
+    return {'startMonitor': startMonitor,
             'ajaxError': ajaxError,
-            'bindEvents': bindEvents,
             'setupDialogs': setupDialogs,
             'setupDropdowns' : setupDropdowns,
-            'setupServerList' : setupServerList
            };
 });

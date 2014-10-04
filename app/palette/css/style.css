@@ -1174,7 +1174,7 @@ ul.title-area > li > h1 > a {
     color: #697078;
     background-color: #fff;
 }
-article.event {
+article.item {
     background-color: #e5e5e5;
     display: block;
     min-height: 55px;
@@ -1190,13 +1190,13 @@ article.event {
     position: relative;
     overflow: hidden;
 }
-article.event.open {
+article.item.open {
     height: auto;
 }
-article.event:hover {
+article.item:hover {
     background-color: #e1e1e1;
 }
-article.event .summary > i, article.event .summary > span > i {
+article.item .summary > i, article.item .summary > span > i {
     float: left;
     width: 60px;
     display: block;
@@ -1209,44 +1209,44 @@ article.event .summary > i, article.event .summary > span > i {
     -o-transition: all 0.1s ease-in;
     transition: all 0.1s ease-in;
 }
-article.event .summary > span.fa-stack {
+article.item .summary > span.fa-stack {
     float: left;
 }
-article.event .summary i.fa-circle.fa-stack-1x {
+article.item .summary i.fa-circle.fa-stack-1x {
     color: white;
 }
-article.event .summary i.expand {
+article.item .summary i.expand {
     color: #5f6670;
 }
-article.event i.help {
+article.item i.help {
     float: none;
     display: inline-block;
     line-height: inherit;
     font-size: 1.5em;
     width: inherit;
 }
-article.event a.edit {
+article.item a.edit {
     text-decoration: none;
 }
-article.event a.edit i {
+article.item a.edit i {
     display: inline;
     position: static;
     font-size: 14px;
     line-height: 20px;
     margin: 0 0 0 5px;
 }
-article.event .col2 {
+article.item .col2 {
     float: left;
     width: 50%;
 }
-article.event > div.description > div {
+article.item > div.description > div {
     padding: 0 50px 0 0;
 }
-article.event > div.summary {
+article.item > div.summary {
     height: 55px;
     cursor: pointer;
 }
-article.event > div.summary > div {
+article.item > div.summary > div {
     position: absolute;
     left: 0;
     top: 0;
@@ -1254,10 +1254,10 @@ article.event > div.summary > div {
     width: 100%;
     height: 55px;
 }
-article.event > div.summary div.col2 {
+article.item > div.summary div.col2 {
     padding: 0 10px 0 0;
 }
-article.event > div.summary h3 {
+article.item > div.summary h3 {
     font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
     line-height: 20px;
     font-size: 15px;
@@ -1266,7 +1266,7 @@ article.event > div.summary h3 {
     white-space: nowrap;
     text-overflow:ellipsis;
 }
-article.event > div.summary p {
+article.item > div.summary p {
     font-size: 14px;
     font-weight: 300 !important;
     color: #5F6670;
@@ -1275,22 +1275,22 @@ article.event > div.summary p {
     white-space: nowrap;
     text-overflow:ellipsis;
 }
-article.event input[type="text"] {
+article.item input[type="text"] {
     height:20px;
     margin: 0;
 }
-article.event > div.description {
+article.item > div.description {
     display: none;
 }
-article.event.open > div.description {
+article.item.open > div.description {
     display: block;
     padding: 0 10px 20px 60px;
     width: 100%;
 }
-article.event li {
+article.item li {
     list-style-type: none;
 }
-article.event article {
+article.item article {
     padding-top: 5px;
 }
 
@@ -1332,8 +1332,15 @@ div.refresh {
 .filter-dropdowns div {
     margin-right: 10px;
 }
-#type-dropdown, #status-dropdown {
+.filter-dropdowns > span {
+    font-weight: bold;
+    margin-right: 5px;
+}
+#type-dropdown, #status-dropdown, #sort-dropdown, #show-dropdown {
     min-width: 150px;
+}
+#site-project-dropdown {
+    min-width: 175px;
 }
 #http-load-warn, #http-load-error {
     min-width: 110px;
@@ -1380,7 +1387,7 @@ h2.page-subtitle {
 .general-page {
     padding-bottom: 160px;
 }
-.workbook-page .event .summary div.col2 div {
+.workbook-page .item .summary div.col2 div {
     text-align: right;
 }
 
@@ -1501,7 +1508,7 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
     min-width: 370px;
 }
 
-.pagenav {
+.paging {
     display: none;
     float: right;
     font-size: 18px;
@@ -1509,17 +1516,16 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
     line-height: 18px;
     vertical-align: middle;
 }
-.pagenav > span, .pagenav > span a {
+.paging > span, .paging > span a {
     line-height: 32px;
     vertical-align: middle;
 }
-.pagenav > span {
+.paging > span {
     padding-right: 5px;
 }
-.pagenav a {
+.paging a {
     font-size: 32px;
 }
-
-.top-zone .pagenav {
+.top-zone .paging {
     margin-top:5px;
 }

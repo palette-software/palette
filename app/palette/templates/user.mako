@@ -22,7 +22,7 @@
 
 <script id="user-list-template" type="x-tmpl-mustache">
   {{#users}}
-  <article class="event">
+  <article class="item">
     <div class="summary clearfix">
       <i class="fa fa-fw fa-user"></i>
       <div>

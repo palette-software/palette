@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from datetime import datetime
 from webob import exc
 import cgi
@@ -38,20 +39,23 @@ class EventApplication(PaletteRESTHandler):
     def query_mostrecent(self, envid, status=None, event_type=None,
                          timestamp=None, limit=None, publisher=None):
         # pylint: disable=too-many-arguments
-        filters = {}
-        filters['envid'] = envid
-        query = meta.Session.query(EventEntry).filter(EventEntry.envid == envid)
+        # pylint: disable=maybe-no-member
+        filters = OrderedDict({'envid': envid})
+
         if not publisher is None:
             filters['userid'] = publisher
-            query = query.filter(EventEntry.userid == publisher)
         if status:
             filters['level'] = status
-            query = query.filter(EventEntry.level == status)
         if event_type:
             filters['event_type'] = event_type
-            query = query.filter(EventEntry.event_type == event_type)
+
+        query = meta.Session.query(EventEntry)
+        query = EventEntry.apply_filters(query, filters)
+
+        # timestamp filter is deliberately not included in the count().
         if not timestamp is None:
             query = query.filter(EventEntry.timestamp > timestamp)
+
         query = query.order_by(EventEntry.timestamp.desc())
         if not limit is None:
             query = query.limit(limit)
@@ -66,26 +70,28 @@ class EventApplication(PaletteRESTHandler):
 
         data = {}
         data['events'] = events
-        data['count'] = EventEntry.count(filters)
+        data['count'] = EventEntry.count(filters) # FIXME: approximate?
         return data
 
     def query_page(self, envid, page, status=None, event_type=None,
                    limit=None, timestamp=None, publisher=None):
         # pylint: disable=too-many-arguments
-        filters = {}
-        filters['envid'] = envid
-        query = meta.Session.query(EventEntry).filter(EventEntry.envid == envid)
+        # pylint: disable=maybe-no-member
+        filters = OrderedDict({'envid': envid})
+
         if not publisher is None:
             filters['userid'] = publisher
-            query = query.filter(EventEntry.userid == publisher)
         if status:
             filters['level'] = status
-            query = query.filter(EventEntry.level == status)
         if event_type:
             filters['event_type'] = event_type
-            query = query.filter(EventEntry.event_type == event_type)
+
+        query = meta.Session.query(EventEntry)
+        query = EventEntry.apply_filters(query, filters)
+
+        # timestamp filter is deliberately not included in the count().
         if not timestamp is None:
-            query = query.filter(EventEntry.timestamp <= timestamp)
+            query = query.filter(EventEntry.timestamp > timestamp)
 
         if limit is None:
             limit = self.DEFAULT_PAGE_SIZE
@@ -105,31 +111,9 @@ class EventApplication(PaletteRESTHandler):
         data['count'] = EventEntry.count(filters)
         return data
 
-    def get(self, req, name):
-        if not name in req.GET:
-            return None
-        value = req.GET[name]
-        if value == '0':
-            return None
-        return value
-
-    def getint(self, req, name):
-        try:
-            return int(req.GET[name])
-        except StandardError:
-            pass
-        return None
-
-    def getfloat(self, req, name):
-        try:
-            return float(req.GET[name])
-        except StandardError:
-            pass
-        return None
-
     # ts is epoch seconds as a float.
     def handle_GET(self, req):
-        timestamp = self.getfloat(req, 'ts')
+        timestamp = req.getfloat('ts')
         if not timestamp is None:
             timestamp = datetime.utcfromtimestamp(timestamp)
 
@@ -137,20 +121,20 @@ class EventApplication(PaletteRESTHandler):
         if req.remote_user.roleid == Role.NO_ADMIN:
             publisher = req.remote_user.system_user_id
 
-        page = self.getint(req, 'page')
+        page = req.getint('page')
         if page is None:
             return self.query_mostrecent(req.envid,
-                                         status=self.get(req, 'status'),
-                                         event_type=self.get(req, 'type'),
+                                         status=req.get('status'),
+                                         event_type=req.get('type'),
                                          timestamp=timestamp,
-                                         limit=self.getint(req, 'limit'),
+                                         limit=req.getint('limit'),
                                          publisher=publisher)
         else:
             return self.query_page(req.envid, page,
-                                   status=self.get(req, 'status'),
-                                   event_type=self.get(req, 'type'),
+                                   status=req.get('status'),
+                                   event_type=req.get('type'),
                                    timestamp=timestamp,
-                                   limit=self.getint(req, 'limit'),
+                                   limit=req.getint('limit'),
                                    publisher=publisher)
 
     def handle(self, req):

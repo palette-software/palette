@@ -146,3 +146,10 @@ def traceback_string(all_on_one_line=True):
         return tback.replace('\n', '')
     else:
         return tback
+
+def safe_int(value, default=None):
+    try:
+        return int(value)
+    except StandardError:
+        pass
+    return default

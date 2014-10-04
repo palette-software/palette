@@ -1,5 +1,6 @@
 import os
 
+from collections import OrderedDict
 from webob import exc
 from paste.fileapp import FileApp
 
@@ -10,7 +11,7 @@ from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
 from controller.workbooks import WorkbookEntry, WorkbookUpdateEntry
-from controller.util import UNDEFINED
+from controller.util import UNDEFINED, safe_int
 from controller.profile import UserProfile, Role
 from controller.credential import CredentialEntry
 from controller.sites import Site
@@ -30,9 +31,67 @@ class CredentialMixin(object):
     def get_cred(self, envid, name):
         return CredentialEntry.get_by_envid_key(envid, name, default=None)
 
+class StaticOptionType(type):
+    def __getattr__(cls, name):
+        if name == 'ITEMS':
+            return cls.items()
+        if name == 'OPTIONS':
+            options = []
+            for key, value in cls.ITEMS.items():
+                options.append({'option': value, 'id': key})
+            return options
+        raise AttributeError(name)
+
+class BaseStaticOption(object):
+    __metaclass__ = StaticOptionType
+
+    @classmethod
+    def get(cls, req, name, default=0):
+        #pylint: disable=no-member
+        if name not in req.GET:
+            return default
+        try:
+            value = int(req.GET[name])
+        except StandardError:
+            return default
+        if value not in cls.ITEMS:
+            return default
+        return value
+
+    @classmethod
+    def name(cls, key):
+        #pylint: disable=no-member
+        if key in cls.ITEMS:
+            return cls.ITEMS[key]
+        else:
+            return None
+
+class WorkbookShow(BaseStaticOption):
+    ALL = 0
+    MINE = 1
+
+    @classmethod
+    def items(cls):
+        return OrderedDict({cls.ALL:'All Workbooks', cls.MINE:'My Workbooks'})
+
+class WorkbookSort(BaseStaticOption):
+    NAME = 0
+    SITE = 1
+    PROJECT = 2
+    PUBLISHER = 3
+    REVISION_DATE = 4
+
+    @classmethod
+    def items(cls):
+        return OrderedDict({cls.NAME:'Workbook', cls.SITE:'Site',
+                            cls.PROJECT:'Project', cls.PUBLISHER:'Publisher',
+                            cls.REVISION_DATE:'Revision Date'})
+
 class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
 
     NAME = 'workbooks'
+
+    ALL_SITES_PROJECTS_OPTION = 'All Sites/Projects'
 
     def getuser_fromdb(self, envid, system_user_id):
         if system_user_id < 0:
@@ -58,25 +117,77 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
             meta.Session.add(entry)
         return entry
 
-    def get_site(self, envid, siteid, cache=None):
-        if cache is None:
-            cache = {}
-        if siteid in cache:
-            return cache[siteid]
-        entry = Site.get(envid, siteid, default=None)
-        name = entry and entry.name or ''
-        cache[siteid] = name
-        return name
+    def item_count(self, envid):
+        return WorkbookEntry.count(filters={'envid':envid})
 
-    def get_project(self, envid, projectid, cache=None):
-        if cache is None:
-            cache = {}
-        if projectid in cache:
-            return cache[projectid]
-        entry = Project.get(envid, projectid, default=None)
-        name = entry and entry.name or ''
-        cache[projectid] = name
-        return name
+    def site_options(self, sites):
+        options = [{'option': 'All Sites', 'id': 0}]
+        for site in sites.values():
+            data = {'option':site.name, 'id':site.siteid}
+            options.append(data)
+        return options
+
+    def project_options(self, projects):
+        options = [{'option': 'All Projects', 'id': 0}]
+        for project in projects.values():
+            data = {'option':project.name, 'id':project.projectid}
+            options.append(data)
+        return options
+
+    def site_project_options(self, sites, projects):
+        # estimate: < 50 projects
+        options = [{'option': self.ALL_SITES_PROJECTS_OPTION, 'id': 0}]
+        for site in sites.values():
+            for project in projects.values():
+                if project.site_id != site.siteid:
+                    continue
+                data = {'option': site.name + '/' + project.name,
+                        'id': str(site.siteid) + ':' + str(project.projectid)}
+                options.append(data)
+        return options
+
+    # returns id,value
+    def site_project_id_value(self, req, sites, projects):
+        if 'site-project' not in req.GET:
+            return 0, self.ALL_SITES_PROJECTS_OPTION
+        key = str(req.GET['site-project'])
+        if key == '0':
+            return 0, self.ALL_SITES_PROJECTS_OPTION
+        tokens = key.split(':')
+        if len(tokens) != 2:
+            return 0, self.ALL_SITES_PROJECTS_OPTION
+        try:
+            siteid = int(tokens[0])
+            projectid = int(tokens[1])
+        except StandardError:
+            return 0, self.ALL_SITES_PROJECTS_OPTION
+        if siteid not in sites or projectid not in projects:
+            return 0, self.ALL_SITES_PROJECTS_OPTION
+        value = sites[siteid].name + '/' + projects[projectid].name
+        return str(siteid) + ':' + str(projectid), value
+
+    def build_config(self, req, sites, projects):
+        # pylint: disable=no-member
+        # OPTIONS is created by __setattr__ of the metaclass so pylint warning.
+        config = []
+        show_options = WorkbookShow.OPTIONS
+        showid = WorkbookShow.get(req, 'show')
+
+        config.append({'name': 'show', 'options': show_options,
+                       'id': showid, 'value': WorkbookShow.name(showid)})
+
+        sort_options = WorkbookSort.OPTIONS
+        sortid = WorkbookSort.get(req, 'sort')
+
+        config.append({'name': 'sort', 'options': sort_options,
+                       'id': sortid, 'value': WorkbookSort.name(sortid)})
+
+        site_project_options = self.site_project_options(sites, projects)
+        spid, value = self.site_project_id_value(req, sites, projects)
+        config.append({'name': 'site-project', 'options': site_project_options,
+                       'id': spid, 'value': value})
+        return config
+
 
     @required_parameters('value')
     # pylint: disable=invalid-name
@@ -122,15 +233,79 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         meta.Session.commit()
         return {'value': update.note}
 
-    def handle_get(self, req):
-        # pylint: disable=multiple-statements
-        users = {}; sites = {}; projects = {}  # lookup caches
-        if req.remote_user.roleid > Role.NO_ADMIN:
-            entries = WorkbookEntry.get_all_by_envid(req.envid)
+    def build_query_filters(self, req):
+        filters = OrderedDict({'envid':req.envid})
+        if req.remote_user.roleid == Role.NO_ADMIN:
+            showid = WorkbookShow.MINE
         else:
-            system_user_id = req.remote_user.system_user_id
-            entries = WorkbookEntry.get_all_by_system_user(req.envid,
-                                                           system_user_id)
+            showid = req.getint('show')
+            #pylint: disable=no-member
+            if showid is None or showid not in WorkbookShow.ITEMS:
+                showid = WorkbookShow.ALL
+        if showid == WorkbookShow.MINE:
+            filters['system_user_id'] = req.remote_user.system_user_id
+
+        site_project = req.get('site-project', default='0')
+        if site_project != '0':
+            tokens = site_project.split(':')
+            if len(tokens) == 2:
+                siteid = safe_int(tokens[0], default=0)
+                if siteid != 0:
+                    filters['site_id'] = siteid
+                projectid = safe_int(tokens[1], default=0)
+                if projectid != 0:
+                    filters['project_id'] = projectid
+        return filters
+
+    def do_query(self, req):
+        filters = self.build_query_filters(req)
+
+        query = meta.Session.query(WorkbookEntry)
+
+        # pylint: disable=no-member
+        # pylint: disable=maybe-no-member
+        sort = req.getint('sort')
+        if sort is None or sort not in WorkbookSort.ITEMS:
+            sort = WorkbookSort.NAME
+
+        if sort == WorkbookSort.SITE:
+            query = query.join(Site,
+                               WorkbookEntry.site_id == Site.siteid)
+        elif sort == WorkbookSort.PROJECT:
+            query = query.join(Project,
+                               WorkbookEntry.project_id == Project.projectid)
+        elif sort == WorkbookSort.PUBLISHER:
+            query = query.join(UserProfile, \
+                WorkbookEntry.system_user_id == UserProfile.system_user_id)
+
+        query = WorkbookEntry.apply_filters(query, filters)
+
+        if sort == WorkbookSort.NAME:
+            query = query.order_by(WorkbookEntry.name)
+        elif sort == WorkbookSort.SITE:
+            query = query.order_by(Site.name, WorkbookEntry.name)
+        elif sort == WorkbookSort.PROJECT:
+            query = query.order_by(Project.name, WorkbookEntry.name)
+        elif sort == WorkbookSort.REVISION_DATE:
+            query = query.order_by(WorkbookEntry.created_at.desc())
+
+        limit = req.getint('limit', default=25)
+        page = req.getint('page', default=1)
+
+        offset = (page - 1) * limit
+        query = query.limit(limit).offset(offset)
+
+        return query.all()
+
+    # FIXME: move build options to a separate file.
+    def handle_get(self, req):
+
+        entries = self.do_query(req)
+
+        # lookup caches
+        users = {}
+        sites = Site.cache(req.envid)
+        projects = Project.cache(req.envid)
 
         workbooks = []
         for entry in entries:
@@ -158,13 +333,17 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
                 data['current-revision'] = current['revision']
                 data['url'] = current['url']
 
-            data['site'] = self.get_site(req.envid, entry.site_id, cache=sites)
-            data['project'] = self.get_project(req.envid,
-                                               entry.project_id,
-                                               cache=projects)
+            if entry.site_id in sites:
+                data['site'] = sites[entry.site_id].name
+            if entry.project_id in projects:
+                data['project'] = projects[entry.project_id].name
+
             workbooks.append(data)
 
-        return {'workbooks': workbooks}
+        return {'workbooks': workbooks,
+                'config': self.build_config(req, sites, projects),
+                'item-count': self.item_count(req.envid)
+        }
 
     def handle(self, req):
         path_info = self.base_path_info(req)

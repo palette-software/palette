@@ -1,5 +1,6 @@
-require(['jquery', 'topic', 'template', 'common', 'EditBox', 'OnOff', 'bootstrap'],
-function ($, topic, template, common, EditBox, OnOff)
+require(['jquery', 'topic', 'template', 'common', 'items', 'EditBox', 'OnOff',
+         'bootstrap'],
+        function ($, topic, template, common, items, EditBox, OnOff)
 {
     var LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -58,7 +59,7 @@ function ($, topic, template, common, EditBox, OnOff)
             $('div.dropdown').each(function () {
                 $(this).data('callback', ddCallback);
             });
-            common.bindEvents();
+            items.bind();
             common.setupDropdowns();
             EditBox.setup();
             OnOff.setup();

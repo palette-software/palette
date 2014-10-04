@@ -83,3 +83,7 @@ class Project(meta.Base, BaseMixin):
 
         d = {u'status': 'OK', u'count': len(data[''])}
         return d
+
+    @classmethod
+    def cache(cls, envid):
+        return cls.cache_by_key(envid, key='projectid')
