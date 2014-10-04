@@ -60,11 +60,11 @@ class MonitorApplication(PaletteRESTHandler):
 
     def status_options(self, req):
         current_key = 'status' in req.GET and req.GET['status'] or '0'
-        options = [{'item':'All Status', 'id':0}]
+        options = [{'option':'All Status', 'id':0}]
         for x in ['E', 'W', 'I']:
-            options.append({'item':EventControl.level_strings[x], 'id':x})
+            options.append({'option':EventControl.level_strings[x], 'id':x})
         if current_key == '0':
-            value = options[0]['item']
+            value = options[0]['option']
         else:
             value = EventControl.level_strings[current_key]
         return {'name':'status', 'value':value,
@@ -72,7 +72,7 @@ class MonitorApplication(PaletteRESTHandler):
 
     def type_options(self, req):
         current_key = 'type' in req.GET and req.GET['type'] or '0'
-        options = [{'item':'All Types', 'id':0}]
+        options = [{'option':'All Types', 'id':0}]
 
         d = {'name':'type'}
         types = OrderedDict()
@@ -83,9 +83,9 @@ class MonitorApplication(PaletteRESTHandler):
             if key == current_key:
                 d['value'] = types[key]
                 d['id'] = key
-            options.append({'item':types[key], 'id':key})
+            options.append({'option':types[key], 'id':key})
         if 'id' not in d:
-            d['value'] = options[0]['item']
+            d['value'] = options[0]['option']
             d['id'] = 0
         d['options'] = options
         return d
@@ -93,16 +93,16 @@ class MonitorApplication(PaletteRESTHandler):
     def publisher_options(self, req):
         sysid = self.getindex(req, 'publisher')
 
-        options = [{'item':'All Publishers', 'id':0}]
+        options = [{'option':'All Publishers', 'id':0}]
         d = {'name':'publisher'}
         for publisher in ExtractManager.publishers():
             if publisher.system_user_id == sysid:
                 d['value'] = publisher.friendly_name
                 d['id'] = publisher.system_user_id
-            options.append({'item':publisher.friendly_name,
+            options.append({'option':publisher.friendly_name,
                       'id':publisher.system_user_id})
         if not 'id' in d:
-            d['value'] = options[0]['item']
+            d['value'] = options[0]['option']
             d['id'] = options[0]['id']
         d['options'] = options
         return d
@@ -448,7 +448,7 @@ class MonitorApplication(PaletteRESTHandler):
 
             events = self.event.handle_GET(req)
             monitor_ret['events'] = events['events']
-            monitor_ret['event-count'] = events['count']
+            monitor_ret['item-count'] = events['count']
 
         return monitor_ret
 

@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from sqlalchemy import DateTime, func
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -70,6 +71,12 @@ class BaseMixin(object):
             return rows['RECORDS']
 
     @classmethod
+    def apply_filters(cls, query, filters):
+        for key, value in filters.items():
+            query = query.filter(getattr(cls, key) == value)
+        return query
+
+    @classmethod
     def get_unique_by_keys(cls, keys, **kwargs):
         if 'default' in kwargs:
             default = kwargs['default']
@@ -82,9 +89,7 @@ class BaseMixin(object):
             raise ValueError("Invalid kwargs: " + str(kwargs))
 
         query = meta.Session.query(cls)
-
-        for key, value in keys.items():
-            query = query.filter(getattr(cls, key) == value)
+        query = cls.apply_filters(query, keys)
 
         try:
             entry = query.one()
@@ -94,14 +99,14 @@ class BaseMixin(object):
             raise ValueError("No such value: " + str(keys))
         return entry
 
-
     @classmethod
     def get_all_by_keys(cls, keys, order_by=None, limit=None):
         if order_by is None:
             order_by = []
+
         query = meta.Session.query(cls)
-        for key, value in keys.items():
-            query = query.filter(getattr(cls, key) == value)
+        query = cls.apply_filters(query, keys)
+
         if isinstance(order_by, basestring):
             order_by = [order_by]
         for clause in order_by:
@@ -115,8 +120,9 @@ class BaseMixin(object):
         if filters is None:
             filters = {}
         query = meta.Session().query(func.max(getattr(cls, column)))
-        for key, value in filters.items():
-            query = query.filter(getattr(cls, key) == value)
+        query = cls.apply_filters(query, filters)
+
+        # pylint: disable=maybe-no-member
         value = query.scalar()
         if value is None:
             return default
@@ -127,10 +133,20 @@ class BaseMixin(object):
         if filters is None:
             filters = {}
         query = meta.Session().query(cls)
-        for key, value in filters.items():
-            query = query.filter(getattr(cls, key) == value)
+        query = cls.apply_filters(query, filters)
+        # pylint: disable=maybe-no-member
         return query.count()
 
+    @classmethod
+    def cache_by_key(cls, envid, key=None):
+        if key is None:
+            tokey = lambda k: k
+        elif isinstance(key, basestring):
+            tokey = lambda k: getattr(k, key)
+        else:
+            tokey = key
+        objs = [(tokey(obj), obj) for obj in cls.all(envid)]
+        return OrderedDict(objs)
 
 class OnlineMixin(object):
 

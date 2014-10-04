@@ -28,6 +28,24 @@ class Request(apiRequest):
             self.system = System(self.envid)
             environ['PALETTE_SYSTEM'] = self.system
 
+    def get(self, name, default=None):
+        if not name in self.GET:
+            return default
+        return self.GET[name]
+
+    def getint(self, name, default=None):
+        try:
+            return int(self.GET[name])
+        except StandardError:
+            pass
+        return default
+
+    def getfloat(self, name, default=None):
+        try:
+            return float(self.GET[name])
+        except StandardError:
+            pass
+        return default
 
 # FIXME: merge with SystemManager.
 class System(object):
