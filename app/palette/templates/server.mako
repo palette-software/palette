@@ -12,7 +12,7 @@
 
 <script id="server-detail-template" type="x-tmpl-mustache">
   {{#servers}}
-  <article class="event">
+  <article class="item">
     <div class="summary clearfix">
       <i class="fa fa-fw fa-laptop"></i>
       <div>
