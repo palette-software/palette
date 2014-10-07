@@ -5,7 +5,7 @@
 <title>Palette - User Configuration</title>
 </%block>
 
-<section class="dynamic-content integration">
+<section class="dynamic-content integration s3">
   <section class="top-zone">
     <section class="row">
       <section class="col-xs-12">
@@ -16,20 +16,26 @@
       <section class="col-xs-12">
          <p>Cloud storage to save your Tableau backups, logfiles, workbooks and other Palette generated files</p>
          <h2 class="page-subtitle">Credentials</h2>
-         <h3>Access Key ID</h3>
-         <p class="editbox" data-href="/rest/s3/access-key">
-           ${obj.access_key}
-         </p>
-         <h3>Secret Access Key</h3>
-         <p class="editbox password" data-href="/rest/s3/secret">
-           ${obj.secret}
-         </p>
-         <h3>Bucket Name</h3>
-         <p class="editbox" data-href="/rest/s3/bucket">
-           ${obj.bucket}
-         </p>
+         <form>
+         <h3>Access Key ID (20 characters)</h3>
+         <p id="access-key" />&nbsp;</p>
+         <h3>Secret Access Key (40 characters)</h3>
+         <p id="secret-key" />&nbsp;</p>
+         <h3>Bucket Name (required)</h3>
+         <p id="bucket">&nbsp;</p>
+         <div>
+           <button type="button" id="edit" class="btn btn-primary">
+             <i class="fa fa-pencil"></i> Edit
+           </button>
+           <button type="button" id="save" class="btn btn-primary disabled hidden">
+             <i class="fa fa-download"></i> Save
+           </button>
+           <button type="button" id="cancel" class="btn btn-primary hidden">
+             <i class="fa fa-times"></i> Cancel
+           </button>
+         </div>
+         </form>
       </section>
-    </section>
     </section>
   </section>
 </section>

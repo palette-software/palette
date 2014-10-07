@@ -52,7 +52,6 @@ i.tableau {
     width: 28px;
     margin: 13px 14px 13px 17px !important;
 }
-
 .bold {
     font-weight: bold;
 }
@@ -137,7 +136,6 @@ article.popup p {
     font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: 17px;
 }
-
 .secondary-side-bar {
     height: 100%;
     display: block;
@@ -325,6 +323,31 @@ article.popup p {
     display: block;
     margin: 10px 25px;
     height: 32px;
+}
+/* FIXME - remove p-btn */
+.btn, .p-btn {
+    color: #fff;
+    background-color: #8d96a4;
+    font-weight: 500;
+    outline: 0;
+    border: 0;
+    border-radius: 0;
+}
+.btn {
+    width: 125px;
+}
+.p-btn {
+    width: 100%;
+    max-width: 320px;
+    text-transform: uppercase;
+    padding: 9px 0;
+}
+.btn:hover, .btn:focus, .btn:active, .p-btn:hover {
+    background-color: #5e646b;
+}
+.btn-primary {
+    padding: 9px 0;
+    text-transform: uppercase;
 }
 .btn-group {
     position: relative;
@@ -704,6 +727,14 @@ ul.processes.visible {
 .dynamic-content input[type="text"] {
     width: 50%;
 }
+input#access-key {
+    width: 250px;
+    max-width: inherit;
+}
+input#secret-key {
+    width: 400px;
+    max-width: inherit;
+}
 h1.page-title {
     font-size: 28px;
     display: inline-block;
@@ -716,7 +747,22 @@ h1.page-title {
 .about-page h1.page-title, .profile-page h1.page-title, .general-page h1.page-title, .integration h1.page-title {
     margin-bottom: 20px;
 }
-
+.integration h2.page-subtitle {
+    margin-bottom: 20px;
+}
+.integration h3 {
+    margin: 10px 0 0 0;
+}
+.integration form p {
+    line-height: 34px;
+    margin: 5px 0 25px 0;
+}
+.integration form input[type="text"] {
+    font-size: 16px;
+}
+.integration form input[type="text"]:last-of-type {
+    margin-bottom: 25px;
+}
 #mainNav a.site-id {
     background-image: url('/app/module/palette/images/palette_logo_600dpi-2.png');
     background-size: 100%;
@@ -771,7 +817,6 @@ p.large {
 .login-box input[type="text"], .login-box input[type="password"] {
     font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
     border: 1px solid #d9d9d9;
-    border-radius: 0px;
     color: #666666; /* FIXME */
     font-size: 19px;
     outline: 0;
@@ -787,7 +832,6 @@ p.large {
 .login-box button {
     font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     color: white;
-    border-radius: 0px;
     background-color: #8d96a4;
     width: 100%;
     font-size: 20px;
@@ -887,20 +931,6 @@ label {
 }
 
 /* FIXME: popup button, merge with bootstrap .btn class */
-.p-btn {
-    color: #fff;
-    background-color: #8d96a4;
-    width: 100%;
-    font-weight: 500;
-    padding: 9px 0;
-    text-transform: uppercase;
-    outline: 0;
-    border: 0;
-    max-width: 320px;
-}
-.p-btn:hover {
-    background-color: #5e646b;
-}
 input[type="text"], input[type="password"], input[type="email"] {
     margin: 5px 0 15px 0;
     color: black;
@@ -909,7 +939,7 @@ input[type="text"], input[type="password"], input[type="email"], select {
     width: 100%;
     border: 0;
     outline: 0;
-    border-radius: 5px;
+    border-radius: 0;
     box-shadow: 0 0;
     height: 34px;
     padding: 0 8px;

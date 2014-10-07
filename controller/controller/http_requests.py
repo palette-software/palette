@@ -52,7 +52,6 @@ class HttpRequestEntry(meta.Base, BaseMixin, BaseDictMixin):
     def max_reqid(cls, envid):
         return cls.max('id', filters={'envid':envid})
 
-
 class HttpRequestManager(TableauCacheManager):
 
     @synchronized('http_requests')
