@@ -5,7 +5,7 @@
 <title>Palette - User Configuration</title>
 </%block>
 
-<section class="dynamic-content integration">
+<section class="dynamic-content integration gcs">
   <section class="top-zone">
     <section class="row">
       <section class="col-xs-12">
