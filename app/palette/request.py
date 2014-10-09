@@ -66,6 +66,13 @@ class System(object):
             return None
         return self.data[key].modification_time.strftime(DATEFMT)
 
+    def delete(self, key, synchronize_session='evaluate'):
+        if hasattr(self, 'data'):
+            if key in self.data:
+                del self.data[key]
+        filters = {'envid':self.envid, 'key':key}
+        SystemEntry.delete(filters, synchronize_session=synchronize_session)
+
     def get(self, key, **kwargs):
         if 'default' in kwargs:
             default = kwargs['default']
@@ -80,10 +87,42 @@ class System(object):
         if not key in self.data:
             if have_default:
                 return default
-            raise ValueError('No such value: ' + key)
+            raise KeyError('No such key: ' + key)
 
         entry = self.data[key]
         return entry.value
+
+    def getint(self, key, **kwargs):
+        if 'cleanup' in kwargs:
+            cleanup = kwargs['cleanup']
+            del kwargs['cleanup']
+        else:
+            cleanup = False
+
+        if 'default' in kwargs:
+            default = kwargs['default']
+            have_default = True
+            del kwargs['default']
+        else:
+            have_default = False
+
+        try:
+            value = int(self.get(key))
+        except KeyError, ex:
+            if have_default:
+                return default
+            raise ex
+        except ValueError, ex:
+            if cleanup:
+                if 'synchronize_session' in kwargs:
+                    synchronize_session = kwargs['synchronize_session']
+                else:
+                    synchronize_session = 'evaluate'
+                self.delete(key, synchronize_session=synchronize_session)
+            if have_default:
+                return default
+            raise ex
+        return value
 
     def save(self, key, value):
         self.tryload()

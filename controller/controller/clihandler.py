@@ -19,7 +19,7 @@ from agentinfo import AgentYmlEntry
 from event_control import EventControl
 from files import FileManager
 from get_file import GetFile
-from cloud import CloudManager
+from cloud import CloudManager, S3_ID, GCS_ID
 from system import SystemEntry
 from state import StateManager
 from state_control import StateControl
@@ -1681,116 +1681,86 @@ class CliHandler(socketserver.StreamRequestHandler):
         agent.connection.http_send_json("/hup", {})
         self.report_status({})
 
-    @usage('s3 [GET|PUT] <s3-name> <key-or-path> <local-dir>')
+    def _do_cloud(self, cloud_type, usage_msg, cmd):
+        # pylint: disable=too-many-branches
+
+        if cloud_type == CloudManager.CLOUD_TYPE_S3:
+            cloud_type_id = S3_ID
+            cloud_instance = self.server.cloud.s3
+        elif cloud_type == CloudManager.CLOUD_TYPE_GCS:
+            cloud_type_id = GCS_ID
+            cloud_instance = self.server.cloud.gcs
+        else:
+            raise ValueError('cloud_type')
+
+        if len(cmd.args) == 2:
+            dirpath = None
+        elif len(cmd.args) == 3:
+            dirpath = cmd.args[2]
+        else:
+            self.print_usage(usage_msg)
+            return
+
+        action = cmd.args[0].upper()
+        if action not in ('GET', 'PUT', 'DELETE'):
+            self.error(clierror.ERROR_COMMAND_SYNTAX_ERROR,
+                       "Invalid action: %s", action)
+            return
+
+        if action != 'DELETE':
+            agent = self.get_agent(cmd.dict)
+            if not agent:
+                return
+
+        keypath = cmd.args[1]
+
+        # FIXME: move to CloudManager ?
+        if 'name' in cmd.dict:
+            name = cmd.dict['name']
+            entry = self.server.cloud.get_by_name(name, cloud_type)
+            if not entry:
+                self.error(clierror.ERROR_NOT_FOUND,
+                           "cloud instance '" + name + "' not found.")
+                return
+        else:
+            # FIXME: duplicate code with webapp.
+            cloudid = self.server.system.getint(cloud_type_id, default=0)
+            if cloudid == 0:
+                self.error(clierror.ERROR_NOT_FOUND,
+                           'No default cloud instance specified.')
+                return
+            entry = self.server.cloud.get_by_cloudid(cloudid)
+            if not entry:
+                self.error(clierror.ERROR_NOT_FOUND,
+                           "cloud instance '" + str(cloudid) + "' not found.")
+                return
+
+        self.ack()
+
+        if action == 'GET':
+            body = cloud_instance.get(agent, entry, keypath, pwd=dirpath)
+        elif action == 'PUT':
+            body = cloud_instance.put(agent, entry, keypath, pwd=dirpath)
+        elif action == 'DELETE':
+            body = cloud_instance.delete_file(entry, keypath)
+
+        self.report_status(body)
+
+    # 's3-name' is now a slash ('/') parameter
+    @usage('s3 [GET|PUT|DELETE] <key-or-path> [dirpath]')
     def do_s3(self, cmd):
         """Send a file to or receive a file from an S3 bucket"""
+        return self._do_cloud(CloudManager.CLOUD_TYPE_S3,
+                              self.do_s3.__usage__,
+                              cmd)
 
-        if len(cmd.args) != 4:
-            self.print_usage(self.do_s3.__usage__)
-            return
-
-        agent = self.get_agent(cmd.dict)
-        if not agent:
-            return
-
-        action = cmd.args[0].upper()
-        if action not in ('GET', 'PUT'):
-            self.error(clierror.ERROR_COMMAND_SYNTAX_ERROR,
-                       "Invalid action: %s", action)
-            return
-        name = cmd.args[1]
-        keypath = cmd.args[2]
-        data_dir = cmd.args[3]
-
-        entry = self.server.cloud.get_by_name(name, CloudManager.CLOUD_TYPE_S3)
-        if not entry:
-            self.error(clierror.ERROR_NOT_FOUND,
-                       "s3 instance '" + name + "' not found.")
-            return
-
-        self.ack()
-        body = self.server.s3_cmd(agent, action, entry, data_dir, keypath)
-
-        self.report_status(body)
-
-    @usage('gcs [GET|PUT] <gcs-name> <key-or-path> <local-dir>')
+    # 'gcs-name' is now a slash ('/') parameter
+    @usage('gcs [GET|PUT|DELETE] <key-or-path> [dirpath]')
     def do_gcs(self, cmd):
         """Send a file to or receive a file from a GCP bucket"""
-
-        if len(cmd.args) != 4:
-            self.print_usage(self.do_gcs.__usage__)
-            return
-
-        agent = self.get_agent(cmd.dict)
-        if not agent:
-            return
-
-        action = cmd.args[0].upper()
-        if action not in ('GET', 'PUT'):
-            self.error(clierror.ERROR_COMMAND_SYNTAX_ERROR,
-                       "Invalid action: %s", action)
-            return
-        name = cmd.args[1]
-        keypath = cmd.args[2]
-        data_dir = cmd.args[3]
-
-        entry = self.server.cloud.get_by_name(name, CloudManager.CLOUD_TYPE_GCS)
-        if not entry:
-            self.error(clierror.ERROR_NOT_FOUND,
-                       "gcs entry '" + name + "' not found.")
-            return
-
-        # fixme
-        # sanity check on local-dir on the primary?
-
-        self.ack()
-
-        body = self.server.gcs_cmd(agent, action, entry, data_dir, keypath)
-        self.report_status(body)
-
-    @usage('gcsdel <gcs-name> <filename>')
-    def do_gcsdel(self, cmd):
-        """Delete a filename from a gcs-name."""
-
-        if len(cmd.args) != 2:
-            self.print_usage(self.do_gcsdel.__usage__)
-            return
-
-        name = cmd.args[0]
-        entry = self.server.cloud.get_by_name(name, CloudManager.CLOUD_TYPE_GCS)
-        if not entry:
-            self.error(clierror.ERROR_NOT_FOUND,
-                       "gcs entry '" + name + "' not found.")
-            return
-
-        self.ack()
-
-        try:
-            self.server.delete_gcs_file(entry, cmd.args[1])
-        except IOError, ex:
-            self.error(clierror.ERROR_COMMAND_FAILED, str(ex).replace('\n', ''))
-            return
-
-        self.report_status({})
-
-    @usage('s3del <s3-name> <filename>')
-    def do_s3del(self, cmd):
-        """Delete a filename from a s3-name."""
-
-        if len(cmd.args) != 2:
-            self.print_usage(self.do_s3del.__usage__)
-            return
-
-        name = cmd.args[0]
-        entry = self.server.cloud.get_by_name(name, CloudManager.CLOUD_TYPE_S3)
-        if not entry:
-            self.error(clierror.ERROR_NOT_FOUND,
-                       "s3 instance '" + name + "' not found.")
-            return
-        self.ack()
-
-        self.server.delete_s3_file(entry, cmd.args[1])
-        self.report_status({})
+        return self._do_cloud(CloudManager.CLOUD_TYPE_GCS,
+                              self.do_gcs.__usage__,
+                              cmd)
 
     @usage('sql <statement>')
     def do_sql(self, cmd):
