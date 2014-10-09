@@ -16,7 +16,7 @@ from akiri.framework.ext.sqlalchemy import meta
 from event import EventEntry
 from profile import UserProfile
 from util import DATEFMT, UNDEFINED, utc2local
-from mixin import BaseMixin
+from mixin import BaseMixin, BaseDictMixin
 from manager import Manager
 
 from sites import Site
@@ -26,7 +26,7 @@ mako.runtime.UNDEFINED = UNDEFINED
 
 import re
 
-class EventControl(meta.Base, BaseMixin):
+class EventControl(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = "event_control"
 
     eventid = Column(BigInteger, unique=True, nullable=False,

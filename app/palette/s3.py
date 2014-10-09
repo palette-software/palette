@@ -24,8 +24,8 @@ class S3Application(PaletteRESTHandler):
         return CloudEntry.get_by_envid_type(envid, CloudManager.CLOUD_TYPE_S3)
 
     def _get_by_bucket(self, envid, bucket):
-        entry = CloudEntry.get_by_envid_bucket(envid, bucket,
-                                               CloudManager.CLOUD_TYPE_S3)
+        entry = CloudEntry.get_by_envid_name(envid, bucket,
+                                             CloudManager.CLOUD_TYPE_S3)
         if entry is None:
             entry = CloudEntry(envid=envid,
                                cloud_type=CloudManager.CLOUD_TYPE_S3)

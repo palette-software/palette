@@ -1,3 +1,11 @@
+import os
+import ntpath
+
+import boto
+from boto.s3 import connection
+
+from abc import ABCMeta, abstractmethod
+
 from sqlalchemy import Column, BigInteger, DateTime, String, func
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import ForeignKey, UniqueConstraint
@@ -11,6 +19,8 @@ from manager import Manager
 
 # FIXME: This policy is *way* too permissive.
 S3_POLICY = '{"Statement":[{"Effect":"Allow","Action": "s3:*","Resource":"*"}]}'
+S3_ID = 's3-id'
+GCS_ID = 'gcs-id'
 
 class CloudEntry(meta.Base, BaseMixin, BaseDictMixin, OnlineMixin):
     __tablename__ = 'cloud'
@@ -28,8 +38,7 @@ class CloudEntry(meta.Base, BaseMixin, BaseDictMixin, OnlineMixin):
     modification_time = Column(DateTime, server_default=func.now(),
                                server_onupdate=func.current_timestamp())
 
-    __table_args__ = (UniqueConstraint('envid', 'name'),
-                      UniqueConstraint('envid', 'bucket'))
+    __table_args__ = (UniqueConstraint('envid', 'name'),)
 
     @classmethod
     def get_by_envid_cloudid(cls, envid, cloudid):
@@ -54,23 +63,31 @@ class CloudEntry(meta.Base, BaseMixin, BaseDictMixin, OnlineMixin):
             return None
 
     @classmethod
-    def get_by_envid_bucket(cls, envid, bucket, cloud_type):
-        filters = {'envid':envid, 'cloud_type':cloud_type, 'bucket':bucket}
-        return cls.get_unique_by_keys(filters, default=None)
-
-    @classmethod
     def get_by_envid_name(cls, envid, name, cloud_type):
         filters = {'envid':envid, 'cloud_type':cloud_type, 'name':name}
         return cls.get_unique_by_keys(filters, default=None)
 
+    @classmethod
+    def get_all_by_envid(cls, envid):
+        filters = {'envid':envid}
+        return cls.get_all_by_keys(filters, order_by='name')
 
 class CloudManager(Manager):
 
     CLOUD_TYPE_S3 = 's3'
     CLOUD_TYPE_GCS = 'gcs'
 
+    def __init__(self, server):
+        super(CloudManager, self).__init__(server)
+        # pylint: disable=invalid-name
+        self.s3 = S3(server)
+        self.gcs = GCS(server)
+
     def get_by_name(self, name, cloud_type):
         return CloudEntry.get_by_envid_name(self.envid, name, cloud_type)
+
+    def get_clouds(self):
+        return CloudEntry.get_all_by_envid(self.envid)
 
     # FIXME: use get_unique_by_keys()
     def get_by_cloudid(self, cloudid):
@@ -95,17 +112,162 @@ class CloudManager(Manager):
             return None
 
     @classmethod
-    def get_clouds_by_envid(cls, envid):
-        # FIXME: use get_all_by_keys()
-        return meta.Session.query(CloudEntry).\
-            filter_by(envid=envid).\
-            order_by('cloud.name').\
-            all()
-
-    @classmethod
     def text(cls, value):
         if value == CloudManager.CLOUD_TYPE_S3:
             return 'Amazon S3 Storage'
         if value == CloudManager.CLOUD_TYPE_GCS:
             return 'Google Cloud Storage'
         raise KeyError(value)
+
+
+def move_bucket_subdirs_to_path(in_bucket, in_path):
+    """ Given:
+      in_bucket: palette-storage/subdir/dir2
+      in_path:   filename
+      return:
+        bucket:    palette-storage
+        path:      subdir/dir2/filename
+    """
+
+    if in_bucket.find('/') != -1:
+        bucket, rest = in_bucket.split('/', 1)
+        path = os.path.join(rest, in_path)
+    elif in_bucket.find('\\') != -1:
+        bucket, rest = in_bucket.split('\\', 1)
+        path = ntpath.join(rest, in_path)
+    else:
+        bucket = in_bucket
+        path = in_path
+    return (bucket, path)
+
+# Abstract base class for S3 and GCS.
+class CloudInstance(object):
+    __metaclass__ = ABCMeta
+
+    def __init__(self, server):
+        self.server = server
+        self.envid = self.server.environment.envid
+
+    @abstractmethod
+    def send_cmd(self, agent, action, cloud_entry, path, pwd=None):
+        # pylint: disable=too-many-arguments
+        pass
+
+    @abstractmethod
+    def delete_file(self, entry, path):
+        pass
+
+    def get(self, agent, cloud_entry, path, pwd=None):
+        return self.send_cmd(agent, 'GET', cloud_entry, path, pwd=pwd)
+
+    def put(self, agent, cloud_entry, path, pwd=None):
+        return self.send_cmd(agent, 'PUT', cloud_entry, path, pwd=pwd)
+
+# Handle S3 specifics
+class S3(CloudInstance):
+
+    def send_cmd(self, agent, action, cloud_entry, path, pwd=None):
+        # pylint: disable=too-many-arguments
+        # fixme: sanity check on data-dir on the primary?
+        # fixme: create the path first
+
+        # pylint: disable=pointless-string-statement
+        """
+        # fixme: Not all users have authorization to do this.
+        resource = os.path.basename(filename)
+        try:
+            token = cloud_entry.get_token(resource)
+        except (AWSConnectionError, BotoClientError, BotoServerError) as e:
+            return self.error("s3: %s" % str(e))
+
+        # fixme: this method doesn't work
+        env = {u'ACCESS_KEY': token.credentials.access_key,
+               u'SECRET_KEY': token.credentials.secret_key,
+               u'SESSION': token.credentials.session_token,
+               u'REGION_ENDPOINT': cloud_entry.region,
+               u'PWD': pwd}
+        """
+
+        env = {u'ACCESS_KEY': cloud_entry.access_key,
+               u'SECRET_KEY': cloud_entry.secret}
+
+        if pwd:
+            env['PWD'] = pwd
+        elif agent.data_dir:
+            env['PWD'] = agent.data_dir
+
+        s3_command = 'ps3 %s %s "%s"' % (action, cloud_entry.bucket, path)
+
+        self.server.log.debug("s3_command: '%s', pwd: '%s', path: '%s'",
+                              s3_command, pwd, path)
+
+        # Send the s3 command to the agent
+        return self.server.cli_cmd(s3_command, agent, env=env)
+
+    def delete_file(self, entry, path):
+        # Move any bucket subdirectories to the filename
+        bucket_name, filename = move_bucket_subdirs_to_path(entry.bucket, path)
+
+        # fixme: use temporary token if configured for it
+        conn = connection.S3Connection(entry.access_key, entry.secret)
+
+        bucket = connection.Bucket(conn, bucket_name)
+
+        s3key = connection.Key(bucket)
+        s3key.key = filename
+        try:
+            bucket.delete_key(s3key)
+        except boto.exception.BotoServerError as ex:
+            raise IOError(
+                    ("Failed to delete '%s' from S3 Cloud Storage " + \
+                    "bucket '%s'. %s: %s") % \
+                    (filename, bucket_name, ex.reason, ex.message))
+        return {'status': 'OK'}
+
+
+class GCS(CloudInstance):
+
+    def send_cmd(self, agent, action, cloud_entry, path, pwd=None):
+        # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-arguments
+
+        # fixme: sanity check on data-dir on the primary?
+
+        # FIXME: We don't really want to send our real keys and
+        #        secrets to the agents, but while boto.connect_gs
+        #        can replace boto.connect_s3, there is no GCS
+        #        equivalent for boto.connect_sts, so we may need
+        #        to move away from boto to get GCS temporary tokens.
+        env = {u'ACCESS_KEY': cloud_entry.access_key,
+               u'SECRET_KEY': cloud_entry.secret}
+
+        if pwd:
+            env['PWD'] = pwd
+        elif agent.data_dir:
+            env['PWD'] = agent.data_dir
+
+        gcs_command = 'pgcs %s %s "%s"' % (action, cloud_entry.bucket, path)
+
+        # Send the gcs command to the agent
+        return self.server.cli_cmd(gcs_command, agent, env=env)
+
+    def delete_file(self, entry, path):
+        # Move any bucket subdirectories to the filename
+        bucket_name, filename = move_bucket_subdirs_to_path(entry.bucket, path)
+
+        conn = boto.connect_gs(entry.access_key, entry.secret)
+        bucket = conn.get_bucket(bucket_name)
+
+        # boto uses s3 keys for GCS ??
+        s3key = boto.s3.key.Key(bucket)
+        s3key.key = filename
+
+        try:
+            s3key.delete()
+        except boto.exception.BotoServerError as ex:
+            if ex.status != 404:
+                raise IOError(
+                    ("Failed to delete '%s' from Google Cloud Storage " + \
+                    "bucket '%s': %s") % \
+                    (filename, bucket_name, str(ex)))
+        return {'status': 'OK'}

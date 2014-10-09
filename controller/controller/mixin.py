@@ -18,7 +18,7 @@ class BaseDictMixin(object):
             exclude = []
         if not isinstance(self, meta.Base):
             raise Exception("meta.Base instance required.")
-        d = {}
+        d = OrderedDict({})
         for column in self.__table__.columns:
             if column.name in exclude:
                 continue
@@ -117,10 +117,10 @@ class BaseMixin(object):
 
     @classmethod
     def max(cls, column, filters=None, default=None):
-        if filters is None:
-            filters = {}
         query = meta.Session().query(func.max(getattr(cls, column)))
-        query = cls.apply_filters(query, filters)
+
+        if filters:
+            query = cls.apply_filters(query, filters)
 
         # pylint: disable=maybe-no-member
         value = query.scalar()
@@ -130,12 +130,18 @@ class BaseMixin(object):
 
     @classmethod
     def count(cls, filters=None):
-        if filters is None:
-            filters = {}
         query = meta.Session().query(cls)
-        query = cls.apply_filters(query, filters)
+        if filters:
+            query = cls.apply_filters(query, filters)
         # pylint: disable=maybe-no-member
         return query.count()
+
+    @classmethod
+    def delete(cls, filters=None, synchronize_session='evaluate'):
+        query = meta.Session().query(cls)
+        if filters:
+            query = meta.Session().query(cls)
+        return query.delete(synchronize_session=synchronize_session)
 
     @classmethod
     def cache_by_key(cls, envid, key=None):

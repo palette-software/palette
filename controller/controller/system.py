@@ -99,6 +99,10 @@ class SystemManager(Manager):
                 raise ex
         return entry.value
 
+    def delete(self, key, synchronize_session='evaluate'):
+        filters = {'envid':self.envid, 'key':key}
+        SystemEntry.delete(filters, synchronize_session=synchronize_session)
+
     def getint(self, key, **kwargs):
         return int(self.get(key, **kwargs))
 

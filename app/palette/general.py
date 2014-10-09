@@ -5,7 +5,7 @@ from controller.util import sizestr, str2bool
 from controller.general import SystemConfig
 from controller.files import FileManager
 from controller.agentinfo import AgentVolumesEntry
-from controller.cloud import CloudManager
+from controller.cloud import CloudManager, CloudEntry
 from controller.passwd import set_aes_key_file
 
 from page import PalettePage, FAKEPW
@@ -59,7 +59,7 @@ class GeneralApplication(PaletteRESTHandler):
             if destid == ourid:
                 value = item
 
-        for entry in CloudManager.get_clouds_by_envid(req.envid):
+        for entry in CloudEntry.get_all_by_envid(req.envid):
             item = CloudManager.text(entry.cloud_type)
             ourid = '%s:%d' % (FileManager.STORAGE_TYPE_CLOUD, entry.cloudid)
             options.append({'id': ourid, 'item': item})

@@ -77,9 +77,9 @@ class PlaceFile(object):
 
     def copy_to_cloud(self):
         if self.dcheck.target_entry.cloud_type == CloudManager.CLOUD_TYPE_S3:
-            cloud_cmd = self.server.s3_cmd
+            cloud_cmd = self.server.cloud.s3.send_cmd
         elif self.dcheck.target_entry.cloud_type == CloudManager.CLOUD_TYPE_GCS:
-            cloud_cmd = self.server.gcs_cmd
+            cloud_cmd = self.server.cloud.gcs.send_cmd
 
         data_dir = self.agent.path.dirname(self.full_path)
         storage_body = cloud_cmd(self.agent, "PUT", self.dcheck.target_entry,

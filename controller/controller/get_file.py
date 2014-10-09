@@ -156,9 +156,9 @@ class GetFile(object):
                 self.agent.path.basename(self.full_path))
 
         if self.source_entry.cloud_type == CloudManager.CLOUD_TYPE_GCS:
-            cloud_cmd = self.server.gcs_cmd
+            cloud_cmd = self.server.cloud.gcs.send_cmd
         elif self.source_entry.cloud_type == CloudManager.CLOUD_TYPE_S3:
-            cloud_cmd = self.server.s3_cmd
+            cloud_cmd = self.server.cloud.s3.send_cmd
 
         # Where to store the cloud file
         data_dir = self.agent.path.dirname(self.primary_full_path)

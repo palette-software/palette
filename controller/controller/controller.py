@@ -14,13 +14,6 @@ from request import CliStartRequest, CleanupRequest
 import httplib
 import ntpath
 
-import boto
-
-from boto.s3 import connection
-#from boto.gs.connection import GSConnection
-
-#from boto.exception import BotoClientError, BotoServerError
-
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker, scoped_session
 
@@ -798,16 +791,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # fixme: report somewhere the DEL failed.
         return remove_body
 
+
+    # FIXME: move to CloudManager
     def delete_cloud_file(self, file_entry):
         cloud_entry = self.cloud.get_by_cloudid(file_entry.storageid)
         if not cloud_entry:
             raise IOError("No such cloudid: %d for file %s" % \
-                        (file_entry.cloudid, file_entry.name))
+                          (file_entry.cloudid, file_entry.name))
 
         if cloud_entry.cloud_type == CloudManager.CLOUD_TYPE_S3:
-            self.delete_s3_file(cloud_entry, file_entry.name)
+            self.cloud.s3.delete_file(cloud_entry, file_entry.name)
         elif cloud_entry.cloud_type == CloudManager.CLOUD_TYPE_GCS:
-            self.delete_gcs_file(cloud_entry, file_entry.name)
+            self.cloud.gcs.delete_file(cloud_entry, file_entry.name)
         else:
             msg = "delete_cloud_file: Unknown cloud_type %s for file: %s" % \
                   (cloud_entry.cloud_type, file_entry.name)
@@ -839,102 +834,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             bucket = in_bucket
             path = in_path
         return (bucket, path)
-
-    def delete_s3_file(self, entry, path):
-        # Move any bucket subdirectories to the filename
-        bucket_name, filename = \
-                        self.move_bucket_subdirs_to_path(entry.bucket, path)
-
-        # fixme: use temporary token if configured for it
-        conn = connection.S3Connection(entry.access_key, entry.secret)
-
-        bucket = connection.Bucket(conn, bucket_name)
-
-        s3key = connection.Key(bucket)
-        s3key.key = filename
-        try:
-            bucket.delete_key(s3key)
-        except boto.exception.BotoServerError as ex:
-            raise IOError(
-                    ("Failed to delete '%s' from S3 Cloud Storage " + \
-                    "bucket '%s'. %s: %s") % \
-                    (filename, bucket_name, ex.reason, ex.message))
-
-    def delete_gcs_file(self, entry, path):
-        # Move any bucket subdirectories to the filename
-        bucket_name, filename = \
-                        self.move_bucket_subdirs_to_path(entry.bucket, path)
-
-        conn = boto.connect_gs(entry.access_key, entry.secret)
-        bucket = conn.get_bucket(bucket_name)
-
-        s3key = boto.s3.key.Key(bucket)
-        s3key.key = filename
-
-        try:
-            s3key.delete()
-        except boto.exception.BotoServerError as ex:
-            raise IOError(
-                    ("Failed to delete '%s' from Google Cloud Storage " + \
-                    "bucket '%s': %s") % \
-                    (filename, bucket_name, str(ex)))
-
-    def gcs_cmd(self, agent, action, cloud_entry, data_dir, full_path):
-        # pylint: disable=too-many-arguments
-
-        # fixme: sanity check on data-dir on the primary?
-
-        # FIXME: We don't really want to send our real keys and
-        #        secrets to the agents, but while boto.connect_gs
-        #        can replace boto.connect_s3, there is no GCS
-        #        equivalent for boto.connect_sts, so we may need
-        #        to move away from boto to get GCS temporary tokens.
-        env = {u'ACCESS_KEY': cloud_entry.access_key,
-               u'SECRET_KEY': cloud_entry.secret,
-               u'PWD': data_dir}
-
-        gcs_command = 'pgcs %s %s "%s"' % (action, cloud_entry.bucket,
-                                          full_path)
-
-        # Send the gcs command to the agent
-        return self.cli_cmd(gcs_command, agent, env=env)
-
-    def s3_cmd(self, agent, action, cloud_entry, data_dir, full_path):
-        # pylint: disable=too-many-arguments
-        # fixme: sanity check on data-dir on the primary?
-
-        #fixme: create the path first
-        filename = agent.path.basename(full_path)
-
-        # pylint: disable=pointless-string-statement
-        """
-        # fixme: Not all users have authorization to do this.
-        resource = os.path.basename(filename)
-        try:
-            token = cloud_entry.get_token(resource)
-        except (AWSConnectionError, BotoClientError, BotoServerError) as e:
-            return self.error("s3: %s" % str(e))
-
-        # fixme: this method doesn't work
-        env = {u'ACCESS_KEY': token.credentials.access_key,
-               u'SECRET_KEY': token.credentials.secret_key,
-               u'SESSION': token.credentials.session_token,
-               u'REGION_ENDPOINT': cloud_entry.region,
-               u'PWD': data_dir}
-        """
-
-        env = {u'ACCESS_KEY': cloud_entry.access_key,
-               u'SECRET_KEY': cloud_entry.secret,
-               u'PWD': data_dir}
-
-        s3_command = 'ps3 %s %s "%s"' % (action, cloud_entry.bucket, filename)
-
-        self.log.debug("s3_command: '%s', data_dir: '%s', full_path: '%s'",
-                       s3_command, data_dir, full_path)
-
-        # Send the s3 command to the agent
-        return self.cli_cmd(s3_command, agent, env=env)
-
 
     def _get_cli_status(self, xid, agent, orig_cli_command):
         """Gets status on the command and xid.  Returns:
