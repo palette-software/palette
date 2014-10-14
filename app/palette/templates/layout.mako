@@ -144,5 +144,24 @@ ${next.body()}
 </div>
 </div>
 
+<article class="popup" id="okcancel">
+  <section class="popup-body">
+    <section class="row">
+      <section class="col-xs-12">
+        <p>&nbsp;</p>
+      </section>
+    </section>
+    <section class="row">
+      <section class="col-xs-6">
+        <button class="p-btn popup-close">Cancel</button>
+      </section>
+      <section class="col-xs-6">
+        <button class="p-btn popup-ok">OK</button>
+      </section>
+    </section>
+  </section>
+  <div class="shade">&nbsp;</div>
+</article>
+
 </body>
 </html>
