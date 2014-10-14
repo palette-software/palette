@@ -156,15 +156,16 @@ class GetFile(object):
                 self.agent.path.basename(self.full_path))
 
         if self.source_entry.cloud_type == CloudManager.CLOUD_TYPE_GCS:
-            cloud_cmd = self.server.cloud.gcs.send_cmd
+            cloud_instance = self.server.cloud.gcs
         elif self.source_entry.cloud_type == CloudManager.CLOUD_TYPE_S3:
-            cloud_cmd = self.server.cloud.s3.send_cmd
+            cloud_instance = self.server.cloud.s3
 
-        # Where to store the cloud file
-        data_dir = self.agent.path.dirname(self.primary_full_path)
-        # NOte full_path for a cloud file will not have a directory.
-        body = cloud_cmd(self.agent, "GET", self.source_entry,
-                         data_dir, self.full_path)
+        # Directory where to store the cloud file
+        dirpath = self.agent.path.dirname(self.primary_full_path)
+        # Note full_path for a cloud file will not have a directory.
+        body = cloud_instance.get(self.agent, self.source_entry,
+                                  self.file_entry.name, pwd=dirpath)
+
         if 'error' in body:
             fmt = "_get_cloud_file: %s named '%s' GET file '%s' " + \
                 "failed.  Error: %s"
