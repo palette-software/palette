@@ -61,14 +61,7 @@
           </article>
 
           <article><span class="label">Email</span>
-%if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
-            <span class="editbox email" 
-                  data-name="{{name}}" data-href="/rest/users/email">
-              {{email}}
-            </span>
-%else:
-	    <span>{{email}}</span>
-%endif
+	        <span>{{email}}</span>
           </article>
           <article>
             <span class="label">Created</span>{{system-created-at}}
@@ -79,6 +72,7 @@
         </div>
         <div class="col2">
 %if req.remote_user.roleid == req.remote_user.role.SUPER_ADMIN:
+          {{^current}}
           <article>
             <span class="label">Palette Admin Permissions</span>
             <i class="fa fa-fw fa-question-circle fa-2x help"></i>
@@ -89,12 +83,13 @@
               <div>{{admin-type}}</div><span class="caret"></span>
             </button>
             <ul class="dropdown-menu" role="menu">
-                  {{#admin-levels}}
+              {{#admin-levels}}
               <li><a data-userid="{{userid}}" data-roleid="{{id}}"
                      href="/rest/users/admin">{{name}}</a></li>
-                  {{/admin-levels}}
+              {{/admin-levels}}
             </ul>
           </div>
+          {{/current}}
 %endif
         </div>
       </div>

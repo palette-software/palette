@@ -1,6 +1,6 @@
-require(['jquery', 'topic', 'template', 'common', 'items', 'EditBox', 'OnOff',
+require(['jquery', 'topic', 'template', 'common', 'items', 'OnOff',
          'bootstrap'],
-        function ($, topic, template, common, items, EditBox, OnOff)
+function ($, topic, template, common, items, OnOff)
 {
     var LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -61,7 +61,6 @@ require(['jquery', 'topic', 'template', 'common', 'items', 'EditBox', 'OnOff',
             });
             items.bind();
             common.setupDropdowns();
-            EditBox.setup();
             OnOff.setup();
             $('#last-update').html(data['last-update']);
         });
