@@ -134,5 +134,5 @@ class System(object):
             entry = SystemEntry(envid=self.envid, key=key, value=value)
             session.add(entry)
             self.data[key] = entry
-        entry.value = value
+        entry.value = str(value)
         session.commit()
