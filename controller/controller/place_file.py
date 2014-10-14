@@ -77,13 +77,12 @@ class PlaceFile(object):
 
     def copy_to_cloud(self):
         if self.dcheck.target_entry.cloud_type == CloudManager.CLOUD_TYPE_S3:
-            cloud_cmd = self.server.cloud.s3.send_cmd
+            cloud_instance = self.server.cloud.s3
         elif self.dcheck.target_entry.cloud_type == CloudManager.CLOUD_TYPE_GCS:
-            cloud_cmd = self.server.cloud.gcs.send_cmd
+            cloud_instance = self.server.cloud.gcs
 
-        data_dir = self.agent.path.dirname(self.full_path)
-        storage_body = cloud_cmd(self.agent, "PUT", self.dcheck.target_entry,
-                                 data_dir, self.full_path)
+        storage_body = cloud_instance.put(self.agent, self.dcheck.target_entry,
+                                          self.full_path)
 
         if 'error' in storage_body:
             self.info = ("Copy to %s bucket '%s' filename '%s' failed: %s." + \
