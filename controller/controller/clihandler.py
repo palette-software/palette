@@ -472,7 +472,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         except StandardError:
             self.server.log.exception("Backup Exception:")
             line = "Backup Error. Traceback: %s" % traceback_string()
-            body = {'error': line}
+            body = {'error': line, 'info': 'Failure'}
 
         # delete/rotate old backups
         rotate_info = self.server.rotate_backups()
