@@ -16,18 +16,28 @@
       <section class="col-xs-12">
          <p>Cloud storage to save your Tableau backups, logfiles, workbooks and other Palette generated files</p>
          <h2 class="page-subtitle">Credentials</h2>
-         <h3>Access Key ID</h3>
-         <p class="editbox" data-href="/rest/gcs/access-key">
-           ${obj.access_key}
-         </p>
-         <h3>Secret Access Key</h3>
-         <p class="editbox password" data-href="/rest/gcs/secret">
-           ${obj.secret}
-         </p>
-         <h3>Bucket Name</h3>
-         <p class="editbox" data-href="/rest/gcs/bucket">
-           ${obj.bucket}
-         </p>
+                  <form>
+           <h3>Access Key ID</h3>
+           <input type="text" id="access-key" />
+           <label for="access-key">&nbsp;</label>
+           <h3>Secret Access Key</h3>
+           <input type="password" id="secret-key" />
+           <label for="secret-key">&nbsp;</label>
+           <h3>GCS URL or Bucket Name</h3>
+           <input type="text" id="url" />
+           <div>
+             <button type="button" id="save" class="btn btn-primary disabled">
+               Save
+             </button>
+             <button type="button" id="cancel" class="btn btn-primary">
+               Cancel
+             </button>
+             <button type="button" id="delete" class="btn btn-primary okcancel"
+                     data-text="Are you sure you want to delete the GCS credentials?">
+               Delete
+             </button>
+           </div>
+         </form>
       </section>
     </section>
     </section>

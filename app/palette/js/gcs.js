@@ -1,9 +1,5 @@
-require(['jquery', 'common', 'EditBox', 'bootstrap'],
-function ($, common, EditBox)
+require(['jquery', 'integration'],
+function ($, integration)
 {
-    common.startMonitor(false);
-
-    $().ready(function() {
-        EditBox.setup();
-    });
+    integration.setup('/rest/gcs');
 });
