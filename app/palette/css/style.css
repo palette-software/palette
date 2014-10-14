@@ -143,7 +143,7 @@ article.popup p {
     height: 100%;
     display: block;
     position: fixed;
-    top: 67px;
+    top: 63px;
     left: 250px;
     width: 300px;
     background-color: #555A60;
@@ -449,8 +449,7 @@ ul.dropdown-menu a:hover {
     display: block;
     height: 120px;
     color: #5f6670;
-    background-color: #F8F8F8;
-    border-right: 1px solid #8D96A3;
+    background-color: white;
 }
 .main-side-bar .status:hover {
     cursor: pointer;
