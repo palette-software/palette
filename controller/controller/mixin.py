@@ -140,7 +140,7 @@ class BaseMixin(object):
     def delete(cls, filters=None, synchronize_session='evaluate'):
         query = meta.Session().query(cls)
         if filters:
-            query = meta.Session().query(cls)
+            query = cls.apply_filters(query, filters)
         return query.delete(synchronize_session=synchronize_session)
 
     @classmethod

@@ -163,6 +163,47 @@ function ($, topic, template, items, paging)
     }
 
     /*
+     * setupOkCancel()
+     * Instantiate the generic OK/Cancel dialog.
+     */
+    function setupOkCancel()
+    {
+        $().ready(function() {
+            $('#okcancel .popup-ok').bind('click', function() {
+                var data = $(this).closest('article').data();
+                var callback = data['callback'];
+                if (callback != null) {
+                    callback($(this));
+                }
+                $('#okcancel').removeClass('visible');
+            });
+
+            $('#okcancel .popup-close').bind('click', function() {
+                $('#okcancel').removeClass('visible');
+            });
+
+            $('#okcancel .shade').bind('click', function() {
+                $('#okcancel').removeClass('visible');
+            });
+
+            $('.okcancel').bind('click', function() {
+                var data = $(this).data();
+                var inactive = $(this).hasClass('inactive');
+                if (inactive == false) {
+                    /* link button data to the article. */
+                    $('#okcancel').data(data);
+                    var text = data['text'];
+                    if (text == null) {
+                        text = $(this).attr('data-text');
+                    }
+                    $('#okcancel p').html(text);
+                    $('#okcancel').addClass('visible');
+                }
+            });
+        });
+    }
+
+    /*
      * gethref
      * Find the 'href' attribute of a link or the data-href of the parent div.
      * Returns null if not found or '#'.
@@ -535,5 +576,6 @@ function ($, topic, template, items, paging)
             'ajaxError': ajaxError,
             'setupDialogs': setupDialogs,
             'setupDropdowns' : setupDropdowns,
+            'setupOkCancel' : setupOkCancel,
            };
 });

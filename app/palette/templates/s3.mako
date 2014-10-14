@@ -17,21 +17,24 @@
          <p>Cloud storage to save your Tableau backups, logfiles, workbooks and other Palette generated files</p>
          <h2 class="page-subtitle">Credentials</h2>
          <form>
-         <h3>Access Key ID (20 characters)</h3>
-         <p id="access-key" />&nbsp;</p>
-         <h3>Secret Access Key (40 characters)</h3>
-         <p id="secret-key" />&nbsp;</p>
-         <h3>Bucket Name (required)</h3>
-         <p id="bucket">&nbsp;</p>
+         <h3>Access Key ID</h3>
+         <input type="text" id="access-key" />
+         <label for="access-key">&nbsp;</label>
+         <h3>Secret Access Key</h3>
+         <input type="password" id="secret-key" />
+         <label for="secret-key">&nbsp;</label>
+         <h3>S3 URL or Bucket Name</h3>
+         <input type="text" id="url" />
          <div>
-           <button type="button" id="edit" class="btn btn-primary">
-             <i class="fa fa-pencil"></i> Edit
+           <button type="button" id="save" class="btn btn-primary disabled">
+             Save
            </button>
-           <button type="button" id="save" class="btn btn-primary disabled hidden">
-             <i class="fa fa-download"></i> Save
+           <button type="button" id="cancel" class="btn btn-primary">
+             Cancel
            </button>
-           <button type="button" id="cancel" class="btn btn-primary hidden">
-             <i class="fa fa-times"></i> Cancel
+           <button type="button" id="delete" class="btn btn-primary okcancel"
+           data-text="Are you sure you want to delete the S3 credentials?">
+             Delete
            </button>
          </div>
          </form>
@@ -39,6 +42,25 @@
     </section>
   </section>
 </section>
+
+<article class="popup" id="okcancel">
+  <section class="popup-body">
+    <section class="row">
+      <section class="col-xs-12">
+        <p>&nbsp;</p>
+      </section>
+    </section>
+    <section class="row">
+      <section class="col-xs-6">
+        <button class="p-btn popup-close">Cancel</button>
+      </section>
+      <section class="col-xs-6">
+        <button class="p-btn popup-ok">OK</button>
+      </section>
+    </section>
+  </section>
+  <div class="shade">&nbsp;</div>
+</article>
 
 <script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/s3.js">
 </script>
