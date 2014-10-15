@@ -964,7 +964,13 @@ class CliHandler(socketserver.StreamRequestHandler):
                 return
 
             self.ack()
-            body = self.server.get_pinfo(agent, update_agent=True)
+            try:
+                body = self.server.get_pinfo(agent, update_agent=True)
+            except IOError as ex:
+                self.error(clierror.ERROR_COMMAND_FAILED, str(ex))
+                self.server.log.info("pinfo failed: %s", str(ex))
+                return
+
             self.report_status(body)
             return
 
@@ -983,7 +989,14 @@ class CliHandler(socketserver.StreamRequestHandler):
                 # This agent is now gone
                 continue
 
-            body = self.server.get_pinfo(agent, update_agent=True)
+            try:
+                body = self.server.get_pinfo(agent, update_agent=True)
+            except IOError as ex:
+                self.error(clierror.ERROR_COMMAND_FAILED, str(ex))
+                self.server.log.info("pinfo failed for agent '%s': %s",
+                                            agent.displayname, str(ex))
+                return
+
             pinfos.append(body)
 
         self.report_status({"info": pinfos})

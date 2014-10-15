@@ -402,7 +402,23 @@ class TableauStatusMonitor(threading.Thread):
                     self._add(agentid, line, -1, 'error')
                     self.log.debug("logged: %s, %d, %s", line, -1, 'error')
 
+        aconn = agent.connection
+        acquired = aconn.user_action_lock(blocking=False)
+        if not acquired:
+            # If the user_action_lock is taken, that thread should
+            # control the state.  We don't update the tableau process
+            # table since state should be consistent with tableau process
+            # status.
+            self.log.debug(
+                "status thread: Primary agent locked for user action " + \
+                "after tabadmin status finished.  " + \
+                "Will not update state or tableau status.")
+            session.rollback()
+            return
+
         self._set_main_state(system_status, agent, body)
         self.log.debug("Logging main status: %s", system_status)
 
         session.commit()
+
+        aconn.user_action_unlock()
