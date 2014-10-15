@@ -782,7 +782,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     # FIXME: use filemanager.delete() instead?
     def delete_vol_file(self, agent, source_fullpathname):
-        """Delete a file, check the error, and return the body result."""
+        """Delete a file, check the error, and return the body result.
+           Note: Does not remove the entry from the files table.
+           If that is needed, that must be done by the caller."""
         self.log.debug("Removing file '%s'", source_fullpathname)
         cmd = 'CMD /C DEL \\\"%s\\\"' % source_fullpathname
         remove_body = self.cli_cmd(cmd, agent)
@@ -794,6 +796,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     # FIXME: move to CloudManager
     def delete_cloud_file(self, file_entry):
+        """Note: Does not remove the entry from the files table.
+           If that is needed, that must be done by the caller."""
         cloud_entry = self.cloud.get_by_cloudid(file_entry.storageid)
         if not cloud_entry:
             raise IOError("No such cloudid: %d for file %s" % \
@@ -808,12 +812,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                   (cloud_entry.cloud_type, file_entry.name)
             self.log.error(msg)
             raise IOError(msg)
-        try:
-            self.files.remove(file_entry.storageid)
-        except sqlalchemy.orm.exc.NoResultFound:
-            return {'error': ("fileid %d not found: name=%s storageid=%d" % \
-                    (file_entry.storageid, file_entry.name,
-                    file_entry.storageid))}
 
     def move_bucket_subdirs_to_path(self, in_bucket, in_path):
         """ Given:
