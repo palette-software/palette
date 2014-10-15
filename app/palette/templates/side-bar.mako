@@ -25,6 +25,7 @@
         <span>Manage Tableau</span>
       </a>
     </li>
+%if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:
     <li class="category">
       <a>
         <i class="fa fa-fw fa-gears"></i>
@@ -44,16 +45,9 @@
             <span>Google Storage</span>
           </a>
         </li>
-        <!--
-        <li ${obj.active=='splunk' and 'class="active"' or ''}>
-          <a href="/configure/splunk">
-            <i class="fa fa-fw fa-arrows-alt"></i>
-            <span>Splunk</span>
-          </a>
-        </li>
-        -->
       </ul>
     </li>
+%endif
     <li class="category">
       <a>
         <i class="fa fa-fw fa-cog"></i>
@@ -61,12 +55,14 @@
         <i class="fa fa-fw fa-angle-${obj.expanded and 'up' or 'down'} expand"></i>
       </a>
       <ul ${obj.expanded and 'class="visible"' or ''}>
+%if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:
         <li ${obj.active=='general' and 'class="active"' or ''}>
           <a href="/configure/general">
             <i class="fa fa-fw fa-edit"></i>
             <span>General</span>
           </a>
         </li>
+%endif
         <li ${obj.active=='users' and 'class="active"' or ''}>
           <a href="/configure/users">
             <i class="fa fa-fw fa-group"></i>

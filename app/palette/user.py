@@ -86,8 +86,8 @@ class UserApplication(PaletteRESTHandler):
             raise exc.HTTPMethodNotAllowed()
         if path_info == 'admin':
             return self.handle_admin(req)
-        if path_info == 'email':
-            return self.handle_email(req)
+#        if path_info == 'email':
+#            return self.handle_email(req)
         if path_info == 'email-level':
             return self.handle_email_level(req)
 
@@ -121,6 +121,7 @@ class UserApplication(PaletteRESTHandler):
             d['palette-display-role'] = user.display_role()
             if 'login-at' not in d:
                 d['login-at'] = user.name == 'palette' and 'N/A' or 'never'
+            d['current'] = (req.remote_user.userid == user.userid)
 
             users.append(d)
         data = {'users': users,

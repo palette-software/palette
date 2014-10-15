@@ -39,9 +39,10 @@
             </div>
 %else:
             <div>
-              {{environment}}
+              <span class="label">Environment</span>{{environment}}
             </div>
 %endif
+%if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
           <div class="monitor">
             <span class="label">Monitor</span>
             <div class="onoffswitch"
@@ -49,6 +50,11 @@
               {{enabled}}
             </div>
           </div>
+%else:
+	  <div>
+	    <span class="label">Monitor</span>{{#enabled}}ON{{/enabled}}{{^enabled}}OFF{{/enabled}}
+	  </div>
+%endif
         </div>
       </div>
       <i class="fa fa-fw fa-angle-down expand"></i>
