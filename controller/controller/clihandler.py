@@ -856,7 +856,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             files.append(fileent.todict(pretty=True))
         self.report_status({'files': files})
 
-    @usage('list [agents|backups]')
+    @usage('list [agents|files]')
     def do_list(self, cmd):
         """List information about all connected agents."""
 
@@ -2089,6 +2089,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         line = "Command Failed with Exception.\n" + \
             "Command: '%s'\n" % telnet_command
 
+        # If the database had an internal error, etc. this may
+        # be needed:
+        session = meta.Session()
+        session.rollback()
+
         stateman = self.server.state_manager
         now_state = stateman.get_state()
 
@@ -2150,9 +2155,11 @@ class CliHandler(socketserver.StreamRequestHandler):
                 f = getattr(self, 'do_'+cmd.name)
                 f(cmd)
             # fixme on exceptions: reset state?
+            except (SystemExit, KeyboardInterrupt, GeneratorExit) as e:
+                raise
             except exc.InvalidStateError, ex:
                 self.error(clierror.ERROR_WRONG_STATE, ex.message)
-            except Exception:
+            except BaseException:
                 self.handle_exception(before_state, data)
             finally:
                 session.rollback()
