@@ -16,7 +16,7 @@ from controller.firewall_manager import FirewallEntry
 from controller.ports import PortEntry
 from controller.profile import Role
 from controller.state_control import StateControl
-from controller.util import sizestr, DATEFMT
+from controller.util import sizestr, DATEFMT, utc2local
 from controller.licensing import LicenseEntry
 from controller.extracts import ExtractManager
 from controller.event_control import EventControl
@@ -269,18 +269,21 @@ class MonitorApplication(PaletteRESTHandler):
             if entry.creation_time:
                 # Since creation_time is set on commit() there is a very
                 # small window where the creation_time may be None.
-                agent['creation-time'] = entry.creation_time.strftime(DATEFMT)
+                creation_time = utc2local(entry.creation_time)
+                agent['creation-time'] = creation_time.strftime(DATEFMT)
             if entry.modification_time != None:
-                agent['modification_time'] = \
-                    entry.modification_time.strftime(DATEFMT)
+                modtime = utc2local(entry.modification_time)
+                agent['modification_time'] = modtime.strftime(DATEFMT)
             else:
                 agent['modification_time'] = ""
 
+            last_connection_time = utc2local(entry.last_connection_time)
             agent['last-connnection-time'] = \
-                entry.last_connection_time.strftime(DATEFMT)
+                                    last_connection_time.strftime(DATEFMT)
             if entry.last_disconnect_time:
+                last_disconnect_time = utc2local(entry.last_disconnect_time)
                 agent['last-disconnect-time'] = \
-                    entry.last_disconnect_time.strftime(DATEFMT)
+                                    last_disconnect_time.strftime(DATEFMT)
 
             if main_state in (StateManager.STATE_DISCONNECTED,
                               StateManager.STATE_PENDING,
