@@ -445,8 +445,8 @@
 "level":"I",
 "send_email":"f",
 "subject":"INFO - Palette Server Now Synced with Your Degraded Tableau Primary",
-"event_description":"Status: INFO",
-"email_message":"Status: INFO\nTime: ${time}\n\nThis message was sent from your Palette Server at ${server_url}",
+"event_description":"Status: INFO\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n",
+"email_message":"Status: INFO\nTime: ${time}Server Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
 "event_type":"tableau"
@@ -456,8 +456,8 @@
 "level":"I",
 "send_email":"f",
 "subject":"INFO - Palette Server Now Synced with Your Running Tableau Primary",
-"event_description":"Status: INFO ",
-"email_message":"Status: INFO\nTime: ${time}\n\nThis message was sent from your Palette Server at ${server_url}",
+"event_description":"Status: INFO\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n",
+"email_message":"Status: INFO\nTime: ${time}\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
 "event_type":"tableau"
@@ -467,8 +467,8 @@
 "level":"I",
 "send_email":"f",
 "subject":"INFO - Palette Server Now Synced with Your Stopped Tableau Primary",
-"event_description":"Status: INFO ",
-"email_message":"Status: INFO\nTime: ${time}\n\nThis message was sent from your Palette Server at ${server_url}",
+"event_description":"Status: INFO\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n",
+"email_message":"Status: INFO\nTime: ${time}\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
 "event_type":"tableau"
