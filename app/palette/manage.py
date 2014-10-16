@@ -51,6 +51,7 @@ class ManageApplication(PaletteRESTHandler):
     @required_role(Role.MANAGER_ADMIN)
     def handle_repair_license(self, req):
         self.commapp.send_cmd('license repair', req=req, read_response=False)
+        return {}
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_ziplogs(self, req):
