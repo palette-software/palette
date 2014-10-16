@@ -214,8 +214,8 @@
 "level":"E",
 "send_email":"t",
 "subject":"ERROR - Backup Requested by %(username)s Failed",
-"event_description":"Status: ERROR\nRequesting User: ${username}\nDetails: ${error}\n\n${stderr}",
-"email_message":"Status: ERROR \n\nTime: ${time}\nRequesting User: ${username}\nDetails: ${error}\n\n${stderr}\n\nThis message was sent from your Palette Server at ${server_url}",
+"event_description":"Status: ERROR\nRequesting User: ${username}\nDetails: ${error}\n",
+"email_message":"Status: ERROR \n\nTime: ${time}\nRequesting User: ${username}\nDetails: ${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
 "event_type":"backup"
@@ -819,8 +819,8 @@
 "level":"E",
 "send_email":"f",
 "subject":"ERROR - Tableau Server Make Ziplogs Failure",
-"event_description":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}",
-"email_message":"Status - ERROR\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
+"event_description":"Server: ${displayname}\nDetails: ${error}",
+"email_message":"Status - ERROR\nDetails: ${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
 "event_type":"logs"
