@@ -15,7 +15,7 @@
             </a>
           </li>
           <li>
-            <a href="http://www.tableausoftware.com/support/help">
+            <a href="http://www.tableausoftware.com/support/help" target="_blank">
               <i class="fa fa-fw fa-book"></i> Tableau Docs
             </a>
           </li>
