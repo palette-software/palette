@@ -66,10 +66,10 @@
     </section>
     <section class="row">
       <section class="col-xs-6">
-        <button class="p-btn popup-close">Cancel</button>
+        <button id="start-ok" class="p-btn">OK</button>
       </section>
       <section class="col-xs-6">
-        <button id="start-ok" class="p-btn">OK</button>
+        <button class="p-btn popup-close">Cancel</button>
       </section>
     </section>
   </section>
@@ -110,10 +110,10 @@
 
     <section class="row">
       <section class="col-xs-6">
-        <button class="p-btn popup-close">Cancel</button>
+        <button id="stop-ok" class="p-btn">OK</button>
       </section>
       <section class="col-xs-6">
-        <button id="stop-ok" class="p-btn">OK</button>
+        <button class="p-btn popup-close">Cancel</button>
       </section>
     </section>
   </section>
@@ -129,10 +129,10 @@
     </section>
     <section class="row">
       <section class="col-xs-6">
-        <button class="p-btn popup-close">Cancel</button>
+        <button id="backup-ok" class="p-btn">OK</button>
       </section>
       <section class="col-xs-6">
-        <button id="backup-ok" class="p-btn">OK</button>
+        <button class="p-btn popup-close">Cancel</button>
       </section>
     </section>
   </section>
@@ -167,10 +167,10 @@
 
     <section class="row">
       <section class="col-xs-6">
-        <button class="p-btn popup-close">Cancel</button>
+        <button id="restart-ok" class="p-btn">OK</button>
       </section>
       <section class="col-xs-6">
-        <button id="restart-ok" class="p-btn">OK</button>
+        <button class="p-btn popup-close">Cancel</button>
       </section>
     </section>
   </section>
@@ -186,10 +186,10 @@
     </section>
     <section class="row">
       <section class="col-xs-6">
-        <button class="p-btn popup-close">Cancel</button>
+        <button id="repair-license-ok" class="p-btn">OK</button>
       </section>
       <section class="col-xs-6">
-        <button id="repair-license-ok" class="p-btn">OK</button>
+        <button class="p-btn popup-close">Cancel</button>
       </section>
     </section>
   </section>
@@ -205,10 +205,10 @@
     </section>
     <section class="row">
       <section class="col-xs-6">
-        <button class="p-btn popup-close">Cancel</button>
+        <button id="ziplogs-ok" class="p-btn">OK</button>
       </section>
       <section class="col-xs-6">
-        <button id="ziplogs-ok" class="p-btn">OK</button>
+        <button class="p-btn popup-close">Cancel</button>
       </section>
     </section>
   </section>
@@ -238,10 +238,10 @@
     </section>
     <section class="row">
       <section class="col-xs-6">
-        <button class="p-btn popup-close">Cancel</button>
+        <button id="restore-ok" class="p-btn">OK</button>
       </section>
       <section class="col-xs-6">
-        <button id="restore-ok" class="p-btn">OK</button>
+        <button class="p-btn popup-close">Cancel</button>
       </section>
     </section>
   </section>

@@ -153,10 +153,10 @@ ${next.body()}
     </section>
     <section class="row">
       <section class="col-xs-6">
-        <button class="p-btn popup-close">Cancel</button>
+        <button class="p-btn popup-ok">OK</button>
       </section>
       <section class="col-xs-6">
-        <button class="p-btn popup-ok">OK</button>
+        <button class="p-btn popup-close">Cancel</button>
       </section>
     </section>
   </section>

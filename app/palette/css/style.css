@@ -748,7 +748,7 @@ h1.page-title {
     margin: 10px 0 0 0;
 }
 .integration label {
-    font-size: 16px;
+    font-size: 13px;
     color: red;
     margin: 0 0 15px 0;
 }
@@ -929,14 +929,13 @@ label {
     font-weight: 300;
 }
 
-/* FIXME: popup button, merge with bootstrap .btn class */
 input[type="text"], input[type="password"], input[type="email"] {
     margin: 5px 0 15px 0;
     color: black;
 }
 input[type="text"], input[type="password"], input[type="email"], select {
     width: 100%;
-    border: 0;
+    border: 1px solid #ebebeb;
     outline: 0;
     border-radius: 0;
     box-shadow: 0 0;
@@ -945,7 +944,7 @@ input[type="text"], input[type="password"], input[type="email"], select {
     box-sizing:border-box;
     font-size: 14px;
     max-width: 320px;
-}
+}    
 
 input[type="text"]:focus, input[type="password"]:focus, input[type="date"]:focus, input[type="datetime"]:focus, input[type="datetime-local"]:focus, input[type="month"]:focus, input[type="week"]:focus, input[type="email"]:focus, input[type="number"]:focus, input[type="search"]:focus, input[type="tel"]:focus, input[type="time"]:focus, input[type="url"]:focus, textarea:focus {
     border: 1px solid #a6a6a6;
