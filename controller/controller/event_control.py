@@ -291,10 +291,7 @@ class EventControlManager(Manager):
         if timestamp is None:
             timestamp = datetime.datetime.now(tz=tz.tzlocal())
             self.log.debug(key + " timestamp : " + timestamp.strftime(DATEFMT))
-
-        #if not 'time' in data:
-        #    # FIXME: is this needed or used?
-        #    data['time'] = timestamp.strftime(DATEFMT)
+        data['timestamp'] = timestamp.strftime(DATEFMT)
 
         # The userid for other events is the Palette "userid".
         profile = None
