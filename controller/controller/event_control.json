@@ -379,8 +379,8 @@
 "level":"E",
 "send_email":"t",
 "subject":"ERROR - Extract(s) Refresh Failed for %(subtitle)s '%(title)s' by Publisher '%(username)s'",
-"event_description":"Status: ERROR\n\nTime: ${completed_at}\nPublisher: ${username}\n${subtitle}: ${title}\nJob Name: ${job_name}\nJob Extract ID: ${id}\nJob Duration: ${duration} Seconds\n\nNotes:\n${notes}",
-"email_message":"Status: ERROR\n\nTime: ${completed_at}\nPublisher: ${username}\n${subtitle}: ${title}\nJob Name: ${job_name}\nBackground Job ID: ${id}\nJob Duration: ${duration} Seconds\n\nNotes:\n${notes}\n\nThis message was sent from your Palette Server at ${server_url}\n",
+"event_description":"Status: ERROR\n\nTime: ${completed_at}\nPublisher: ${username}\n${subtitle}: ${title}\nWorker: ${processed_on_worker}\nJob Name: ${job_name}\nJob Extract ID: ${id}\nJob Duration: ${duration} Seconds\n\nNotes:\n${notes}",
+"email_message":"Status: ERROR\n\nTime: ${completed_at}\nPublisher: ${username}\n${subtitle}: ${title}\nWorker: ${processed_on_worker}\nJob Name: ${job_name}\nBackground Job ID: ${id}\nJob Duration: ${duration} Seconds\n\nNotes:\n${notes}\n\nThis message was sent from your Palette Server at ${server_url}\n",
 "icon":null,
 "color":"red",
 "event_type":"extract"
@@ -390,8 +390,8 @@
 "level":"I",
 "send_email":"f",
 "subject":"INFO - Extract(s) Refresh Completed for %(subtitle)s '%(title)s' by Publisher '%(username)s'",
-"event_description":"Status: INFO\n\nCompleted At: ${completed_at}\nPublisher: ${username}\n${subtitle}: ${title}\nJob Name: ${job_name}\nBackground Job ID: ${id}\nJob Duration: ${duration} Seconds\n\nNotes:\n${notes}",
-"email_message":"Status: INFO\n\nCompleted At: ${completed_at}\nPublisher: ${username}\n${subtitle}: ${title}\nJob Name: ${job_name}\nBackground Job ID: ${id}\nJob Duration: ${duration} Seconds\n\nNotes:\n${notes}\n\nThis message was sent from your Palette Server at ${server_url}\n",
+"event_description":"Status: INFO\n\nCompleted At: ${completed_at}\nPublisher: ${username}\n${subtitle}: ${title}\nWorker: ${processed_on_worker}\nJob Name: ${job_name}\nBackground Job ID: ${id}\nJob Duration: ${duration} Seconds\n\nNotes:\n${notes}",
+"email_message":"Status: INFO\n\nCompleted At: ${completed_at}\nPublisher: ${username}\n${subtitle}: ${title}\nWorker: ${processed_on_worker}\nJob Name: ${job_name}\nBackground Job ID: ${id}\nJob Duration: ${duration} Seconds\n\nNotes:\n${notes}\n\nThis message was sent from your Palette Server at ${server_url}\n",
 "icon":null,
 "color":"green",
 "event_type":"extract"
