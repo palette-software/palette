@@ -37,12 +37,6 @@
 */
 
 
-/* @import must be at top of file, otherwise CSS will not work */
-@import url("//hello.myfonts.net/count/2b4065");
-/* @import must be at top of file, otherwise CSS will not work */
-@import url("//hello.myfonts.net/count/2b42cd");
-
-
 @font-face {font-family: 'Proxima Nova Light';src: url('/app/module/palette/fonts/webfonts/2B4065_8_0.eot');src: url('/app/module/palette/fonts/webfonts/2B4065_8_0.eot?#iefix') format('embedded-opentype'),url('/app/module/palette/fonts/webfonts/2B4065_8_0.woff') format('woff'),url('/app/module/palette/fonts/webfonts/2B4065_8_0.ttf') format('truetype');}
 
 
