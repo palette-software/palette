@@ -157,6 +157,8 @@ class AgentManager(threading.Thread):
         self.log = self.server.log
         self.domainid = self.server.domain.domainid
         self.envid = self.server.environment.envid
+        self.upgrade_rwlock = self.server.upgrade_rwlock
+
         self.daemon = True
         # This agent is now gone
         self.lockobj = threading.RLock()
@@ -1016,26 +1018,15 @@ class AgentManager(threading.Thread):
         sock.listen(8)
 
         session = meta.Session()
+        self.server.system.save(SystemConfig.UPGRADING, 'no')
         self.server.state_manager.update(StateManager.STATE_DISCONNECTED)
         session.commit()
 
         while True:
-            stateman = self.server.state_manager
-            if stateman.get_state() == StateManager.STATE_UPGRADING:
-                self.log.debug("AgentManager: UPGRADING: Not " + \
-                                    "listening for new agent connections.")
-                time.sleep(10)
-                continue
             try:
                 conn, addr = sock.accept()
             except socket.error:
                 self.log.debug("Accept failed.")
-                continue
-
-            if stateman.get_state() == StateManager.STATE_UPGRADING:
-                self.log.debug("AgentManager: UPGRADING: Not " + \
-                               "handling the agent connection.")
-                self._close(conn)
                 continue
 
             tobj = threading.Thread(target=self.handle_agent_connection_pre,
@@ -1062,8 +1053,9 @@ class AgentManager(threading.Thread):
 
         self.log.error("Couldn't find agent with fd: %d", filedes)
 
-    # thread function: spawned on a new connection from an agent.
     def handle_agent_connection_pre(self, conn, addr):
+        """Thread function: spawned on a new connection from an agent."""
+
         try:
             self.handle_agent_connection(conn, addr)
         except StandardError:
@@ -1077,8 +1069,8 @@ class AgentManager(threading.Thread):
         # pylint: disable=too-many-branches
         # pylint: disable=too-many-statements
         if self.ssl:
-            conn.settimeout(self.ssl_handshake_timeout)
             try:
+                conn.settimeout(self.ssl_handshake_timeout)
                 ssl_sock = ssl.wrap_socket(conn, server_side=True,
                                            certfile=self.cert_file)
                 conn = ssl_sock
@@ -1097,6 +1089,9 @@ class AgentManager(threading.Thread):
         conn.settimeout(self.socket_timeout)
 
         session = meta.Session()
+
+        self.upgrade_rwlock.read_acquire()
+        acquired = True
 
         try:
             aconn = AgentConnection(self.server, conn, addr, peername)
@@ -1162,11 +1157,16 @@ class AgentManager(threading.Thread):
                 # If the agent isn't enabled, only ping and don't go through
                 # all of the agent initialization until/if the agent is enabled
                 # by the user.
+                self.upgrade_rwlock.read_release()
+                acquired = False
                 if self.ping_check(agent, init_enabled=False):
                     # The agent has been enabled and is still there,
                     # so continue on with the initialization.
+                    self.upgrade_rwlock.read_acquire()
+                    acquired = True
+
                     agent = Agent.build(self.envid, aconn)
-                    # conneciton is initialized in reconstruct().
+                    # connection is initialized in reconstruct().
                     agent.connection = aconn
                     self.setup_agent(agent)
                 else:
@@ -1183,12 +1183,17 @@ class AgentManager(threading.Thread):
 
             make_transient(agent)
 
+            self.upgrade_rwlock.read_release()
+            acquired = False
+
             self.ping_check(agent)
 
         except (socket.error, IOError) as ex:
             self.log.debug("handle_agent_connection_error: " + str(ex))
             self._close(aconn.socket)
         finally:
+            if acquired:
+                self.upgrade_rwlock.read_release()
             try:
                 # Use " ifinspect(agent).session" when we go to sqlalchemy
                 # > 0.8
@@ -1399,7 +1404,7 @@ class AgentManager(threading.Thread):
 
         body = self.server.ping(agent)
         if body.has_key('error'):
-            if stateman.get_state() == StateManager.STATE_UPGRADING:
+            if stateman.upgrading():
                 self.log.info(
                     ("Ping During UPDATE: Agent '%s', type '%s', " + \
                     "uuid '%s', conn_id %d did  not respond to a " + \

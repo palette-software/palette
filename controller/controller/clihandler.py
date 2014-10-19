@@ -18,6 +18,7 @@ from agentmanager import AgentManager
 from agentinfo import AgentYmlEntry
 from event_control import EventControl
 from files import FileManager
+from general import SystemConfig
 from get_file import GetFile
 from cloud import CloudManager, S3_ID, GCS_ID
 from system import SystemEntry
@@ -27,7 +28,7 @@ from tableau import TableauProcess
 
 import exc
 import clierror
-from util import success, failed, traceback_string
+from util import success, failed, traceback_string, upgrade_rwlock
 
 # pylint: disable=too-many-public-methods
 
@@ -315,12 +316,19 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_upgrade(self, cmd):
         # pylint: disable=too-many-return-statements
         # pylint: disable=too-many-branches
+
         stateman = self.server.state_manager
 
         if not len(cmd.args):
+            upgrading = stateman.upgrading()
+            if upgrading:
+                msg = 'yes'
+            else:
+                msg = 'no'
             main_state = stateman.get_state()
             self.ack()
-            self.report_status({"main-state": main_state})
+            self.report_status({'upgrading': msg,
+                                "main-state": main_state})
             return
         if len(cmd.args) != 1:
             self.print_usage(self.do_upgrade.__usage__)
@@ -329,70 +337,68 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_usage(self.do_upgrade.__usage__)
             return
 
-        agent = self.get_agent(cmd.dict, error_on_no_agent=False)
-
         # Note: an agent doesn't have to be connected to change upgrade mode.
 
-        if agent:
-            aconn = agent.connection
-        else:
-            aconn = None
-
-        # lock to ensure against two simultaneous user actions
-        if aconn and not aconn.user_action_lock(blocking=False):
-            self.error(clierror.ERROR_BUSY)
-            return
-
-        # Check to see if we're in a state to upgrade
-        main_state = stateman.get_state()
-
         if cmd.args[0] == 'on':
+            self.server.log.debug(
+                            "Attempting to acquire the upgrade WRITE lock.")
+            self.server.upgrade_rwlock.write_acquire()
+            self.server.log.debug("Acquired the upgrade WRITE lock.")
+
+            # Check to see if we're in a state to upgrade
+            main_state = stateman.get_state()
+
             if main_state not in (StateManager.STATE_STARTED,
                     StateManager.STATE_STOPPED,
                     StateManager.STATE_STOPPED_UNEXPECTED,
                     StateManager.STATE_DEGRADED,
-                    StateManager.STATE_DISCONNECTED,
-                    StateManager.STATE_UPGRADING, StateManager.STATE_UNKNOWN):
+                    StateManager.STATE_PENDING,
+                    StateManager.STATE_DISCONNECTED):
 
                 msg = "Can't upgrade - main state is: " + main_state
                 self.error(clierror.ERROR_BUSY, 'FAIL: ' + msg)
                 self.server.log.debug(msg)
 
-                if aconn:
-                    aconn.user_action_unlock()
+                self.server.upgrade_rwlock.write_release()
+
                 return
 
-            # They can request to upgrade even if they are already upgrading.
-            if main_state != StateManager.STATE_UPGRADING:
-                stateman.update(StateManager.STATE_UPGRADING)
-            if aconn:
-                aconn.user_action_unlock()
+            self.server.system.save(SystemConfig.UPGRADING, 'yes')
 
             self.ack()
             self.report_status({})
             return
 
-        # "upgrade off"
-        if main_state != StateManager.STATE_UPGRADING:
-            self.error(clierror.ERROR_BUSY,
-                       "FAIL: Can't upgrade - main state is: %s", main_state)
-            self.server.log.debug("Can't upgrade - main state is: %s",
-                                  main_state)
+        # Disable upgrade
+        self.server.system.save(SystemConfig.UPGRADING, 'no')
+        main_state = stateman.get_state()
 
-            if aconn:
-                aconn.user_action_unlock()
+        try:
+            self.server.upgrade_rwlock.write_release()
+        except RuntimeError, ex:
+            self.error(clierror.ERROR_COMMAND_FAILED,
+                       "FAIL: Can't disable upgrade: " + \
+                       "upgrading: %s, " + \
+                       "main state: %s, " + \
+                       "error: %s",
+                       stateman.upgrading(),
+                       main_state,
+                       str(ex))
+            self.server.log.debug(
+                       "FAIL: Can't disable upgrade: " + \
+                       "upgrading: %s, " + \
+                       "main state: %s, " + \
+                       "error: %s",
+                       stateman.upgrading(),
+                       main_state,
+                       str(ex))
             return
-
-        # Set it back to the real state
-        self.server.statusmon.set_state_from_tableau_status()
-
-        if aconn:
-            aconn.user_action_unlock()
 
         self.ack()
         self.report_status({})
 
     @usage('backup')
+    @upgrade_rwlock
     def do_backup(self, cmd):
         """Perform a Tableau backup and potentially migrate."""
         # pylint: disable=too-many-branches
@@ -507,6 +513,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
 
     @usage('deletefile file-name')
+    @upgrade_rwlock
     def do_deletefile(self, cmd):
         """Delete a file in the 'files' table."""
 
@@ -557,6 +564,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
     @usage('http_request IMPORT')
+    @upgrade_rwlock
     def do_http_request(self, cmd):
         """Import http_requests table from Tableau"""
 
@@ -581,6 +589,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
 
     @usage('workbook [IMPORT|FIXUP]')
+    @upgrade_rwlock
     def do_workbook(self, cmd):
         """Import workbooks table from Tableau or fixup a previous import"""
 
@@ -612,6 +621,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
 
     @usage('extract IMPORT')
+    @upgrade_rwlock
     def do_extract(self, cmd):
         """Import extracts from the background_jobs table in Tableau"""
 
@@ -636,6 +646,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
 
     @usage('[/no-config] restore backup-name')
+    @upgrade_rwlock
     def do_restore(self, cmd):
         """Restore.
         The "name" is not a full path-name, but is the backup
@@ -827,10 +838,6 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_usage(self.do_copy.__usage__)
             return
 
-        if self.server.upgrading():
-            self.error(clierror.ERROR_WRONG_STATE, "Upgrading")
-            return
-
         self.ack()
         body = self.server.copy_cmd(cmd.args[0], cmd.args[1], cmd.args[2])
         self.report_status(body)
@@ -928,10 +935,6 @@ class CliHandler(socketserver.StreamRequestHandler):
         if not agent:
             return
 
-        if self.server.upgrading():
-            self.error(clierror.ERROR_WRONG_STATE, "Upgrading")
-            return
-
         self.ack()
 
         phttp_cmd = "phttp"
@@ -948,7 +951,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
     @usage('info [all]')
+    @upgrade_rwlock
     def do_info(self, cmd):
+        # pylint: disable=too-many-return-statements
         """Run pinfo."""
         if len(cmd.args) == 1:
             if cmd.args[0] != 'all':
@@ -1002,6 +1007,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status({"info": pinfos})
 
     @usage('license [repair]')
+    @upgrade_rwlock
     def do_license(self, cmd):
         """Run license check."""
         repair = False
@@ -1034,6 +1040,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
     @usage('yml')
+    @upgrade_rwlock
     def do_yml(self, cmd):
         if len(cmd.args):
             self.print_usage(self.do_yml.__usage__)
@@ -1054,6 +1061,7 @@ class CliHandler(socketserver.StreamRequestHandler):
     @usage('sched [status | delete job-name [job-name ...] | ' + \
                'add min hour dom mon dow command ]\n' + \
                'Note: dow uses 0 for Monday while cron dow uses 0 for Sunday')
+    @upgrade_rwlock
     def do_sched(self, cmd):
         """Manipulate scheduler."""
         if not len(cmd.args):
@@ -1086,7 +1094,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.report_status(body)
         return
 
-    @usage('portcheck')
+    @usage('checkports')
+    @upgrade_rwlock
     def do_checkports(self, cmd):
         """Check on all outgoing port connections."""
 
@@ -1094,15 +1103,10 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_usage(self.do_checkports.__usage__)
             return
 
-        if self.server.upgrading():
-            self.error(clierror.ERROR_WRONG_STATE, "Upgrading")
-            return
-
         stateman = self.server.state_manager
         main_state = stateman.get_state()
         if main_state in (StateManager.STATE_PENDING,
-                          StateManager.STATE_DISCONNECTED,
-                          StateManager.STATE_UNKNOWN):
+                          StateManager.STATE_DISCONNECTED):
             self.error(clierror.ERROR_WRONG_STATE, main_state)
             return
 
@@ -1178,6 +1182,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
     @usage('start')
+    @upgrade_rwlock
     def do_start(self, cmd):
         if len(cmd.args) != 0:
             self.print_usage(self.do_start.__usage__)
@@ -1367,6 +1372,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         return True
 
     @usage('restart [no-backup|nobackup] [no-license|nolicense]')
+    @upgrade_rwlock
     def do_restart(self, cmd):
         backup_first = True
         license_check = True
@@ -1438,6 +1444,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     @usage('stop [no-backup|nobackup] [no-license|nolicense]' +\
            ' [no-maint|nomaint]')
+    @upgrade_rwlock
     def do_stop(self, cmd):
         # pylint: disable=too-many-return-statements
         # pylint: disable=too-many-branches
@@ -1802,6 +1809,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
     @usage('auth [import|verify] <username> <password>')
+    @upgrade_rwlock
     def do_auth(self, cmd):
         """Work with the Tableau user data."""
 
@@ -1872,6 +1880,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
     @usage('sync')
+    @upgrade_rwlock
     def do_sync(self, cmd):
         """Synchronize Tableau tables."""
 
@@ -1959,6 +1968,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         return self.report_status(body)
 
     @usage('ziplogs')
+    @upgrade_rwlock
     def do_ziplogs(self, cmd):
         """Run 'tabadmin ziplogs'."""
 
@@ -2010,6 +2020,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Events are generated in ziplogs_cmd
 
     @usage('cleanup')
+    @upgrade_rwlock
     def do_cleanup(self, cmd):
         """Run 'tabadmin cleanup'."""
 
@@ -2117,9 +2128,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
             if now_state == before_state:
                 line += "State remaining at  '%s'.\n" % now_state
-            elif now_state in (StateManager.STATE_DISCONNECTED,
-                               StateManager.STATE_UNKNOWN,
-                               StateManager.STATE_UPGRADING):
+            elif now_state == StateManager.STATE_DISCONNECTED:
                 line += "Won't change state from '%s' back to '%s'.\n" % \
                     (now_state, before_state)
             else:
@@ -2168,7 +2177,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                 f = getattr(self, 'do_'+cmd.name)
                 f(cmd)
             # fixme on exceptions: reset state?
-            except (SystemExit, KeyboardInterrupt, GeneratorExit) as e:
+            except (SystemExit, KeyboardInterrupt, GeneratorExit) as ex:
                 raise
             except exc.InvalidStateError, ex:
                 self.error(clierror.ERROR_WRONG_STATE, ex.message)

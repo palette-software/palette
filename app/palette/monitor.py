@@ -242,8 +242,7 @@ class MonitorApplication(PaletteRESTHandler):
         if main_state in (StateManager.STATE_STOPPED,
                 StateManager.STATE_STOPPED_UNEXPECTED,
                 StateManager.STATE_STARTED, StateManager.STATE_DEGRADED,
-                StateManager.STATE_PENDING, StateManager.STATE_DISCONNECTED,
-                                                    StateManager.STATE_UNKNOWN):
+                StateManager.STATE_PENDING, StateManager.STATE_DISCONNECTED):
             user_action_in_progress = False
         else:
             user_action_in_progress = True
@@ -286,8 +285,7 @@ class MonitorApplication(PaletteRESTHandler):
                                     last_disconnect_time.strftime(DATEFMT)
 
             if main_state in (StateManager.STATE_DISCONNECTED,
-                              StateManager.STATE_PENDING,
-                              StateManager.STATE_UNKNOWN) and \
+                              StateManager.STATE_PENDING) and \
                           entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
                 agent_color_num = Colors.RED_NUM
                 if main_state == StateManager.STATE_DISCONNECTED:
@@ -430,6 +428,32 @@ class MonitorApplication(PaletteRESTHandler):
                 return
 
             color_num = Colors.RED_NUM
+
+        # Special case: If Upgrading, set the main state to
+        # "upgrading", etc.
+        if StateManager.upgrading_by_envid(req.envid):
+            main_state = StateManager.STATE_UPGRADING
+
+            state_control_entry = \
+                            StateControl.get_state_control_entry(main_state)
+            if not state_control_entry:
+                print "UNKNOWN STATE!  State:", main_state
+                # fixme: stop everything?  Log this somewhere?
+                return
+
+            allowable_actions = []
+            if req.remote_user.roleid >= Role.MANAGER_ADMIN:
+                # Convert the space-separated string to a list, e.g.
+                # "start stop reset" --> ["start", "stop", "reset"]
+                s = state_control_entry.allowable_actions
+                if s:
+                    allowable_actions = s.split(' ')
+
+            color = state_control_entry.color
+            if color in Colors.color_to_num:
+                color_num = Colors.color_to_num[color]
+            else:
+                color_num = Colors.RED_NUM
 
         environments = [{"name": "My Servers", "agents": agents}]
 

@@ -21,6 +21,8 @@ class SystemConfig(object):
 
     PALETTE_VERSION = "palette-version"
 
+    UPGRADING = "upgrading"
+
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
     def __init__(self, system):
@@ -72,6 +74,7 @@ class SystemConfig(object):
 
     def __getattr__(self, name):
         # pylint: disable=too-many-return-statements
+        # pylint: disable=too-many-branches
         if name == 'watermark_low':
             return self._watermark(self.WATERMARK_LOW)
         if name == 'watermark_high':
@@ -96,6 +99,8 @@ class SystemConfig(object):
             return self._http_load_error(self.HTTP_LOAD_ERROR)
         if name == 'alerts_enabled':
             return self._getyesno(self.ALERTS_ENABLED)
+        if name == 'upgrading':
+            return self._getyesno(self.UPGRADING)
 
     def todict(self):
         return {
@@ -111,6 +116,7 @@ class SystemConfig(object):
             self.HTTP_LOAD_ERROR: self.http_load_error,
             self.ALERTS_ENABLED: self.alerts_enabled,
             self.PALETTE_VERSION: self.palette_version,
+            self.UPGRADING: self.upgrading,
             }
 
     def text(self, value):

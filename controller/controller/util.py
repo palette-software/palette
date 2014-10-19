@@ -153,3 +153,15 @@ def safe_int(value, default=None):
     except StandardError:
         pass
     return default
+
+def upgrade_rwlock(f):
+    """Decorator.
+       Gets a read lock from the upgrade_rwlock.
+    """
+    def realf(self, *args, **kwargs):
+        self.server.upgrade_rwlock.read_acquire()
+        try:
+            return f(self, *args, **kwargs)
+        finally:
+            self.server.upgrade_rwlock.read_release()
+    return realf

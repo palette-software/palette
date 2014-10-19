@@ -89,6 +89,9 @@ class CommBase(object):
                                                                     (cmd, ack)
                 return
 
+            raise CommException("Command '%s' failed. Error: %s" % \
+                                    (self.command, ack))
+
         if not read_response:
             self._close()
             return

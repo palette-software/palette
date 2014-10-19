@@ -40,6 +40,7 @@ class TableauProcess(meta.Base):
     UniqueConstraint('agentid', 'name')
 
 class TableauStatusMonitor(threading.Thread):
+    # pylint: disable=too-many-instance-attributes
 
     # Note: If there is a value in the system table, it is
     # used instead of these defaults.
@@ -56,12 +57,13 @@ class TableauStatusMonitor(threading.Thread):
         TableauProcess.STATUS_RUNNING: StateManager.STATE_STARTED,
         TableauProcess.STATUS_STOPPED: StateManager.STATE_STOPPED,
         TableauProcess.STATUS_DEGRADED: StateManager.STATE_DEGRADED,
-        TableauProcess.STATUS_UNKNOWN: StateManager.STATE_UNKNOWN
+        TableauProcess.STATUS_UNKNOWN: StateManager.STATE_DISCONNECTED
     }
 
     def __init__(self, server, manager):
         super(TableauStatusMonitor, self).__init__()
         self.server = server
+        self.rwlock = self.server.upgrade_rwlock
         self.manager = manager # AgentManager instance
         self.log = logger.get(self.LOGGER_NAME)
         self.envid = self.server.environment.envid
@@ -128,17 +130,6 @@ class TableauStatusMonitor(threading.Thread):
                 one().status
         except NoResultFound:
             return TableauProcess.STATUS_UNKNOWN
-
-    def set_state_from_tableau_status(self):
-        tableau_status = self.get_reported_status()
-
-        if tableau_status not in self.statemap:
-            self.log.error("set_main_state: Unknown Tableau status: %s",
-                    tableau_status)
-            return
-        else:
-            main_state = self.statemap[tableau_status]
-            self.stateman.update(main_state)
 
     def _set_main_state(self, tableau_status, agent, body):
         old_state = self.stateman.get_state()
@@ -252,8 +243,15 @@ class TableauStatusMonitor(threading.Thread):
 
             session = meta.Session()
             try:
+                # Don't do a 'tabadmin status -v' if upgrading
+                acquired = self.rwlock.read_acquire(blocking=False)
+                if not acquired:
+                    self.log.debug("status thread: Upgrading.  Won't run.")
+                    continue
                 self.check_status()
             finally:
+                if acquired:
+                    self.rwlock.read_release()
                 session.rollback()
                 meta.Session.remove()
 
@@ -262,7 +260,7 @@ class TableauStatusMonitor(threading.Thread):
         # FIXME: Tie agent to domain.
         agent = self.manager.agent_by_type(AgentManager.AGENT_TYPE_PRIMARY)
         if not agent:
-            self.log.debug("check_status: The primary agent is either " + \
+            self.log.debug("status thread: The primary agent is either " + \
                            "not connected or not enabled.")
             return
 
@@ -275,19 +273,13 @@ class TableauStatusMonitor(threading.Thread):
             session.commit()
             return
 
+
         # Don't do a 'tabadmin status -v' if the user is doing an action.
         acquired = aconn.user_action_lock(blocking=False)
         if not acquired:
             self.log.debug(
                 "status thread: Primary agent locked for user action. " + \
                 "Skipping status check.")
-            return
-
-        main_state = self.stateman.get_state()
-        if main_state == StateManager.STATE_UPGRADING:
-            self.log.debug(
-                        "main state is UPGRADING: skipping status check.")
-            aconn.user_action_unlock()
             return
 
         # We don't force the user to delay starting their request
@@ -333,15 +325,15 @@ class TableauStatusMonitor(threading.Thread):
     def check_status_with_connection(self, agent):
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-branches
+        # pylint: disable=too-many-statements
         agentid = agent.agentid
 
         body = self.server.status_cmd(agent)
         if not body.has_key('stdout'):
             # fixme: Probably update the status table to say
             # something's wrong.
-            self.log.error(
-                    "No output received for status monitor. body: " + \
-                    str(body))
+            self.log.error("status thread: No output received for " + \
+                           "status monitor. body: " + str(body))
             return
 
         stdout = body['stdout']

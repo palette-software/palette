@@ -10,7 +10,7 @@ from mixin import BaseMixin
 class StateControl(meta.Base, BaseMixin):
     __tablename__ = "state_control"
 
-    stateid = Column(BigInteger, unique=True, nullable=False, \
+    stateid = Column(BigInteger, unique=True, nullable=False,
                                    autoincrement=True, primary_key=True)
 
     state = Column(String, unique=True)

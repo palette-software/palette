@@ -1,5 +1,6 @@
 from manager import Manager
 from system import SystemEntry, SystemManager
+from general import SystemConfig
 
 class StateManager(Manager):
     # possible states
@@ -44,9 +45,12 @@ class StateManager(Manager):
 
     STATE_DEGRADED = "DEGRADED"   # reported from tabadmin
 
+    # This is not a real state like others.  Upgrading is controlled
+    # by a rw lock.  The WebApp is told about "upgrading" through a different
+    # different system key: "upgrading" (not the "state" key).
+    # We keep this here so the webapp can pull in the values for
+    # "state_control" when "upgrading" is enabled.
     STATE_UPGRADING = "UPGRADING" # agent or controller is upgrading
-
-    STATE_UNKNOWN = "UNKNOWN"     # no primary ever connected to the controller
 
     # Not a real state, but used for displaying this state information
     # when the primary is not enabled.
@@ -74,3 +78,22 @@ class StateManager(Manager):
     def get_state_by_envid(cls, envid):
         entry = SystemEntry.get_by_key(envid, SystemManager.SYSTEM_KEY_STATE)
         return entry and entry.value or StateManager.STATE_DISCONNECTED
+
+    def upgrading(self):
+        return StateManager.upgrading_by_envid(self.envid)
+
+    @classmethod
+    def upgrading_by_envid(cls, envid):
+        try:
+            entry = SystemEntry.get_by_key(envid, SystemConfig.UPGRADING)
+            value = entry.value
+        except ValueError:
+            return False
+
+        if value == 'no':
+            return False
+        elif value == 'yes':
+            return True
+        else:
+            raise ValueError("Upgrading: Bad value for '%s': '%s'" % \
+                             (SystemConfig.UPGRADING, value))

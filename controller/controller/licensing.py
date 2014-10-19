@@ -92,11 +92,6 @@ class LicenseManager(Manager):
 
     def check(self, agent):
         server = self.server
-        # FIXME:
-        if server.upgrading():
-            server.log.info("license check: Failing due to UPGRADING")
-            return {"error": "Cannot run command while UPGRADING"}
-
         body = server.cli_cmd('tabadmin license', agent)
 
         if not 'exit-status' in body or body['exit-status'] != 0:
@@ -127,11 +122,6 @@ class LicenseManager(Manager):
 
     def repair(self, agent):
         server = self.server
-        # FIXME:
-        if server.upgrading():
-            server.log.info("license repair: Failing due to UPGRADING")
-            return {"error": "Cannot run command while UPGRADING"}
-
         data = agent.todict()
 
         server.event_control.gen(EventControl.LICENSE_REPAIR_STARTED, data)

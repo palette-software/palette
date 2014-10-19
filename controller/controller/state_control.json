@@ -145,12 +145,6 @@
 "color":"red"
 },
 {
-"state":"UNKNOWN",
-"text":"Please Install Palette Agent",
-"allowable_actions":"",
-"color":"red"
-},
-{
 "state":"PRIMARY-NOT-ENABLED",
 "text":"Primary Disabled",
 "allowable_actions":"",
