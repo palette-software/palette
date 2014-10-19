@@ -202,7 +202,7 @@ class JobHandler(object):
         self.server = self.scheduler.server
 
     def __call__(self, name):
-        if self.server.upgrading():
+        if self.server.state_manager.upgrading():
             self.server.log.info(
                 "sched command will be SKIPPED due to upgrading.  "
                 "command: %s", name)
@@ -213,7 +213,7 @@ class JobHandler(object):
 
         if not os.path.exists(path):
             self.server.log.error("sched job: No such command: %s", path)
-            self.server.event_control.gen(\
+            self.server.event_control.gen(
                 EventControl.SCHEDULED_JOB_FAILED,
                 {'error': "No such command: '%s'" % name})
             return
@@ -228,7 +228,7 @@ class JobHandler(object):
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE, close_fds=True)
         except StandardError as ex:
-            self.server.event_control.gen(\
+            self.server.event_control.gen(
                 EventControl.SCHEDULED_JOB_FAILED,
                 {'error': "Could not start job '%s': %s" % (cmd, ex.__doc__)})
             return

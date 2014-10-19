@@ -85,8 +85,8 @@ class Upgrade(object):
         # Find out if the controller is already in UPGRADING state and
         # go into UPGRADING state if it isn't already.
         self.comm.send_cmd("upgrade")
-        self.initial_state = self.comm.result['main-state']
-        if self.initial_state != 'UPGRADING':
+        self.initial_state = self.comm.result['upgrading']
+        if self.initial_state != 'true':
             if self.comm.verbose:
                 print "Enabling UPGRADE state"
             if not self.comm.args.dry_run:

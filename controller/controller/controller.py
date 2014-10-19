@@ -62,6 +62,7 @@ from cloud import CloudManager
 
 from clihandler import CliHandler
 from util import version, success, sizestr, safecmd
+from rwlock import RWLock
 
 # pylint: disable=no-self-use
 
@@ -963,18 +964,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         body = agent.connection.http_send_json('/ad', data)
         return json.loads(body)
 
-    def upgrading(self):
-        main_state = self.state_manager.get_state()
-        if main_state == StateManager.STATE_UPGRADING:
-            return True
-        else:
-            return False
-
     def get_pinfo(self, agent, update_agent=False):
-        if self.upgrading():
-            self.log.info("get_pinfo: Failing due to UPGRADING")
-            raise exc.InvalidStateError("Cannot run command while UPGRADING")
-
         body = self.cli_cmd('pinfo', agent, immediate=True)
         # FIXME: add a function to test cli success (cli_success?)
         if not 'exit-status' in body:
@@ -1394,18 +1384,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # (needed for agent.tableau_data_dir).
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
             self.yml(agent, set_agent_types=False) # raises an exception on fail
-            if not self.upgrading():
-                # These can all fail as long as they don't get an IOError.
-                # For example, if tableau is stopped, these will fail,
-                # but we don't know tableau's status yet and it's
-                # worth trying, especially to import the users.
-                if success(self.auth.load(agent, check_odbc_state=False)):
-                    self.sync_cmd(agent, check_odbc_state=False)
-                    self.extract.load(agent, check_odbc_state=False)
-                else:
-                    self.log.debug(
-                        "init_new_agent: Couldn't do initial import of " + \
-                        "auth, etc. probably due to tableau stopped.")
+            # These can all fail as long as they don't get an IOError.
+            # For example, if tableau is stopped, these will fail,
+            # but we don't know tableau's status yet and it's
+            # worth trying, especially to import the users.
+            if success(self.auth.load(agent, check_odbc_state=False)):
+                self.sync_cmd(agent, check_odbc_state=False)
+                self.extract.load(agent, check_odbc_state=False)
+            else:
+                self.log.debug(
+                    "init_new_agent: Couldn't do initial import of " + \
+                    "auth, etc. probably due to tableau stopped.")
 
         return pinfo
 
@@ -1585,6 +1574,8 @@ def main():
 
     # Send controller started and potentially "new version" events.
     server.controller_init_events()
+
+    server.upgrade_rwlock = RWLock()
 
     server.workbooks = WorkbookManager(server)
     server.files = FileManager(server)
