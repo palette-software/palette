@@ -349,7 +349,8 @@ class EventControlManager(Manager):
 
         if event_description:
             try:
-                mako_template = Template(event_description)
+                mako_template = Template(event_description,
+                                         default_filters=['h'])
                 event_description = mako_template.render(**data)
             except MakoException:
                 event_description = \

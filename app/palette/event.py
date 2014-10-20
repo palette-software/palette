@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from datetime import datetime
 from webob import exc
-import cgi
+import re
 
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
@@ -31,9 +31,10 @@ class EventApplication(PaletteRESTHandler):
         entry.icon = icon
 
     def convert_description_to_html(self, entry):
-        html = cgi.escape(entry.description)
-        html = html.replace('\n', '<br>')
-        entry.description = html.replace(' ', '&nbsp;')
+        html = entry.description.replace('\n', '<br>')
+        # Replace leading spaces with '&nbsp;'
+        entry.description = re.sub(r'^ +', lambda m: '&nbsp;'*len(m.group()),
+                                   html)
         return
 
     def query_mostrecent(self, envid, status=None, event_type=None,
