@@ -172,7 +172,7 @@ class AlertEmail(object):
         message = event_entry.email_message
         if message:
             try:
-                mako_template = Template(message)
+                mako_template = Template(message, default_filters=['h'])
                 message = mako_template.render(**data)
             except StandardError:
                 message = "Mako template message conversion failure: " + \
