@@ -42,6 +42,7 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
                  'value': '5'},
                 {'envid':1, 'key':'http-load-warn', 'value':str(10)},
                 {'envid':1, 'key':'http-load-error', 'value':str(20)},
+                {'envid':1, 'key':'http-load-re', 'value':r'.+\.xml\Z'},
                 {'envid':1, 'key':'ping-request-interval', 'value':str(10)},
                 {'envid':1, 'key':'socket-timeout', 'value':str(60)},
                 {'envid':1, 'key':'ssl-handshake-timeout', 'value':str(5)},

@@ -1,3 +1,5 @@
+import re
+
 from sqlalchemy import Column, String, Integer, BigInteger, DateTime
 from sqlalchemy import func
 
@@ -6,6 +8,20 @@ from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
 from mixin import BaseMixin
+
+def list_re(arg):
+    _ = []
+    arg = arg.replace(',', ' ')
+    for token in arg.split(' '):
+        if token:
+            _.append(re.compile(token))
+    return _
+
+def match_re(patterns, arg):
+    for pattern in patterns:
+        if pattern.match(arg):
+            return True
+    return False
 
 class HttpControl(meta.Base, BaseMixin):
     __tablename__ = "http_control"
@@ -26,13 +42,30 @@ class HttpControl(meta.Base, BaseMixin):
             filter(HttpControl.level > 0).\
             all()
 
-    @classmethod
-    def info(cls):
-        d = {}
-        for entry in cls.all():
+class HttpControlData(object):
+
+    SYSTEM_KEY = 'http-load-re'
+
+    def __init__(self, server):
+        self.server = server
+
+        self.status_excludes = []
+        for entry in HttpControl.all():
             if entry.excludes:
-                excludes = entry.excludes.replace(',', ' ')
-                d[entry.status] = excludes.strip()
-            else:
-                d[entry.status] = []
-        return d
+                excludes = list_re(entry.excludes)
+                if excludes:
+                    self.status_excludes[entry.status] = excludes
+
+        self.load_excludes = []
+        arg = server.system.get(self.SYSTEM_KEY, default=None)
+        if arg:
+            self.load_excludes = list_re(arg)
+
+    def status_exclude(self, status, url):
+        if status not in self.status_excludes:
+            return False
+        excludes = self.status_excludes[status]
+        return match_re(excludes, url)
+
+    def load_exclude(self, url):
+        return match_re(self.load_excludes, url)

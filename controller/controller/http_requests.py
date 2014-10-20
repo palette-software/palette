@@ -1,3 +1,5 @@
+from httplib import responses
+
 from sqlalchemy import Column, String, DateTime, Integer, BigInteger
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.schema import ForeignKey
@@ -6,12 +8,10 @@ from sqlalchemy.schema import ForeignKey
 from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
-from httplib import responses
-
 from cache import TableauCacheManager
 from manager import synchronized
 from mixin import BaseMixin, BaseDictMixin
-from http_control import HttpControl
+from http_control import HttpControlData
 from event_control import EventControl
 from util import timedelta_total_seconds
 from sites import Site
@@ -49,7 +49,7 @@ class HttpRequestEntry(meta.Base, BaseMixin, BaseDictMixin):
     __table_args__ = (UniqueConstraint('envid', 'id'),)
 
     @classmethod
-    def max_reqid(cls, envid):
+    def maxid(cls, envid):
         return cls.max('id', filters={'envid':envid})
 
 class HttpRequestManager(TableauCacheManager):
@@ -60,10 +60,10 @@ class HttpRequestManager(TableauCacheManager):
         envid = self.server.environment.envid
         self._prune(agent, envid)
 
-        controldata = HttpControl.info()
+        controldata = HttpControlData(self.server)
         userdata = self.load_users(agent)
 
-        maxid = HttpRequestEntry.max_reqid(envid)
+        maxid = HttpRequestEntry.maxid(envid)
         if maxid is None:
             # our table is empty, just pull in one placeholder record.
             stmt = 'SELECT * FROM http_requests '+\
@@ -95,20 +95,17 @@ class HttpRequestManager(TableauCacheManager):
         return {u'status': 'OK', u'count': len(datadict[''])}
 
     def _test_for_alerts(self, entry, agent, controldata):
+        uri = entry.http_request_uri
         seconds = int(timedelta_total_seconds(entry.completed_at,
                                               entry.created_at))
         body = {'duration':seconds}
         if entry.status >= 400 and entry.action == 'show':
-            if entry.status in controldata:
-                excludes = controldata[entry.status]
-            else:
-                excludes = []
-            # check the URI against the list to be skipped.
-            if not entry.controller in excludes or '*' in excludes:
+            if not controldata.status_exclude(entry.status, uri):
                 self._eventgen(EventControl.HTTP_BAD_STATUS,
                                agent, entry, body=body)
-        elif entry.action == 'show' and \
-             entry.http_request_uri.startswith('/views/'):
+        elif entry.action == 'show' and uri.startswith('/views/'):
+            if controldata.load_exclude(uri):
+                return
             errorlevel = self.server.system.getint('http-load-error')
             warnlevel = self.server.system.getint('http-load-warn')
             if errorlevel != 0 and seconds >= errorlevel:
