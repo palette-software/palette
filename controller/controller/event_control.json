@@ -489,8 +489,8 @@
 "level":"E",
 "send_email":"t",
 "subject":"ERROR - Tableau Server License Invalid",
-"event_description":"Status: ERROR\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nYour Tableau Server License has expired and needs to be fixed.\n\nDetails: \n${stdout}${stderr}\n${info}${error}\n",
-"email_message":"Status: ERROR\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nYour Tableau Server License has expired and needs to be fixed.\n\nDetails: \n${stdout}${stderr}\n${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
+"event_description":"Status: ERROR\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nYour Tableau Server License has expired and needs to be fixed.\n\nDetails: \n${error}\n",
+"email_message":"Status: ERROR\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nYour Tableau Server License has expired and needs to be fixed.\n\nDetails: \n${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
 "event_type":"license"
@@ -534,7 +534,7 @@
 "send_email":"t",
 "subject":"INFO - \"Down for Maintenance\" Web Page Deactivated",
 "event_description":"Status: INFO",
-"email_message":"Status: INFO\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nVisits to your Tableau Server will now see a \"Tableau Server Down for Maintenance\" Page instead of receiving an HTTP 404 \"Page Not Found\" Error.\n\nDetails: \n${stdout}${stderr}\n${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}\n",
+"email_message":"Status: INFO\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nVisits to your Tableau Server will now see a \"Tableau Server Down for Maintenance\" Page instead of receiving an HTTP 404 \"Page Not Found\" Error.\n\nThis message was sent from your Palette Server at ${server_url}\n",
 "icon":null,
 "color":"green",
 "event_type":"maintentance"
@@ -555,8 +555,8 @@
 "level":"E",
 "send_email":"f",
 "subject":"ERROR - Could Not Start Maintenance Web Server on '%(displayname)s'",
-"event_description":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}",
-"email_message":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
+"event_description":"Server: ${displayname}\nAdditional Details: ${error}",
+"email_message":"Server: ${displayname}\nAdditional Details: ${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
 "event_type":"maintentance"
