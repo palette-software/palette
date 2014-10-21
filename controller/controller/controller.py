@@ -1107,7 +1107,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.error("Invalid yml entry for 'gatway.ports': %s",
                                 gateway_ports)
 
-        ssl_port = AgentYmlEntry.get(envid, 'ssl.listen.port', default=None)
+        ssl_port = AgentYmlEntry.get(envid, 'ssl.port', default=None)
         if ssl_port:
             try:
                 ssl_port = int(ssl_port)
