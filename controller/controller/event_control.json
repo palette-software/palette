@@ -500,8 +500,8 @@
 "level":"I",
 "send_email":"f",
 "subject":"INFO - Tableau Server License Repair Started",
-"event_description":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}",
-"email_message":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
+"event_description":"Server: ${displayname}",
+"email_message":"Server: ${displayname}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
 "event_type":"license"
@@ -511,8 +511,8 @@
 "level":"I",
 "send_email":"f",
 "subject":"INFO - Tableau Server License Repair Finished",
-"event_description":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}",
-"email_message":"Server: ${displayname}\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}\n\nThis message was sent from your Palette Server at ${server_url}",
+"event_description":"Server: ${displayname}\n",
+"email_message":"Server: ${displayname}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
 "event_type":"license"
