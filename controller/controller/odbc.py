@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+from agentinfo import AgentYmlEntry
 from util import odbc2dt
 
 class ODBC(object):
@@ -20,8 +21,13 @@ class ODBC(object):
             raise RuntimeError("agent.server is None")
 
     def connection(self):
+        envid = self.server.environment.envid
+        host = AgentYmlEntry.get(envid, 'pgsql0.host', default=self.SERVER)
+
+        # FIXME: do the same for port and allow failover?
+
         s = 'DRIVER=' + self.DRIVER +'; '
-        s += 'Server=' + self.SERVER + '; '
+        s += 'Server=' + host + '; '
         s += 'Port=' + str(self.PORT) + '; '
         s += 'Database=' + self.DATABASE + '; '
         s += 'Uid=' + self.UID + '; '
