@@ -20,15 +20,32 @@ class ODBC(object):
         if self.server is None:
             raise RuntimeError("agent.server is None")
 
+    def host(self):
+        envid = self.server.environment.envid
+        # worker id points to the 'hot' database IP.
+        worker_id = AgentYmlEntry.get(envid, 'pgsql.worker_id', default=None)
+        if worker_id is None:
+            return self.SERVER
+        key = 'pgsql' + worker_id + '.host'
+        return AgentYmlEntry.get(envid, key, default=self.SERVER)
+
     def connection(self):
         envid = self.server.environment.envid
-        host = AgentYmlEntry.get(envid, 'pgsql0.host', default=self.SERVER)
 
-        # FIXME: do the same for port and allow failover?
+        # worker id points to the 'hot' database IP.
+        worker_id = AgentYmlEntry.get(envid, 'pgsql.worker_id', default=None)
+        if not worker_id is None:
+            key = 'pgsql' + worker_id + '.host'
+            host = AgentYmlEntry.get(envid, key, default=self.SERVER)
+            key = 'pgsql' + worker_id + '.port'
+            port = AgentYmlEntry.get(envid, key, default=self.PORT)
+        else:
+            host = self.SERVER
+            port = str(self.PORT)
 
         s = 'DRIVER=' + self.DRIVER +'; '
         s += 'Server=' + host + '; '
-        s += 'Port=' + str(self.PORT) + '; '
+        s += 'Port=' + port + '; '
         s += 'Database=' + self.DATABASE + '; '
         s += 'Uid=' + self.UID + '; '
         s += 'Pwd=' + self.PASSWD + ';'
