@@ -25,7 +25,6 @@ class PalettePageMixin(object):
 
     def preprocess(self, req, obj):
         # pylint: disable=attribute-defined-outside-init
-        
         # req.remote_user can possibly be None if AD authentication works,
         # but there is a problem importing the user database from Tableau.
         if req.remote_user is None:
