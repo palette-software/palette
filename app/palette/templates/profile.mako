@@ -15,10 +15,7 @@
   <p>${req.remote_user.name}</p>
 
   <h2>Email</h2>
-  <p class="editbox"
-     data-name="${req.remote_user.name}" data-href="/rest/users/email">
-    ${req.remote_user.email or ''}
-  </p>
+  <p>${req.remote_user.email or ''}</p>
 
 %if req.remote_user.userid > 0:
   <h2>Tableau Server User License</h2>
