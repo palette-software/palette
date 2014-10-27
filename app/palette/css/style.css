@@ -752,14 +752,14 @@ h1.page-title {
     color: red;
     margin: 0 0 15px 0;
 }
-.integration form input[type="text"], .integration form input[type="password"] {
+.integration input[type="text"], .integration input[type="password"] {
     font-size: 16px;
     margin: 5px 0;
 }
-.integration form div {
+.integration div {
     margin-top: 35px;
 }
-.integration form div button {
+.integration div button {
     margin-right: 5px;
 }
 #mainNav a.site-id {

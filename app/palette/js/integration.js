@@ -8,11 +8,20 @@ function ($, common)
     var SECRET_KEY_ERROR = 'Please provide a valid Secret Access key.  Your secret Access Key contains 40 characters.';
 
     var base_url = null;
+    var current = null;
 
+    /*
+     * clear()
+     * Empty all input fields.
+     */
     function clear() {
         $('input[type="text"], input[type="password"').val(null);
     }
 
+    /*
+     * save()
+     * Callback for the 'Save' button.
+     */
     function save() {
         var data = {'action': 'save'};
         $('input[type="text"], input[type="password"]').each(function () {
@@ -45,14 +54,23 @@ function ($, common)
         });
         if (result != null) {
             update(result);
+            validate(result);
         }
     }
 
+    /*
+     * cancel()
+     * Callback for the 'Cancel' button.
+     */
     function cancel() {
         query(true);
         validate();
     }
 
+    /*
+     * del()
+     * Callback for the 'Delete' button.
+     */
     function del() {
         var success;
         $.ajax({
@@ -72,11 +90,16 @@ function ($, common)
             }
         });
         if (success) {
+            current = null;
             clear();
             validate();
         }
     }
 
+    /*
+     * validate()
+     * Enable/disable the 'Save' button based on the field values.
+     */
     function validate() {
         var enabled = true;
 
@@ -110,8 +133,18 @@ function ($, common)
             }
         }
 
-        if ($('#url').val().length < 1) {
+        var url = $('#url').val();
+        if (url.length < 1) {
             enabled = false;
+        }
+
+        if (current != null && enabled) {
+            if (access_key == current['access-key'] &&
+                secret_key == current['secret-key'] &&
+                url == current['url'])
+            {
+                enabled = false;
+            }
         }
 
         if (enabled) {
@@ -121,10 +154,15 @@ function ($, common)
         }
     }
 
+    /*
+     * update()
+     * Set the field values to the data returned by the AJAX request.
+     */
     function update(data) {
         for (var key in data) {
             $('#' + key).val(data[key]);
         }
+        current = data;
     }
 
     /*

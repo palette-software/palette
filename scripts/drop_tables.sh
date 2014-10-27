@@ -2,8 +2,11 @@
 # script to drop tables from postgres
 
 psql -U palette -W -d paldb -h localhost << EOF
-drop table s3 cascade;
+drop table cloud cascade;
 drop table extracts cascade;
+drop table files cascade;
+drop table ports cascade;
+drop table s3 cascade;
 drop table workbooks_updates cascade;
 drop table workbooks cascade;
 drop table state_control cascade;
