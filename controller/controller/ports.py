@@ -123,6 +123,14 @@ class PortManager(Manager):
         data['dest_port'] = entry.dest_port
         data['dest_hostname'] = entry.dest_host
 
+        if not 'exit-status' in body:
+            self.log.error(
+                "check_port: agentid %d command '%s' for service %s " + \
+                "did not have 'exit-status' in returned body: %s",
+                entry.agentid, command, entry.service_name,
+                str(body))
+            return "unknown"
+
         if body['exit-status']:
             self.log.info(
                 "Connection to '%s' failed: host '%s', port %d)",
