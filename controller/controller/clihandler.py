@@ -411,6 +411,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_usage(self.do_backup.__usage__)
             return
 
+        blah = abcdef
         agent = self.get_agent(cmd.dict)
         if not agent:
             return
@@ -2131,7 +2132,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         line += traceback_string(all_on_one_line=False)
         self.error(clierror.ERROR_COMMAND_FAILED, line)
         self.server.event_control.gen(EventControl.SYSTEM_EXCEPTION,
-                                      {'error': line})
+                                      {'error': line,
+                                       'version': self.server.version})
 
     def handle(self):
         while True:
