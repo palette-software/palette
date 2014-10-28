@@ -1059,10 +1059,16 @@ class AgentManager(threading.Thread):
 
         try:
             self.handle_agent_connection(conn, addr)
-        except StandardError:
+        except (SystemExit, KeyboardInterrupt, GeneratorExit):
+            raise
+        except BaseException:
             line = traceback_string(all_on_one_line=False)
             self.server.event_control.gen(EventControl.SYSTEM_EXCEPTION,
                                       {'error': line})
+            self.log.error("Fatal: Exiting agent_handle_connection_pre " + \
+                           "on exception.")
+            # pylint: disable=protected-access
+            os._exit(90)
 
     def handle_agent_connection(self, conn, addr):
         # pylint: disable=too-many-locals
