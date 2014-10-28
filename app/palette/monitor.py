@@ -136,7 +136,7 @@ class MonitorApplication(PaletteRESTHandler):
             if not vol.size or vol.available_space is None:
                 continue
             used = vol.size - vol.available_space
-            value = '%s used of %s' % (sizestr(used), sizestr(vol.size))
+            value = '%s free of %s' % (sizestr(vol.available_space), sizestr(vol.size))
             color = self.disk_color(used, vol.size, low, high)
             volumes.append({'name': vol.name, 'value': value, 'color': color})
         return volumes
