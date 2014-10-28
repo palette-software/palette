@@ -13,6 +13,7 @@ function ($, topic, template, common)
                      'archive-backup-template': null};
 
     var allowed = [];
+    var connected;
 
     function disableAll() {
         /* FIXME - do this with a class */
@@ -210,15 +211,17 @@ function ($, topic, template, common)
     }
 
     function updateBackups() {
-        $.ajax({
-            url: '/rest/backup',
-            success: function(data) {
-                $().ready(function() {
-                    updateBackupSuccess(data);
-                });
-            },
-            error: common.ajaxError,
-        });
+        if (connected) {
+            $.ajax({
+                url: '/rest/backup',
+                success: function(data) {
+                    $().ready(function() {
+                        updateBackupSuccess(data);
+                    });
+                },
+                error: common.ajaxError,
+            });
+        }
     }
 
     function bind(id, f) {
@@ -238,6 +241,7 @@ function ($, topic, template, common)
 
     topic.subscribe('state', function(message, data) {
         allowed = data['allowable-actions'];
+        connected = data['connected'];
         updateState();
     });
 
