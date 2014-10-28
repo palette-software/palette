@@ -141,14 +141,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                             self.seconds_to_str(backup_elapsed_time)
             return body
 
-        backup_size_body = agent.filemanager.filesize(backup_full_path)
-        if not success(backup_size_body):
-            self.log.error("Failed to get size of backup file %s: %s" %\
-                            (backup_full_path, backup_size_body['error']))
-            backup_size = 0
-
+        backup_size = 0
+        try:
+            backup_size_body = agent.filemanager.filesize(backup_full_path)
+        except IOError as ex:
+            self.log.error("filemanager.filesize('%s') failed: %s",
+                            backup_full_path, str(ex))
         else:
-            backup_size = backup_size_body['size']
+            if not success(backup_size_body):
+                self.log.error("Failed to get size of backup file '%s': %s" % \
+                                (backup_full_path, backup_size_body['error']))
+            else:
+                backup_size = backup_size_body['size']
 
         # If the target is not on the primary agent, then after the
         # backup, it will be copied to either:
@@ -464,7 +468,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                       uri=uri, body=body_json)
 
         except (httplib.HTTPException, EnvironmentError) as ex:
-            self.log.error(\
+            self.log.error(
                 "_send_cli: command '%s' failed with httplib.HTTPException: %s",
                            safecmd(cli_command), str(ex))
             self.remove_agent(agent, EventControl.AGENT_COMM_LOST) # bad agent
@@ -488,7 +492,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("POST /cli response missing 'run-status'", body)
         if body['run-status'] != 'running' and body['run-status'] != 'finished':
             # FIXME: could possibly be finished.
-            return self.error(\
+            return self.error(
                 "POST /cli response for 'run-status' was not 'running'", body)
 
         return body
@@ -606,7 +610,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                     src.listen_port, src.displayname)
             fw_body = src.firewall.enable([src.listen_port])
             if fw_body.has_key("error"):
-                self.log.error(\
+                self.log.error(
                     "firewall enable port %d on src host %s failed with: %s",
                         src.listen_port, src.displayname, fw_body['error'])
                 data = agent.todict()
@@ -620,12 +624,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
        # Make sure the target directory on the target agent exists.
         try:
             dst.filemanager.mkdirs(target_dir)
-        except (IOError, ValueError):
-            self.log.error(\
-                "copycmd: Could not create directory: '%s'" % target_dir)
-            return self.error(\
-                "Could not create directory '%s' on target agent '%s'" % \
-                target_dir, dst.displayname)
+        except (IOError, ValueError) as ex:
+            self.log.error(
+                "copycmd: Could not create directory: '%s': %s" % (target_dir,
+                                                                   ex))
+            return self.error(
+                "Could not create directory '%s' on target agent '%s': %s" % \
+                (target_dir, dst.displayname, ex))
 
         if src.iswin:
             command = 'phttp GET "https://%s:%s/%s" "%s"' % \
@@ -762,7 +767,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.info("Restore: starting tableau after failed restore.")
             start_body = self.cli_cmd("tabadmin start", agent)
             if 'error' in start_body:
-                self.log.info(\
+                self.log.info(
                     "Restore: 'tabadmin start' failed after failed restore.")
                 msg = "Restore: 'tabadmin start' failed after failed restore."
                 msg += " Error was: %s" % start_body['error']
@@ -903,14 +908,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
                 body = json.loads(body_json)
                 if body == None:
-                    return self.error(\
+                    return self.error(
                             "Get /%s getresponse returned a null body" % uri)
 
                 self.log.debug("body = " + str(body))
                 if not body.has_key('run-status'):
                     self.remove_agent(agent,
                                      EventControl.AGENT_RETURNED_INVALID_STATUS)
-                    return self.error(\
+                    return self.error(
                         "GET %s command reply was missing 'run-status'!  " + \
                         "Will not retry." % (uri), body)
 
@@ -993,7 +998,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.agentmanager.update_agent_pinfo_dirs(agent, pinfo)
                 self.agentmanager.update_agent_pinfo_vols(agent, pinfo)
             else:
-                self.log.error(\
+                self.log.error(
                     "get_pinfo: Could not update agent: unknown " + \
                                     "displayname.  uuid: %s", agent.uuid)
                 raise IOError("get_pinfo: Could not update agent: unknown " + \
@@ -1002,6 +1007,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return pinfo
 
     def yml(self, agent, set_agent_types=True):
+        """Note: Can raise an IOError (if the filemanager.get() fails)."""
         path = agent.path.join(agent.tableau_data_dir, "data", "tabsvc",
                                "config", "workgroup.yml")
         yml_contents = agent.filemanager.get(path)
@@ -1175,7 +1181,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             rawbody = res.read()
             if res.status != httplib.OK:
                 # bad agent
-                self.log.error(\
+                self.log.error(
                     "immediate command to %s failed with status %d: %s " + \
                     "%s, body: %s:",
                             agent.displayname, res.status, method, uri, rawbody)
@@ -1243,13 +1249,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         body[u'info'] = unicode(cmd)
 
         if success(body):
-            ziplog_size_body = agent.filemanager.filesize(ziplogs_full_path)
-            if not success(ziplog_size_body):
-                self.log.error("Failed to get size of ziplogs file %s: %s",
-                               ziplogs_full_path, ziplog_size_body['error'])
-                ziplog_size = 0
+            ziplog_size = 0
+            try:
+                ziplog_size_body = agent.filemanager.filesize(ziplogs_full_path)
+            except IOError as ex:
+                self.log.error("filemanager.filesize('%s') failed: %s",
+                                ziplogs_full_path, str(ex))
             else:
-                ziplog_size = ziplog_size_body['size']
+                if not success(ziplog_size_body):
+                    self.log.error("Failed to get size of ziplogs file %s: %s",
+                                   ziplogs_full_path, ziplog_size_body['error'])
+                else:
+                    ziplog_size = ziplog_size_body['size']
 
             # Place the file where it belongs (different agent, cloud, etc.)
             place = PlaceFile(self, agent, dcheck, ziplogs_full_path,
@@ -1401,7 +1412,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def clean_xid_dirs(self, agent):
         """Remove old XID directories."""
         xid_dir = agent.path.join(agent.data_dir, "XID")
-        body = agent.filemanager.listdir(xid_dir)
+        try:
+            body = agent.filemanager.listdir(xid_dir)
+        except IOError as ex:
+            self.log.error("filemanager.listdir('%s') for the XID " + \
+                           "directory failed: %s", xid_dir, str(ex))
+            return
 
         if not success(body):
             self.log.error("Could not list the XID directory '%s': %s",
@@ -1417,7 +1433,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         for rem_dir in body['directories']:
             full_path = agent.path.join(xid_dir, rem_dir)
             self.log.debug("Removing %s", full_path)
-            agent.filemanager.delete(full_path)
+            try:
+                agent.filemanager.delete(full_path)
+            except IOError as ex:
+                self.log.error("filemanager.delete('%s') failed: %s",
+                                full_path, str(ex))
 
     def config_servers(self, agent):
         """Configure the maintenance and archive servers."""
