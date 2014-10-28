@@ -465,7 +465,10 @@ function ($, topic, template, items, paging)
 
     function monitorUpdate(data)
     {
-        var state = data['state']
+        if (data['connected'] == null) {
+            data['connected'] = true;
+        }
+
         var json = JSON.stringify(data);
         
         /*
@@ -475,7 +478,7 @@ function ($, topic, template, items, paging)
         if (json == current) {
             return;
         }
-         
+
         topic.publish('state', data);
         current = json;
 
@@ -527,6 +530,7 @@ function ($, topic, template, items, paging)
                 var data = {}
                 data['text'] = 'Browser Disconnected';
                 data['color'] = 'yellow';
+                data['connected'] = false;
                 monitorUpdate(data);
             },
             complete: function() {
