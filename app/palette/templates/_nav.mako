@@ -15,11 +15,6 @@
             </a>
           </li>
           <li>
-            <a href="http://www.tableausoftware.com/support/help" target="_blank">
-              <i class="fa fa-fw fa-book"></i> Tableau Docs
-            </a>
-          </li>
-          <li>
             <a href="/support/about">
               <i class="fa fa-fw fa-info-circle"></i> About Palette
             </a>
