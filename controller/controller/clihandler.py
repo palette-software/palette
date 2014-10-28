@@ -411,7 +411,6 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_usage(self.do_backup.__usage__)
             return
 
-        blah = abcdef
         agent = self.get_agent(cmd.dict)
         if not agent:
             return
