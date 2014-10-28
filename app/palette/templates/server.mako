@@ -113,7 +113,7 @@
 	  </article>
       {{#volumes}}
       <article>
-        {{name}}: {{size-readable}} ({{available-readable}} Unused)
+        {{name}}: {{available-readable}} free of {{size-readable}}
       </article>
       {{/volumes}}
 	</div>
