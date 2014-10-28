@@ -24,13 +24,14 @@ class EnvironmentApplication(PaletteRESTHandler):
     # pylint: disable=invalid-name
     def handle_GET(self, req):
         # pylint: disable=unused-argument
-        env = Environment.get()
-        return {'name': env.name}
+        entry = Environment.get()
+        return {'name': entry.name}
 
     def handle_POST(self, req):
         if 'value' not in req.POST:
             return exc.HTTPBadRequest()
-        self.environment.name = req.POST['value']
+        entry = Environment.get()
+        entry.name = req.POST['value']
         meta.Session.commit()
         return {}
 
