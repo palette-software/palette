@@ -691,6 +691,7 @@ class AgentManager(threading.Thread):
 
         data = agent.todict()
         data['info'] = msg
+        data['volume_name'] = entry.name
         self.server.event_control.gen(event, data)
 
     def disk_watermark(self, name):
