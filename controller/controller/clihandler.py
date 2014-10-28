@@ -129,7 +129,7 @@ class Command(object):
             if 'uuid' in opts:
                 query = query.filter(Agent.uuid == opts['uuid'])
             if 'displayname' in opts:
-                query = query.filter(\
+                query = query.filter(
                     Agent.displayname == opts['displayname'])
             if 'hostname' in opts:
                 query = query.filter(Agent.hostname == opts['hostname'])
@@ -1055,7 +1055,14 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         self.ack()
-        body = self.server.yml(agent)
+        try:
+            body = self.server.yml(agent)
+        except IOError as ex:
+            self.error(clierror.ERROR_COMMAND_FAILED,
+                       "FAIL: Can't get yml: %s", str(ex))
+            self.server.log.debug("FAIL: Can't get yml: %s", str(ex))
+            return
+
         self.report_status(body)
 
     @usage('sched [status | delete job-name [job-name ...] | ' + \

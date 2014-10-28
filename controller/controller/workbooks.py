@@ -285,14 +285,19 @@ class WorkbookManager(TableauCacheManager):
                 return None
 
         # move twbx/twb to resting location.
-        file_size_body = agent.filemanager.filesize(dst)
-        if not success(file_size_body):
-            self.log.error(
-                "build_workbook: Failed to get size of workbook file %s: %s",
-                dst, file_size_body['error'])
-            file_size = 0
+        file_size = 0
+        try:
+            file_size_body = agent.filemanager.filesize(dst)
+        except IOError as ex:
+            self.log.error("build_workbook: filemanager.filesize('%s')" +
+                           "failed: %s", dst, str(ex))
         else:
-            file_size = file_size_body['size']
+            if not success(file_size_body):
+                self.log.error("build_workbook: Failed to get size of " + \
+                               "workbook file %s: %s", dst,
+                               file_size_body['error'])
+            else:
+                file_size = file_size_body['size']
 
         auto = True
         place = PlaceFile(self.server, agent, dcheck, dst, file_size, auto,
@@ -320,7 +325,13 @@ class WorkbookManager(TableauCacheManager):
             return None
         else:
             self.log.debug('Retrieved workbook: %s', path)
-        agent.filemanager.delete(path)
+        try:
+            agent.filemanager.delete(path)
+        except IOError as ex:
+            self.log.debug("Error deleting workbook twb '%s': %s",
+                            path, str(ex))
+            return None
+
         return agent.path.basename(path)
 
     # Retrieve the twb file of an update and set the url.
@@ -385,7 +396,11 @@ class WorkbookManager(TableauCacheManager):
         body = self.server.cli_cmd(cmd, agent)
         if failed(body):
             self._eventgen(update, data=body)
-            agent.filemanager.delete(dst)
+            try:
+                agent.filemanager.delete(dst)
+            except IOError as ex:
+                self.log.debug("Error deleting workbook dst '%s': %s",
+                                dst, str(ex))
             return None
         dst = dst[0:-1] # drop the trailing 'x' from the file extension.
         return dst

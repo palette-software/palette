@@ -1245,7 +1245,11 @@ class AgentManager(threading.Thread):
         #fixme: not a great place to do this
         #aconn.displayname = agent.displayname
 
-        self.save_routes(agent) # fixme: check return value?
+        if not self.save_routes(agent):
+            self._close(aconn.socket)
+            raise IOError(("Couldn't save_routes for agent with " + \
+                           "uuid: %s'.  Disconnecting.") % uuid)
+
         aconn.initting = False
 
         self.server.event_control.gen(
@@ -1318,9 +1322,7 @@ class AgentManager(threading.Thread):
                                     agent.hostname, route_path, lines)
         try:
             agent.filemanager.put(route_path, lines)
-        except (exc.HTTPException, \
-                    httplib.HTTPException, \
-                    EnvironmentError) as ex:
+        except IOError as ex:
             self.log.error("filemanager.put(%s) on %s failed with: %s",
                            agent.displayname, route_path, str(ex))
             return False
