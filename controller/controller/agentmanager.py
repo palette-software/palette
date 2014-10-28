@@ -1064,7 +1064,8 @@ class AgentManager(threading.Thread):
         except BaseException:
             line = traceback_string(all_on_one_line=False)
             self.server.event_control.gen(EventControl.SYSTEM_EXCEPTION,
-                                      {'error': line})
+                                      {'error': line,
+                                       'version': self.server.version})
             self.log.error("Fatal: Exiting agent_handle_connection_pre " + \
                            "on exception.")
             # pylint: disable=protected-access

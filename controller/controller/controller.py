@@ -1307,19 +1307,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def controller_init_events(self):
         """Generate an event if we are running a new version."""
-        current_version = version()
         last_version = self.system.get(SystemConfig.PALETTE_VERSION,
                                        default=None)
 
         body = {'version_previous': last_version,
-                'version_current': current_version}
+                'version_current': self.version}
 
         self.event_control.gen(EventControl.CONTROLLER_STARTED, body)
 
-        if current_version == last_version:
+        if self.version == last_version:
             return
 
-        self.system.save(SystemConfig.PALETTE_VERSION, current_version)
+        self.system.save(SystemConfig.PALETTE_VERSION, self.version)
 
         self.event_control.gen(EventControl.PALETTE_UPDATED, body)
 
@@ -1592,6 +1591,7 @@ def main():
     EventControl.populate()
     server.event_control = EventControlManager(server)
 
+    server.version = version()
     # Send controller started and potentially "new version" events.
     server.controller_init_events()
 
