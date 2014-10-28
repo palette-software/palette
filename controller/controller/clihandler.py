@@ -1,5 +1,6 @@
 import inspect
 import sys
+import os
 import shlex
 import SocketServer as socketserver
 import socket
@@ -2125,23 +2126,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         session = meta.Session()
         session.rollback()
 
-        stateman = self.server.state_manager
-        now_state = stateman.get_state()
-
-        if before_state in (StateManager.STATE_STARTED,
-                            StateManager.STATE_DEGRADED,
-                            StateManager.STATE_STOPPED,
-                            StateManager.STATE_STOPPED_UNEXPECTED):
-
-            if now_state == before_state:
-                line += "State remaining at  '%s'.\n" % now_state
-            elif now_state == StateManager.STATE_DISCONNECTED:
-                line += "Won't change state from '%s' back to '%s'.\n" % \
-                    (now_state, before_state)
-            else:
-                line += "Changing state from '%s' back to '%s'.\n" % \
-                                                (now_state, before_state)
-                stateman.update(before_state)
+        line += "State is '%s'.\n" %  before_state
 
         line += traceback_string(all_on_one_line=False)
         self.error(clierror.ERROR_COMMAND_FAILED, line)
@@ -2169,9 +2154,14 @@ class CliHandler(socketserver.StreamRequestHandler):
             except CommandException, ex:
                 self.error(clierror.ERROR_COMMAND_SYNTAX_ERROR, str(ex))
                 continue
-            except Exception:
+            except (SystemExit, KeyboardInterrupt, GeneratorExit):
+                raise
+            except BaseException:
                 self.handle_exception(before_state, data)
-                continue
+                self.server.log.error("Fatal: Exiting clihandler command " + \
+                                      " parse '%s' on exception.", data)
+                # pylint: disable=protected-access
+                os._exit(91)
 
             if not hasattr(self, 'do_'+cmd.name):
                 self.error(clierror.ERROR_NO_SUCH_COMMAND,
@@ -2184,12 +2174,16 @@ class CliHandler(socketserver.StreamRequestHandler):
                 f = getattr(self, 'do_'+cmd.name)
                 f(cmd)
             # fixme on exceptions: reset state?
-            except (SystemExit, KeyboardInterrupt, GeneratorExit) as ex:
+            except (SystemExit, KeyboardInterrupt, GeneratorExit):
                 raise
             except exc.InvalidStateError, ex:
                 self.error(clierror.ERROR_WRONG_STATE, ex.message)
             except BaseException:
                 self.handle_exception(before_state, data)
+                self.server.log.error("Fatal: Exiting clihandler command " + \
+                                      "'%s' on exception.", data)
+                # pylint: disable=protected-access
+                os._exit(92)
             finally:
                 session.rollback()
                 meta.Session.remove()
