@@ -9,9 +9,8 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from controller.tableau import TableauProcess
 from controller.state import StateManager
-from controller.agent import Agent
+from controller.agent import Agent, AgentVolumesEntry
 from controller.agentmanager import AgentManager
-from controller.agentinfo import AgentVolumesEntry
 from controller.firewall_manager import FirewallEntry
 from controller.ports import PortEntry
 from controller.profile import Role

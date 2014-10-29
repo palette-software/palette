@@ -1,7 +1,7 @@
 from general import SystemConfig
 from files import FileManager
 
-from agentinfo import AgentVolumesEntry
+from agent import AgentVolumesEntry
 from agent import Agent
 from util import sizestr
 

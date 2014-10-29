@@ -8,11 +8,11 @@ from akiri.framework.api import Authenticator
 from akiri.framework.auth import AuthFilter
 from akiri.framework.config import store
 
-from controller.agentinfo import AgentYmlEntry
 from controller.profile import UserProfile
 from controller.domain import Domain
 from controller.environment import Environment
 from controller.palapi import CommHandlerApp
+from controller.yml import YmlEntry
 
 class TableauAuthenticator(Authenticator):
 
@@ -29,20 +29,15 @@ class TableauAuthenticator(Authenticator):
             return Environment.get()
         raise AttributeError(name)
 
-    # FIXME: this is a hack since there isn't currently any
-    # concept of agent during login.
-    def yml(self, key):
-        entry = meta.Session.query(AgentYmlEntry).\
-            filter(AgentYmlEntry.key == key).first()
-        return entry and entry.value or None
-
     def authenticate(self, username, password, service='login'):
         envid = self.environment.envid
         entry = UserProfile.get(envid, 0) # user '0', likely 'palette'
         if entry and username == entry.name:
             # 'palette' always uses local authentication
             return UserProfile.verify(envid, username, password)
-        value = self.yml('wgserver.authenticate')
+        value = YmlEntry.get(self.environment.envid,
+                             'wgserver.authenticate',
+                             default=None)
         if not value or value.lower() != 'activedirectory':
             return UserProfile.verify(envid, username, password)
         cmd = "ad verify " + username + " " + password

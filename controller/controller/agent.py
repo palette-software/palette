@@ -1,19 +1,19 @@
+import os
+import ntpath
+import posixpath
+
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, Boolean
-from sqlalchemy import func
+from sqlalchemy import func, asc
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
-from sqlalchemy.orm import reconstructor
+from sqlalchemy.orm import reconstructor, relationship, backref
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
-from agentinfo import AgentVolumesEntry
 from mixin import BaseDictMixin
 from util import sizestr, is_ip, hostname_only
-
-import ntpath
-import posixpath
 
 class Agent(meta.Base, BaseDictMixin):
     # pylint: disable=too-many-instance-attributes
@@ -236,3 +236,177 @@ class Agent(meta.Base, BaseDictMixin):
             entry.path = posixpath
             entry.data_dir = body['data-dir']
         return entry
+
+
+class AgentVolumesEntry(meta.Base, BaseDictMixin):
+    __tablename__ = "agent_volumes"
+
+    volid = Column(Integer, unique=True, nullable=False, primary_key=True)
+
+    agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False)
+
+    name = Column(String)
+    path = Column(String)
+    vol_type = Column(String)
+    label = Column(String)
+    drive_format = Column(String)
+
+    size = Column(BigInteger)
+    available_space = Column(BigInteger)
+
+    # Last notification about disk low or high watermark:
+    #  "r" (red), "y" (yellow) or null.
+    watermark_notified_color = Column(String(1))
+
+    system = Column(Boolean)    # The OS/system is installed on this volume
+
+    archive = Column(Boolean)
+    archive_limit = Column(BigInteger)
+
+    active = Column(Boolean)
+
+    agent = relationship('Agent',
+                         backref=backref('volumes',
+                                         order_by='AgentVolumesEntry.name')
+                         )
+    UniqueConstraint('agentid', 'name')
+
+    def todict(self, pretty=False, exclude=None):
+        d = super(AgentVolumesEntry, self).todict(pretty=pretty)
+        if not self.size is None and not self.available_space is None:
+            d['used'] = self.size - self.available_space
+        if not pretty:
+            return d
+        if 'size' in d:
+            d['size-readable'] = sizestr(d['size'])
+        if 'available-space' in d:
+            d['available-readable'] = sizestr(d['available-space'])
+        if 'used' in d:
+            d['used-readable'] = sizestr(d['used'])
+        return d
+
+    @classmethod
+    def build(cls, agent, volume, install_data_dir):
+        # pylint: disable=multiple-statements
+        name = None; path = None; vol_type = None; label = None
+        drive_format = None; archive = False; archive_limit = None
+        size = None; available_space = None
+
+        if volume.has_key("name"):
+            name = volume['name']
+            if agent.iswin:
+                name = volume['name'].upper()
+
+        if volume.has_key('path'):
+            path = volume['path']
+
+        if volume.has_key("size"):
+            size = volume['size']
+
+        if volume.has_key("type"):
+            vol_type = volume['type']
+            if agent.iswin and vol_type == 'Fixed':
+                archive = True
+                path = install_data_dir
+            elif not agent.iswin and volume['type'][:7] == '/dev/sd' and \
+                name != None and \
+                        os.path.commonprefix([agent.data_dir, name]) == name:
+                # The data-dir is on the entry's mount point so it is
+                # the "archive" entry.
+                archive = True
+                path = install_data_dir
+
+        if archive == True:
+            if size:
+                archive_limit = size    # fixme: can't use whole disk
+
+        if volume.has_key("label"):
+            label = volume['label']
+
+        if volume.has_key("drive-format"):
+            drive_format = volume['drive-format']
+
+        if volume.has_key('available-space'):
+            available_space = volume['available-space']
+
+        return AgentVolumesEntry(agentid=agent.agentid, name=name, path=path,
+            vol_type=vol_type, label=label, drive_format=drive_format,
+            archive=archive, archive_limit=archive_limit, size=size,
+            available_space=available_space, active=True)
+
+    @classmethod
+    def has_available_space(cls, agentid, min_needed):
+        """Searches for a volume on the agent that has
+        the requested disk space for archiving.  If found, returns
+        the volume entry.  If not, returns False."""
+
+        try:
+            return meta.Session.query(AgentVolumesEntry).\
+                    filter(AgentVolumesEntry.agentid == agentid).\
+                    filter(AgentVolumesEntry.vol_type == "Fixed").\
+                    filter(AgentVolumesEntry.archive == True).\
+                    filter(AgentVolumesEntry.active == True).\
+                    filter(AgentVolumesEntry.available_space >= min_needed).\
+                    filter(AgentVolumesEntry.size - \
+                                AgentVolumesEntry.available_space +
+                                min_needed < AgentVolumesEntry.archive_limit).\
+                    one()   # for now, choosen any one - no particular order.
+
+        except NoResultFound:
+            return False
+
+    @classmethod
+    def get_vol_entry_by_agentid_vol_name(cls, agentid, vol_name):
+        # pylint: disable=invalid-name
+        try:
+            return meta.Session.query(AgentVolumesEntry).\
+                filter(AgentVolumesEntry.agentid == agentid).\
+                filter(AgentVolumesEntry.name == vol_name).\
+                one()
+        except NoResultFound:
+            return None
+
+    @classmethod
+    def get_vol_entry_by_volid(cls, volid):
+        # pylint: disable=invalid-name
+        try:
+            return meta.Session.query(AgentVolumesEntry).\
+                filter(AgentVolumesEntry.volid == volid).\
+                one()
+        except NoResultFound:
+            return None
+    get_by_id = get_vol_entry_by_volid
+
+    @classmethod
+    def get_vol_entry_with_agent_by_volid(cls, volid):
+        # pylint: disable=invalid-name
+        try:
+            return meta.Session.query(AgentVolumesEntry).\
+                filter(AgentVolumesEntry.volid == volid).\
+                join('agent').\
+                filter_by(agentid=AgentVolumesEntry.agentid).\
+                one()
+        except NoResultFound:
+            return None
+
+    @classmethod
+    def get_vol_archive_entries_by_agentid(cls, agentid):
+        # pylint: disable=invalid-name
+        return meta.Session.query(AgentVolumesEntry).\
+            filter(AgentVolumesEntry.archive == True).\
+            filter(AgentVolumesEntry.agentid == agentid).\
+            order_by(AgentVolumesEntry.name.desc()).\
+            all()
+
+    @classmethod
+    def get_archives_by_envid(cls, envid, enabled_agents_only=True):
+        query = meta.Session.query(AgentVolumesEntry).\
+            filter_by(archive=True).\
+            join('agent').\
+            filter_by(envid=envid)
+
+        if enabled_agents_only:
+            query = query.filter_by(enabled=True)
+
+        return query.order_by(asc('agent.display_order'), asc('name')).\
+            all()

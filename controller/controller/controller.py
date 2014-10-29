@@ -25,8 +25,7 @@ from akiri.framework.ext.sqlalchemy import meta
 # FIXME: these should logically go in __init__.py.
 # pylint: disable=unused-import
 from agentmanager import AgentManager
-from agent import Agent
-from agentinfo import AgentVolumesEntry, AgentYmlEntry
+from agent import Agent, AgentVolumesEntry
 from alert_email import AlertEmail
 from auth import AuthManager
 from config import Config
@@ -50,6 +49,7 @@ from state_control import StateControl
 from system import SystemManager
 from tableau import TableauStatusMonitor, TableauProcess
 from workbooks import WorkbookEntry, WorkbookUpdateEntry, WorkbookManager
+from yml import YmlEntry, YmlManager
 #pylint: enable=unused-import
 
 from sites import Site
@@ -374,10 +374,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if url:
             return url
 
-        envid = self.environment.envid
-
         key = 'svcmonitor.notification.smtp.canonical_url'
-        url = AgentYmlEntry.get(envid, key, default=None)
+        url = self.yml.get(key, default=None)
         if url:
             return url
 
@@ -390,10 +388,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if url:
             return url
 
-        envid = self.environment.envid
-
         key = 'datacollector.apache.url'
-        url = AgentYmlEntry.get(envid, key, default=None)
+        url = self.yml.get(key, default=None)
         if url:
             tokens = url.split('/', 3)
             if len(tokens) >= 3:
@@ -1009,26 +1005,22 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return pinfo
 
-    def yml(self, agent, set_agent_types=True):
+    def yml_sync(self, agent, set_agent_types=True):
         """Note: Can raise an IOError (if the filemanager.get() fails)."""
-        path = agent.path.join(agent.tableau_data_dir, "data", "tabsvc",
-                               "config", "workgroup.yml")
-        yml_contents = agent.filemanager.get(path)
-        envid = self.environment.envid
-        old_gateway_hosts = AgentYmlEntry.get(envid, 'gateway.hosts',
-                                              default=None)
-        body = AgentYmlEntry.sync(self.environment.envid, yml_contents)
-        new_gateway_hosts = AgentYmlEntry.get(envid, 'gateway.hosts')
+        old_gateway_hosts = self.yml.get('gateway.hosts', default=None)
+        body = self.yml.sync(agent)
+        new_gateway_hosts = self.yml.get('gateway.hosts', default=None)
 
         if set_agent_types:
             # See if any worker agents need to be reclassified as
             # archive agents or vice versa.
             self.agentmanager.set_all_agent_types()
 
-        if old_gateway_hosts != new_gateway_hosts:
-            # Stop the maintenance web server, to get out of the way
-            # of Tableau if the yml has changed from last check.
-            self.maint("stop")
+        if not old_gateway_hosts is None:
+            if old_gateway_hosts != new_gateway_hosts:
+                # Stop the maintenance web server, to get out of the way
+                # of Tableau if the yml has changed from last check.
+                self.maint("stop")
 
         return body
 
@@ -1165,10 +1157,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return body
 
     def set_maint_body(self, action):
-        envid = self.environment.envid
         send_body = {"action": action}
 
-        gateway_ports = AgentYmlEntry.get(envid, 'gateway.ports', default=None)
+        gateway_ports = self.yml.get('gateway.ports', default=None)
         if gateway_ports:
             ports = gateway_ports.split(';')
             try:
@@ -1178,7 +1169,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.error("Invalid yml entry for 'gatway.ports': %s",
                                 gateway_ports)
 
-        ssl_port = AgentYmlEntry.get(envid, 'ssl.port', default=None)
+        ssl_port = self.yml.get('ssl.port', default=None)
         if ssl_port:
             try:
                 ssl_port = int(ssl_port)
@@ -1193,7 +1184,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     'ssl.chain.file': 'ssl-cert-chain-file'}
 
         for key in file_map.keys():
-            value = AgentYmlEntry.get(envid, key, default=None)
+            value = self.yml.get(key, default=None)
             if not value:
                 continue
 
@@ -1458,7 +1449,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # Note: Don't call this before update_agent_pinfo_dirs()
         # (needed for agent.tableau_data_dir).
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-            self.yml(agent, set_agent_types=False) # raises an exception on fail
+            # raises an exception on fail
+            self.yml_sync(agent, set_agent_types=False)
             # These can all fail as long as they don't get an IOError.
             # For example, if tableau is stopped, these will fail,
             # but we don't know tableau's status yet and it's
@@ -1650,6 +1642,9 @@ def main():
 
     # Must be done after auth, since it uses the users table.
     server.alert_email = AlertEmail(server)
+
+    # Must be set before EventControlManager
+    server.yml = YmlManager(server)
 
     EventControl.populate()
     server.event_control = EventControlManager(server)

@@ -1,6 +1,5 @@
 from collections import OrderedDict
 
-from agentinfo import AgentYmlEntry
 from util import odbc2dt
 
 class ODBC(object):
@@ -21,24 +20,21 @@ class ODBC(object):
             raise RuntimeError("agent.server is None")
 
     def host(self):
-        envid = self.server.environment.envid
         # worker id points to the 'hot' database IP.
-        worker_id = AgentYmlEntry.get(envid, 'pgsql.worker_id', default=None)
+        worker_id = self.server.yml.get('pgsql.worker_id', default=None)
         if worker_id is None:
             return self.SERVER
         key = 'pgsql' + worker_id + '.host'
-        return AgentYmlEntry.get(envid, key, default=self.SERVER)
+        return self.server.yml.get(key, default=self.SERVER)
 
     def connection(self):
-        envid = self.server.environment.envid
-
         # worker id points to the 'hot' database IP.
-        worker_id = AgentYmlEntry.get(envid, 'pgsql.worker_id', default=None)
+        worker_id = self.server.yml.get('pgsql.worker_id', default=None)
         if not worker_id is None:
             key = 'pgsql' + worker_id + '.host'
-            host = AgentYmlEntry.get(envid, key, default=self.SERVER)
+            host = self.server.yml.get(key, default=self.SERVER)
             key = 'pgsql' + worker_id + '.port'
-            port = AgentYmlEntry.get(envid, key, default=self.PORT)
+            port = self.server.yml.get(key, default=self.PORT)
         else:
             host = self.SERVER
             port = str(self.PORT)

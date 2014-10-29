@@ -4,7 +4,7 @@ from controller.profile import Role
 from controller.util import sizestr, str2bool
 from controller.general import SystemConfig
 from controller.files import FileManager
-from controller.agentinfo import AgentVolumesEntry
+from controller.agent import AgentVolumesEntry
 from controller.cloud import CloudManager, CloudEntry
 from controller.passwd import set_aes_key_file
 

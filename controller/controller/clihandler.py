@@ -16,7 +16,6 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from agent import Agent
 from agentmanager import AgentManager
-from agentinfo import AgentYmlEntry
 from event_control import EventControl
 from files import FileManager
 from general import SystemConfig
@@ -1057,13 +1056,12 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
         try:
-            body = self.server.yml(agent)
+            body = self.server.yml_sync(agent)
         except IOError as ex:
             self.error(clierror.ERROR_COMMAND_FAILED,
                        "FAIL: Can't get yml: %s", str(ex))
             self.server.log.debug("FAIL: Can't get yml: %s", str(ex))
             return
-
         self.report_status(body)
 
     @usage('sched [status | delete job-name [job-name ...] | ' + \
@@ -1870,9 +1868,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             agent = self.get_agent(cmd.dict)
             if not agent:
                 return
-            windomain = AgentYmlEntry.get(self.server.environment.envid,
-                                          "wgserver.domain.fqdn",
-                                          default=None)
+            windomain = self.server.yml.get("wgserver.domain.fqdn",
+                                            default=None)
             if not windomain:
                 self.error(clierror.ERROR_WRONG_STATE,
                            "FAIL: No ActiveDirectory domain specified.")

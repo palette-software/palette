@@ -1,33 +1,49 @@
 from webob import exc
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
-
-from controller.agentinfo import AgentYmlEntry
 from controller.profile import Role
+from controller.util import utc2local, DATEFMT
+from controller.yml import YmlEntry, YML_LOCATION_SYSTEM_KEY
 
 from page import PalettePage
 from rest import PaletteRESTHandler
 
-class YMLApplication(PaletteRESTHandler):
+class YmlApplication(PaletteRESTHandler):
     NAME = 'yml'
 
     def handle(self, req):
         if req.method != 'GET':
             raise exc.HTTPBadRequest()
 
-        # FIXME: filter by agentid of the primary.
-        query = meta.Session.query(AgentYmlEntry).\
-            order_by(AgentYmlEntry.key.asc())
+        last_update = None
 
-        return {'items': [x.todict() for x in query.all()]}
+        items = []
+        entries = YmlEntry.get_all_by_envid(req.envid, order_by="key asc")
+        for entry in entries:
+            items.append(entry.todict())
 
-class YML(PalettePage):
+            # since the entries list must be traversed anyway,
+            # last_update can be calculated along the way.
+            if last_update is None:
+                last_update = entry.modification_time
+            elif last_update < entry.modification_time:
+                last_update = entry.modification_time
+
+        data = {'items': items}
+        if not last_update is None:
+            last_update = utc2local(last_update)
+            data['last-update'] = last_update.strftime(DATEFMT)
+
+        location = req.system.get(YML_LOCATION_SYSTEM_KEY, default=None)
+        if not location is None:
+            data['location'] = location
+
+        return data
+
+class YmlPage(PalettePage):
     TEMPLATE = 'yml.mako'
     active = 'yml'
     expanded = True
     required_role = Role.READONLY_ADMIN
 
 def make_yml(global_conf):
-    return YML(global_conf)
+    return YmlPage(global_conf)

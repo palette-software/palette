@@ -8,6 +8,17 @@ function (jquery, template, common)
         $().ready(function() {
             var rendered = template.render(t, data);
             $('#yml-list').html(rendered);
+
+            var location = data['location'];
+            if (location != null) {
+                $('#location').html(location);
+            }
+
+            var last_update = data['last-update'];
+            if (last_update != null) {
+                $('#last-update').html(last_update);
+                $('.refresh').show();
+            }
         });
     }
 
