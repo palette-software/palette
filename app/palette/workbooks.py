@@ -288,6 +288,8 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
             query = query.order_by(Project.name, WorkbookEntry.name)
         elif sort == WorkbookSort.REVISION_DATE:
             query = query.order_by(WorkbookEntry.created_at.desc())
+        elif sort == WorkbookSort.PUBLISHER:
+            query = query.order_by(UserProfile.friendly_name)
 
         limit = req.getint('limit', default=25)
         page = req.getint('page', default=1)
