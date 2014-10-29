@@ -672,11 +672,15 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # pylint: disable=too-many-branches
         # pylint: disable=too-many-statements
 
-        # If the backup file is not on the primary agent,
-        # from to a staging area on the primary from:
-        #   1) another agent
-        # or
-        #   2) cloud storage
+        data = agent.todict()
+        if no_config:
+            data['restore_type'] = 'Data only'
+        else:
+            data['restore_type'] = 'Data and Configuration'
+
+        # If the backup file is not on the primary agent (other agent
+        # or cloud storage), copy the file from the other agent or
+        # cloud storage to the staging area on the primary.
         try:
             got = GetFile(self, agent, backup_full_path)
         except IOError as ex:
@@ -684,7 +688,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("restore_cmd failure: %s" % str(ex))
 
         # The restore file is now on the Primary Agent.
-        data = agent.todict()
         self.event_control.gen(EventControl.RESTORE_STARTED,
                                data, userid=userid)
 
