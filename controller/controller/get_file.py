@@ -1,7 +1,6 @@
 import os
 
-from agent import Agent
-from agentinfo import AgentVolumesEntry
+from agent import Agent, AgentVolumesEntry
 from cloud import CloudManager
 from diskcheck import DiskCheck, DiskException
 from files import FileManager

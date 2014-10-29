@@ -8,12 +8,12 @@
 <section class="dynamic-content configuration">
   <h1 class="page-title">Users</h1>
   <div class="refresh">
-%if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
-    <i class="fa fa-fw fa-refresh inactive"></i>
-%endif
     <p>
       <span class="message"></span>
       Updated <span id="last-update"></span>
+%if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
+      <i class="fa fa-fw fa-refresh inactive"></i>
+%endif
     </p>
   </div>
   <div class="letters"></div>

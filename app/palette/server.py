@@ -7,13 +7,12 @@ from akiri.framework.ext.sqlalchemy import meta
 from page import PalettePage
 from rest import PaletteRESTHandler, required_parameters, required_role
 
-from controller.agent import Agent
+from controller.agent import Agent, AgentVolumesEntry
 from controller.agentmanager import AgentManager
-from controller.agentinfo import AgentVolumesEntry, AgentYmlEntry
+from controller.licensing import LicenseEntry
 from controller.profile import Role
 from controller.util import str2bool
-
-from controller.licensing import LicenseEntry
+from controller.yml import YmlEntry
 
 class ServerApplication(PaletteRESTHandler):
     NAME = 'servers'
@@ -62,13 +61,12 @@ class ServerApplication(PaletteRESTHandler):
                     d['tableau-license-capacity'] = capacity
 
             if server.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-                version = AgentYmlEntry.get(req.envid,
-                                            'version.external',
-                                            default=None)
+                version = YmlEntry.get(req.envid, 'version.external',
+                                       default=None)
                 if version:
                     d['tableau-version'] = version
-                bitness = AgentYmlEntry.get(req.envid,
-                                            'version.bitness',
+                bitness = YmlEntry.get(req.envid,
+                                       'version.bitness',
                                             default=None)
                 if bitness:
                     d['tableau-bitness'] = bitness

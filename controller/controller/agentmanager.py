@@ -9,8 +9,7 @@ import json
 import exc
 import httplib
 
-from agent import Agent
-from agentinfo import AgentYmlEntry, AgentVolumesEntry
+from agent import Agent, AgentVolumesEntry
 from diskcheck import DiskCheck, DiskException
 from state import StateManager
 from event_control import EventControl
@@ -397,8 +396,6 @@ class AgentManager(threading.Thread):
            We look for the "workerX.host" entry that has
            our ip address."""
 
-        envid = self.server.environment.envid
-
         try:
             hosts = self.get_yml_list('worker.hosts')
         except ValueError, ex:
@@ -424,7 +421,7 @@ class AgentManager(threading.Thread):
             # Get entry for "worker%d.host".  Its value is worker's IP address.
             worker_key = "worker%d.host" % worker_num
 
-            value = AgentYmlEntry.get(envid, worker_key, default=None)
+            value = self.server.yml.get(worker_key, default=None)
             if not value:
                 self.log.error("calc_worker_name: Missing yml key: %s",
                                worker_key)
@@ -752,8 +749,7 @@ class AgentManager(threading.Thread):
            from the yml file and return the list."""
 
         # get() raises ValueError if not found.
-        envid = self.server.environment.envid
-        value = AgentYmlEntry.get(envid, yml_key)
+        value = self.server.yml.get(yml_key)
 
         # For 'worker.hosts', the value is in the format:
         #       "DEV-PRIMARY, 10.0.0.102"

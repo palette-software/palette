@@ -82,7 +82,7 @@ function ($, topic, template, common, items, OnOff)
     }
 
     function bind_refresh() {
-        $('.refresh > i').bind('click', function() {
+        $('.refresh > p > i').bind('click', function() {
             if (active) {
                 refresh();
             }
@@ -110,17 +110,17 @@ function ($, topic, template, common, items, OnOff)
         $().ready(function() {
             var allowed = data['allowable-actions'];
             if ($.inArray('user-refresh', allowed) >= 0) {
-                $('.refresh > i').removeClass('inactive');
+                $('.refresh > p > i').removeClass('inactive');
                 $('.refresh > p > span.message').html('');
                 active = true;
                 bind_refresh();
             } else {
-                $('.refresh > i').addClass('inactive');
-                $('.refresh > i').off('click');
+                $('.refresh > p > i').addClass('inactive');
+                $('.refresh > p > i').off('click');
                 $('.refresh > p > span.message').html(refresh_unavailable_text);
                 active = false;
             }
-            $('.refresh p').show();
+            $('.refresh').show();
         });
     });
 

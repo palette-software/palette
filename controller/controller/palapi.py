@@ -5,8 +5,14 @@ import json
 import hashlib
 import ntpath
 import posixpath
+
+# pylint: disable=import-error,no-name-in-module
 from akiri.framework.config import store
+# pylint: enable=import-error,no-name-in-module
+
 import clierror
+
+
 
 class CommException(StandardError):
     pass

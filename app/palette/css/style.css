@@ -1324,20 +1324,15 @@ article.item article {
 
 /* Refresh bar(s) */
 div.refresh {
+    display: none;
     float: right;
-    height: 36px;
     margin: 0 0 3px 0;
 }
-.refresh p, .refresh > i {
-    float: right;
-    height: 36px;
-}
 .refresh p {
-    display: none;
+    margin: 0;
     font-size: 13px;
     font-weight: bold;
-    line-height: 36px;
-    padding: 0 3px 0 0;
+    text-align: right;
 }
 .refresh > i.inactive {
     cursor: auto;
@@ -1347,6 +1342,7 @@ div.refresh {
     cursor: pointer;
     font-size: 19px;
     line-height: 36px;
+    height: 36px;
     width: 36px;
     margin-right: 3px;
 }

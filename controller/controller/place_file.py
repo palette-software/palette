@@ -3,7 +3,7 @@ import time
 
 from cloud import CloudManager
 from files import FileManager
-from agentinfo import AgentVolumesEntry
+from agent import AgentVolumesEntry
 
 # This a transitory class - instantiated each time it is needed.
 class PlaceFile(object):
