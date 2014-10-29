@@ -697,10 +697,16 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         data = agent.todict()
 
+        if cmd.dict.has_key('no-config'):
+            no_config = True
+            data['restore_type'] = 'Data only'
+        else:
+            no_config = False
+            data['restore_type'] = 'Data and Configuration'
+
         # Do a quick check to make sure the file to restore from
-        # is available.  In particular, make sure the file is
-        # available and if the file is on an agent, make sure the agent
-        # is enabled.
+        # is available.  In particular, if the file is on an agent,
+        # make sure the agent is enabled.
         try:
             GetFile(self.server, agent, backup_name, check_only=True)
         except IOError as ex:
@@ -733,11 +739,6 @@ class CliHandler(socketserver.StreamRequestHandler):
         # Do a backup before we try to do a restore.
         #FIXME: refactor do_backup() into do_backup() and backup()
         self.server.log.debug("----------Starting Backup for Restore----------")
-        if cmd.dict.has_key('no-config'):
-            no_config = True
-        else:
-            no_config = False
-
         self.server.event_control.gen(
             EventControl.BACKUP_BEFORE_RESTORE_STARTED, data, userid=userid)
 
@@ -796,7 +797,6 @@ class CliHandler(socketserver.StreamRequestHandler):
         # The final RESTORE_FINISHED/RESTORE_FAILED alert is sent only here and
         # not in restore_cmd().  Intermediate alerts like RESTORE_STARTED
         # are sent in restore_cmd().
-        data = agent.todict()
         if success(body):
             # Delete/rotate old backups AFTER the restore succeeded.
             #

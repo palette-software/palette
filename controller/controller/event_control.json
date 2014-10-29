@@ -621,8 +621,8 @@
 "level":"E",
 "send_email":"t",
 "subject":"ERROR - Restore Requested by %(username)s Failed",
-"event_description":"Status: ERROR\nRequesting User: ${username}\nAdditional Details: ${error}",
-"email_message":"Status: ERROR\nTime:${timestamp}\nRequesting User: ${username}\nAdditional Details: ${error}\n\nThis message was sent from your Palette Server at ${server_url}",
+"event_description":"Status: ERROR\nRequesting User: ${username}\nRestore type: ${restore_type}\nAdditional Details: ${error}",
+"email_message":"Status: ERROR\nTime:${timestamp}\nRequesting User: ${username}\nRestore type: ${restore_type}\nAdditional Details: ${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
 "event_type":"restore"
@@ -632,8 +632,8 @@
 "level":"I",
 "send_email":"f",
 "subject":"INFO - Restore Requested by %(username)s Completed",
-"event_description":"Status: INFO\nRequesting User: ${username}\nDetails:\n${stdout}${stderr}",
-"email_message":"Status: INFO\nRequesting User: ${username}\nDetails:\n${stdout}${stderr}\n\nThis message was sent from your Palette Server at ${server_url}",
+"event_description":"Status: INFO\nRequesting User: ${username}\nRestore type ${restore_type}\nDetails:\n${stdout}${stderr}",
+"email_message":"Status: INFO\nRequesting User: ${username}\nRestore type: ${restore_type}\nDetails:\n${stdout}${stderr}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
 "event_type":"restore"
@@ -643,8 +643,8 @@
 "level":"I",
 "send_email":"f",
 "subject":"INFO - Restore Requested by %(username)s Initiated",
-"event_description":"Status: INFO\nServer: ${displayname}\nDetails: ${stdout}\nAdditional Details: ${info}",
-"email_message":"Status: INFO\nRequesting User: ${username}\n\nThis message was sent from your Palette Server at ${server_url}",
+"event_description":"Status: INFO\nServer: ${displayname}\nRestore type: ${restore_type}\nDetails: ${stdout}\nAdditional Details: ${info}",
+"email_message":"Status: INFO\nRequesting User: ${username}\nRestore type: ${restore_type}\\nnThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
 "event_type":"restore"
