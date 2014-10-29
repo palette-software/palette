@@ -400,7 +400,7 @@ class AgentManager(threading.Thread):
         envid = self.server.environment.envid
 
         try:
-            hosts = self.get_worker_hosts()
+            hosts = self.get_yml_list('worker.hosts')
         except ValueError, ex:
             self.log.error("calc_worker_name: %s", str(ex))
             return (AgentManager.WORKER_TEMPLATE % 0,
@@ -720,7 +720,7 @@ class AgentManager(threading.Thread):
         """
 
         try:
-            hosts = self.get_worker_hosts()
+            hosts = self.get_yml_list('worker.hosts')
         except ValueError:
             return False
 
@@ -747,15 +747,15 @@ class AgentManager(threading.Thread):
                     return True
         return False
 
-    def get_worker_hosts(self):
-        """Get the value 'worker.hosts' from the yml file and return
-           the list of hosts there."""
+    def get_yml_list(self, yml_key):
+        """Get the yml value such as 'worker.hosts' or 'gateway.hosts'
+           from the yml file and return the list."""
 
         # get() raises ValueError if not found.
         envid = self.server.environment.envid
-        value = AgentYmlEntry.get(envid, 'worker.hosts')
+        value = AgentYmlEntry.get(envid, yml_key)
 
-        # The value is in the format:
+        # For 'worker.hosts', the value is in the format:
         #       "DEV-PRIMARY, 10.0.0.102"
         # where the first host is the primary and the remaining are
         # Tableau workers.
@@ -904,6 +904,15 @@ class AgentManager(threading.Thread):
         """
         for key in self.all_agents():   # Returns ENABLED agents
             if self.agents[key].uuid == uuid:
+                return self.agents[key]
+        return None
+
+    def agent_by_id(self, agentid):
+        """Search for agents with the given agentid.
+            Return an instance of it, or None if none match.
+        """
+        for key in self.all_agents():   # Returns ENABLED agents
+            if self.agents[key].agentid == agentid:
                 return self.agents[key]
         return None
 
