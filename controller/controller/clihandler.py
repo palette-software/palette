@@ -1507,7 +1507,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         if success(body) and start_maint:
             # Start the maintenance server only after Tableau has stopped
             # and reqlinquished the web server port.
-            maint_body = self.server.maint("start", agent=agent)
+            maint_body = self.server.maint("start")
             if failed(maint_body):
                 msg = "maint start failed: " + str(maint_body)
                 if not 'info' in body:
@@ -1536,7 +1536,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # fixme: check & report status to see if it really stopped?
         self.report_status(body)
 
-    @usage('maint [start|stop]')
+    @usage('maint start|stop')
     def do_maint(self, cmd):
         """Start or Stop the maintenance webserver on the agent."""
 

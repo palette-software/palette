@@ -5,7 +5,7 @@ import time
 
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from sqlalchemy.orm.exc import NoResultFound
 
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
@@ -15,7 +15,6 @@ from state import StateManager
 from agentmanager import AgentManager
 from agent import Agent
 from event_control import EventControl
-from util import is_ip, hostname_only
 from state_transitions import TRANSITIONS
 
 class TableauProcess(meta.Base):
@@ -288,40 +287,6 @@ class TableauStatusMonitor(threading.Thread):
 
         self.check_status_with_connection(agent)
 
-    def get_agent_id_from_host(self, host):
-        """ Given a hostname, fully qualified domain name or IP address,
-            return an agentid.  If no agentid is found, return None.
-            Hostname is treated as case insensitive."""
-
-        session = meta.Session()
-        if is_ip(host):
-            try:
-                entry = session.query(Agent).\
-                    filter(Agent.envid == self.envid).\
-                    filter(Agent.ip_address == host).\
-                    one()
-                return entry.agentid
-            except NoResultFound:
-                return None
-            except MultipleResultsFound:
-                # FIXME: log error
-                pass
-            return None
-
-        hostname = hostname_only(host).upper()
-
-        try:
-            entry = session.query(Agent).\
-                filter(Agent.envid == self.envid).\
-                filter(func.upper(Agent.hostname) == hostname).\
-                one()
-            return entry.agentid
-        except NoResultFound:
-            return None
-        except MultipleResultsFound:
-            # FIXME: log error
-            return None
-
     def check_status_with_connection(self, agent):
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-branches
@@ -388,7 +353,7 @@ class TableauStatusMonitor(threading.Thread):
                 if line[-1:] == ':':
                     # A hostname or IP address is specified: new section
                     host = parts[0].strip().replace(':', '')
-                    agentid = self.get_agent_id_from_host(host)
+                    agentid = Agent.get_agentid_from_host(self.envid, host)
                 else:
                     # Example: "Connection error contacting worker 1"
                     self._add(agentid, line, -1, 'error')

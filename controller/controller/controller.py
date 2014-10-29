@@ -717,7 +717,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # web server may be running if Tableau is stopped.
         maint_msg = ""
         if orig_state == StateManager.STATE_STOPPED:
-            maint_body = self.maint("stop", agent=agent)
+            maint_body = self.maint("stop")
             if maint_body.has_key("error"):
                 self.log.info(
                         "Restore: maint stop failed: " + maint_body['error'])
@@ -1014,12 +1014,21 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         path = agent.path.join(agent.tableau_data_dir, "data", "tabsvc",
                                "config", "workgroup.yml")
         yml_contents = agent.filemanager.get(path)
+        envid = self.environment.envid
+        old_gateway_hosts = AgentYmlEntry.get(envid, 'gateway.hosts',
+                                              default=None)
         body = AgentYmlEntry.sync(self.environment.envid, yml_contents)
+        new_gateway_hosts = AgentYmlEntry.get(envid, 'gateway.hosts')
 
         if set_agent_types:
             # See if any worker agents need to be reclassified as
             # archive agents or vice versa.
             self.agentmanager.set_all_agent_types()
+
+        if old_gateway_hosts != new_gateway_hosts:
+            # Stop the maintenance web server, to get out of the way
+            # of Tableau if the yml has changed from last check.
+            self.maint("stop")
 
         return body
 
@@ -1063,42 +1072,95 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return sync_dict
 
     def maint(self, action, agent=None, send_alert=True):
+        """If agent is not specified, action is done for all gateway agents."""
         if action not in ("start", "stop"):
             self.log.error("Invalid maint action: %s", action)
             return self.error("Bad maint action: %s" % action)
 
+        envid = self.environment.envid
+
         manager = self.agentmanager
+        try:
+            gateway_hosts = manager.get_yml_list('gateway.hosts')
+        except ValueError:
+            self.log.error("maint: %s: No yml entry for 'gateway.hosts' yet.",
+                            action)
 
-        # FIXME: Tie agent to domain
-        if not agent:
-            agent = manager.agent_by_type(AgentManager.AGENT_TYPE_PRIMARY)
-            if not agent:
-                return self.error(
-                            "maint: no primary agent is known and enabled.")
-
-            elif not agent.connection:
-                return self.error("maint: no primary agent is connected.")
-
+        results = []
+        maint_success = True
         send_maint_body = self.set_maint_body(action)
 
+        # We were called with a specific agent so do the maint action only
+        # there
+        if agent:
+            body = self.send_maint(action, agent, send_maint_body, send_alert)
+            return {'maint': [body]}
+
+        for host in gateway_hosts:
+            # This means the primary is the gateway host
+            if host == 'localhost' or host == '127.0.0.1':
+                agent = manager.agent_by_type(AgentManager.AGENT_TYPE_PRIMARY)
+                if not agent:
+                    self.log.debug("maint: %s: primary is not [yet] " + \
+                                   "fully connected.  Skipping.", action)
+                    continue
+
+            else:
+                agentid = Agent.get_agentid_from_host(envid, host)
+                if not agentid:
+                    self.log.info("maint: %s: No such agent found " + \
+                                   "for host '%s' from gateway.hosts list: %s",
+                                    action, host, str(gateway_hosts))
+                    continue
+
+                agent = manager.agent_by_id(agentid)
+                if not agent:
+                    self.log.debug("maint: %s: Agent host '%s' with " + \
+                                   "agentid %d not connected. " + \
+                                   "gateway.hosts list: %s",
+                                    action, host, agentid, str(gateway_hosts))
+                    continue
+
+            # We have a gateway agent.  Do the maint action if possible.
+            if not agent.connection:
+                self.log.debug("maint: gateway agent not connected: %s. " + \
+                               "Skipping '%s'.", host, action)
+                continue
+
+            body = self.send_maint(action, agent, send_maint_body, send_alert)
+
+            results.append(body)
+            if 'error' in body:
+                maint_success = False
+
+        if not maint_success:
+            return {"maint": results, 'error': "Failed."}
+
+        return {"maint": results}
+
+    def send_maint(self, action, agent, send_maint_body, send_alert):
+        """Does the actual sending of the maint command to the agent,
+           generates the events, and returns the body/result."""
+
+        self.log.debug("maint: %s for '%s'", action, agent.displayname)
         body = self.send_immediate(agent, "POST", "/maint", send_maint_body)
 
         if body.has_key("error"):
             data = agent.todict()
             data['error'] = body['error']
             if action == "start":
-                self.event_control.gen(EventControl.MAINT_START_FAILED, data)
+                self.event_control.gen(EventControl.MAINT_START_FAILED,
+                                       data)
             else:
-                self.event_control.gen(EventControl.MAINT_STOP_FAILED, data)
-            return body
-
-        if not send_alert:
-            return body
-
-        if action == 'start':
-            self.event_control.gen(EventControl.MAINT_ONLINE, agent.todict())
-        else:
-            self.event_control.gen(EventControl.MAINT_OFFLINE, agent.todict())
+                self.event_control.gen(EventControl.MAINT_STOP_FAILED,
+                                       data)
+        if send_alert:
+            if action == 'start':
+                self.event_control.gen(EventControl.MAINT_ONLINE,
+                                       agent.todict())
+            else:
+                self.event_control.gen(EventControl.MAINT_OFFLINE,
+                                       agent.todict())
 
         return body
 
@@ -1443,8 +1505,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def config_servers(self, agent):
         """Configure the maintenance and archive servers."""
-        if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-            # Put into a known state
+        if agent.agent_type in (AgentManager.AGENT_TYPE_PRIMARY,
+                                AgentManager.AGENT_TYPE_WORKER):
+            # Put into a known state if it could possibley be a
+            # gateway server.
             body = self.maint("stop", agent=agent, send_alert=False)
             if body.has_key("error"):
                 data = agent.todict()
@@ -1460,10 +1524,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if body.has_key("error"):
             self.event_control.gen(EventControl.ARCHIVE_START_FAILED,
                                    dict(body.items() + agent.todict().items()))
-
-        # If tableau is stopped, turn on the maintenance server
-        if agent.agent_type != AgentManager.AGENT_TYPE_PRIMARY:
-            return
 
     def remove_agent(self, agent, reason="", gen_event=True):
         manager = self.agentmanager

@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, BigInteger, String, DateTime, Boolean
 from sqlalchemy import func
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import reconstructor
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
@@ -10,7 +10,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from agentinfo import AgentVolumesEntry
 from mixin import BaseDictMixin
-from util import sizestr
+from util import sizestr, is_ip, hostname_only
 
 import ntpath
 import posixpath
@@ -106,6 +106,41 @@ class Agent(meta.Base, BaseDictMixin):
         except NoResultFound:
             return None
         return entry
+
+    @classmethod
+    def get_agentid_from_host(cls, envid, host):
+        """ Given a hostname, fully qualified domain name or IP address,
+            return an agentid.  If no agentid is found, return None.
+            Hostname is treated as case insensitive."""
+
+        session = meta.Session()
+        if is_ip(host):
+            try:
+                entry = session.query(Agent).\
+                    filter(Agent.envid == envid).\
+                    filter(Agent.ip_address == host).\
+                    one()
+                return entry.agentid
+            except NoResultFound:
+                return None
+            except MultipleResultsFound:
+                # FIXME: log error
+                pass
+            return None
+
+        hostname = hostname_only(host).upper()
+
+        try:
+            entry = session.query(Agent).\
+                filter(Agent.envid == envid).\
+                filter(func.upper(Agent.hostname) == hostname).\
+                one()
+            return entry.agentid
+        except NoResultFound:
+            return None
+        except MultipleResultsFound:
+            # FIXME: log error
+            return None
 
     @classmethod
     def display_order_by_envid(cls, envid):
