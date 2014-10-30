@@ -88,10 +88,6 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
             return False
         return entry.hashed_password == tableau_hash(password, entry.salt)
 
-    @classmethod
-    def last_modification_time(cls, envid):
-        return cls.max('modification_time', filters={'envid': envid})
-
     defaults = [{'userid':0, 'envid':1, 'name':'palette',
                  'friendly_name':'Palette',
                  'email':None, 'salt':'', 'roleid':3, # SUPER_ADMIN

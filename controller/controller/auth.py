@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlalchemy import not_
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
@@ -5,12 +6,12 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from manager import Manager, synchronized
 from profile import UserProfile, Publisher, License
-from util import odbc2dt
+from util import odbc2dt, DATEFMT
+
+AUTH_TIMESTAMP_SYSTEM_KEY = 'auth-timestamp'
 
 # FIXME: use the ODBC class here instead.
 class AuthManager(Manager):
-
-    LAST_IMPORT_KEY = 'last-user-import'
 
     # build a cache of the Tableau 'users' table.
     def load_users(self, agent):
@@ -110,6 +111,9 @@ class AuthManager(Manager):
         session.query(UserProfile).\
             filter(not_(UserProfile.name.in_(names))).\
             update({'active': False}, synchronize_session='fetch')
+
+        timestamp = datetime.now().strftime(DATEFMT)
+        self.server.system.save(AUTH_TIMESTAMP_SYSTEM_KEY, timestamp)
 
         d = {u'status': 'OK', u'count': len(data[''])}
         self.server.log.debug("auth load returning: %s", str(d))
