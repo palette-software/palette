@@ -5,8 +5,9 @@ from sqlalchemy import func
 from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
+from controller.auth import AUTH_TIMESTAMP_SYSTEM_KEY
 from controller.profile import UserProfile, Role, Admin, License
-from controller.util import str2bool, DATEFMT, utc2local, LETTERS
+from controller.util import str2bool, LETTERS
 
 from page import PalettePage
 from rest import PaletteRESTHandler, required_parameters, required_role
@@ -69,13 +70,6 @@ class UserApplication(PaletteRESTHandler):
             return 'Unknown'
         return License.str(d['licensing-role-id'])
 
-    def last_user_import(self, req):
-        modtime = UserProfile.last_modification_time(req.envid)
-        if modtime is None:
-            return 'never'
-        modtime = utc2local(modtime)
-        return modtime.strftime(DATEFMT)
-
     def handle(self, req):
         path_info = self.base_path_info(req)
         if path_info == '':
@@ -126,9 +120,13 @@ class UserApplication(PaletteRESTHandler):
             users.append(d)
         data = {'users': users,
                 'admin-levels': self.admin_levels(),
-                'last-update': self.last_user_import(req),
                 'counts': counts
         }
+
+        last_update = req.system.get(AUTH_TIMESTAMP_SYSTEM_KEY, default=None)
+        if not last_update is None:
+            data['last-update'] = last_update
+
         return data
 
     # refresh request

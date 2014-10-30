@@ -62,7 +62,11 @@ function ($, topic, template, common, items, OnOff)
             items.bind();
             common.setupDropdowns();
             OnOff.setup();
-            $('#last-update').html(data['last-update']);
+            var last_update = data['last-update']
+            if (last_update != null) {
+                $('#last-update').html(last_update);
+                $('.refresh').show();
+            }
         });
     }
 
@@ -120,7 +124,6 @@ function ($, topic, template, common, items, OnOff)
                 $('.refresh > p > span.message').html(refresh_unavailable_text);
                 active = false;
             }
-            $('.refresh').show();
         });
     });
 
