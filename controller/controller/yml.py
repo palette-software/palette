@@ -98,6 +98,7 @@ class YmlManager(Manager):
     def get(self, key, **kwargs):
         return YmlEntry.get(self.envid, key, **kwargs)
 
+    # This method can throw IOError
     def sync(self, agent):
         path = agent.path.join(agent.tableau_data_dir, "data", "tabsvc",
                                "config", "workgroup.yml")
@@ -106,7 +107,6 @@ class YmlManager(Manager):
         else:
             location = agent.displayname + ' - ' + path
         timestamp = datetime.now().strftime(DATEFMT)
-        # FIXME: need a try/except block?
         contents = agent.filemanager.get(path)
         body = YmlEntry.sync(self.envid, contents)
         self.server.system.save(YML_LOCATION_SYSTEM_KEY, location)
