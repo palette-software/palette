@@ -6,6 +6,7 @@ import SocketServer as socketserver
 import socket
 import json
 import traceback
+import subprocess
 
 import sqlalchemy
 from sqlalchemy.orm.session import make_transient
@@ -37,6 +38,8 @@ def usage(msg):
         def realf(*args, **kwargs):
             return f(*args, **kwargs)
         realf.__name__ = f.__name__
+        if hasattr(f, '__doc__'):
+            realf.__doc__ = f.__doc__
         realf.__usage__ = msg
         return realf
     return wrapper
@@ -1550,6 +1553,52 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
 
         body = self.server.maint(action)
+        self.report_status(body)
+
+    @usage('exit')
+    def do_exit(self, cmd):
+        """Clean exit the controller."""
+        if len(cmd.args) > 0:
+            self.print_usage(self.do_exit.__usage__)
+            return
+        self.ack()
+        # pylint: disable=protected-access
+        os._exit(0)
+
+    @usage('apache [start|stop|restart|reload|force-reload')
+    def do_apache(self, cmd):
+        """Control the apache2 service. (must be run as root)"""
+        if len(cmd.args) != 1:
+            self.print_usage(self.do_apache.__usage__)
+            return
+        action = cmd.args[0].lower()
+        if action not in ['start', 'stop', 'restart', 'reload', 'force-reload']:
+            self.print_usage(self.do_apache.__usage__)
+            return
+        if os.geteuid() != 0:
+            self.error(clierror.ERROR_PERMISSION)
+            return
+        self.ack()
+
+        cmd = ['/usr/sbin/service', 'apache2', action]
+        process = subprocess.Popen(cmd,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+        body = {'command': ' '.join(cmd)}
+        if process.returncode == 0:
+            body['status'] = 'OK'
+            body['exit-status'] = 0
+        else:
+            body['status'] = 'FAILED'
+            body['error'] = "command failed"
+            body['exit-status'] = process.returncode
+
+        if stdout:
+            body['stdout'] = stdout
+        if stderr:
+            body['stderr'] = stderr
+
         self.report_status(body)
 
     @usage('archive [start|stop] [port]')
