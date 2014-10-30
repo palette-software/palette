@@ -101,7 +101,10 @@ class YmlManager(Manager):
     def sync(self, agent):
         path = agent.path.join(agent.tableau_data_dir, "data", "tabsvc",
                                "config", "workgroup.yml")
-        location = agent.displayname + ' - ' + path
+        if not agent.displayname:
+            location = agent.hostname + ' - ' + path
+        else:
+            location = agent.displayname + ' - ' + path
         timestamp = datetime.now().strftime(DATEFMT)
         # FIXME: need a try/except block?
         contents = agent.filemanager.get(path)
