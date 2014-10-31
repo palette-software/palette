@@ -1,5 +1,5 @@
-require(['jquery', 'template', 'common', 'domReady!'],
-function (jquery, template, common)
+require(['common'],
+function (common)
 {
     common.startMonitor();
 });
