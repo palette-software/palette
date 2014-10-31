@@ -1,6 +1,7 @@
 from webob import exc
 
 from controller.profile import Role
+from controller.palapi import CommException
 
 from page import PalettePage
 from rest import PaletteRESTHandler, required_parameters, required_role
@@ -59,21 +60,39 @@ class ManageApplication(PaletteRESTHandler):
         self.commapp.send_cmd(cmd, req=req, read_response=False)
         return {}
 
+    @required_role(Role.MANAGER_ADMIN)
+    def handle_restart_controller(self, req):
+        self.commapp.send_cmd('exit', req=req, read_response=False)
+        return {}
+
+    @required_role(Role.MANAGER_ADMIN)
+    def handle_restart_webserver(self, req):
+        self.commapp.send_cmd('apache restart', req=req, read_response=False)
+        return {}
+
     @required_parameters('action')
     def handle(self, req):
+        # pylint: disable=too-many-return-statements
         if req.method != "POST":
             raise exc.HTTPMethodNotAllowed()
         action = req.POST['action'].lower()
-        if action == 'start':
-            return self.handle_start(req)
-        elif action == 'stop':
-            return self.handle_stop(req)
-        elif action == 'restart':
-            return self.handle_restart(req)
-        elif action == 'repair-license':
-            return self.handle_repair_license(req)
-        elif action == 'ziplogs':
-            return self.handle_ziplogs(req)
+        try:
+            if action == 'start':
+                return self.handle_start(req)
+            elif action == 'stop':
+                return self.handle_stop(req)
+            elif action == 'restart':
+                return self.handle_restart(req)
+            elif action == 'repair-license':
+                return self.handle_repair_license(req)
+            elif action == 'ziplogs':
+                return self.handle_ziplogs(req)
+            elif action == 'restart-webserver':
+                return self.handle_restart_webserver(req)
+            elif action == 'restart-controller':
+                return self.handle_restart_controller(req)
+        except CommException:
+            raise exc.HTTPMethodNotAllowed()
         raise exc.HTTPBadRequest()
 
 

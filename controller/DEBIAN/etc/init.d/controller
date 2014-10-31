@@ -22,9 +22,12 @@ CONFIG=/etc/${NAME}.ini
 PIDFILE=/var/run/${NAME}.pid
 DAEMON=/usr/bin/daemon
 
+ACCEPTABLE=10 # minimum non-error runtime (see daemon man page)
+DELAY=10 # respawn delay
+
 start() {
     log_daemon_msg "Starting Palette controller" "controller"
-    $DAEMON --name=$NAME --respawn --pidfile $PIDFILE $EXEC $CONFIG
+    $DAEMON --name=$NAME --acceptable=$ACCEPTABLE --delay=$DELAY --respawn --pidfile $PIDFILE $EXEC $CONFIG
     RETVAL=$?
     log_end_msg $RETVAL
     return $RETVAL

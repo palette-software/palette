@@ -28,9 +28,24 @@
     <p>hello@palette-software.com</p>
     <p>www.palette-software.com</p>
   </div>
+
+%if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:
+  <div>
+     <button type="button" id="restart-webserver"
+             class="btn btn-primary okcancel"
+             data-text="Are you sure you want to restart the webserver?">
+       Restart Webserver
+     </button>
+     <button type="button" id="restart-controller"
+             class="btn btn-primary okcancel"
+             data-text="Are you sure you want to restart the controller?">
+       Restart Controller
+     </button>
+  </div>
+%endif
 </section>
 
-<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/contact.js">
+<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/about.js">
 </script>
 </html>
 

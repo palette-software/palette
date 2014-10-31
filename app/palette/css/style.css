@@ -905,9 +905,12 @@ input[type="submit"].login:active {
     top: 0 !important;
     color: #aaa !important;
     background: #ddd !important;
-    border-color: #ccc !important;
     text-shadow: 1px 1px 0 #fff;
     cursor: not-allowed;
+}
+.disabled:focus {
+    border: none;
+    outline: 0;
 }
 .full-size-box {
     position: absolute;
@@ -1390,6 +1393,10 @@ div.refresh {
 }
 .about-page p {
     margin: 0px;
+}
+.about-page button {
+    margin-top: 50px;
+    width: 200px;
 }
 .profile-page h2 {
     margin-top: 50px;
