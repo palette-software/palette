@@ -366,7 +366,7 @@
 "subject":"Palette Controller Started",
 "event_description":"Palette controller started\nVersion: ${version_current}\n",
 "email_subject":null,
-"email_message":"Status - INFO\nPalette controller started\nVersion: ${version_current}}\n\nThis message was sent from your Palette Server at ${server_url}",
+"email_message":"Status - INFO\nPalette controller started\nVersion: ${version_current}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
 "event_type":"server"
@@ -654,7 +654,7 @@
 "subject":"Palette Software Updated",
 "event_description":"Palette software has been updated.\nVersion: ${version_current}\n",
 "email_subject":null,
-"email_message":"Status - INFO\nTime: ${timestamp}\n\nVersion: ${version_current}}\n\nThis message was sent from your Palette Server at ${server_url}",
+"email_message":"Status - INFO\nTime: ${timestamp}\n\nVersion: ${version_current}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
 "event_type":"server"
