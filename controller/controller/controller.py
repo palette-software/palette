@@ -687,7 +687,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.event_control.gen(EventControl.RESTORE_STARTED,
                                data, userid=userid)
 
-        reported_status = self.statusmon.get_reported_status()
+        reported_status = self.statusmon.get_tableau_status()
 
         if reported_status == TableauProcess.STATUS_RUNNING:
             # Restore can run only when tableau is stopped.

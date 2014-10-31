@@ -20,6 +20,8 @@ ERROR_COMMAND_FAILED = 50
 
 ERROR_DOMAIN_INVALID = 60
 
+ERROR_PERMISSION = 70
+
 ERROR_INTERNAL = 99
 
 ERROR_STRINGS = {
@@ -29,5 +31,6 @@ ERROR_STRINGS = {
     ERROR_BUSY: "Busy with another user request",
     ERROR_AGENT_NOT_SPECIFIED: "No agent specified",
     ERROR_WRONG_STATE: "wrong state for command",
-    ERROR_INTERNAL: "Internal error"
+    ERROR_INTERNAL: "Internal error",
+    ERROR_PERMISSION: "Permission denied"
 }

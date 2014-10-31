@@ -2,10 +2,13 @@ import logger
 import string
 import threading
 import time
+import os
 
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
+
+from util import traceback_string
 
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
@@ -119,7 +122,7 @@ class TableauStatusMonitor(threading.Thread):
                                pid=pid, status=status)
         session.add(entry)
 
-    def get_reported_status(self):
+    def get_tableau_status(self):
         try:
             return meta.Session().query(TableauProcess).\
                 join(Agent).\
@@ -130,26 +133,28 @@ class TableauStatusMonitor(threading.Thread):
         except NoResultFound:
             return TableauProcess.STATUS_UNKNOWN
 
-    def _set_main_state(self, tableau_status, agent, body):
-        old_state = self.stateman.get_state()
+    def _set_main_state(self, prev_tableau_status, tableau_status, agent, body):
+        prev_state = self.stateman.get_state()
 
         if tableau_status not in (TableauProcess.STATUS_RUNNING,
                                   TableauProcess.STATUS_STOPPED,
                                   TableauProcess.STATUS_DEGRADED):
             self.log.error("Unknown reported tableau_status from " + \
-                "tableau: %s.  old_state: %s", tableau_status, old_state)
+                "tableau: %s.  prev_state: %s", tableau_status, prev_state)
             return  # fixme: do something more drastic than return?
 
-        if old_state not in TRANSITIONS:
-            self.log.error("Old state unexpected: %s", old_state)
+        if prev_state not in TRANSITIONS:
+            self.log.error("prev state unexpected: %s", prev_state)
             return  # fixme: do something more drastic than return?
 
-        # Get our new state and events to send based on the old
+        # Get our new state and events to send based on the previous
         # state and new tableau status.
-        new_state_info = TRANSITIONS[old_state][tableau_status]
+        new_state_info = TRANSITIONS[prev_state][tableau_status]
 
-        self.log.debug("old state: %s, new state info: %s", old_state,
-                       str(new_state_info))
+        self.log.debug("prev_state: %s, new state info: %s, " + \
+                       "prev_tableau_status %s, tableau_status: %s",
+                       prev_state, str(new_state_info),
+                       prev_tableau_status, tableau_status)
 
         if 'state' in new_state_info:
             self.stateman.update(new_state_info['state'])
@@ -162,6 +167,26 @@ class TableauStatusMonitor(threading.Thread):
             events = [events]
 
         self._send_events(events, agent, body)
+
+        # Make sure the maint server(s) are stopped if tableau
+        # is not stopped.  It is fine to stop the maintenance server
+        # even if it is already stopped.
+
+        if prev_state == StateManager.STATE_STARTED:
+            # If the previous state was STARTED, then we intentionally
+            # started Tableau and already stopped the maintenance server.
+            # We're looking more for the case of the user typing
+            # 'tabadmin start' behind our backs - we want to make sure
+            # the maintenance server is stopped in this case.
+            return
+
+        if prev_tableau_status != TableauProcess.STATUS_UNKNOWN and \
+                            prev_tableau_status != tableau_status and \
+                            tableau_status != TableauProcess.STATUS_STOPPED:
+            self.log.debug("_set_main_state: prev_tableau_status %s, " + \
+                           "tableau_status %s.  Stopping maint server.",
+                           prev_tableau_status, tableau_status)
+            self.server.maint("stop")
 
     def _send_events(self, events, agent, body):
         """Send the events according to the old and new states.
@@ -223,6 +248,21 @@ class TableauStatusMonitor(threading.Thread):
             self.sent_degraded_event = False
 
     def run(self):
+        try:
+            self.tableau_status_loop()
+        except (SystemExit, KeyboardInterrupt, GeneratorExit):
+            raise
+        except BaseException:
+            line = traceback_string(all_on_one_line=False)
+            self.server.event_control.gen(EventControl.SYSTEM_EXCEPTION,
+                                      {'error': line,
+                                       'version': self.server.version})
+            self.log.error("Fatal: Exiting tableau_status_loop " + \
+                           "on exception.")
+            # pylint: disable=protected-access
+            os._exit(93)
+
+    def tableau_status_loop(self):
         while True:
             self.log.debug("status-check: About to timeout or " + \
                            "wait for a new primary to connect")
@@ -272,7 +312,6 @@ class TableauStatusMonitor(threading.Thread):
             session.commit()
             return
 
-
         # Don't do a 'tabadmin status -v' if the user is doing an action.
         acquired = aconn.user_action_lock(blocking=False)
         if not acquired:
@@ -306,11 +345,13 @@ class TableauStatusMonitor(threading.Thread):
 
         session = meta.Session()
 
+        prev_tableau_status = self.get_tableau_status()
+
         self.remove_all_status()
         # Do not commit until after the table is added to.
         # Otherwise, the table could be empty temporarily.
 
-        system_status = None
+        tableau_status = None
         for line in lines:
             parts = line.strip().split(' ')
 
@@ -343,8 +384,8 @@ class TableauStatusMonitor(threading.Thread):
                 server_status = parts[1].strip()
                 if agentid:
                     self._add(agentid, "Status", 0, server_status)
-                    if system_status == None or server_status == 'DEGRADED':
-                        system_status = server_status
+                    if tableau_status == None or server_status == 'DEGRADED':
+                        tableau_status = server_status
                 else:
                     # FIXME: log error
                     pass
@@ -373,8 +414,8 @@ class TableauStatusMonitor(threading.Thread):
             session.rollback()
             return
 
-        self._set_main_state(system_status, agent, body)
-        self.log.debug("Logging main status: %s", system_status)
+        self._set_main_state(prev_tableau_status, tableau_status, agent, body)
+        self.log.debug("Logging main status: %s", tableau_status)
 
         session.commit()
 
