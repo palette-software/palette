@@ -61,7 +61,7 @@ from get_file import GetFile
 from cloud import CloudManager
 
 from clihandler import CliHandler
-from util import version, success, sizestr, safecmd
+from util import version, success, failed, sizestr, safecmd
 from rwlock import RWLock
 
 # pylint: disable=no-self-use
@@ -313,12 +313,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                        file_full_path, target_agent.displayname)
 
         body = self.delete_vol_file(target_agent, file_full_path)
-        if not body.has_key('error'):
-            try:
-                self.files.remove(entry.fileid)
-            except sqlalchemy.orm.exc.NoResultFound:
-                return {'error': ("fileid %d not found: name=%s agent=%s" % \
-                        (entry.fileid, file_full_path,
+
+        # We remove the entry from the files table regardless of
+        # whether or not the file was successfully removed:
+        # If it failed to remove, it was probably because it was already
+        # gone.
+        try:
+            self.files.remove(entry.fileid)
+        except sqlalchemy.orm.exc.NoResultFound:
+            return {'error': ("fileid %d not found: name=%s agent=%s" % \
+                    (entry.fileid, file_full_path,
                         target_agent.displayname))}
         return body
 
@@ -791,13 +795,29 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
            Note: Does not remove the entry from the files table.
            If that is needed, that must be done by the caller."""
         self.log.debug("Removing file '%s'", source_fullpathname)
-        cmd = 'CMD /C DEL \\\"%s\\\"' % source_fullpathname
-        remove_body = self.cli_cmd(cmd, agent)
-        if remove_body.has_key('error'):
-            self.log.info('DEL of "%s" failed.', source_fullpathname)
-            # fixme: report somewhere the DEL failed.
-        return remove_body
 
+        # Verify file exists.
+        try:
+            exists_body = agent.filemanager.filesize(source_fullpathname)
+        except IOError as ex:
+            self.log.info("filemanager.filesize('%s') failed: %s",
+                            source_fullpathname, str(ex))
+            return {'error': str(ex)}
+
+        if failed(exists_body):
+            self.log.info("filemanager.filesize('%s') error: %s",
+                            source_fullpathname, str(exists_body))
+            return exists_body
+
+        # Remove file.
+        try:
+            remove_body = agent.filemanager.delete(source_fullpathname)
+        except IOError as ex:
+            self.log.info("filemanager.delete('%s') failed: %s",
+                            source_fullpathname, str(ex))
+            return {'error': str(ex)}
+
+        return remove_body
 
     # FIXME: move to CloudManager
     def delete_cloud_file(self, file_entry):

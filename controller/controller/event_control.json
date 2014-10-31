@@ -944,7 +944,7 @@
 "subject":"ERROR - Palette Server Issue",
 "event_description":"Status: ERROR\n\nYour Palette Server experienced an error. See message below.\n\nDetails:\n${error}",
 "email_subject":null,
-"email_message":"Status: ERROR\nTime: ${{timestamp}\n\nYour Palette Server experienced an error. See message below.\n\nDetails:\n${error}\n\nThis message was sent from your Palette Server at ${server_url}",
+"email_message":"Status: ERROR\nTime: ${timestamp}\n\nYour Palette Server experienced an error. See message below.\n\nDetails:\n${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"yellow",
 "event_type":"server"
