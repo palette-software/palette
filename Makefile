@@ -8,6 +8,10 @@ controller:
 	make -C controller all
 .PHONY: controller
 
+debian:
+	make -C controller debian
+	make -C app debian
+
 pylint:
 	make -C controller pylint
 	make -C app pylint
