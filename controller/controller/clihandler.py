@@ -6,6 +6,7 @@ import SocketServer as socketserver
 import socket
 import json
 import traceback
+import subprocess
 
 import sqlalchemy
 from sqlalchemy.orm.session import make_transient
@@ -37,6 +38,8 @@ def usage(msg):
         def realf(*args, **kwargs):
             return f(*args, **kwargs)
         realf.__name__ = f.__name__
+        if hasattr(f, '__doc__'):
+            realf.__doc__ = f.__doc__
         realf.__usage__ = msg
         return realf
     return wrapper
@@ -435,7 +438,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return
 
-        reported_status = self.server.statusmon.get_reported_status()
+        reported_status = self.server.statusmon.get_tableau_status()
         # The reported status from Tableau needs to be running or stopped
         # to do a backup.
         if reported_status in (TableauProcess.STATUS_RUNNING,
@@ -719,7 +722,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return
 
-        reported_status = self.server.statusmon.get_reported_status()
+        reported_status = self.server.statusmon.get_tableau_status()
         # The reported status from Tableau needs to be running or stopped
         # to do a backup.  If it is, set our state to
         # STATE_*_BACKUP_RESTORE.
@@ -1216,7 +1219,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return
 
-        reported_status = self.server.statusmon.get_reported_status()
+        reported_status = self.server.statusmon.get_tableau_status()
         if reported_status != TableauProcess.STATUS_STOPPED:
             self.error(clierror.ERROR_WRONG_STATE,
                        "Can't start - reported status is: " + reported_status)
@@ -1306,7 +1309,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return False
 
-        reported_status = self.server.statusmon.get_reported_status()
+        reported_status = self.server.statusmon.get_tableau_status()
         if reported_status not in good_reported_status:
             msg = "Can't stop/restart - reported status is: " + reported_status
             self.error(clierror.ERROR_WRONG_STATE, "FAIL: " + msg)
@@ -1526,7 +1529,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # If the 'stop' had failed, set the status to what we just
         # got back from 'tabadmin status ...'
         if failed(body):
-            reported_status = self.server.statusmon.get_reported_status()
+            reported_status = self.server.statusmon.get_tableau_status()
             stateman.update(reported_status)
 
         aconn.user_action_unlock()
@@ -1550,6 +1553,52 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
 
         body = self.server.maint(action)
+        self.report_status(body)
+
+    @usage('exit')
+    def do_exit(self, cmd):
+        """Clean exit the controller."""
+        if len(cmd.args) > 0:
+            self.print_usage(self.do_exit.__usage__)
+            return
+        self.ack()
+        # pylint: disable=protected-access
+        os._exit(0)
+
+    @usage('apache [start|stop|restart|reload|force-reload')
+    def do_apache(self, cmd):
+        """Control the apache2 service. (must be run as root)"""
+        if len(cmd.args) != 1:
+            self.print_usage(self.do_apache.__usage__)
+            return
+        action = cmd.args[0].lower()
+        if action not in ['start', 'stop', 'restart', 'reload', 'force-reload']:
+            self.print_usage(self.do_apache.__usage__)
+            return
+        if os.geteuid() != 0:
+            self.error(clierror.ERROR_PERMISSION)
+            return
+        self.ack()
+
+        cmd = ['/usr/sbin/service', 'apache2', action]
+        process = subprocess.Popen(cmd,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+        body = {'command': ' '.join(cmd)}
+        if process.returncode == 0:
+            body['status'] = 'OK'
+            body['exit-status'] = 0
+        else:
+            body['status'] = 'FAILED'
+            body['error'] = "command failed"
+            body['exit-status'] = process.returncode
+
+        if stdout:
+            body['stdout'] = stdout
+        if stderr:
+            body['stderr'] = stderr
+
         self.report_status(body)
 
     @usage('archive [start|stop] [port]')
