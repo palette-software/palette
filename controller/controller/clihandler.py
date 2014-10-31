@@ -770,9 +770,16 @@ class CliHandler(socketserver.StreamRequestHandler):
                        EventControl.BACKUP_BEFORE_RESTORE_FINISHED_COPY_FAILED
             else:
                 real_event = EventControl.BACKUP_BEFORE_RESTORE_FINISHED
+
             self.server.event_control.gen(real_event,
                 dict(body.items() + data.items()),
                 userid=userid)
+
+            if 'copy-failed' in body:
+                self.report_status(body)
+                stateman.update(main_state)
+                aconn.user_action_unlock()
+                return
         else:
             self.server.event_control.gen(
                 EventControl.BACKUP_BEFORE_RESTORE_FAILED,

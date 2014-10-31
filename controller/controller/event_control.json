@@ -109,14 +109,14 @@
 },
 {
 "key":"BACKUP-BEFORE-RESTORE-FINISHED-COPY-FAILED",
-"level":"W",
+"level":"E",
 "send_email":"t",
-"subject":"WARNING - Safety Backup Before Restore Completed, But Copy Failed",
-"event_description":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"subject":"ERROR - Safety Backup Before Restore Completed, But Copy Failed",
+"event_description":"Status: ERROR\nRestore Aborted\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
 "email_subject":null,
-"email_message":"Status: INFO\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
+"email_message":"Status: ERROR\nRestore Aborted\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}",
 "icon":null,
-"color":"yellow",
+"color":"red",
 "event_type":"backup"
 },
 {
