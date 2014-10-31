@@ -12,7 +12,6 @@ else:
     print >> sys.stderr, 'usage: event_control_gen.py [url]'
     sys.exit(1)
 
-url = 'postgresql://palette:palpass@localhost/paldb'
 meta.engine = sqlalchemy.create_engine(url, echo=False)
 meta.Base.metadata.create_all(bind=meta.engine)
 meta.Session = scoped_session(sessionmaker(bind=meta.engine))
@@ -36,6 +35,7 @@ for entry in EventControl.get_all_by_keys({}, order_by='eventid'):
     d['send_email'] = entry.send_email and 't' or 'f'
     d['subject'] = entry.subject
     d['event_description'] = entry.event_description
+    d['email_subject'] = entry.email_subject
     d['email_message'] = entry.email_message
     d['icon'] = entry.icon
     d['color'] = entry.color
