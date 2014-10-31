@@ -24,12 +24,12 @@ class GeneralApplication(PaletteRESTHandler):
     HTTP_LOAD_ERROR_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45]
 
     def build_item_for_volume(self, volume):
-        fmt = "%s %s %s (%s Unused)"
+        fmt = "%s %s %s free of %s"
         name = volume.name
         if volume.agent.iswin and len(name) == 1:
             name = name + ':'
         return fmt % (volume.agent.displayname, name,
-                      sizestr(volume.size), sizestr(volume.available_space))
+                      sizestr(volume.available_space), sizestr(volume.size))
 
     def build_item_for_web_request(self, x):
         if x == 0:
