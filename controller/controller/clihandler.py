@@ -438,7 +438,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return
 
-        reported_status = self.server.statusmon.get_reported_status()
+        reported_status = self.server.statusmon.get_tableau_status()
         # The reported status from Tableau needs to be running or stopped
         # to do a backup.
         if reported_status in (TableauProcess.STATUS_RUNNING,
@@ -722,7 +722,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return
 
-        reported_status = self.server.statusmon.get_reported_status()
+        reported_status = self.server.statusmon.get_tableau_status()
         # The reported status from Tableau needs to be running or stopped
         # to do a backup.  If it is, set our state to
         # STATE_*_BACKUP_RESTORE.
@@ -1219,7 +1219,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return
 
-        reported_status = self.server.statusmon.get_reported_status()
+        reported_status = self.server.statusmon.get_tableau_status()
         if reported_status != TableauProcess.STATUS_STOPPED:
             self.error(clierror.ERROR_WRONG_STATE,
                        "Can't start - reported status is: " + reported_status)
@@ -1309,7 +1309,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return False
 
-        reported_status = self.server.statusmon.get_reported_status()
+        reported_status = self.server.statusmon.get_tableau_status()
         if reported_status not in good_reported_status:
             msg = "Can't stop/restart - reported status is: " + reported_status
             self.error(clierror.ERROR_WRONG_STATE, "FAIL: " + msg)
@@ -1529,7 +1529,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # If the 'stop' had failed, set the status to what we just
         # got back from 'tabadmin status ...'
         if failed(body):
-            reported_status = self.server.statusmon.get_reported_status()
+            reported_status = self.server.statusmon.get_tableau_status()
             stateman.update(reported_status)
 
         aconn.user_action_unlock()
