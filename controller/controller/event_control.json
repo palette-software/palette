@@ -1,6 +1,7 @@
 {
 "RECORDS":[
 {
+"eventid":1,
 "key":"AGENT-COMM-LOST",
 "level":"E",
 "send_email":"t",
@@ -13,6 +14,7 @@
 "event_type":"communucation"
 },
 {
+"eventid":2,
 "key":"AGENT-COMMUNICATION",
 "level":"I",
 "send_email":"t",
@@ -25,6 +27,7 @@
 "event_type":"communucation"
 },
 {
+"eventid":3,
 "key":"AGENT-DISCONNECT",
 "level":"E",
 "send_email":"t",
@@ -37,6 +40,7 @@
 "event_type":"communucation"
 },
 {
+"eventid":4,
 "key":"AGENT-FAILED-STATUS",
 "level":"E",
 "send_email":"t",
@@ -49,6 +53,7 @@
 "event_type":"agent"
 },
 {
+"eventid":5,
 "key":"AGENT-RETURNED-INVALID-STATUS",
 "level":"E",
 "send_email":"t",
@@ -61,6 +66,7 @@
 "event_type":"agent"
 },
 {
+"eventid":6,
 "key":"ARCHIVE-START-FAILED",
 "level":"E",
 "send_email":"f",
@@ -73,6 +79,7 @@
 "event_type":"agent"
 },
 {
+"eventid":7,
 "key":"ARCHIVE-STOP-FAILED",
 "level":"E",
 "send_email":"f",
@@ -85,6 +92,7 @@
 "event_type":"storage"
 },
 {
+"eventid":8,
 "key":"BACKUP-BEFORE-RESTORE-FAILED",
 "level":"E",
 "send_email":"t",
@@ -97,17 +105,20 @@
 "event_type":"backup"
 },
 {
+"eventid":9,
 "key":"BACKUP-BEFORE-RESTORE-FINISHED",
 "level":"I",
 "send_email":"f",
 "subject":"INFO - Safety Backup Before Restore Completed",
 "event_description":"Status: INFO\n\nDetails: \n${stdout}\n${info}",
+"email_subject":null,
 "email_message":"Status: INFO\nTime: ${timestamp}\nDetails: \n${stdout}\n${info}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
 "event_type":"backup"
 },
 {
+"eventid":10,
 "key":"BACKUP-BEFORE-RESTORE-FINISHED-COPY-FAILED",
 "level":"W",
 "send_email":"t",
@@ -120,6 +131,7 @@
 "event_type":"backup"
 },
 {
+"eventid":11,
 "key":"BACKUP-BEFORE-RESTORE-STARTED",
 "level":"I",
 "send_email":"f",
@@ -132,6 +144,7 @@
 "event_type":"backup"
 },
 {
+"eventid":12,
 "key":"BACKUP-BEFORE-STOP-FAILED",
 "level":"E",
 "send_email":"t",
@@ -144,6 +157,7 @@
 "event_type":"backup"
 },
 {
+"eventid":13,
 "key":"BACKUP-BEFORE-STOP-FINISHED",
 "level":"I",
 "send_email":"f",
@@ -156,6 +170,7 @@
 "event_type":"backup"
 },
 {
+"eventid":14,
 "key":"BACKUP-BEFORE-STOP-FINISHED-COPY-FAILED",
 "level":"W",
 "send_email":"t",
@@ -168,6 +183,7 @@
 "event_type":"backup"
 },
 {
+"eventid":15,
 "key":"BACKUP-BEFORE-STOP-STARTED",
 "level":"I",
 "send_email":"f",
@@ -180,6 +196,7 @@
 "event_type":"backup"
 },
 {
+"eventid":16,
 "key":"BACKUP-BEFORE-RESTART-FAILED",
 "level":"E",
 "send_email":"t",
@@ -192,6 +209,7 @@
 "event_type":"backup"
 },
 {
+"eventid":17,
 "key":"BACKUP-BEFORE-RESTART-FINISHED",
 "level":"I",
 "send_email":"f",
@@ -204,6 +222,7 @@
 "event_type":"backup"
 },
 {
+"eventid":18,
 "key":"BACKUP-BEFORE-RESTART-FINISHED-COPY-FAILED",
 "level":"W",
 "send_email":"t",
@@ -216,6 +235,7 @@
 "event_type":"backup"
 },
 {
+"eventid":19,
 "key":"BACKUP-BEFORE-RESTART-STARTED",
 "level":"I",
 "send_email":"f",
@@ -228,6 +248,7 @@
 "event_type":"backup"
 },
 {
+"eventid":20,
 "key":"BACKUP-FAILED",
 "level":"E",
 "send_email":"t",
@@ -240,6 +261,7 @@
 "event_type":"backup"
 },
 {
+"eventid":21,
 "key":"BACKUP-FAILED-SCHEDULED",
 "level":"E",
 "send_email":"t",
@@ -252,6 +274,7 @@
 "event_type":"backup"
 },
 {
+"eventid":22,
 "key":"BACKUP-FINISHED",
 "level":"I",
 "send_email":"f",
@@ -264,6 +287,7 @@
 "event_type":"backup"
 },
 {
+"eventid":23,
 "key":"BACKUP-FINISHED-COPY-FAILED",
 "level":"W",
 "send_email":"t",
@@ -276,6 +300,7 @@
 "event_type":"backup"
 },
 {
+"eventid":24,
 "key":"BACKUP-FINISHED-SCHEDULED",
 "level":"I",
 "send_email":"f",
@@ -288,6 +313,7 @@
 "event_type":"backup"
 },
 {
+"eventid":25,
 "key":"BACKUP-FINISHED-SCHEDULED-COPY-FAILED",
 "level":"E",
 "send_email":"f",
@@ -300,6 +326,7 @@
 "event_type":"backup"
 },
 {
+"eventid":26,
 "key":"BACKUP-STARTED",
 "level":"I",
 "send_email":"f",
@@ -312,6 +339,7 @@
 "event_type":"backup"
 },
 {
+"eventid":27,
 "key":"BACKUP-STARTED-SCHEDULED",
 "level":"I",
 "send_email":"f",
@@ -324,6 +352,7 @@
 "event_type":"backup"
 },
 {
+"eventid":28,
 "key":"CLEANUP-FAILED",
 "level":"W",
 "send_email":"f",
@@ -336,6 +365,7 @@
 "event_type":"cleanup"
 },
 {
+"eventid":29,
 "key":"CLEANUP-FINISHED",
 "level":"I",
 "send_email":"f",
@@ -348,6 +378,7 @@
 "event_type":"cleanup"
 },
 {
+"eventid":30,
 "key":"CLEANUP-STARTED",
 "level":"I",
 "send_email":"f",
@@ -360,30 +391,33 @@
 "event_type":"cleanup"
 },
 {
+"eventid":31,
 "key":"CONTROLLER-STARTED",
 "level":"I",
 "send_email":"f",
 "subject":"Palette Controller Started",
 "event_description":"Palette controller started\nVersion: ${version_current}\n",
 "email_subject":null,
-"email_message":"Status - INFO\nPalette controller started\nVersion: ${version_current}}\n\nThis message was sent from your Palette Server at ${server_url}",
+"email_message":"Status - INFO\nPalette controller started\nVersion: ${version_current}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
 "event_type":"server"
 },
 {
+"eventid":32,
 "key":"DISK-USAGE-ABOVE-HIGH-WATERMARK",
 "level":"E",
 "send_email":"t",
 "subject":"ERROR - Disk Usage Above Error Threshold on Server '%(displayname)s' Volume '%(volume_name)s'",
 "event_description":"Status: ERROR\nServer: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\nDetails: ${info}\n\nYour current Warning Disk Storage Threshold is set at ${disk_watermark_high}% of your volume's capacity. You can adjust this value by going to your Storage Configuration Page at ${server_url}configure/storage.",
 "email_subject":null,
-"email_message":"Status: ERROR\nTime: ${timestamp}\nServer: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\nDetails: ${info}\n\nYour current Warning Disk Storage Threshold is set at ${disk_watermark_high}% of your volume's capacity. You can adjust this value by going to your Storage Configuration Page at ${server_url}configure/storage.\n\nThis message was sent from your Palette Server at ${server_url}",
+"email_message":"Status: ERROR\nTime: ${timestamp}\nServer: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\nDetails: ${info}\n\nYour current Warning Disk Storage Threshold is set at ${disk_watermark_high}% of your volume's capacity. You can adjust this value by going to your Storage Configuration Page at ${server_url}/configure/storage.\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
 "event_type":"storage"
 },
 {
+"eventid":33,
 "key":"DISK-USAGE-ABOVE-LOW-WATERMARK",
 "level":"W",
 "send_email":"t",
@@ -396,18 +430,20 @@
 "event_type":"storage"
 },
 {
+"eventid":34,
 "key":"DISK-USAGE-OKAY",
 "level":"I",
 "send_email":"t",
 "subject":"INFO - Disk Usage Now OK on Server '%(displayname)s' Volume '%(volume_name)s'",
 "event_description":"Status: INFO\nServer: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\nDetails: ${info}",
 "email_subject":null,
-"email_message":"Status: INFO\nTinme: ${timestamp}\nServer: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails: ${info}\n\nThis message was sent from your Palette Server at ${server_url}",
+"email_message":"Status: INFO\nTime: ${timestamp}\nServer: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails: ${info}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
 "event_type":"storage"
 },
 {
+"eventid":35,
 "key":"EMAIL-TEST",
 "level":"I",
 "send_email":"t",
@@ -420,6 +456,7 @@
 "event_type":"server"
 },
 {
+"eventid":36,
 "key":"EXTRACT-FAILED",
 "level":"E",
 "send_email":"t",
@@ -432,6 +469,7 @@
 "event_type":"extract"
 },
 {
+"eventid":37,
 "key":"EXTRACT-OK",
 "level":"I",
 "send_email":"f",
@@ -444,6 +482,7 @@
 "event_type":"extract"
 },
 {
+"eventid":38,
 "key":"FIREWALL-OPEN-FAILED",
 "level":"E",
 "send_email":"t",
@@ -456,42 +495,46 @@
 "event_type":"network"
 },
 {
+"eventid":39,
 "key":"HTTP-BAD-STATUS",
 "level":"E",
 "send_email":"t",
 "subject":"ERROR - HTTP Status %(status)s %(http_status)s",
-"event_description":"Status: ERROR\n\nHTTP Status Error Code: ${status} - ${http_status}\nProblem URL: <a href=\"${tableau_server_url}${http_request_uri}\">${tableau_server_url}${http_request_uri}</a>\nReferring URL: <a href=\"${http_referer is UNDEFINED and \"None\" or http_referer}\">${http_referer is UNDEFINED and \"None\" or http_referer}</a>\nTableau Controller: ${controller}\nTableau Action: ${action.capitalize()}\n\nTableau HTTP Request ID: ${reqid is UNDEFINED and \"None\" or reqid}\nURL Server by Tableau Worker: ${worker}\nSession ID: ${session_id is UNDEFINED and \"None\" or session_id}\n\nBrowser Details\nInteractor: ${username}\nIP Address: ${remote_ip}",
+"event_description":"Status: ERROR\n\nHTTP Status Error Code: ${status} - ${http_status}\nProblem URL: <a href=\"${tableau_server_url}${http_request_uri}\">${tableau_server_url}${http_request_uri}</a>\nReferring URL: <a href=\"${http_referer is UNDEFINED and \"None\" or http_referer}\">${http_referer is UNDEFINED and \"None\" or http_referer}</a>\nTableau Controller: ${controller}\nTableau Action: ${action.capitalize()}\n\nTableau HTTP Request ID: ${id}\nURL Server by Tableau Worker: ${worker}\nSession ID: ${session_id is UNDEFINED and \"None\" or session_id}\n\nBrowser Details\nInteractor: ${username}\nIP Address: ${remote_ip}",
 "email_subject":null,
-"email_message":"Status: ERROR\nTime: ${timestamp}\n\nHTTP Status Error Code: ${status} - ${http_status}\nProblem URL: ${tableau_server_url}${http_request_uri}\nReferring URL: ${http_referer is UNDEFINED and \"None\" or http_referer}\nTableau Controller: ${controller}\nTableau Action: ${action.capitalize()}\n\nTableau HTTP Request ID: ${reqid is UNDEFINED and \"None\" or reqid}\nURL Server by Tableau Worker: ${worker}\nSession ID: ${session_id is UNDEFINED and \"None\" or session_id}\n\nBrowser Interactor: ${username}\nBrowser IP: ${remote_ip}\n\nThis message was sent from your Palette Server at ${server_url}",
+"email_message":"Status: ERROR\nTime: ${timestamp}\n\nHTTP Status Error Code: ${status} - ${http_status}\nProblem URL: ${tableau_server_url}${http_request_uri}\nReferring URL: ${http_referer is UNDEFINED and \"None\" or http_referer}\nTableau Controller: ${controller}\nTableau Action: ${action.capitalize()}\n\nTableau HTTP Request ID: ${id}\nURL Server by Tableau Worker: ${worker}\nSession ID: ${session_id is UNDEFINED and \"None\" or session_id}\n\nBrowser Interactor: ${username}\nBrowser IP: ${remote_ip}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
 "event_type":"http"
 },
 {
+"eventid":40,
 "key":"HTTP-LOAD-ERROR",
 "level":"E",
 "send_email":"t",
 "subject":"ERROR - Long load Time Error on Tableau Server",
-"event_description":"Status: ERROR  \n\nHTTP Status Code: ${status} - ${http_status}\nProblem URL: ${tableau_server_url}${http_request_uri}\nLoad Duration: ${duration} seconds\nReferring URL: ${http_referer is UNDEFINED and \"None\" or http_referer}\nTableau Controller: ${controller}\nTableau Action: ${action.capitalize()}\nTableau HTTP Request ID: ${reqid is UNDEFINED and \"None\" or reqid}\nURL Server by Tableau Worker: ${worker}\nSession ID: ${session_id is UNDEFINED and \"None\" or session_id}\nBrowser Interactor: ${username}\nBrowser IP: ${remote_ip}\n\nNote: Error loading threshold is currently set at ${http_load_error} seconds.",
+"event_description":"Status: ERROR  \n\nHTTP Status Code: ${status} - ${http_status}\nProblem URL: ${tableau_server_url}${http_request_uri}\nLoad Duration: ${duration} seconds\nReferring URL: ${http_referer is UNDEFINED and \"None\" or http_referer}\nTableau Controller: ${controller}\nTableau Action: ${action.capitalize()}\nTableau HTTP Request ID: ${id}\nURL Server by Tableau Worker: ${worker}\nSession ID: ${session_id is UNDEFINED and \"None\" or session_id}\nBrowser Interactor: ${username}\nBrowser IP: ${remote_ip}\n\nNote: Error loading threshold is currently set at ${http_load_error} seconds.",
 "email_subject":null,
-"email_message":"Status: ERROR  \nTime: ${timestamp}\n\nHTTP Status Code: ${status} - ${http_status}\nProblem URL: ${tableau_server_url}${http_request_uri}\nLoad Duration: ${duration} seconds\nReferring URL: ${http_referer is UNDEFINED and \"None\" or http_referer}\nTableau Controller: ${controller}\nTableau Action: ${action.capitalize()}\nTableau HTTP Request ID: ${reqid is UNDEFINED and \"None\" or reqid}\nURL Server by Tableau Worker: ${worker}\nSession ID: ${session_id is UNDEFINED and \"None\" or session_id}\nBrowser Interactor: ${username}\nBrowser IP: ${remote_ip}\n\nNote: Error loading threshold is currently set at ${http_load_error} seconds. \n\nThis message was sent from your Palette Server at ${server_url}",
+"email_message":"Status: ERROR  \nTime: ${timestamp}\n\nHTTP Status Code: ${status} - ${http_status}\nProblem URL: ${tableau_server_url}${http_request_uri}\nLoad Duration: ${duration} seconds\nReferring URL: ${http_referer is UNDEFINED and \"None\" or http_referer}\nTableau Controller: ${controller}\nTableau Action: ${action.capitalize()}\nTableau HTTP Request ID: ${id}\nURL Server by Tableau Worker: ${worker}\nSession ID: ${session_id is UNDEFINED and \"None\" or session_id}\nBrowser Interactor: ${username}\nBrowser IP: ${remote_ip}\n\nNote: Error loading threshold is currently set at ${http_load_error} seconds. \n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
 "event_type":"load"
 },
 {
+"eventid":41,
 "key":"HTTP-LOAD-WARN",
 "level":"W",
 "send_email":"t",
 "subject":"WARNING - Long Load Time Warning on Tableau Server",
-"event_description":"Status: WARNING  \n\nHTTP Status Code: ${status} - ${http_status} \nProblem URL: ${tableau_server_url}${http_request_uri} \nLoad Duration: ${duration} seconds \nReferring URL: ${http_referer is UNDEFINED and \"None\" or http_referer} \nTableau Controller: ${controller} \nTableau Action: ${action.capitalize()}  \nTableau HTTP Request ID: ${reqid is UNDEFINED and \"None\" or reqid} \nURL Server by Tableau Worker: ${worker} \nSession ID: ${session_id is UNDEFINED and \"None\" or session_id}  \nBrowser Interactor: ${username} \nBrowser IP: ${remote_ip}  \n\nNote: Error loading threshold is currently set at ${http_load_error} seconds. ",
+"event_description":"Status: WARNING  \n\nHTTP Status Code: ${status} - ${http_status} \nProblem URL: ${tableau_server_url}${http_request_uri} \nLoad Duration: ${duration} seconds \nReferring URL: ${http_referer is UNDEFINED and \"None\" or http_referer} \nTableau Controller: ${controller} \nTableau Action: ${action.capitalize()}  \nTableau HTTP Request ID: ${id} \nURL Server by Tableau Worker: ${worker} \nSession ID: ${session_id is UNDEFINED and \"None\" or session_id}  \nBrowser Interactor: ${username} \nBrowser IP: ${remote_ip}  \n\nNote: Error loading threshold is currently set at ${http_load_error} seconds. ",
 "email_subject":null,
-"email_message":"Status: WARNING \n\nTime: ${timestamp}  \nHTTP Status Code: ${status} - ${http_status} \nProblem URL: ${tableau_server_url}${http_request_uri} \nLoad Duration: ${duration} seconds \nReferring URL: ${http_referer is UNDEFINED and \"None\" or http_referer} \nTableau Controller: ${controller} \nTableau Action: ${action.capitalize()}  \nTableau HTTP Request ID: ${reqid is UNDEFINED and \"None\" or reqid} \nURL Server by Tableau Worker: ${worker} \nSession ID: ${session_id is UNDEFINED and \"None\" or session_id}  \n\nNote: Warning threshold is currently set at ${http_load_warn} seconds.  \n\nThis message was sent from your Palette Server at ${server_url}. ",
+"email_message":"Status: WARNING \n\nTime: ${timestamp}  \nHTTP Status Code: ${status} - ${http_status} \nProblem URL: ${tableau_server_url}${http_request_uri} \nLoad Duration: ${duration} seconds \nReferring URL: ${http_referer is UNDEFINED and \"None\" or http_referer} \nTableau Controller: ${controller} \nTableau Action: ${action.capitalize()}  \nTableau HTTP Request ID: ${id} \nURL Server by Tableau Worker: ${worker} \nSession ID: ${session_id is UNDEFINED and \"None\" or session_id}  \n\nNote: Warning threshold is currently set at ${http_load_warn} seconds.  \n\nThis message was sent from your Palette Server at ${server_url}. ",
 "icon":null,
 "color":"yellow",
 "event_type":"load"
 },
 {
+"eventid":42,
 "key":"INIT-STATE-DEGRADED",
 "level":"I",
 "send_email":"f",
@@ -504,6 +547,7 @@
 "event_type":"tableau"
 },
 {
+"eventid":43,
 "key":"INIT-STATE-STARTED",
 "level":"I",
 "send_email":"f",
@@ -516,6 +560,7 @@
 "event_type":"tableau"
 },
 {
+"eventid":44,
 "key":"INIT-STATE-STOPPED",
 "level":"I",
 "send_email":"f",
@@ -528,6 +573,7 @@
 "event_type":"tableau"
 },
 {
+"eventid":45,
 "key":"LICENSE-EXPIRED",
 "level":"E",
 "send_email":"t",
@@ -540,6 +586,7 @@
 "event_type":"license"
 },
 {
+"eventid":46,
 "key":"LICENSE-INVALID",
 "level":"E",
 "send_email":"t",
@@ -552,6 +599,7 @@
 "event_type":"license"
 },
 {
+"eventid":47,
 "key":"LICENSE-REPAIR-FAILED",
 "level":"E",
 "send_email":"t",
@@ -564,6 +612,7 @@
 "event_type":"license"
 },
 {
+"eventid":48,
 "key":"LICENSE-REPAIR-FINISHED",
 "level":"I",
 "send_email":"f",
@@ -576,6 +625,7 @@
 "event_type":"license"
 },
 {
+"eventid":49,
 "key":"LICENSE-REPAIR-STARTED",
 "level":"I",
 "send_email":"f",
@@ -588,6 +638,7 @@
 "event_type":"license"
 },
 {
+"eventid":50,
 "key":"MAINT-OFFLINE",
 "level":"I",
 "send_email":"t",
@@ -600,6 +651,7 @@
 "event_type":"maintentance"
 },
 {
+"eventid":51,
 "key":"MAINT-ONLINE",
 "level":"I",
 "send_email":"t",
@@ -612,6 +664,7 @@
 "event_type":"maintentance"
 },
 {
+"eventid":52,
 "key":"MAINT-START-FAILED",
 "level":"E",
 "send_email":"f",
@@ -624,6 +677,7 @@
 "event_type":"maintentance"
 },
 {
+"eventid":53,
 "key":"MAINT-STOP-FAILED",
 "level":"E",
 "send_email":"t",
@@ -636,6 +690,7 @@
 "event_type":"maintentance"
 },
 {
+"eventid":54,
 "key":"MAINT-WEB",
 "level":"I",
 "send_email":"f",
@@ -648,18 +703,20 @@
 "event_type":"maintentance"
 },
 {
+"eventid":55,
 "key":"PALETTE-UPDATED",
 "level":"I",
 "send_email":"f",
 "subject":"Palette Software Updated",
 "event_description":"Palette software has been updated.\nVersion: ${version_current}\n",
 "email_subject":null,
-"email_message":"Status - INFO\nTime: ${timestamp}\n\nVersion: ${version_current}}\n\nThis message was sent from your Palette Server at ${server_url}",
+"email_message":"Status - INFO\nTime: ${timestamp}\n\nVersion: ${version_current}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"green",
 "event_type":"server"
 },
 {
+"eventid":56,
 "key":"PERMISSION",
 "level":"E",
 "send_email":"f",
@@ -672,6 +729,7 @@
 "event_type":"server"
 },
 {
+"eventid":57,
 "key":"PORT-CONNECTION-FAILED",
 "level":"E",
 "send_email":"t",
@@ -684,6 +742,7 @@
 "event_type":"network"
 },
 {
+"eventid":58,
 "key":"PORT-CONNECTION-OKAY",
 "level":"I",
 "send_email":"t",
@@ -696,6 +755,7 @@
 "event_type":"network"
 },
 {
+"eventid":59,
 "key":"RESTART-FAILED",
 "level":"E",
 "send_email":"t",
@@ -708,6 +768,7 @@
 "event_type":"tableau"
 },
 {
+"eventid":60,
 "key":"RESTART-FINISHED",
 "level":"I",
 "send_email":"f",
@@ -720,6 +781,7 @@
 "event_type":"tableau"
 },
 {
+"eventid":61,
 "key":"RESTORE-FAILED",
 "level":"E",
 "send_email":"t",
@@ -732,6 +794,7 @@
 "event_type":"restore"
 },
 {
+"eventid":62,
 "key":"RESTORE-FINISHED",
 "level":"I",
 "send_email":"f",
@@ -744,6 +807,7 @@
 "event_type":"restore"
 },
 {
+"eventid":63,
 "key":"RESTORE-STARTED",
 "level":"I",
 "send_email":"f",
@@ -756,6 +820,7 @@
 "event_type":"restore"
 },
 {
+"eventid":64,
 "key":"SCHEDULE-JOB-FAILED",
 "level":"E",
 "send_email":"f",
@@ -768,6 +833,7 @@
 "event_type":"server"
 },
 {
+"eventid":65,
 "key":"SCHEDULE-JOB-STARTED",
 "level":"I",
 "send_email":"f",
@@ -780,18 +846,20 @@
 "event_type":"server"
 },
 {
+"eventid":66,
 "key":"STATE-DEGRADED",
 "level":"E",
 "send_email":"t",
 "subject":"ERROR - Tableau Server Partial Process Failure",
-"event_description":"Status: ERROR\n\nPlease review the output below to find which Tableau Process is “Stopped.” Sometimes a Tableau Process will stop running momentarily to restart itself which can cause this alert to be triggered. Normally, Tableau Server will recover in less than 5 minutes. If not, please inspect the Server browser by clicking on the Status box in the top left corner to help you troubleshoot further. \n\nDetails: \n\n${stdout}",
+"event_description":"Status: ERROR\n\nPlease review the output below to find which Tableau Process is \u201cStopped.\u201d Sometimes a Tableau Process will stop running momentarily to restart itself which can cause this alert to be triggered. Normally, Tableau Server will recover in less than 5 minutes. If not, please inspect the Server browser by clicking on the Status box in the top left corner to help you troubleshoot further. \n\nDetails: \n\n${stdout}",
 "email_subject":null,
-"email_message":"Status: ERROR\nTime: ${timestamp}\n\nPlease review the output below to find which Tableau Process is “Stopped.” Sometimes a Tableau Process will stop running momentarily to restart itself which can cause this alert to be triggered. Normally, Tableau Server will recover in less than 5 minutes. If not, please inspect the Server browser by clicking on the Status box in the top left corner to help you troubleshoot further. \n\nDetails: ${stdout}\n\nThis message was sent from your Palette Server at ${server_url}",
+"email_message":"Status: ERROR\nTime: ${timestamp}\n\nPlease review the output below to find which Tableau Process is \u201cStopped.\u201d Sometimes a Tableau Process will stop running momentarily to restart itself which can cause this alert to be triggered. Normally, Tableau Server will recover in less than 5 minutes. If not, please inspect the Server browser by clicking on the Status box in the top left corner to help you troubleshoot further. \n\nDetails: ${stdout}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
 "event_type":"tableau"
 },
 {
+"eventid":67,
 "key":"STATE-STARTED",
 "level":"I",
 "send_email":"f",
@@ -804,6 +872,7 @@
 "event_type":"tableau"
 },
 {
+"eventid":68,
 "key":"STATE-STARTED-AFTER-DEGRADED",
 "level":"I",
 "send_email":"t",
@@ -816,6 +885,7 @@
 "event_type":"tableau"
 },
 {
+"eventid":69,
 "key":"STATE-STOPPED",
 "level":"W",
 "send_email":"t",
@@ -828,6 +898,7 @@
 "event_type":"tableau"
 },
 {
+"eventid":70,
 "key":"STATE-UNEXPECTED-STARTED",
 "level":"I",
 "send_email":"t",
@@ -840,6 +911,7 @@
 "event_type":"tableau"
 },
 {
+"eventid":71,
 "key":"STATE-UNEXPECTED-STOPPED",
 "level":"E",
 "send_email":"t",
@@ -852,6 +924,7 @@
 "event_type":"tableau"
 },
 {
+"eventid":72,
 "key":"STATE-UNEXPECTED-STOPPED-AFTER-DEGRADED",
 "level":"E",
 "send_email":"t",
@@ -864,18 +937,20 @@
 "event_type":"tableau"
 },
 {
+"eventid":73,
 "key":"SYSTEM-EXCEPTION",
 "level":"E",
 "send_email":"t",
-"subject":"ERROR - System Exception",
+"subject":"ERROR - Palette Server Issue",
 "event_description":"Status: ERROR\n\nYour Palette Server experienced an error. See message below.\n\nDetails:\n${error}",
 "email_subject":null,
-"email_message":"Status: ERROR\nTime: ${{time}\n\nYour Palette Server experienced an error. See message below.\n\nDetails:\n${error}\n\nThis message was sent from your Palette Server at ${server_url}",
+"email_message":"Status: ERROR\nTime: ${timestamp}\n\nYour Palette Server experienced an error. See message below.\n\nDetails:\n${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
-"color":"red",
+"color":"yellow",
 "event_type":"server"
 },
 {
+"eventid":74,
 "key":"TABLEAU-START-FAILED",
 "level":"E",
 "send_email":"t",
@@ -888,6 +963,7 @@
 "event_type":"tableau"
 },
 {
+"eventid":75,
 "key":"TABLEAU-SYSTEM-TABLE",
 "level":"W",
 "send_email":"f",
@@ -900,6 +976,7 @@
 "event_type":"tableau"
 },
 {
+"eventid":76,
 "key":"TABLEAU-USER-TABLE",
 "level":"W",
 "send_email":"f",
@@ -912,6 +989,7 @@
 "event_type":"server"
 },
 {
+"eventid":77,
 "key":"WORKBOOK-ARCHIVE-FAILED",
 "level":"E",
 "send_email":"t",
@@ -924,6 +1002,7 @@
 "event_type":"workbook"
 },
 {
+"eventid":78,
 "key":"ZIPLOGS-FAILED",
 "level":"E",
 "send_email":"f",
@@ -936,6 +1015,7 @@
 "event_type":"logs"
 },
 {
+"eventid":79,
 "key":"ZIPLOGS-FINISHED",
 "level":"I",
 "send_email":"f",
@@ -948,6 +1028,7 @@
 "event_type":"logs"
 },
 {
+"eventid":80,
 "key":"ZIPLOGS-STARTED",
 "level":"I",
 "send_email":"f",
