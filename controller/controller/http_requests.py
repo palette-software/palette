@@ -94,17 +94,35 @@ class HttpRequestManager(TableauCacheManager):
 
         return {u'status': 'OK', u'count': len(datadict[''])}
 
+    def _parseuri(self, uri, body):
+        tokens = uri.split('?', 1)
+        if len(tokens) == 2:
+            body['uri'] = uri = tokens[0]
+            body['query_string'] = tokens[1]
+        else:
+            body['uri'] = uri
+        tokens = uri[1:].split('/')
+        # /views/<workbook.repository_url>/<viewname>
+        if len(tokens) == 3 and tokens[0].lower() == 'views':
+            body['repository_url'] = tokens[1]
+            body['view'] = tokens[2]
+        # /t/<site>/views/<workbook.repository_url>/<viewname>
+        elif len(tokens) == 5 and tokens[0].lower() == 't':
+            body['site'] = tokens[1]
+            body['repository_url'] = tokens[3]
+            body['view'] = tokens[4]
+
     def _test_for_alerts(self, entry, agent, controldata):
-        uri = entry.http_request_uri
         seconds = int(timedelta_total_seconds(entry.completed_at,
                                               entry.created_at))
         body = {'duration':seconds}
+        self._parseuri(entry.htt_request_uri, body)
         if entry.status >= 400 and entry.action == 'show':
-            if not controldata.status_exclude(entry.status, uri):
+            if not controldata.status_exclude(entry.status, body['uri']):
                 self._eventgen(EventControl.HTTP_BAD_STATUS,
                                agent, entry, body=body)
-        elif entry.action == 'show' and uri.startswith('/views/'):
-            if controldata.load_exclude(uri):
+        elif entry.action == 'show' and 'view' in body:
+            if controldata.load_exclude(body['uri']):
                 return
             errorlevel = self.server.system.getint('http-load-error')
             warnlevel = self.server.system.getint('http-load-warn')
@@ -124,24 +142,6 @@ class HttpRequestManager(TableauCacheManager):
         if row[0] is None:
             return 0
         return int(row[0])
-
-    def _parseuri(self, uri, body):
-        tokens = uri.split('?', 1)
-        if len(tokens) == 2:
-            body['uri'] = uri = tokens[0]
-            body['query_string'] = tokens[1]
-        else:
-            body['uri'] = uri
-        tokens = uri[1:].split('/')
-        # /views/<workbook.repository_url>/<viewname>
-        if len(tokens) == 3 and tokens[0].lower() == 'views':
-            body['repository_url'] = tokens[1]
-            body['view'] = tokens[2]
-        # /t/<site>/views/<workbook.repository_url>/<viewname>
-        elif len(tokens) == 5 and tokens[0].lower() == 't':
-            body['site'] = tokens[1]
-            body['repository_url'] = tokens[3]
-            body['view'] = tokens[4]
 
     # translate workbook.repository_url -> system_user_id -> owner
     def _translate_workbook(self, body):
@@ -165,8 +165,6 @@ class HttpRequestManager(TableauCacheManager):
         body = dict(body.items() +\
                         agent.todict().items() +\
                         entry.todict().items())
-
-        self._parseuri(entry.http_request_uri, body)
 
         body['http_status'] = responses[entry.status]
 
