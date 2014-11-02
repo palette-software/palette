@@ -126,7 +126,8 @@ class FileManager(object):
         uri = self.uri(path)
         self.server.log.debug("FileManager DELETE %s", uri)
         try:
-            return self.agent.connection.http_send('DELETE', uri)
+            body = self.agent.connection.http_send('DELETE', uri)
+            return json.loads(body)
         except (exc.HTTPException, httplib.HTTPException,
                 EnvironmentError) as ex:
             raise IOError("filemanager.delete failed: %s" % str(ex))
