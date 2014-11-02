@@ -578,9 +578,9 @@
 "level":"E",
 "send_email":"t",
 "subject":"ERROR - Tableau Server License Expired",
-"event_description":"Status: ERROR\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails: ${stdout}${stderr}\nAdditional Details: ${info}${error}",
+"event_description":"Status: ERROR\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails: ${error}",
 "email_subject":null,
-"email_message":"Status: ERROR\nTime: ${timestamp}\n\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails: ${stderr}\n\nAdditional Details: ${error}\n\nThis message was sent from your Palette Server at ${server_url}",
+"email_message":"Status: ERROR\nTime: ${timestamp}\n\nServer Display: ${displayname}\nServer IP: ${ip_address}\nServer Domain Name: ${fqdn}\n\nDetails: ${error}\n\nThis message was sent from your Palette Server at ${server_url}",
 "icon":null,
 "color":"red",
 "event_type":"license"
