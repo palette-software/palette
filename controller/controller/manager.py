@@ -8,7 +8,7 @@ def synchronized(label=None):
                     error = 'load: busy.'
                 else:
                     error = '%s: busy' % label
-                return {u'error', error}
+                return {u'error': error}
             try:
                 return f(self, *args, **kwargs)
             finally:
