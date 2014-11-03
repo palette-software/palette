@@ -139,19 +139,20 @@ class TableauStatusMonitor(threading.Thread):
         if tableau_status not in (TableauProcess.STATUS_RUNNING,
                                   TableauProcess.STATUS_STOPPED,
                                   TableauProcess.STATUS_DEGRADED):
-            self.log.error("Unknown reported tableau_status from " + \
-                "tableau: %s.  prev_state: %s", tableau_status, prev_state)
+            self.log.error("status-check: Unknown reported tableau_status " + \
+                "from tableau: %s.  prev_state: %s", tableau_status, prev_state)
             return  # fixme: do something more drastic than return?
 
         if prev_state not in TRANSITIONS:
-            self.log.error("prev state unexpected: %s", prev_state)
+            self.log.error("status-check: prev state unexpected: %s",
+                            prev_state)
             return  # fixme: do something more drastic than return?
 
         # Get our new state and events to send based on the previous
         # state and new tableau status.
         new_state_info = TRANSITIONS[prev_state][tableau_status]
 
-        self.log.debug("prev_state: %s, new state info: %s, " + \
+        self.log.debug("status-check: prev_state: %s, new state info: %s, " + \
                        "prev_tableau_status %s, tableau_status: %s",
                        prev_state, str(new_state_info),
                        prev_tableau_status, tableau_status)
@@ -183,9 +184,10 @@ class TableauStatusMonitor(threading.Thread):
         if prev_tableau_status != TableauProcess.STATUS_UNKNOWN and \
                             prev_tableau_status != tableau_status and \
                             tableau_status != TableauProcess.STATUS_STOPPED:
-            self.log.debug("_set_main_state: prev_tableau_status %s, " + \
-                           "tableau_status %s.  Stopping maint server.",
-                           prev_tableau_status, tableau_status)
+            self.log.debug("status-check: _set_main_state: " + \
+                            "prev_tableau_status %s, " + \
+                            "tableau_status %s.  Stopping maint server.",
+                            prev_tableau_status, tableau_status)
             self.server.maint("stop")
 
     def _send_events(self, events, agent, body):
@@ -233,12 +235,12 @@ class TableauStatusMonitor(threading.Thread):
                 event_degraded_min = self.EVENT_DEGRADED_MIN_DEFAULT
 
             now = time.time()
-            self.log.debug("now %d, first %d, min %d, diff %d",
+            self.log.debug("status-check: now %d, first %d, min %d, diff %d",
                            now, self.first_degraded_time,
                            event_degraded_min,
                            now - self.first_degraded_time)
             if now - self.first_degraded_time >= event_degraded_min:
-                self.log.debug("Sending degraded")
+                self.log.debug("status-check: Sending degraded")
                 self.server.event_control.gen(event,
                                       dict(body.items() + data.items()))
                 self.sent_degraded_event = True
@@ -257,8 +259,8 @@ class TableauStatusMonitor(threading.Thread):
             self.server.event_control.gen(EventControl.SYSTEM_EXCEPTION,
                                       {'error': line,
                                        'version': self.server.version})
-            self.log.error("Fatal: Exiting tableau_status_loop " + \
-                           "on exception.")
+            self.log.error("status-check: Fatal: " + \
+                           "Exiting tableau_status_loop on exception.")
             # pylint: disable=protected-access
             os._exit(93)
 
@@ -285,7 +287,7 @@ class TableauStatusMonitor(threading.Thread):
                 # Don't do a 'tabadmin status -v' if upgrading
                 acquired = self.rwlock.read_acquire(blocking=False)
                 if not acquired:
-                    self.log.debug("status thread: Upgrading.  Won't run.")
+                    self.log.debug("status-check: Upgrading.  Won't run.")
                     continue
                 self.check_status()
             finally:
@@ -299,7 +301,7 @@ class TableauStatusMonitor(threading.Thread):
         # FIXME: Tie agent to domain.
         agent = self.manager.agent_by_type(AgentManager.AGENT_TYPE_PRIMARY)
         if not agent:
-            self.log.debug("status thread: The primary agent is either " + \
+            self.log.debug("status-check: The primary agent is either " + \
                            "not connected or not enabled.")
             return
 
@@ -307,7 +309,7 @@ class TableauStatusMonitor(threading.Thread):
         if not aconn:
             session = meta.Session()
             self.log.debug(
-                    "status thread: No primary agent currently connected.")
+                    "status-check: No primary agent currently connected.")
             self.remove_all_status()
             session.commit()
             return
@@ -316,7 +318,7 @@ class TableauStatusMonitor(threading.Thread):
         acquired = aconn.user_action_lock(blocking=False)
         if not acquired:
             self.log.debug(
-                "status thread: Primary agent locked for user action. " + \
+                "status-check: Primary agent locked for user action. " + \
                 "Skipping status check.")
             return
 
@@ -333,10 +335,27 @@ class TableauStatusMonitor(threading.Thread):
         agentid = agent.agentid
 
         body = self.server.status_cmd(agent)
+        if 'error' in body:
+            self.log.error(
+                "status-check: Error from tabadmin status command: %s",
+                str(body))
+            return
+
+        if 'exit-status' in body:
+            if body['exit-status']:
+                self.log.error("status-check: Failed exit status: %d for " + \
+                               "tabadmin status command: %s",
+                               body['exit-status'], str(body))
+                return
+        else:
+            self.log.error("status-check: Missing exit-status from " + \
+                           "tabadmin status command: %s", str(body))
+            return
+
         if not body.has_key('stdout'):
             # fixme: Probably update the status table to say
             # something's wrong.
-            self.log.error("status thread: No output received for " + \
+            self.log.error("status-check: No output received for " + \
                            "status monitor. body: " + str(body))
             return
 
@@ -365,7 +384,7 @@ class TableauStatusMonitor(threading.Thread):
                     try:
                         pid = int(pid_str)
                     except StandardError:
-                        self.log.error("Bad PID: " + pid_str)
+                        self.log.error("status-check: Bad PID: " + pid_str)
                         continue
 
                     del parts[0:2]  # Remove 'Tableau' and 'Server'
@@ -376,7 +395,8 @@ class TableauStatusMonitor(threading.Thread):
                         name = name[:-1]
 
                     self._add(agentid, name, pid, status)
-                    self.log.debug("logged: %s, %d, %s", name, pid, status)
+                    self.log.debug("status-check: logged: %s, %d, %s", name,
+                                   pid, status)
                 else:
                     # FIXME: log error
                     pass
@@ -398,7 +418,8 @@ class TableauStatusMonitor(threading.Thread):
                 else:
                     # Example: "Connection error contacting worker 1"
                     self._add(agentid, line, -1, 'error')
-                    self.log.debug("logged: %s, %d, %s", line, -1, 'error')
+                    self.log.debug("status-check: logged: %s, %d, %s",
+                                   line, -1, 'error')
 
         aconn = agent.connection
         acquired = aconn.user_action_lock(blocking=False)
@@ -408,14 +429,18 @@ class TableauStatusMonitor(threading.Thread):
             # table since state should be consistent with tableau process
             # status.
             self.log.debug(
-                "status thread: Primary agent locked for user action " + \
+                "status-check: Primary agent locked for user action " + \
                 "after tabadmin status finished.  " + \
                 "Will not update state or tableau status.")
             session.rollback()
             return
 
+        if tableau_status is None:
+            self.log.error("status-check: Tableau status not valid: %s",
+                           str(lines))
+
         self._set_main_state(prev_tableau_status, tableau_status, agent, body)
-        self.log.debug("Logging main status: %s", tableau_status)
+        self.log.debug("status-check: Logging main status: %s", tableau_status)
 
         session.commit()
 
