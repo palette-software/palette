@@ -116,7 +116,7 @@ class HttpRequestManager(TableauCacheManager):
         seconds = int(timedelta_total_seconds(entry.completed_at,
                                               entry.created_at))
         body = {'duration':seconds}
-        self._parseuri(entry.htt_request_uri, body)
+        self._parseuri(entry.http_request_uri, body)
         if entry.status >= 400 and entry.action == 'show':
             if not controldata.status_exclude(entry.status, body['uri']):
                 self._eventgen(EventControl.HTTP_BAD_STATUS,

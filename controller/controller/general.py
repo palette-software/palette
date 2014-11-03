@@ -101,6 +101,7 @@ class SystemConfig(object):
             return self._getyesno(self.ALERTS_ENABLED)
         if name == 'upgrading':
             return self._getyesno(self.UPGRADING)
+        raise AttributeError(name)
 
     def todict(self):
         return {
