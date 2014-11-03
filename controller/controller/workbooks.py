@@ -20,6 +20,9 @@ from event_control import EventControl
 from place_file import PlaceFile
 from files import FileManager
 
+from sites import Site
+from projects import Project
+
 # NOTE: system_user_id is maintained in two places.  This is not ideal from
 # a db design perspective but makes the find-by-current-owner code clearer.
 class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
@@ -64,6 +67,13 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
     document_version = Column(String)
 
     __table_args__ = (UniqueConstraint('envid', 'id'),)
+
+    def __getattr__(self, name):
+        if name == 'site':
+            return Site.get_name_by_id(self.envid, self.site_id)
+        elif name == 'project':
+            return Project.get_name_by_id(self.envid, self.site_id)
+        raise AttributeError(name)
 
     def fileext(self):
         if self.data_engine_extracts:
@@ -117,7 +127,8 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     # ideally: site-project-name-rev.twb
     def basename(self):
         # pylint: disable=no-member
-        return self.workbook.repository_url + '-rev' + self.revision
+        prefix = self.workbook.site + '-' + self.workbook.project + '-'
+        return prefix + self.workbook.repository_url + '-rev' + self.revision
 
     @classmethod
     def get(cls, wbid, revision, **kwargs):
