@@ -319,9 +319,7 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
                 d['username'] = self.getuser(req.envid,
                                              update.system_user_id,
                                              users)
-                if 'url' not in d or not d['url']:
-                    d['url'] = '#'
-                else:
+                if 'url' in d and d['url']:
                     # FIXME: make this configurable
                     d['url'] = '/data/workbook-archive/' + d['url']
                 updates.append(d)
