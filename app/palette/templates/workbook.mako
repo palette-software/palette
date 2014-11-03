@@ -56,7 +56,12 @@
         {{#updates}}
         <li>
           <div>
+            {{#url}}
             <a href="{{url}}">rev{{revision}} {{timestamp}}</a> by {{username}}
+            {{/url}}
+            {{^url}}
+            rev{{revision}} {{timestamp}} by {{username}}
+            {{/url}}
           </div>
           <div>
             <span class="label">Note</span>
