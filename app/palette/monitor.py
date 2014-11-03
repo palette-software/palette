@@ -470,6 +470,10 @@ class MonitorApplication(PaletteRESTHandler):
                        'config': config
                       }
 
+        seq = req.getint('seq')
+        if not seq is None:
+            monitor_ret['seq'] = seq
+
         if not 'event' in req.GET or \
            ('event' in req.GET and req.GET['event'] != 'false'):
 

@@ -38,7 +38,7 @@ function ($, topic, template, items, paging)
         queryString: function () {
             var array = [];
 
-            array.push('seq='+this.seq++);
+            array.push('seq=' + ++this.seq);
 
             if (!needEvents) {
                 array.push('event=false');
@@ -227,6 +227,7 @@ function ($, topic, template, items, paging)
      */
     function ddClick(event) {
         event.preventDefault();
+
         var parent = $(this).closest('.btn-group');
         var a = $(this).find('a');
         var div =  $(parent).find('div')
@@ -463,10 +464,27 @@ function ($, topic, template, items, paging)
         paging.bind(eventPageCallback);
     }
 
+    /*
+     * monitorUpdate()
+     * Returns true iff the request was not ignored and the request should
+     * trigger another monitor call to be sent.
+     */
     function monitorUpdate(data)
     {
         if (data['connected'] == null) {
             data['connected'] = true;
+        }
+
+        if (data['seq'] != null) {
+            var n = parseInt(data['seq']);
+            /* If there is more than one outstanding request, then only
+             * accept the last one sent.  This can happen when a dropdown
+             * is changed while a request is in-flight.
+             */
+            if (n != eventFilter.seq) {
+                console.log('skip: ' + data['seq'] + ', expected: ' + eventFilter.seq);
+                return false;
+            }
         }
 
         var json = JSON.stringify(data);
@@ -476,7 +494,7 @@ function ($, topic, template, items, paging)
          * NOTE: this method may lead to false positives, which is OK.
          */
         if (json == current) {
-            return;
+            return true;
         }
 
         topic.publish('state', data);
@@ -497,6 +515,7 @@ function ($, topic, template, items, paging)
         if (needEvents) {
             monitorUpdateEvents(data);
         }
+        return true;
     }
 
     /*
@@ -523,7 +542,10 @@ function ($, topic, template, items, paging)
         $.ajax({
             url: url,
             success: function(data) {
-                monitorUpdate(data);
+                var retval = monitorUpdate(data);
+                if (retval) {
+                    timer = setTimeout(poll, interval);
+                }
             },
             error: function(req, textStatus, errorThrown)
             {
@@ -531,9 +553,7 @@ function ($, topic, template, items, paging)
                 data['text'] = 'Browser Disconnected';
                 data['color'] = 'yellow';
                 data['connected'] = false;
-                monitorUpdate(data);
-            },
-            complete: function() {
+                monitorUpdate(data); /* can't return false. */
                 timer = setTimeout(poll, interval);
             }
         });
