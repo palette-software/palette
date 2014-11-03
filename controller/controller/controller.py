@@ -923,41 +923,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
                 self.log.debug("_get_status reading.")
                 body_json = res.read()
-                aconn.unlock()
-
                 body = json.loads(body_json)
                 if body == None:
                     return self.error(
                             "Get /%s getresponse returned a null body" % uri)
 
                 self.log.debug("body = " + str(body))
-                if not body.has_key('run-status'):
-                    self.remove_agent(agent,
-                                     EventControl.AGENT_RETURNED_INVALID_STATUS)
-                    return self.error(
-                        "GET %s command reply was missing 'run-status'!  " + \
-                        "Will not retry." % (uri), body)
 
-                if body['run-status'] == 'finished':
-                    # Make sure if the command failed, that the 'error'
-                    # key is set.
-                    if body['exit-status'] != 0:
-                        if body.has_key('stderr') and body['stderr']:
-                            body['error'] = body['stderr']
-                        else:
-                            body['error'] = u"Failed with exit status: %d" % \
-                                                            body['exit-status']
-                    return body
-                elif body['run-status'] == 'running':
-                    time.sleep(self.cli_get_status_interval)
-                    continue
-                else:
-                    self.remove_agent(agent,
-                        "Communication failure with agent:  " + \
-                        "Unknown run-status returned from agent: %s" % \
-                                            body['run-status'])    # bad agent
-                    return self.error("Unknown run-status: %s.  Will not " + \
-                                            "retry." % body['run-status'], body)
             except httplib.HTTPException, ex:
                 self.remove_agent(agent,
                             "HTTP communication failure with agent: " + str(ex))
@@ -967,6 +939,44 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.remove_agent(agent, "Communication failure with " + \
                                   "agent. Unexpected error: " + str(ex))
                 return self.error("GET %s failed with: %s" % (uri, str(ex)))
+            finally:
+                aconn.unlock()
+
+            if not 'run-status' in body:
+                self.remove_agent(agent,
+                                     EventControl.AGENT_RETURNED_INVALID_STATUS)
+                return self.error(
+                        ("GET %s command reply was missing 'run-status'!  " + \
+                        "Will not retry: %s") % (uri, str(body)))
+
+            if body['run-status'] == 'finished':
+                # Make sure if the command failed, that the 'error'
+                # key is set.
+                if not 'exit-status' in body:
+                    self.remove_agent(agent,
+                                     EventControl.AGENT_RETURNED_INVALID_STATUS)
+                    return self.error(
+                        ("GET %s command reply returned 'finished' but was " + \
+                         "missing 'exit-status'!  " + \
+                        "Will not retry: %s") % (uri, str(body)))
+
+                if body['exit-status'] != 0:
+                    if body.has_key('stderr') and body['stderr']:
+                        body['error'] = body['stderr']
+                    else:
+                        body['error'] = u"Failed with exit status: %d" % \
+                                                        body['exit-status']
+                return body
+            elif body['run-status'] == 'running':
+                time.sleep(self.cli_get_status_interval)
+                continue
+            else:
+                self.remove_agent(agent,
+                    "Communication failure with agent:  " + \
+                    "Unknown run-status returned from agent: %s" % \
+                                        body['run-status'])    # bad agent
+                return self.error("Unknown run-status: %s.  Will not " + \
+                                        "retry." % body['run-status'], body)
 
     def odbc_ok(self):
         """Reports back True if odbc commands can be run now to
