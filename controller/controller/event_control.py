@@ -60,6 +60,13 @@ class EventControl(meta.Base, BaseMixin, BaseDictMixin):
 
     event_type = Column(String) # backup, restore, etc.
 
+    # Columns added to store descriptions and visiblity of events
+    event_type_label = Column(String)
+    event_label = Column(String)
+    event_label_desc = Column(String)
+    admin_visibility = Column(Boolean)
+    publisher_visibility = Column(Boolean)
+
     # event keys
     INIT_STATE_STARTED = "INIT-STATE-STARTED"
     INIT_STATE_STOPPED = "INIT-STATE-STOPPED"

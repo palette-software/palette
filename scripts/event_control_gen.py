@@ -40,6 +40,11 @@ for entry in EventControl.get_all_by_keys({}, order_by='eventid'):
     d['icon'] = entry.icon
     d['color'] = entry.color
     d['event_type'] = entry.event_type
+    d['event_type_label'] = entry.event_type_label
+    d['event_label'] = entry.event_label
+    d['event_label_desc'] = entry.event_label_desc
+    d['admin_visibility'] = entry.admin_visibility
+    d['publisher_visibility'] = entry.publisher_visibility
     records.append(d)
 
 print json.dumps({'RECORDS':records}, indent=0, separators=(',',':'))        
