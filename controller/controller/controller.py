@@ -985,13 +985,24 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             * When the tableau is stopped, since the postgres is also
               stopped when tableau is stopped.
             * When in "UPGRADE" mode.
+           The primary should be enabled before doing an odbc connection,
+           but that should be been handled in the "get_agent" call.
         """
         main_state = self.state_manager.get_state()
-        if main_state in (StateManager.STATE_STARTED,
-                                            StateManager.STATE_DEGRADED):
-            return True
-        else:
+        if main_state in (StateManager.STATE_DISCONNECTED,
+                          StateManager.STATE_PENDING,
+                          StateManager.STATE_STOPPING,
+                          StateManager.STATE_STOPPING_RESTORE,
+                          StateManager.STATE_STOPPED,
+                          StateManager.STATE_STOPPED_UNEXPECTED,
+                          StateManager.STATE_STOPPED_RESTORE,
+                          StateManager.STATE_STARTING,
+                          StateManager.STATE_STARTING_RESTORE,
+                          StateManager.STATE_RESTARTING,
+                          StateManager.STATE_UPGRADING):
             return False
+        else:
+            return True
 
     def active_directory_verify(self, agent, windomain, username, password):
         data = {'domain': windomain, 'username':username, 'password':password}
