@@ -487,6 +487,9 @@ function ($, topic, template, items, paging)
             }
         }
 
+        /* delete seq so that the UX doesn't constantly refresh */
+        delete data['seq']
+
         var json = JSON.stringify(data);
         
         /*
