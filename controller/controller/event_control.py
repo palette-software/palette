@@ -321,6 +321,9 @@ class EventControlManager(Manager):
         data['disk_watermark_high'] \
             = self.server.system.get('disk-watermark-high', default='')
 
+        if not 'environment' in data:
+            data['environment'] = self.server.environment.name
+
         if 'site_id' in data and 'site' not in data:
             site = Site.get_name_by_id(self.envid, data['site_id'])
             if not site is None:
