@@ -13,7 +13,7 @@ from manager import synchronized
 from mixin import BaseMixin, BaseDictMixin
 from http_control import HttpControlData
 from event_control import EventControl
-from util import timedelta_total_seconds
+from util import timedelta_total_seconds, utc2local
 from sites import Site
 from workbooks import WorkbookEntry
 from profile import UserProfile
@@ -183,7 +183,7 @@ class HttpRequestManager(TableauCacheManager):
             if site:
                 body['site'] = site.name
 
-        completed_at = entry.completed_at
+        completed_at = utc2local(entry.completed_at)
         self.server.event_control.gen(key, body,
                                       userid=system_user_id,
                                       timestamp=completed_at)
