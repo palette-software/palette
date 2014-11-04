@@ -76,8 +76,12 @@ class StateManager(Manager):
 
     @classmethod
     def get_state_by_envid(cls, envid):
-        entry = SystemEntry.get_by_key(envid, SystemManager.SYSTEM_KEY_STATE)
-        return entry and entry.value or StateManager.STATE_DISCONNECTED
+        try:
+            entry = SystemEntry.get_by_key(envid,
+                                           SystemManager.SYSTEM_KEY_STATE)
+            return entry.value
+        except ValueError:
+            return StateManager.STATE_DISCONNECTED
 
     def upgrading(self):
         return StateManager.upgrading_by_envid(self.envid)
