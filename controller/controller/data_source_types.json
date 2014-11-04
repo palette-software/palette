@@ -2,7 +2,7 @@
 "RECORDS":[
 {
 "data_source":"MySQL",
-"standard_port":3060,
+"standard_port":3306,
 "dbclass":"dataengine"
 },
 {
