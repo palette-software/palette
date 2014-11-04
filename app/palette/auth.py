@@ -57,7 +57,10 @@ class TableauAuthFilter(AuthFilter):
             self.envid = Environment.get().envid
         if 'REMOTE_USER' in environ:
             user = UserProfile.get_by_name(self.envid, environ['REMOTE_USER'])
-            user.timestamp = func.current_timestamp()
-            meta.Session.commit()
-            environ['REMOTE_USER'] = user
+            if user:
+                user.timestamp = func.current_timestamp()
+                meta.Session.commit()
+                environ['REMOTE_USER'] = user
+            else:
+                del environ['REMOTE_USER']
         return super(TableauAuthFilter, self).__call__(environ, start_response)
