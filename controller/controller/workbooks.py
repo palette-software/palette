@@ -72,7 +72,7 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
         if name == 'site':
             return Site.get_name_by_id(self.envid, self.site_id)
         elif name == 'project':
-            return Project.get_name_by_id(self.envid, self.site_id)
+            return Project.get_name_by_id(self.envid, self.project_id)
         raise AttributeError(name)
 
     def fileext(self):
@@ -127,8 +127,15 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     # ideally: site-project-name-rev.twb
     def basename(self):
         # pylint: disable=no-member
-        prefix = self.workbook.site + '-' + self.workbook.project + '-'
-        return prefix + self.workbook.repository_url + '-rev' + self.revision
+        site = self.workbook.site
+        if not site:
+            site = self.workbook.site_id
+        project = self.workbook.project
+        if not project:
+            project = self.workbook.project_id
+        filename = site + '-' + project + '-'
+        filename += self.workbook.repository_url + '-rev' + self.revision
+        return filename.replace(' ', '_')
 
     @classmethod
     def get(cls, wbid, revision, **kwargs):
