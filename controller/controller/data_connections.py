@@ -1,6 +1,7 @@
 from sqlalchemy import Column, String, DateTime, Boolean, Integer
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy import not_
+from sqlalchemy import not_, UniqueConstraint
+from sqlalchemy.schema import ForeignKey
 
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
@@ -13,7 +14,7 @@ class DataConnection(meta.Base):
 
     # FIXME: BigInteger
     dcid = Column(Integer, primary_key=True)
-    # FIXME: add envid
+    envid = Column(Integer, ForeignKey("environment.envid"), nullable=False)
     server = Column(String)
     dbclass = Column(String)
     port = Column(Integer)
@@ -30,10 +31,13 @@ class DataConnection(meta.Base):
     site_id = Column(Integer)
     keychain = Column(String)
 
+    __table_args__ = (UniqueConstraint('envid', 'dcid'),)
+
     @classmethod
-    def get(cls, dcid):
+    def get(cls, envid, dcid):
         try:
             entry = meta.Session.query(DataConnection).\
+                filter(DataConnection.envid == envid).\
                 filter(DataConnection.dcid == dcid).one()
         except NoResultFound:
             entry = None
@@ -56,11 +60,13 @@ class DataConnection(meta.Base):
 
         ids = []
 
+        envid = agent.server.environment.envid
+
         session = meta.Session()
         for row in data['']:
-            entry = DataConnection.get(row[0])
+            entry = DataConnection.get(envid, row[0])
             if not entry:
-                entry = DataConnection(dcid=row[0])
+                entry = DataConnection(envid=envid, dcid=row[0])
                 session.add(entry)
             entry.server = row[1]
             entry.dbclass = row[2]
