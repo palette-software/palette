@@ -2,7 +2,7 @@
 "RECORDS":[
 {
 "eventid":1,
-"key":"AGENT-COMM-LOST",
+"key":"AGENT-COMM-LOST-DEPRECATED-REMOVE-ME",
 "level":"E",
 "send_email":"t",
 "subject":"ERROR - Server '%(displayname)s' Disconnected",

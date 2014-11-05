@@ -471,7 +471,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.error(
                 "_send_cli: command '%s' failed with httplib.HTTPException: %s",
                            safecmd(cli_command), str(ex))
-            self.remove_agent(agent, EventControl.AGENT_COMM_LOST) # bad agent
+            # bad agent
+            self.remove_agent(agent, "Command to agent failed. " + \
+                                     "Error: " + str(ex))
             return self.error("_send_cli: '%s' command failed with: %s" %
                               (safecmd(cli_command), str(ex)))
         finally:
