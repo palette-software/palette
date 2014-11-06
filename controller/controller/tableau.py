@@ -438,6 +438,9 @@ class TableauStatusMonitor(threading.Thread):
         if tableau_status is None:
             self.log.error("status-check: Tableau status not valid: %s",
                            str(lines))
+            aconn.user_action_unlock()
+            session.rollback()
+            return
 
         self._set_main_state(prev_tableau_status, tableau_status, agent, body)
         self.log.debug("status-check: Logging main status: %s", tableau_status)
