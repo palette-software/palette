@@ -10,7 +10,7 @@
     <a class="previous" href="#"><i class="fa fa-angle-left"></i></a>
   </span>
   <span class="numbering">
-    <span class="page-number"></span> of <span class="page-count"></span>
+    <span class="page-number"></span> of <span class="page-count"></span>&nbsp;Pages
   </span>
   <span class="next">
     <a href="#"><i class="fa fa-angle-right"></i></a>
