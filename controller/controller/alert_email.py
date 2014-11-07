@@ -235,7 +235,7 @@ class AlertEmail(object):
         if len(subject) > self.max_subject_len:
             subject = subject[:self.max_subject_len]  + "..."
 
-        subject = Header(unicode("Palette Alert: " + subject), 'utf-8')
+        subject = Header(unicode(subject), 'utf-8')
         msg['Subject'] = subject
         msg['From'] = self.from_email
 
