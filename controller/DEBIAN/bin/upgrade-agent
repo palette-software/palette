@@ -118,8 +118,9 @@ class Upgrade(object):
                         [os.path.join(root, name) for name in files]
 
         else:
-            raise UpgradeException(
-                "No such file or directory: %s" % self.comm.args.source)
+            msg = "No such file or directory: %s" % self.comm.args.source
+            print >> sys.stderr, "%s: %s" % (sys.argv[0], msg)
+            sys.exit(1)
 
         source_files = sorted(source_files)
         return source_files
