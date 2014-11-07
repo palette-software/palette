@@ -553,7 +553,7 @@ function ($, topic, template, items, paging)
             error: function(req, textStatus, errorThrown)
             {
                 var data = {}
-                data['text'] = 'Browser Disconnected';
+                data['text'] = 'Your Browser is Disconnected';
                 data['color'] = 'yellow';
                 data['connected'] = false;
                 monitorUpdate(data); /* can't return false. */
