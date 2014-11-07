@@ -8,6 +8,7 @@ debian:
 .PHONY: debian
 
 pylint:
+	$(PYLINT) DEBIAN/bin/upgrade-agent
 	$(PYLINT) controller
 .PHONY: pylint
 

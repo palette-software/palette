@@ -12,10 +12,16 @@ from akiri.framework.config import store
 
 import clierror
 
-
+class CommError(object):
+    COULD_NOT_CONNECT_TO_HOST = 1
+    COMMAND_FAILED_TO_RUN = 2
+    COMMAND_RESULT_ERROR = 3    # The command resulted in an error
 
 class CommException(StandardError):
-    pass
+    def __init__(self, errnum, message):
+        StandardError.__init__(self, message)
+        self.errnum = errnum
+        self.message = message
 
 class CommBase(object):
     # pylint: disable=too-many-instance-attributes
@@ -45,7 +51,7 @@ class CommBase(object):
         try:
             self.conn.connect((self.hostname, self.port))
         except socket.error, ex:
-            raise CommException(\
+            raise CommException(CommError.COULD_NOT_CONNECT_TO_HOST,
                 ("Could not connect to host '%s', port '%d': %s") %
                                 (self.hostname, self.port, ex))
 
@@ -80,7 +86,8 @@ class CommBase(object):
         if ack != 'OK':
             parts = ack.split()
             if len(parts) < 2 or not parts[1].isdigit():
-                raise CommException("Command '%s' failed: %s" % \
+                raise CommException(CommError.COMMAND_FAILED_TO_RUN,
+                                    "Command '%s' failed: %s" % \
                                         (self.command, ack))
             errnum = int(parts[1])
             # Skip on BUSY or WRONG_STATE if requested
@@ -95,7 +102,8 @@ class CommBase(object):
                                                                     (cmd, ack)
                 return
 
-            raise CommException("Command '%s' failed. Error: %s" % \
+            raise CommException(CommError.COMMAND_FAILED_TO_RUN,
+                                "Command '%s' failed. Error: %s" % \
                                     (self.command, ack))
 
         if not read_response:
@@ -109,8 +117,8 @@ class CommBase(object):
         try:
             self.result = json.loads(self.response)
         except ValueError as ex:
-            raise CommException(\
-                ("Can't decode input from command '%s' from " + \
+            raise CommException(CommError.COMMAND_FAILED_TO_RUN,
+                ("Can't decode json from command '%s' from " + \
                 "response: '%s': %s") % (self.command, self.response, str(ex)))
         finally:
             self._close()
@@ -119,18 +127,18 @@ class CommBase(object):
             print 'Response:', self.response
 
         if 'error' in self.result:
-            raise CommException(\
+            raise CommException(CommError.COMMAND_RESULT_ERROR,
                 ('Error in command ("%s") response: %s') % \
                             (full_command, self.result['error']))
 
         if not 'status' in self.result:
-            raise CommException(\
+            raise CommException(CommError.COMMAND_FAILED_TO_RUN,
                 ('Error in command ("%s").  Missing "status" in ' + \
                   'response: %s') % \
                             (full_command, str(self.result)))
 
         if self.result['status'] != "OK":
-            raise CommException(\
+            raise CommException(CommError.COMMAND_FAILED_TO_RUN,
                 ('Error in command ("%s").  status not "OK" in ' + \
                   'response: %s') % \
                             (full_command, self.result['status']))
@@ -161,11 +169,13 @@ class CommBase(object):
         self.send_cmd("list")
 
         if not 'agents' in self.result:
-            raise CommException("Bad result from 'list' command: %s." % \
+            raise CommException(CommError.COMMAND_FAILED_TO_RUN,
+                                "Bad result from 'list' command: %s." % \
                                                         self.result)
 
         if not len(self.result['agents']):
-            raise CommException("No agents connected now: %s." % \
+            raise CommException(CommError.COMMAND_RESULT_ERROR,
+                                "No agents connected now: %s." % \
                                                         self.result)
 
         for agent in self.result['agents']:
@@ -180,7 +190,7 @@ class CommBase(object):
                             'install-dir']
                 for item in required:
                     if not item in agent:
-                        raise CommException(\
+                        raise CommException(CommError.COMMAND_RESULT_ERROR,
                             "Missing required key '%s' in '%s'" % \
                                                         (item, str(agent)))
 
@@ -192,7 +202,8 @@ class CommBase(object):
                     agent['path'] = posixpath
                 return agent
 
-        raise CommException("Agent not found: %s %s" % \
+        raise CommException(CommError.COMMAND_RESULT_ERROR,
+                            "Agent not found: %s %s" % \
                                         (self.spec_str, self.spec_val))
 
 class CommHandlerApp(CommBase):
