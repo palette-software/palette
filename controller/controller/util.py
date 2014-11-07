@@ -7,7 +7,7 @@ from dateutil import tz
 import dateutil.parser
 
 UTCFMT = "%Y-%m-%d %H:%M:%SZ"
-DATEFMT = "%I:%M%p PDT %b %d, %Y"
+DATEFMT = "%I:%M%p %Z %b %d, %Y"
 SIZEFMT = "%(value).1f%(symbol)s"
 SYMBOLS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
