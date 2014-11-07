@@ -15,6 +15,10 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     """
     Profile information is added to the 'users' table.
     """
+    PALETTE_DEFAULT_NAME = 'palette'
+    PALETTE_DEFAULT_FRIENDLY_NAME = 'Palette Install User'
+    PALETTE_DEFAULT_PASSWORD = 'Tableau2014!'
+
     __tablename__ = 'users'
     userid = Column(BigInteger, unique=True, nullable=False, \
                         autoincrement=True, primary_key=True)
@@ -88,10 +92,10 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
             return False
         return entry.hashed_password == tableau_hash(password, entry.salt)
 
-    defaults = [{'userid':0, 'envid':1, 'name':'palette',
-                 'friendly_name':'Palette',
+    defaults = [{'userid':0, 'envid':1, 'name':PALETTE_DEFAULT_NAME,
+                 'friendly_name':PALETTE_DEFAULT_FRIENDLY_NAME,
                  'email':None, 'salt':'', 'roleid':3, # SUPER_ADMIN
-                 'hashed_password':tableau_hash('tableau2014', ''),
+                 'hashed_password':tableau_hash(PALETTE_DEFAULT_PASSWORD, ''),
                  'system_user_id':0}]
 
 class Role(meta.Base, BaseMixin):
