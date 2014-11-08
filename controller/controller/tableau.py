@@ -169,25 +169,23 @@ class TableauStatusMonitor(threading.Thread):
 
         self._send_events(events, agent, body)
 
-        # Make sure the maint server(s) are stopped if tableau
-        # is not stopped.  It is fine to stop the maintenance server
-        # even if it is already stopped.
+        if 'maint-stop' in new_state_info:
+            # Make sure the maint server(s) are stopped if tableau
+            # is not stopped.  For example, the user stopped
+            # tableau via 'tabadmin stop' and then restarted it with
+            # 'tabadmin start' without going through the Palette UI.
+            self.log.debug("status-check: May stop maint server. " + \
+                           "prev_state: %s, new state info: %s, " + \
+                           "prev_tableau_status %s, tableau_status: %s, " + \
+                           "maint_started: %s",
+                           prev_state, str(new_state_info),
+                           prev_tableau_status, tableau_status,
+                           str(self.server.maint_started))
 
-        if prev_state == StateManager.STATE_STARTED:
-            # If the previous state was STARTED, then we intentionally
-            # started Tableau and already stopped the maintenance server.
-            # We're looking more for the case of the user typing
-            # 'tabadmin start' behind our backs - we want to make sure
-            # the maintenance server is stopped in this case.
-            return
+            if not self.server.maint_started:
+                self.log.debug("state-check: maint server not running")
+                return
 
-        if prev_tableau_status != TableauProcess.STATUS_UNKNOWN and \
-                            prev_tableau_status != tableau_status and \
-                            tableau_status != TableauProcess.STATUS_STOPPED:
-            self.log.debug("status-check: _set_main_state: " + \
-                            "prev_tableau_status %s, " + \
-                            "tableau_status %s.  Stopping maint server.",
-                            prev_tableau_status, tableau_status)
             self.server.maint("stop")
 
     def _send_events(self, events, agent, body):

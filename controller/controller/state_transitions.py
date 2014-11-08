@@ -29,25 +29,29 @@ TRANSITIONS = {
     StateManager.STATE_STOPPED: {
         STATUS_RUNNING:
             {'state': StateManager.STATE_STARTED,
-             'events': EventControl.STATE_UNEXPECTED_STATE_STARTED},
+             'events': EventControl.STATE_UNEXPECTED_STATE_STARTED,
+             'maint-stop': True},    # stop the maint server
 
         STATUS_STOPPED:
                 {}, # no state change and no events to send.
         STATUS_DEGRADED:
             {'state': StateManager.STATE_DEGRADED,
              'events': [EventControl.STATE_UNEXPECTED_STATE_STARTED,
-                        EventControl.STATE_DEGRADED]},
+                        EventControl.STATE_DEGRADED],
+             'maint-stop': True}    # stop the maint server
     },
     StateManager.STATE_STOPPED_UNEXPECTED: {
         STATUS_RUNNING:
             {'state': StateManager.STATE_STARTED,
-             'events': EventControl.STATE_UNEXPECTED_STATE_STARTED},
+             'events': EventControl.STATE_UNEXPECTED_STATE_STARTED,
+             'maint-stop': True},
         STATUS_STOPPED:
                 {}, # no state change and no events to send.
         STATUS_DEGRADED:
             {'state': StateManager.STATE_DEGRADED,
              'events': [EventControl.STATE_UNEXPECTED_STATE_STARTED,
-                        EventControl.STATE_DEGRADED]},
+                        EventControl.STATE_DEGRADED],
+             'maint-stop': True}    # stop the maint server
     },
     StateManager.STATE_STARTED: {
         STATUS_RUNNING: {},
