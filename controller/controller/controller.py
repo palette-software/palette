@@ -1107,6 +1107,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return sync_dict
 
     def maint(self, action, agent=None, send_alert=True):
+        # pylint: disable=too-many-branches
         """If agent is not specified, action is done for all gateway agents."""
         if action not in ("start", "stop"):
             self.log.error("Invalid maint action: %s", action)
@@ -1121,15 +1122,23 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.error("maint: %s: No yml entry for 'gateway.hosts' yet.",
                             action)
 
-        results = []
+        # We're going to combine stdout/stderr/error for all gateway hosts.
+        body_combined = {'stdout': "",
+                         'stderr': "",
+                         'error': ""}
+
         maint_success = True
         send_maint_body = self.set_maint_body(action)
 
         # We were called with a specific agent so do the maint action only
-        # there
+        # there.
         if agent:
-            body = self.send_maint(action, agent, send_maint_body, send_alert)
-            return {'maint': [body]}
+            body = self.send_maint(action, agent, send_maint_body)
+            self.update_maint_status(action, body)
+
+            if send_alert:
+                self.send_maint_event(action, agent, body)
+            return body
 
         for host in gateway_hosts:
             # This means the primary is the gateway host
@@ -1162,42 +1171,74 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                "Skipping '%s'.", host, action)
                 continue
 
-            body = self.send_maint(action, agent, send_maint_body, send_alert)
+            body = self.send_maint(action, agent, send_maint_body)
 
-            results.append(body)
+            if 'stdout' in body:
+                body_combined['stdout'] += '%s: %s\n' % (agent.displayname,
+                                                body['stdout'])
+            if 'stderr' in body:
+                body_combined['stderr'] += '%s: %s\n' % (agent.displayname,
+                                                body['stdout'])
             if 'error' in body:
+                body_combined['error'] += '%s: %s\n' % \
+                                        (agent.displayname, body['error'])
                 maint_success = False
 
-        if not maint_success:
-            return {"maint": results, 'error': "Failed."}
+        if maint_success:
+            # The existence of 'error' signifies failure but all succeeded.
+            del body_combined['error']
 
-        return {"maint": results}
+        self.update_maint_status(action, body_combined)
 
-    def send_maint(self, action, agent, send_maint_body, send_alert):
+        if send_alert:
+            self.send_maint_event(action, agent, body_combined)
+
+        return body_combined
+
+    def update_maint_status(self, action, body):
+        if action == 'start':
+            if 'error' in body:
+                self.maint_started = False
+            else:
+                self.maint_started = True
+
+        elif action == 'stop':
+            if 'error' in body:
+                self.maint_started = True
+            else:
+                self.maint_started = False
+
+    def send_maint(self, action, agent, send_maint_body):
         """Does the actual sending of the maint command to the agent,
-           generates the events, and returns the body/result."""
+           returns the body/result.
+        """
 
         self.log.debug("maint: %s for '%s'", action, agent.displayname)
         body = self.send_immediate(agent, "POST", "/maint", send_maint_body)
 
-        if body.has_key("error"):
+        return body
+
+    def send_maint_event(self, action, agent, body):
+        """Generates the appropriate maint event (start failed, stop
+           failed, maint online, maint offline).
+        """
+        if 'error' in body:
             data = agent.todict()
-            data['error'] = body['error']
             if action == "start":
                 self.event_control.gen(EventControl.MAINT_START_FAILED,
-                                       data)
+                                       dict(body.items() + data.items()))
+                return
             else:
                 self.event_control.gen(EventControl.MAINT_STOP_FAILED,
-                                       data)
-        if send_alert:
-            if action == 'start':
-                self.event_control.gen(EventControl.MAINT_ONLINE,
-                                       agent.todict())
-            else:
-                self.event_control.gen(EventControl.MAINT_OFFLINE,
-                                       agent.todict())
+                                       dict(body.items() + data.items()))
+                return
 
-        return body
+        if action == 'start':
+            self.event_control.gen(EventControl.MAINT_ONLINE,
+                                   agent.todict())
+        else:
+            self.event_control.gen(EventControl.MAINT_OFFLINE,
+                                   agent.todict())
 
     def set_maint_body(self, action):
         send_body = {"action": action}
@@ -1679,6 +1720,9 @@ def main():
     server.cred = CredentialManager(server)
     server.extract = ExtractManager(server)
     server.hrman = HttpRequestManager(server)
+
+    # Status of the maintenance web server(s)
+    server.maint_started = False
 
     Role.populate()
     UserProfile.populate()
