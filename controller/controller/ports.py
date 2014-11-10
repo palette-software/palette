@@ -174,9 +174,10 @@ class PortManager(Manager):
             self.log.debug(details)
         elif entry.max_time and 'connect_time' in details and \
                                 details['connect_time'] > entry.max_time:
-            details['error'] = "Connection time exceeded maximum allowed " + \
-                       "to '%s': host '%s', port %d" % \
-                       (entry.service_name, entry.dest_host, entry.dest_port)
+            details['error'] = "Connection time (%.1f) exceeded maximum " + \
+                       "allowed (%d.0) to '%s': host '%s', port %d" % \
+                       (details['connect_time'], entry.max_time,
+                       entry.service_name, entry.dest_host, entry.dest_port)
             self.log.debug(details)
 
         if failed(details):
