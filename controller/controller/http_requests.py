@@ -187,7 +187,8 @@ class HttpRequestManager(TableauCacheManager):
         if 'http_referer' in body:
             body['http_referer'] = unquote(body['http_referer']).decode('utf8')
         if 'http_request_uri' in body:
-            body['http_request_uri'] = unquote(body['http_request_uri']).decode('utf8')
+            http_request_uri = unquote(body['http_request_uri'])
+            body['http_request_uri'] = http_request_uri.decode('utf8')
 
         completed_at = utc2local(entry.completed_at)
         self.server.event_control.gen(key, body,

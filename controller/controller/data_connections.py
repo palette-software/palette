@@ -1,5 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Boolean, Integer
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy import Column, String, DateTime, Boolean, Integer, BigInteger
 from sqlalchemy import not_, UniqueConstraint
 from sqlalchemy.schema import ForeignKey
 
@@ -7,14 +6,16 @@ from sqlalchemy.schema import ForeignKey
 from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
-class DataConnection(meta.Base):
+from mixin import BaseMixin
+
+class DataConnection(meta.Base, BaseMixin):
     # pylint: disable=no-init
     # pylint: disable=too-many-instance-attributes
     __tablename__ = 'data_connections'
 
-    # FIXME: BigInteger
-    dcid = Column(Integer, primary_key=True)
+    dcid = Column(BigInteger, primary_key=True)
     envid = Column(Integer, ForeignKey("environment.envid"), nullable=False)
+    id = Column(Integer, nullable=False)
     server = Column(String)
     dbclass = Column(String)
     port = Column(Integer)
@@ -31,17 +32,12 @@ class DataConnection(meta.Base):
     site_id = Column(Integer)
     keychain = Column(String)
 
-    __table_args__ = (UniqueConstraint('envid', 'dcid'),)
+    __table_args__ = (UniqueConstraint('envid', 'id'),)
 
     @classmethod
-    def get(cls, envid, dcid):
-        try:
-            entry = meta.Session.query(DataConnection).\
-                filter(DataConnection.envid == envid).\
-                filter(DataConnection.dcid == dcid).one()
-        except NoResultFound:
-            entry = None
-        return entry
+    def get(cls, envid, tid, **kwargs):
+        keys = {'envid':envid, 'id':tid}
+        return cls.get_unique_by_keys(keys, **kwargs)
 
     @classmethod
     def sync(cls, agent):
@@ -64,9 +60,9 @@ class DataConnection(meta.Base):
 
         session = meta.Session()
         for row in data['']:
-            entry = DataConnection.get(envid, row[0])
+            entry = DataConnection.get(envid, row[0], default=None)
             if not entry:
-                entry = DataConnection(envid=envid, dcid=row[0])
+                entry = DataConnection(envid=envid, id=row[0])
                 session.add(entry)
             entry.server = row[1]
             entry.dbclass = row[2]
