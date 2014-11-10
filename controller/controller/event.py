@@ -30,8 +30,8 @@ class EventEntry(meta.Base, BaseMixin, BaseDictMixin):
     color = Column(String)
     event_type = Column(String)
     userid = Column(Integer)
-    siteid = Column(Integer)
-    projectid = Column(Integer)
+    site_id = Column(Integer)
+    project_id = Column(Integer)
     creation_time = Column(DateTime, server_default=func.now())
     timestamp = Column(DateTime, server_default=func.now())
 

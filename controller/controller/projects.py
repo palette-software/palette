@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Integer
+from sqlalchemy import Column, String, DateTime, Integer, BigInteger
 from sqlalchemy import not_, UniqueConstraint
 from sqlalchemy.schema import ForeignKey
 
@@ -13,8 +13,9 @@ class Project(meta.Base, BaseMixin):
     __tablename__ = 'projects'
 
     # FIXME: BigInteger
-    projectid = Column(Integer, primary_key=True)
+    projectid = Column(BigInteger, primary_key=True)
     envid = Column(Integer, ForeignKey("environment.envid"), nullable=False)
+    id = Column(Integer, nullable=False)
     name = Column(String, nullable=False)
     owner_id = Column(Integer)
     created_at = Column(DateTime)
@@ -24,16 +25,16 @@ class Project(meta.Base, BaseMixin):
     site_id = Column(Integer, nullable=False)
     special = Column(Integer)
 
-    __table_args__ = (UniqueConstraint('envid', 'projectid'),)
+    __table_args__ = (UniqueConstraint('envid', 'id'),)
 
     @classmethod
-    def get(cls, envid, projectid, **kwargs):
-        keys = {'envid':envid, 'projectid':projectid}
+    def get(cls, envid, tid, **kwargs):
+        keys = {'envid':envid, 'id':tid}
         return cls.get_unique_by_keys(keys, **kwargs)
 
     @classmethod
-    def get_name_by_id(cls, envid, projectid):
-        entry = cls.get(envid, projectid, default=None)
+    def get_name_by_id(cls, envid, tid):
+        entry = cls.get(envid, tid, default=None)
         if entry is None:
             return None
         return entry.name
@@ -62,7 +63,7 @@ class Project(meta.Base, BaseMixin):
         for row in data['']:
             entry = Project.get(envid, row[0], default=None)
             if not entry:
-                entry = Project(envid=envid, projectid=row[0])
+                entry = Project(envid=envid, id=row[0])
                 session.add(entry)
             entry.name = row[1]
             entry.owner_id = row[2]
@@ -86,4 +87,4 @@ class Project(meta.Base, BaseMixin):
 
     @classmethod
     def cache(cls, envid):
-        return cls.cache_by_key(envid, key='projectid')
+        return cls.cache_by_key(envid, key='id')

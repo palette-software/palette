@@ -14,8 +14,9 @@ class Site(meta.Base, BaseMixin):
     __tablename__ = 'sites'
 
     # FIXME: BigInteger
-    siteid = Column(Integer, primary_key=True)
-    envid = Column(Integer, ForeignKey("environment.envid"), nullable=False)
+    siteid = Column(BigInteger, primary_key=True)
+    envid = Column(Integer, ForeignKey("environment.envid"), primary_key=True)
+    id = Column(Integer, nullable=False)
     name = Column(String, nullable=False)
     status = Column(String)
     created_at = Column(DateTime)
@@ -31,16 +32,16 @@ class Site(meta.Base, BaseMixin):
     luid = Column(String, unique=True)
     query_limit = Column(Integer)
 
-    __table_args__ = (UniqueConstraint('envid', 'siteid'),)
+    __table_args__ = (UniqueConstraint('envid', 'id'),)
 
     @classmethod
-    def get(cls, envid, siteid, **kwargs):
-        keys = {'envid':envid, 'siteid':siteid}
+    def get(cls, envid, tid, **kwargs):
+        keys = {'envid':envid, 'id':tid}
         return cls.get_unique_by_keys(keys, **kwargs)
 
     @classmethod
-    def get_name_by_id(cls, envid, siteid):
-        entry = cls.get(envid, siteid, default=None)
+    def get_name_by_id(cls, envid, tid):
+        entry = cls.get(envid, tid, default=None)
         if entry is None:
             return None
         return entry.name
@@ -73,7 +74,7 @@ class Site(meta.Base, BaseMixin):
         for row in data['']:
             entry = Site.get(envid, row[0], default=None)
             if not entry:
-                entry = Site(envid=envid, siteid=row[0])
+                entry = Site(envid=envid, id=row[0])
                 session.add(entry)
             entry.name = row[1]
             entry.status = row[2]
@@ -103,5 +104,5 @@ class Site(meta.Base, BaseMixin):
 
     @classmethod
     def cache(cls, envid):
-        return cls.cache_by_key(envid, key='siteid')
+        return cls.cache_by_key(envid, key='id')
 
