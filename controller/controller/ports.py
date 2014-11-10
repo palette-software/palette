@@ -1,7 +1,8 @@
 import threading
+import json
 
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
-from sqlalchemy import Boolean
+from sqlalchemy import Boolean, Float
 from sqlalchemy.schema import ForeignKey
 
 # pylint: disable=import-error,no-name-in-module
@@ -12,6 +13,7 @@ from agent import Agent
 from event_control import EventControl
 from manager import Manager
 from mixin import BaseMixin
+from util import success, failed
 
 class PortEntry(meta.Base, BaseMixin):
     __tablename__ = "ports"
@@ -27,10 +29,13 @@ class PortEntry(meta.Base, BaseMixin):
     service_name = Column(String, nullable=False)  # user editable
     agentid = Column(BigInteger, ForeignKey("agent.agentid"),
                                                      nullable=False)
+    ip_address = Column(String)
+    connect_time = Column(Float)
+    max_time = Column(Integer)
+
     color = Column(String)   # red or green
     notified_color = Column(String) # red or green
 
-    max_time = Column(Integer)
     active = Column(Boolean, default=True)
 
     creation_time = Column(DateTime, server_default=func.now())
@@ -92,12 +97,9 @@ class PortManager(Manager):
                 meta.Session.commit()
                 continue
 
-            state = self.check_port(port)
-            report.append({'state': state,
-                           'dest-host': port.dest_host,
-                           'dest-port': port.dest_port,
-                           'service-name': port.service_name,
-                           'agentid': port.agentid})
+            results_dict = self.check_port(port)
+
+            report.append(results_dict)
 
         return {'status': 'OK', 'ports': report}
 
@@ -106,6 +108,15 @@ class PortManager(Manager):
            Returns "success", "fail", or "unknown" (if agent
            isn't connected)."""
 
+        details = {
+                    'service_name': entry.service_name,
+                    'dest_port': entry.dest_port,
+                    'dest_hostname': entry.dest_host
+                   }
+
+        if entry.max_time:
+            details['max_time'] = entry.max_time
+
         agent = self.server.agentmanager.agent_by_agentid(entry.agentid)
         if not agent:
             self.log.debug(
@@ -113,15 +124,14 @@ class PortManager(Manager):
                 "check service_name %s dest_host '%s' dest_port '%d'",
                 entry.agentid, entry.service_name, entry.dest_host,
                 entry.dest_port)
-            return "unknown"
+            details['error'] = \
+                "agent %d not connected.  Can't do port check." % entry.agentid
+            return details
 
         command = "pok %s %d" % (entry.dest_host, entry.dest_port)
 
         body = self.server.cli_cmd(command, agent)
         data = agent.todict()
-        data['service_name'] = entry.service_name
-        data['dest_port'] = entry.dest_port
-        data['dest_hostname'] = entry.dest_host
 
         if not 'exit-status' in body:
             self.log.error(
@@ -129,43 +139,78 @@ class PortManager(Manager):
                 "did not have 'exit-status' in returned body: %s",
                 entry.agentid, command, entry.service_name,
                 str(body))
-            return "unknown"
+            details['error'] = 'Missing exit-status from port check check.'
+            return dict(data.items() + details.items())
 
-        if body['exit-status']:
-            self.log.info(
-                "Connection to '%s' failed: host '%s', port %d)",
+        if 'stdout' in body:
+            try:
+                stdout = json.loads(body['stdout'])
+            except ValueError as ex:
+                self.log.error("check_port: Bad json in stdout: %s: %s\n",
+                    str(ex), body['stdout'])
+                stdout = {}
+
+            if 'milliseconds' in stdout:
+                try:
+                    details['connect_time'] = stdout['milliseconds']/1000.
+                except TypeError as ex:
+                    self.log.error(
+                        "check_port: Bad milliseconds value: %s: %s\n",
+                        str(ex), str(stdout))
+
+            if 'ip' in stdout:
+                details['ip'] = stdout['ip']
+
+            if failed(stdout):
+                details['error'] = stdout['error']
+
+        if body['exit-status'] or failed(details):
+            # Non-zero exit status means failure to connect or
+            # resolve hostname.
+            if not 'error' in details:
+                details['error'] = \
+                        "Connection to '%s' failed: host '%s', port %d" % \
+                       (entry.service_name, entry.dest_host, entry.dest_port)
+            self.log.debug(details)
+        elif entry.max_time and 'connect_time' in details and \
+                                details['connect_time'] > entry.max_time:
+            details['error'] = "Connection time (%.1f) exceeded maximum " + \
+                       "allowed (%d.0) to '%s': host '%s', port %d" % \
+                       (details['connect_time'], entry.max_time,
                        entry.service_name, entry.dest_host, entry.dest_port)
+            self.log.debug(details)
 
+        if failed(details):
             color = 'red'
         else:
             color = 'green'
 
-        # generate an event if appropriate
+        # Generate an event if appropriate
         if color == 'red' and entry.notified_color != 'red':
-            data['error'] = "Connection to '%s' failed: host '%s', port %d" % \
-                       (entry.service_name, entry.dest_host, entry.dest_port)
-
             self.server.event_control.gen(EventControl.PORT_CONNECTION_FAILED,
-                                          data)
+                                          dict(data.items() + details.items()))
         elif entry.notified_color == 'red' and color == 'green':
             data['info'] = \
                     "Connection to '%s' is now okay: host '%s', port %d" % \
                     (entry.service_name, entry.dest_host, entry.dest_port)
-
             self.server.event_control.gen(EventControl.PORT_CONNECTION_OKAY,
-                                          data)
+                                          dict(data.items() + details.items()))
+
+        # Update the row
+        update_dict = {'color': color, 'notified_color': color}
+        if 'connect_time' in details:
+            update_dict['connect_time'] = details['connect_time']
+        if 'ip' in details:
+            update_dict['ip_address'] = details['ip']
 
         meta.Session.query(PortEntry).\
             filter(PortEntry.portid == entry.portid).\
-            update({'color': color, 'notified_color': color},
+            update(update_dict,
                    synchronize_session=False)
 
         meta.Session.commit()
 
-        if body['exit-status']:
-            return 'fail'
-        else:
-            return 'success'
+        return details
 
     def populate(self):
         agent_count = meta.Session.query(Agent).\
