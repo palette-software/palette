@@ -318,7 +318,7 @@ class EventControlManager(Manager):
 
         data['event_type'] = event_entry.event_type
         data['event_type_label'] = event_entry.event_type_label
-        data['event_label'] =  event_entry.event_label
+        data['event_label'] = event_entry.event_label
         data['event_label_desc'] = event_entry.event_label_desc
         data['admin_visibility'] = event_entry.admin_visibility
         data['publisher_visiblity'] = event_entry.publisher_visibility
