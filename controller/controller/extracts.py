@@ -213,7 +213,7 @@ class ExtractManager(TableauCacheManager):
 
         return self.server.event_control.gen(key, data,
                                              userid=data['system_user_id'],
-                                             siteid=data['site_id'],
+                                             site_id=data['site_id'],
                                              timestamp=timestamp)
 
     @classmethod

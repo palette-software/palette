@@ -123,14 +123,14 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
     def site_options(self, sites):
         options = [{'option': 'All Sites', 'id': 0}]
         for site in sites.values():
-            data = {'option':site.name, 'id':site.siteid}
+            data = {'option':site.name, 'id':site.id}
             options.append(data)
         return options
 
     def project_options(self, projects):
         options = [{'option': 'All Projects', 'id': 0}]
         for project in projects.values():
-            data = {'option':project.name, 'id':project.projectid}
+            data = {'option':project.name, 'id':project.id}
             options.append(data)
         return options
 
@@ -139,10 +139,10 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         options = [{'option': self.ALL_SITES_PROJECTS_OPTION, 'id': 0}]
         for site in sites.values():
             for project in projects.values():
-                if project.site_id != site.siteid:
+                if project.site_id != site.id:
                     continue
                 data = {'option': site.name + '/' + project.name,
-                        'id': str(site.siteid) + ':' + str(project.projectid)}
+                        'id': str(site.id) + ':' + str(project.id)}
                 options.append(data)
         return options
 
@@ -157,14 +157,14 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         if len(tokens) != 2:
             return 0, self.ALL_SITES_PROJECTS_OPTION
         try:
-            siteid = int(tokens[0])
-            projectid = int(tokens[1])
+            site_id = int(tokens[0])
+            project_id = int(tokens[1])
         except StandardError:
             return 0, self.ALL_SITES_PROJECTS_OPTION
-        if siteid not in sites or projectid not in projects:
+        if site_id not in sites or project_id not in projects:
             return 0, self.ALL_SITES_PROJECTS_OPTION
-        value = sites[siteid].name + '/' + projects[projectid].name
-        return str(siteid) + ':' + str(projectid), value
+        value = sites[site_id].name + '/' + projects[project_id].name
+        return str(site_id) + ':' + str(project_id), value
 
     def build_config(self, req, sites, projects):
         # pylint: disable=no-member
@@ -249,12 +249,12 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         if site_project != '0':
             tokens = site_project.split(':')
             if len(tokens) == 2:
-                siteid = safe_int(tokens[0], default=0)
-                if siteid != 0:
-                    filters['site_id'] = siteid
-                projectid = safe_int(tokens[1], default=0)
-                if projectid != 0:
-                    filters['project_id'] = projectid
+                site_id = safe_int(tokens[0], default=0)
+                if site_id != 0:
+                    filters['site_id'] = site_id
+                project_id = safe_int(tokens[1], default=0)
+                if project_id != 0:
+                    filters['project_id'] = project_id
         return filters
 
     def do_query(self, req):
@@ -270,10 +270,10 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
 
         if sort == WorkbookSort.SITE:
             query = query.join(Site,
-                               WorkbookEntry.site_id == Site.siteid)
+                               WorkbookEntry.site_id == Site.id)
         elif sort == WorkbookSort.PROJECT:
             query = query.join(Project,
-                               WorkbookEntry.project_id == Project.projectid)
+                               WorkbookEntry.project_id == Project.id)
         elif sort == WorkbookSort.PUBLISHER:
             query = query.join(UserProfile, \
                 WorkbookEntry.system_user_id == UserProfile.system_user_id)

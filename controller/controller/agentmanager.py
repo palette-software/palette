@@ -3,8 +3,8 @@ import socket
 import ssl
 import threading
 import time
-from httplib import HTTPConnection
 import json
+import traceback
 
 import exc
 import httplib
@@ -1203,7 +1203,8 @@ class AgentManager(threading.Thread):
             self.ping_check(agent)
 
         except (socket.error, IOError) as ex:
-            self.log.debug("handle_agent_connection_error: " + str(ex))
+            self.log.warn("handle_agent_connection_error: " + str(ex))
+            self.log.warn(traceback.format_exc())
             self._close(aconn.socket)
         finally:
             if acquired:
@@ -1232,6 +1233,8 @@ class AgentManager(threading.Thread):
         except (IOError, ValueError, exc.InvalidStateError,
                 exc.HTTPException, httplib.HTTPException) as ex:
             self._close(aconn.socket)
+            self.log.error(str(ex))
+            self.log.debug(traceback.format_exc())
             raise IOError(
                 "Bad agent with uuid: '%s', Disconnecting. Error: %s",
                 uuid, str(ex))
@@ -1474,24 +1477,23 @@ class AgentManager(threading.Thread):
                         break
             return True
 
-class ReverseHTTPConnection(HTTPConnection):
+class ReverseHTTPConnection(httplib.HTTPConnection):
 
     def __init__(self, sock, aconn):
-        HTTPConnection.__init__(self, 'agent')
-#        HTTPConnection.debuglevel = 1
+        httplib.HTTPConnection.__init__(self, 'agent')
         self.sock = sock
         self.aconn = aconn
         self.aconn.last_activity = time.time()    # update for ping check
 
     def getresponse(self, buffering=False):
         self.aconn.ast_activity = time.time()    # update for ping check
-        return HTTPConnection.getresponse(self, buffering)
+        return httplib.HTTPConnection.getresponse(self, buffering)
 
     def request(self, method, url, body=None, headers=None):
         if headers is None:
             headers = {}
         self.aconn.last_activity = time.time()    # update for ping check
-        HTTPConnection.request(self, method, url, body, headers)
+        httplib.HTTPConnection.request(self, method, url, body, headers)
 
     def connect(self):
         pass

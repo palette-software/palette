@@ -242,7 +242,7 @@ class EventControlManager(Manager):
 
         return entry
 
-    def gen(self, key, data=None, userid=None, siteid=None, timestamp=None):
+    def gen(self, key, data=None, userid=None, site_id=None, timestamp=None):
         # pylint: disable=too-many-arguments
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-statements
@@ -405,7 +405,7 @@ class EventControlManager(Manager):
         entry.event_type = event_entry.event_type
         entry.summary = summary
         entry.userid = userid
-        entry.siteid = siteid
+        entry.site_id = site_id
         entry.timestamp = timestamp
 
         session.merge(entry)
