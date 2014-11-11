@@ -52,7 +52,8 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
                 {'envid':1, 'key': SystemConfig.UPGRADING, 'value':'no'},
                 {'envid':1, 'key': SystemConfig.CPU_LOAD_WARN, 'value':'60'},
                 {'envid':1, 'key': SystemConfig.CPU_LOAD_ERROR, 'value':'90'},
-                {'envid':1, 'key': SystemConfig.CPU_LOAD_PERIOD, 'value':'300'}
+                {'envid':1, 'key': SystemConfig.CPU_PERIOD_WARN, 'value':'300'},
+                {'envid':1, 'key': SystemConfig.CPU_PERIOD_ERROR, 'value':'300'}
         # Note: No default volid set.
     ]
 
