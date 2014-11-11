@@ -19,7 +19,8 @@ class SystemConfig(object):
 
     CPU_LOAD_WARN = "cpu-load-warn"
     CPU_LOAD_ERROR = "cpu-load-error"
-    CPU_LOAD_PERIOD = "cpu-load-period"
+    CPU_PERIOD_WARN = "cpu-period-warn"
+    CPU_PERIOD_ERROR = "cpu-period-error"
 
     ALERTS_ENABLED = "alerts-enabled"
 
@@ -109,8 +110,10 @@ class SystemConfig(object):
             return self._getint(self.CPU_LOAD_WARN, default=60)
         if name == 'cpu_load_error':
             return self._getint(self.CPU_LOAD_ERROR, default=90)
-        if name == 'cpu_load_period':
-            return self._getint(self.CPU_LOAD_PERIOD, default=300)
+        if name == 'cpu_period_warn':
+            return self._getint(self.CPU_PERIOD_WARN, default=300)
+        if name == 'cpu_period_error':
+            return self._getint(self.CPU_PERIOD_ERROR, default=600)
         raise AttributeError(name)
 
     def todict(self):

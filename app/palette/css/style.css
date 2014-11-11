@@ -1561,3 +1561,9 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
 .top-zone .paging {
     margin-top:5px;
 }
+#cpu-error {
+    padding-left: 23px;
+}
+#cpu-load-warn, #cpu-load-error, #cpu-period-warn, #cpu-period-error {
+    width: 60px;
+}
