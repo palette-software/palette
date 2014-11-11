@@ -31,6 +31,7 @@ from auth import AuthManager
 from config import Config
 from credential import CredentialEntry, CredentialManager
 from diskcheck import DiskCheck, DiskException
+from datasources import DataSource
 from data_source_types import DataSourceTypes
 from domain import Domain
 from environment import Environment
@@ -1071,6 +1072,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def sync_cmd(self, agent, check_odbc_state=True):
         """sync/copy tables from tableau to here."""
+        # pylint: disable=too-many-branches
 
         if check_odbc_state and not self.odbc_ok():
             main_state = self.state_manager.get_state()
@@ -1102,6 +1104,14 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             error_msg += "DataConnection sync failure: " + body['error']
         else:
             sync_dict['data-connections'] = body['count']
+
+        body = DataSource.sync(agent)
+        if 'error' in body:
+            if error_msg:
+                error_msg += ", "
+            error_msg += "DataSouce sync failure: " + body['error']
+        else:
+            sync_dict['data-sources'] = body['count']
 
         if error_msg:
             sync_dict['error'] = error_msg
