@@ -9,29 +9,37 @@ from akiri.framework.ext.sqlalchemy import meta
 from mixin import BaseMixin
 from odbc import ODBC
 
-class DataConnection(meta.Base, BaseMixin):
-    # pylint: disable=no-init
-    # pylint: disable=too-many-instance-attributes
-    __tablename__ = 'data_connections'
+class DataSource(meta.Base, BaseMixin):
 
-    dcid = Column(BigInteger, primary_key=True)
+    __tablename__ = 'datasources'
+
+    dsid = Column(BigInteger, primary_key=True)
     envid = Column(Integer, ForeignKey("environment.envid"), nullable=False)
     id = Column(Integer, nullable=False)
-    server = Column(String)
-    dbclass = Column(String)
-    port = Column(Integer)
-    username = Column(String)
-    password = Column(Boolean)
     name = Column(String)
-    dbname = Column(String)
-    tablename = Column(String)
-    owner_type = Column(String)
-    owner_id = Column(Integer)
+    repository_url = Column(String)
+    owner_id = Column(Integer, nullable=False)
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
-    caption = Column(String)
+    project_id = Column(Integer)
+    size = Column(BigInteger)
+    lock_version = Column(Integer)
+    state = Column(String)
+    db_class = Column(String)
+    db_name = Column(String)
+    table_name = Column(String)
     site_id = Column(Integer)
-    keychain = Column(String)
+    revision = Column(String)
+    repository_data_id = Column(BigInteger)
+    repository_extract_data_id = Column(BigInteger)
+    embedded = Column(String)
+    incremental_extracts = Column(Boolean)
+    refreshable_extracts = Column(Boolean)
+    data_engine_extracts = Column(Boolean)
+    extracts_refreshed_at = Column(DateTime)
+    luid = Column(String)
+    asset_key_id = Column(Integer)
+    document_version = Column(String)
 
     __table_args__ = (UniqueConstraint('envid', 'id'),)
 
@@ -42,7 +50,7 @@ class DataConnection(meta.Base, BaseMixin):
 
     @classmethod
     def sync(cls, agent):
-        stmt = 'SELECT * FROM data_connections'
+        stmt = 'SELECT * FROM datasources'
 
         data = agent.odbc.execute(stmt)
         if 'error' in data:
@@ -58,19 +66,19 @@ class DataConnection(meta.Base, BaseMixin):
         session = meta.Session()
         for odbcdata in ODBC.load(data):
             tid = odbcdata.data['id']
-            entry = DataConnection.get(envid, tid, default=None)
+            entry = DataSource.get(envid, tid, default=None)
             if not entry:
-                entry = DataConnection(envid=envid)
+                entry = DataSource(envid=envid)
                 session.add(entry)
-            entry.envid = envid
             odbcdata.copyto(entry)
-            ids.append(entry.dcid)
+            ids.append(entry.dsid)
 
-        session.query(DataConnection).\
-            filter(not_(DataConnection.dcid.in_(ids))).\
+        session.query(DataSource).\
+            filter(not_(DataSource.dsid.in_(ids))).\
             delete(synchronize_session='fetch')
 
         session.commit()
 
         d = {u'status': 'OK', u'count': len(data[''])}
         return d
+
