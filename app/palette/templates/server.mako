@@ -6,7 +6,7 @@
 </%block>
 
 <section class="dynamic-content configuration">
-  <h1 class="page-title">Servers</h1>
+  <h1 class="page-title">Machines</h1>
   <div id="server-detail"></div>
 </section>
 

@@ -72,7 +72,7 @@
         <li ${obj.active=='servers' and 'class="active"' or ''}>
           <a href="/configure/servers">
             <i class="fa fa-fw fa-laptop"></i>
-            <span>Servers</span>
+            <span>Machines</span>
           </a>
         </li>
         <li  ${obj.active=='yml' and 'class="active"' or ''}>
