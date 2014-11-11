@@ -13,7 +13,7 @@ from agent import Agent
 from event_control import EventControl
 from manager import Manager
 from mixin import BaseMixin
-from util import success, failed
+from util import failed
 
 class PortEntry(meta.Base, BaseMixin):
     __tablename__ = "ports"
@@ -104,6 +104,8 @@ class PortManager(Manager):
         return {'status': 'OK', 'ports': report}
 
     def check_port(self, entry):
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-statements
         """Tests connectivity from an agent to a host/port.
            Returns "success", "fail", or "unknown" (if agent
            isn't connected)."""
@@ -174,8 +176,8 @@ class PortManager(Manager):
             self.log.debug(details)
         elif entry.max_time and 'connect_time' in details and \
                                 details['connect_time'] > entry.max_time:
-            details['error'] = "Connection time (%.1f) exceeded maximum " + \
-                       "allowed (%d.0) to '%s': host '%s', port %d" % \
+            details['error'] = ("Connection time (%.1f) exceeded maximum " + \
+                       "allowed (%d.0) to '%s': host '%s', port %d") % \
                        (details['connect_time'], entry.max_time,
                        entry.service_name, entry.dest_host, entry.dest_port)
             self.log.debug(details)

@@ -41,6 +41,8 @@ from firewall_manager import FirewallManager
 from general import SystemConfig
 from http_requests import HttpRequestEntry, HttpRequestManager
 from licensing import LicenseManager, LicenseEntry
+from metrics import MetricManager
+from notifications import NotificationManager
 from ports import PortManager
 from profile import UserProfile, Role
 from sched import Sched, Crontab
@@ -1108,6 +1110,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def maint(self, action, agent=None, send_alert=True):
         # pylint: disable=too-many-branches
+        # pylint: disable=too-many-statements
         """If agent is not specified, action is done for all gateway agents."""
         if action not in ("start", "stop"):
             self.log.error("Invalid maint action: %s", action)
@@ -1140,6 +1143,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.send_maint_event(action, agent, body)
             return body
 
+        agent_connected = None
         for host in gateway_hosts:
             # This means the primary is the gateway host
             if host == 'localhost' or host == '127.0.0.1':
@@ -1171,6 +1175,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                "Skipping '%s'.", host, action)
                 continue
 
+            if not agent_connected:
+                # The agent to use for the event
+                agent_connected = agent
+
             body = self.send_maint(action, agent, send_maint_body)
 
             if 'stdout' in body:
@@ -1184,6 +1192,11 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                         (agent.displayname, body['error'])
                 maint_success = False
 
+        if not agent_connected:
+            self.log.debug("maint: No agents are connected.  Did nothing.")
+            body_combined['error'] = "No agents are connected."
+            return body_combined    # Empty as we did nothing
+
         if maint_success:
             # The existence of 'error' signifies failure but all succeeded.
             del body_combined['error']
@@ -1191,19 +1204,19 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.update_maint_status(action, body_combined)
 
         if send_alert:
-            self.send_maint_event(action, agent, body_combined)
+            self.send_maint_event(action, agent_connected, body_combined)
 
         return body_combined
 
     def update_maint_status(self, action, body):
         if action == 'start':
-            if 'error' in body:
+            if failed(body):
                 self.maint_started = False
             else:
                 self.maint_started = True
 
         elif action == 'stop':
-            if 'error' in body:
+            if failed(body):
                 self.maint_started = True
             else:
                 self.maint_started = False
@@ -1748,6 +1761,9 @@ def main():
     server.firewall_manager = FirewallManager(server)
     server.license_manager = LicenseManager(server)
     server.state_manager = StateManager(server)
+
+    server.notifications = NotificationManager(server)
+    server.metrics = MetricManager(server)
 
     server.ports = PortManager(server)
     server.ports.populate()

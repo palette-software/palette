@@ -49,7 +49,10 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
                 {'envid':1, 'key':'event-degraded-min', 'value':str(180)},
                 {'envid':1, 'key':'status-request-interval', 'value':str(10)},
                 {'envid':1, 'key': SystemConfig.ALERTS_ENABLED, 'value':'no'},
-                {'envid':1, 'key': SystemConfig.UPGRADING, 'value':'no'}
+                {'envid':1, 'key': SystemConfig.UPGRADING, 'value':'no'},
+                {'envid':1, 'key': SystemConfig.CPU_LOAD_WARN, 'value':'60'},
+                {'envid':1, 'key': SystemConfig.CPU_LOAD_ERROR, 'value':'90'},
+                {'envid':1, 'key': SystemConfig.CPU_LOAD_PERIOD, 'value':'300'}
         # Note: No default volid set.
     ]
 
