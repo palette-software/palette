@@ -1138,6 +1138,21 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status(body)
 
+    @usage('metric')
+    @upgrade_rwlock
+    def do_metric(self, cmd):
+        """Check on metrics and potentially send an alert."""
+
+        if len(cmd.args):
+            self.print_usage(self.do_metric.__usage__)
+            return
+
+        self.ack()
+
+        body = self.server.metrics.check()
+
+        self.report_status(body)
+
 
     @usage('firewall { status | { enable | disable } port [port] }')
     def do_firewall(self, cmd):

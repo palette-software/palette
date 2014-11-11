@@ -17,6 +17,10 @@ class SystemConfig(object):
     HTTP_LOAD_WARN = "http-load-warn"
     HTTP_LOAD_ERROR = "http-load-error"
 
+    CPU_LOAD_WARN = "cpu-load-warn"
+    CPU_LOAD_ERROR = "cpu-load-error"
+    CPU_LOAD_PERIOD = "cpu-load-period"
+
     ALERTS_ENABLED = "alerts-enabled"
 
     PALETTE_VERSION = "palette-version"
@@ -101,6 +105,12 @@ class SystemConfig(object):
             return self._getyesno(self.ALERTS_ENABLED)
         if name == 'upgrading':
             return self._getyesno(self.UPGRADING)
+        if name == 'cpu_load_warn':
+            return self._getint(self.CPU_LOAD_WARN, default=60)
+        if name == 'cpu_load_error':
+            return self._getint(self.CPU_LOAD_ERROR, default=90)
+        if name == 'cpu_load_period':
+            return self._getint(self.CPU_LOAD_PERIOD, default=300)
         raise AttributeError(name)
 
     def todict(self):

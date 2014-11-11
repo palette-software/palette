@@ -156,6 +156,7 @@ class AgentManager(threading.Thread):
         self.log = self.server.log
         self.domainid = self.server.domain.domainid
         self.envid = self.server.environment.envid
+        self.metrics = self.server.metrics
         self.upgrade_rwlock = self.server.upgrade_rwlock
 
         self.daemon = True
@@ -1453,9 +1454,24 @@ class AgentManager(threading.Thread):
         else:
             self.log.debug(
                 "Ping: Reply from agent '%s', type '%s', uuid %s, " + \
-                "conn_id %d",
+                "conn_id %d, body: %s",
                     agent.displayname, agent.agent_type, agent.uuid,
-                    agent.conn_id)
+                    agent.conn_id, str(body))
+            if 'counters' in body:
+                for counter in body['counters']:
+                    if 'counter-name' in counter and \
+                            counter['counter-name'] == '% Processor Time' and \
+                                                'value' in counter:
+
+                        try:
+                            cpu = float(counter['value'])
+                        except ValueError as ex:
+                            self.log.error(
+                                "ping: Error obtaining cpu metric: %s: %s",
+                                str(ex), str(body))
+                            break
+                        self.metrics.add(agent, cpu)
+                        break
             return True
 
 class ReverseHTTPConnection(HTTPConnection):
