@@ -455,7 +455,7 @@ class MonitorApplication(PaletteRESTHandler):
             else:
                 color_num = Colors.RED_NUM
 
-        environments = [{"name": "My Servers", "agents": agents}]
+        environments = [{"name": "My Machines", "agents": agents}]
 
         config = [self.status_options(req),
                   self.type_options(req)]
