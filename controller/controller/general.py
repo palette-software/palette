@@ -107,9 +107,9 @@ class SystemConfig(object):
         if name == 'upgrading':
             return self._getyesno(self.UPGRADING)
         if name == 'cpu_load_warn':
-            return self._getint(self.CPU_LOAD_WARN, default=60)
+            return self._getint(self.CPU_LOAD_WARN, default=80)
         if name == 'cpu_load_error':
-            return self._getint(self.CPU_LOAD_ERROR, default=90)
+            return self._getint(self.CPU_LOAD_ERROR, default=95)
         if name == 'cpu_period_warn':
             return self._getint(self.CPU_PERIOD_WARN, default=300)
         if name == 'cpu_period_error':
@@ -131,6 +131,10 @@ class SystemConfig(object):
             self.ALERTS_ENABLED: self.alerts_enabled,
             self.PALETTE_VERSION: self.palette_version,
             self.UPGRADING: self.upgrading,
+            self.CPU_LOAD_WARN: self.cpu_load_warn,
+            self.CPU_LOAD_ERROR: self.cpu_load_error,
+            self.CPU_PERIOD_WARN: self.cpu_load_warn,
+            self.CPU_PERIOD_ERROR: self.cpu_period_error
             }
 
     def text(self, value):
