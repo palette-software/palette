@@ -222,7 +222,6 @@ class AgentManager(threading.Thread):
            - Checks agent uuid and type against already connected agents.
            - Calculates a displayname and order if it is a new agent.
            - Adds the agent to the connected agents dictionary.
-           - Makes agent transient with respect to the database.
        """
 
         self.log.debug("register: new agent name %s, uuid %s, conn_id %d", \
@@ -285,10 +284,6 @@ class AgentManager(threading.Thread):
             # connected before the primary ever connected with its
             # yml file that tells us the ip addresses of workers.
             self.set_all_agent_types()
-
-            # Tell the status thread to start getting status on
-            # the new primary.
-            self.new_primary_event.set()
 
         return True
 
@@ -1106,6 +1101,7 @@ class AgentManager(threading.Thread):
 
         self.upgrade_rwlock.read_acquire()
         acquired = True
+        agent = None
 
         try:
             aconn = AgentConnection(self.server, conn, addr, peername)
@@ -1195,6 +1191,11 @@ class AgentManager(threading.Thread):
             session = meta.Session()
             session.commit()
 
+            # Tell the status thread to start getting status on
+            # the new primary.
+            if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+                self.new_primary_event.set()
+
             make_transient(agent)
 
             self.upgrade_rwlock.read_release()
@@ -1204,8 +1205,21 @@ class AgentManager(threading.Thread):
 
         except (socket.error, IOError) as ex:
             self.log.warn("handle_agent_connection_error: " + str(ex))
-            self.log.warn(traceback.format_exc())
             self._close(aconn.socket)
+
+            if agent:
+                # Make sure the agent is marked as disconnected by
+                # updating the last_disconnect_time.
+                try:
+                    session.query(Agent).\
+                        filter(Agent.agentid == agent.agentid).\
+                        update({'last_disconnect_time': func.now()},
+                        synchronize_session=False)
+                    session.commit()
+                except BaseException as ex:
+                    self.log.info(
+                        "Updating failed agent last_disconnect_time failed: %s",
+                        str(ex))
         finally:
             if acquired:
                 self.upgrade_rwlock.read_release()
@@ -1257,6 +1271,9 @@ class AgentManager(threading.Thread):
         if not self.register(agent, orig_agent_type):
             self._close(aconn.socket)
             raise IOError("Bad agent with uuid: %s'.  Disconnecting." % uuid)
+
+        session = meta.Session()
+        session.commit()
 
         #fixme: not a great place to do this
         #aconn.displayname = agent.displayname
