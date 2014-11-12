@@ -1620,7 +1620,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         cmd = ['/usr/sbin/service', 'apache2', action]
         process = subprocess.Popen(cmd,
                                    stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
+                                   stderr=subprocess.PIPE,
+                                   close_fds=True)
         stdout, stderr = process.communicate()
         body = {'command': ' '.join(cmd)}
         if process.returncode == 0:
