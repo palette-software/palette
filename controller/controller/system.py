@@ -55,7 +55,7 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
                 {'envid':1, 'key': SystemConfig.CPU_PERIOD_WARN, 'value':'300'},
                 {'envid':1, 'key': SystemConfig.CPU_PERIOD_ERROR,
                                                                 'value':'300'},
-                {'envid':1, 'key': SystemConfig.METRIC_SAVE_HOURS, 'value':'24'}
+                {'envid':1, 'key': SystemConfig.METRIC_SAVE_DAYS, 'value':'1'}
         # Note: No default volid set.
     ]
 

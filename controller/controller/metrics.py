@@ -1,4 +1,4 @@
-import time
+import time, datetime
 
 from sqlalchemy import Column, BigInteger, Float, DateTime, func
 
@@ -45,15 +45,15 @@ class MetricManager(object):
         """Prune/remove old rows from the metrics table."""
 
         try:
-            metric_save_hours = self.st_config.metric_save_hours
+            metric_save_days = self.st_config.metric_save_days
         except ValueError as ex:
             return {'error': str(ex)}
 
-        self.log.debug("metrics: prune save %d hours", metric_save_hours)
+        self.log.debug("metrics: prune save %d days", metric_save_days)
 
         stmt = ("DELETE FROM metrics " + \
-                "WHERE creation_time < NOW() - INTERVAL '%d HOURS'") % \
-                (metric_save_hours)
+                "WHERE creation_time < NOW() - INTERVAL '%d DAYS'") % \
+                (metric_save_days)
 
         connection = meta.engine.connect()
         result = connection.execute(stmt)
@@ -185,8 +185,10 @@ class MetricManager(object):
                             agent.displayname)
             return {"above": "unknown"}
 
-        last_connection_time = \
-                        time.mktime(agent.last_connection_time.timetuple())
+        # Seconds since the epoch
+        last_connection_time = (agent.last_connection_time -
+                                datetime.datetime.utcfromtimestamp(0)).\
+                                total_seconds()
 
         if time.time() - last_connection_time < period:
             # The agent hasn't been connected at least "period" amount
@@ -208,7 +210,8 @@ class MetricManager(object):
         report_value = -1
         for entry in connection.execute(stmt):
             sample_count += 1
-            creation_time = time.mktime(entry[1].timetuple())
+            creation_time = (entry[1] - datetime.datetime.utcfromtimestamp(0)).\
+                             total_seconds()
             items.append(entry[0])
             if sample_count == 1:
                 report_value = entry[0]
@@ -216,8 +219,10 @@ class MetricManager(object):
                     # The most recent sample doesn't include data for at least
                     # "period" amount of time.
                     self.log.debug("metrics: creation_time (%d) - " + \
-                                   "last_connection_time (%d) < period (%d)",
-                                   creation_time, last_connection_time, period)
+                                   "last_connection_time (%d) " + \
+                                   "< period (%d) = %d",
+                                   creation_time, last_connection_time, period,
+                                   creation_time - last_connection_time)
                     return {"above": "unknown"}
 
             if entry[0] < threshold:
