@@ -1153,6 +1153,21 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status(body)
 
+    @usage('prune')
+    @upgrade_rwlock
+    def do_prune(self, cmd):
+        """Prune old rows from the metrics table."""
+
+        if len(cmd.args):
+            self.print_usage(self.do_prune.__usage__)
+            return
+
+        self.ack()
+
+        body = self.server.metrics.prune()
+
+        self.report_status(body)
+
 
     @usage('firewall { status | { enable | disable } port [port] }')
     def do_firewall(self, cmd):

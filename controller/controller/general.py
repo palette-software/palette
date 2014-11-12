@@ -21,6 +21,7 @@ class SystemConfig(object):
     CPU_LOAD_ERROR = "cpu-load-error"
     CPU_PERIOD_WARN = "cpu-period-warn"
     CPU_PERIOD_ERROR = "cpu-period-error"
+    METRIC_SAVE_HOURS = 'metric-save-hours'
 
     ALERTS_ENABLED = "alerts-enabled"
 
@@ -114,6 +115,8 @@ class SystemConfig(object):
             return self._getint(self.CPU_PERIOD_WARN, default=300)
         if name == 'cpu_period_error':
             return self._getint(self.CPU_PERIOD_ERROR, default=600)
+        if name == 'metric_save_hours':
+            return self._getint(self.METRIC_SAVE_HOURS, default=24)
         raise AttributeError(name)
 
     def todict(self):
@@ -134,7 +137,8 @@ class SystemConfig(object):
             self.CPU_LOAD_WARN: self.cpu_load_warn,
             self.CPU_LOAD_ERROR: self.cpu_load_error,
             self.CPU_PERIOD_WARN: self.cpu_load_warn,
-            self.CPU_PERIOD_ERROR: self.cpu_period_error
+            self.CPU_PERIOD_ERROR: self.cpu_period_error,
+            self.METRIC_SAVE_HOURS: self.metric_save_hours
             }
 
     def text(self, value):
