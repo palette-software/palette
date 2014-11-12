@@ -41,6 +41,27 @@ class MetricManager(object):
         session.add(entry)
         session.commit()
 
+    def prune(self):
+        """Prune/remove old rows from the metrics table."""
+
+        try:
+            metric_save_hours = self.st_config.metric_save_hours
+        except ValueError as ex:
+            return {'error': str(ex)}
+
+        self.log.debug("metrics: prune save %d hours", metric_save_hours)
+
+        stmt = ("DELETE FROM metrics " + \
+                "WHERE creation_time < NOW() - INTERVAL '%d HOURS'") % \
+                (metric_save_hours)
+
+        connection = meta.engine.connect()
+        result = connection.execute(stmt)
+        connection.close()
+
+        self.log.debug("metrics: pruned %d rows", result.rowcount)
+        return {'status': "OK", 'pruned': result.rowcount}
+
     def check(self, metric='cpu'):
         # pylint: disable=too-many-locals
         if metric != 'cpu':
