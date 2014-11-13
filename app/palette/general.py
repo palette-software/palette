@@ -286,7 +286,7 @@ class GeneralApplication(PaletteRESTHandler):
         else:
             raise exc.HTTPMethodNotAllowed()
 
-    def handle_load_warn(self, req):
+    def _handle_load_warn(self, req):
         scfg = SystemConfig(req.system)
         if req.method == 'GET':
             return {'value':scfg.http_load_warn}
@@ -296,7 +296,7 @@ class GeneralApplication(PaletteRESTHandler):
         else:
             raise exc.HTTPMethodNotAllowed()
 
-    def handle_load_error(self, req):
+    def _handle_load_error(self, req):
         scfg = SystemConfig(req.system)
         if req.method == 'GET':
             return {'value':scfg.http_load_error}
