@@ -17,3 +17,6 @@ changelog
 dist
 build
 .idea/
+dpkg/keys/random_seed
+dpkg/apt/db
+dpkg/apt/dists
