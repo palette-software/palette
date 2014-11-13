@@ -35,7 +35,12 @@ class BackupApplication(PaletteRESTHandler):
             print >> sys.stderr, "Backup not found:", filename
             return {}
 
+
         cmd = 'restore "%s"' % backup_entry.name
+
+        if 'password' in req.POST and len(req.POST['password']):
+            cmd += ' "%s"' % req.POST['password']
+
         if req.POST['restore-type'] == 'data-only':
             cmd = '/no-config ' + cmd
 
