@@ -1567,3 +1567,6 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
 #cpu-load-warn, #cpu-load-error, #cpu-period-warn, #cpu-period-error {
     width: 60px;
 }
+section.run-as-user {
+    margin-top: 15px;
+}

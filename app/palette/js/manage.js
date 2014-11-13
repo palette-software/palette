@@ -127,8 +127,14 @@ function ($, topic, template, common)
     function restore() {
         var ts = $('#restore-timestamp').html();
         var filename = $('#restore-filename').val();
-        data = {'action': 'restore',
-               'filename': filename}
+        var data = {'action': 'restore',
+                    'filename': filename}
+
+        var passwd = $('#password').val();
+        if (passwd != null && passwd.length > 0) {
+            data['password'] = passwd;
+        }
+        $('#password').val('');
 
         data['restore-type'] = $('#restore-dialog input[type=radio]:checked').val();
 
