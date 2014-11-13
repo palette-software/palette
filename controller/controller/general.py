@@ -112,9 +112,9 @@ class SystemConfig(object):
         if name == 'cpu_load_error':
             return self._getint(self.CPU_LOAD_ERROR, default=95)
         if name == 'cpu_period_warn':
-            return self._getint(self.CPU_PERIOD_WARN, default=300)
+            return self._getint(self.CPU_PERIOD_WARN, default=60)
         if name == 'cpu_period_error':
-            return self._getint(self.CPU_PERIOD_ERROR, default=600)
+            return self._getint(self.CPU_PERIOD_ERROR, default=60)
         if name == 'metric_save_days':
             return self._getint(self.METRIC_SAVE_DAYS, default=1)
         raise AttributeError(name)
