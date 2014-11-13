@@ -663,7 +663,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return copy_body
 
     def restore_cmd(self, agent, backup_full_path, orig_state,
-                    no_config=False, userid=None):
+                    no_config=False, userid=None, user_password=None):
         # pylint: disable=too-many-arguments
         """Do a tabadmin restore for the backup_full_path.
            The backup_full_path may be in cloud storage, or a volume
@@ -733,6 +733,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.state_manager.update(StateManager.STATE_STARTING_RESTORE)
 
         cmd = 'tabadmin restore \\\"%s\\\"' % got.primary_full_path
+        if user_password:
+            cmd += ' --password \\\"%s\\\"' % user_password
         if no_config:
             cmd += ' --no-config'
 
