@@ -197,9 +197,8 @@ class AlertEmail(object):
                 subject, message)
             return
 
-        if event_entry.key == EventControl.EXTRACT_OK:
-            to_emails = self.publisher_email(data)
-        elif event_entry.key == EventControl.EXTRACT_FAILED:
+        if event_entry.key in (EventControl.EXTRACT_OK,
+                               EventControl.EXTRACT_FAILED):
             to_emails = self.admin_emails() + self.publisher_email(data)
         else:
             to_emails = self.admin_emails()
