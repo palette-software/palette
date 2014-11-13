@@ -1,4 +1,5 @@
 include ../pylint.mk
+dpkg_dir := ../dpkg
 
 all: pylint debian
 .PHONY: all
@@ -6,6 +7,10 @@ all: pylint debian
 debian:
 	python setup.py bdist
 	make -C DEBIAN all
+	mkdir -p $(dpkg_dir)/pool
+	cp -r DEBIAN/*.deb $(dpkg_dir)/pool
+dpkg_dir := ../dpkg
+
 .PHONY: debian
 
 pylint:
