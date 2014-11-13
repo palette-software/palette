@@ -1,5 +1,10 @@
 all: palette controller
 
+publish:
+	make clean all
+	GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
+	chmod 600 dpkg/client/id_rsa; cd dpkg/apt; scp -r -i ../client/id_rsa -r . ubuntu@apt.palette-software.com:/var/packages/release
+
 palette: 
 	make -C app all
 .PHONY: palette
@@ -20,6 +25,7 @@ pylint:
 clean:
 	make -C app clean
 	make -C controller clean
+	rm -rf dpkg/dists dpkg/pool dpkg/apt/db dpkg/apt/dists dpkg/apt/pool
 .PHONY: clean
 
 build-setup:

@@ -1,0 +1,16 @@
+The "apt" directory is the repository.  It should be copied to be served
+up by the apt.palette-software.com web server from the
+"/var/packages/release" directory.
+
+# Add the repo gpg key to the trusted key list
+apt-key add client/key.asc
+
+# Create a file /etc/apt/sources.list.d/palette.list and add
+# the following line:
+deb http://username:password@apt.palette-software.com/release stable non-free
+
+# Update:
+apt-get update
+
+# Install
+apt-get install palette controller

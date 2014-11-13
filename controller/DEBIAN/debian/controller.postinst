@@ -10,6 +10,8 @@ fi
 
 set +x
 
+apt-key add /usr/share/palette/conf/key.asc
+
 # The "| echo" is so it returns exit status of 0 even if they already exist.
 sudo -u postgres createuser --superuser $USER 2>&1 | echo
 
