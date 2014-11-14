@@ -159,6 +159,7 @@ function ($, topic, template, items, paging)
 
         $('.popup-close, article.popup .shade').bind('click', function() {
             $('article.popup').removeClass('visible');
+            $('#password').val('');
         });
     }
 
