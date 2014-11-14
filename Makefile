@@ -34,5 +34,5 @@ clean:
 .PHONY: clean
 
 build-setup:
-	sudo apt-get install -y debhelper reprepro python-setuptools pylint
+	sudo apt-get install -y debhelper reprepro python-setuptools pylint python-passlib
 .PHONY: build-setup
