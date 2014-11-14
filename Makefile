@@ -5,6 +5,11 @@ publish:
 	GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
 	chmod 600 dpkg/client/id_rsa; cd dpkg/apt; scp -r -i ../client/id_rsa -r . ubuntu@apt.palette-software.com:/var/packages/release
 
+publish-test:
+	make clean all
+	GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
+	chmod 600 dpkg/client/id_rsa; cd dpkg/apt; scp -r -i ../client/id_rsa -r . ubuntu@apt.palette-software.com:/var/packages/test
+
 palette: 
 	make -C app all
 .PHONY: palette
@@ -29,5 +34,5 @@ clean:
 .PHONY: clean
 
 build-setup:
-	sudo apt-get install -y debhelper python-setuptools pylint
+	sudo apt-get install -y debhelper reprepro python-setuptools pylint
 .PHONY: build-setup
