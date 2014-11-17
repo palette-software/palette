@@ -41,6 +41,7 @@
             </button>
           </section>
         </section>
+        <input type="hidden" id="redirect" name="redirect" value=""/>
       </form>
       %if 'AUTH_ERROR' in req.environ:
       <section class="hidden" id="auth-error"></section>
