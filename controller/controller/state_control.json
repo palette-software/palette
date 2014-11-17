@@ -1,159 +1,211 @@
 {
 "RECORDS":[
 {
+"stateid":1,
 "state":"DISCONNECTED",
 "text":"Tableau Status Unknown",
 "allowable_actions":"",
+"icon":null,
 "color":"red"
 },
 {
+"stateid":2,
 "state":"PENDING",
 "text":"Retrieving Tableau Status",
 "allowable_actions":"",
+"icon":null,
 "color":"yellow"
 },
 {
+"stateid":3,
 "state":"STOPPING",
 "text":"Tableau Stopping",
 "allowable_actions":"",
+"icon":null,
 "color":"yellow"
 },
 {
+"stateid":4,
 "state":"STOPPING-RESTORE",
 "text":"Tableau Stopping",
 "allowable_actions":"",
+"icon":null,
 "color":"yellow"
 },
 {
+"stateid":5,
 "state":"RESTARTING",
 "text":"Tableau Restarting",
 "allowable_actions":"",
+"icon":null,
 "color":"yellow"
 },
 {
+"stateid":6,
 "state":"STOPPED",
 "text":"Tableau Stopped",
 "allowable_actions":"start backup restore restart repair-license ziplogs",
+"icon":null,
 "color":"yellow"
 },
 {
+"stateid":7,
 "state":"STOPPED-UNEXPECTED",
 "text":"Unplanned Tableau Stop",
 "allowable_actions":"start backup restore restart repair-license ziplogs",
+"icon":null,
 "color":"red"
 },
 {
+"stateid":8,
 "state":"STOPPED-RESTORE",
 "text":"Tableau Stopped",
 "allowable_actions":"",
+"icon":null,
 "color":"yellow"
 },
 {
+"stateid":9,
 "state":"STOPPED-BACKUP",
 "text":"Tableau Stopped",
 "allowable_actions":"",
+"icon":null,
 "color":"yellow"
 },
 {
+"stateid":10,
 "state":"STOPPED-BACKUP-RESTORE",
 "text":"Tableau Stopped",
 "allowable_actions":"",
+"icon":null,
 "color":"yellow"
 },
 {
+"stateid":11,
 "state":"STOPPED-FILEDEL",
 "text":"Tableau Stopped",
 "allowable_actions":"",
+"icon":null,
 "color":"yellow"
 },
 {
+"stateid":12,
 "state":"STOPPED-ZIPLOGS",
 "text":"Tableau Stopped",
 "allowable_actions":"",
+"icon":null,
 "color":"yellow"
 },
 {
+"stateid":13,
 "state":"STOPPED-CLEANUP",
 "text":"Tableau Stopped",
 "allowable_actions":"",
+"icon":null,
 "color":"yellow"
 },
 {
+"stateid":14,
 "state":"STARTING",
 "text":"Starting Tableau",
 "allowable_actions":"user-refresh",
+"icon":null,
 "color":"yellow"
 },
 {
+"stateid":15,
 "state":"STARTING-RESTORE",
 "text":"Tableau Stopped",
 "allowable_actions":"",
+"icon":null,
 "color":"yellow"
 },
 {
+"stateid":16,
 "state":"STARTED",
 "text":"Tableau Running",
 "allowable_actions":"stop backup restore restart repair-license ziplogs user-refresh",
+"icon":null,
 "color":"green"
 },
 {
+"stateid":17,
 "state":"STARTED-BACKUP",
 "text":"Tableau Running",
 "allowable_actions":"user-refresh",
+"icon":null,
 "color":"green"
 },
 {
+"stateid":18,
 "state":"STARTED-BACKUP-RESTORE",
 "text":"Tableau Running",
 "allowable_actions":"",
+"icon":null,
 "color":"green"
 },
 {
+"stateid":19,
 "state":"STARTED-BACKUP-STOP",
 "text":"Tableau Running",
 "allowable_actions":"",
+"icon":null,
 "color":"green"
 },
 {
+"stateid":20,
 "state":"STARTED-BACKUP-RESTART",
 "text":"Tableau Running",
 "allowable_actions":"",
+"icon":null,
 "color":"green"
 },
 {
+"stateid":21,
 "state":"STARTED-FILEDEL",
 "text":"Tableau Running",
 "allowable_actions":"",
+"icon":null,
 "color":"green"
 },
 {
+"stateid":22,
 "state":"STARTED-ZIPLOGS",
 "text":"Tableau Running",
 "allowable_actions":"user-refresh",
+"icon":null,
 "color":"green"
 },
 {
+"stateid":23,
 "state":"STARTED-CLEANUP",
 "text":"Tableau Running",
 "allowable_actions":"user-refresh",
+"icon":null,
 "color":"green"
 },
 {
+"stateid":24,
 "state":"DEGRADED",
 "text":"Tableau Partially Degraded",
 "allowable_actions":"stop backup restore restart repair-license ziplogs user-refresh",
+"icon":null,
 "color":"red"
 },
 {
+"stateid":25,
 "state":"PRIMARY-NOT-ENABLED",
 "text":"Primary Disabled",
 "allowable_actions":"",
+"icon":null,
 "color":"red"
 },
 {
+"stateid":26,
 "state":"UPGRADING",
 "text":"Upgrading Palette Software",
 "allowable_actions":"",
+"icon":null,
 "color":"yellow"
 }
 ]
