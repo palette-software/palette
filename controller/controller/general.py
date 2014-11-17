@@ -17,6 +17,12 @@ class SystemConfig(object):
     HTTP_LOAD_WARN = "http-load-warn"
     HTTP_LOAD_ERROR = "http-load-error"
 
+    CPU_LOAD_WARN = "cpu-load-warn"
+    CPU_LOAD_ERROR = "cpu-load-error"
+    CPU_PERIOD_WARN = "cpu-period-warn"
+    CPU_PERIOD_ERROR = "cpu-period-error"
+    METRIC_SAVE_DAYS = 'metric-save-days'
+
     ALERTS_ENABLED = "alerts-enabled"
 
     PALETTE_VERSION = "palette-version"
@@ -101,6 +107,16 @@ class SystemConfig(object):
             return self._getyesno(self.ALERTS_ENABLED)
         if name == 'upgrading':
             return self._getyesno(self.UPGRADING)
+        if name == 'cpu_load_warn':
+            return self._getint(self.CPU_LOAD_WARN, default=80)
+        if name == 'cpu_load_error':
+            return self._getint(self.CPU_LOAD_ERROR, default=95)
+        if name == 'cpu_period_warn':
+            return self._getint(self.CPU_PERIOD_WARN, default=60)
+        if name == 'cpu_period_error':
+            return self._getint(self.CPU_PERIOD_ERROR, default=60)
+        if name == 'metric_save_days':
+            return self._getint(self.METRIC_SAVE_DAYS, default=1)
         raise AttributeError(name)
 
     def todict(self):
@@ -118,6 +134,11 @@ class SystemConfig(object):
             self.ALERTS_ENABLED: self.alerts_enabled,
             self.PALETTE_VERSION: self.palette_version,
             self.UPGRADING: self.upgrading,
+            self.CPU_LOAD_WARN: self.cpu_load_warn,
+            self.CPU_LOAD_ERROR: self.cpu_load_error,
+            self.CPU_PERIOD_WARN: self.cpu_load_warn,
+            self.CPU_PERIOD_ERROR: self.cpu_period_error,
+            self.METRIC_SAVE_DAYS: self.metric_save_days
             }
 
     def text(self, value):

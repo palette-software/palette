@@ -197,9 +197,8 @@ class AlertEmail(object):
                 subject, message)
             return
 
-        if event_entry.key == EventControl.EXTRACT_OK:
-            to_emails = self.publisher_email(data)
-        elif event_entry.key == EventControl.EXTRACT_FAILED:
+        if event_entry.key in (EventControl.EXTRACT_OK,
+                               EventControl.EXTRACT_FAILED):
             to_emails = self.admin_emails() + self.publisher_email(data)
         else:
             to_emails = self.admin_emails()
@@ -235,7 +234,7 @@ class AlertEmail(object):
         if len(subject) > self.max_subject_len:
             subject = subject[:self.max_subject_len]  + "..."
 
-        subject = Header(unicode("Palette Alert: " + subject), 'utf-8')
+        subject = Header(unicode(subject), 'utf-8')
         msg['Subject'] = subject
         msg['From'] = self.from_email
 

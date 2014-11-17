@@ -13,7 +13,7 @@ from mixin import BaseMixin, BaseDictMixin
 from cache import TableauCacheManager
 from manager import synchronized
 from odbc import ODBC
-from util import timedelta_total_seconds
+from util import timedelta_total_seconds, utc2local
 
 def to_hhmmss(seconds):
     hours = seconds // (60*60)
@@ -99,6 +99,7 @@ class ExtractManager(TableauCacheManager):
 
     @synchronized('extracts')
     def load(self, agent, check_odbc_state=True):
+        # pylint: disable=too-many-locals
         envid = self.server.environment.envid
 
         # FIXME
@@ -129,7 +130,6 @@ class ExtractManager(TableauCacheManager):
                     " AND progress = 100 AND completed_at > '"+\
                     last_completed_at + "'"
         stmt += " ORDER BY id ASC"
-
 
         datadict = agent.odbc.execute(stmt)
 
@@ -162,12 +162,13 @@ class ExtractManager(TableauCacheManager):
                 body['duration'] = duration
                 body['duration_hms'] = to_hhmmss(duration)
 
+            completed_at = utc2local(entry.completed_at)
             if entry.finish_code == 0:
                 self._eventgen(EventControl.EXTRACT_OK, body,
-                               timestamp=entry.completed_at)
+                               timestamp=completed_at)
             else:
                 self._eventgen(EventControl.EXTRACT_FAILED, body,
-                               timestamp=entry.completed_at)
+                               timestamp=completed_at)
 
             session.add(entry)
 
@@ -212,7 +213,7 @@ class ExtractManager(TableauCacheManager):
 
         return self.server.event_control.gen(key, data,
                                              userid=data['system_user_id'],
-                                             siteid=data['site_id'],
+                                             site_id=data['site_id'],
                                              timestamp=timestamp)
 
     @classmethod

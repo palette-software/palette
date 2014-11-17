@@ -1,0 +1,7 @@
+Origin: Palette Software
+Label: Palette Software
+Codename: stable
+Components: non-free
+Architectures: amd64 i386
+Description: Palette Software Repository
+SignWith: yes

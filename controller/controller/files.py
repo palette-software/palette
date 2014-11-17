@@ -16,6 +16,7 @@ class FileEntry(meta.Base, BaseDictMixin):
     envid = Column(BigInteger, ForeignKey("environment.envid"))
     name = Column(String)
     file_type = Column(String)      # backup, ziplog, etc.
+    username = Column(String)       # Tableau run-as user
     storage_type = Column(String)   # vol, cloud
     storageid = Column(BigInteger)  # volid or cloudid
     size = Column(BigInteger)
@@ -38,12 +39,13 @@ class FileManager(Manager):
 
     # FIXME: replace this with kwargs variant.
     def add(self, name, file_type, storage_type, storageid,
-            size=0, auto=True, encrypted=False):
+            size=0, auto=True, encrypted=False, username=None):
         # pylint: disable=too-many-arguments
         session = meta.Session()
         entry = FileEntry(envid=self.envid, name=name, file_type=file_type,
-                          storage_type=storage_type, storageid=storageid,
-                          size=size, auto=auto, encrypted=encrypted)
+                          username=username, storage_type=storage_type,
+                          storageid=storageid, size=size, auto=auto,
+                          encrypted=encrypted)
         session.add(entry)
         session.commit()
         return entry

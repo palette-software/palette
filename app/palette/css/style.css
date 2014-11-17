@@ -457,19 +457,20 @@ ul.dropdown-menu a:hover {
 .main-side-bar .status > i {
     position: absolute;
     display: block;
-    top: 78px;
-    font-size: 28px;
-    left: 205px;
+    top: 34px;
+    font-size: 30px;
+    left: 213px;
 }
 .main-side-bar .status span.fa-stack {
     position: absolute;
-    font-size: 64px;
+    font-size: 80px;
     line-height: 64px;
     height: 64px;
     width: 64px;
     top: 15px;
     right: 20px;
     color: white;
+    left: 135px;
 /*
     -webkit-transition: all 0.2s ease-in;
     -moz-transition: all 0.2s ease-in;
@@ -491,10 +492,10 @@ ul.dropdown-menu a:hover {
 .main-side-bar .status h3 {
     font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     position: absolute;
-    top: 84px;
+    top: 94px;
     left: 16px;
     display: block;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 300;
     width: 220px;
     overflow: visible;
@@ -1559,4 +1560,13 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
 }
 .top-zone .paging {
     margin-top:5px;
+}
+#cpu-error {
+    padding-left: 23px;
+}
+#cpu-load-warn, #cpu-load-error, #cpu-period-warn, #cpu-period-error {
+    width: 60px;
+}
+section.run-as-user {
+    margin-top: 15px;
 }

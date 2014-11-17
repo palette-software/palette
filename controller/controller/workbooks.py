@@ -81,9 +81,9 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
         return 'twb'
 
     @classmethod
-    def get(cls, envid, name, siteid, projectid, **kwargs):
+    def get(cls, envid, name, site_id, project_id, **kwargs):
         keys = {'envid':envid, 'name':name,
-                'site_id':siteid, 'project_id':projectid}
+                'site_id':site_id, 'project_id':project_id}
         return cls.get_unique_by_keys(keys, **kwargs)
 
     @classmethod
@@ -201,14 +201,14 @@ class WorkbookManager(TableauCacheManager):
         for odbcdata in ODBC.load(data):
             name = odbcdata.data['name']
             revision = odbcdata.data['revision']
-            siteid = odbcdata.data['site_id']
-            projectid = odbcdata.data['project_id']
+            site_id = odbcdata.data['site_id']
+            project_id = odbcdata.data['project_id']
 
-            wbe = WorkbookEntry.get(envid, name, siteid, projectid,
+            wbe = WorkbookEntry.get(envid, name, site_id, project_id,
                                     default=None)
             if wbe is None:
                 wbe = WorkbookEntry(envid=envid, name=name,
-                                    site_id=siteid, project_id=projectid)
+                                    site_id=site_id, project_id=project_id)
                 session.add(wbe)
 
             # NOTE: id is updated with each revision.

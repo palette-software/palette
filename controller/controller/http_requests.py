@@ -1,4 +1,5 @@
 from httplib import responses
+from urllib import unquote
 
 from sqlalchemy import Column, String, DateTime, Integer, BigInteger
 from sqlalchemy import UniqueConstraint
@@ -182,6 +183,12 @@ class HttpRequestManager(TableauCacheManager):
             site = Site.get(entry.envid, entry.site_id)
             if site:
                 body['site'] = site.name
+
+        if 'http_referer' in body:
+            body['http_referer'] = unquote(body['http_referer']).decode('utf8')
+        if 'http_request_uri' in body:
+            http_request_uri = unquote(body['http_request_uri'])
+            body['http_request_uri'] = http_request_uri.decode('utf8')
 
         completed_at = utc2local(entry.completed_at)
         self.server.event_control.gen(key, body,
