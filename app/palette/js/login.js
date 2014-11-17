@@ -31,10 +31,29 @@ function (jquery)
         }
     }
 
+    function getParam(name)
+    {
+        var qs = window.location.search.substring(1);
+        var tokens = qs.split('&');
+        for (var i = 0; i < tokens.length; i++) 
+        {
+            var param = tokens[i].split('=');
+            if (param[0] == name)
+            {
+                return param[1];
+            }
+        }
+        return null;
+    }
+
     function submit() {
         var data = validate();
         if (!data) {
             return setErrorMode();
+        }
+        var redirect = getParam("location");
+        if (redirect != null) {
+            jquery('#redirect').val(redirect);
         }
         jquery('form').submit();
     }
