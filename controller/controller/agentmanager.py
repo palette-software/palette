@@ -3,8 +3,8 @@ import socket
 import ssl
 import threading
 import time
-from httplib import HTTPConnection
 import json
+import traceback
 
 import exc
 import httplib
@@ -156,6 +156,7 @@ class AgentManager(threading.Thread):
         self.log = self.server.log
         self.domainid = self.server.domain.domainid
         self.envid = self.server.environment.envid
+        self.metrics = self.server.metrics
         self.upgrade_rwlock = self.server.upgrade_rwlock
 
         self.daemon = True
@@ -221,7 +222,6 @@ class AgentManager(threading.Thread):
            - Checks agent uuid and type against already connected agents.
            - Calculates a displayname and order if it is a new agent.
            - Adds the agent to the connected agents dictionary.
-           - Makes agent transient with respect to the database.
        """
 
         self.log.debug("register: new agent name %s, uuid %s, conn_id %d", \
@@ -284,10 +284,6 @@ class AgentManager(threading.Thread):
             # connected before the primary ever connected with its
             # yml file that tells us the ip addresses of workers.
             self.set_all_agent_types()
-
-            # Tell the status thread to start getting status on
-            # the new primary.
-            self.new_primary_event.set()
 
         return True
 
@@ -1105,6 +1101,7 @@ class AgentManager(threading.Thread):
 
         self.upgrade_rwlock.read_acquire()
         acquired = True
+        agent = None
 
         try:
             aconn = AgentConnection(self.server, conn, addr, peername)
@@ -1194,6 +1191,11 @@ class AgentManager(threading.Thread):
             session = meta.Session()
             session.commit()
 
+            # Tell the status thread to start getting status on
+            # the new primary.
+            if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+                self.new_primary_event.set()
+
             make_transient(agent)
 
             self.upgrade_rwlock.read_release()
@@ -1202,8 +1204,22 @@ class AgentManager(threading.Thread):
             self.ping_check(agent)
 
         except (socket.error, IOError) as ex:
-            self.log.debug("handle_agent_connection_error: " + str(ex))
+            self.log.warn("handle_agent_connection_error: " + str(ex))
             self._close(aconn.socket)
+
+            if agent:
+                # Make sure the agent is marked as disconnected by
+                # updating the last_disconnect_time.
+                try:
+                    session.query(Agent).\
+                        filter(Agent.agentid == agent.agentid).\
+                        update({'last_disconnect_time': func.now()},
+                        synchronize_session=False)
+                    session.commit()
+                except BaseException as ex:
+                    self.log.info(
+                        "Updating failed agent last_disconnect_time failed: %s",
+                        str(ex))
         finally:
             if acquired:
                 self.upgrade_rwlock.read_release()
@@ -1231,6 +1247,8 @@ class AgentManager(threading.Thread):
         except (IOError, ValueError, exc.InvalidStateError,
                 exc.HTTPException, httplib.HTTPException) as ex:
             self._close(aconn.socket)
+            self.log.error(str(ex))
+            self.log.debug(traceback.format_exc())
             raise IOError(
                 "Bad agent with uuid: '%s', Disconnecting. Error: %s",
                 uuid, str(ex))
@@ -1253,6 +1271,9 @@ class AgentManager(threading.Thread):
         if not self.register(agent, orig_agent_type):
             self._close(aconn.socket)
             raise IOError("Bad agent with uuid: %s'.  Disconnecting." % uuid)
+
+        session = meta.Session()
+        session.commit()
 
         #fixme: not a great place to do this
         #aconn.displayname = agent.displayname
@@ -1453,29 +1474,43 @@ class AgentManager(threading.Thread):
         else:
             self.log.debug(
                 "Ping: Reply from agent '%s', type '%s', uuid %s, " + \
-                "conn_id %d",
+                "conn_id %d, body: %s",
                     agent.displayname, agent.agent_type, agent.uuid,
-                    agent.conn_id)
+                    agent.conn_id, str(body))
+            if 'counters' in body:
+                for counter in body['counters']:
+                    if 'counter-name' in counter and \
+                            counter['counter-name'] == '% Processor Time' and \
+                                                'value' in counter:
+
+                        try:
+                            cpu = float(counter['value'])
+                        except ValueError as ex:
+                            self.log.error(
+                                "ping: Error obtaining cpu metric: %s: %s",
+                                str(ex), str(body))
+                            break
+                        self.metrics.add(agent, cpu)
+                        break
             return True
 
-class ReverseHTTPConnection(HTTPConnection):
+class ReverseHTTPConnection(httplib.HTTPConnection):
 
     def __init__(self, sock, aconn):
-        HTTPConnection.__init__(self, 'agent')
-#        HTTPConnection.debuglevel = 1
+        httplib.HTTPConnection.__init__(self, 'agent')
         self.sock = sock
         self.aconn = aconn
         self.aconn.last_activity = time.time()    # update for ping check
 
     def getresponse(self, buffering=False):
         self.aconn.ast_activity = time.time()    # update for ping check
-        return HTTPConnection.getresponse(self, buffering)
+        return httplib.HTTPConnection.getresponse(self, buffering)
 
     def request(self, method, url, body=None, headers=None):
         if headers is None:
             headers = {}
         self.aconn.last_activity = time.time()    # update for ping check
-        HTTPConnection.request(self, method, url, body, headers)
+        httplib.HTTPConnection.request(self, method, url, body, headers)
 
     def connect(self):
         pass

@@ -31,6 +31,7 @@ from auth import AuthManager
 from config import Config
 from credential import CredentialEntry, CredentialManager
 from diskcheck import DiskCheck, DiskException
+from datasources import DataSource
 from data_source_types import DataSourceTypes
 from domain import Domain
 from environment import Environment
@@ -41,6 +42,8 @@ from firewall_manager import FirewallManager
 from general import SystemConfig
 from http_requests import HttpRequestEntry, HttpRequestManager
 from licensing import LicenseManager, LicenseEntry
+from metrics import MetricManager
+from notifications import NotificationManager
 from ports import PortManager
 from profile import UserProfile, Role
 from sched import Sched, Crontab
@@ -660,7 +663,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return copy_body
 
     def restore_cmd(self, agent, backup_full_path, orig_state,
-                    no_config=False, userid=None):
+                    no_config=False, userid=None, user_password=None):
         # pylint: disable=too-many-arguments
         """Do a tabadmin restore for the backup_full_path.
            The backup_full_path may be in cloud storage, or a volume
@@ -730,6 +733,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.state_manager.update(StateManager.STATE_STARTING_RESTORE)
 
         cmd = 'tabadmin restore \\\"%s\\\"' % got.primary_full_path
+        if user_password:
+            cmd += ' --password \\\"%s\\\"' % user_password
         if no_config:
             cmd += ' --no-config'
 
@@ -1069,6 +1074,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def sync_cmd(self, agent, check_odbc_state=True):
         """sync/copy tables from tableau to here."""
+        # pylint: disable=too-many-branches
 
         if check_odbc_state and not self.odbc_ok():
             main_state = self.state_manager.get_state()
@@ -1101,12 +1107,22 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         else:
             sync_dict['data-connections'] = body['count']
 
+        body = DataSource.sync(agent)
+        if 'error' in body:
+            if error_msg:
+                error_msg += ", "
+            error_msg += "DataSouce sync failure: " + body['error']
+        else:
+            sync_dict['data-sources'] = body['count']
+
         if error_msg:
             sync_dict['error'] = error_msg
 
         return sync_dict
 
     def maint(self, action, agent=None, send_alert=True):
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-statements
         """If agent is not specified, action is done for all gateway agents."""
         if action not in ("start", "stop"):
             self.log.error("Invalid maint action: %s", action)
@@ -1121,16 +1137,25 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.log.error("maint: %s: No yml entry for 'gateway.hosts' yet.",
                             action)
 
-        results = []
+        # We're going to combine stdout/stderr/error for all gateway hosts.
+        body_combined = {'stdout': "",
+                         'stderr': "",
+                         'error': ""}
+
         maint_success = True
         send_maint_body = self.set_maint_body(action)
 
         # We were called with a specific agent so do the maint action only
-        # there
+        # there.
         if agent:
-            body = self.send_maint(action, agent, send_maint_body, send_alert)
-            return {'maint': [body]}
+            body = self.send_maint(action, agent, send_maint_body)
+            self.update_maint_status(action, body)
 
+            if send_alert:
+                self.send_maint_event(action, agent, body)
+            return body
+
+        agent_connected = None
         for host in gateway_hosts:
             # This means the primary is the gateway host
             if host == 'localhost' or host == '127.0.0.1':
@@ -1162,42 +1187,83 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                "Skipping '%s'.", host, action)
                 continue
 
-            body = self.send_maint(action, agent, send_maint_body, send_alert)
+            if not agent_connected:
+                # The agent to use for the event
+                agent_connected = agent
 
-            results.append(body)
+            body = self.send_maint(action, agent, send_maint_body)
+
+            if 'stdout' in body:
+                body_combined['stdout'] += '%s: %s\n' % (agent.displayname,
+                                                body['stdout'])
+            if 'stderr' in body:
+                body_combined['stderr'] += '%s: %s\n' % (agent.displayname,
+                                                body['stdout'])
             if 'error' in body:
+                body_combined['error'] += '%s: %s\n' % \
+                                        (agent.displayname, body['error'])
                 maint_success = False
 
-        if not maint_success:
-            return {"maint": results, 'error': "Failed."}
+        if not agent_connected:
+            self.log.debug("maint: No agents are connected.  Did nothing.")
+            body_combined['error'] = "No agents are connected."
+            return body_combined    # Empty as we did nothing
 
-        return {"maint": results}
+        if maint_success:
+            # The existence of 'error' signifies failure but all succeeded.
+            del body_combined['error']
 
-    def send_maint(self, action, agent, send_maint_body, send_alert):
+        self.update_maint_status(action, body_combined)
+
+        if send_alert:
+            self.send_maint_event(action, agent_connected, body_combined)
+
+        return body_combined
+
+    def update_maint_status(self, action, body):
+        if action == 'start':
+            if failed(body):
+                self.maint_started = False
+            else:
+                self.maint_started = True
+
+        elif action == 'stop':
+            if failed(body):
+                self.maint_started = True
+            else:
+                self.maint_started = False
+
+    def send_maint(self, action, agent, send_maint_body):
         """Does the actual sending of the maint command to the agent,
-           generates the events, and returns the body/result."""
+           returns the body/result.
+        """
 
         self.log.debug("maint: %s for '%s'", action, agent.displayname)
         body = self.send_immediate(agent, "POST", "/maint", send_maint_body)
 
-        if body.has_key("error"):
+        return body
+
+    def send_maint_event(self, action, agent, body):
+        """Generates the appropriate maint event (start failed, stop
+           failed, maint online, maint offline).
+        """
+        if 'error' in body:
             data = agent.todict()
-            data['error'] = body['error']
             if action == "start":
                 self.event_control.gen(EventControl.MAINT_START_FAILED,
-                                       data)
+                                       dict(body.items() + data.items()))
+                return
             else:
                 self.event_control.gen(EventControl.MAINT_STOP_FAILED,
-                                       data)
-        if send_alert:
-            if action == 'start':
-                self.event_control.gen(EventControl.MAINT_ONLINE,
-                                       agent.todict())
-            else:
-                self.event_control.gen(EventControl.MAINT_OFFLINE,
-                                       agent.todict())
+                                       dict(body.items() + data.items()))
+                return
 
-        return body
+        if action == 'start':
+            self.event_control.gen(EventControl.MAINT_ONLINE,
+                                   agent.todict())
+        else:
+            self.event_control.gen(EventControl.MAINT_OFFLINE,
+                                   agent.todict())
 
     def set_maint_body(self, action):
         send_body = {"action": action}
@@ -1680,6 +1746,9 @@ def main():
     server.extract = ExtractManager(server)
     server.hrman = HttpRequestManager(server)
 
+    # Status of the maintenance web server(s)
+    server.maint_started = False
+
     Role.populate()
     UserProfile.populate()
 
@@ -1704,6 +1773,9 @@ def main():
     server.firewall_manager = FirewallManager(server)
     server.license_manager = LicenseManager(server)
     server.state_manager = StateManager(server)
+
+    server.notifications = NotificationManager(server)
+    server.metrics = MetricManager(server)
 
     server.ports = PortManager(server)
     server.ports.populate()

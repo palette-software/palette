@@ -174,6 +174,10 @@ class EventControl(meta.Base, BaseMixin, BaseDictMixin):
     DISK_USAGE_ABOVE_LOW_WATERMARK = "DISK-USAGE-ABOVE-LOW-WATERMARK"
     DISK_USAGE_OKAY = "DISK-USAGE-OKAY"
 
+    CPU_LOAD_ABOVE_HIGH_WATERMARK = "CPU-LOAD-ABOVE-HIGH-WATERMARK"
+    CPU_LOAD_ABOVE_LOW_WATERMARK = "CPU-LOAD-ABOVE-LOW-WATERMARK"
+    CPU_LOAD_OKAY = "CPU-LOAD-OKAY"
+
     EMAIL_TEST = "EMAIL-TEST"
 
     WORKBOOK_ARCHIVE_FAILED = "WORKBOOK-ARCHIVE-FAILED"
@@ -238,7 +242,7 @@ class EventControlManager(Manager):
 
         return entry
 
-    def gen(self, key, data=None, userid=None, siteid=None, timestamp=None):
+    def gen(self, key, data=None, userid=None, site_id=None, timestamp=None):
         # pylint: disable=too-many-arguments
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-statements
@@ -313,6 +317,11 @@ class EventControlManager(Manager):
             data['username'] = mako.runtime.UNDEFINED
 
         data['event_type'] = event_entry.event_type
+        data['event_type_label'] = event_entry.event_type_label
+        data['event_label'] = event_entry.event_label
+        data['event_label_desc'] = event_entry.event_label_desc
+        data['admin_visibility'] = event_entry.admin_visibility
+        data['publisher_visiblity'] = event_entry.publisher_visibility
 
         # set server-url(s)
         data['server_url'] = self.server.system.get('server-url',
@@ -326,6 +335,11 @@ class EventControlManager(Manager):
             = self.server.system.get('disk-watermark-low', default='')
         data['disk_watermark_high'] \
             = self.server.system.get('disk-watermark-high', default='')
+
+        data['cpu_load_warn'] \
+            = self.server.system.get('cpu-load-warn', default='')
+        data['cpu_load_error'] \
+            = self.server.system.get('cpu-load-error', default='')
 
         if not 'environment' in data:
             data['environment'] = self.server.environment.name
@@ -396,7 +410,7 @@ class EventControlManager(Manager):
         entry.event_type = event_entry.event_type
         entry.summary = summary
         entry.userid = userid
-        entry.siteid = siteid
+        entry.site_id = site_id
         entry.timestamp = timestamp
 
         session.merge(entry)

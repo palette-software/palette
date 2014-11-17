@@ -222,18 +222,22 @@
         <p>Are you sure want to restore from<br/><span id="restore-timestamp"></span>?</p>
       </section>
       <section class="col-xs-12">
-      <div class="radio">
-        <p class="radio-text">
-          <input type="radio" name="restoreOptions" id="config-and-data" value="config-and-data" checked />
-          <label for="config-and-data">Restore data and configuration</label>
-        </p>
-      </div>
-      <div class="radio">
-        <p class="radio-text">
-          <input type="radio" name="restoreOptions" id="data-only" value="data-only">
-          <label for="data-only">Restore data only</label>
-        </p>
-      </div>
+        <div class="radio">
+          <p class="radio-text">
+            <input type="radio" name="restoreOptions" id="config-and-data" value="config-and-data" checked />
+            <label for="config-and-data">Restore data and configuration</label>
+          </p>
+        </div>
+        <div class="radio">
+          <p class="radio-text">
+            <input type="radio" name="restoreOptions" id="data-only" value="data-only">
+              <label for="data-only">Restore data only</label>
+          </p>
+        </div>
+      </section>
+      <section class="col-xs-12 run-as-user">
+        <p>Tableau 'Run-As-User' Password<br/>(If Any)</p>
+        <input type="password" name="password" id="password" />
       </section>
     </section>
     <section class="row">
@@ -257,7 +261,7 @@
     <li class="backup">
       <a class="inactive">
         <span class="timestamp">{{creation-time}}</span>
-	<span class="filename">{{name}}</span>
+        <span class="filename">{{name}}</span>
       </a>
     </li>
     {{/items}}

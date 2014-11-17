@@ -22,6 +22,10 @@ class GeneralApplication(PaletteRESTHandler):
     HIGH_WATERMARK_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
     HTTP_LOAD_WARN_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45]
     HTTP_LOAD_ERROR_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45]
+    CPU_LOAD_WARN_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+    CPU_LOAD_ERROR_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+    CPU_PERIOD_WARN_RANGE = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30]
+    CPU_PERIOD_ERROR_RANGE = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30]
 
     def build_item_for_volume(self, volume):
         fmt = "%s %s %s free of %s"
@@ -133,8 +137,38 @@ class GeneralApplication(PaletteRESTHandler):
             options.append({'id':x, 'item': item})
         http_load_error['options'] = options
 
+        cpu_load_warn = {'name': SystemConfig.CPU_LOAD_WARN,
+                         'value': str(scfg.cpu_load_warn)}
+        options = []
+        for x in self.CPU_LOAD_WARN_RANGE:
+            options.append({'id':x, 'item': str(x)})
+        cpu_load_warn['options'] = options
+
+        cpu_load_error = {'name': SystemConfig.CPU_LOAD_ERROR,
+                          'value': str(scfg.cpu_load_error)}
+        options = []
+        for x in self.CPU_LOAD_ERROR_RANGE:
+            options.append({'id':x, 'item': str(x)})
+        cpu_load_error['options'] = options
+
+        cpu_period_warn = {'name': SystemConfig.CPU_PERIOD_WARN,
+                           'value': str(scfg.cpu_period_warn / 60)}
+        options = []
+        for x in self.CPU_PERIOD_WARN_RANGE:
+            options.append({'id':x * 60, 'item': str(x)})
+        cpu_period_warn['options'] = options
+
+        cpu_period_error = {'name': SystemConfig.CPU_PERIOD_ERROR,
+                            'value': str(scfg.cpu_period_error / 60)}
+        options = []
+        for x in self.CPU_PERIOD_ERROR_RANGE:
+            options.append({'id':x * 60, 'item': str(x)})
+        cpu_period_error['options'] = options
+
         data['config'] = [dest, low, high, auto, user, logs,
-                          http_load_warn, http_load_error]
+                          http_load_warn, http_load_error,
+                          cpu_load_warn, cpu_load_error,
+                          cpu_period_warn, cpu_period_error]
         return data
 
     @required_parameters('value')
@@ -252,7 +286,7 @@ class GeneralApplication(PaletteRESTHandler):
         else:
             raise exc.HTTPMethodNotAllowed()
 
-    def handle_load_warn(self, req):
+    def _handle_load_warn(self, req):
         scfg = SystemConfig(req.system)
         if req.method == 'GET':
             return {'value':scfg.http_load_warn}
@@ -262,7 +296,7 @@ class GeneralApplication(PaletteRESTHandler):
         else:
             raise exc.HTTPMethodNotAllowed()
 
-    def handle_load_error(self, req):
+    def _handle_load_error(self, req):
         scfg = SystemConfig(req.system)
         if req.method == 'GET':
             return {'value':scfg.http_load_error}
@@ -272,9 +306,50 @@ class GeneralApplication(PaletteRESTHandler):
         else:
             raise exc.HTTPMethodNotAllowed()
 
+    def _handle_cpu_load_warn(self, req):
+        scfg = SystemConfig(req.system)
+        if req.method == 'GET':
+            return {'value':scfg.cpu_load_warn}
+        elif req.method == 'POST':
+            d = self.handle_int_POST(req, SystemConfig.CPU_LOAD_WARN)
+            return d
+        else:
+            raise exc.HTTPMethodNotAllowed()
+
+    def _handle_cpu_load_error(self, req):
+        scfg = SystemConfig(req.system)
+        if req.method == 'GET':
+            return {'value':scfg.cpu_load_error}
+        elif req.method == 'POST':
+            d = self.handle_int_POST(req, SystemConfig.CPU_LOAD_ERROR)
+            return d
+        else:
+            raise exc.HTTPMethodNotAllowed()
+
+    def _handle_cpu_period_warn(self, req):
+        scfg = SystemConfig(req.system)
+        if req.method == 'GET':
+            return {'value':scfg.cpu_period_warn}
+        elif req.method == 'POST':
+            d = self.handle_int_POST(req, SystemConfig.CPU_PERIOD_WARN)
+            return d
+        else:
+            raise exc.HTTPMethodNotAllowed()
+
+    def _handle_cpu_period_error(self, req):
+        scfg = SystemConfig(req.system)
+        if req.method == 'GET':
+            return {'value':scfg.cpu_period_error}
+        elif req.method == 'POST':
+            d = self.handle_int_POST(req, SystemConfig.CPU_PERIOD_ERROR)
+            return d
+        else:
+            raise exc.HTTPMethodNotAllowed()
+
     @required_role(Role.MANAGER_ADMIN)
     def handle(self, req):
         # pylint: disable=too-many-return-statements
+        # pylint: disable=too-many-branches
         path_info = self.base_path_info(req)
         if path_info == 'encryption':
             return self.handle_encryption(req)
@@ -292,11 +367,18 @@ class GeneralApplication(PaletteRESTHandler):
             return self.handle_logs(req)
         elif path_info == 'twb':
             return self.handle_twb(req)
-        elif path_info == 'http_load_warn':
-            return self.handle_load_warn(req)
-        elif path_info == 'http_load_error':
-            return self.handle_load_error(req)
-
+        elif path_info == 'http_load_warn' or path_info == 'http/load/warn':
+            return self._handle_load_warn(req)
+        elif path_info == 'http_load_error' or path_info == 'http/load/error':
+            return self._handle_load_error(req)
+        elif path_info == 'cpu/load/warn':
+            return self._handle_cpu_load_warn(req)
+        elif path_info == 'cpu/load/error':
+            return self._handle_cpu_load_error(req)
+        elif path_info == 'cpu/period/warn':
+            return self._handle_cpu_period_warn(req)
+        elif path_info == 'cpu/period/error':
+            return self._handle_cpu_period_error(req)
         if req.method == "GET":
             return self.handle_get(req)
 

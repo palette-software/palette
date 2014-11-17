@@ -1,13 +1,18 @@
 include ../pylint.mk
+dpkg_dir := ../dpkg
 
 all: pylint debian
 .PHONY: all
 
 debian:
 	make -C DEBIAN all
+	mkdir -p $(dpkg_dir)/pool
+	cp -f DEBIAN/*.deb $(dpkg_dir)/pool
 .PHONY: debian
 
 pylint:
+	$(PYLINT) DEBIAN/bin/sum-files
+	$(PYLINT) DEBIAN/bin/upgrade-agent
 	$(PYLINT) controller
 .PHONY: pylint
 

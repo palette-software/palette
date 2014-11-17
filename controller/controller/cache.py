@@ -26,7 +26,7 @@ class TableauUserCache(object):
 class TableauCacheManager(Manager):
 
     # build a cache of the Tableau 'users' table.
-    # used to translate siteid:userid -> system_user_id
+    # used to translate site_id:userid -> system_user_id
     def load_users(self, agent):
         stmt = \
             'SELECT system_user_id, site_id, id ' +\

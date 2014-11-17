@@ -648,7 +648,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
 
-    @usage('[/no-config] restore backup-name')
+    @usage('[/no-config] restore backup-name [tableau-run-as-user-password]')
     @upgrade_rwlock
     def do_restore(self, cmd):
         """Restore.
@@ -660,11 +660,16 @@ class CliHandler(socketserver.StreamRequestHandler):
         # pylint: disable=too-many-branches
         # pylint: disable=too-many-statements
 
-        if len(cmd.args) != 1:
+        if not len(cmd.args) or len(cmd.args) > 2:
             self.print_usage(self.do_restore.__usage__)
             return
 
         backup_name = cmd.args[0]
+
+        if len(cmd.args) == 2:
+            user_password = cmd.args[1]
+        else:
+            user_password = None
 
         agent = self.get_agent(cmd.dict)
         if not agent:
@@ -797,7 +802,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         # success of backup, copy, stop, restore, etc.
         try:
             body = self.server.restore_cmd(agent, backup_name, main_state,
-                                            no_config=no_config, userid=userid)
+                                            no_config=no_config, userid=userid,
+                                            user_password=user_password)
         except StandardError:
             self.server.log.exception("Restore Exception:")
             line = "Restore Error: Traceback: %s" % traceback_string()
@@ -1135,6 +1141,36 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         body = self.server.ports.check_ports()
         self.server.ports.check_ports_unlock()
+
+        self.report_status(body)
+
+    @usage('metric')
+    @upgrade_rwlock
+    def do_metric(self, cmd):
+        """Check on metrics and potentially send an alert."""
+
+        if len(cmd.args):
+            self.print_usage(self.do_metric.__usage__)
+            return
+
+        self.ack()
+
+        body = self.server.metrics.check()
+
+        self.report_status(body)
+
+    @usage('prune')
+    @upgrade_rwlock
+    def do_prune(self, cmd):
+        """Prune old rows from the metrics table."""
+
+        if len(cmd.args):
+            self.print_usage(self.do_prune.__usage__)
+            return
+
+        self.ack()
+
+        body = self.server.metrics.prune()
 
         self.report_status(body)
 
@@ -1590,7 +1626,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         cmd = ['/usr/sbin/service', 'apache2', action]
         process = subprocess.Popen(cmd,
                                    stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
+                                   stderr=subprocess.PIPE,
+                                   close_fds=True)
         stdout, stderr = process.communicate()
         body = {'command': ' '.join(cmd)}
         if process.returncode == 0:

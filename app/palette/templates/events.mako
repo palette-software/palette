@@ -14,6 +14,7 @@
 </section>
 <section class="bottom-zone">
   <section id="event-list"></section>
+  <%include file="paging.mako" args="name='Events'" />
 </section>
 
 <script id="event-list-template" type="x-tmpl-mustache">

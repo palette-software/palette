@@ -1,37 +1,23 @@
 #!/usr/bin/env python
 
+# pylint: disable=invalid-name
 # Prints the sha256 sum of all files in the agent's Palette install-dir.
 
 import os
 import sys
-import time
-import argparse
 
-from controller.palapi import UpgradeHandler, UpgradeException
+#pylint: disable=import-error
+from controller.palapi import CommHandlerArgs, CommException
 
 class SumFiles(object):
 
     def __init__(self):
 
-        parser = argparse.ArgumentParser(sys.argv[0])
-
-        parser.add_argument('-v', '--verbose', dest='verbose',
-                                                    action='store_true')
-        parser.add_argument('--hostname', dest='hostname', default='localhost')
-        parser.add_argument('--port', dest='port', type=int, default=9000)
-        parser.add_argument('--envid', dest='envid', type=int, default=1)
-
-        group2 = parser.add_mutually_exclusive_group()
-        group2.add_argument('--displayname', dest='displayname')
-        group2.add_argument('--uuid', dest='uuid')
-        group2.add_argument('--type', dest='agent_type', default='primary')
-
-        args = parser.parse_args()
-
-        self.comm = UpgradeHandler(args)
+        # Sets up the parser with required arguments.
+        self.comm = CommHandlerArgs()
+        self.comm.parse_args()
 
         try:
-
             agent = self.comm.get_agent_info()
             install_dir = agent['path'].join(agent['install-dir'])
 
@@ -43,13 +29,13 @@ class SumFiles(object):
 
                 self.comm.send_cmd("file sha256 '%s'" % full_path)
                 if not 'hash' in self.comm.result:
-                    self.error("sha256 command on file '%s' failed.  " +
-                               "Missing 'hash': %s",
-                               target_path_tmp, result)
-                print self.comm.result['hash'], ' ',fname
+                    self.error(("sha256 command on file '%s' failed.  " + \
+                               "Missing 'hash': %s") %
+                               (full_path, self.comm.result))
+                print self.comm.result['hash'], ' ', fname
 
-        except UpgradeException, e:
-            self.error(e)
+        except CommException as ex:
+            self.error(ex)
 
         except KeyboardInterrupt:
             print "\nInterrupted.  Exiting."

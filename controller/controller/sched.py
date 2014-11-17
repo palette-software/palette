@@ -110,6 +110,8 @@ class Sched(threading.Thread):
         self.add_cron_job(name='backup', hour=0, minute=0)
 
         self.add_cron_job(name='yml', minute="0/5")
+        self.add_cron_job(name='cpu_load', minute="0/5")
+        self.add_cron_job(name='metrics_prune', minute=15, hour=3)
         self.add_cron_job(name='info_all', minute="1/5")
         self.add_cron_job(name='auth_import', minute="2/10")
         self.add_cron_job(name='sync', minute="3/5")
