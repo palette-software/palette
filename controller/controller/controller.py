@@ -40,6 +40,7 @@ from extracts import ExtractManager
 from files import FileManager
 from firewall_manager import FirewallManager
 from general import SystemConfig
+from http_control import HttpControl
 from http_requests import HttpRequestEntry, HttpRequestManager
 from licensing import LicenseManager, LicenseEntry
 from metrics import MetricManager
@@ -1737,8 +1738,8 @@ def main():
     server.system = SystemManager(server)
     SystemManager.populate()
 
+    HttpControl.populate()
     StateControl.populate()
-
     DataSourceTypes.populate()
 
     server.auth = AuthManager(server)

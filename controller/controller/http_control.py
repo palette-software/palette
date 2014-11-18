@@ -36,6 +36,8 @@ class HttpControl(meta.Base, BaseMixin):
     modification_time = Column(DateTime, server_default=func.now(),
                                onupdate=func.current_timestamp())
 
+    defaults = [{'status':404, 'excludes':r'.+\.xml(\Z|\?)'}]
+
     @classmethod
     def all(cls):
         return meta.Session.query(HttpControl).\
@@ -49,7 +51,7 @@ class HttpControlData(object):
     def __init__(self, server):
         self.server = server
 
-        self.status_excludes = []
+        self.status_excludes = {}
         for entry in HttpControl.all():
             if entry.excludes:
                 excludes = list_re(entry.excludes)
