@@ -1,8 +1,6 @@
 #!/bin/sh
 cmd=controller
 
-apt-key del BEF0F85D
-
 if [ -x /etc/init.d/$cmd ]; then
     /etc/init.d/$cmd stop
 fi
