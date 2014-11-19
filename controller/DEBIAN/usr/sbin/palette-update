@@ -1,0 +1,62 @@
+#!/bin/bash
+#
+# This script checks to see if there there are packages to be installed
+# and installs them.
+# This script needs to be run from the cron
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+export DEBIAN_FRONTEND="noninteractive"
+
+LOG_FILE=/var/log/palette/update.log
+INI_FILE=/etc/palette_update.ini
+PACKAGES="controller palette akiri.framework-sqlalchemy akiri.framework"
+
+delayer()
+{
+    if [ ! -t 0 ]; then
+        # If we are run in the background (not from a shell terminal):
+        # Sleep a random amount of time to not overload the servers
+        SLEEP_TIME=$(($RANDOM % 300))
+        echo Sleeping for $SLEEP_TIME seconds >> $LOG_FILE
+        sleep $SLEEP_TIME
+    fi
+}
+
+echo "Palette Updater Running"
+echo "**************" >> $LOG_FILE
+date >> $LOG_FILE
+
+# Check to see if updating is disabled
+if [ -f $INI_FILE ]; then
+    # Do the update unless "auto-update" is disabled in the ini file.
+    grep --after-context=1 '\[update\]' $INI_FILE | grep -q "auto_update = false"
+    if [ $? -eq 0 ]; then
+        echo Auto update is disabled >> $LOG_FILE
+        exit 0
+    fi
+fi
+
+if [ $# -eq 1 ]; then
+    if [ "$1" == "now" ]; then
+        echo Updating now
+        echo Updating now >> $LOG_FILE
+    else
+        echo "Usage: $0 [now]"
+        exit 1
+    fi
+else
+    delayer
+fi
+
+# perform the update
+apt-get update >> $LOG_FILE 2>&1
+# Keep OLD config files (change to use NEW config files after upgraded to 1.0.1)
+apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y $PACKAGES >> $LOG_FILE 2>&1
+
+# log that we finished with the update
+echo "Palette updates (if any) installed" >> $LOG_FILE
+echo "Palette update check finished at `date`" >> $LOG_FILE
+
+echo "Palette Updater Finished"
+
+exit 0
