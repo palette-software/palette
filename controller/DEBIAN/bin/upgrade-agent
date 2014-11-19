@@ -265,7 +265,12 @@ class Upgrade(object):
             if not, go into the UPGRADING state."""
 
         self.comm.send_cmd("upgrade")
-        self.already_upgrading = self.comm.result['upgrading']
+        if 'upgrading' in self.comm.result:
+            self.already_upgrading = self.comm.result['upgrading']
+        else:
+            # Support for beta
+            if self.comm.result['main-state'] == 'UPGRADING':
+                self.already_upgrading = 'yes'
         if self.already_upgrading != 'yes':
             if not self.comm.args.dry_run:
                 if self.comm.verbose:
