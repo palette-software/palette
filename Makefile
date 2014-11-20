@@ -11,10 +11,15 @@ publish-release: $(PREBUILT_PACKAGES)
 	GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
 	chmod 600 dpkg/client/id_rsa; cd dpkg/apt; scp -r -i ../client/id_rsa -r . ubuntu@apt.palette-software.com:/var/packages/release
 
-publish-test: $(PREBUILT_PACKAGES)
+publish-early: $(PREBUILT_PACKAGES)
 	make clean all
 	GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
-	chmod 600 dpkg/client/id_rsa; cd dpkg/apt; scp -r -i ../client/id_rsa -r . ubuntu@apt.palette-software.com:/var/packages/test
+	chmod 600 dpkg/client/id_rsa; cd dpkg/apt; scp -r -i ../client/id_rsa -r . ubuntu@apt.palette-software.com:/var/packages/early
+
+publish-dev: $(PREBUILT_PACKAGES)
+	make clean all
+	GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
+	chmod 600 dpkg/client/id_rsa; cd dpkg/apt; scp -r -i ../client/id_rsa -r . ubuntu@apt.palette-software.com:/var/packages/dev
 
 $(POOL_DIR)/$(PKG1):
 	wget --directory-prefix=$(POOL_DIR) $(DOWNLOAD_DIR)/$(PKG1)
