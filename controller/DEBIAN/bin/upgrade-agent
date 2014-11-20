@@ -4,6 +4,7 @@
 import os
 import sys
 import time
+import re
 
 #pylint: disable=import-error
 from controller.palapi import CommHandlerArgs, CommException, CommError
@@ -13,8 +14,6 @@ class UpgradeException(StandardError):
 
 #pylint: disable=too-many-instance-attributes
 class Upgrade(object):
-
-    CONSOLE_AGENT = "ConsoleAgent.exe"
 
     def __init__(self):
         # Sets up the parser with required arguments.
@@ -35,7 +34,7 @@ class Upgrade(object):
         self.already_upgrading = None
         self.agent_target_dir = None
         self.upgrade_count = 0
-        self.console_updated = False
+        self.send_hup = False
         self.source_dir = []
 
         try:
@@ -66,9 +65,9 @@ class Upgrade(object):
 
         self.upgrade_files(agent, source_files)
 
-        if self.console_updated:
+        if self.send_hup:
             if self.comm.verbose:
-                print "Sending 'hup' for update to", self.CONSOLE_AGENT
+                print "Sending 'hup'"
             self.comm.send_cmd("hup")
 
         if self.already_upgrading != 'yes':
@@ -152,6 +151,11 @@ class Upgrade(object):
                 print "target_path:", target_path
                 print "target_full_pathname:", target_full_pathname
 
+            if target_path in ('ServiceAgent.exe', 'conf/agent.ini'):
+                if self.comm.args.verbose:
+                    print "Skipping", target_path, "(don't or can't upgrade)"
+                continue
+
             source_checksum = self.comm.checksum(source_full_pathname)
 
             # Checksum target file.  It may not exist, in which just
@@ -188,9 +192,6 @@ class Upgrade(object):
             self.put_file(agent, source_full_pathname, target_full_pathname,
                           target_path, source_checksum)
 
-            if target_path == self.CONSOLE_AGENT:
-                self.console_updated = True
-
         time.sleep(1)   # Give time to finish
 
     def put_file(self, agent, source_full_pathname, target_full_pathname,
@@ -207,14 +208,17 @@ class Upgrade(object):
             source_checksum:        source file's checksum
         """
 
-        # ConsoleAgent.exe goes in the 'upgrade' sub-directory
-        # and the 'hup' command triggers the copy of ConsoleAgent.exe
-        # up a level before it is run.
-        if target_path == self.CONSOLE_AGENT:
-            target_full_pathname = agent['path'].join(self.agent_target_dir,
+        # Top-level files that end in "*.dll" and  "ConsoleAgent.exe"
+        # go in the 'upgrade' sub-directory.  At the end, we send
+        # the 'hup' command which triggers the copy of these files up a level,
+        # followed by restarting ConsoleAgent.exe.
+        if os.path.split(target_path)[0] == '' and \
+                         (target_path == "ConsoleAgent.exe" or
+                               re.search('.*dll$', target_path)):
+                target_full_pathname = agent['path'].join(self.agent_target_dir,
                                                       'upgrade',
-                                                      self.CONSOLE_AGENT)
-
+                                                      target_path)
+                self.send_hup = True
         # Make sure the ".download" file from a previous failed attempt doesn't
         # exist.
         target_path_tmp = target_full_pathname + '.download'
