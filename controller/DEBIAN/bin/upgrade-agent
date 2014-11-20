@@ -215,10 +215,10 @@ class Upgrade(object):
         if os.path.split(target_path)[0] == '' and \
                          (target_path == "ConsoleAgent.exe" or
                                re.search('.*dll$', target_path)):
-                target_full_pathname = agent['path'].join(self.agent_target_dir,
+            target_full_pathname = agent['path'].join(self.agent_target_dir,
                                                       'upgrade',
                                                       target_path)
-                self.send_hup = True
+            self.send_hup = True
         # Make sure the ".download" file from a previous failed attempt doesn't
         # exist.
         target_path_tmp = target_full_pathname + '.download'
