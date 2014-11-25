@@ -43,6 +43,8 @@ class CloudHandler(PaletteRESTHandler):
             return None
         return CloudEntry.get_by_envid_cloudid(req.envid, cloudid)
 
+    # Not used yet.  Will be used when multiple cloud names for
+    # one cloud type are supported.
     def _get_by_name(self, envid, name):
         entry = CloudEntry.get_by_envid_name(envid, name, self.TYPE)
         if entry is None:
@@ -50,6 +52,13 @@ class CloudHandler(PaletteRESTHandler):
             # The name and the bucket are currently the same.
             entry.name = name
             entry.bucket = name
+            meta.Session.add(entry)
+        return entry
+
+    def _get_by_type(self, envid):
+        entry = CloudEntry.get_by_envid_type(envid, self.TYPE)
+        if entry is None:
+            entry = CloudEntry(envid=envid, cloud_type=self.TYPE)
             meta.Session.add(entry)
         return entry
 
@@ -67,7 +76,7 @@ class CloudHandler(PaletteRESTHandler):
         return self._todict(entry)
 
     @required_parameters('access-key', 'secret-key', 'url')
-    def handle_save_POST(self, req):
+        def handle_save_POST(self, req):
         # pylint: disable=invalid-name
         bucket = self.url_to_bucket(req.POST['url'])
         if not bucket:
@@ -75,7 +84,10 @@ class CloudHandler(PaletteRESTHandler):
 
         session = meta.Session()
 
-        entry = self._get_by_name(req.envid, bucket)
+        entry = self._get_by_type(req.envid)
+        # The name and the bucket are currently the same.
+        entry.name = name
+        entry.bucket = bucket
         entry.access_key = req.POST['access-key']
         entry.secret = req.POST['secret-key']
         session.commit()
