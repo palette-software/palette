@@ -204,6 +204,9 @@ class AlertEmail(object):
         else:
             to_emails = self.admin_emails()
 
+        # Remove any duplicates
+        to_emails = list(set(to_emails))
+
         bcc = None
         if not self.standalone:
             # Get the diagnostics email and bcc it there if it exists.
