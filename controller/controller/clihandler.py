@@ -241,7 +241,17 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             body['status'] = CliHandler.STATUS_ERROR
 
-        self.print_client("%s", json.dumps(body))
+        try:
+            string = json.dumps(body, ensure_ascii=False)
+        except StandardError as ex:
+            self.server.log.error(
+                "report_status json.dumps failed with: %s.  dict: %s",
+                str(ex), str(body))
+            string = \
+                "{'status': '%s', 'error': 'json decode error.  See log.'}" % \
+                 CliHandler.STATUS_ERROR
+
+        self.print_client("%s", string)
 
     def do_help(self, cmd):
         # pylint: disable=unused-argument
