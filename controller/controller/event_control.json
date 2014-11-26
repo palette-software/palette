@@ -473,7 +473,7 @@
 "key":"CLEANUP-FAILED",
 "level":"I",
 "send_email":"f",
-"subject":"%(eventid)s WARN - Tableau Server Log Cleanup Failed",
+"subject":"%(eventid)s INFO - Tableau Server Log Cleanup Failed",
 "event_description":"Event Type: ${event_type_label}\nEnvironment: ${environment}\n\nDetails:\nYour Tableau Server experienced a failure when it attempted to remove older logs completely. Please read the notes below for more detail and possible next steps.\n\n% if info is not UNDEFINED:\n${info}\n% endif\n% if error is not UNDEFINED:\n${error}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif",
 "email_subject":null,
 "email_message":"Time: ${timestamp}\nEvent Type: ${event_type_label}\nEnvironment: ${environment}\n\nDetails:\nYour Tableau Server experienced a failure when it attempted to remove older logs completely. Please read the notes below for more detail and possible next steps.\n\n% if info is not UNDEFINED:\n${info}\n% endif\n% if error is not UNDEFINED:\n${error}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif\n\nThis message was sent from your Palette Server at ${server_url}\nYou can turn off these email alerts on your profile page found at ${server_url}/profile",
