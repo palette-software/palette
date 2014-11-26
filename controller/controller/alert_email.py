@@ -139,7 +139,8 @@ class AlertEmail(object):
         try:
             entry = session.query(UserProfile).\
                 filter(UserProfile.system_user_id == data['system_user_id']).\
-                filter(UserProfile.email != "").\
+                filter(UserProfile.email != None).\
+                filter(UserProfile.email_level > 0).\
                 one()
         except NoResultFound:
             return []
