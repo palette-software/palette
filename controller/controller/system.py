@@ -55,7 +55,10 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
                 {'envid':1, 'key': SystemConfig.CPU_PERIOD_WARN, 'value':'60'},
                 {'envid':1, 'key': SystemConfig.CPU_PERIOD_ERROR,
                                                                 'value':'60'},
-                {'envid':1, 'key': SystemConfig.METRIC_SAVE_DAYS, 'value':'1'}
+                {'envid':1, 'key': SystemConfig.METRIC_SAVE_DAYS, 'value':'1'},
+                {'envid':1, 'key': SystemConfig.DEBUG_LEVEL, 'value':'DEBUG'},
+                {'envid':1, 'key': SystemConfig.FROM_EMAIL,
+                        'value':'Palette Alerts <alerts@palette-software.com>'}
         # Note: No default volid set.
     ]
 

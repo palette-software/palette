@@ -1695,7 +1695,10 @@ def main():
     port = config.getint('controller', 'port', default=9000)
     agent_port = config.getint('controller', 'agent_port', default=22)
 
-    # loglevel is entirely controlled by the INI file.
+    # loglevel at the start, here, is controlled by the INI file,
+    # though uses a default.  After the database is available,
+    # we reset the log-level, depending on the 'debug-level' value in the
+    # system table.
     logger.make_loggers(config)
     log = logger.get(Controller.LOGGER_NAME)
     log.info("Controller version: %s", version())
@@ -1718,8 +1721,6 @@ def main():
     meta.Session = scoped_session(sessionmaker(bind=meta.engine,
                                    autoflush=False, expire_on_commit=False))
 
-    log.debug("Starting agent listener.")
-
     server = Controller((host, port), CliHandler)
     server.config = config
     server.log = log
@@ -1737,6 +1738,10 @@ def main():
 
     server.system = SystemManager(server)
     SystemManager.populate()
+
+    # Set the log level from the system table
+    server.st_config = SystemConfig(server.system)
+    log.setLevel(server.st_config.debug_level)
 
     HttpControl.populate()
     StateControl.populate()
@@ -1785,6 +1790,8 @@ def main():
     server.agentmanager = manager
 
     manager.update_last_disconnect_time()
+
+    log.debug("Starting agent listener.")
     manager.start()
 
     # Need to instantiate to initialize state and status tables,

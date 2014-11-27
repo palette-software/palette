@@ -34,7 +34,6 @@ class AlertEmail(object):
         if standalone:
             self.envid = 1
             self.standalone = True
-            self.from_email = "tim.flagg@gmail.com"
             self.to_email = "tim.flagg@gmail.com"
             self.smtp_server = "localhost"
             self.smtp_port = 25
@@ -71,8 +70,7 @@ class AlertEmail(object):
                 value = 'no'
             self.system.save(SystemConfig.ALERTS_ENABLED, value)
 
-        self.from_email = self.config.get('alert', 'from_email',
-                                     default="alerts@palette-software.com")
+
         self.smtp_server = self.config.get('alert', 'smtp_server',
                                     default="localhost")
         self.smtp_port = self.config.getint("alert", "smtp_port", default=25)
@@ -83,33 +81,10 @@ class AlertEmail(object):
         self.max_subject_len = self.config.getint("alert", "max_subject_len",
                                         default=self.DEFAULT_MAX_SUBJECT_LEN)
 
-        diagnostics_email = self.config.get("alert", "diagnostics_email",
-                                            default="")
-        if diagnostics_email:
-            self.add_diagnostics_email(diagnostics_email)
-
         if self.alert_level < 1:
             self.log.error("Invalid alert level: %d, setting to %d",
                            self.alert_level, self.DEFAULT_ALERT_LEVEL)
             self.alert_level = self.DEFAULT_ALERT_LEVEL
-
-    def add_diagnostics_email(self, diagnostics_email):
-        """If the palette user (userid 0) has an empty email address,
-           add the passed diagnostics_email to it."""
-
-        entry = UserProfile.get(self.envid, 0)
-        if not entry:
-            self.log.error("alert diag: No such user with id 0!")
-            return
-
-        if entry.email:
-            self.log.debug("alert diag: already has a diag email: %s",
-                           entry.email)
-            return  # It already has an email address
-
-        entry.email = diagnostics_email
-        meta.Session.commit()
-        self.log.debug("alert diag: set a diag email: %s", entry.email)
 
     def admin_emails(self):
         """Return a list of admins that have an email address, enabled
@@ -215,7 +190,7 @@ class AlertEmail(object):
                 bcc = [entry.email]
 
         if not to_emails and not bcc:
-            self.log.debug(\
+            self.log.debug(
                 "No admin users exist with email addresses.  " + \
                 "Not sending: Subject: %s, Message: %s" % (subject, message))
             return
@@ -240,7 +215,8 @@ class AlertEmail(object):
 
         subject = Header(unicode(subject), 'utf-8')
         msg['Subject'] = subject
-        msg['From'] = self.from_email
+        from_email = self.st_config.from_email
+        msg['From'] = from_email
 
         all_to = []
 
@@ -254,10 +230,10 @@ class AlertEmail(object):
 
         try:
             mail_server = smtplib.SMTP(self.smtp_server, self.smtp_port)
-            mail_server.sendmail(self.from_email, all_to, msg_str)
+            mail_server.sendmail(from_email, all_to, msg_str)
             mail_server.quit()
         except (smtplib.SMTPException, EnvironmentError) as ex:
-            self.log.error(\
+            self.log.error(
                 "Email send failed, text: %s, exception: %s, server: %s," + \
                 " port: %d",
                 message, ex, self.smtp_server, self.smtp_port)

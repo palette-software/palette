@@ -330,6 +330,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         # pylint: disable=too-many-return-statements
         # pylint: disable=too-many-branches
 
+        # Potentially update log level
+        self.server.log.setLevel(self.server.st_config.debug_level)
+
         stateman = self.server.state_manager
 
         if not len(cmd.args):

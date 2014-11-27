@@ -1,4 +1,5 @@
 from files import FileManager
+import logging
 
 # This a transitory class - instantiated each time it is needed.
 class SystemConfig(object):
@@ -29,6 +30,9 @@ class SystemConfig(object):
 
     UPGRADING = "upgrading"
 
+    DEBUG_LEVEL = 'debug-level'
+    FROM_EMAIL = 'from-email'
+
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
     def __init__(self, system):
@@ -50,6 +54,9 @@ class SystemConfig(object):
     def _getint(self, name, **kwargs):
         value = self.system.get(name, **kwargs)
         return int(value) # Throws exception if non-digit.
+
+    def _getstring(self, name, **kwargs):
+        return self.system.get(name, **kwargs)
 
     def _backup_dest_type(self):
         value = self.system.get(self.BACKUP_DEST_TYPE,
@@ -77,6 +84,16 @@ class SystemConfig(object):
             return int(self.system.get(name))
         except StandardError:
             return 20
+
+    def _debug_level(self, name, **kwargs):
+        """Returns an integer level, based on the logging level string."""
+        level_str = self.system.get(name, **kwargs)
+
+        level_str = level_str.upper().strip()
+        if level_str not in ('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'):
+            level_str = 'DEBUG'
+
+        return getattr(logging, level_str)
 
     def __getattr__(self, name):
         # pylint: disable=too-many-return-statements
@@ -117,6 +134,11 @@ class SystemConfig(object):
             return self._getint(self.CPU_PERIOD_ERROR, default=60)
         if name == 'metric_save_days':
             return self._getint(self.METRIC_SAVE_DAYS, default=1)
+        if name == 'debug_level':
+            return self._debug_level(self.DEBUG_LEVEL, default='DEBUG')
+        if name == 'from_email':
+            return self._getstring(self.FROM_EMAIL,
+                        default="Palette Alerts <alerts@palette-software.com>")
         raise AttributeError(name)
 
     def todict(self):
@@ -138,7 +160,9 @@ class SystemConfig(object):
             self.CPU_LOAD_ERROR: self.cpu_load_error,
             self.CPU_PERIOD_WARN: self.cpu_load_warn,
             self.CPU_PERIOD_ERROR: self.cpu_period_error,
-            self.METRIC_SAVE_DAYS: self.metric_save_days
+            self.METRIC_SAVE_DAYS: self.metric_save_days,
+            self.DEBUG_LEVEL: self.debug_level,
+            self.FROM_EMAIL: self.from_email
             }
 
     def text(self, value):
