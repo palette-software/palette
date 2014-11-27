@@ -247,7 +247,7 @@ class MonitorApplication(PaletteRESTHandler):
         else:
             user_action_in_progress = True
 
-        agent_worker_stopped = False
+        agent_worker_problem = False
         agents = []
         for entry in agent_entries:
             if not entry.enabled:
@@ -336,7 +336,7 @@ class MonitorApplication(PaletteRESTHandler):
                 agent['warnings'] = [{'color':'yellow',
                                       'message': 'Tableau stopped'}]
                 if entry.agent_type == AgentManager.AGENT_TYPE_WORKER:
-                    agent_worker_stopped = True
+                    agent_worker_problem = True
             elif entry.agent_type in (AgentManager.AGENT_TYPE_PRIMARY,
                                     AgentManager.AGENT_TYPE_WORKER) and \
                         main_state == StateManager.STATE_STOPPED_UNEXPECTED:
@@ -344,7 +344,7 @@ class MonitorApplication(PaletteRESTHandler):
                 agent['warnings'] = [{'color':'red',
                                       'message': 'Tableau stopped'}]
                 if entry.agent_type == AgentManager.AGENT_TYPE_WORKER:
-                    agent_worker_stopped = True
+                    agent_worker_problem = True
 
             if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY or \
                         entry.agent_type == AgentManager.AGENT_TYPE_WORKER:
@@ -368,9 +368,8 @@ class MonitorApplication(PaletteRESTHandler):
                         agent_color_num = Colors.RED_NUM
                         agent['warnings'] = [{'color':'red',
                                               'message': tab_entry.name}]
-                        # This is close to the truth and results in
-                        # the main state being set to DEGRADED.
-                        agent_worker_stopped = True
+                        # This in the main state being set to DEGRADED.
+                        agent_worker_problem = True
                         continue
 
                     proc['pid'] = tab_entry.pid
@@ -402,6 +401,8 @@ class MonitorApplication(PaletteRESTHandler):
                         agent['warnings'] = warning
 
                     agent_color_num = Colors.RED_NUM
+                    # This in the main state being set to DEGRADED.
+                    agent_worker_problem = True
 
             else:
                 # For now, only primaries and workers have details
@@ -414,9 +415,9 @@ class MonitorApplication(PaletteRESTHandler):
             if agent_color_num < color_num:
                 color_num = agent_color_num
 
-        # If the primary is running and any worker is stopped, set
+        # If the primary is running and any worker has a problem, set
         # the status to DEGRADED.
-        if main_state == StateManager.STATE_STARTED and agent_worker_stopped:
+        if main_state == StateManager.STATE_STARTED and agent_worker_problem:
             main_state = StateManager.STATE_DEGRADED
             # allowable_actions are the same for STARTED and DEGRADED, so
             # we don't need to update.

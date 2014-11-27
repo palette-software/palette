@@ -76,7 +76,7 @@ class CloudHandler(PaletteRESTHandler):
         return self._todict(entry)
 
     @required_parameters('access-key', 'secret-key', 'url')
-        def handle_save_POST(self, req):
+    def handle_save_POST(self, req):
         # pylint: disable=invalid-name
         bucket = self.url_to_bucket(req.POST['url'])
         if not bucket:
@@ -86,7 +86,7 @@ class CloudHandler(PaletteRESTHandler):
 
         entry = self._get_by_type(req.envid)
         # The name and the bucket are currently the same.
-        entry.name = name
+        entry.name = bucket
         entry.bucket = bucket
         entry.access_key = req.POST['access-key']
         entry.secret = req.POST['secret-key']
