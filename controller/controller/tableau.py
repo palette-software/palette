@@ -19,6 +19,7 @@ from agentmanager import AgentManager
 from agent import Agent
 from event_control import EventControl
 from state_transitions import TRANSITIONS
+from general import SystemConfig
 
 class TableauProcess(meta.Base):
     # pylint: disable=no-init
@@ -67,7 +68,9 @@ class TableauStatusMonitor(threading.Thread):
         self.server = server
         self.rwlock = self.server.upgrade_rwlock
         self.manager = manager # AgentManager instance
+        self.st_config = SystemConfig(server.system)
         self.log = logger.get(self.LOGGER_NAME)
+        self.log.setLevel(self.st_config.debug_level)
         self.envid = self.server.environment.envid
 
         self.first_degraded_time = None
@@ -296,6 +299,7 @@ class TableauStatusMonitor(threading.Thread):
 
     def check_status(self):
 
+        self.log.setLevel(self.st_config.debug_level)
         # FIXME: Tie agent to domain.
         agent = self.manager.agent_by_type(AgentManager.AGENT_TYPE_PRIMARY)
         if not agent:

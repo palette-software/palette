@@ -1384,6 +1384,9 @@ class AgentManager(threading.Thread):
         aconn = agent.connection
         conn_id = aconn.conn_id
         while not self.server.noping:
+            # Update log level in case it changed
+            self.log.setLevel(self.server.st_config.debug_level)
+
             if agent.enabled:
                 if conn_id not in self.all_agents(enabled_only=False):
                     self.log.info(
