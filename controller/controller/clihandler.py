@@ -514,10 +514,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                                           dict(body.items() + data.items()),
                                           userid=userid)
 
-        if reported_status == TableauProcess.STATUS_RUNNING:
-            stateman.update(StateManager.STATE_STARTED)
-        elif reported_status == TableauProcess.STATUS_STOPPED:
-            stateman.update(StateManager.STATE_STOPPED)
+        stateman.update(main_state)
 
         # Get the latest status from tabadmin
         self.server.statusmon.check_status_with_connection(agent)
