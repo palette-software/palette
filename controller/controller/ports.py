@@ -31,7 +31,7 @@ class PortEntry(meta.Base, BaseMixin):
                                                      nullable=False)
     ip_address = Column(String)
     connect_time = Column(Float)
-    max_time = Column(Integer)
+    max_time = Column(Integer, default=60, nullable=False)
 
     color = Column(String)   # red or green
     notified_color = Column(String) # red or green
