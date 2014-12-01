@@ -50,9 +50,10 @@ db_url = args['db'] or db_url
 interval_ms = args['interval'] or interval_ms
 filename = args['filename'] or filename
 eventid = args['eventid'] or eventid
+eventid = int(eventid)
 num_events = args['num_events'] or num_events;
 
-print 'Genrating {0} events'.format(num_events)
+print 'Genrating {0} events on server {1}'.format(num_events, db_url)
 
 # connect to the DB
 meta.engine = sqlalchemy.create_engine(db_url, echo=False)
