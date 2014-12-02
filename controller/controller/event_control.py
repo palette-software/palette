@@ -213,6 +213,7 @@ class EventControl(meta.Base, BaseMixin, BaseDictMixin):
         'restore' : 'Tableau Restore',
         'server' : 'Palette Server',
         'storage' : 'Storage',
+        'cpu' : 'CPU Load',
         'tableau' : 'Tableau App',
         'workbook' : 'Workbooks'
     }
