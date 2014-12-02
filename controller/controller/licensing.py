@@ -92,7 +92,7 @@ class LicenseManager(Manager):
 
     def check(self, agent):
         server = self.server
-        body = server.cli_cmd('tabadmin license', agent)
+        body = server.cli_cmd('tabadmin license', agent, timeout=60*10)
 
         if not 'exit-status' in body or body['exit-status'] != 0:
             return body
@@ -126,7 +126,8 @@ class LicenseManager(Manager):
 
         server.event_control.gen(EventControl.LICENSE_REPAIR_STARTED, data)
 
-        body = server.cli_cmd('tabadmin license --repair_service', agent)
+        body = server.cli_cmd('tabadmin license --repair_service', agent,
+                              timeout=60*10)
 
         if not 'exit-status' in body or body['exit-status'] != 0:
             data['status'] = 'FAILED'

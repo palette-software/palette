@@ -137,7 +137,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         cmd = 'tabadmin backup \\\"%s\\\"' % backup_full_path
 
         backup_start_time = time.time()
-        body = self.cli_cmd(cmd, agent)
+        body = self.cli_cmd(cmd, agent, timeout=60*60*2)
         backup_elapsed_time = time.time() - backup_start_time
 
         if body.has_key('error'):
@@ -331,15 +331,20 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return body
 
     def status_cmd(self, agent):
-        return self.cli_cmd('tabadmin status -v', agent)
+        return self.cli_cmd('tabadmin status -v', agent, timeout=60*5)
 
-    def cli_cmd(self, command, agent, env=None, immediate=False):
+    def cli_cmd(self, command, agent, env=None, immediate=False,
+                timeout=60*60*2):
         """ 1) Sends the command (a string)
             2) Waits for status/completion.  Saves the body from the status.
             3) Sends cleanup.
             4) Returns body from the status.
+
+            "timeout" is the maximum amount of time the command is allowed
+            to run before it is considered failed.
         """
         # pylint: disable=too-many-return-statements
+        # pylint: disable=too-many-arguments
 
         body = self._send_cli(command, agent, env=env, immediate=immediate)
 
@@ -354,7 +359,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if body['run-status'] == 'finished':
             return body
 
-        cli_body = self._get_cli_status(body['xid'], agent, command)
+        cli_body = self._get_cli_status(body['xid'], agent, command, timeout)
 
         if not 'stdout' in cli_body:
             self.log.error(
@@ -425,7 +430,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         cmd = ('tabcmd %s -u %s --password %s ' + \
                '--no-cookie --server %s --no-certcheck ') %\
               (args, cred.user, pw, url)
-        return self.cli_cmd(cmd, agent)
+        return self.cli_cmd(cmd, agent, timeout=30*60)
 
     def _send_cli(self, cli_command, agent, env=None, immediate=False):
         """Send a "cli" command to an Agent.
@@ -703,7 +708,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # Restore can run only when tableau is stopped.
             self.state_manager.update(StateManager.STATE_STOPPING_RESTORE)
             self.log.debug("----------Stopping Tableau for restore-----------")
-            stop_body = self.cli_cmd("tabadmin stop", agent)
+            stop_body = self.cli_cmd("tabadmin stop", agent, timeout=60*60)
             if stop_body.has_key('error'):
                 self.log.info("Restore: tabadmin stop failed")
                 if got.copied:
@@ -741,7 +746,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         try:
             self.log.debug("restore sending command: %s", cmd)
-            restore_body = self.cli_cmd(cmd, agent)
+            restore_body = self.cli_cmd(cmd, agent, timeout=60*60*2)
         except httplib.HTTPException, ex:
             restore_body = {"error": "HTTP Exception: " + str(ex)}
 
@@ -776,7 +781,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # stopped, rather than have tableau automatically start
             # during the restore.  (Tableau does not support this currently.)
             self.log.info("Restore: starting tableau after failed restore.")
-            start_body = self.cli_cmd("tabadmin start", agent)
+            start_body = self.cli_cmd("tabadmin start", agent, timeout=60*60*2)
             if 'error' in start_body:
                 self.log.info(
                     "Restore: 'tabadmin start' failed after failed restore.")
@@ -866,8 +871,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             path = in_path
         return (bucket, path)
 
-    def _get_cli_status(self, xid, agent, orig_cli_command):
-        """Gets status on the command and xid.  Returns:
+    def _get_cli_status(self, xid, agent, orig_cli_command, timeout):
+        """Gets status on the command and xid.  The timeout is the
+           maximum amount of time the command is allowed to take before
+           we consider it failed:
+
+           Returns:
+
             Body in json with status/results.
 
             orig_cli_command is used only for debugging/printing.
@@ -888,10 +898,24 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         headers = {"Content-Type": "application/json"}
 
         aconn = agent.connection
+        start_time = time.time()
         while True:
-            self.log.debug(
-                "about to get status of cli command '%s', xid %d, conn_id %d",
-                           safecmd(orig_cli_command), xid, aconn.conn_id)
+            now = time.time()
+            if now - start_time > timeout:
+                self.log.info("timeout for command '%s', xid %s, " + \
+                              "conn_id %d, timeout %d, timeout %d," + \
+                              "elapsed %d, start_time %d, now %d",
+                              safecmd(orig_cli_command), xid, aconn.conn_id,
+                              timeout, now - start_time, start_time, now)
+                return self.error(("Command timed out after %d seconds: " + \
+                                   "'%s', agent '%s', xid %d, conn_id %d") \
+                                   % (timeout, safecmd(orig_cli_command),
+                                   agent.displayname, xid, aconn.conn_id))
+
+            self.log.debug("about to get status of cli command '%s', " + \
+                           "xid %d, conn_id %d, timeout %d",
+                           safecmd(orig_cli_command), xid, aconn.conn_id,
+                           timeout)
 
             # If the agent is initializing, then "agent_connected"
             # will not know about it yet.
@@ -1411,7 +1435,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         ziplogs_name = time.strftime(self.FILENAME_FMT) + ".logs.zip"
         ziplogs_full_path = agent.path.join(dcheck.primary_dir, ziplogs_name)
         cmd = 'tabadmin ziplogs -f -l -n -a \\\"%s\\\"' % ziplogs_full_path
-        body = self.cli_cmd(cmd, agent)
+        body = self.cli_cmd(cmd, agent, timeout=60*60)
         body[u'info'] = unicode(cmd)
 
         if success(body):
@@ -1450,7 +1474,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         data = agent.todict()
         self.event_control.gen(EventControl.CLEANUP_STARTED, data,
                                userid=userid)
-        body = self.cli_cmd('tabadmin cleanup', agent)
+        body = self.cli_cmd('tabadmin cleanup', agent, timeout=60*60)
         if 'error' in body:
             self.event_control.gen(EventControl.CLEANUP_FAILED,
                                    dict(body.items() + data.items()),
