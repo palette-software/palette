@@ -75,7 +75,7 @@
           {{^current}}
           <article>
             <span class="label">Palette Admin Permissions</span>
-            <i class="fa fa-fw fa-question-circle fa-2x help"></i>
+            <!-- <i class="fa fa-fw fa-question-circle fa-2x help"></i> -->
           </article>
           <div class="btn-group dropdown">
             <button type="button" class="btn btn-default dropdown-toggle"
