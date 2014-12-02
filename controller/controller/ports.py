@@ -142,7 +142,6 @@ class PortManager(Manager):
                 entry.agentid, command, entry.service_name,
                 body['error'])
             details['error'] = body['error']
-            return dict(data.items() + details.items())
 
         if not 'exit-status' in body:
             self.log.error(
