@@ -284,7 +284,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         self.ack()
-        body = self.server.cli_cmd("tabadmin status -v", agent)
+        body = self.server.cli_cmd("tabadmin status -v", agent, timeout=60*30)
         self.report_status(body)
 
     @usage('test email')
@@ -908,7 +908,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
         f()
 
-    @usage('cli <command> [args...]')
+    @usage('[/timeout=<seconds>] cli <command> [args...]')
     def do_cli(self, cmd):
         if len(cmd.args) < 1:
             self.print_usage(self.do_cli.__usage__)
@@ -926,7 +926,16 @@ class CliHandler(socketserver.StreamRequestHandler):
                 cli_command += ' "' + arg + '" '
             else:
                 cli_command += ' ' + arg
-        body = self.server.cli_cmd(cli_command, agent)
+        if cmd.dict.has_key('timeout'):
+            try:
+                timeout = int(cmd.dict['timeout'])
+            except ValueError, ex:
+                self.error(clierror.ERROR_INVALID_PORT,
+                           "cli: Invalid timeout: " + str(ex))
+                return
+            body = self.server.cli_cmd(cli_command, agent, timeout=timeout)
+        else:
+            body = self.server.cli_cmd(cli_command, agent)
         self.report_status(body)
 
 
@@ -973,7 +982,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         env = {u'BASIC_USERNAME': agent.username,
                u'BASIC_PASSWORD': agent.password}
 
-        body = self.server.cli_cmd(phttp_cmd, agent, env=env)
+        body = self.server.cli_cmd(phttp_cmd, agent, env=env, timeout=10*60)
         self.report_status(body)
 
     @usage('info [all]')
@@ -1297,7 +1306,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.server.maint("stop")
         # FIXME: let it continue ?
 
-        body = self.server.cli_cmd('tabadmin start', agent)
+        body = self.server.cli_cmd('tabadmin start', agent, timeout=60*60)
         if body.has_key("exit-status"):
             exit_status = body['exit-status']
         else:
@@ -1478,7 +1487,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.server.log.debug("-------------Restarting Tableau----------------")
         # fixme: Reply with "OK" only after the agent received the command?
-        body = self.server.cli_cmd('tabadmin restart', agent)
+        body = self.server.cli_cmd('tabadmin restart', agent, timeout=60*60)
 
         data = agent.todict()
 
@@ -1557,7 +1566,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.server.log.debug("--------------Stopping Tableau-----------------")
         # fixme: Reply with "OK" only after the agent received the command?
-        body = self.server.cli_cmd('tabadmin stop', agent)
+        body = self.server.cli_cmd('tabadmin stop', agent, timeout=60*30)
         if success(body) and start_maint:
             # Start the maintenance server only after Tableau has stopped
             # and reqlinquished the web server port.

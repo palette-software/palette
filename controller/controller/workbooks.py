@@ -411,7 +411,7 @@ class WorkbookManager(TableauCacheManager):
     # Extract the twb and return the path.
     def _extract_twb_from_twbx(self, agent, update, dst):
         cmd = 'ptwbx ' + '"' + dst + '"'
-        body = self.server.cli_cmd(cmd, agent)
+        body = self.server.cli_cmd(cmd, agent, timeout=60*30)
         if failed(body):
             self._eventgen(update, data=body)
             try:
