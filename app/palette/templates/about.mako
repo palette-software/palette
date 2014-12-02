@@ -25,8 +25,8 @@
 
   <h2>Contact</h2>
   <div>
-    <p>hello@palette-software.com</p>
-    <p>www.palette-software.com</p>
+    <p><a href='mailto:hello@palette-software.com'>hello@palette-software.com</a></p>
+    <p><a target='_blank' href='http://www.palette-software.com'>www.palette-software.com</a></p>
   </div>
 
 %if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:
