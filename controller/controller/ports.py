@@ -132,16 +132,25 @@ class PortManager(Manager):
 
         command = "pok %s %d" % (entry.dest_host, entry.dest_port)
 
-        body = self.server.cli_cmd(command, agent)
+        body = self.server.cli_cmd(command, agent, timeout=60*5)
         data = agent.todict()
+
+        if failed(body):
+            self.log.error(
+                "check_port: agentid %d command '%s' for service '%s' " + \
+                "failed: %s",
+                entry.agentid, command, entry.service_name,
+                body['error'])
+            details['error'] = body['error']
+            return dict(data.items() + details.items())
 
         if not 'exit-status' in body:
             self.log.error(
-                "check_port: agentid %d command '%s' for service %s " + \
+                "check_port: agentid %d command '%s' for service '%s' " + \
                 "did not have 'exit-status' in returned body: %s",
                 entry.agentid, command, entry.service_name,
                 str(body))
-            details['error'] = 'Missing exit-status from port check check.'
+            details['error'] = 'Missing exit-status from port check.'
             return dict(data.items() + details.items())
 
         if 'stdout' in body:
