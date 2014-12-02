@@ -202,7 +202,7 @@ class S3(CloudInstance):
                               s3_command, pwd, path)
 
         # Send the s3 command to the agent
-        return self.server.cli_cmd(s3_command, agent, env=env)
+        return self.server.cli_cmd(s3_command, agent, env=env, timeout=60*60*2)
 
     def delete_file(self, entry, path):
         # Move any bucket subdirectories to the filename
@@ -249,7 +249,7 @@ class GCS(CloudInstance):
         gcs_command = 'pgcs %s %s "%s"' % (action, cloud_entry.bucket, path)
 
         # Send the gcs command to the agent
-        return self.server.cli_cmd(gcs_command, agent, env=env)
+        return self.server.cli_cmd(gcs_command, agent, env=env, timeout=60*60*2)
 
     def delete_file(self, entry, path):
         # Move any bucket subdirectories to the filename
