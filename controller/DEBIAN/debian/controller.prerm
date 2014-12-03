@@ -1,6 +1,8 @@
 #!/bin/sh
 cmd=controller
 
+action="$1"
+
 if [ -x /etc/init.d/$cmd ]; then
     /etc/init.d/$cmd stop
 fi
