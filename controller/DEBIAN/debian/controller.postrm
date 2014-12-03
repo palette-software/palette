@@ -1,5 +1,11 @@
 #!/bin/sh
 
+action="$1"
+
+if [ "$action" = upgrade ]; then
+    exit 0
+fi
+
 update-rc.d -f controller remove
 
 exit 0

@@ -5,7 +5,21 @@ oldversion="$2"
 
 if [ "$action" != configure ]
 then
-      exit 0
+      echo postinst called with unknown argument: $action
+      exit 1
+fi
+
+if [ "$oldversion" = "1.0.0" ]; then
+    echo Upgrading from 1.0.0 ...
+    psql paldb << XYZZY
+    drop table event_control;
+    drop table data_source_types;
+    drop table ports;
+XYZZY
+
+    update-rc.d controller defaults
+    service controller start
+    exit 0
 fi
 
 set +x
