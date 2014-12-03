@@ -1789,8 +1789,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                 body = agent.filemanager.filesize(path)
             elif method == "WRITE":
                 self.ack()
-                agent.filemanager.put(path, cmd.args[2])
-                body = {}
+                body = agent.filemanager.put(path, cmd.args[2])
             else:
                 self.print_usage(self.do_file.__usage__)
                 return

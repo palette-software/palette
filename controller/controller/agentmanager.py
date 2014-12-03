@@ -17,7 +17,7 @@ from firewall import Firewall
 from odbc import ODBC
 from filemanager import FileManager
 from general import SystemConfig
-from util import sizestr, is_ip, traceback_string
+from util import sizestr, is_ip, traceback_string, failed
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
@@ -1354,7 +1354,11 @@ class AgentManager(threading.Thread):
         self.log.debug("save_routes: agent hostname '%s': saving to %s: '%s'",
                                     agent.hostname, route_path, lines)
         try:
-            agent.filemanager.put(route_path, lines)
+            body = agent.filemanager.put(route_path, lines)
+            if failed(body):
+                self.log.error("filemanager.put(%s) on %s failed with: %s",
+                               agent.displayname, route_path, body['error'])
+                return False
         except IOError as ex:
             self.log.error("filemanager.put(%s) on %s failed with: %s",
                            agent.displayname, route_path, str(ex))
