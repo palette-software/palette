@@ -15,7 +15,7 @@ class FileManager(object):
 
     def checkpath(self, path):
         if path.endswith('/') or path.endswith('\\'):
-            raise ValueError("'path' may not refer to a directory")
+            raise IOError("'path' may not refer to a directory")
 
     def get(self, path):
         try:
@@ -57,8 +57,12 @@ class FileManager(object):
             headers['content-length'] = 0
         self.server.log.debug("FileManager PUT %s: %d", uri, len(data))
         try:
-            return self.agent.connection.http_send('PUT', uri, data,
+            body = self.agent.connection.http_send('PUT', uri, data,
                                                    headers=headers)
+            if body:
+                return json.loads(body)
+            else:
+                return {}
         except (exc.HTTPException, httplib.HTTPException,
                 EnvironmentError) as ex:
             raise IOError("filemanager.put failed: %s" % str(ex))
@@ -112,14 +116,13 @@ class FileManager(object):
         source = os.path.abspath(os.path.expanduser(source))
         with open(source, "rb") as f:
             data = f.read()
-            self.put(path, data)
+            body = self.put(path, data)
         self.server.log.debug("sendfile source '%s' path '%s' size %d." % \
                                                     (source, path, len(data)))
-        return {
-            'source': source,
-            'path': path,
-            'size': len(data)
-            }
+        body['source'] = source
+        body['path'] = path
+        body['size'] = len(data)
+        return body
 
     def delete(self, path):
         self.checkpath(path)
