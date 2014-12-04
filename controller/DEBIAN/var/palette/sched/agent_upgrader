@@ -6,9 +6,8 @@ UPGRADE_AGENT=/bin/upgrade-agent
 AGENT_DIR=/var/palette/agent
 
 # For testing:
-UPGRADE_AGENT=/export/home/ubuntu/timf/palette/controller/DEBIAN/bin/upgrade-agent
-AGENT_DIR=~/palette-agent/debian/var/palette/agent
-
+#UPGRADE_AGENT=/export/home/ubuntu/timf/palette/controller/DEBIAN/bin/upgrade-agent
+#AGENT_DIR=~/palette-agent/debian/var/palette/agent
 
 $UPGRADE_AGENT --dry-run --type all $AGENT_DIR
 if [ $? -ne 0 ]; then
