@@ -2,7 +2,7 @@
 
 # Upgrade the agents
 
-UPGRADE_AGENT=/bin/upgrade-agent
+UPGRADE_AGENT=/usr/bin/upgrade-agent
 AGENT_DIR=/var/palette/agent
 
 # For testing:

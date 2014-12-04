@@ -11,7 +11,7 @@ debian:
 .PHONY: debian
 
 pylint:
-	$(PYLINT) DEBIAN/bin/upgrade-agent
+	$(PYLINT) DEBIAN/usr/bin/upgrade-agent
 	$(PYLINT) controller
 .PHONY: pylint
 
