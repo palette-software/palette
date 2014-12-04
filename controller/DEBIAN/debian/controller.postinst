@@ -15,6 +15,7 @@ if [ "$oldversion" = "1.0.0" ]; then
     drop table event_control;
     drop table data_source_types;
     drop table ports;
+    drop table cron;
 XYZZY
 
     update-rc.d controller defaults

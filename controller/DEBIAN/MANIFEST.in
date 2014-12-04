@@ -1,4 +1,4 @@
-include bin/*
+include usr/bin/*
 include usr/sbin/*
 include etc/*
 include etc/ssl/certs/*

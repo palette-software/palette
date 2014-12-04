@@ -1,9 +1,8 @@
 etc/controller.ini		/etc
 etc/ssl/certs/palette_cert.pem	/etc/ssl/certs
 etc/init.d/controller	/etc/init.d
-bin/controller			/usr/bin
-bin/upgrade-agent        /usr/bin
-bin/sum-files        /usr/bin
+usr/bin/controller			/usr/bin
+usr/bin/upgrade-agent        /usr/bin
 usr/sbin/palette-update     /usr/sbin
 etc/cron.d/palette-update   /etc/cron.d
 usr/share/palette/conf/key.asc      /usr/share/palette/conf
@@ -19,3 +18,4 @@ var/palette/sched/metrics_prune    /var/palette/sched
 var/palette/sched/sync    /var/palette/sched
 var/palette/sched/workbook    /var/palette/sched
 var/palette/sched/yml    /var/palette/sched
+var/palette/sched/agent_upgrader    /var/palette/sched
