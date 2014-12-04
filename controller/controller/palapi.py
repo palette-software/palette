@@ -165,7 +165,7 @@ class CommBase(object):
         fobj.close()
         return sha.hexdigest()
 
-    def get_agent_info(self):
+    def get_agents(self):
         self.send_cmd("list")
 
         if not 'agents' in self.result:
@@ -178,7 +178,29 @@ class CommBase(object):
                                 "No agents connected now: %s." % \
                                                         self.result)
 
+        agents = []
+
         for agent in self.result['agents']:
+            if 'microsoft' in agent['os-version'].lower():
+                agent['iswin'] = True
+                agent['path'] = ntpath
+            else:
+                agent['iswin'] = False
+                agent['path'] = posixpath
+
+            required = ['os-version',
+                        'install-dir']
+            for item in required:
+                if not item in agent:
+                    raise CommException(CommError.COMMAND_RESULT_ERROR,
+                        "Missing required key '%s' in '%s'" % \
+                                                    (item, str(agent)))
+
+
+            if self.spec_str == 'type' and self.spec_val == 'all':
+                agents.append(agent)
+                continue
+
             if (self.spec_str == 'displayname' and agent['displayname'] == \
                                                     self.spec_val) \
                 or (self.spec_str == "uuid" and \
@@ -186,21 +208,10 @@ class CommBase(object):
                 or (self.spec_str == 'type' and agent['agent-type'] == \
                                                             self.spec_val):
 
-                required = ['os-version',
-                            'install-dir']
-                for item in required:
-                    if not item in agent:
-                        raise CommException(CommError.COMMAND_RESULT_ERROR,
-                            "Missing required key '%s' in '%s'" % \
-                                                        (item, str(agent)))
+                agents.append(agent)
 
-                if 'microsoft' in agent['os-version'].lower():
-                    agent['iswin'] = True
-                    agent['path'] = ntpath
-                else:
-                    agent['iswin'] = False
-                    agent['path'] = posixpath
-                return agent
+        if agents:
+            return agents
 
         raise CommException(CommError.COMMAND_RESULT_ERROR,
                             "Agent not found: %s %s" % \
@@ -259,9 +270,16 @@ class CommHandlerArgs(CommBase):
             self.spec_str = "uuid"
             self.spec_val = self.args.uuid
         elif self.args.agent_type:
-            self.preamble += ' /type=%s' % (self.args.agent_type)
             self.spec_str = "type"
             self.spec_val = self.args.agent_type
+
+            if self.spec_val != 'all':
+                self.preamble += ' /type=%s' % (self.args.agent_type)
+
+    def set_preamble(self, agent=None):
+        if agent == None:
+            self.preamble = ""
+        self.preamble = "/envid=%d /uuid=%s" % (agent['envid'], agent['uuid'])
 
 class CommHandlerCmd(CommHandlerArgs):
     def __init__(self):

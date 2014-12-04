@@ -11,7 +11,6 @@ debian:
 .PHONY: debian
 
 pylint:
-	$(PYLINT) DEBIAN/bin/sum-files
 	$(PYLINT) DEBIAN/bin/upgrade-agent
 	$(PYLINT) controller
 .PHONY: pylint
