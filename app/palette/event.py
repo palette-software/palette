@@ -19,22 +19,24 @@ class EventApplication(PaletteRESTHandler):
     NAME = 'events'
     DEFAULT_PAGE_SIZE = 25
 
-    def fixup_icon(self, entry):
+    def fixup_icon(self, data):
+        icon = data['icon']
         # FIXME: really use the database table
-        if not entry.icon:
-            if entry.color == 'green':
+        if not icon:
+            color = data['color']
+            if color == 'green':
                 icon = 'fa-check-circle'
-            elif entry.color == 'red':
+            elif color == 'red':
                 icon = 'fa-times-circle'
             else:
                 icon = 'fa-exclamation-circle'
-        entry.icon = icon
+        data['icon'] = icon
 
-    def convert_description_to_html(self, entry):
-        html = entry.description.replace('\n', '<br>')
+    def convert_description_to_html(self, data):
+        html = data['description'].replace('\n', '<br>')
         # Replace leading spaces with '&nbsp;'
-        entry.description = re.sub(r'^ +', lambda m: '&nbsp;'*len(m.group()),
-                                   html)
+        html = re.sub(r'^ +', lambda m: '&nbsp;'*len(m.group()), html)
+        data['description'] = html
         return
 
     def query_mostrecent(self, envid, status=None, event_type=None,
@@ -65,9 +67,10 @@ class EventApplication(PaletteRESTHandler):
         for event in query.all():
             if not event.complete:
                 continue
-            self.convert_description_to_html(event)
-            self.fixup_icon(event)
-            events.append(event.todict(pretty=True))
+            evdict = event.todict(pretty=True)
+            self.convert_description_to_html(evdict)
+            self.fixup_icon(evdict)
+            events.append(evdict)
 
         data = {}
         data['events'] = events
@@ -103,9 +106,10 @@ class EventApplication(PaletteRESTHandler):
 
         events = []
         for event in query.all():
-            self.convert_description_to_html(event)
-            self.fixup_icon(event)
-            events.append(event.todict(pretty=True))
+            evdict = event.todict(pretty=True)
+            self.convert_description_to_html(evdict)
+            self.fixup_icon(evdict)
+            events.append(evdict)
 
         data = {}
         data['events'] = events
