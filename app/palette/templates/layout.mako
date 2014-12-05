@@ -53,7 +53,7 @@
 	    </div>
         <i class="fa fa-fw fa-angle-down down-arrow"></i>
       </a>
-      <ul class="processes">
+      <ul class="processes {{visible}}">
 	{{#volumes}}
 	<li>
 	  <i class="fa fa-fw fa-circle {{color}}"></i>

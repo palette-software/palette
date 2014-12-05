@@ -19,7 +19,7 @@
 
 <script id="event-list-template" type="x-tmpl-mustache">
   {{#events}}
-  <article class="item">
+  <article class="item" id="item{{eventid}}">
     <div class="summary clearfix">
       <span class="fa-stack">
 	<i class="fa fa-circle fa-stack-1x"></i>

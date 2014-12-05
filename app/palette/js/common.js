@@ -21,6 +21,8 @@ function ($, topic, template, items, paging)
     var status_color = null;
     var status_text = null;
 
+    var sidebar_open = false;
+
     /*
      * EventFilter
      * pseudo-class for maintaining the selected events
@@ -115,14 +117,16 @@ function ($, topic, template, items, paging)
             $('.main-side-bar li.active, ' +
               '.secondary-side-bar, .dynamic-content, ' +
               '.secondary-side-bar.servers').toggleClass('servers-visible');
-            if ($('#expand-right').hasClass('fa-angle-right')) {
-                $('#expand-right').removeClass('fa-angle-right');
-                $('#expand-right').addClass('fa-angle-left');
-                $('.filter-dropdowns').addClass('hidden');
-            } else {
+            if (sidebar_open) {
                 $('#expand-right').removeClass('fa-angle-left');
                 $('#expand-right').addClass('fa-angle-right');
                 $('.filter-dropdowns').removeClass('hidden');
+                sidebar_open = false;
+            } else {
+                $('#expand-right').removeClass('fa-angle-right');
+                $('#expand-right').addClass('fa-angle-left');
+                $('.filter-dropdowns').addClass('hidden');
+                sidebar_open = true;
             }
         });
     }
@@ -431,8 +435,19 @@ function ($, topic, template, items, paging)
             return;
         }
 
+        /* build a list of events currently opened in the UI. */
+        var events_open = [];
+        $('article.item.open').each(function () {
+            var server = $('a > div > h5', $(this).parent()).html();
+            events_open.push($(this).attr('id'));
+        });
+
         var rendered = template.render(event_list_template, data);
         $('#event-list').html(rendered);
+
+        for (var i=0; i < events_open.length; i++) {
+            $('#' + events_open[i]).addClass('open');
+        }
 
         eventFilter.first = events[0].eventid;
         eventFilter.last = events[events.length-1].eventid;
@@ -503,6 +518,28 @@ function ($, topic, template, items, paging)
 
         topic.publish('state', data);
         current = json;
+
+        /* build a list of server names currently open in the UI
+           FIXME: do this on a per-environment basis. */
+        var servers_open = [];
+        $('ul.server-list > li > ul.processes.visible').each(function () {
+            var server = $('a > div > h5', $(this).parent()).html();
+            servers_open.push(server);
+        });
+
+        /* Set the visible class to the processes ul for all open servers.
+           FIXME: update for multi-environment support. */
+        if (servers_open.length > 0) {
+            for (var i = 0; i < data['environments'].length; i++) {
+                var environment = data['environments'][i];
+                for (var j = 0; j < environment.agents.length; j++) {
+                    var agent = environment.agents[j];
+                    if (servers_open.indexOf(agent.displayname) >= 0) {
+                        agent.visible = 'visible';
+                    }
+                }
+            }
+        }
 
         var text = data['text'] != null ? data['text'] : 'SERVER ERROR';
         setStatusText(text);
