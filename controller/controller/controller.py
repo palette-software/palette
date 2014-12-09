@@ -1069,6 +1069,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             if agent.agent_type:
                 self.agentmanager.update_agent_pinfo_dirs(agent, pinfo)
                 self.agentmanager.update_agent_pinfo_vols(agent, pinfo)
+                self.agentmanager.update_agent_pinfo_other(agent, pinfo)
             else:
                 self.log.error(
                     "get_pinfo: Could not update agent: unknown " + \
