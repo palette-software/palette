@@ -1,6 +1,5 @@
-from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
-from sqlalchemy import Boolean
-# from sqlalchemy import Index
+from sqlalchemy import Column, Integer, BigInteger, String, DateTime, Boolean
+from sqlalchemy import Index, func
 from sqlalchemy.schema import ForeignKey
 
 # pylint: disable=import-error,no-name-in-module
@@ -47,4 +46,8 @@ class EventEntry(meta.Base, BaseMixin, BaseDictMixin):
             data['reference_time'] = timestamp
         return data
 
-# Index('idx', EventEntry.envid, EventEntry.timestamp.desc())
+Index('events_envid_timestamp_idx', EventEntry.envid, EventEntry.timestamp)
+Index('events_envid_level_timestamp_idx', \
+          EventEntry.envid, EventEntry.level, EventEntry.timestamp)
+Index('events_envid_event_type_timestamp_idx', \
+          EventEntry.envid, EventEntry.event_type, EventEntry.timestamp)
