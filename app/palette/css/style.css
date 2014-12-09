@@ -159,6 +159,7 @@ article.popup p {
     padding-bottom: 64px;
     max-width: 600px;
     white-space: nowrap;
+    -ms-overflow-style: none;
 }
 .secondary-side-bar h1, .secondary-side-bar h2, .secondary-side-bar h3, .secondary-side-bar h4, .secondary-side-bar h5 {
     color: white;
@@ -430,6 +431,7 @@ ul.dropdown-menu a:hover {
     -moz-transition: all 0.3s ease-out;
     -ms-transition: all 0.3s ease-out;
     -o-transition: all 0.3s ease-out;
+    -ms-overflow-style: none;
     transition: all 0.3s ease-out;
     overflow-y:scroll;
     padding-bottom: 64px;
@@ -597,6 +599,10 @@ ul.processes.visible {
 }
 .main-side-bar > ul.actions li a:hover {
     text-decoration: none;
+}
+/* For IE11 */
+.main-side-bar ul.actions li.category ul.visible li {
+    display: block;
 }
 .secondary-side-bar > ul.actions {
     margin: 0;
