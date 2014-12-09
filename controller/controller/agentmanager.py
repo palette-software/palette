@@ -1164,15 +1164,19 @@ class AgentManager(threading.Thread):
                     self._close(conn)
                     return
 
-            if self.server.domain.license_key:
+            # Get the latest controller license key in case it has changed.
+            domain_entry = \
+                        self.server.domain.get_by_name(self.server.domain.name)
+            license_key = domain_entry.license_key
+            if license_key:
                 if not body.has_key('license-key'):
                     self.log.error("Agent missing required 'license-key'")
                     self._close(conn)
                     return
-                key = body['license-key'].strip()
-                if key != self.server.domain.license_key:
+                agent_key = body['license-key'].strip()
+                if agent_key != license_key:
                     self.log.error("Agent license is incorrect '%s' != '%s'",
-                                   key, self.server.domain.license_key)
+                                   agent_key, license_key)
                     self._close(conn)
                     return
 
