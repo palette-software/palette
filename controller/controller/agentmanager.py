@@ -487,6 +487,25 @@ class AgentManager(threading.Thread):
 
         return True
 
+    def update_agent_pinfo_other(self, agent, pinfo):
+        """Update other information from pinfo, such as the IP address,
+           if it has changed."""
+
+        if 'ip-address' in pinfo and pinfo['ip-address'] != agent.ip_address:
+            self.log.debug(
+                "update_agent_info_other: Updating ip address from %s to %s",
+                                                       agent.ip_address,
+                                                       pinfo['ip-address'])
+            agent.ip_address = pinfo['ip-address']
+            session = meta.Session()
+            agentid = agent.agentid
+
+            session.query(Agent).\
+                filter(Agent.agentid == agentid).\
+                       update({"ip_address" : agent.ip_address},
+                       synchronize_session=False)
+            session.commit()
+
     def update_agent_pinfo_vols(self, agent, pinfo):
         """Update volume-related information from pinfo.
            Checks the disk-usage of each volume and generates an

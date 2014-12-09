@@ -33,7 +33,7 @@ def make_logger(name, config):
     if filename:
         from logging.handlers import RotatingFileHandler
         max_bytes = config.getint(section, 'max_bytes', default=20*1024*1024)
-        backup_count = config.getint(section, 'backup_count', default=5)
+        backup_count = config.getint(section, 'backup_count', default=20)
         handler = RotatingFileHandler(filename, "a", max_bytes, backup_count)
     else:
         handler = logging.StreamHandler()
