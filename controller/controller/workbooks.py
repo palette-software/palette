@@ -383,6 +383,10 @@ class WorkbookManager(TableauCacheManager):
         if not cred:
             cred = self.server.cred.get('secondary', default=None)
 
+        if cred:
+            if not cred.user:
+                cred = None
+
         return cred
 
     # Run 'tabcmd get' on the agent to retrieve the twb/twbx file
