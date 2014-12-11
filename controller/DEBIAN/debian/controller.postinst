@@ -16,6 +16,9 @@ if [ "$oldversion" = "1.0.0" ]; then
     drop table data_source_types;
     drop table ports;
     drop table cron;
+    create index events_envid_timestamp_idx on events (envid, timestamp);
+    create index events_envid_level_timestamp_idx on events (envid, level, timestamp);
+    create index events_envid_event_type_timestamp_idx on events (envid, event_type, timestamp);
 XYZZY
 
     update-rc.d controller defaults
