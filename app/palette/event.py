@@ -20,7 +20,10 @@ class EventApplication(PaletteRESTHandler):
     DEFAULT_PAGE_SIZE = 25
 
     def fixup_icon(self, data):
-        icon = data['icon']
+        if 'icon' in data:
+            icon = data['icon']
+        else:
+            icon = None
         # FIXME: really use the database table
         if not icon:
             color = data['color']
