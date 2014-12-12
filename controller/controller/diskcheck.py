@@ -93,6 +93,10 @@ class DiskCheck(object):
             raise DiskException("Could not create directory '%s': %s" % \
                                 (self.primary_dir, str(ex)))
 
+        # Create directories only on the primary
+        if self.target_agent != self.agent:
+            return
+
         if self.target_dir and (self.primary_dir != self.target_dir):
             # Make sure the target directory on the primary exists, too.
             try:
@@ -195,11 +199,11 @@ class DiskCheck(object):
                 "primary_dir '%s'. " + \
                 "Need %s, have %s, size %s, " + \
                 "archive limit %s",
-                    self.agent.displayname, entry.volid, self.target_dir,
-                    self.primary_dir,
-                    sizestr(self.min_disk_needed),
+                   self.target_agent.displayname, entry.volid, self.target_dir,
+                   self.primary_dir,
+                   sizestr(self.min_disk_needed),
                                         sizestr(entry.available_space),
-                    sizestr(entry.size), sizestr(entry.archive_limit))
+                   sizestr(entry.size), sizestr(entry.archive_limit))
 
     @classmethod
     def get_primary_loc(cls, agent, parent_dir, min_disk_needed=0):
