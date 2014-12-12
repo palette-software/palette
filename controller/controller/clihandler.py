@@ -498,7 +498,10 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # delete/rotate old backups
         rotate_info = self.server.rotate_backups()
-        body['info'] += rotate_info
+        if 'info' in body:
+            body['info'] += rotate_info
+        else:
+            body['info'] = rotate_info
 
         data = agent.todict()
         if success(body):
