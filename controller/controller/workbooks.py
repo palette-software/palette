@@ -129,10 +129,10 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
         # pylint: disable=no-member
         site = self.workbook.site
         if not site:
-            site = self.workbook.site_id
+            site = str(self.workbook.site_id)
         project = self.workbook.project
         if not project:
-            project = self.workbook.project_id
+            project = str(self.workbook.project_id)
         filename = site + '-' + project + '-'
         filename += self.workbook.repository_url + '-rev' + self.revision
         return filename.replace(' ', '_')
