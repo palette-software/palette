@@ -111,7 +111,8 @@ class Agent(meta.Base, BaseDictMixin):
     def get_agentid_from_host(cls, envid, host):
         """ Given a hostname, fully qualified domain name or IP address,
             return an agentid.  If no agentid is found, return None.
-            Hostname is treated as case insensitive."""
+            Hostname is treated as case insensitive.
+            Note: Only enabled agents are checked."""
 
         session = meta.Session()
         if is_ip(host):
@@ -119,6 +120,7 @@ class Agent(meta.Base, BaseDictMixin):
                 entry = session.query(Agent).\
                     filter(Agent.envid == envid).\
                     filter(Agent.ip_address == host).\
+                    filter(Agent.enabled == True).\
                     one()
                 return entry.agentid
             except NoResultFound:
@@ -133,6 +135,7 @@ class Agent(meta.Base, BaseDictMixin):
         try:
             entry = session.query(Agent).\
                 filter(Agent.envid == envid).\
+                filter(Agent.enabled == True).\
                 filter(func.upper(Agent.hostname) == hostname).\
                 one()
             return entry.agentid
