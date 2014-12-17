@@ -1226,7 +1226,7 @@ class AgentManager(threading.Thread):
 
             self.ping_check(agent)
 
-        except (socket.error, IOError) as ex:
+        except (socket.error, IOError, httplib.HTTPException) as ex:
             self.log.warn("handle_agent_connection_error: " + str(ex))
             self._close(aconn.socket)
 
