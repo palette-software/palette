@@ -419,9 +419,14 @@ class TableauStatusMonitor(threading.Thread):
                     agentid = Agent.get_agentid_from_host(self.envid, host)
                 else:
                     # Example: "Connection error contacting worker 1"
-                    self._add(agentid, line, -1, 'error')
-                    self.log.debug("status-check: logged: %s, %d, %s",
-                                   line, -1, 'error')
+                    if not agentid:
+                        self.log.debug("status-check: Can't log due to " + \
+                                       "unknown or disabled agent: %s, %d, %s",
+                                       line, -1, 'error')
+                    else:
+                        self._add(agentid, line, -1, 'error')
+                        self.log.debug("status-check: logged: %s, %d, %s",
+                                       line, -1, 'error')
 
         aconn = agent.connection
         acquired = aconn.user_action_lock(blocking=False)
