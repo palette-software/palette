@@ -9,7 +9,7 @@ export DEBIAN_FRONTEND="noninteractive"
 
 LOG_FILE=/var/log/palette/update.log
 INI_FILE=/etc/palette_update.ini
-PACKAGES="controller palette akiri.framework-sqlalchemy akiri.framework"
+PACKAGES="controller palette"
 
 delayer()
 {
@@ -52,8 +52,8 @@ fi
 apt-get update >> $LOG_FILE 2>&1
 # Keep OLD config files (change to use NEW config files after upgraded to 1.0.1)
 #apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y $PACKAGES >> $LOG_FILE 2>&1
-# After 1.0.1 is installed and beyond:
-apt-get install -y $PACKAGES >> $LOG_FILE 2>&1
+# After 1.0.1 is installed and beyond, force using the new config file:
+apt-get install -y -o Dpkg::Options::=--force-confnew $PACKAGES >> $LOG_FILE 2>&1
 
 # log that we finished with the update
 echo "Palette updates (if any) installed" >> $LOG_FILE

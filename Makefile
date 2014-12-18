@@ -26,6 +26,11 @@ publish-dev2: $(PREBUILT_PACKAGES)
 	GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
 	chmod 600 dpkg/client/id_rsa; cd dpkg/apt; scp -r -i ../client/id_rsa -r . ubuntu@apt.palette-software.com:/var/packages/dev2
 
+publish-dev3: $(PREBUILT_PACKAGES)
+	make clean all
+	GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
+	chmod 600 dpkg/client/id_rsa; cd dpkg/apt; scp -r -i ../client/id_rsa -r . ubuntu@apt.palette-software.com:/var/packages/dev3
+
 $(POOL_DIR)/$(PKG1):
 	wget --directory-prefix=$(POOL_DIR) $(DOWNLOAD_DIR)/$(PKG1)
 
