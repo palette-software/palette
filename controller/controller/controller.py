@@ -1463,10 +1463,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if 'error' in body:
             self.event_control.gen(EventControl.ZIPLOGS_FAILED,
-                                   dict(body.items() + data.items()))
+                                   dict(body.items() + data.items()),
+                                   userid=userid)
         else:
             self.event_control.gen(EventControl.ZIPLOGS_FINISHED,
-                                   dict(body.items() + data.items()))
+                                   dict(body.items() + data.items()),
+                                   userid=userid)
         return body
 
     def cleanup_cmd(self, agent, userid=None):
