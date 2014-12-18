@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/python
 
 # pylint: disable=invalid-name
 import os
@@ -87,6 +87,7 @@ class Upgrade(object):
         for agent in agents:
 
             source_files = self.init(agent)
+            self.send_hup = False
 
             if self.comm.verbose:
                 print "agent:", agent['displayname']
