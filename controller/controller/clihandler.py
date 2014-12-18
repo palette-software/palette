@@ -2126,12 +2126,6 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
 
         body = self.server.ziplogs_cmd(agent, userid=userid)
-        if failed(body):
-            data = agent.todict()
-            self.server.event_control.gen(EventControl.ZIPLOGS_FAILED,
-                                          dict(body.items() + data.items()),
-                                          userid=userid)
-
         stateman.update(main_state)
         aconn.user_action_unlock()
 

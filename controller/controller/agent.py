@@ -121,7 +121,7 @@ class Agent(meta.Base, BaseDictMixin):
         if is_ip(host):
             query = query.filter(Agent.ip_address == host)
             if enabled_agents_only:
-                    query = query.filter(Agent.enabled == True)
+                query = query.filter(Agent.enabled == True)
             try:
                 entry = query.one()
                 return entry.agentid
