@@ -2223,6 +2223,17 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def handle_exception(self, before_state, telnet_command):
         self.server.log.exception("Command Failed with Exception:")
+
+        # Remove password if it was:
+        #   ad verify username password
+        # or
+        #   auth verify username password
+        tokens = telnet_command.split()
+        if len(tokens) == 4:
+            if tokens[0] in ('ad', 'auth') and tokens[1] == 'verify':
+                tokens[3] = '<>'
+                telnet_command = ' '.join(tokens)
+
         line = "Command Failed with Exception.\n" + \
             "Command: '%s'\n" % telnet_command
 
