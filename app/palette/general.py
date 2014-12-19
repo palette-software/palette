@@ -10,6 +10,8 @@ from controller.passwd import set_aes_key_file
 
 from page import PalettePage, FAKEPW
 from rest import PaletteRESTHandler, required_parameters, required_role
+from s3 import S3Application
+from gcs import GCSApplication
 
 from workbooks import CredentialMixin
 
@@ -63,7 +65,19 @@ class GeneralApplication(PaletteRESTHandler):
             if destid == ourid:
                 value = item
 
+        gcs_id = scfg.gcs_id
+        s3_id = scfg.s3_id
+
         for entry in CloudEntry.get_all_by_envid(req.envid):
+            # An enabled (non-deleted) cloud entry are the ones
+            # referred to in the system table.
+            if S3Application.NAME == entry.cloud_type and \
+                                                        s3_id != entry.cloudid:
+                continue
+            if GCSApplication.NAME == entry.cloud_type and \
+                                                        gcs_id != entry.cloudid:
+                continue
+
             item = CloudManager.text(entry.cloud_type)
             ourid = '%s:%d' % (FileManager.STORAGE_TYPE_CLOUD, entry.cloudid)
             options.append({'id': ourid, 'item': item})

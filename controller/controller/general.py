@@ -1,5 +1,6 @@
 from files import FileManager
 import logging
+from cloud import S3_ID, GCS_ID
 
 # This a transitory class - instantiated each time it is needed.
 class SystemConfig(object):
@@ -136,6 +137,10 @@ class SystemConfig(object):
             return self._getint(self.METRIC_SAVE_DAYS, default=1)
         if name == 'debug_level':
             return self._debug_level(self.DEBUG_LEVEL, default='DEBUG')
+        if name == 's3_id':
+            return self._getint(S3_ID, default=0)
+        if name == 'gcs_id':
+            return self._getint(GCS_ID, default=0)
         if name == 'from_email':
             return self._getstring(self.FROM_EMAIL,
                         default="Palette Alerts <alerts@palette-software.com>")
