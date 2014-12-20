@@ -191,6 +191,28 @@ class TableauStatusMonitor(threading.Thread):
 
             self.server.maint("stop")
 
+        if 'maint-start' in new_state_info:
+            # Make sure the maint server(s) are started if tableau
+            # is stopped.  For example, the user stopped
+            # tableau via 'tabadmin stop' and then the controller
+            # started at that point (small chance, but possible).
+            # We want to set the maint_started status.
+            # We assume the user wanted the maint server started,
+            # but can't be sure.
+            self.log.debug("status-check: Will start maint server. " + \
+                           "prev_state: %s, new state info: %s, " + \
+                           "prev_tableau_status %s, tableau_status: %s, " + \
+                           "maint_started: %s",
+                           prev_state, str(new_state_info),
+                           prev_tableau_status, tableau_status,
+                           str(self.server.maint_started))
+
+            if self.server.maint_started:
+                self.log.debug("state-check: maint server already running")
+                return
+
+            self.server.maint("start")
+
     def _send_events(self, events, agent, body):
         """Send the events according to the old and new states.
            However, don't send DEGRADED-related events until
