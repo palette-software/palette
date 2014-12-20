@@ -379,10 +379,16 @@ class CliHandler(socketserver.StreamRequestHandler):
 
                 return
 
+            combined_status = {}
+            if self.server.maint_started:
+                combined_status['maint-stop'] = \
+                                self.server.maint('stop', send_alert=False)
+            combined_status['archive-stop'] = self.server.archive('stop')
+
             self.server.system.save(SystemConfig.UPGRADING, 'yes')
 
             self.ack()
-            self.report_status({})
+            self.report_status(combined_status)
             return
 
         # Disable upgrade
@@ -410,8 +416,13 @@ class CliHandler(socketserver.StreamRequestHandler):
                        str(ex))
             return
 
+        combined_status = {}
+        combined_status['archive-start'] = self.server.archive('start')
+        if main_state == StateManager.STATE_STOPPED:
+            combined_status['maint-start'] = \
+                                    self.server.maint('start', send_alert=False)
         self.ack()
-        self.report_status({})
+        self.report_status(combined_status)
 
     @usage('backup')
     @upgrade_rwlock
@@ -1302,11 +1313,12 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             userid = None
 
-        # Stop the maintenance web server and relinquish the web
-        # server port before tabadmin start tries to listen on the web
-        # server port.
+        # If the maintenance web server is started, stop the maintenance web
+        # server relinquish the web server port before tabadmin start tries
+        # to listen on the web server port.
 
-        self.server.maint("stop")
+        if self.server.maint_started:
+            self.server.maint("stop")
         # FIXME: let it continue ?
 
         body = self.server.cli_cmd('tabadmin start', agent, timeout=60*60)
@@ -1694,7 +1706,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
 
-        body = self.server.archive(agent, action, port)
+        body = self.server.archive(action, agent, port)
         self.report_status(body)
 
 

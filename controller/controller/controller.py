@@ -1224,7 +1224,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                                 body['stdout'])
             if 'stderr' in body:
                 body_combined['stderr'] += '%s: %s\n' % (agent.displayname,
-                                                body['stdout'])
+                                                body['stderr'])
             if 'error' in body:
                 body_combined['error'] += '%s: %s\n' % \
                                         (agent.displayname, body['error'])
@@ -1327,12 +1327,47 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return send_body
 
-    def archive(self, agent, action, port=-1):
+    def archive(self, action, agent=None, port=-1):
+        """'start' or 'stop' one or all archive servers."""
         send_body = {"action": action}
         if port > 0:
             send_body["port"] = port
 
-        return self.send_immediate(agent, "POST", "/archive", send_body)
+        if agent:
+            # Send archive command to just one agent
+            return self.send_immediate(agent, "POST", "/archive", send_body)
+
+        # Send archive command to all connected agents
+        body_combined = {'stdout': "",
+                         'stderr': "",
+                         'error': ""}
+
+        archive_success = True
+        agents = self.agentmanager.all_agents()
+        for key in agents.keys():
+            self.agentmanager.lock()
+            if not agents.has_key(key):
+                self.log.info(
+                    "archive: agent with conn_id %d is now " + \
+                    "gone and won't be checked.", key)
+                self.agentmanager.unlock()
+                continue
+            agent = agents[key]
+            self.agentmanager.unlock()
+            body = self.send_immediate(agent, "POST", "/archive", send_body)
+            if 'stdout' in body:
+                body_combined['stdout'] += '%s: %s\n' % (agent.displayname,
+                                                          body['stdout'])
+                body_combined['stderr'] += '%s: %s\n' % (agent.displayname,
+                                                          body['stderr'])
+                body_combined['error'] += '%s: %s\n' % (agent.displayname,
+                                                          body['error'])
+                archive_success = False
+
+        if archive_success:
+            # The existence of 'error' signifies failure but all succeeded.
+            del body_combined['error']
+        return body_combined
 
     def ping(self, agent):
 
@@ -1644,12 +1679,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.event_control.gen(EventControl.MAINT_STOP_FAILED,
                                        dict(body.items() + data.items()))
 
-        body = self.archive(agent, "stop")
+        body = self.archive("stop", agent)
         if body.has_key("error"):
             self.event_control.gen(EventControl.ARCHIVE_STOP_FAILED,
                                    dict(body.items() + agent.todict().items()))
         # Get ready.
-        body = self.archive(agent, "start")
+        body = self.archive("start", agent)
         if body.has_key("error"):
             self.event_control.gen(EventControl.ARCHIVE_START_FAILED,
                                    dict(body.items() + agent.todict().items()))
