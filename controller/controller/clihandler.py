@@ -515,6 +515,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             body['info'] = rotate_info
 
         data = agent.todict()
+
         if success(body):
             if 'copy-failed' in body:
                 real_event = backup_finished_copy_failed_event
@@ -528,16 +529,13 @@ class CliHandler(socketserver.StreamRequestHandler):
                                           dict(body.items() + data.items()),
                                           userid=userid)
 
+        # This triggers the UI to allow the user to do another command
         stateman.update(main_state)
 
-        # Get the latest status from tabadmin
-        self.server.statusmon.check_status_with_connection(agent)
-        # Don't unlock to allow the status thread to ALSO do
-        # 'tabadmin status -v' until at least we finish with ours.
+        # This allows another telnet command
         aconn.user_action_unlock()
 
         self.report_status(body)
-
 
     @usage('deletefile file-name')
     @upgrade_rwlock
@@ -1525,7 +1523,6 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         aconn.user_action_unlock()
 
-        # fixme: check & report status to see if it really stopped?
         self.report_status(body)
 
     @usage('stop [no-backup|nobackup] [no-license|nolicense]' +\
@@ -1611,7 +1608,6 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         aconn.user_action_unlock()
 
-        # fixme: check & report status to see if it really stopped?
         self.report_status(body)
 
     @usage('maint start|stop')
