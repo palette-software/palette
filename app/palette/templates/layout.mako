@@ -60,6 +60,12 @@
 	  Storage: {{name}} {{value}}
 	</li>
 	{{/volumes}}
+	{{#cpu}}
+	<li>
+	  <i class="fa fa-fw fa-circle {{color}}"></i>
+	  CPU
+	</li>
+	{{/cpu}}
 	{{#license}}
 	<li>
 	  <i class="fa fa-fw fa-circle {{color}}"></i>
