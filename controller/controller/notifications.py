@@ -43,3 +43,15 @@ class NotificationManager(object):
                                       agentid=agentid)
             meta.Session.add(entry)
         return entry
+
+    @classmethod
+    def get_entry_by_envid_name_agentid(cls, envid, name, agentid):
+        try:
+            entry = meta.Session.query(NotificationEntry).\
+                filter(NotificationEntry.envid == envid).\
+                filter(NotificationEntry.name == name).\
+                filter(NotificationEntry.agentid == agentid).\
+                one()
+        except NoResultFound:
+            return None
+        return entry

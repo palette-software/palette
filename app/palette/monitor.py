@@ -19,6 +19,7 @@ from controller.util import sizestr, DATEFMT, utc2local
 from controller.licensing import LicenseEntry
 from controller.extracts import ExtractManager
 from controller.event_control import EventControl
+from controller.notifications import NotificationManager
 
 from event import EventApplication
 from rest import PaletteRESTHandler
@@ -183,7 +184,13 @@ class MonitorApplication(PaletteRESTHandler):
         else:
             return {'value':'invalid', 'color':'red'}
 
-    def cpu_info(self):
+    def cpu_info(self, envid, agent_entry):
+        cpu_entry = NotificationManager.get_entry_by_envid_name_agentid(
+                    envid, 'cpu', agent_entry.agentid)
+        if cpu_entry and cpu_entry.color:
+            return {'color': cpu_entry.color}
+
+        # Report green unless proven otherwise.
         return {'color': 'green'}
 
     def lowest_color(self, info_list):
@@ -314,7 +321,12 @@ class MonitorApplication(PaletteRESTHandler):
                 agent['volumes'] = self.volume_info(req, entry)
                 agent['in_ports'] = self.firewall_info(entry)
                 agent['out_ports'] = self.out_ports(entry)
-                agent['cpu'] = self.cpu_info()
+                cpu_info = self.cpu_info(req.envid, entry)
+                if cpu_info:
+                    agent['cpu'] = cpu_info
+                    cpu_color = Colors.color_to_num[cpu_info['color']]
+                    if cpu_color < agent_color_num:
+                        agent_color_num = cpu_color
 
                 vol_lowest_color = self.lowest_color(agent['volumes'])
                 firewall_lowest_color = self.lowest_color(agent['in_ports'])
