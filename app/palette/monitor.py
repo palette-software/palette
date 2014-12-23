@@ -183,6 +183,9 @@ class MonitorApplication(PaletteRESTHandler):
         else:
             return {'value':'invalid', 'color':'red'}
 
+    def cpu_info(self):
+        return {'color': 'green'}
+
     def lowest_color(self, info_list):
         lowest_color_num = Colors.GREEN_NUM
 
@@ -311,6 +314,7 @@ class MonitorApplication(PaletteRESTHandler):
                 agent['volumes'] = self.volume_info(req, entry)
                 agent['in_ports'] = self.firewall_info(entry)
                 agent['out_ports'] = self.out_ports(entry)
+                agent['cpu'] = self.cpu_info()
 
                 vol_lowest_color = self.lowest_color(agent['volumes'])
                 firewall_lowest_color = self.lowest_color(agent['in_ports'])
