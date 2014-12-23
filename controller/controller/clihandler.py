@@ -850,7 +850,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             else:
                 body['stdout'] = rotate_info
 
-            # Restore finished successfully.  The main state has.
+            # Restore finished successfully.  The main state has
             # already been set.
             self.server.event_control.gen(EventControl.RESTORE_FINISHED,
                                           dict(body.items() + data.items()),
@@ -860,10 +860,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                                           dict(body.items() + data.items()),
                                           userid=userid)
 
-        # Get the latest status from tabadmin
-        self.server.statusmon.check_status_with_connection(agent)
-        # Don't unlock to allow the status thread to ALSO do
-        # 'tabadmin status -v' until at least we finish with ours.
+        # The state was updated in restore_cmd so we don't need
+        # to wait for 'tabadmin status -v' now.
         aconn.user_action_unlock()
 
         self.report_status(body)
