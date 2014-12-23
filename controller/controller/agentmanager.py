@@ -1008,6 +1008,7 @@ class AgentManager(threading.Thread):
         self.log.error("after expunge: %s", str(agent.todict()))
 
     def _close(self, sock):
+        self.log.warn("agentmanager._close socket")
         try:
             sock.shutdown(socket.SHUT_RDWR)
             sock.close()
@@ -1533,7 +1534,7 @@ class ReverseHTTPConnection(httplib.HTTPConnection):
         self.aconn.last_activity = time.time()    # update for ping check
 
     def getresponse(self, buffering=False):
-        self.aconn.ast_activity = time.time()    # update for ping check
+        self.aconn.last_activity = time.time()    # update for ping check
         return httplib.HTTPConnection.getresponse(self, buffering)
 
     def request(self, method, url, body=None, headers=None):
