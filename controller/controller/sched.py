@@ -45,6 +45,7 @@ class Sched(threading.Thread):
 
     def run(self):
         while True:
+            meta.Session.expire_all()
             now = time.time()
             nexttime = 61 +  now - (now % 60) # start of the minute
 
@@ -138,7 +139,7 @@ class Crontab(meta.Base, BaseDictMixin):
     day_of_month = Column(String, nullable=False) # 1-31,*
     month = Column(String, nullable=False) # 1-12,*
     day_of_week = Column(String, nullable=False) # 0-6,# or names
-    enabled = Column(Boolean, default=True)
+    enabled = Column(Boolean, nullable=False, default=True)
 
     # convert X/Y format to comma delimetted list
     def commafy(self, s, maxval=60):
