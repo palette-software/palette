@@ -836,7 +836,10 @@ class AgentManager(threading.Thread):
         # Return only enabled agents
         enabled_agents = {}
         for key in self.agents.keys():
-            agent = self.agents[key]
+            try:
+                agent = self.agents[key]
+            except KeyError:
+                continue
 
             temp_agent = Agent.get_by_uuid(self.envid, agent.uuid)
             make_transient(temp_agent)
@@ -888,9 +891,13 @@ class AgentManager(threading.Thread):
         """
 
         for key in self.all_agents():   # The list of ENABLED agents
-            if self.agents[key].agent_type == agent_type:
-                agent = self.agents[key]
-                return agent
+            try:
+                if self.agents[key].agent_type == agent_type:
+                    agent = self.agents[key]
+                    return agent
+            # agent can go away while we are in this loop.
+            except KeyError:
+                continue
 
         return None
 
@@ -904,8 +911,11 @@ class AgentManager(threading.Thread):
         Returns None if no agents of that type are connected."""
 
         for key in self.all_agents():
-            if self.agents[key].agent_type == agent_type:
-                return self.agents[key].connection
+            try:
+                if self.agents[key].agent_type == agent_type:
+                    return self.agents[key].connection
+            except KeyError:
+                continue
 
         return None
 
@@ -914,8 +924,11 @@ class AgentManager(threading.Thread):
             Return an instance of it, or None if none match.
         """
         for key in self.all_agents():   # Returns ENABLED agents
-            if self.agents[key].uuid == uuid:
-                return self.agents[key]
+            try:
+                if self.agents[key].uuid == uuid:
+                    return self.agents[key]
+            except KeyError:
+                continue
         return None
 
     def agent_by_id(self, agentid):
@@ -923,8 +936,11 @@ class AgentManager(threading.Thread):
             Return an instance of it, or None if none match.
         """
         for key in self.all_agents():   # Returns ENABLED agents
-            if self.agents[key].agentid == agentid:
-                return self.agents[key]
+            try:
+                if self.agents[key].agentid == agentid:
+                    return self.agents[key]
+            except KeyError:
+                continue
         return None
 
     # DEPRECATED
