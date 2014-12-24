@@ -26,6 +26,17 @@ XYZZY
     exit 0
 fi
 
+if [ "$oldversion" = "1.0.1" ]; then
+    echo Upgrading from 1.0.1 ...
+    psql paldb << XYZZY
+    alter table cron add column enabled boolean default True;
+XYZZY
+
+    update-rc.d controller defaults
+    service controller start
+    exit 0
+fi
+
 set +x
 
 apt-key add /usr/share/palette/conf/key.asc

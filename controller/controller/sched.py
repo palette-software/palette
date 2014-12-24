@@ -6,7 +6,7 @@ import re
 
 from datetime import datetime
 
-from sqlalchemy import Column, String, BigInteger, DateTime
+from sqlalchemy import Column, String, BigInteger, DateTime, Boolean
 from sqlalchemy.orm.exc import NoResultFound
 
 # pylint: disable=import-error,no-name-in-module
@@ -49,7 +49,10 @@ class Sched(threading.Thread):
             nexttime = 61 +  now - (now % 60) # start of the minute
 
             for job in Crontab.get_ready_jobs():
-                self.server.log.debug("JOB: " + str(job))
+                self.server.log.debug("JOB: %s, enabled %s", job.name,
+                                      str(job.enabled))
+                if not job.enabled:
+                    continue
                 try:
                     self.handler(job.name)
                 except StandardError, ex:
@@ -135,6 +138,7 @@ class Crontab(meta.Base, BaseDictMixin):
     day_of_month = Column(String, nullable=False) # 1-31,*
     month = Column(String, nullable=False) # 1-12,*
     day_of_week = Column(String, nullable=False) # 0-6,# or names
+    enabled = Column(Boolean, default=True)
 
     # convert X/Y format to comma delimetted list
     def commafy(self, s, maxval=60):
@@ -219,6 +223,12 @@ class JobHandler(object):
             self.server.event_control.gen(
                 EventControl.SCHEDULED_JOB_FAILED,
                 {'error': "No such command: '%s'" % name})
+            return
+
+        if not os.access(path, os.X_OK):
+            self.server.log.debug(
+                "cmd '%s' does not have any execute bits on. Will not run.",
+                path)
             return
 
         cmd = [path,
