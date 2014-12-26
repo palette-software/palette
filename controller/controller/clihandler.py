@@ -1764,8 +1764,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                     self.print_usage(self.do_file.__usage__)
                     return
                 self.ack()
-                agent.filemanager.delete(path)
-                body = {}
+                body = agent.filemanager.delete(path)
             elif method == 'SHA256':
                 if len(cmd.args) != 2:
                     self.print_usage(self.do_file.__usage__)
