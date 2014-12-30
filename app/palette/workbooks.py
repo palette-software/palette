@@ -17,9 +17,8 @@ from controller.credential import CredentialEntry
 from controller.sites import Site
 from controller.projects import Project
 
-from page import FAKEPW
-from rest import PaletteRESTHandler
-from rest import required_parameters, required_role
+from .page import FAKEPW
+from .rest import required_parameters, required_role, PaletteRESTApplication
 
 __all__ = ["WorkbookApplication"]
 
@@ -87,9 +86,8 @@ class WorkbookSort(BaseStaticOption):
                             cls.PROJECT:'Project', cls.PUBLISHER:'Publisher',
                             cls.REVISION_DATE:'Revision Date'})
 
-class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
-
-    NAME = 'workbooks'
+class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
+    # pylint: disable=too-many-public-methods
 
     ALL_SITES_PROJECTS_OPTION = 'All Sites/Projects'
 
@@ -221,6 +219,7 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         value = cred and FAKEPW or ''
         return {'value': value}
 
+    # FIXME: covert to /workbook/<id>/note or /workbook/note/<id>
     # GET doesn't have a ready meaning.
     @required_role(Role.MANAGER_ADMIN)
     @required_parameters('id', 'value')
@@ -238,14 +237,14 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         if req.remote_user.roleid == Role.NO_ADMIN:
             showid = WorkbookShow.MINE
         else:
-            showid = req.getint('show')
+            showid = req.params_getint('show')
             #pylint: disable=no-member
             if showid is None or showid not in WorkbookShow.ITEMS:
                 showid = WorkbookShow.ALL
         if showid == WorkbookShow.MINE:
             filters['system_user_id'] = req.remote_user.system_user_id
 
-        site_project = req.get('site-project', default='0')
+        site_project = req.params_get('site-project', default='0')
         if site_project != '0':
             tokens = site_project.split(':')
             if len(tokens) == 2:
@@ -264,7 +263,7 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
 
         # pylint: disable=no-member
         # pylint: disable=maybe-no-member
-        sort = req.getint('sort')
+        sort = req.params_getint('sort')
         if sort is None or sort not in WorkbookSort.ITEMS:
             sort = WorkbookSort.NAME
 
@@ -291,8 +290,8 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
         elif sort == WorkbookSort.PUBLISHER:
             query = query.order_by(UserProfile.friendly_name)
 
-        limit = req.getint('limit', default=25)
-        page = req.getint('page', default=1)
+        limit = req.params_getint('limit', default=25)
+        page = req.params_getint('page', default=1)
 
         offset = (page - 1) * limit
         query = query.limit(limit).offset(offset)
@@ -345,20 +344,22 @@ class WorkbookApplication(PaletteRESTHandler, CredentialMixin):
                 'item-count': self.item_count(req.envid)
         }
 
-    def handle(self, req):
-        path_info = self.base_path_info(req)
-        if path_info == 'primary/user':
-            return self.handle_user(req, key=self.PRIMARY_KEY)
-        elif path_info == 'primary/password':
-            return self.handle_passwd(req, key=self.PRIMARY_KEY)
-        elif path_info == 'secondary/user':
-            return self.handle_user(req, key=self.SECONDARY_KEY)
-        elif path_info == 'secondary/password':
-            return self.handle_passwd(req, key=self.SECONDARY_KEY)
-        elif path_info == 'updates/note':
-            return self.handle_update_note(req)
-        elif path_info:
-            raise exc.HTTPBadRequest()
+    # FIXME: route correctly.
+    # FIXME: primary/secondary now (likely) unused, remove.
+    def service(self, req):
+        if 'action' in req.environ:
+            action = req.environ['action']
+            if action == 'primary/user':
+                return self.handle_user(req, key=self.PRIMARY_KEY)
+            elif action == 'primary/password':
+                return self.handle_passwd(req, key=self.PRIMARY_KEY)
+            elif action == 'secondary/user':
+                return self.handle_user(req, key=self.SECONDARY_KEY)
+            elif action == 'secondary/password':
+                return self.handle_passwd(req, key=self.SECONDARY_KEY)
+            elif action == 'updates/note':
+                return self.handle_update_note(req)
+            raise exc.HTTPNotFound()
 
         if req.method == "GET":
             return self.handle_get(req)

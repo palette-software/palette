@@ -10,11 +10,11 @@ from akiri.framework.ext.sqlalchemy import meta
 from controller.event import EventEntry
 from controller.profile import Role
 
-from rest import PaletteRESTHandler
+from .request import get, getint, getfloat
 
-__all__ = ["EventApplication"]
+__all__ = ["EventHandler"]
 
-class EventApplication(PaletteRESTHandler):
+class EventHandler(object):
 
     NAME = 'events'
     DEFAULT_PAGE_SIZE = 25
@@ -121,7 +121,7 @@ class EventApplication(PaletteRESTHandler):
 
     # ts is epoch seconds as a float.
     def handle_GET(self, req):
-        timestamp = req.getfloat('ts')
+        timestamp = getfloat(req, 'ts')
         if not timestamp is None:
             timestamp = datetime.utcfromtimestamp(timestamp)
 
@@ -129,20 +129,20 @@ class EventApplication(PaletteRESTHandler):
         if req.remote_user.roleid == Role.NO_ADMIN:
             publisher = req.remote_user.system_user_id
 
-        page = req.getint('page')
+        page = getint(req, 'page')
         if page is None:
             return self.query_mostrecent(req.envid,
-                                         status=req.get('status'),
-                                         event_type=req.get('type'),
+                                         status=get(req, 'status'),
+                                         event_type=get(req, 'type'),
                                          timestamp=timestamp,
-                                         limit=req.getint('limit'),
+                                         limit=getint(req, 'limit'),
                                          publisher=publisher)
         else:
             return self.query_page(req.envid, page,
-                                   status=req.get('status'),
-                                   event_type=req.get('type'),
+                                   status=get(req, 'status'),
+                                   event_type=get(req, 'type'),
                                    timestamp=timestamp,
-                                   limit=req.getint('limit'),
+                                   limit=getint(req, 'limit'),
                                    publisher=publisher)
 
     def handle(self, req):

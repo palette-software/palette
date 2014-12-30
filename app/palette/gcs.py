@@ -1,12 +1,12 @@
 from controller.profile import Role
 from controller.cloud import CloudManager, GCS_ID
 
-from cloud import CloudHandler
-from page import PalettePage
+from .cloud import CloudApplication
+from .page import PalettePage
 
 __all__ = ["GCSApplication"]
 
-class GCSApplication(CloudHandler):
+class GCSApplication(CloudApplication):
     NAME = 'gcs'
 
     @property

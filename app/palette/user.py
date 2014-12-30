@@ -9,11 +9,11 @@ from controller.auth import AUTH_TIMESTAMP_SYSTEM_KEY
 from controller.profile import UserProfile, Role, Admin, License
 from controller.util import str2bool, LETTERS
 
-from page import PalettePage
-from rest import PaletteRESTHandler, required_parameters, required_role
+from .page import PalettePage
+from .rest import required_parameters, required_role, PaletteRESTApplication
 
-class UserApplication(PaletteRESTHandler):
-    NAME = 'users'
+class UserApplication(PaletteRESTApplication):
+    # pylint: disable=too-many-public-methods
 
     def admin_levels(self):
         roles = meta.Session.query(Role).all()
@@ -70,22 +70,20 @@ class UserApplication(PaletteRESTHandler):
             return 'Unknown'
         return License.str(d['licensing-role-id'])
 
-    def handle(self, req):
-        path_info = self.base_path_info(req)
-        if path_info == '':
-            if req.method == 'GET':
-                return self.handle_GET(req)
-            elif req.method == 'POST':
-                return self.handle_POST(req)
-            raise exc.HTTPMethodNotAllowed()
-        if path_info == 'admin':
-            return self.handle_admin(req)
-#        if path_info == 'email':
-#            return self.handle_email(req)
-        if path_info == 'email-level':
-            return self.handle_email_level(req)
+    def service(self, req):
+        if 'action' in req.environ:
+            action = req.environ['action']
+            if action == 'admin':
+                return self.handle_admin(req)
+            elif action == 'email-level':
+                return self.handle_email_level(req)
+            raise exc.HTTPNotFound()
 
-        raise exc.HTTPNotFound()
+        if req.method == 'GET':
+            return self.handle_GET(req)
+        elif req.method == 'POST':
+            return self.handle_POST(req)
+        raise exc.HTTPMethodNotAllowed()
 
     def first_populated_letter(self, counts):
         for letter in LETTERS:
@@ -173,10 +171,12 @@ class UserApplication(PaletteRESTHandler):
         meta.Session.commit()
         return {'value':value}
 
+    # FIXME: unused, remove.
     @required_role(Role.MANAGER_ADMIN)
     def handle_email_other(self, req):
         return self.set_email(req, req.POST['name'], req.POST['value'])
 
+    # FIXME: unused, remove.
     @required_parameters('name', 'value')
     def handle_email(self, req):
         # any user may update their own email address.

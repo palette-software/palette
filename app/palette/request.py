@@ -9,6 +9,37 @@ from controller.profile import UserProfile
 from controller.system import SystemEntry
 from controller.util import DATEFMT
 
+def get(req, name, default=None):
+    if not name in req.params:
+        return default
+    return req.params[name]
+
+def getint(req, name, default=None):
+    try:
+        return int(req.params[name])
+    except StandardError:
+        pass
+    return default
+
+def getfloat(req, name, default=None):
+    try:
+        return float(req.params[name])
+    except StandardError:
+        pass
+    return default
+
+def getbool(req, name, default=None):
+    try:
+        value = req.POST[name].lower()
+        if value == 'true' or value == '1':
+            return True
+        if value == 'false' or value == '0':
+            return False
+        return default
+    except StandardError:
+        pass
+    return default
+
 class Request(apiRequest):
     """ This class may be called more than once in the WSGI Pipeline. """
     # pylint: disable=too-many-public-methods
@@ -28,24 +59,11 @@ class Request(apiRequest):
             self.system = System(self.envid)
             environ['PALETTE_SYSTEM'] = self.system
 
-    def get(self, name, default=None):
-        if not name in self.GET:
-            return default
-        return self.GET[name]
+    get = get
+    getint = getint
+    getfloat = getfloat
+    getbool = getbool
 
-    def getint(self, name, default=None):
-        try:
-            return int(self.GET[name])
-        except StandardError:
-            pass
-        return default
-
-    def getfloat(self, name, default=None):
-        try:
-            return float(self.GET[name])
-        except StandardError:
-            pass
-        return default
 
 # FIXME: merge with SystemManager.
 class System(object):

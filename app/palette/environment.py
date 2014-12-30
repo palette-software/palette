@@ -5,16 +5,10 @@ from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
 from controller.environment import Environment
-from rest import PaletteRESTHandler
+from .rest import PaletteRESTApplication
 
-class EnvironmentApplication(PaletteRESTHandler):
-    # The REST application will be available at "/rest/environment"
-    NAME = 'environment'
-
-    def handle(self, req):
-        path_info = self.base_path_info(req)
-        if path_info != '':
-            raise exc.HTTPNotFound()
+class EnvironmentApplication(PaletteRESTApplication):
+    def service(self, req):
         if req.method == 'GET':
             return self.handle_GET(req)
         if req.method == 'POST':
