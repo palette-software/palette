@@ -3,24 +3,19 @@ from webob import exc
 from controller.profile import Role
 from controller.palapi import CommException
 
-from page import PalettePage
-from rest import PaletteRESTHandler, required_parameters, required_role
+from .page import PalettePage
+from .rest import required_parameters, required_role, PaletteRESTApplication
 
-class ManageApplication(PaletteRESTHandler):
+class ManageApplication(PaletteRESTApplication):
 
     NAME = 'manage'
 
     # This method also implicity checks for missing parameters.
     def getbool(self, req, name):
-        try:
-            value = req.POST[name].lower()
-            if value == 'true' or value == '1':
-                return True
-            if value == 'false' or value == '0':
-                return False
-        except (TypeError, ValueError):
-            pass
-        raise exc.HTTPBadRequest("Invalid or missing parameter '"+name+"'")
+        value = req.getbool(name, default=None)
+        if value is None:
+            raise exc.HTTPBadRequest("Invalid or missing parameter '"+name+"'")
+        return value
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_start(self, req):
@@ -71,7 +66,7 @@ class ManageApplication(PaletteRESTHandler):
         return {}
 
     @required_parameters('action')
-    def handle(self, req):
+    def service(self, req):
         # pylint: disable=too-many-return-statements
         if req.method != "POST":
             raise exc.HTTPMethodNotAllowed()

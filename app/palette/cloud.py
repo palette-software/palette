@@ -5,11 +5,10 @@ from webob import exc
 from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
-from rest import PaletteRESTHandler, required_parameters
-
 from controller.cloud import CloudEntry
+from .rest import required_parameters, PaletteRESTApplication
 
-class CloudHandler(PaletteRESTHandler):
+class CloudApplication(PaletteRESTApplication):
 
     __metaclass__ = ABCMeta
 
@@ -105,13 +104,17 @@ class CloudHandler(PaletteRESTHandler):
         meta.Session().commit()
         return {}
 
-    def handle(self, req):
-        path_info = self.base_path_info(req)
-        if req.method == 'GET':
-            return self.handle_GET(req)
-        elif req.method == 'POST':
-            if path_info == 'save':
+    def service(self, req):
+        if 'action' in req.environ:
+            action = req.environ['action']
+            if req.method != 'POST':
+                raise exc.HTTPMethodNotAllowed()
+            if action == 'save':
                 return self.handle_save_POST(req)
-            elif path_info == 'delete':
+            elif action == 'delete':
                 return self.handle_delete_POST(req)
-        raise exc.HTTPBadRequest()
+            raise exc.HTTPNotFound()
+
+        if req.method != 'GET':
+            raise exc.HTTPMethodNotAllowed()
+        return self.handle_GET(req)

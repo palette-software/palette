@@ -4,13 +4,11 @@ from controller.profile import Role
 from controller.yml import YmlEntry
 from controller.yml import YML_LOCATION_SYSTEM_KEY, YML_TIMESTAMP_SYSTEM_KEY
 
-from page import PalettePage
-from rest import PaletteRESTHandler
+from .page import PalettePage
+from .rest import PaletteRESTApplication
 
-class YmlApplication(PaletteRESTHandler):
-    NAME = 'yml'
-
-    def handle(self, req):
+class YmlApplication(PaletteRESTApplication):
+    def service(self, req):
         if req.method != 'GET':
             raise exc.HTTPBadRequest()
 

@@ -21,8 +21,8 @@ from controller.extracts import ExtractManager
 from controller.event_control import EventControl
 from controller.notifications import NotificationManager
 
-from event import EventApplication
-from rest import PaletteRESTHandler
+from .event import EventHandler
+from .rest import PaletteRESTApplication
 
 __all__ = ["MonitorApplication"]
 
@@ -43,20 +43,11 @@ class Colors(object):
         'green': GREEN_NUM
     }
 
-class MonitorApplication(PaletteRESTHandler):
+class MonitorApplication(PaletteRESTApplication):
 
-    NAME = 'monitor'
-
-    def __init__(self, global_conf):
-        super(MonitorApplication, self).__init__(global_conf)
-        self.event = EventApplication(global_conf)
-
-    def getindex(self, req, name):
-        try:
-            return int(req.GET[name])
-        except (TypeError, ValueError):
-            pass
-        return 0
+    def __init__(self):
+        super(MonitorApplication, self).__init__()
+        self.event = EventHandler()
 
     def status_options(self, req):
         current_key = 'status' in req.GET and req.GET['status'] or '0'
@@ -91,7 +82,7 @@ class MonitorApplication(PaletteRESTHandler):
         return d
 
     def publisher_options(self, req):
-        sysid = self.getindex(req, 'publisher')
+        sysid = req.param_getint('publisher', default=0)
 
         options = [{'option':'All Publishers', 'id':0}]
         d = {'name':'publisher'}
@@ -487,7 +478,7 @@ class MonitorApplication(PaletteRESTHandler):
                        'config': config
                       }
 
-        seq = req.getint('seq')
+        seq = req.param_getint('seq')
         if not seq is None:
             monitor_ret['seq'] = seq
 
@@ -502,7 +493,7 @@ class MonitorApplication(PaletteRESTHandler):
 
         return monitor_ret
 
-    def handle(self, req):
-        if req.environ['PATH_INFO'] == '/monitor':
-            return self.handle_monitor(req)
-        raise exc.HTTPBadRequest()
+    def service(self, req):
+        if req.method != 'GET':
+            raise exc.HTTPMethodNotAllowed()
+        return self.handle_monitor(req)

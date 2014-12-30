@@ -8,16 +8,15 @@ from controller.agent import AgentVolumesEntry
 from controller.cloud import CloudManager, CloudEntry
 from controller.passwd import set_aes_key_file
 
-from page import PalettePage, FAKEPW
-from rest import PaletteRESTHandler, required_parameters, required_role
-from s3 import S3Application
-from gcs import GCSApplication
-
-from workbooks import CredentialMixin
+from .page import PalettePage, FAKEPW
+from .rest import required_parameters, required_role, PaletteRESTApplication
+from .s3 import S3Application
+from .gcs import GCSApplication
+from .workbooks import CredentialMixin
 
 __all__ = ["GeneralApplication"]
 
-class GeneralApplication(PaletteRESTHandler):
+class GeneralApplication(PaletteRESTApplication):
     NAME = 'general'
 
     LOW_WATERMARK_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
@@ -361,42 +360,45 @@ class GeneralApplication(PaletteRESTHandler):
             raise exc.HTTPMethodNotAllowed()
 
     @required_role(Role.MANAGER_ADMIN)
-    def handle(self, req):
+    def service(self, req):
         # pylint: disable=too-many-return-statements
         # pylint: disable=too-many-branches
-        path_info = self.base_path_info(req)
-        if path_info == 'encryption':
-            return self.handle_encryption(req)
-        elif path_info == 'dest':
-            return self.handle_dest(req)
-        elif path_info == 'low':
-            return self.handle_low(req)
-        elif path_info == 'high':
-            return self.handle_high(req)
-        elif path_info == 'auto':
-            return self.handle_auto(req)
-        elif path_info == 'user':
-            return self.handle_user(req)
-        elif path_info == 'logs':
-            return self.handle_logs(req)
-        elif path_info == 'twb':
-            return self.handle_twb(req)
-        elif path_info == 'http_load_warn' or path_info == 'http/load/warn':
-            return self._handle_load_warn(req)
-        elif path_info == 'http_load_error' or path_info == 'http/load/error':
-            return self._handle_load_error(req)
-        elif path_info == 'cpu/load/warn':
-            return self._handle_cpu_load_warn(req)
-        elif path_info == 'cpu/load/error':
-            return self._handle_cpu_load_error(req)
-        elif path_info == 'cpu/period/warn':
-            return self._handle_cpu_period_warn(req)
-        elif path_info == 'cpu/period/error':
-            return self._handle_cpu_period_error(req)
-        if req.method == "GET":
-            return self.handle_get(req)
+        if 'action' in req.environ:
+            action = req.environ['action']
+            if action == 'encryption':
+                return self.handle_encryption(req)
+            elif action == 'dest':
+                return self.handle_dest(req)
+            elif action == 'low':
+                return self.handle_low(req)
+            elif action == 'high':
+                return self.handle_high(req)
+            elif action == 'auto':
+                return self.handle_auto(req)
+            elif action == 'user':
+                return self.handle_user(req)
+            elif action == 'logs':
+                return self.handle_logs(req)
+            elif action == 'twb':
+                return self.handle_twb(req)
+            elif action == 'http_load_warn' or action == 'http/load/warn':
+                return self._handle_load_warn(req)
+            elif action == 'http_load_error' or action == 'http/load/error':
+                return self._handle_load_error(req)
+            elif action == 'cpu/load/warn':
+                return self._handle_cpu_load_warn(req)
+            elif action == 'cpu/load/error':
+                return self._handle_cpu_load_error(req)
+            elif action == 'cpu/period/warn':
+                return self._handle_cpu_period_warn(req)
+            elif action == 'cpu/period/error':
+                return self._handle_cpu_period_error(req)
+            raise exc.HTTPNotFound()
 
-        raise exc.HTTPBadRequest()
+        if req.method != "GET":
+            raise exc.HTTPMethodNotAllowed()
+
+        return self.handle_get(req)
 
 
 class GeneralPage(PalettePage, CredentialMixin):

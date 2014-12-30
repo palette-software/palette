@@ -4,8 +4,8 @@ from webob import exc
 from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
-from page import PalettePage
-from rest import PaletteRESTHandler, required_parameters, required_role
+from .page import PalettePage
+from .rest import required_parameters, required_role, PaletteRESTApplication
 
 from controller.agent import Agent, AgentVolumesEntry
 from controller.agentmanager import AgentManager
@@ -14,21 +14,21 @@ from controller.profile import Role
 from controller.util import str2bool
 from controller.yml import YmlEntry
 
-class ServerApplication(PaletteRESTHandler):
-    NAME = 'servers'
-
+class ServerApplication(PaletteRESTApplication):
     # FIXME: allow GETs on all sub-URLs
-    def handle(self, req):
-        path_info = self.base_path_info(req)
-        if path_info == '':
-            if req.method == 'GET':
-                return self.handle_GET(req)
-        elif path_info == 'displayname':
-            return self.handle_displayname(req)
-        elif path_info == 'archive':
-            return self.handle_archive(req)
-        elif path_info == 'monitor':
-            return self.handle_monitor_POST(req)
+    def service(self, req):
+        if 'action' in req.environ:
+            action = req.environ['action']
+            if action == 'displayname':
+                return self.handle_displayname(req)
+            elif action == 'archive':
+                return self.handle_archive(req)
+            elif action == 'monitor':
+                return self.handle_monitor_POST(req)
+            raise exc.HTTPNotFound()
+
+        if req.method == 'GET':
+            return self.handle_GET(req)
         raise exc.HTTPMethodNotAllowed()
 
     def volumes(self, server):

@@ -1,7 +1,7 @@
 from webob import exc
 
-from page import PalettePage
-from rest import PaletteRESTHandler
+from .page import PalettePage
+from .rest import PaletteRESTApplication
 
 class Profile(PalettePage):
     TEMPLATE = "profile.mako"
@@ -9,23 +9,12 @@ class Profile(PalettePage):
 def make_profile(global_conf):
     return Profile(global_conf)
 
-class ProfileApplication(PaletteRESTHandler):
-    # The REST application will be available at "/rest/profile"
-    NAME = 'profile'
+class ProfileApplication(PaletteRESTApplication):
 
-    def handle(self, req):
-        if not 'REMOTE_USER' in req.environ:
-            raise exc.HTTPBadRequest()
-
-        path_info = self.base_path_info(req)
-        if path_info == '':
-            return self.handle_profile(req)
-        raise exc.HTTPNotFound()
-
-    def handle_profile_POST(self, req):
-        # pylint: disable=invalid-name
-        # pylint: disable=unused-argument
-        raise exc.HTTPBadRequest()
+    def service(self, req):
+        if req.method == 'GET':
+            return self.handle_GET(req)
+        raise exc.HTTPMethodNotAllowed()
 
     def handle_GET(self, req):
         profile = req.remote_user.todict(pretty=True)
@@ -36,11 +25,4 @@ class ProfileApplication(PaletteRESTHandler):
             profile['roles'].append(role.name)
 
         return profile
-
-    def handle_profile(self, req):
-        if req.method == 'POST':
-            return self.handle_profile_POST(req)
-        elif req.method == 'GET':
-            return self.handle_GET(req)
-        raise exc.HTTPMethodNotAllowed()
 

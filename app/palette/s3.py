@@ -1,12 +1,12 @@
 from controller.profile import Role
 from controller.cloud import CloudManager, S3_ID
 
-from cloud import CloudHandler
-from page import PalettePage
+from .cloud import CloudApplication
+from .page import PalettePage
 
 __all__ = ["S3Application"]
 
-class S3Application(CloudHandler):
+class S3Application(CloudApplication):
 
     NAME = 's3'
 

@@ -1,9 +1,10 @@
 from webob import exc
 
 from akiri.framework.api import RESTApplication
-from akiri.framework.config import store
+#from akiri.framework.config import store
+from akiri.framework import GenericWSGI
 
-from controller.domain import Domain
+#from controller.domain import Domain
 from controller.profile import Role
 from controller.palapi import CommHandlerApp
 
@@ -38,12 +39,12 @@ class PaletteRESTHandler(RESTApplication):
         super(PaletteRESTHandler, self).__init__(global_conf)
         self.commapp = CommHandlerApp(self)
 
-    def __getattr__(self, name):
-        if name == 'domainname':
-            return store.get('palette', 'domainname')
-        if name == 'domain':
-            return Domain.get_by_name(self.domainname)
-        raise AttributeError(name)
+#    def __getattr__(self, name):
+#        if name == 'domainname':
+#            return store.get('palette', 'domainname')
+#        if name == 'domain':
+#            return Domain.get_by_name(self.domainname)
+#        raise AttributeError(name)
 
     def base_path_info(self, req):
         # REST handlers return the handle path prefix too, strip it.
@@ -53,6 +54,12 @@ class PaletteRESTHandler(RESTApplication):
         if path_info.startswith('/'):
             path_info = path_info[1:]
         return path_info
+
+class PaletteRESTApplication(GenericWSGI):
+
+    def __init__(self):
+        super(PaletteRESTApplication, self).__init__()
+        self.commapp = CommHandlerApp(self)
 
 import logging
 from akiri.framework.rest import REST
@@ -71,4 +78,3 @@ def make_rest(global_conf):
 
     app = REST(global_conf)
     return app
-

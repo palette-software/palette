@@ -9,11 +9,11 @@ from controller.files import FileManager
 from controller.util import DATEFMT
 from controller.profile import Role
 
-from rest import PaletteRESTHandler, required_parameters, required_role
+from .rest import required_parameters, required_role, PaletteRESTApplication
 
 __all__ = ["BackupApplication"]
 
-class BackupApplication(PaletteRESTHandler):
+class BackupApplication(PaletteRESTApplication):
 
     NAME = 'backup'
 
@@ -62,7 +62,7 @@ class BackupApplication(PaletteRESTHandler):
     # pylint: disable=invalid-name
     def handle_archive_POST(self, req):
         value = req.POST['value']
-        self.system.save('archive-location', value)
+        req.system.save('archive-location', value)
         return {'value':value}
 
     @required_role(Role.READONLY_ADMIN)
@@ -89,16 +89,17 @@ class BackupApplication(PaletteRESTHandler):
             'next': scheduled
             }
 
-    def handle(self, req):
-        path_info = self.base_path_info(req)
-        if path_info == '':
-            if req.method == 'GET':
-                return self.handle_GET(req)
-            elif req.method == 'POST':
-                return self.handle_POST(req)
-            raise exc.HTTPMethodNotAllowed()
-        elif path_info == 'location':
-            if req.method == 'POST':
-                return self.handle_archive_POST(req)
-            raise exc.HTTPMethodNotAllowed()
-        raise exc.HTTPBadRequest()
+    def service(self, req):
+        if 'action' in req.environ:
+            action = req.environ['action']
+            if action == 'location':
+                if req.method == 'POST':
+                    return self.handle_archive_POST(req)
+                raise exc.HTTPMethodNotAllowed()
+            raise exc.HTTPNotFound()
+
+        if req.method == 'GET':
+            return self.handle_GET(req)
+        elif req.method == 'POST':
+            return self.handle_POST(req)
+        raise exc.HTTPMethodNotAllowed()
