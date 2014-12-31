@@ -948,6 +948,27 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = self.server.cli_cmd(cli_command, agent)
         self.report_status(body)
 
+    @usage('kill <xid>')
+    def do_kill(self, cmd):
+
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            return
+
+        if len(cmd.args) != 1:
+            self.print_usage(self.do_kill.__usage__)
+            return
+
+        try:
+            xid = int(cmd.args[0])
+        except ValueError:
+            self.error(clierror.ERROR_INVALID_XID,
+                       "Invalid XID: " + cmd.args[0])
+            return
+
+        self.ack()
+        body = self.server.kill_cmd(xid, agent)
+        self.report_status(body)
 
     @usage('tabcmd [args...]')
     def do_tabcmd(self, cmd):
