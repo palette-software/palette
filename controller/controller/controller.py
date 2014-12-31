@@ -568,6 +568,60 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                               return_dict={})
         return body
 
+    def kill_cmd(self, xid, agent):
+        """Send a "kill" command to an Agent to end a process by XID.
+            Returns the body of the reply.
+            Called without the connection lock."""
+
+        self.log.debug("kill_cmd")
+        aconn = agent.connection
+        aconn.lock()
+        self.log.debug("kill_cmd got lock")
+
+        data = {'action': 'kill', 'xid': xid}
+        send_body = json.dumps(data)
+
+        headers = {"Content-Type": "application/json"}
+        uri = self.CLI_URI
+
+        self.log.debug('about to send the kill command, xid %d', xid)
+        try:
+            aconn.httpconn.request('POST', uri, send_body, headers)
+            self.log.debug('sent kill command')
+            res = aconn.httpconn.getresponse()
+            self.log.debug('command: kill: ' + \
+                               str(res.status) + ' ' + str(res.reason))
+            body_json = res.read()
+            if res.status != httplib.OK:
+                self.log.error("kill_cmd: POST failed: %d\n", res.status)
+                alert = "Agent command failed with status: " + str(res.status)
+                self.remove_agent(agent, alert)
+                return self.httperror(res, method="POST",
+                                      displayname=agent.displayname,
+                                      uri=uri, body=body_json)
+
+            self.log.debug("headers: " + str(res.getheaders()))
+
+        except (httplib.HTTPException, EnvironmentError) as ex:
+            # bad agent
+            msg = "kill_cmd: failed: " + str(ex)
+            self.log.error(msg)
+            self.remove_agent(agent, "Command to agent failed. " \
+                                  + "Error: " + str(ex))
+            return self.error(msg)
+        finally:
+            # Must call aconn.unlock() even after self.remove_agent(),
+            # since another thread may waiting on the lock.
+            aconn.unlock()
+            self.log.debug("kill_cmd unlocked")
+
+        self.log.debug("done reading.")
+        body = json.loads(body_json)
+        if body == None:
+            return self.error("POST /%s getresponse returned null body" % uri,
+                              return_dict={})
+        return body
+
     def copy_cmd(self, source_agentid, source_path, target_agentid, target_dir):
         """Sends a phttp command and checks the status.
            copy from  source_agentid /path/to/file target_agentid target-dir
