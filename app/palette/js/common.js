@@ -504,7 +504,12 @@ function ($, topic, template, items, paging)
         }
 
         /* delete seq so that the UX doesn't constantly refresh */
-        delete data['seq']
+        delete data['seq'];
+
+        if (data['interval'] != null) {
+            interval = data['interval'];
+        }
+        delete data['interval'];
 
         var json = JSON.stringify(data);
         

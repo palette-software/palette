@@ -498,6 +498,8 @@ class MonitorApplication(PaletteRESTHandler):
             monitor_ret['events'] = events['events']
             monitor_ret['item-count'] = events['count']
 
+        monitor_ret['interval'] = 1000 # ms
+
         return monitor_ret
 
     def handle(self, req):
