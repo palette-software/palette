@@ -1,6 +1,7 @@
 import time
 import sys
 import datetime
+from dateutil.tz import tzlocal
 
 from webob import exc
 
@@ -72,7 +73,10 @@ class BackupApplication(PaletteRESTHandler):
                                             asc=False)]
         # FIXME: convert TIMEZONE
         tomorrow = datetime.date.today() + datetime.timedelta(days=1)
-        midnight = datetime.datetime.combine(tomorrow, datetime.time(0, 0))
+        midnight = datetime.datetime(tomorrow.year,
+                                     tomorrow.month,
+                                     tomorrow.day,
+                                     0, 0, 0, 0, tzlocal())
         scheduled = midnight.strftime(DATEFMT)
 
         options = [{'item': 'Palette Cloud Storage'},
