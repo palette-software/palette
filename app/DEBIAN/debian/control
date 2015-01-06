@@ -14,7 +14,7 @@ Depends:
  python-sqlalchemy, python-psycopg2, telnet, controller,
  apache2, libapache2-mod-wsgi, python-dateutil
  akiri.framework-sqlalchemy,
- akiri.framework (>= 0.3.2)
+ akiri.framework (>= 0.4.1)
 Description: Palette Web App
  This package contains the Palette Web Application.
 Homepage: http://www.palette-software.com
