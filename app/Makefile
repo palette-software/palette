@@ -17,6 +17,10 @@ pylint:
 	$(PYLINT) palette
 .PHONY: pylint
 
+check-tabs:
+	grep -P "\t" palette/templates/*.mako; test $$? -ne 0
+.PHONY: check-tabs
+
 clean:
 	rm -rf *.egg-info dist build
 	find . -name \*.pyc -exec rm '{}' ';'

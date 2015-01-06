@@ -5,8 +5,8 @@
     <title>Palette - Home</title>
 </%block>
 
-<section class="dynamic-content">
-    <%include file="events.mako" />
+<div class="dynamic-content">
+  <%include file="events.mako" />
 </section>
 
 <script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/dashboard.js">

@@ -645,13 +645,19 @@ ul.processes.visible {
     background-color: rgba(0, 0, 0, 0.1);
 }
 .dynamic-content {
-    position: absolute;
-    height: 100%;
+    position: fixed;
+    height: inherit;
     top: 67px;
     right: 0;
     left: 250px;
+    overflow: auto;
+    padding-bottom: 67px;
+}
+.dynamic-content > div.scrollable {
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: 100%;
     padding: 0 15px 72px 18px;
-    overflow-y: scroll;
 }
 .dynamic-content a, .dynamic-content a:hover {
     color: #697078;
@@ -762,9 +768,6 @@ h1.page-title {
 .integration input[type="text"], .integration input[type="password"] {
     font-size: 16px;
     margin: 5px 0;
-}
-.integration div {
-    margin-top: 35px;
 }
 .integration div button {
     margin-right: 5px;
@@ -1423,7 +1426,7 @@ h2.page-subtitle {
     margin-top: 30px;
 }
 .general-page {
-    padding-bottom: 160px;
+    padding-bottom: 67px;
 }
 .workbook-page .item .summary div.col2 div {
     text-align: right;

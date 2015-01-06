@@ -16,13 +16,13 @@
     </li>
     <li class="${obj.active=='activity' and 'active' or ''}">
       <a href="/activity">
-	<i class="fa fa-fw fa-book"></i><span>Workbook Archive</span>
+        <i class="fa fa-fw fa-book"></i><span>Workbook Archive</span>
       </a>
     </li>
 %if req.remote_user.roleid > req.remote_user.role.NO_ADMIN:
     <li class="has-side-bar ${obj.active=='manage' and 'active' or ''}">
       <a href="/manage">
-	<i class="fa fa-fw fa-wrench"></i><span>Manage Tableau</span>
+        <i class="fa fa-fw fa-wrench"></i><span>Manage Tableau</span>
       </a>
     </li>
 %if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:

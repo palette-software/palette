@@ -5,16 +5,18 @@
 <title>Palette - Tableau Settings</title>
 </%block>
 
-<section class="dynamic-content configuration">
-  <h1 class="page-title">Tableau Settings</h1>
-  <div class="refresh">
-    <p>
-      Updated <span id="last-update"></span>
-    </p>
-    <p id="location"></p>
+<div class="dynamic-content configuration">
+  <div class="scrollable">
+    <h1 class="page-title">Tableau Settings</h1>
+    <div class="refresh">
+      <p>
+        Updated <span id="last-update"></span>
+      </p>
+      <p id="location"></p>
+    </div>
+    <div id="yml-list"></div>
   </div>
-  <div id="yml-list"></div>
-</section>
+</div>
 
 <script id="yml-list-template" type="x-tmpl-mustache">
   {{#items}}

@@ -46,56 +46,56 @@
     <li>
       <a>
         <i class="fa fa-fw fa-laptop {{color}}"></i>
-	    <div>
+            <div>
           <h5>{{displayname}}</h5>
           <span class="hostname">{{hostname}}</span>
           <span class="address">{{ip_address}}</span>
-	    </div>
+            </div>
         <i class="fa fa-fw fa-angle-down down-arrow"></i>
       </a>
       <ul class="processes {{visible}}">
-	{{#volumes}}
-	<li>
-	  <i class="fa fa-fw fa-circle {{color}}"></i>
-	  Storage: {{name}} {{value}}
-	</li>
-	{{/volumes}}
-	{{#cpu}}
-	<li>
-	  <i class="fa fa-fw fa-circle {{color}}"></i>
-	  CPU
-	</li>
-	{{/cpu}}
-	{{#license}}
-	<li>
-	  <i class="fa fa-fw fa-circle {{color}}"></i>
-	  License: Tableau
-	</li>
-	{{/license}}
-	{{#in_ports}}
-	<li>
-	   <i class="fa fa-fw fa-circle {{color}}"></i>
-	   NETin: {{name}} ({{num}})
-	</li>
-	{{/in_ports}}
-	{{#out_ports}}
-	<li>
-	   <i class="fa fa-fw fa-circle {{color}}"></i>
-	   NETout: {{name}} ({{num}})
-	</li>
-	{{/out_ports}}
-	{{#details}}
-	<li>
-	  <i class="fa fa-fw fa-circle {{color}}"></i>
-	  {{name}} ({{pid}})
-	</li>
-	{{/details}}
-	{{#warnings}}
-	<li>
-	  <i class="fa fa-fw fa-circle {{color}}"></i>
-	  {{message}}
-	</li>
-	{{/warnings}}
+        {{#volumes}}
+        <li>
+          <i class="fa fa-fw fa-circle {{color}}"></i>
+          Storage: {{name}} {{value}}
+        </li>
+        {{/volumes}}
+        {{#cpu}}
+        <li>
+          <i class="fa fa-fw fa-circle {{color}}"></i>
+          CPU
+        </li>
+        {{/cpu}}
+        {{#license}}
+        <li>
+          <i class="fa fa-fw fa-circle {{color}}"></i>
+          License: Tableau
+        </li>
+        {{/license}}
+        {{#in_ports}}
+        <li>
+           <i class="fa fa-fw fa-circle {{color}}"></i>
+           NETin: {{name}} ({{num}})
+        </li>
+        {{/in_ports}}
+        {{#out_ports}}
+        <li>
+           <i class="fa fa-fw fa-circle {{color}}"></i>
+           NETout: {{name}} ({{num}})
+        </li>
+        {{/out_ports}}
+        {{#details}}
+        <li>
+          <i class="fa fa-fw fa-circle {{color}}"></i>
+          {{name}} ({{pid}})
+        </li>
+        {{/details}}
+        {{#warnings}}
+        <li>
+          <i class="fa fa-fw fa-circle {{color}}"></i>
+          {{message}}
+        </li>
+        {{/warnings}}
       </ul>
     </li>
     {{/agents}}

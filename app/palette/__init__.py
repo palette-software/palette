@@ -13,6 +13,7 @@ import request
 
 from page import PalettePageMixin
 
+# This is essentially the home page.
 class DashboardPage(MainPage, PalettePageMixin):
     TEMPLATE = 'dashboard.mako'
     active = 'home'
