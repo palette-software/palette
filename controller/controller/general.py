@@ -26,6 +26,8 @@ class SystemConfig(object):
     METRIC_SAVE_DAYS = 'metric-save-days'
 
     ALERTS_ENABLED = "alerts-enabled"
+    ALERTS_ADMIN_ENABLED = 'alerts-admin-enabled'
+    ALERTS_PUBLISHER_ENABLED = 'alerts-publisher-enabled'
 
     PALETTE_VERSION = "palette-version"
 
@@ -33,6 +35,8 @@ class SystemConfig(object):
 
     DEBUG_LEVEL = 'debug-level'
     FROM_EMAIL = 'from-email'
+
+
 
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
@@ -123,6 +127,10 @@ class SystemConfig(object):
             return self._http_load_error(self.HTTP_LOAD_ERROR)
         if name == 'alerts_enabled':
             return self._getyesno(self.ALERTS_ENABLED)
+        if name == 'alerts_admin_enabled':
+            return self._getyesno(self.ALERTS_ADMIN_ENABLED)
+        if name == 'alerts_publisher_enabled':
+            return self._getyesno(self.ALERTS_PUBLISHER_ENABLED)
         if name == 'upgrading':
             return self._getyesno(self.UPGRADING)
         if name == 'cpu_load_warn':
@@ -159,6 +167,8 @@ class SystemConfig(object):
             self.HTTP_LOAD_WARN: self.http_load_warn,
             self.HTTP_LOAD_ERROR: self.http_load_error,
             self.ALERTS_ENABLED: self.alerts_enabled,
+            self.ALERTS_ADMIN_ENABLED: self.alerts_admin_enabled,
+            self.ALERTS_PUBLISHER_ENABLED: self.alerts_publisher_enabled,
             self.PALETTE_VERSION: self.palette_version,
             self.UPGRADING: self.upgrading,
             self.CPU_LOAD_WARN: self.cpu_load_warn,

@@ -52,6 +52,7 @@ class AlertEmail(object):
         self.st_config = SystemConfig(server.system)
         self.log = server.log
         self.server = server
+        self.admin_enabled = True
 
         # Check to see if alert enabled/disabled is configured in the
         # system table.  If not, 1) Use the *ini file or if not there,
@@ -93,6 +94,9 @@ class AlertEmail(object):
         if self.standalone:
             return [self.to_email]
 
+        if not self.admin_enabled:
+            return []
+
         session = meta.Session()
         rows = session.query(UserProfile).\
             filter(UserProfile.roleid > 0).\
@@ -108,6 +112,14 @@ class AlertEmail(object):
            if it exists and has an email address."""
 
         if not 'system_user_id' in data:
+            return []
+
+        try:
+            publisher_enabled = self.st_config.alerts_publisher_enabled
+        except ValueError:
+            # If not there, then set to enabled
+            publisher_enabled = True
+        if not publisher_enabled:
             return []
 
         session = meta.Session()
@@ -173,6 +185,12 @@ class AlertEmail(object):
                 subject, message)
             return
 
+        try:
+            self.admin_enabled = self.st_config.alerts_admin_enabled
+        except ValueError:
+            # If not there, then set to enabled
+            self.admin_enabled = True
+
         if event_entry.key in (EventControl.EXTRACT_OK,
                                EventControl.EXTRACT_FAILED):
             to_emails = self.admin_emails() + self.publisher_email(data)
@@ -183,7 +201,7 @@ class AlertEmail(object):
         to_emails = list(set(to_emails))
 
         bcc = None
-        if not self.standalone:
+        if not self.standalone and self.admin_enabled:
             # Get the diagnostics email and bcc it there if it exists.
             entry = UserProfile.get(self.envid, 0)
             if entry and entry.email != None and entry.email != "":
@@ -191,7 +209,7 @@ class AlertEmail(object):
 
         if not to_emails and not bcc:
             self.log.debug(
-                "No admin users exist with email addresses.  " + \
+                "No admin users exist with enabled email addresses.  " + \
                 "Not sending: Subject: %s, Message: %s" % (subject, message))
             return
 
