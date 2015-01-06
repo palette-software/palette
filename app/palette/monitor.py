@@ -82,7 +82,7 @@ class MonitorApplication(PaletteRESTApplication):
         return d
 
     def publisher_options(self, req):
-        sysid = req.param_getint('publisher', default=0)
+        sysid = req.params_getint('publisher', default=0)
 
         options = [{'option':'All Publishers', 'id':0}]
         d = {'name':'publisher'}
@@ -478,7 +478,7 @@ class MonitorApplication(PaletteRESTApplication):
                        'config': config
                       }
 
-        seq = req.param_getint('seq')
+        seq = req.params_getint('seq')
         if not seq is None:
             monitor_ret['seq'] = seq
 
