@@ -15,8 +15,6 @@ __all__ = ["BackupApplication"]
 
 class BackupApplication(PaletteRESTApplication):
 
-    NAME = 'backup'
-
     @required_role(Role.MANAGER_ADMIN)
     def handle_backup(self, req):
         self.commapp.send_cmd("backup", req=req, read_response=False)
