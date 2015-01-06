@@ -27,6 +27,7 @@ class RestRouter(Router):
                                                   req.remote_user)
         return super(RestRouter, self).service(req)
 
+from .backup import BackupApplication
 from .environment import EnvironmentApplication
 from .general import GeneralApplication
 from .manage import ManageApplication
@@ -40,6 +41,7 @@ from .workbooks import WorkbookApplication
 def make_rest(global_conf):
     # pylint: disable=unused-argument
     app = RestRouter()
+    app.add_route(r'/backup\Z', BackupApplication())
     app.add_route(r'/environment\Z', EnvironmentApplication())
     app.add_route(r'/general?(/(?P<action>[^\s]+))?\Z',
                   GeneralApplication())
