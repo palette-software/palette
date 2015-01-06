@@ -5,20 +5,22 @@
 <title>Palette - User Configuration</title>
 </%block>
 
-<section class="dynamic-content configuration">
-  <h1 class="page-title">Users</h1>
-  <div class="refresh">
-    <p>
-      <span class="message"></span>
-      Updated <span id="last-update"></span>
-%if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
-      <i class="fa fa-fw fa-refresh inactive"></i>
-%endif
-    </p>
+<div class="dynamic-content configuration">
+  <div class="scrollable">
+    <h1 class="page-title">Users</h1>
+    <div class="refresh">
+      <p>
+        <span class="message"></span>
+        Updated <span id="last-update"></span>
+        %if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
+        <i class="fa fa-fw fa-refresh inactive"></i>
+        %endif
+      </p>
+    </div>
+    <div class="letters"></div>
+    <div id="user-list"></div>
   </div>
-  <div class="letters"></div>
-  <div id="user-list"></div>
-</section>
+</div>
 
 <script id="user-list-template" type="x-tmpl-mustache">
   {{#users}}
@@ -61,7 +63,7 @@
           </article>
 
           <article><span class="label">Email</span>
-	        <span>{{email}}</span>
+                <span>{{email}}</span>
           </article>
           <article>
             <span class="label">Created</span>{{system-created-at}}
