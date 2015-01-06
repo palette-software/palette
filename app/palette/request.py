@@ -30,7 +30,7 @@ def getfloat(req, name, default=None):
 
 def getbool(req, name, default=None):
     try:
-        value = req.POST[name].lower()
+        value = req.params[name].lower()
         if value == 'true' or value == '1':
             return True
         if value == 'false' or value == '0':
@@ -59,6 +59,7 @@ class Request(apiRequest):
             self.system = System(self.envid)
             environ['PALETTE_SYSTEM'] = self.system
 
+    # deprecated
     get = get
     getint = getint
     getfloat = getfloat
