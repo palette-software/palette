@@ -1290,8 +1290,8 @@ class AgentManager(threading.Thread):
             self.log.error(str(ex))
             self.log.debug(traceback.format_exc())
             raise IOError(
-                "Bad agent with uuid: '%s', Disconnecting. Error: %s",
-                uuid, str(ex))
+                "Bad agent with uuid: '%s', Disconnecting. Error: %s" % \
+                (uuid, str(ex)))
 
         if agent.agent_type is None:
             agent.agent_type = aconn.agent_type
