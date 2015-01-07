@@ -9,7 +9,6 @@ import time
 import datetime
 
 import exc
-from request import CliStartRequest, CleanupRequest
 
 import httplib
 import ntpath
@@ -28,6 +27,7 @@ from agentmanager import AgentManager
 from agent import Agent, AgentVolumesEntry
 from alert_email import AlertEmail
 from auth import AuthManager
+from cli_cmd import CliCmd
 from config import Config
 from credential import CredentialEntry, CredentialManager
 from diskcheck import DiskCheck, DiskException
@@ -65,7 +65,7 @@ from get_file import GetFile
 from cloud import CloudManager
 
 from clihandler import CliHandler
-from util import version, success, failed, sizestr, safecmd
+from util import version, success, failed, sizestr
 from rwlock import RWLock
 
 # pylint: disable=no-self-use
@@ -333,54 +333,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def status_cmd(self, agent):
         return self.cli_cmd('tabadmin status -v', agent, timeout=60*5)
 
-    def cli_cmd(self, command, agent, env=None, immediate=False,
-                timeout=60*60*2):
-        """ 1) Sends the command (a string)
-            2) Waits for status/completion.  Saves the body from the status.
-            3) Sends cleanup.
-            4) Returns body from the status.
-
-            "timeout" is the maximum amount of time the command is allowed
-            to run before it is considered failed.
-        """
-        # pylint: disable=too-many-return-statements
-        # pylint: disable=too-many-arguments
-
-        body = self._send_cli(command, agent, env=env, immediate=immediate)
-
-        if body.has_key('error'):
-            return body
-
-        if not body.has_key('run-status'):
-            return self.error("_send_cli (%s) missing 'run-status': %s" % \
-                              (safecmd(command), str(body)))
-
-        # It is possible for the command to finish immediately.
-        if body['run-status'] == 'finished':
-            return body
-
-        cli_body = self._get_cli_status(body['xid'], agent, command, timeout)
-
-        if not 'stdout' in cli_body:
-            self.log.error(
-                "check status of cli xid %d failed - missing 'stdout' in " + \
-                "reply for command '%s': %s", body['xid'], command, cli_body)
-            if not 'error' in cli_body:
-                cli_body['error'] = \
-                    ("Missing 'stdout' in agent reply for xid %d, " + \
-                    "command '%s': %s") % \
-                    (safecmd(command), body['xid'], cli_body)
-
-        cleanup_body = self._send_cleanup(body['xid'], agent, command)
-
-        if cli_body.has_key("error"):
-            return cli_body
-
-        if cleanup_body.has_key('error'):
-            return cleanup_body
-
-        return cli_body
-
     def public_url(self):
         """ Generate a url for Tableau that is reportable to a user."""
         url = self.system.get('tableau-server-url', default=None)
@@ -431,142 +383,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                '--no-cookie --server %s --no-certcheck ') %\
               (args, cred.user, pw, url)
         return self.cli_cmd(cmd, agent, timeout=30*60)
-
-    def _send_cli(self, cli_command, agent, env=None, immediate=False):
-        """Send a "cli" command to an Agent.
-            Returns a body with the results.
-            Called without the connection lock."""
-        # pylint: disable=too-many-return-statements
-
-        self.log.debug("_send_cli")
-
-        aconn = agent.connection
-        aconn.lock()
-
-        req = CliStartRequest(cli_command, env=env, immediate=immediate)
-
-        headers = {"Content-Type": "application/json"}
-        uri = self.CLI_URI
-
-        displayname = agent.displayname and agent.displayname or agent.uuid
-        self.log.debug(
-            "about to send the cli command to '%s', conn_id %d, " + \
-            "type '%s' xid: %d, command: %s",
-            displayname, aconn.conn_id, agent.agent_type,
-            req.xid, safecmd(cli_command))
-        try:
-            aconn.httpconn.request('POST', '/cli', req.send_body, headers)
-            self.log.debug('sent cli command.')
-
-            res = aconn.httpconn.getresponse()
-
-            self.log.debug('_send_cli: command: cli: ' + \
-                           str(res.status) + ' ' + str(res.reason))
-            # print "headers:", res.getheaders()
-            self.log.debug("_send_cli reading...")
-            body_json = res.read()
-
-            if res.status != httplib.OK:
-                self.log.error("_send_cli: command: '%s', %d %s : %s",
-                               safecmd(cli_command), res.status,
-                               res.reason, body_json)
-                reason = "Command sent to agent failed. Error: " + res.reason
-                self.remove_agent(agent, reason)
-                return self.httperror(res, method="POST",
-                                      displayname=agent.displayname,
-                                      uri=uri, body=body_json)
-
-        except (httplib.HTTPException, EnvironmentError) as ex:
-            self.log.error(
-                "_send_cli: command '%s' failed with httplib.HTTPException: %s",
-                           safecmd(cli_command), str(ex))
-            # bad agent
-            self.remove_agent(agent, "Command to agent failed. " + \
-                                     "Error: " + str(ex))
-            return self.error("_send_cli: '%s' command failed with: %s" %
-                              (safecmd(cli_command), str(ex)))
-        finally:
-            aconn.unlock()
-
-        self.log.debug("_send_cli done reading, body_json: " + body_json)
-        body = json.loads(body_json)
-        if body == None:
-            return self.error("POST /cli response had a null body")
-        self.log.debug("_send_cli body:" + str(body))
-        if not body.has_key('xid'):
-            return self.error("POST /cli response was missing the xid", body)
-        if req.xid != body['xid']:
-            return self.error("POST /cli xid expected: %d but was %d" % \
-                              (req.xid, body['xid']), body)
-
-        if not body.has_key('run-status'):
-            return self.error("POST /cli response missing 'run-status'", body)
-        if body['run-status'] != 'running' and body['run-status'] != 'finished':
-            # FIXME: could possibly be finished.
-            return self.error(
-                "POST /cli response for 'run-status' was not 'running'", body)
-
-        return body
-
-    def _send_cleanup(self, xid, agent, orig_cli_command):
-        """Send a "cleanup" command to an Agent.
-            On success, returns the body of the reply.
-            On failure, throws an exception.
-
-            orig_cli_command is used only for debugging/printing.
-
-            Called without the connection lock."""
-
-        self.log.debug("_send_cleanup")
-        aconn = agent.connection
-        aconn.lock()
-        self.log.debug("_send_cleanup got lock")
-
-        req = CleanupRequest(xid)
-        headers = {"Content-Type": "application/json"}
-        uri = self.CLI_URI
-
-        self.log.debug('about to send the cleanup command, xid %d', xid)
-        try:
-            aconn.httpconn.request('POST', uri, req.send_body, headers)
-            self.log.debug('sent cleanup command')
-            res = aconn.httpconn.getresponse()
-            self.log.debug('command: cleanup: ' + \
-                               str(res.status) + ' ' + str(res.reason))
-            body_json = res.read()
-            if res.status != httplib.OK:
-                self.log.error("_send_cleanup: POST %s for cmd '%s' failed,"
-                               "%d %s : %s", uri, orig_cli_command,
-                               res.status, res.reason, body_json)
-                alert = "Agent command failed with status: " + str(res.status)
-                self.remove_agent(agent, alert)
-                return self.httperror(res, method="POST",
-                                      displayname=agent.displayname,
-                                      uri=uri, body=body_json)
-
-            self.log.debug("headers: " + str(res.getheaders()))
-            self.log.debug("_send_cleanup reading...")
-
-        except (httplib.HTTPException, EnvironmentError) as ex:
-            # bad agent
-            self.log.error("_send_cleanup: POST %s for '%s' failed with: %s",
-                           uri, orig_cli_command, str(ex))
-            self.remove_agent(agent, "Command to agent failed. " \
-                                  + "Error: " + str(ex))
-            return self.error("'%s' failed for command '%s' with: %s" % \
-                                  (uri, orig_cli_command, str(ex)), {})
-        finally:
-            # Must call aconn.unlock() even after self.remove_agent(),
-            # since another thread may waiting on the lock.
-            aconn.unlock()
-            self.log.debug("_send_cleanup unlocked")
-
-        self.log.debug("done reading.")
-        body = json.loads(body_json)
-        if body == None:
-            return self.error("POST /%s getresponse returned null body" % uri,
-                              return_dict={})
-        return body
 
     def kill_cmd(self, xid, agent):
         """Send a "kill" command to an Agent to end a process by XID.
@@ -924,145 +740,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             bucket = in_bucket
             path = in_path
         return (bucket, path)
-
-    def _get_cli_status(self, xid, agent, orig_cli_command, timeout):
-        """Gets status on the command and xid.  The timeout is the
-           maximum amount of time the command is allowed to take before
-           we consider it failed:
-
-           Returns:
-
-            Body in json with status/results.
-
-            orig_cli_command is used only for debugging/printing.
-
-            Note: Do not call this with the agent lock since
-            we keep requesting status until the command is
-            finished and that could be a long time.
-        """
-        # pylint: disable=too-many-branches
-        # pylint: disable=too-many-return-statements
-
-#        debug for testing agent disconnects
-#        print "sleeping"
-#        time.sleep(5)
-#        print "awake"
-
-        uri = self.CLI_URI + "?xid=" + str(xid)
-        headers = {"Content-Type": "application/json"}
-
-        aconn = agent.connection
-        start_time = time.time()
-        while True:
-            now = time.time()
-            if now - start_time > timeout:
-                self.log.info("timeout for command '%s', xid %s, " + \
-                              "conn_id %d, timeout %d, timeout %d," + \
-                              "elapsed %d, start_time %d, now %d",
-                              safecmd(orig_cli_command), xid, aconn.conn_id,
-                              timeout, now - start_time, start_time, now)
-                return self.error(("Command timed out after %d seconds: " + \
-                                   "'%s', agent '%s', xid %d, conn_id %d") \
-                                   % (timeout, safecmd(orig_cli_command),
-                                   agent.displayname, xid, aconn.conn_id))
-
-            self.log.debug("about to get status of cli command '%s', " + \
-                           "xid %d, conn_id %d, timeout %d",
-                           safecmd(orig_cli_command), xid, aconn.conn_id,
-                           timeout)
-
-            # If the agent is initializing, then "agent_connected"
-            # will not know about it yet.
-            if not aconn.initting and \
-                    not self.agentmanager.agent_connected(aconn):
-                self.log.warning(
-                    "Agent '%s' (type: '%s', uuid %s, conn_id %d) " + \
-                    "disconnected before finishing: %s",
-                     agent.displayname, agent.agent_type, agent.uuid,
-                     aconn.conn_id, uri)
-                return self.error(("Agent '%s' (type: '%s', uuid %s, " + \
-                    "conn_id %d), disconnected before finishing: %s") %
-                    (agent.displayname, agent.agent_type, agent.uuid,
-                    aconn.conn_id, uri))
-
-            aconn.lock()
-            self.log.debug("Sending GET " + uri)
-
-            try:
-                aconn.httpconn.request("GET", uri, None, headers)
-
-                self.log.debug("Getting response from GET " +  uri)
-                res = aconn.httpconn.getresponse()
-                self.log.debug("status: " + str(res.status) + ' ' + \
-                                                            str(res.reason))
-                if res.status != httplib.OK:
-                    self.remove_agent(agent,
-                                 EventControl.AGENT_RETURNED_INVALID_STATUS)
-                    return self.httperror(res,
-                                          displayname=agent.displayname,
-                                          uri=uri)
-
-#                debug for testing agent disconnects
-#                print "sleeping"
-#                time.sleep(5)
-#                print "awake"
-
-                self.log.debug("_get_status reading.")
-                body_json = res.read()
-                body = json.loads(body_json)
-                if body == None:
-                    return self.error(
-                            "Get /%s getresponse returned a null body" % uri)
-
-                self.log.debug("body = " + str(body))
-
-            except httplib.HTTPException, ex:
-                self.remove_agent(agent,
-                            "HTTP communication failure with agent: " + str(ex))
-                return self.error("GET %s failed with HTTPException: %s" % \
-                                  (uri, str(ex)))
-            except EnvironmentError, ex:
-                self.remove_agent(agent, "Communication failure with " + \
-                                  "agent. Unexpected error: " + str(ex))
-                return self.error("GET %s failed with: %s" % (uri, str(ex)))
-            finally:
-                aconn.unlock()
-
-            if not 'run-status' in body:
-                self.remove_agent(agent,
-                                     EventControl.AGENT_RETURNED_INVALID_STATUS)
-                return self.error(
-                        ("GET %s command reply was missing 'run-status'!  " + \
-                        "Will not retry: %s") % (uri, str(body)))
-
-            if body['run-status'] == 'finished':
-                # Make sure if the command failed, that the 'error'
-                # key is set.
-                if not 'exit-status' in body:
-                    self.remove_agent(agent,
-                                     EventControl.AGENT_RETURNED_INVALID_STATUS)
-                    return self.error(
-                        ("GET %s command reply returned 'finished' but was " + \
-                         "missing 'exit-status'!  " + \
-                        "Will not retry: %s") % (uri, str(body)))
-
-                if body['exit-status'] != 0:
-                    if body.has_key('stderr') and body['stderr']:
-                        body['error'] = body['stderr']
-                    else:
-                        body['error'] = u"Failed with exit status: %d" % \
-                                                        body['exit-status']
-                return body
-            elif body['run-status'] == 'running':
-                time.sleep(self.cli_get_status_interval)
-                continue
-            else:
-                self.remove_agent(agent,
-                    "Communication failure with agent:  " + \
-                    "Unknown run-status returned from agent: %s" % \
-                                        body['run-status'])    # bad agent
-                return self.error("Unknown run-status: %s.  Will not " + \
-                                        "retry." % body['run-status'], body)
 
     def odbc_ok(self):
         """Reports back True if odbc commands can be run now to
@@ -1901,6 +1578,9 @@ def main():
 
     server.ports = PortManager(server)
     server.ports.populate()
+
+    clicmdclass = CliCmd(server)
+    server.cli_cmd = clicmdclass.cli_cmd
 
     manager = AgentManager(server, port=agent_port)
     server.agentmanager = manager

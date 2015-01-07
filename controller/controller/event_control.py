@@ -281,6 +281,11 @@ class EventControlManager(Manager):
         if data == None:
             data = {}
 
+        if 'enabled' in data and not data['enabled']:
+            self.log.debug("Agent is disabled so no event will be " + \
+                           "generated.  key: %s, data: %s", key, data)
+            return
+
         event_entry = self.get_event_control_entry(key)
         if event_entry:
             subject = event_entry.subject
