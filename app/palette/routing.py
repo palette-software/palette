@@ -29,11 +29,14 @@ class RestRouter(Router):
 
 from .backup import BackupApplication
 from .environment import EnvironmentApplication
+from .gcs import GCSApplication
 from .general import GeneralApplication
 from .manage import ManageApplication
 from .monitor import MonitorApplication
 from .profile import ProfileApplication
+from .setup import SetupApplication
 from .server import ServerApplication
+from .s3 import S3Application
 from .user import UserApplication
 from .yml import YmlApplication
 from .workbooks import WorkbookApplication
@@ -43,11 +46,14 @@ def make_rest(global_conf):
     app = RestRouter()
     app.add_route(r'/backup\Z', BackupApplication())
     app.add_route(r'/environment\Z', EnvironmentApplication())
+    app.add_route(r'/gcs\Z', GCSApplication())
     app.add_route(r'/general?(/(?P<action>[^\s]+))?\Z',
                   GeneralApplication())
     app.add_route(r'/manage\Z', ManageApplication())
     app.add_route(r'/monitor\Z', MonitorApplication())
     app.add_route(r'/profile\Z', ProfileApplication())
+    app.add_route(r'/s3\Z', S3Application())
+    app.add_route(r'/setup(/(?P<action>email))?\Z', SetupApplication())
     app.add_route(r'/servers?(/(?P<action>[^\s]+))?\Z',
                   ServerApplication())
     app.add_route(r'/users?(/(?P<action>[^\s]+))?\Z',

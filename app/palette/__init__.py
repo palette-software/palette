@@ -1,4 +1,3 @@
-from akiri.framework.config import store
 from akiri.framework.api import MainPage, LoginPage
 
 import auth

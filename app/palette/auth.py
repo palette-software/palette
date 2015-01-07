@@ -4,9 +4,13 @@ from sqlalchemy import func
 from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
+# FIXME: deprecate the use of 'store'
+# pylint: disable=import-error,no-name-in-module
+import akiri.framework.config as config
+# pylint: enable=import-error,no-name-in-module
+
 from akiri.framework.api import Authenticator
 from akiri.framework.auth import AuthFilter
-from akiri.framework.config import store
 
 from controller.profile import UserProfile
 from controller.domain import Domain
@@ -22,7 +26,7 @@ class TableauAuthenticator(Authenticator):
 
     def __getattr__(self, name):
         if name == 'domainname':
-            return store.get('palette', 'domainname')
+            return config.store.get('palette', 'domainname')
         if name == 'domain':
             return Domain.get_by_name(self.domainname)
         if name == 'environment':

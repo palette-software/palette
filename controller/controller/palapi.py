@@ -6,8 +6,9 @@ import hashlib
 import ntpath
 import posixpath
 
+# FIXME: deprecate the use of 'store'
 # pylint: disable=import-error,no-name-in-module
-from akiri.framework.config import store
+import akiri.framework.config as config
 # pylint: enable=import-error,no-name-in-module
 
 import clierror
@@ -222,9 +223,9 @@ class CommHandlerApp(CommBase):
         super(CommHandlerApp, self).__init__()
 
         self.app = app
-        self.port = store.getint("palette", "telnet_port", default=9000)
-        self.hostname = store.get("palette", "telnet_hostname",
-                                  default="localhost")
+        self.port = config.store.getint("palette", "telnet_port", default=9000)
+        self.hostname = config.store.get("palette", "telnet_hostname",
+                                         default="localhost")
 
 
 class CommHandlerArgs(CommBase):
