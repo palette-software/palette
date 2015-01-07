@@ -17,6 +17,7 @@ from controller.credential import CredentialEntry
 from controller.sites import Site
 from controller.projects import Project
 
+from .option import BaseStaticOption
 from .page import FAKEPW
 from .rest import required_parameters, required_role, PaletteRESTApplication
 
@@ -29,41 +30,6 @@ class CredentialMixin(object):
 
     def get_cred(self, envid, name):
         return CredentialEntry.get_by_envid_key(envid, name, default=None)
-
-class StaticOptionType(type):
-    def __getattr__(cls, name):
-        if name == 'ITEMS':
-            return cls.items()
-        if name == 'OPTIONS':
-            options = []
-            for key, value in cls.ITEMS.items():
-                options.append({'option': value, 'id': key})
-            return options
-        raise AttributeError(name)
-
-class BaseStaticOption(object):
-    __metaclass__ = StaticOptionType
-
-    @classmethod
-    def get(cls, req, name, default=0):
-        #pylint: disable=no-member
-        if name not in req.GET:
-            return default
-        try:
-            value = int(req.GET[name])
-        except StandardError:
-            return default
-        if value not in cls.ITEMS:
-            return default
-        return value
-
-    @classmethod
-    def name(cls, key):
-        #pylint: disable=no-member
-        if key in cls.ITEMS:
-            return cls.ITEMS[key]
-        else:
-            return None
 
 class WorkbookShow(BaseStaticOption):
     ALL = 0

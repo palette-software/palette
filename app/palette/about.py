@@ -1,4 +1,8 @@
-from akiri.framework.config import store
+# FIXME: deprecate the use of 'store'
+# pylint: disable=import-error,no-name-in-module
+import akiri.framework.config as config
+# pylint: enable=import-error,no-name-in-module
+
 from controller.domain import Domain
 from page import PalettePage
 
@@ -22,7 +26,7 @@ class About(PalettePage):
             self.version = VERSION + ' - ' + DATE
         else:
             self.version = VERSION
-        self.domainname = store.get('palette', 'domainname')
+        self.domainname = config.store.get('palette', 'domainname')
         self.license_key = None
 
     def render(self, req, obj=None):

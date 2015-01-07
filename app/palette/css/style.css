@@ -4,6 +4,8 @@
  * #555A60; secondary-side-bar background;
  * #8d96a4; button background.
  * #5f6670; font color
+ * 
+ * navbar height: 63px;
  */
 
 html {
@@ -13,13 +15,13 @@ html, body {
     min-width: 0 !important;
     font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     height: 100%;
-    height: 100%;
     color: #5f6670;
     overflow: hidden;
     position: relative;
 }
 body {
     background: #f8f8f8;
+    margin: 0px;
 }
 h1 {
     font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
@@ -79,16 +81,6 @@ i.tableau {
 }
 input[type="text"].invalid, input[type="text"].invalid:focus, input[type="password"].invalid, input[type="password"].invalid:focus {
     border: 1px solid red;
-}
-#mainNav {
-    background: #fff;
-    position: fixed;
-    height: 63px;
-    border-bottom: 3px solid #8D96A3;
-    display: block;
-    width: 100%;
-    top: 0;
-    z-index: 9001;
 }
 .container {
     width: 100%;
@@ -354,7 +346,6 @@ article.popup p {
     text-transform: uppercase;
 }
 .btn-group {
-    position: relative;
     max-width: 320px;
 }
 .btn-group button {
@@ -647,7 +638,7 @@ ul.processes.visible {
 .dynamic-content {
     position: fixed;
     height: inherit;
-    top: 67px;
+    top: 63px;
     right: 0;
     left: 250px;
     overflow: auto;
@@ -757,7 +748,7 @@ h1.page-title {
 .integration h2.page-subtitle {
     margin-bottom: 20px;
 }
-.integration h3 {
+.integration h3, .setup-page h3 {
     margin: 10px 0 0 0;
 }
 .integration label {
@@ -772,7 +763,36 @@ h1.page-title {
 .integration div button {
     margin-right: 5px;
 }
-#mainNav a.site-id {
+/* standard bootstrap class */
+nav.navbar {
+    background: #fff;
+    height: 63px;
+    border: none;
+    border-radius: 0;
+    border-bottom: 3px solid #8D96A3;
+}
+.navbar-header {
+    background-image: url('/app/module/palette/images/palette_logo_600dpi-2.png');
+    height: 60px;
+    width: 242px;
+    background-size: 100%;
+    background-repeat: no-repeat;
+    background-position: 50%;
+    box-sizing: content-box;
+    margin-left: 15px;
+}
+#mainNav {
+    background: #fff;
+    position: fixed;
+    height: 63px;
+    border-bottom: 3px solid #8D96A3;
+    display: block;
+    width: 100%;
+    top: 0;
+    z-index: 9001;
+}
+/* formerly #mainNav a.site-id */
+a.site-id {
     background-image: url('/app/module/palette/images/palette_logo_600dpi-2.png');
     background-size: 100%;
     background-position: 50%;
@@ -790,6 +810,7 @@ h1.page-title {
     left: 7px;
     border-top: 7px solid #fff;
 }
+/* FIXME: redundant with bootstrap */
 .text-center {
     text-align: center;
 }
@@ -1578,4 +1599,24 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
 }
 section.run-as-user {
     margin-top: 15px;
+}
+.setup-page {
+    max-width: 900px;
+}
+.setup-page .btn-group, .setup-page .onoffswitch {
+    margin: 5px 0 15px 0;
+}
+.setup-page .btn-group {
+    width: 100%;
+}
+.setup-page #smtp-port {
+    width: 64px;
+}
+.setup-page #test-email-recipient {
+    width: 50%;
+}
+.setup-page #test {
+    margin-left: 5px;
+    height: 34px;
+    vertical-align: baseline;
 }
