@@ -18,11 +18,7 @@ class ProfileApplication(PaletteRESTApplication):
 
     def handle_GET(self, req):
         profile = req.remote_user.todict(pretty=True)
-
-        # Add a list of roles the user has
-        profile['roles'] = []
-        for role in req.remote_user.roles:
-            profile['roles'].append(role.name)
+        profile['role'] = req.remote_user.role.name
 
         return profile
 
