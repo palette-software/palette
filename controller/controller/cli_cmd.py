@@ -302,11 +302,14 @@ class CliCmd(object):
                               "elapsed %d, start_time %d, now %d",
                               safecmd(orig_cli_command), xid, aconn.conn_id,
                               timeout, now - start_time, start_time, now)
+                kill_body = self.server.kill_cmd(xid, agent)
                 return self.server.error(
                                    ("Command timed out after %d seconds: " + \
-                                   "'%s', agent '%s', xid %d, conn_id %d") \
+                                   "'%s', agent '%s', xid %d, conn_id %d " + \
+                                   "kill results: %s") \
                                    % (timeout, safecmd(orig_cli_command),
-                                   agent.displayname, xid, aconn.conn_id))
+                                   agent.displayname, xid, aconn.conn_id,
+                                   str(kill_body)))
 
             self.log.debug("about to get status of cli command '%s', " + \
                            "xid %d, conn_id %d, timeout %d",
