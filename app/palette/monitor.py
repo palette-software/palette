@@ -468,15 +468,26 @@ class MonitorApplication(PaletteRESTApplication):
         config = [self.status_options(req),
                   self.type_options(req)]
 
-        monitor_ret = {'state': main_state,
-                       'allowable-actions': allowable_actions,
-                       'text': state_control_entry.text,
-                       'icon': state_control_entry.icon,
-                       'color': Colors.color_to_str[color_num],
-                       'user-action-in-progress': user_action_in_progress,
-                       'environments': environments,
-                       'config': config
-                      }
+        if req.remote_user.roleid == Role.NO_ADMIN:
+            # publisher:
+            monitor_ret = {'state': main_state,
+                           'text': state_control_entry.text,
+                           'icon': state_control_entry.icon,
+                           'color': Colors.color_to_str[color_num],
+                           'config': config,
+                           'admin': False
+                           }
+        else:
+            monitor_ret = {'state': main_state,
+                           'allowable-actions': allowable_actions,
+                           'text': state_control_entry.text,
+                           'icon': state_control_entry.icon,
+                           'color': Colors.color_to_str[color_num],
+                           'user-action-in-progress': user_action_in_progress,
+                           'environments': environments,
+                           'config': config,
+                           'admin': True,
+                           }
 
         seq = req.params_getint('seq')
         if not seq is None:
