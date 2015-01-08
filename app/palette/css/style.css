@@ -444,9 +444,6 @@ ul.dropdown-menu a:hover {
     color: #5f6670;
     background-color: white;
 }
-.main-side-bar .status:hover {
-    cursor: pointer;
-}
 .main-side-bar .status > i {
     position: absolute;
     display: block;

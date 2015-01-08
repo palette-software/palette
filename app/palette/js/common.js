@@ -13,7 +13,7 @@ function ($, topic, template, items, paging)
     template.parse(event_list_template);
 
     /* MONITOR TIMER */
-    var interval = 1000; //ms - FIXME: make configurable from the backend.
+    var interval = 1000; // milliseconds
     var timer = null;
     var current = null;
     var needEvents = true;
@@ -22,6 +22,7 @@ function ($, topic, template, items, paging)
     var status_text = null;
 
     var sidebar_open = false;
+    var status_bound = false;
 
     /*
      * EventFilter
@@ -129,6 +130,10 @@ function ($, topic, template, items, paging)
                 sidebar_open = true;
             }
         });
+        $('.main-side-bar .status').hover(function() {
+            $(this).css('cursor','pointer');
+        });
+        status_bound = true;
     }
 
     /*
@@ -521,6 +526,11 @@ function ($, topic, template, items, paging)
             return true;
         }
 
+        var admin = data['admin'];
+        if (admin && !status_bound) {
+            bindStatus();
+        }
+
         topic.publish('state', data);
         current = json;
 
@@ -639,7 +649,6 @@ function ($, topic, template, items, paging)
     $().ready(function() {
         setupHeaderMenus();
         setupCategories();
-        bindStatus();
     });
 
     return {'startMonitor': startMonitor,

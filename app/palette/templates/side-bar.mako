@@ -6,7 +6,9 @@
     </span>
     <h1>STATUS</h1>
     <h3 id="status-text">${obj.status_text}</h3>
+%if req.remote_user.roleid > req.remote_user.role.NO_ADMIN:
     <i class="fa fa-fw fa-angle-right" id="expand-right"></i>
+%endif
   </section>
   <ul class="actions">
     <li ${obj.active=='home' and 'class="active"' or ''}>
