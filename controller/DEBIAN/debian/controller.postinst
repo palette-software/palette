@@ -30,6 +30,7 @@ if [ "$oldversion" = "1.0.1" ]; then
     echo Upgrading from 1.0.1 ...
     psql paldb << XYZZY
     alter table cron add column enabled boolean default True;
+    alter table notifications add column description varchar;
 XYZZY
 
     update-rc.d controller defaults
