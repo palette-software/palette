@@ -108,17 +108,21 @@ class MetricManager(object):
             if error_report['above'] == 'yes':
                 color = 'red'
                 report_value = error_report['value']
+                description = "%d > %d" % (report_value, cpu_load_error)
             elif warn_report['above'] == 'yes':
                 color = 'yellow'
                 report_value = warn_report['value']
+                description = "%d > %d" % (report_value, cpu_load_warn)
             else:
                 color = 'green'
                 if error_report['above'] != 'unknown':
                     report_value = error_report['value']
                 else:
                     report_value = warn_report['value']
+                description = "%d" % report_value
 
-            result = self._report('cpu', connection, agent, color, report_value)
+            result = self._report('cpu', connection, agent, color,
+                                  report_value, description)
             results.append(result)
 
         connection.close()
@@ -127,7 +131,8 @@ class MetricManager(object):
             return {'status': 'OK', 'info': 'No agents connected.'}
         return {'status': 'OK', 'info': results}
 
-    def _report(self, name, connection, agent, color, report_value):
+    def _report(self, name, connection, agent, color, report_value,
+                description):
         # pylint: disable=too-many-arguments
         """
             Generates an event, if appropriate and updates the
@@ -136,14 +141,13 @@ class MetricManager(object):
             Arguments:
                 text name used for the notifications table and
                 debug messages.
-                etc.
 
             Returns a dictionary for the report.
         """
         notification = self.notifications.get(name, agent.agentid)
         self.log.debug(
             ("metric: %s.  agent '%s', color '%s', " + \
-            "notified_color '%s', report_value %.1f") % \
+            "notified_color '%s', report_value %d") % \
             (name, agent.displayname, color,
             str(notification.notified_color), report_value))
 
@@ -153,15 +157,16 @@ class MetricManager(object):
                 self._gen_event("CPU Load", agent, color, report_value)
 
                 stmt = ("UPDATE notifications " + \
-                        "SET color='%s', notified_color='%s'" +
+                        "SET color='%s', notified_color='%s', " +
+                        "description='%s'" + \
                         "WHERE notificationid=%d") % \
-                        (color, color, notification.notificationid)
+                        (color, color, description, notification.notificationid)
 
                 connection.execute(stmt)
 
         return {"displayname": agent.displayname,
                 "status": color,
-                "last-value": report_value}
+                "value": report_value}
 
     def _cpu_above_threshold(self, connection, agent, threshold, period):
         """Checks the data for the last "period" seconds.
@@ -169,12 +174,13 @@ class MetricManager(object):
            more than "period" seconds, then return "status": "no" since
            the data is too new.
 
-           Otherwise, if any sample is below the threshold, then return
-           "no".  If all samples are above the threshold, then return "yes".
+           Otherwise, if the average of the samples is below the threshold,
+           then return "no" or if the average of the samples is above
+           or equal to the threshold, then return "yes".
 
            Returns a dictionary:
-                above: yes, no or unknown
-                value: the most recent value, if above is yes or no.
+                above: 'yes', 'no' or 'unknown'
+                value: the average, if 'above' value is not 'unknown'
         """
 
         self.log.debug(
@@ -198,48 +204,30 @@ class MetricManager(object):
                             time.time() - last_connection_time)
             return {"above": "unknown"}
 
-        stmt = ("SELECT cpu, creation_time FROM metrics WHERE " + \
+        stmt = ("SELECT AVG(cpu) FROM metrics WHERE " + \
                "agentid = %d AND " + \
-               "creation_time >= NOW() - INTERVAL '%d seconds'" + \
-               "order by creation_time desc") % \
+               "creation_time >= NOW() - INTERVAL '%d seconds'") % \
                (agent.agentid, period)
 
-        sample_count = 0
-
-        items = []
         report_value = -1
-        for entry in connection.execute(stmt):
-            sample_count += 1
-            creation_time = (entry[1] - datetime.datetime.utcfromtimestamp(0)).\
-                             total_seconds()
-            items.append(entry[0])
-            if sample_count == 1:
-                report_value = entry[0]
-                if creation_time - last_connection_time < period:
-                    # The most recent sample doesn't include data for at least
-                    # "period" amount of time.
-                    self.log.debug("metrics: creation_time (%d) - " + \
-                                   "last_connection_time (%d) " + \
-                                   "< period (%d) = %d",
-                                   creation_time, last_connection_time, period,
-                                   creation_time - last_connection_time)
-                    return {"above": "unknown"}
+        result = connection.execute(stmt)
+        for row in result:
+            if row[0] == None:
+                report_value = -1
+            else:
+                report_value = int(round(row[0], 0))
 
-            if entry[0] < threshold:
-                # If *any* sample is below the threshold, then it is
-                # overall considered below the threshold.
-                self.log.debug("metrics: '%s' threshold %d, items so far: %s",
-                    agent.displayname, threshold, str(items))
-                return {"above": "no", "value": entry[0]}
+        self.log.debug("metrics: '%s' threshold: %d, average: %d",
+                        agent.displayname, threshold, report_value)
 
-        if not sample_count:
+        if report_value == -1:
             self.log.debug(
                 "metrics: No samples for agent '%s'." % agent.displayname)
             return {"above": "unknown"}
-
-        self.log.debug("metrics: '%s' threshold %d, items before return: %s",
-                    agent.displayname, threshold, str(items))
-        return {"above": 'yes', "value": report_value}
+        elif report_value < threshold:
+            return {"above": "no", "value": report_value}
+        else:
+            return {"above": 'yes', "value": report_value}
 
     def _gen_event(self, which, agent, color, value):
         if color == 'green':
@@ -253,5 +241,5 @@ class MetricManager(object):
             return
 
         data = agent.todict()
-        data['info'] = "%s: %.1f" % (which, value)
+        data['info'] = "%s: %d" % (which, value)
         self.server.event_control.gen(event, data)
