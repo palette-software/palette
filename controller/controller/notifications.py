@@ -20,6 +20,7 @@ class NotificationEntry(meta.Base):
 
     color = Column(String)
     notified_color = Column(String)
+    description = Column(String)    # reason or metric for the notification
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(),
                                      server_onupdate=func.current_timestamp())

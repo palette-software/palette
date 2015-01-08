@@ -1455,20 +1455,11 @@ class AgentManager(threading.Thread):
                                 "'%s', is now enabled.", agent.displayname)
                 return True
 
-            now = time.time()
-            elapsed = now - aconn.last_activity
-            if elapsed < self.ping_interval:
-                # There was recent activity with this agent, so we don't
-                # need to ping.
-                time.sleep(self.ping_interval - elapsed)
-                continue
-
             self.log.debug("ping: check for agent '%s', type '%s', " + \
-                           "uuid '%s', conn_id %d, last heard from: " + \
-                           "%d seconds ago (>= %d), enabled %s.",
+                           "uuid '%s', conn_id %d, enabled %s.",
                            str(temp_agent.displayname),
                            str(temp_agent.agent_type),
-                           agent.uuid, conn_id, elapsed, self.ping_interval,
+                           agent.uuid, conn_id,
                            str(temp_agent.enabled))
 
             if not self.ping_agent(agent):
