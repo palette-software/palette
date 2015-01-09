@@ -235,6 +235,22 @@
           </p>
         </div>
       </section>
+      <section class="col-xs-12">
+        <ul class="checkbox">
+          <li>
+            <input name="license" type="checkbox" checked/>
+            <label class="checkbox">
+              Also perform license check
+            </label>
+          </li>
+          <li>
+            <input name="backup" type="checkbox" checked/>
+            <label class="checkbox">
+              Also perform safety backup
+            </label>
+          </li>
+        </ul>
+      </section>
       <section class="col-xs-12 run-as-user">
         <p>Tableau 'Run-As-User' Password<br/>(If Any)</p>
         <input type="password" name="password" id="password" />
