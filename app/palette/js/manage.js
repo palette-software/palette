@@ -125,10 +125,13 @@ function ($, topic, template, common)
     }
 
     function restore() {
-        var ts = $('#restore-timestamp').html();
-        var filename = $('#restore-filename').val();
         var data = {'action': 'restore',
-                    'filename': filename}
+                    'filename': $('#restore-filename').val()};
+        $('#restore-dialog input[type=checkbox]').each(
+            function(index, item){
+                data[item.name] = item.checked;
+            }
+        );
 
         var passwd = $('#password').val();
         if (passwd != null && passwd.length > 0) {

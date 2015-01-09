@@ -10,36 +10,31 @@ class ManageApplication(PaletteRESTApplication):
 
     NAME = 'manage'
 
-    # This method also implicity checks for missing parameters.
-    def getbool(self, req, name):
-        value = req.getbool(name, default=None)
-        if value is None:
-            raise exc.HTTPBadRequest("Invalid or missing parameter '"+name+"'")
-        return value
-
     @required_role(Role.MANAGER_ADMIN)
     def handle_start(self, req):
         self.commapp.send_cmd('start', req=req, read_response=False)
         return {}
 
+    @required_parameters('backup', 'license', 'maint')
     @required_role(Role.MANAGER_ADMIN)
     def handle_stop(self, req):
         cmd = 'stop'
-        if not self.getbool(req, 'backup'):
+        if not req.params_getbool('backup'):
             cmd = cmd + ' nobackup'
-        if not self.getbool(req, 'license'):
+        if not req.params_getbool('license'):
             cmd = cmd + ' nolicense'
-        if not self.getbool(req, 'maint'):
+        if not req.params_getbool('maint'):
             cmd = cmd + ' nomaint'
         self.commapp.send_cmd(cmd, req=req, read_response=False)
         return {}
 
+    @required_parameters('backup', 'license')
     @required_role(Role.MANAGER_ADMIN)
     def handle_restart(self, req):
         cmd = 'restart'
-        if not self.getbool(req, 'backup'):
+        if not req.params_getbool('backup'):
             cmd = cmd + ' nobackup'
-        if not self.getbool(req, 'license'):
+        if not req.params_getbool('license'):
             cmd = cmd + ' nolicense'
         self.commapp.send_cmd(cmd, req=req, read_response=False)
         return {}

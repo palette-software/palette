@@ -21,19 +21,15 @@ class BackupApplication(PaletteRESTApplication):
         now = time.strftime('%A, %B %d at %I:%M %p')
         return {'last': now}
 
+    @required_parameters('filename', 'backup', 'license')
     @required_role(Role.MANAGER_ADMIN)
     def handle_restore(self, req):
-        if not 'filename' in req.POST:
-            print >> sys.stderr, "Missing filename.  Ignoring backup request."
-            return {}
 
         filename = req.POST['filename']
 
         backup_entry = FileManager.find_by_name_envid(req.envid, filename)
         if not backup_entry:
-            print >> sys.stderr, "Backup not found:", filename
-            return {}
-
+            return {'error': 'Backup not found: ' + filename }
 
         cmd = 'restore "%s"' % backup_entry.name
 
@@ -42,6 +38,14 @@ class BackupApplication(PaletteRESTApplication):
 
         if req.POST['restore-type'] == 'data-only':
             cmd = '/no-config ' + cmd
+
+        if not req.params_getbool('backup'):
+            cmd = cmd + ' nobackup'
+        if not req.params_getbool('license'):
+            cmd = cmd + ' nolicense'
+
+        print >> sys.stderr, cmd
+        return {}
 
         self.commapp.send_cmd(cmd, req=req, read_response=False)
         return {}
