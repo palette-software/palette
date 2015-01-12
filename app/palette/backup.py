@@ -1,5 +1,4 @@
 import time
-import sys
 import datetime
 from dateutil.tz import tzlocal
 
@@ -29,7 +28,7 @@ class BackupApplication(PaletteRESTApplication):
 
         backup_entry = FileManager.find_by_name_envid(req.envid, filename)
         if not backup_entry:
-            return {'error': 'Backup not found: ' + filename }
+            return {'error': 'Backup not found: ' + filename}
 
         cmd = 'restore "%s"' % backup_entry.name
 
@@ -37,15 +36,12 @@ class BackupApplication(PaletteRESTApplication):
             cmd += ' "%s"' % req.POST['password']
 
         if req.POST['restore-type'] == 'data-only':
-            cmd = '/no-config ' + cmd
+            cmd = '/noconfig ' + cmd
 
         if not req.params_getbool('backup'):
-            cmd = cmd + ' nobackup'
+            cmd = '/nobackup ' + cmd
         if not req.params_getbool('license'):
-            cmd = cmd + ' nolicense'
-
-        print >> sys.stderr, cmd
-        return {}
+            cmd = '/nolicense ' + cmd
 
         self.commapp.send_cmd(cmd, req=req, read_response=False)
         return {}

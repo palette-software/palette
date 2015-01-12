@@ -670,7 +670,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
 
-    @usage('[/no-config] restore backup-name [tableau-run-as-user-password]')
+    @usage('[/noconfig] [/nobackup] [/nolicense] restore backup-name ' + \
+           '[tableau-run-as-user-password]')
     @upgrade_rwlock
     def do_restore(self, cmd):
         """Restore.
@@ -704,6 +705,16 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             userid = None
 
+        if cmd.dict.has_key('nobackup'):
+            backup_first = False
+        else:
+            backup_first = True
+
+        if cmd.dict.has_key('nolicense'):
+            license_check = False
+        else:
+            license_check = True
+
         # lock to ensure against two simultaneous user actions
         if not aconn.user_action_lock(blocking=False):
             self.error(clierror.ERROR_BUSY)
@@ -726,7 +737,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         data = agent.todict()
 
-        if cmd.dict.has_key('no-config'):
+        if cmd.dict.has_key('noconfig'):
             no_config = True
             data['restore_type'] = 'Data only'
         else:
@@ -773,50 +784,52 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
 
-        # Before we do anything, do a license check, which automatically
-        # sends an event if appropriate.
-        license_body = self.server.license_manager.check(agent)
-        if failed(license_body):
-            stateman.update(main_state)
-            self.report_status(license_body)
-            aconn.user_action_unlock()
-            return
+        if license_check:
+            # Before we do anything, do a license check, which automatically
+            # sends an event if appropriate.
+            license_body = self.server.license_manager.check(agent)
+            if failed(license_body):
+                stateman.update(main_state)
+                self.report_status(license_body)
+                aconn.user_action_unlock()
+                return
 
-        # No alerts or state updates are done in backup_cmd().
-        try:
-            body = self.server.backup_cmd(agent, userid)
-        except StandardError:
-            self.server.log.exception("Backup for Restore Exception:")
-            line = "Backup For Restore Error. Traceback: %s" % \
-                    traceback_string()
-            body = {'error': line}
+        if backup_first:
+            # No alerts or state updates are done in backup_cmd().
+            try:
+                body = self.server.backup_cmd(agent, userid)
+            except StandardError:
+                self.server.log.exception("Backup for Restore Exception:")
+                line = "Backup For Restore Error. Traceback: %s" % \
+                        traceback_string()
+                body = {'error': line}
 
-        if success(body):
-            if 'copy-failed' in body:
-                real_event = \
+            if success(body):
+                if 'copy-failed' in body:
+                    real_event = \
                        EventControl.BACKUP_BEFORE_RESTORE_FINISHED_COPY_FAILED
+                else:
+                    real_event = EventControl.BACKUP_BEFORE_RESTORE_FINISHED
+
+                self.server.event_control.gen(real_event,
+                    dict(body.items() + data.items()),
+                    userid=userid)
+
+                if 'copy-failed' in body:
+                    self.report_status(body)
+                    stateman.update(main_state)
+                    aconn.user_action_unlock()
+                    return
             else:
-                real_event = EventControl.BACKUP_BEFORE_RESTORE_FINISHED
+                self.server.event_control.gen(
+                    EventControl.BACKUP_BEFORE_RESTORE_FAILED,
+                    dict(body.items() + data.items()),
+                    userid=userid)
 
-            self.server.event_control.gen(real_event,
-                dict(body.items() + data.items()),
-                userid=userid)
-
-            if 'copy-failed' in body:
                 self.report_status(body)
                 stateman.update(main_state)
                 aconn.user_action_unlock()
                 return
-        else:
-            self.server.event_control.gen(
-                EventControl.BACKUP_BEFORE_RESTORE_FAILED,
-                dict(body.items() + data.items()),
-                userid=userid)
-
-            self.report_status(body)
-            stateman.update(main_state)
-            aconn.user_action_unlock()
-            return
 
         self.server.log.debug("-------------Starting Restore---------------")
 
@@ -1474,21 +1487,22 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         return True
 
-    @usage('restart [no-backup|nobackup] [no-license|nolicense]')
+    @usage('[/nobackup] [/nolicense] restart')
     @upgrade_rwlock
     def do_restart(self, cmd):
-        backup_first = True
-        license_check = True
+        if len(cmd.args):
+            self.print_usage(self.do_restart.__usage__)
+            return
 
-        for arg in cmd.args:
-            arg = arg.lower()
-            if arg == "no-backup" or arg == "nobackup":
-                backup_first = False
-            elif arg == "no-license" or arg == "nolicense":
-                license_check = False
-            else:
-                self.print_usage(self.do_restart.__usage__)
-                return
+        if cmd.dict.has_key('nobackup'):
+            backup_first = False
+        else:
+            backup_first = True
+
+        if cmd.dict.has_key('nolicense'):
+            license_check = False
+        else:
+            license_check = True
 
         if cmd.dict.has_key('userid'):
             userid = int(cmd.dict['userid'])
@@ -1544,34 +1558,37 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status(body)
 
-    @usage('stop [no-backup|nobackup] [no-license|nolicense]' +\
-           ' [no-maint|nomaint]')
+    @usage('[/nobackup] [/nolicense] [/nomaint] stop')
     @upgrade_rwlock
     def do_stop(self, cmd):
         # pylint: disable=too-many-return-statements
         # pylint: disable=too-many-branches
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-statements
-        backup_first = True
-        license_check = True
-        start_maint = True
 
-        for arg in cmd.args:
-            arg = arg.lower()
-            if arg == "no-backup" or arg == "nobackup":
-                backup_first = False
-            elif arg == "no-license" or arg == "nolicense":
-                license_check = False
-            elif arg == "no-maint" or arg == "nomaint":
-                start_maint = False
-            else:
-                self.print_usage(self.do_stop.__usage__)
-                return
+        if len(cmd.args):
+            self.print_usage(self.do_stop.__usage__)
+            return
 
         if cmd.dict.has_key('userid'):
             userid = int(cmd.dict['userid'])
         else:
             userid = None
+
+        if cmd.dict.has_key('nobackup'):
+            backup_first = False
+        else:
+            backup_first = True
+
+        if cmd.dict.has_key('nolicense'):
+            license_check = False
+        else:
+            license_check = True
+
+        if cmd.dict.has_key('nomaint'):
+            start_maint = False
+        else:
+            start_maint = True
 
         agent = self.get_agent(cmd.dict)
         if not agent:
