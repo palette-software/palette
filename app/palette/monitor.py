@@ -197,9 +197,6 @@ class MonitorApplication(PaletteRESTApplication):
         return lowest_color_num
 
     def handle_monitor(self, req):
-        # pylint: disable=too-many-branches
-        # pylint: disable=too-many-locals
-        # pylint: disable=too-many-statements
         # Get the state
 
         agent_entries = meta.Session.query(Agent).\
@@ -223,6 +220,40 @@ class MonitorApplication(PaletteRESTApplication):
             # fixme: stop everything?  Log this somewhere?
             return
 
+        if req.remote_user.roleid == Role.NO_ADMIN:
+            # publisher:
+            monitor_ret = self.get_publisher_view(main_state)
+        else:
+            monitor_ret = self.get_admin_view(req, main_state,
+                                              state_control_entry,
+                                              agent_entries)
+
+        config = [self.status_options(req),
+                  self.type_options(req)]
+
+        monitor_ret['config'] = config
+
+        seq = req.params_getint('seq')
+        if not seq is None:
+            monitor_ret['seq'] = seq
+
+        if not 'event' in req.GET or \
+           ('event' in req.GET and req.GET['event'] != 'false'):
+
+            events = self.event.handle_GET(req)
+            monitor_ret['events'] = events['events']
+            monitor_ret['item-count'] = events['count']
+
+        monitor_ret['interval'] = 1000 # ms
+
+        return monitor_ret
+
+    def get_admin_view(self, req, main_state, state_control_entry,
+                       agent_entries):
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-statements
+        """Return information for an administrator."""
         allowable_actions = []
         if req.remote_user.roleid >= Role.MANAGER_ADMIN:
             # Convert the space-separated string to a list, e.g.
@@ -465,44 +496,51 @@ class MonitorApplication(PaletteRESTApplication):
 
         environments = [{"name": "My Machines", "agents": agents}]
 
-        config = [self.status_options(req),
-                  self.type_options(req)]
+        return {'state': main_state,
+                'allowable-actions': allowable_actions,
+                'text': state_control_entry.text,
+                'icon': state_control_entry.icon,
+                'color': Colors.color_to_str[color_num],
+                'user-action-in-progress': user_action_in_progress,
+                'environments': environments,
+                'admin': True,
+               }
 
-        if req.remote_user.roleid == Role.NO_ADMIN:
-            # publisher:
-            monitor_ret = {'state': main_state,
-                           'text': state_control_entry.text,
-                           'icon': state_control_entry.icon,
-                           'color': Colors.color_to_str[color_num],
-                           'config': config,
-                           'admin': False
-                           }
+    def get_publisher_view(self, main_state):
+        """Return information for a publisher."""
+
+        if main_state in (StateManager.STATE_PENDING,
+                          StateManager.STATE_DISCONNECTED):
+            # Set to report "...Unknown..."
+            main_state = StateManager.STATE_DISCONNECTED
+        elif main_state == StateManager.STATE_DEGRADED:
+            # it is already set to degraded
+            pass
+        elif main_state.find('STARTED') != -1:
+            # Anything that is started is reduced to "STARTED"
+            main_state = StateManager.STATE_STARTED
         else:
-            monitor_ret = {'state': main_state,
-                           'allowable-actions': allowable_actions,
-                           'text': state_control_entry.text,
-                           'icon': state_control_entry.icon,
-                           'color': Colors.color_to_str[color_num],
-                           'user-action-in-progress': user_action_in_progress,
-                           'environments': environments,
-                           'config': config,
-                           'admin': True,
-                           }
+            # All other states are a version of STOPPED
+            main_state = StateManager.STATE_STOPPED
 
-        seq = req.params_getint('seq')
-        if not seq is None:
-            monitor_ret['seq'] = seq
+        state_control_entry = StateControl.get_state_control_entry(main_state)
+        if not state_control_entry:
+            print "UNKNOWN STATE!  State:", main_state
+            # fixme: stop everything?  Log this somewhere?
+            return
 
-        if not 'event' in req.GET or \
-           ('event' in req.GET and req.GET['event'] != 'false'):
+        color = state_control_entry.color
+        if color in Colors.color_to_num:
+            color_num = Colors.color_to_num[color]
+        else:
+            color_num = Colors.RED_NUM
 
-            events = self.event.handle_GET(req)
-            monitor_ret['events'] = events['events']
-            monitor_ret['item-count'] = events['count']
-
-        monitor_ret['interval'] = 1000 # ms
-
-        return monitor_ret
+        return {'state': main_state,
+                'text': state_control_entry.text,
+                'icon': state_control_entry.icon,
+                'color': Colors.color_to_str[color_num],
+                'admin': False
+               }
 
     def service(self, req):
         if req.method != 'GET':
