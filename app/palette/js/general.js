@@ -6,6 +6,13 @@ function ($, template, common, EditBox, OnOff)
     var dropdown_template = $('#dropdown-template').html();
     template.parse(dropdown_template);
 
+    function change_storage_location(value) {
+        $('#s3, #gcs, #local').addClass('hidden');
+        if (value != 'none') {
+            $('#' + value).removeClass('hidden');
+        }
+    }
+
     function update(data) {
         /* populate the dropdowns */
         var checked = data['storage-encrypt'];
@@ -34,6 +41,20 @@ function ($, template, common, EditBox, OnOff)
                 EditBox.setup();
                 OnOff.setup();
                 common.setupDropdowns();
+            });
+        },
+        error: common.ajaxError,
+    });
+
+    $.ajax({
+        url: '/rest/storage',
+        success: function(data) {
+            $().ready(function() {
+                $('input:radio[name="storage-type"]').change(function() {
+                    change_storage_location($(this).val());
+                });
+                $('#storage-'+data['storage-type']).prop('checked', true);
+                change_storage_location(data['storage-type']);
             });
         },
         error: common.ajaxError,

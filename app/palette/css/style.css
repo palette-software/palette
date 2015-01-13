@@ -339,11 +339,18 @@ article.popup p {
     padding: 9px 0;
 }
 .btn:hover, .btn:focus, .btn:active, .p-btn:hover {
+    color: white;
     background-color: #5e646b;
 }
 .btn-primary {
     padding: 9px 0;
     text-transform: uppercase;
+}
+.btn-test {
+    width: 250px;
+}
+.btn-bar {
+    margin: 0 0 15px 0;
 }
 .btn-group {
     max-width: 320px;
@@ -742,6 +749,7 @@ h1.page-title {
 .about-page h1.page-title, .profile-page h1.page-title, .general-page h1.page-title, .integration h1.page-title {
     margin-bottom: 20px;
 }
+/* FIXME: remove all .integration classes */
 .integration h2.page-subtitle {
     margin-bottom: 20px;
 }
@@ -1436,13 +1444,17 @@ div.refresh {
 .profile-page p {
     margin: 0px;
 }
-h2.page-subtitle {
-    text-transform: uppercase;
+
+.configuration h2, .configuration h3 {
     font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
     color: #5f6670;
     font-size: 17px;
-    margin-top: 30px;
 }
+.configuration h2 {
+    margin-top: 30px;
+    text-transform: uppercase;
+}
+
 .general-page {
     padding-bottom: 67px;
 }
@@ -1616,4 +1628,17 @@ section.run-as-user {
     margin-left: 5px;
     height: 34px;
     vertical-align: baseline;
+}
+input[name="storage-type"] {
+    display: inline-block;
+}
+input[name="storage-type"] + label {
+    display: inline-block;
+    margin: 0 25px 0 3px;
+}
+label[for*="s3-"], label[for*="gcs-"] {
+    margin: 0;
+}
+label + input[type="text"], label + input[type="password"] {
+    margin-top: 0;
 }

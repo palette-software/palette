@@ -29,7 +29,7 @@ class BackupApplication(PaletteRESTApplication):
 
         backup_entry = FileManager.find_by_name_envid(req.envid, filename)
         if not backup_entry:
-            return {'error': 'Backup not found: ' + filename }
+            return {'error': 'Backup not found: ' + filename}
 
         cmd = 'restore "%s"' % backup_entry.name
 
