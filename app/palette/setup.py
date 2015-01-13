@@ -7,6 +7,7 @@ from collections import OrderedDict
 
 from controller.profile import UserProfile
 
+from .page import PalettePage
 from .option import BaseStaticOption
 from .rest import PaletteRESTApplication
 
@@ -19,6 +20,12 @@ class SetupPage(Page):
 def make_setup(global_conf):
     return SetupPage(global_conf)
 
+
+class SetupConfigPage(PalettePage):
+    TEMPLATE = "setup2.mako"
+
+def make_setup_config(global_conf):
+    return SetupConfigPage(global_conf)
 
 class MailServerType(BaseStaticOption):
 

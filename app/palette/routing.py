@@ -37,6 +37,7 @@ from .profile import ProfileApplication
 from .setup import SetupApplication
 from .server import ServerApplication
 from .s3 import S3Application
+from .storage import StorageApplication
 from .user import UserApplication
 from .yml import YmlApplication
 from .workbooks import WorkbookApplication
@@ -56,6 +57,8 @@ def make_rest(global_conf):
     app.add_route(r'/setup(/(?P<action>email))?\Z', SetupApplication())
     app.add_route(r'/servers?(/(?P<action>[^\s]+))?\Z',
                   ServerApplication())
+    app.add_route(r'/storage\Z',
+                  StorageApplication())
     app.add_route(r'/users?(/(?P<action>[^\s]+))?\Z',
                   UserApplication())
     app.add_route(r'/yml\Z', YmlApplication())
