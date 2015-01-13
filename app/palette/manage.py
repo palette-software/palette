@@ -20,11 +20,11 @@ class ManageApplication(PaletteRESTApplication):
     def handle_stop(self, req):
         cmd = 'stop'
         if not req.params_getbool('backup'):
-            cmd = cmd + ' nobackup'
+            cmd = '/nobackup ' + cmd
         if not req.params_getbool('license'):
-            cmd = cmd + ' nolicense'
+            cmd = '/nolicense' + cmd
         if not req.params_getbool('maint'):
-            cmd = cmd + ' nomaint'
+            cmd = '/nomaint' + cmd
         self.commapp.send_cmd(cmd, req=req, read_response=False)
         return {}
 
@@ -33,9 +33,9 @@ class ManageApplication(PaletteRESTApplication):
     def handle_restart(self, req):
         cmd = 'restart'
         if not req.params_getbool('backup'):
-            cmd = cmd + ' nobackup'
+            cmd = '/nobackup ' + cmd
         if not req.params_getbool('license'):
-            cmd = cmd + ' nolicense'
+            cmd = '/nolicense ' + cmd
         self.commapp.send_cmd(cmd, req=req, read_response=False)
         return {}
 

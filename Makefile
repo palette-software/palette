@@ -1,5 +1,5 @@
 PKG1:= akiri.framework-sqlalchemy_0.1_all.deb
-PKG2 = akiri.framework_0.4.0_all.deb
+PKG2 = akiri.framework_0.4.1_all.deb
 POOL_DIR = dpkg/pool
 DOWNLOAD_DIR = https://www.akirisolutions.com/download/framework/
 PREBUILT_PACKAGES = $(POOL_DIR)/$(PKG1) $(POOL_DIR)/$(PKG2)
