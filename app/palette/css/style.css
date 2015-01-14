@@ -737,6 +737,9 @@ ul.processes.visible {
 .dynamic-content input[type="text"] {
     width: 50%;
 }
+.general-page input[type="text"] {
+    width: 100%;
+}
 h1.page-title {
     font-size: 28px;
     display: inline-block;
@@ -1464,6 +1467,7 @@ div.refresh {
 
 /* OnOff */
 .onoffswitch {
+    display: inline-block;
     position: relative;
     width: 66px;
     -webkit-user-select:none;
@@ -1542,6 +1546,15 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
     padding-right: 11px;
     background-color: #EEEEEE; color: #999999;
     text-align: right;
+}
+.slider-group > span {
+    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
+    line-height: 26px;
+    vertical-align: top;
+    margin-right: 25px;
+}
+.slider-group > span > span {
+    margin-left: 5px;
 }
 
 .monitor, .email-level {

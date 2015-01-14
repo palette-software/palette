@@ -36,8 +36,6 @@ class SystemConfig(object):
     DEBUG_LEVEL = 'debug-level'
     FROM_EMAIL = 'from-email'
 
-
-
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
     def __init__(self, system):
