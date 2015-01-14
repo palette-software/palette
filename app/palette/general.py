@@ -1,5 +1,7 @@
 from webob import exc
 
+from akiri.framework.route import Router
+
 from controller.profile import Role
 from controller.util import sizestr, str2bool
 from controller.general import SystemConfig
@@ -8,15 +10,99 @@ from controller.agent import AgentVolumesEntry
 from controller.cloud import CloudManager, CloudEntry
 from controller.passwd import set_aes_key_file
 
+from .option import ListOption
 from .page import PalettePage, FAKEPW
 from .rest import required_parameters, required_role, PaletteRESTApplication
 from .s3 import S3Application
 from .gcs import GCSApplication
 from .workbooks import CredentialMixin
 
-__all__ = ["GeneralApplication"]
+class GeneralBackupApplication(PaletteRESTApplication):
+    """Handler for the 'BACKUPS' section."""
+    SCHEDULED_BACKUP_PERIOD_RANGE = [1, 2, 3, 4, 6, 8, 12, 24]
+    SCHEDULED_BACKUP_HOUR_RANGE = range(1, 12)
+    SCHEDULED_BACKUP_MINUTE_RANGE = ['00', '15', '30', '45']
+    SCHEDULED_BACKUP_RETAIN_RANGE = [7, 14, 21, 28]
+    USER_BACKUP_RETAIN_RANGE = range(1, 11)
 
-class GeneralApplication(PaletteRESTApplication):
+    def service_GET(self, req):
+        scfg = SystemConfig(req.system)
+
+        config = [ListOption('scheduled-backup-period', 12, #FIXME
+                             self.SCHEDULED_BACKUP_PERIOD_RANGE),
+                  ListOption(SystemConfig.BACKUP_AUTO_RETAIN_COUNT,
+                             scfg.backup_auto_retain_count,
+                             self.SCHEDULED_BACKUP_RETAIN_RANGE),
+                  ListOption(SystemConfig.BACKUP_USER_RETAIN_COUNT,
+                             scfg.backup_user_retain_count,
+                             self.USER_BACKUP_RETAIN_RANGE),
+                  ListOption('scheduled-backup-hour', 12, #FIXME
+                             self.SCHEDULED_BACKUP_HOUR_RANGE),
+                  ListOption('scheduled-backup-minute', '00', #FIXME
+                             self.SCHEDULED_BACKUP_MINUTE_RANGE),
+                  ListOption('scheduled-backup-ampm', 'AM', #FIXME
+                             ['AM', 'PM'])]
+
+        data = {}
+        data['config'] = [option.default() for option in config]
+        data['schedule-backups'] = True #FIXME
+        # FIXME: add 'timezone'
+        return data
+
+
+class EmailAlertApplication(PaletteRESTApplication):
+    """Handler for the 'EMAIL ALERTS' section."""
+    def service_GET(self, req):
+        # pylint: disable=unused-argument
+        data = {}
+        data['alert-admins'] = True # FIXME
+        data['alert-publishers'] = True # FIXME
+        return data
+
+
+class GeneralZiplogApplication(PaletteRESTApplication):
+    """Handler for the 'ZIPLOGSS' section."""
+    SCHEDULED_RETAIN_RANGE = range(1, 10)
+    USER_RETAIN_RANGE = range(1, 10)
+
+    def service_GET(self, req):
+        # pylint: disable=unused-argument
+        # scfg = SystemConfig(req.system)
+
+        config = [ListOption('ziplog-auto-retain-count', 10, # FIXME
+                             self.SCHEDULED_RETAIN_RANGE),
+                  ListOption('ziplog-user-retain-count', 5, #FIXME
+                             self.USER_RETAIN_RANGE)]
+        data = {}
+        data['config'] = [option.default() for option in config]
+        data['schedule-ziplogs'] = True #FIXME
+        return data
+
+
+class GeneralArchiveApplication(PaletteRESTApplication):
+    """Handler for 'WORKBOOK ARCHIVE' section."""
+    def service_GET(self, req):
+        # pylint: disable=unused-argument
+        data = {}
+        data['archive'] = True # FIXME
+        data['username'] = 'john' # FIXME
+        data['password'] = '********' # FIXME, return '*' for each pw char
+        return data
+
+
+# Maybe break this into Storage, CPU, Workbook?
+class GeneralMonitorApplication(PaletteRESTApplication):
+    """Handler from 'MONITORING' section."""
+    def service_GET(self, req):
+        # pylint: disable=unused-argument
+        # FIXME: add options for storage-warning (use to be disk-low)
+        # FIXME: add options for storage-error (use to be disk-high)
+        # FIXME: cpu-warning, cpu-warning-duration
+        # FIXME: cpu-error, cpu-error-duration
+        # FIXME: workbook-warning, workbook-error (TBD)
+        return {}
+
+class OldGeneralApplication(PaletteRESTApplication):
     NAME = 'general'
 
     LOW_WATERMARK_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
@@ -400,6 +486,48 @@ class GeneralApplication(PaletteRESTApplication):
 
         return self.handle_get(req)
 
+def extend(dict1, dict2):
+    """
+    Add the contents of dict2 to dict1 and return the result.
+    The name is the same as the jQuery function with the same purpose.
+    """
+    for key in dict2:
+        value2 = dict2[key]
+        if key in dict1:
+            if hasattr(value2, '__getitem__'):
+                dict1[key] += value2
+            else:
+                raise KeyError("'" + key + "' exists.")
+        else:
+            dict1[key] = value2
+    return dict1
+
+class _GeneralApplication(PaletteRESTApplication):
+
+    def __init__(self):
+        super(_GeneralApplication, self).__init__()
+        self.backup = GeneralBackupApplication()
+        self.email_alert = EmailAlertApplication()
+        self.ziplog = GeneralZiplogApplication()
+        self.archive = GeneralArchiveApplication()
+
+    def service_GET(self, req):
+        data = {}
+        extend(data, self.backup.service_GET(req))
+        extend(data, self.email_alert.service_GET(req))
+        extend(data, self.ziplog.service_GET(req))
+        extend(data, self.archive.service_GET(req))
+        return data
+
+
+class GeneralApplication(Router):
+    """Main handler/router for /rest/general"""
+    def __init__(self):
+        super(GeneralApplication, self).__init__()
+        self.add_route(r'/\Z', _GeneralApplication())
+        self.add_route(r'/backup\Z', GeneralBackupApplication())
+        self.add_route(r'/email/alerts?\Z', EmailAlertApplication())
+        self.add_route(r'/ziplog\Z', GeneralZiplogApplication())
 
 class GeneralPage(PalettePage, CredentialMixin):
     TEMPLATE = "general.mako"

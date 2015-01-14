@@ -85,66 +85,123 @@
       <section id="local">
       </section>
     </section>
-
     <hr />
 
     <section>
-      <h3>Alert When My Server Attached and Palette Cloud Storage Volumes Attain These Thresholds</h3>
+      <h2>Email Alerts</h2>
+      <p class="slider-group">
+	<span>Send Alerts to Palette Admins
+	  <span id="alert-admins" class="onoffswitch yesno"></span>
+	</span>&nbsp;
+	<span>
+	  Send Alerts to Palette Publishers
+	  <span id="alert-publishers" class="onoffswitch yesno"></span>
+	</span>
+      </p>
+    </section>
+    <hr />
+
+    <section>
+      <h2>Backups</h2>
+      <p class="slider-group">
+	    <span>Scheduled Backups
+	      <span id="scheduled-backups" class="onoffswitch yesno"></span>
+	    </span>
+      </p>
+      <h3>Retained Scheduled Backups</h3>
+      <p>The number of scheduled Backups you want Palette to keep in storage</p>
+      <p><span id="backup-auto-retain-count" class="btn-group"></span> Backups</p>
+      <h3>Frequency and Time of Scheduled Backups</h3>
+      <p>
+	<span>Run Backup Every
+	  <span id="scheduled-backup-period" class="btn-group"></span> Hours</span>
+        &nbsp;<span>Starting at <span id="scheduled-backup-hour" class="btn-group"></span> : <span id="scheduled-backup-minute" class="btn-group"></span> : <span id="scheduled-backup-ampm" class="btn-group"></span>
+      <span class="timezone"></span></span>
+      </p>
+      <h3>Retained User Requested Backups</h3>
+      <p>The number of user requested Backups you want Palette to keep in storage</p>
+      <p>
+	    <span id="backup-user-retain-count" class="btn-group"></span> Backups
+      </p>
+    </section>
+    <hr />
+
+    <section>
+      <h2>Ziplogs</h2>
+      <p class="slider-group">
+	    <span>Scheduled Ziplogs
+	      <span id="scheduled-ziplogs" class="onoffswitch yesno"></span>
+	    </span>
+      </p>
+      <h3>Retained Scheduled Ziplogs</h3>
+      <p>The number of scheduled Ziplogs you want Palette to keep in storage</p>
+      <p>
+        <span id="ziplog-auto-retain-count" class="btn-group"></span> Ziplogs
+      </p>
+      <h3>Retained User Requested Ziplogs</h3>
+      <p>The number of user requested Ziplogs you want Palette to keep in storage</p>
+      <p>
+	    <span id="ziplog-user-retain-count" class="btn-group"></span> Ziplogs
+      </p>
+    </section>
+    <hr />
+
+    <section>
+      <h2>Workbook Archive</h2>
+      <p class="slider-group">
+	    <span>Archive
+	      <span id="archive" class="onoffswitch yesno"></span>
+	    </span>
+      </p>
+      <div class="row">
+        <div class="col-xs-6">
+          <h3>Tableau Server Admin Username</h3>
+          <input type="text" id="username" />
+        </div>
+        <div class="col-xs-6">
+          <h3>Tableau Server Admin Password</h3>
+          <input type="password" id="password" />
+        </div>
+      </div>
+    </section>
+    <hr />
+
+    <section>
+      <h2>Monitoring</h2>
+
+      <h3>Storage</h3>
+      <p>Alert When My Machine Attached Volumes Exceed These Thresholds</p>
       <p>
         <span>Warning Alert at <span id="disk-watermark-low" data-href="/rest/general/low" class="btn-group"></span> %</span>
         &nbsp;<span>Error Alert at <span id="disk-watermark-high" data-href="/rest/general/high" class="btn-group"></span> %</span>
       </p>
     </section>
-    <section class="cpu">
-      <h2>CPU Monitoring</h2>
-      <h3>Alert When Any Monitored Server Attains These Thresholds</h3>
-      <p id="cpu-warn">
-        <span>Warning Alert at <span id="cpu-load-warn" data-href="/rest/general/cpu/load/warn" class="btn-group"></span> %</span>
-        &nbsp;<span>for <span id="cpu-period-warn" data-href="/rest/general/cpu/period/warn" class="btn-group"></span> minutes</span>
-      </p>
-      <p id="cpu-error">
-        <span>Error Alert at <span id="cpu-load-error" data-href="/rest/general/cpu/load/error" class="btn-group"></span> %</span>
-        &nbsp;<span>for <span id="cpu-period-error" data-href="/rest/general/cpu/period/error" class="btn-group"></span> minutes</span>
-      </p>
-    </section>
-    <section>
-      <h2>Tabcmd User Credentials</h2>
-      <p>The Tableau Administrator user credentials used to manage the Palette Workbook Archive</p>
-      <h4>Username</h4>
-      <p class="editbox"
-         data-href="/rest/workbooks/primary/user">
-        ${req.primary_user}
-      </p>
-      <h4>Password</h4>
-      <p class="editbox password"
-         data-href="/rest/workbooks/primary/password">
-        ${req.primary_pw}
-      </p>
-    </section>
-    <section>
-      <h2>Backups</h2>
-      <h3>Daily Scheduled Backups to Retain</h3>
-      <p>The number of daily backups you want Palette to keep in storage</p>
-      <p><span id="backup-auto-retain-count" data-href="/rest/general/auto" class="btn-group"></span> Backups</p>
-    </section>
-    <section>
-      <h3>User Generated Backups to Retain</h3>
-      <p>The number of user generated Tableau .tsbak backups you want Palette to keep in storage</p>
-      <p><span id="backup-user-retain-count" data-href="/rest/general/user" class="btn-group"></span> Backups</P>
-    </section>
-    <section>
-      <h2>Logfiles</h2>
-      <h3>Log File Archives to Retain</h3>
-      <p>The number of Tableau logfile archives you want Palette to keep in storage</p>
-      <p><span id="log-archive-retain-count" data-href="/rest/general/logs" class="btn-group"></span> Log Archives</p>
-    </section>
-    <section>
-      <h2>Tableau Web Requests</h2>
-      <h3>Alert When Tableau Web Requests take longer than These Thresholds</h3>
+
+    <section class="cpu">      
+      <h3>CPU</h3>
       <p>
-        Warning Alert at <span id="http-load-warn" data-href="/rest/general/http_load_warn" class="btn-group up"></span>
-        &nbsp;Error Alert at <span id="http-load-error" data-href="/rest/general/http_load_error" class="btn-group up"></span>
+        <span>Warning Alert at <span id="cpu-warning" class="btn-group"></span> %</span>
+        &nbsp;<span>for <span id="cpu-warning-duration" class="btn-group"></span> minutes</span>
       </p>
+      <p>
+        <span>Error Alert at <span id="cpu-error" class="btn-group"></span> %</span>
+        &nbsp;<span>for <span id="cpu-error-duration" class="btn-group"></span> minutes</span>
+      </p>
+    </section>
+    <hr />
+
+    <section>
+      <h2>Workbook</h2>
+      <p>Alert When Workbook Web View Load Times Exceed These Thresholds</p>
+      <p>
+        Warning Alert at <span id="http-load-warn" class="btn-group up"></span>
+        &nbsp;Error Alert at <span id="http-load-error" class="btn-group up"></span>
+      </p>
+    </section>
+    <hr />
+
+    <section>
+      <h2>Authentication</h2>
     </section>
   </div>
 </div>

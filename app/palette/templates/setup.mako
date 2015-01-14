@@ -40,21 +40,21 @@
     <div class="center-block setup-page">
       <!-- top-zone? -->
       <section>
-	<h1>Welcome to Palette Software Server Setup</h1>
-	<p>Please set up your Mail, Hostname and SSL Certificate Settings for your Palette Server</p>
-	<hr />
+    <h1>Welcome to Palette Software Server Setup</h1>
+    <p>Please set up your Mail, Hostname and SSL Certificate Settings for your Palette Server</p>
+    <hr />
       </section>
       <section>
-	<h3>Password *</h3>
-	<input type="password" id="password" />
-	<!--<label for="password">&nbsp;</label>-->
-	<h3>Confirm Password *</h3>
-	<input type="password" id="confirm-password" />
-	<!--<label for="confirm-password">&nbsp;</label>-->
+    <h3>Password *</h3>
+    <input type="password" id="password" />
+    <!--<label for="password">&nbsp;</label>-->
+    <h3>Confirm Password *</h3>
+    <input type="password" id="confirm-password" />
+    <!--<label for="confirm-password">&nbsp;</label>-->
       </section>
       <hr />
       <section>
-	<%include file="config/mail.mako" />
+        <%include file="config/mail.mako" />
       </section>
       <hr />
       <section>

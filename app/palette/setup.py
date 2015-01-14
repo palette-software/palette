@@ -7,7 +7,7 @@ from akiri.framework.route import Router
 
 from collections import OrderedDict
 
-from controller.profile import UserProfile
+from controller.profile import UserProfile, Role
 
 from .page import PalettePage
 from .option import BaseStaticOption
@@ -26,6 +26,8 @@ def make_setup(global_conf):
 class SetupConfigPage(PalettePage):
     TEMPLATE = "config/setup.mako"
     active = 'setup'
+    expanded = True
+    required_role = Role.MANAGER_ADMIN
 
 def make_setup_config(global_conf):
     return SetupConfigPage(global_conf)
