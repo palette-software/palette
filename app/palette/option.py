@@ -6,7 +6,7 @@ class StaticOptionType(type):
         if name == 'OPTIONS':
             options = []
             for key, value in cls.ITEMS.items():
-                options.append({'option': value, 'id': key})
+                options.append({'item': value, 'id': key})
             return options
         raise AttributeError(name)
 

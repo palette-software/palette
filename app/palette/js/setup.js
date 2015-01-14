@@ -1,5 +1,5 @@
-require(['jquery', 'template', 'common', 'OnOff', 'bootstrap'],
-function ($, template, common, OnOff)
+require(['jquery', 'template', 'configure', 'common', 'OnOff', 'bootstrap'],
+function ($, template, configure, common, OnOff)
 {    
     /*
      * clear()
@@ -10,26 +10,17 @@ function ($, template, common, OnOff)
     }
 
     /*
-     * save()
-     * Callback for the 'Save' button.
+     * saveMailSettings()
+     * Callback for the 'Save' button in the Mail Server section.
      */
-    function save() {
-        var fields = ['password',
-                      'alert-email-name', 'alert-email-address',
-                      'smtp-server', 'smtp-port',
-                      'smtp-username', 'smtp-password']
-
+    function saveMailSettings() {
         var data = {'action': 'save'}
-        for (var index = 0; index < fields.length; index++) {
-            data[fields[index]] = $('#' + fields[index]).val();
-        };
-        data['mail-server-type'] = $('#mail-server-type > button > div').attr('data-id');
-        data['enable-tls'] = $('#enable-tls .onoffswitch-checkbox').prop("checked");
+        $.extend(data, configure.gatherEmailData());
 
         var result = null;
         $.ajax({
             type: 'POST',
-            url: '/rest/setup',
+            url: '/rest/setup/mail',
             data: data,
             dataType: 'json',
             async: false,
@@ -43,9 +34,7 @@ function ($, template, common, OnOff)
                 sucess = false;
             }
         });
-        if (result != null) {
-            window.location.replace("/");
-        }
+        /* FIXME: failure case? */
     }
 
     /*
@@ -102,17 +91,6 @@ function ($, template, common, OnOff)
      * Test input and return true/false.
      */
     function save_valid() {
-        var password = $('#password').val();
-        if (password.length == 0) {
-            return false;
-        }
-        var confirm_password = $('#confirm-password').val();
-        if (confirm_password.length == 0) {
-            return false;
-        }
-        if (password != confirm_password) {
-            return false;
-        }
         return true;
     }
 
@@ -122,25 +100,19 @@ function ($, template, common, OnOff)
      */
     function test_valid() {
         var recipient = $('#test-email-recipient').val();
-        if (recipient.length < 3) {
-            return false;
-        }
-        if (recipient.indexOf('@') == -1) {
-            return false;
-        }
-        return true;
+        return common.validEmail(recipient);
     }
 
     /*
      * validate()
-     * Enable/disable the 'Save' button based on the field values.
+     * Enable/disable the buttons based on the field values.
      */
     function validate() {
         var save_enabled = save_valid();
         if (save_enabled) {
-            $('#save').removeClass('disabled');
+            $('#save-mail-settings').removeClass('disabled');
         } else {
-            $('#save').addClass('disabled');
+            $('#save-mail-settings').addClass('disabled');
         }
 
         var test_enabled = test_valid();
@@ -156,7 +128,7 @@ function ($, template, common, OnOff)
     template.parse(dropdown_template);
 
     $().ready(function() {
-        $('#save').bind('click', save);
+        $('#save-mail-settings').bind('click', saveMailSettings);
         $('#cancel').bind('click', cancel);
         $('#test').bind('click', test);
         $('input[type="text"], input[type="password"]').on('paste', function() {
@@ -181,6 +153,7 @@ function ($, template, common, OnOff)
                 }
                 OnOff.setup();
                 common.setupDropdowns();
+                validate();
             });
         },
         error: common.ajaxError,
