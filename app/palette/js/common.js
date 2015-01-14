@@ -76,6 +76,13 @@ function ($, topic, template, items, paging)
         }
     }
 
+    /*
+     * Test if the value is a valid email address or not.
+     */
+    function validEmail(email) {
+        var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+        return regex.test(email);
+    }
 
     /*
      * setCookie()
@@ -345,8 +352,6 @@ function ($, topic, template, items, paging)
             }
         });
     }
-
-
 
     /*
      * customDataAttributes
@@ -656,5 +661,6 @@ function ($, topic, template, items, paging)
             'setupDialogs': setupDialogs,
             'setupDropdowns' : setupDropdowns,
             'setupOkCancel' : setupOkCancel,
+            'validEmail' : validEmail,
            };
 });

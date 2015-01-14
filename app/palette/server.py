@@ -110,11 +110,11 @@ class ServerApplication(PaletteRESTApplication):
         meta.Session.commit()
         return {'value':value}
 
-class ServerConfig(PalettePage):
+class ServerConfigPage(PalettePage):
     TEMPLATE = "server.mako"
     active = 'servers'
     expanded = True
     required_role = Role.READONLY_ADMIN
 
 def make_servers(global_conf):
-    return ServerConfig(global_conf)
+    return ServerConfigPage(global_conf)

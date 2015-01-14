@@ -199,11 +199,11 @@ class UserApplication(PaletteRESTApplication):
 
         return self.handle_email_level_other(req, name, value)
 
-class UserConfig(PalettePage):
+class UserConfigPage(PalettePage):
     TEMPLATE = "user.mako"
     active = 'users'
     expanded = True
     required_role = Role.READONLY_ADMIN
 
 def make_users(global_conf):
-    return UserConfig(global_conf)
+    return UserConfigPage(global_conf)

@@ -54,6 +54,13 @@
       </a>
       <ul ${obj.expanded and 'class="visible"' or ''}>
 %if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:
+        <li ${obj.active=='setup' and 'class="active"' or ''}>
+          <a href="/configure/setup">
+            <i class="fa fa-fw fa-gears"></i><span>Setup</span>
+          </a>
+        </li>
+%endif
+%if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:
         <li ${obj.active=='general' and 'class="active"' or ''}>
           <a href="/configure/general">
             <i class="fa fa-fw fa-edit"></i><span>General</span>

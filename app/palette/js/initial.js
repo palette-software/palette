@@ -10,17 +10,17 @@ function ($, template, configure, common, OnOff)
     }
 
     /*
-     * saveMailSettings()
-     * Callback for the 'Save' button in the Mail Server section.
+     * save()
+     * Callback for the 'Save' button.
      */
-    function saveMailSettings() {
+    function save() {
         var data = {'action': 'save'}
-        $.extend(data, configure.gatherEmailData());
+        $.extend(data, gather_email_data());
 
         var result = null;
         $.ajax({
             type: 'POST',
-            url: '/rest/setup/mail',
+            url: '/rest/setup',
             data: data,
             dataType: 'json',
             async: false,
@@ -34,8 +34,15 @@ function ($, template, configure, common, OnOff)
                 sucess = false;
             }
         });
-        /* FIXME: failure case? */
+        if (result != null) {
+            window.location.replace("/");
+        }
     }
+
+    /*
+     * save_mail_settings()
+     * Callback for the 'Save' button on the Settings configure page.
+     */
 
     /*
      * cancel()
@@ -91,6 +98,17 @@ function ($, template, configure, common, OnOff)
      * Test input and return true/false.
      */
     function save_valid() {
+        var password = $('#password').val();
+        if (password.length == 0) {
+            return false;
+        }
+        var confirm_password = $('#confirm-password').val();
+        if (confirm_password.length == 0) {
+            return false;
+        }
+        if (password != confirm_password) {
+            return false;
+        }
         return true;
     }
 
@@ -100,19 +118,25 @@ function ($, template, configure, common, OnOff)
      */
     function test_valid() {
         var recipient = $('#test-email-recipient').val();
-        return common.validEmail(recipient);
+        if (recipient.length < 3) {
+            return false;
+        }
+        if (recipient.indexOf('@') == -1) {
+            return false;
+        }
+        return true;
     }
 
     /*
      * validate()
-     * Enable/disable the buttons based on the field values.
+     * Enable/disable the 'Save' button based on the field values.
      */
     function validate() {
         var save_enabled = save_valid();
         if (save_enabled) {
-            $('#save-mail-settings').removeClass('disabled');
+            $('#save').removeClass('disabled');
         } else {
-            $('#save-mail-settings').addClass('disabled');
+            $('#save').addClass('disabled');
         }
 
         var test_enabled = test_valid();
@@ -128,7 +152,7 @@ function ($, template, configure, common, OnOff)
     template.parse(dropdown_template);
 
     $().ready(function() {
-        $('#save-mail-settings').bind('click', saveMailSettings);
+        $('#save').bind('click', save);
         $('#cancel').bind('click', cancel);
         $('#test').bind('click', test);
         $('input[type="text"], input[type="password"]').on('paste', function() {
@@ -153,7 +177,6 @@ function ($, template, configure, common, OnOff)
                 }
                 OnOff.setup();
                 common.setupDropdowns();
-                validate();
             });
         },
         error: common.ajaxError,

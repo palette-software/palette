@@ -1,7 +1,7 @@
 from webob import exc
 
 from akiri.framework.api import RESTApplication
-from akiri.framework import GenericWSGI
+from akiri.framework import GenericWSGIApplication
 
 #from controller.domain import Domain
 from controller.profile import Role
@@ -47,7 +47,7 @@ class PaletteRESTHandler(RESTApplication):
             path_info = path_info[1:]
         return path_info
 
-class PaletteRESTApplication(GenericWSGI):
+class PaletteRESTApplication(GenericWSGIApplication):
 
     def __init__(self):
         super(PaletteRESTApplication, self).__init__()
