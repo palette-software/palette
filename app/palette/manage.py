@@ -22,9 +22,9 @@ class ManageApplication(PaletteRESTApplication):
         if not req.params_getbool('backup'):
             cmd = '/nobackup ' + cmd
         if not req.params_getbool('license'):
-            cmd = '/nolicense' + cmd
+            cmd = '/nolicense ' + cmd
         if not req.params_getbool('maint'):
-            cmd = '/nomaint' + cmd
+            cmd = '/nomaint ' + cmd
         self.commapp.send_cmd(cmd, req=req, read_response=False)
         return {}
 
