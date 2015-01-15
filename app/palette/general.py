@@ -28,7 +28,8 @@ class GeneralBackupApplication(PaletteRESTApplication):
     def service_GET(self, req):
         scfg = SystemConfig(req.system)
 
-        config = [ListOption('scheduled-backup-period', 12, #FIXME
+        config = [ListOption(SystemConfig.SCHEDULED_BACKUP_PERIOD,
+                             scfg.scheduled_backup_period,
                              self.SCHEDULED_BACKUP_PERIOD_RANGE),
                   ListOption(SystemConfig.BACKUP_AUTO_RETAIN_COUNT,
                              scfg.backup_auto_retain_count,
@@ -36,17 +37,20 @@ class GeneralBackupApplication(PaletteRESTApplication):
                   ListOption(SystemConfig.BACKUP_USER_RETAIN_COUNT,
                              scfg.backup_user_retain_count,
                              self.USER_BACKUP_RETAIN_RANGE),
-                  ListOption('scheduled-backup-hour', 12, #FIXME
+                  ListOption(SystemConfig.SCHEDULED_BACKUP_HOUR,
+                             scfg.scheduled_backup_hour,
                              self.SCHEDULED_BACKUP_HOUR_RANGE),
-                  ListOption('scheduled-backup-minute', '00', #FIXME
+                  ListOption(SystemConfig.SCHEDULED_BACKUP_MINUTE,
+                             scfg.scheduled_backup_minute,
                              self.SCHEDULED_BACKUP_MINUTE_RANGE),
-                  ListOption('scheduled-backup-ampm', 'AM', #FIXME
+                  ListOption(SystemConfig.SCHEDULED_BACKUP_AMPM,
+                             scfg.scheduled_backup_ampm,
                              ['AM', 'PM'])]
 
         data = {}
         data['config'] = [option.default() for option in config]
-        data['schedule-backups'] = True #FIXME
-        # FIXME: add 'timezone'
+        data['schedule-backups'] = scfg.scheduled_backup_enabled
+        data['timezone'] = scfg.timezone # FIXME: right 'timezone'?
         return data
 
 
@@ -54,9 +58,11 @@ class EmailAlertApplication(PaletteRESTApplication):
     """Handler for the 'EMAIL ALERTS' section."""
     def service_GET(self, req):
         # pylint: disable=unused-argument
+
+        scfg = SystemConfig(req.system)
         data = {}
-        data['alert-admins'] = True # FIXME
-        data['alert-publishers'] = True # FIXME
+        data['alert-admins'] = scfg.alerts_admin_enabled
+        data['alert-publishers'] = scfg.alerts_publisher_enabled
         return data
 
 
@@ -67,15 +73,18 @@ class GeneralZiplogApplication(PaletteRESTApplication):
 
     def service_GET(self, req):
         # pylint: disable=unused-argument
-        # scfg = SystemConfig(req.system)
 
-        config = [ListOption('ziplog-auto-retain-count', 10, # FIXME
+        scfg = SystemConfig(req.system)
+
+        config = [ListOption(SystemConfig.ZIPLOG_AUTO_RETAIN_COUNT,
+                             scfg.ziplog_auto_retain_count,
                              self.SCHEDULED_RETAIN_RANGE),
-                  ListOption('ziplog-user-retain-count', 5, #FIXME
+                  ListOption(SystemConfig.ZIPLOG_USER_RETAIN_COUNT,
+                             scfg.ziplog_user_retain_count,
                              self.USER_RETAIN_RANGE)]
         data = {}
         data['config'] = [option.default() for option in config]
-        data['schedule-ziplogs'] = True #FIXME
+        data['schedule-ziplogs'] = scfg.scheduled_ziplog_enabled
         return data
 
 
@@ -83,10 +92,12 @@ class GeneralArchiveApplication(PaletteRESTApplication):
     """Handler for 'WORKBOOK ARCHIVE' section."""
     def service_GET(self, req):
         # pylint: disable=unused-argument
+        scfg = SystemConfig(req.system)
+
         data = {}
-        data['archive'] = True # FIXME
-        data['username'] = 'john' # FIXME
-        data['password'] = '********' # FIXME, return '*' for each pw char
+        data['username'] = scfg.archive_username
+        data['password'] = '*' * len(scfg.archive_password)
+        data['archive'] = scfg.archive_enabled
         return data
 
 
@@ -95,12 +106,20 @@ class GeneralMonitorApplication(PaletteRESTApplication):
     """Handler from 'MONITORING' section."""
     def service_GET(self, req):
         # pylint: disable=unused-argument
-        # FIXME: add options for storage-warning (use to be disk-low)
-        # FIXME: add options for storage-error (use to be disk-high)
-        # FIXME: cpu-warning, cpu-warning-duration
-        # FIXME: cpu-error, cpu-error-duration
-        # FIXME: workbook-warning, workbook-error (TBD)
-        return {}
+        scfg = SystemConfig(req.system)
+
+        data = {}
+        data['storage-warning'] = scfg.watermark_low
+        data['storage-error'] = scfg.watermark_high
+
+        data['cpu-warning'] = scfg.cpu_load_warn
+        data['cpu-error'] = scfg.cpu_load_error
+        data['cpu-period-warn'] = scfg.cpu_period_warn
+        data['cpu-period-error'] = scfg.cpu_period_error
+
+        data['workbook-warn'] = scfg.workbook_load_warn
+        data['workbook-error'] = scfg.workbook_load_error
+        return data
 
 class OldGeneralApplication(PaletteRESTApplication):
     NAME = 'general'
