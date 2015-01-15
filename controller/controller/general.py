@@ -10,6 +10,25 @@ class SystemConfig(object):
     BACKUP_USER_RETAIN_COUNT = "backup-user-retain-count"
     BACKUP_DEST_TYPE = "backup-dest-type"   # "vol" or "cloud"
     BACKUP_DEST_ID = "backup-dest-id"
+
+    SCHEDULED_BACKUP_PERIOD = "scheduled-backup-period"
+    SCHEDULED_BACKUP_HOUR = "scheduled-backup-hour"
+    SCHEDULED_BACKUP_MINUTE = "scheduled-backup-minute"
+    SCHEDULED_BACKUP_AMPM = "scheduled-backup-ampm"
+    SCHEDULED_BACKUP_ENABLED = "scheduled-backup-enabled"
+    TIMEZONE = 'timezone'
+
+    ZIPLOG_AUTO_RETAIN_COUNT = "ziplog-auto-retain-count"
+    ZIPLOG_USER_RETAIN_COUNT = "ziplog-user-retain-count"
+    ZIPLOG_ENABLED = "ziplog-enabled"
+    SCHEDULED_ZIPLOG_ENABLED = "scheduled-ziplog-enabled"
+
+    ARCHIVE_USERNAME = "archive-username"
+    ARCHIVE_PASSWORD = "archive-password"
+    ARCHIVE_ENABLED = "archive-enabled"
+
+    WORKBOOK_LOAD_WARN = "workbook-load-warn"
+    WORKBOOK_LOAD_ERROR = "workbook-load-error"
     LOG_ARCHIVE_RETAIN_COUNT = "log-archive-retain-count"
     WORKBOOKS_AS_TWB = "workbooks-as-twb"
 
@@ -117,6 +136,35 @@ class SystemConfig(object):
             return self._getint(self.BACKUP_DEST_ID, default=-1)
         if name == 'backup_dest_type':
             return self._backup_dest_type()
+
+        if name == "scheduled_backup_period":
+            return self._getint(self.SCHEDULED_BACKUP_PERIOD, default=24)
+        if name == "scheduled_backup_hour":
+            return self._getint(self.SCHEDULED_BACKUP_HOUR, default=12)
+        if name == "scheduled_backup_minute":
+            return self._getstring(self.SCHEDULED_BACKUP_MINUTE, default='00')
+        if name == "scheduled_backup_ampm":
+            return self._getstring(self.SCHEDULED_BACKUP_AMPM, default="AM")
+        if name == "scheduled_backup_enabled":
+            return self._getyesno(self.SCHEDULED_BACKUP_ENABLED, default='yes')
+        if name == 'timezone':
+            return self._getstring(self.TIMEZONE, default="")
+
+        if name == "ziplog_auto_retain_count":
+            return self._getint(self.ZIPLOG_AUTO_RETAIN_COUNT, default=10)
+        if name == "ziplog_user_retain_count":
+            return self._getint(self.ZIPLOG_USER_RETAIN_COUNT, default=5)
+        if name == "scheduled_ziplog_enabled":
+            return self._getyesno(self.SCHEDULED_ZIPLOG_ENABLED,
+                                  default='yes')
+
+        if name == "archive_username":
+            return self._getstring(self.ARCHIVE_USERNAME, default="")
+        if name == "archive_password":
+            return self._getstring(self.ARCHIVE_PASSWORD, default="")
+        if name == "archive_enabled":
+            return self._getyesno(self.ARCHIVE_ENABLED, default='yes')
+
         if name == 'log_archive_retain_count':
             return self._getint(self.LOG_ARCHIVE_RETAIN_COUNT)
         if name == 'backup_user_retain_count':
@@ -125,8 +173,14 @@ class SystemConfig(object):
             return self._getint(self.BACKUP_AUTO_RETAIN_COUNT)
         if name == 'storage_encrypt':
             return self._getyesno(self.STORAGE_ENCRYPT)
+
         if name == 'workbooks_as_twb':
             return self._getyesno(self.WORKBOOKS_AS_TWB)
+        if name == "workbook_load_warn":
+            return self._getint(self.WORKBOOK_LOAD_WARN, default=30)
+        if name == "workbook-load-error":
+            return self._getint(self.WORKBOOK_LOAD_ERROR, default=60)
+
         if name == 'http_load_warn':
             return self._http_load_warn(self.HTTP_LOAD_WARN)
         if name == 'http_load_error':
@@ -171,7 +225,7 @@ class SystemConfig(object):
         if name == 'mail_username':
             return self._getstring(self.MAIL_USERNAME)
         if name == 'mail_password':
-            return self._getstring(MAIL_PASSWORD)
+            return self._getstring(self.MAIL_PASSWORD)
         raise AttributeError(name)
 
     def todict(self):
@@ -181,6 +235,21 @@ class SystemConfig(object):
             self.BACKUP_USER_RETAIN_COUNT: self.backup_user_retain_count,
             self.BACKUP_DEST_TYPE: self.backup_dest_type,
             self.BACKUP_DEST_ID: self.backup_dest_id,
+            self.SCHEDULED_BACKUP_PERIOD: self.scheduled_backup_period,
+            self.SCHEDULED_BACKUP_HOUR: self.scheduled_backup_hour,
+            self.SCHEDULED_BACKUP_MINUTE: self.scheduled_backup_minute,
+            self.SCHEDULED_BACKUP_AMPM: self.scheduled_backup_ampm,
+            self.SCHEDULED_BACKUP_ENABLED: self.scheduled_backup_enabled,
+            self.TIMEZONE: self.timezone,
+            self.ZIPLOG_AUTO_RETAIN_COUNT: self.ziplog_auto_retain_count,
+            self.ZIPLOG_USER_RETAIN_COUNT: self.ziplog_user_retain_count,
+            self.ZIPLOG_ENABLED: self.ziplog_enabled,
+            self.SCHEDULED_ZIPLOG_ENABLED: self.scheduled_ziplog_enabled,
+            self.ARCHIVE_USERNAME: self.archive_username,
+            self.ARCHIVE_PASSWORD: self.archive_password,
+            self.ARCHIVE_ENABLED: self.archive_enabled,
+            self.WORKBOOK_LOAD_WARN: self.workbook_load_warn,
+            self.WORKBOOK_LOAD_ERROR: self.workbook_load_error,
             self.WATERMARK_LOW: self.watermark_low,
             self.WATERMARK_HIGH: self.watermark_high,
             self.LOG_ARCHIVE_RETAIN_COUNT: self.log_archive_retain_count,
