@@ -1,3 +1,5 @@
+import time
+
 from webob import exc
 
 from akiri.framework.route import Router
@@ -50,7 +52,7 @@ class GeneralBackupApplication(PaletteRESTApplication):
         data = {}
         data['config'] = [option.default() for option in config]
         data['schedule-backups'] = scfg.scheduled_backup_enabled
-        data['timezone'] = scfg.timezone # FIXME: right 'timezone'?
+        data['timezone'] = time.strftime("%Z")
         return data
 
 
