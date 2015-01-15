@@ -36,6 +36,14 @@ class SystemConfig(object):
     DEBUG_LEVEL = 'debug-level'
     FROM_EMAIL = 'from-email'
 
+    MAIL_SERVER_TYPE = 'mail-server-type'
+    MAIL_DOMAIN = 'mail-domain'
+    MAIL_ENABLE_TLS = 'mail-enable-tls'
+    MAIL_SMTP_SERVER = 'mail-smtp-server'
+    MAIL_SMTP_PORT = 'mail-smtp-port'
+    MAIL_USERNAME = 'mail-username'
+    MAIL_PASSWORD = 'mail-password'
+
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
     def __init__(self, system):
@@ -150,6 +158,20 @@ class SystemConfig(object):
         if name == 'from_email':
             return self._getstring(self.FROM_EMAIL,
                         default="Palette Alerts <alerts@palette-software.com>")
+        if name == 'mail_server_type':
+            return self._getstring(MAIL_SERVER_TYPE)
+        if name == 'mail_domain':
+            return self._getstring(MAIL_DOMAIN)
+        if name == 'mail_enable_tls':
+            return self._getyesorno(self.MAIL_ENABLE_TLS)
+        if name == 'mail_smtp_server':
+            return self._getstring(self.MAIL_SMTP_SERVER)
+        if name == 'mail_smtp_port':
+            return self._getint(self.MAIL_SMTP_PORT)
+        if name == 'mail_username':
+            return self._getstring(self.MAIL_USERNAME)
+        if name == 'mail_password':
+            return self._getstring(MAIL_PASSWORD)
         raise AttributeError(name)
 
     def todict(self):
@@ -175,7 +197,13 @@ class SystemConfig(object):
             self.CPU_PERIOD_ERROR: self.cpu_period_error,
             self.METRIC_SAVE_DAYS: self.metric_save_days,
             self.DEBUG_LEVEL: self.debug_level,
-            self.FROM_EMAIL: self.from_email
+            self.FROM_EMAIL: self.from_email,
+            self.EMAIL_CONFIG_DOMAIN: self.email_config_domain,
+            self.EMAIL_CONFIG_TLS: email_config_tls,
+            self.EMAIL_CONFIG_RELAYHOST: email_config_relayhost,
+            self.EMAIL_CONFIG_RELAYPORT: email_config_relayport,
+            self.EMAIL_CONFIG_USERNAME: email_config_username,
+            self.EMAIL_CONFIG_PASSWORD: email_config_password
             }
 
     def text(self, value):
