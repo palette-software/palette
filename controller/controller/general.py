@@ -159,9 +159,9 @@ class SystemConfig(object):
             return self._getstring(self.FROM_EMAIL,
                         default="Palette Alerts <alerts@palette-software.com>")
         if name == 'mail_server_type':
-            return self._getstring(MAIL_SERVER_TYPE)
+            return self._getstring(self.MAIL_SERVER_TYPE)
         if name == 'mail_domain':
-            return self._getstring(MAIL_DOMAIN)
+            return self._getstring(self.MAIL_DOMAIN)
         if name == 'mail_enable_tls':
             return self._getyesorno(self.MAIL_ENABLE_TLS)
         if name == 'mail_smtp_server':
@@ -199,11 +199,11 @@ class SystemConfig(object):
             self.DEBUG_LEVEL: self.debug_level,
             self.FROM_EMAIL: self.from_email,
             self.EMAIL_CONFIG_DOMAIN: self.email_config_domain,
-            self.EMAIL_CONFIG_TLS: email_config_tls,
-            self.EMAIL_CONFIG_RELAYHOST: email_config_relayhost,
-            self.EMAIL_CONFIG_RELAYPORT: email_config_relayport,
-            self.EMAIL_CONFIG_USERNAME: email_config_username,
-            self.EMAIL_CONFIG_PASSWORD: email_config_password
+            self.EMAIL_CONFIG_TLS: self.email_config_tls,
+            self.EMAIL_CONFIG_RELAYHOST: self.email_config_relayhost,
+            self.EMAIL_CONFIG_RELAYPORT: self.email_config_relayport,
+            self.EMAIL_CONFIG_USERNAME: self.email_config_username,
+            self.EMAIL_CONFIG_PASSWORD: self.email_config_password
             }
 
     def text(self, value):
