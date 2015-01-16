@@ -15,8 +15,8 @@ function ($, template, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * saveMailSettings()
-     * Callback for the 'Save' button in the Mail Server section.
+     * saveAdmin()
+     * Callback for the 'Save' button in the 'Admin Password' section.
      */
     function saveAdmin() {
         var data = {'action': 'save'}
@@ -44,7 +44,7 @@ function ($, template, configure, common, Dropdown, OnOff)
 
     /*
      * saveMailSettings()
-     * Callback for the 'Save' button in the Mail Server section.
+     * Callback for the 'Save' button in the 'Mail Server' section.
      */
     function saveMailSettings() {
         var data = {'action': 'save'}
