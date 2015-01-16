@@ -103,8 +103,14 @@ class SetupAdminApplication(BaseSetupApplication):
 
     def service_GET(self, req):
         # pylint: disable=unused-argument
-        # FIXME: return self.PASSWD if the password is set, '' otherwise.
-        return {'password': self.PASSWD}
+        entry = meta.Session.query(UserProfile).\
+            filter(UserProfile.name == 'palette').one()
+
+        if entry.hashed_password:
+            passwd = self.PASSWD
+        else:
+            passwd = ''
+        return {'password': passwd}
 
     @required_parameters('password')
     def service_POST(self, req):
@@ -125,7 +131,7 @@ class SetupMailApplication(JSONProxy):
 
     def __init__(self):
         super(SetupMailApplication, self).__init__('http://localhost:9091', \
-                                    allowed_request_methods=('POST'))
+                                    allowed_request_methods=('GET', 'POST'))
 
     def postprocess(self, req, data):
         if 'error' in data:
@@ -133,7 +139,6 @@ class SetupMailApplication(JSONProxy):
 
         req.system.save(SystemConfig.FROM_EMAIL, data['from_email'])
         req.system.save(SystemConfig.MAIL_DOMAIN, data['mail_domain'])
-        req.system.save(SystemConfig.MAIL_ENABLE_TLS, data['enable_tls'])
         req.system.save(SystemConfig.MAIL_SERVER_TYPE, data['mail_server_type'])
 
         if data['mail_server_type'] == '2':
@@ -150,9 +155,33 @@ class SetupMailApplication(JSONProxy):
 
     def service_GET(self, req):
         # pylint: disable=unused-argument
-        config = [MailServerType(MailServerType.DIRECT).default()] # FIXME
+        scfg = SystemConfig(req.system)
+
+        mail_server_type = scfg.mail_server_type
+        if mail_server_type == '1':
+            mst = MailServerType(MailServerType.DIRECT)
+        elif mail_server_type == '2':
+            mst = MailServerType(MailServerType.DIRECT)
+        else:
+            mst = MailServerType(MailServerType.NONE)
+        config = [mst.default()]
         data = {'config': config}
-        # FIXME: return configuration from the system table.
+
+        parts = scfg.from_email.rsplit(" ", 1)
+        if len(parts) == 2:
+            data['alert-email-name'] = parts[0]
+            del parts[0]
+        else:
+            data['alert-email-name'] = ""
+
+        data['alert-email'] = parts[0]
+
+        data['mail-server-type'] = scfg.mail_server_type
+        data['smtp-server'] = scfg.mail_smtp_server
+        data['smtp-port'] = scfg.mail_smtp_port
+        data['smtp-username'] = scfg.mail_username
+        data['smtp-password'] = scfg.mail_password
+
         return data
 
     def service(self, req):
@@ -188,7 +217,16 @@ class SetupAuthApplication(BaseSetupApplication):
 
     def service_GET(self, req):
         # pylint: disable=unused-argument
-        config = [AuthType(AuthType.TABLEAU).default()] # FIXME
+        scfg = SystemConfig(req.system)
+        auth_type = scfg.authentication_type
+        if auth_type == 1:
+            atype = AuthType(AuthType.TABLEAU)
+        elif auth_type == 2:
+            atype = AuthType(AuthType.ACTIVE_DIRECTORY)
+        else:
+            atype = AuthType(AuthType.LOCAL)
+
+        config = [atype.default()]
         data = {'config': config}
         return data
 
@@ -197,7 +235,7 @@ class SetupAuthApplication(BaseSetupApplication):
         authtype = req.params_getint('authentication-type')
         if authtype == None:
             raise exc.HTTPBadRequest()
-        # FIXME: save value
+        req.system.save(SystemConfig.AUTHENTICATION_TYPE, authtype)
         return {'authentication-type': authtype}
 
 

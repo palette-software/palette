@@ -63,6 +63,7 @@ class SystemConfig(object):
     MAIL_PASSWORD = 'mail-password'
 
     SERVER_URL = "server-url"
+    AUTHENTICATION_TYPE = "authentication-type"
 
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
@@ -222,11 +223,13 @@ class SystemConfig(object):
         if name == 'mail_smtp_port':
             return self._getint(self.MAIL_SMTP_PORT)
         if name == 'mail_username':
-            return self._getstring(self.MAIL_USERNAME)
+            return self._getstring(self.MAIL_USERNAME, default='')
         if name == 'mail_password':
-            return self._getstring(self.MAIL_PASSWORD)
+            return self._getstring(self.MAIL_PASSWORD, default='')
         if name == 'server_url':
             return self._getstring(self.SERVER_URL, default='localhost')
+        if name == "authentication_type":
+            return self._getint(self.AUTHENTICATION_TYPE, default=1)
         raise AttributeError(name)
 
     def todict(self):
@@ -273,7 +276,8 @@ class SystemConfig(object):
             self.MAIL_SMTP_PORT: self.mail_smtp_port,
             self.MAIL_USERNAME: self.mail_username,
             self.MAIL_PASSWORD: self.mail_password,
-            self.SERVER_URL: self.server_url
+            self.SERVER_URL: self.server_url,
+            self.AUTHENTICATION_TYPE: self.authentication_type
             }
 
     def text(self, value):
