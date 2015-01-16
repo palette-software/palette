@@ -16,7 +16,6 @@ class SystemConfig(object):
     SCHEDULED_BACKUP_MINUTE = "scheduled-backup-minute"
     SCHEDULED_BACKUP_AMPM = "scheduled-backup-ampm"
     SCHEDULED_BACKUP_ENABLED = "scheduled-backup-enabled"
-    TIMEZONE = 'timezone'
 
     ZIPLOG_AUTO_RETAIN_COUNT = "ziplog-auto-retain-count"
     ZIPLOG_USER_RETAIN_COUNT = "ziplog-user-retain-count"
@@ -147,8 +146,6 @@ class SystemConfig(object):
             return self._getstring(self.SCHEDULED_BACKUP_AMPM, default="AM")
         if name == "scheduled_backup_enabled":
             return self._getyesno(self.SCHEDULED_BACKUP_ENABLED, default='yes')
-        if name == 'timezone':
-            return self._getstring(self.TIMEZONE, default="")
 
         if name == "ziplog_auto_retain_count":
             return self._getint(self.ZIPLOG_AUTO_RETAIN_COUNT, default=10)
@@ -240,7 +237,6 @@ class SystemConfig(object):
             self.SCHEDULED_BACKUP_MINUTE: self.scheduled_backup_minute,
             self.SCHEDULED_BACKUP_AMPM: self.scheduled_backup_ampm,
             self.SCHEDULED_BACKUP_ENABLED: self.scheduled_backup_enabled,
-            self.TIMEZONE: self.timezone,
             self.ZIPLOG_AUTO_RETAIN_COUNT: self.ziplog_auto_retain_count,
             self.ZIPLOG_USER_RETAIN_COUNT: self.ziplog_user_retain_count,
             self.ZIPLOG_ENABLED: self.ziplog_enabled,
