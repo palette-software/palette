@@ -62,7 +62,9 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
                 {'envid':1, 'key': SystemConfig.METRIC_SAVE_DAYS, 'value':'7'},
                 {'envid':1, 'key': SystemConfig.DEBUG_LEVEL, 'value':'DEBUG'},
                 {'envid':1, 'key': SystemConfig.FROM_EMAIL,
-                        'value':'Palette Alerts <alerts@palette-software.com>'}
+                        'value':'Palette Alerts <alerts@palette-software.com>'},
+                {'envid':1, 'key': SystemConfig.SERVER_URL, 'value':'localhost'}
+
         # Note: No default volid set.
     ]
 

@@ -62,6 +62,8 @@ class SystemConfig(object):
     MAIL_USERNAME = 'mail-username'
     MAIL_PASSWORD = 'mail-password'
 
+    SERVER_URL = "server-url"
+
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
     def __init__(self, system):
@@ -223,6 +225,8 @@ class SystemConfig(object):
             return self._getstring(self.MAIL_USERNAME)
         if name == 'mail_password':
             return self._getstring(self.MAIL_PASSWORD)
+        if name == 'server_url':
+            return self._getstring(self.SERVER_URL, default='localhost')
         raise AttributeError(name)
 
     def todict(self):
@@ -263,12 +267,13 @@ class SystemConfig(object):
             self.METRIC_SAVE_DAYS: self.metric_save_days,
             self.DEBUG_LEVEL: self.debug_level,
             self.FROM_EMAIL: self.from_email,
-            self.EMAIL_CONFIG_DOMAIN: self.email_config_domain,
-            self.EMAIL_CONFIG_TLS: self.email_config_tls,
-            self.EMAIL_CONFIG_RELAYHOST: self.email_config_relayhost,
-            self.EMAIL_CONFIG_RELAYPORT: self.email_config_relayport,
-            self.EMAIL_CONFIG_USERNAME: self.email_config_username,
-            self.EMAIL_CONFIG_PASSWORD: self.email_config_password
+            self.MAIL_DOMAIN: self.mail_domain,
+            self.MAIL_TLS: self.mail_enable_tls,
+            self.MAIL_SMTP_SERVER: self.mail_smtp_server,
+            self.MAIL_SMTP_PORT: self.mail_smtp_port,
+            self.MAIL_USERNAME: self.mail_username,
+            self.MAIL_PASSWORD: self.mail_password,
+            self.SERVER_URL: self.server_url
             }
 
     def text(self, value):

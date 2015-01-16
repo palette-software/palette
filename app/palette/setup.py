@@ -5,16 +5,20 @@ from akiri.framework.api import Page
 from akiri.framework import GenericWSGI
 from akiri.framework.proxy import JSONProxy
 from akiri.framework.route import Router
+# pylint: disable=import-error,no-name-in-module
+from akiri.framework.ext.sqlalchemy import meta
 
 from collections import OrderedDict
 
 from controller.profile import UserProfile, Role
+from controller.passwd import tableau_hash
 from controller.general import SystemConfig
 from controller.util import extend
 
 from .page import PalettePage
 from .option import DictOption
 from .rest import PaletteRESTApplication, required_parameters
+
 
 # FIXME: add required_role to all the GET/POST handlers.
 
@@ -80,12 +84,15 @@ class SetupURLApplication(BaseSetupApplication):
 
     def service_GET(self, req):
         # pylint: disable=unused-argument
-        return {'server-url': 'foo.example.com'} # FIXME
+        scfg = SystemConfig(req.system)
+
+        return {'server-url': scfg.server_url}
 
     @required_parameters('server-url')
     def service_POST(self, req):
         dump(req)
         url = req.params_get('server-url')
+        req.system.save(SystemConfig.SERVER_URL, url)
         return {'server-url': url}
 
 
@@ -103,8 +110,14 @@ class SetupAdminApplication(BaseSetupApplication):
     def service_POST(self, req):
         dump(req)
         passwd = req.params_get('password')
-        # FIXME: save value
-        passwd = self.PASSWD
+        hashed_password = tableau_hash(passwd, '')
+        meta.Session.query(UserProfile).\
+            filter(UserProfile.name == 'palette').\
+            update({"hashed_password": hashed_password},
+                    synchronize_session=False)
+
+        meta.Session.commit()
+
         return {'password': passwd}
 
 
@@ -227,6 +240,7 @@ class SetupApplication(Router):
         self.add_route(r'/ssl\Z|/SSL\Z', SetupSSLApplication())
         self.add_route(r'/mail\Z', SetupMailApplication())
         self.add_route(r'/mail/test\Z', SetupMailTestApplication())
+        self.add_route(r'/admin\Z', SetupURLApplication())
         self.add_route(r'/url\Z', SetupURLApplication())
 
 
