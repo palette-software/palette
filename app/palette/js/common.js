@@ -94,7 +94,7 @@ function ($, topic, template, items, paging)
             d.setTime(d.getTime() + (exdays*24*60*60*1000));
             value += "; expires="+d.toUTCString();
         }
-        value += "; path=/";
+        value += "; path=" + "/";
         document.cookie = value;
     }
 
@@ -296,6 +296,13 @@ function ($, topic, template, items, paging)
     function setupDropdowns() {
         $('.dropdown-menu li').off('click');
         $('.dropdown-menu li').bind('click', ddClick);
+    }
+
+    /*
+      * getDropdownValueById()
+      */
+    function getDropdownValueById(id) {
+        return $('#' + id + ' > button > div').attr('data-id');
     }
 
     /*
@@ -660,6 +667,7 @@ function ($, topic, template, items, paging)
             'ajaxError': ajaxError,
             'setupDialogs': setupDialogs,
             'setupDropdowns' : setupDropdowns,
+            'getDropdownValueById': getDropdownValueById,
             'setupOkCancel' : setupOkCancel,
             'validEmail' : validEmail,
            };

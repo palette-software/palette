@@ -40,17 +40,17 @@
     <div class="center-block setup-page">
       <!-- top-zone? -->
       <section>
-    <h1>Welcome to Palette Software Server Setup</h1>
-    <p>Please set up your Mail, Hostname and SSL Certificate Settings for your Palette Server</p>
-    <hr />
+        <h1>Welcome to Palette Software Server Setup</h1>
+        <p>Please set up your Mail, Hostname and SSL Certificate Settings for your Palette Server</p>
+        <hr />
       </section>
       <section>
-    <h3>Password *</h3>
-    <input type="password" id="password" />
-    <!--<label for="password">&nbsp;</label>-->
-    <h3>Confirm Password *</h3>
-    <input type="password" id="confirm-password" />
-    <!--<label for="confirm-password">&nbsp;</label>-->
+        <h3>Password *</h3>
+        <input type="password" id="password" />
+        <!--<label for="password">&nbsp;</label>-->
+        <h3>Confirm Password *</h3>
+        <input type="password" id="confirm-password" />
+        <!--<label for="confirm-password">&nbsp;</label>-->
       </section>
       <hr />
       <section>
@@ -58,12 +58,12 @@
       </section>
       <hr />
       <section>
-	<button type="button" id="save" class="btn btn-primary disabled">
-	  Save
-	</button>
-	<button type="button" id="cancel" class="btn btn-primary">
-	  Cancel
-	</button>
+        <button type="button" id="save" class="btn btn-primary disabled">
+          Save
+        </button>
+        <button type="button" id="cancel" class="btn btn-primary">
+          Cancel
+        </button>
       </section>
     </div>
   </div>

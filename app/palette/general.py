@@ -3,7 +3,7 @@ from webob import exc
 from akiri.framework.route import Router
 
 from controller.profile import Role
-from controller.util import sizestr, str2bool
+from controller.util import sizestr, str2bool, extend
 from controller.general import SystemConfig
 from controller.files import FileManager
 from controller.agent import AgentVolumesEntry
@@ -505,21 +505,6 @@ class OldGeneralApplication(PaletteRESTApplication):
 
         return self.handle_get(req)
 
-def extend(dict1, dict2):
-    """
-    Add the contents of dict2 to dict1 and return the result.
-    The name is the same as the jQuery function with the same purpose.
-    """
-    for key in dict2:
-        value2 = dict2[key]
-        if key in dict1:
-            if hasattr(value2, '__getitem__'):
-                dict1[key] += value2
-            else:
-                raise KeyError("'" + key + "' exists.")
-        else:
-            dict1[key] = value2
-    return dict1
 
 class _GeneralApplication(PaletteRESTApplication):
 

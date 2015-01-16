@@ -14,6 +14,7 @@ function ($)
         for (var index = 0; index < fields.length; index++) {
             data[fields[index]] = $('#' + fields[index]).val();
         };
+        /* FIXME: use common.getDropdownValueById() */
         data['mail-server-type'] = $('#mail-server-type > button > div').attr('data-id');
         data['enable-tls'] = $('#enable-tls .onoffswitch-checkbox').prop("checked");
         return data;

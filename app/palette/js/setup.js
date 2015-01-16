@@ -13,6 +13,34 @@ function ($, template, configure, common, OnOff)
      * saveMailSettings()
      * Callback for the 'Save' button in the Mail Server section.
      */
+    function saveAdmin() {
+        var data = {'action': 'save'}
+        data['password'] = $('#password').val();
+
+        var result = null;
+        $.ajax({
+            type: 'POST',
+            url: '/rest/setup/admin',
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function(data) {
+                result = data;
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(this.url + ": " +
+                      jqXHR.status + " (" + errorThrown + ")");
+                sucess = false;
+            }
+        });
+        /* FIXME: failure case? */
+    }
+
+    /*
+     * saveMailSettings()
+     * Callback for the 'Save' button in the Mail Server section.
+     */
     function saveMailSettings() {
         var data = {'action': 'save'}
         $.extend(data, configure.gatherEmailData());
@@ -21,6 +49,62 @@ function ($, template, configure, common, OnOff)
         $.ajax({
             type: 'POST',
             url: '/rest/setup/mail',
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function(data) {
+                result = data;
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(this.url + ": " +
+                      jqXHR.status + " (" + errorThrown + ")");
+                sucess = false;
+            }
+        });
+        /* FIXME: failure case? */
+    }
+
+    /*
+     * saveAuth()
+     * Callback for the 'Save' button in the Authentication section.
+     */
+    function saveAuth() {
+        var data = {'action': 'save'}
+        data['authentication-type'] = common.getDropdownValueById('authentication-type');
+
+        var result = null;
+        $.ajax({
+            type: 'POST',
+            url: '/rest/setup/auth',
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function(data) {
+                result = data;
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(this.url + ": " +
+                      jqXHR.status + " (" + errorThrown + ")");
+                sucess = false;
+            }
+        });
+        /* FIXME: failure case? */
+    }
+
+/*
+     * saveSSL()
+     * Callback for the 'Save' button in the SSL Certificate section.
+     */
+    function saveSSL() {
+        var data = {'action': 'save'}
+        data['enable-ssl'] = OnOff.getValueById('enable-ssl');
+
+        var result = null;
+        $.ajax({
+            type: 'POST',
+            url: '/rest/setup/ssl',
             data: data,
             dataType: 'json',
             async: false,
@@ -129,6 +213,9 @@ function ($, template, configure, common, OnOff)
 
     $().ready(function() {
         $('#save-mail-settings').bind('click', saveMailSettings);
+        $('#save-auth').bind('click', saveAuth);
+        $('#save-ssl').bind('click', saveSSL);
+        $('#save-admin').bind('click', saveAdmin);
         $('#cancel').bind('click', cancel);
         $('#test').bind('click', test);
         $('input[type="text"], input[type="password"]').on('paste', function() {

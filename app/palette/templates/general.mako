@@ -27,24 +27,24 @@
       <input type="radio" id="storage-local" name="storage-type" value="local" />
       <label for="storage-local">My Machine</label>
       <section id="s3" class="hidden">
-	<h3>Credentials</h3>
+        <h3>Credentials</h3>
         <label for="s3-access-key">Access Key ID</label>
-	<input type="text" id="s3-access-key" />
+        <input type="text" id="s3-access-key" />
         <label for="s3-secret-key">Secret Access Key</label>
         <input type="password" id="s3-secret-key" />
-	<label for="s3-url">S3 URL or Bucket Name</label>
+        <label for="s3-url">S3 URL or Bucket Name</label>
         <input type="text" id="s3-url" />
-	<div class="btn-bar">
-	  <button type="button" id="delete" class="btn btn-test okcancel"
+        <div class="btn-bar">
+          <button type="button" id="delete" class="btn btn-test okcancel"
                   data-text="Are you sure you want to delete the S3 credentials?">
             Test Connection
           </button>
 
-	  <button type="button" id="delete" class="btn btn-test okcancel"
+          <button type="button" id="delete" class="btn btn-test okcancel"
                   data-text="Are you sure you want to delete the S3 credentials?">
             Remove Credentials
           </button>
-	</div>
+        </div>
         <div>
           <button type="button" id="save" class="btn btn-primary disabled">
             Save
@@ -55,24 +55,24 @@
         </div>
       </section>
       <section id="gcs" class="hidden">
-	<h3>Credentials</h3>
+        <h3>Credentials</h3>
         <label for="gcs-access-key">Access Key ID</label>
-	<input type="text" id="gcs-access-key" />
+        <input type="text" id="gcs-access-key" />
         <label for="gcs-secret-key">Secret Access Key</label>
         <input type="password" id="gcs-secret-key" />
-	<label for="gcs-url">GCS URL or Bucket Name</label>
+        <label for="gcs-url">GCS URL or Bucket Name</label>
         <input type="text" id="gcs-url" />
-	<div class="btn-bar">
-	  <button type="button" id="delete" class="btn btn-test okcancel"
+        <div class="btn-bar">
+          <button type="button" id="delete" class="btn btn-test okcancel"
                   data-text="Are you sure you want to delete the GCS credentials?">
             Test Connection
           </button>
 
-	  <button type="button" id="delete" class="btn btn-test okcancel"
+          <button type="button" id="delete" class="btn btn-test okcancel"
                   data-text="Are you sure you want to delete the GCS credentials?">
             Remove Credentials
           </button>
-	</div>
+        </div>
         <div>
           <button type="button" id="save" class="btn btn-primary disabled">
             Save
@@ -90,13 +90,13 @@
     <section>
       <h2>Email Alerts</h2>
       <p class="slider-group">
-	<span>Send Alerts to Palette Admins
-	  <span id="alert-admins" class="onoffswitch yesno"></span>
-	</span>&nbsp;
-	<span>
-	  Send Alerts to Palette Publishers
-	  <span id="alert-publishers" class="onoffswitch yesno"></span>
-	</span>
+        <span>Send Alerts to Palette Admins
+          <span id="alert-admins" class="onoffswitch yesno"></span>
+        </span>&nbsp;
+        <span>
+          Send Alerts to Palette Publishers
+          <span id="alert-publishers" class="onoffswitch yesno"></span>
+        </span>
       </p>
     </section>
     <hr />
@@ -104,24 +104,24 @@
     <section>
       <h2>Backups</h2>
       <p class="slider-group">
-	    <span>Scheduled Backups
-	      <span id="scheduled-backups" class="onoffswitch yesno"></span>
-	    </span>
+        <span>Scheduled Backups
+          <span id="scheduled-backups" class="onoffswitch yesno"></span>
+        </span>
       </p>
       <h3>Retained Scheduled Backups</h3>
       <p>The number of scheduled Backups you want Palette to keep in storage</p>
       <p><span id="backup-auto-retain-count" class="btn-group"></span> Backups</p>
       <h3>Frequency and Time of Scheduled Backups</h3>
       <p>
-	<span>Run Backup Every
-	  <span id="scheduled-backup-period" class="btn-group"></span> Hours</span>
+        <span>Run Backup Every
+          <span id="scheduled-backup-period" class="btn-group"></span> Hours</span>
         &nbsp;<span>Starting at <span id="scheduled-backup-hour" class="btn-group"></span> : <span id="scheduled-backup-minute" class="btn-group"></span> : <span id="scheduled-backup-ampm" class="btn-group"></span>
       <span class="timezone"></span></span>
       </p>
       <h3>Retained User Requested Backups</h3>
       <p>The number of user requested Backups you want Palette to keep in storage</p>
       <p>
-	    <span id="backup-user-retain-count" class="btn-group"></span> Backups
+        <span id="backup-user-retain-count" class="btn-group"></span> Backups
       </p>
     </section>
     <hr />
@@ -129,9 +129,9 @@
     <section>
       <h2>Ziplogs</h2>
       <p class="slider-group">
-	    <span>Scheduled Ziplogs
-	      <span id="scheduled-ziplogs" class="onoffswitch yesno"></span>
-	    </span>
+        <span>Scheduled Ziplogs
+          <span id="scheduled-ziplogs" class="onoffswitch yesno"></span>
+        </span>
       </p>
       <h3>Retained Scheduled Ziplogs</h3>
       <p>The number of scheduled Ziplogs you want Palette to keep in storage</p>
@@ -141,7 +141,7 @@
       <h3>Retained User Requested Ziplogs</h3>
       <p>The number of user requested Ziplogs you want Palette to keep in storage</p>
       <p>
-	    <span id="ziplog-user-retain-count" class="btn-group"></span> Ziplogs
+        <span id="ziplog-user-retain-count" class="btn-group"></span> Ziplogs
       </p>
     </section>
     <hr />
@@ -149,9 +149,9 @@
     <section>
       <h2>Workbook Archive</h2>
       <p class="slider-group">
-	    <span>Archive
-	      <span id="archive" class="onoffswitch yesno"></span>
-	    </span>
+        <span>Archive
+          <span id="archive" class="onoffswitch yesno"></span>
+        </span>
       </p>
       <div class="row">
         <div class="col-xs-6">
