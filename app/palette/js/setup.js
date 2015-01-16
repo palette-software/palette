@@ -3,6 +3,7 @@ require(['jquery', 'template', 'configure', 'common',
 function ($, template, configure, common, Dropdown, OnOff)
 {
 
+    var urlData = null;
     var authData = null;
 
     /*
@@ -152,6 +153,31 @@ function ($, template, configure, common, Dropdown, OnOff)
     }
 
     /*
+     * saveURL()
+     * Callback for the 'Save' button in the Server URL section.
+     */
+    function saveURL() {
+        var data = {'action': 'save'}
+        data['server-url'] = $('#server-url').val();
+
+        $.ajax({
+            type: 'POST',
+            url: '/rest/setup/url',
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function(data) {
+                urlData = data;
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(this.url + ": " +
+                      jqXHR.status + " (" + errorThrown + ")");
+            }
+        });
+    }
+
+    /*
      * cancel()
      * Callback for the 'Cancel' button.
      */
@@ -239,6 +265,7 @@ function ($, template, configure, common, Dropdown, OnOff)
 
     /* deprecated */
     $().ready(function() {
+        $('#save-url').bind('click', saveURL);
         $('#save-mail-settings').bind('click', saveMailSettings);
         $('#save-ssl').bind('click', saveSSL);
         $('#save-admin').bind('click', saveAdmin);

@@ -227,7 +227,7 @@ class SetupApplication(Router):
         self.add_route(r'/ssl\Z|/SSL\Z', SetupSSLApplication())
         self.add_route(r'/mail\Z', SetupMailApplication())
         self.add_route(r'/mail/test\Z', SetupMailTestApplication())
-        self.add_route(r'/admin\Z', SetupURLApplication())
+        self.add_route(r'/url\Z', SetupURLApplication())
 
 
 class SetupTestApp(GenericWSGI):
