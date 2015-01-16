@@ -14,6 +14,7 @@ from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
 from event import EventEntry
+from general import SystemConfig
 from profile import UserProfile
 from util import DATEFMT, UNDEFINED, utc2local
 from mixin import BaseMixin, BaseDictMixin
@@ -330,7 +331,7 @@ class EventControlManager(Manager):
         data['publisher_visiblity'] = event_entry.publisher_visibility
 
         # set server-url(s)
-        data['server_url'] = self.server.system.get('server-url',
+        data['server_url'] = self.server.system.get(SystemConfig.SERVER_URL,
                                                     default='localhost')
 
         url = self.server.public_url()
