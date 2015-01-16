@@ -1,6 +1,10 @@
-require(['jquery', 'template', 'configure', 'common', 'OnOff', 'bootstrap'],
-function ($, template, configure, common, OnOff)
-{    
+require(['jquery', 'template', 'configure', 'common',
+         'Dropdown', 'OnOff', 'bootstrap'],
+function ($, template, configure, common, Dropdown, OnOff)
+{
+
+    var authData = null;
+
     /*
      * clear()
      * Empty all input fields.
@@ -66,14 +70,42 @@ function ($, template, configure, common, OnOff)
     }
 
     /*
+     * gatherAuthData()
+     * Return the current settings in the 'Authentication' section as a dict.
+     */
+    function gatherAuthData() {
+        var data = {};
+
+        var id = 'authentication-type';
+        data[id] = Dropdown.getValueById(id);
+
+        return data;
+    }
+
+    /*
+     * validateAuthData()
+     * Return frue if the 'Authentication' section has changed,
+     *  and return false otherwise.
+     */
+    function validateAuthData()
+    {
+        var data = gatherAuthData();
+        if (data['authetication-type'] != authData['authentication-type']) {
+            return false;
+        }
+        return true;
+    }
+
+    /*
      * saveAuth()
      * Callback for the 'Save' button in the Authentication section.
      */
     function saveAuth() {
         var data = {'action': 'save'}
-        data['authentication-type'] = common.getDropdownValueById('authentication-type');
 
-        var result = null;
+        var id = 'authentication-type';
+        data[id] = Dropdown.getValueById(id);
+
         $.ajax({
             type: 'POST',
             url: '/rest/setup/auth',
@@ -82,18 +114,16 @@ function ($, template, configure, common, OnOff)
             async: false,
 
             success: function(data) {
-                result = data;
+                authData = data;
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 alert(this.url + ": " +
                       jqXHR.status + " (" + errorThrown + ")");
-                sucess = false;
             }
         });
-        /* FIXME: failure case? */
     }
 
-/*
+    /*
      * saveSSL()
      * Callback for the 'Save' button in the SSL Certificate section.
      */
@@ -207,13 +237,9 @@ function ($, template, configure, common, OnOff)
         }
     }
 
-    /* start */
-    var dropdown_template = $('#dropdown-template').html();
-    template.parse(dropdown_template);
-
+    /* deprecated */
     $().ready(function() {
         $('#save-mail-settings').bind('click', saveMailSettings);
-        $('#save-auth').bind('click', saveAuth);
         $('#save-ssl').bind('click', saveSSL);
         $('#save-admin').bind('click', saveAdmin);
         $('#cancel').bind('click', cancel);
@@ -229,18 +255,28 @@ function ($, template, configure, common, OnOff)
         });
     });
 
+    /*
+     * setup()
+     * Enable everything after the REST handler returns.
+     */
+    function setup(data) {
+        Dropdown.setupAll(data);
+        OnOff.setup();
+
+        $('#save-auth').off('click');
+        $('#save-auth').bind('click', saveAuth);
+        //$('#cancel-auth').bind('click', cancelAuth);
+        authData = gatherAuthData();
+
+        validate();
+    }
+
+    /* fire. */
     $.ajax({
         url: '/rest/setup',
         success: function(data) {
             $().ready(function() {
-                for (var i in data['config']) {
-                    var option = data['config'][i];
-                    var rendered = template.render(dropdown_template, option);
-                    $('#'+option['name']).html(rendered);
-                }
-                OnOff.setup();
-                common.setupDropdowns();
-                validate();
+                setup(data);
             });
         },
         error: common.ajaxError,

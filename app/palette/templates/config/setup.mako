@@ -19,11 +19,11 @@
       <p>This is the domain name url that you will type into your browser to view your Palette Server</p>
       <input type="text" id="server-url" />
       <div>
-        <button type="button" id="save-auth" class="btn btn-primary">
-	  Save
+        <button type="button" id="save-url" class="btn btn-primary">
+          Save
         </button>
-        <button type="button" id="cancel-auth" class="btn btn-primary">
-	  Cancel
+        <button type="button" id="cancel-url" class="btn btn-primary">
+          Cancel
         </button>
       </div>
     </section>
@@ -39,10 +39,10 @@
       <!--<label for="confirm-password">&nbsp;</label>-->
       <div>
         <button type="button" id="save-admin" class="btn btn-primary">
-	  Save
+          Save
         </button>
         <button type="button" id="cancel" class="btn btn-primary">
-	  Cancel
+          Cancel
         </button>
       </div>
     </section>
@@ -54,10 +54,10 @@
       <div>
         <button type="button" id="save-mail-settings"
                 class="btn btn-primary disabled">
-	  Save
+          Save
         </button>
         <button type="button" id="cancel" class="btn btn-primary">
-	  Cancel
+          Cancel
         </button>
       </div>
     </section>
@@ -72,21 +72,21 @@
       <h3>SSL Certificate File</h3>
       <p>Must be a valid PEM-encoded x509 certificate with the extension .crt</p>
       <input type="file"
-	     id="ssl-certificate-file" name="ssl-certificate-file" />
+             id="ssl-certificate-file" name="ssl-certificate-file" />
       <h3>SSL Certificate Key File</h3>
       <p>Must be a valid RSA or DSA key that is not password protected with the file extension .key</p>
       <input type="file" id="ssl-certificate-key-file"
-	     name="ssl-certificate-key-file" />
+             name="ssl-certificate-key-file" />
       <h3>SSL Certificate Chain File (Optional)</h3>
       <p>Some certificate providers issue two certificate files.  The second certificate is a chain file, which is a concatenation of all the certificates that from the certificate chain for the server certificate.  All certificates in the file must be x509 PEM-encoded and the file must have a .crt extension (not .pem)</p>
       <input type="file" id="ssl-certificate-chain-file"
-	     name="ssl-certificate-chain-file" />
+             name="ssl-certificate-chain-file" />
       <div>
         <button type="button" id="save-ssl" class="btn btn-primary">
-	  Save
+          Save
         </button>
         <button type="button" id="cancel-ssl" class="btn btn-primary">
-	  Cancel
+          Cancel
         </button>
       </div>
     </section>
@@ -98,10 +98,10 @@
       </p>
       <div>
         <button type="button" id="save-auth" class="btn btn-primary">
-	  Save
+          Save
         </button>
         <button type="button" id="cancel-auth" class="btn btn-primary">
-	  Cancel
+          Cancel
         </button>
       </div>
     </section>
