@@ -91,5 +91,10 @@ function($, template) {
         OnOff.bind2('.onoffswitch', callback); // FIXME
     }
 
+    OnOff.getValueById = function(id)
+    {
+        return $('#'+id+' .onoffswitch-checkbox').prop("checked");
+    }
+
     return OnOff;
 });

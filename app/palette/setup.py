@@ -1,3 +1,4 @@
+import sys
 from webob import exc
 
 from akiri.framework.api import Page
@@ -9,10 +10,16 @@ from collections import OrderedDict
 
 from controller.profile import UserProfile, Role
 from controller.general import SystemConfig
+from controller.util import extend
 
 from .page import PalettePage
-from .option import BaseStaticOption
-from .rest import PaletteRESTApplication
+from .option import DictOption
+from .rest import PaletteRESTApplication, required_parameters
+
+# FIXME: add required_role to all the GET/POST handlers.
+
+def dump(req):
+    print >> sys.stderr, str(req)
 
 class SetupPage(Page):
     TEMPLATE = "setup.mako"
@@ -34,42 +41,80 @@ def make_setup_config(global_conf):
     return SetupConfigPage(global_conf)
 
 
-class MailServerType(BaseStaticOption):
-
+class MailServerType(DictOption):
+    """Representation of the 'Mail Server Type' dropdown."""
     NAME = 'mail-server-type'
-
     DIRECT = 1
     RELAY = 2
     NONE = 3
 
-    @classmethod
-    def items(cls):
-        return OrderedDict({cls.DIRECT: 'Direct SMTP Mail Server (Default)',
-                            cls.RELAY: 'Relay SMTP Mail Server Settings',
-                            cls.NONE: 'None'})
+    def __init__(self, valueid):
+        options = OrderedDict({})
+        options[self.DIRECT] = 'Direct SMTP Mail Server (Default)'
+        options[self.RELAY] = 'Relay SMTP Mail Server Settings'
+        options[self.NONE] = 'None'
+        super(MailServerType, self).__init__(self.NAME, valueid, options)
+
+
+class AuthType(DictOption):
+    """Representation of the 'Authentication' dropdown."""
+    NAME = 'authentication-type'
+    TABLEAU = 1
+    ACTIVE_DIRECTORY = 2
+    LOCAL = 3
+
+    def __init__(self, valueid):
+        options = OrderedDict({})
+        options[self.TABLEAU] = "Tableau Server's Configured Authentication"
+        options[self.ACTIVE_DIRECTORY] = "Active Directory"
+        options[self.LOCAL] = "Tableau Local Authentication"
+        super(AuthType, self).__init__(self.NAME, valueid, options)
+
 
 class BaseSetupApplication(PaletteRESTApplication):
     pass
 
 
-class _SetupApplication(BaseSetupApplication):
+class SetupURLApplication(BaseSetupApplication):
+    """Handler for the 'SERVER URL' section."""
 
     def service_GET(self, req):
         # pylint: disable=unused-argument
-        config = [MailServerType.config(MailServerType.DIRECT)]
-        data = {'config': config}
-        return data
+        return {'server-url': 'foo.example.com'} # FIXME
+
+    @required_parameters('server-url')
+    def service_POST(self, req):
+        dump(req)
+        url = req.params_get('server-url')
+        return {'server-url': url}
 
 
-class MailApplication(JSONProxy):
+class SetupAdminApplication(BaseSetupApplication):
+    """Handler for the 'AUTHENTICATION' section."""
+
+    PASSWD = '********'
+
+    def service_GET(self, req):
+        # pylint: disable=unused-argument
+        # FIXME: return self.PASSWD if the password is set, '' otherwise.
+        return {'password': self.PASSWD}
+
+    @required_parameters('password')
+    def service_POST(self, req):
+        dump(req)
+        passwd = req.params_get('password')
+        # FIXME: save value
+        passwd = self.PASSWD
+        return {'password': passwd}
+
+
+class SetupMailApplication(JSONProxy):
 
     def __init__(self):
-        super(MailApplication, self).__init__('http://localhost:9091', \
-                                    allowed_request_methods=('GET', 'POST'))
+        super(SetupMailApplication, self).__init__('http://localhost:9091', \
+                                    allowed_request_methods=('POST'))
 
     def postprocess(self, req, data):
-        data['proxy'] = 'Added by ' + __file__
-        print 'data:', data
         if 'error' in data:
             return data
 
@@ -90,8 +135,81 @@ class MailApplication(JSONProxy):
             req.system.save(SystemConfig.MAIL_PASSWORD, "")
         return data
 
+    def service_GET(self, req):
+        # pylint: disable=unused-argument
+        config = [MailServerType(MailServerType.DIRECT).default()] # FIXME
+        data = {'config': config}
+        # FIXME: return configuration from the system table.
+        return data
 
-class MailTestApplication(BaseSetupApplication):
+    def service(self, req):
+        if req.method == 'GET':
+            return self.service_GET(req)
+        elif req.method == 'POST':
+            return super(SetupMailApplication, self).service(req)
+        else:
+            raise exc.HTTPMethodNotAllowed()
+
+
+class SetupSSLApplication(BaseSetupApplication):
+    """Handler for the 'SERVER SSL CERTIFICATE' section."""
+
+    def service_GET(self, req):
+        # pylint: disable=unused-argument
+        data = {}
+        data['enable-ssl'] = True # FIXME
+        return data
+
+    def service_POST(self, req):
+        dump(req)
+        enable_ssl = req.params_getbool('enable-ssl')
+        if enable_ssl == None:
+            raise exc.HTTPBadRequest()
+        # FIXME: save value
+        # FIXME: save cert, cert key, cert chain
+        return {'enable-ssl': enable_ssl}
+
+
+class SetupAuthApplication(BaseSetupApplication):
+    """Handler for the 'AUTHENTICATION' section."""
+
+    def service_GET(self, req):
+        # pylint: disable=unused-argument
+        config = [AuthType(AuthType.TABLEAU).default()] # FIXME
+        data = {'config': config}
+        return data
+
+    def service_POST(self, req):
+        dump(req)
+        authtype = req.params_getint('authentication-type')
+        if authtype == None:
+            raise exc.HTTPBadRequest()
+        # FIXME: save value
+        return {'authentication-type': authtype}
+
+
+class _SetupApplication(BaseSetupApplication):
+    """Handler for initial page GET requests."""
+
+    def __init__(self):
+        super(_SetupApplication, self).__init__()
+        self.admin = SetupAdminApplication()
+        self.mail = SetupMailApplication()
+        self.ssl = SetupSSLApplication()
+        self.auth = SetupAuthApplication()
+        self.url = SetupURLApplication()
+
+    def service_GET(self, req):
+        data = {}
+        extend(data, self.admin.service_GET(req))
+        extend(data, self.mail.service_GET(req))
+        extend(data, self.ssl.service_GET(req))
+        extend(data, self.auth.service_GET(req))
+        extend(data, self.url.service_GET(req))
+        return data
+
+
+class SetupMailTestApplication(BaseSetupApplication):
     pass
 
 
@@ -104,8 +222,12 @@ class SetupApplication(Router):
     def __init__(self):
         super(SetupApplication, self).__init__()
         self.add_route(r'/\Z', _SetupApplication())
-        self.add_route(r'/mail\Z', MailApplication())
-        self.add_route(r'/mail/test\Z', MailTestApplication())
+        self.add_route(r'/admin\Z', SetupAdminApplication())
+        self.add_route(r'/auth\Z|/authenticate\Z', SetupAuthApplication())
+        self.add_route(r'/ssl\Z|/SSL\Z', SetupSSLApplication())
+        self.add_route(r'/mail\Z', SetupMailApplication())
+        self.add_route(r'/mail/test\Z', SetupMailTestApplication())
+        self.add_route(r'/admin\Z', SetupURLApplication())
 
 
 class SetupTestApp(GenericWSGI):

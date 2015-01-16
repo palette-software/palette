@@ -1,4 +1,5 @@
 
+# deprecated
 class StaticOptionType(type):
     def __getattr__(cls, name):
         if name == 'ITEMS':
@@ -10,6 +11,7 @@ class StaticOptionType(type):
             return options
         raise AttributeError(name)
 
+# deprecated
 class BaseStaticOption(object):
     __metaclass__ = StaticOptionType
 
@@ -58,4 +60,22 @@ class ListOption(object):
         return {'name': self.name,
                 'id': self.valueid,
                 'value': str(self.valueid),
+                'options': options}
+
+class DictOption(object):
+    """Generates options for an (ordered) dict."""
+    def __init__(self, name, valueid, valueid_dict):
+        assert valueid in valueid_dict
+        self.name = name
+        self.valueid = valueid
+        self.valueid_dict = valueid_dict
+
+    def default(self):
+        # This name matches what the JSON encoder expects
+        options = []
+        for key in self.valueid_dict:
+            options.append({'id': key, 'item': str(self.valueid_dict[key])})
+        return {'name': self.name,
+                'id': self.valueid,
+                'value': str(self.valueid_dict[self.valueid]),
                 'options': options}

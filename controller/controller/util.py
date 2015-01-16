@@ -165,3 +165,19 @@ def upgrade_rwlock(f):
         finally:
             self.server.upgrade_rwlock.read_release()
     return realf
+
+def extend(dict1, dict2):
+    """
+    Add the contents of dict2 to dict1 and return the result.
+    The name is the same as the jQuery function with the same purpose.
+    """
+    for key in dict2:
+        value2 = dict2[key]
+        if key in dict1:
+            if hasattr(value2, '__getitem__'):
+                dict1[key] += value2
+            else:
+                raise KeyError("'" + key + "' exists.")
+        else:
+            dict1[key] = value2
+    return dict1

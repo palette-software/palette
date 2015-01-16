@@ -35,6 +35,12 @@ p {
     line-height: 20px;
     font-size: 16px;
 }
+/* FIXME: remove */
+input[type="file"] {
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
+    color: #5F6670;
+    margin-bottom: 35px;
+}
 a img {
     border: 0 !important;
     outline: 0;
@@ -1547,6 +1553,10 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
     background-color: #EEEEEE; color: #999999;
     text-align: right;
 }
+.slider-group {
+    height: 26px;
+    margin-bottom: 25px;
+}
 .slider-group > span {
     font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
     line-height: 26px;
@@ -1625,11 +1635,9 @@ section.run-as-user {
 .setup-page {
     max-width: 900px;
 }
-.setup-page .btn-group, .setup-page .onoffswitch {
-    margin: 5px 0 15px 0;
-}
 .setup-page .btn-group {
     width: 100%;
+    margin-bottom: 15px;
 }
 .setup-page #smtp-port {
     width: 64px;
@@ -1655,3 +1663,7 @@ label[for*="s3-"], label[for*="gcs-"] {
 label + input[type="text"], label + input[type="password"] {
     margin-top: 0;
 }
+#enable-tls {
+    margin: 5px 0 15px 0;
+}
+
