@@ -35,21 +35,21 @@
         <label for="s3-url">S3 URL or Bucket Name</label>
         <input type="text" id="s3-url" />
         <div class="btn-bar">
-          <button type="button" id="delete" class="btn btn-test okcancel"
+          <button type="button" id="test-s3" class="btn btn-test okcancel"
                   data-text="Are you sure you want to delete the S3 credentials?">
             Test Connection
           </button>
 
-          <button type="button" id="delete" class="btn btn-test okcancel"
+          <button type="button" id="remove-s3" class="btn btn-test okcancel"
                   data-text="Are you sure you want to delete the S3 credentials?">
             Remove Credentials
           </button>
         </div>
         <div>
-          <button type="button" id="save" class="btn btn-primary disabled">
+          <button type="button" id="save-s3" class="btn btn-primary">
             Save
           </button>
-          <button type="button" id="cancel" class="btn btn-primary">
+          <button type="button" id="cancel-s3" class="btn btn-primary">
             Cancel
           </button>
         </div>
@@ -63,26 +63,35 @@
         <label for="gcs-url">GCS URL or Bucket Name</label>
         <input type="text" id="gcs-url" />
         <div class="btn-bar">
-          <button type="button" id="delete" class="btn btn-test okcancel"
+          <button type="button" id="test-gcs" class="btn btn-test okcancel"
                   data-text="Are you sure you want to delete the GCS credentials?">
             Test Connection
           </button>
 
-          <button type="button" id="delete" class="btn btn-test okcancel"
+          <button type="button" id="remove-gcs" class="btn btn-test okcancel"
                   data-text="Are you sure you want to delete the GCS credentials?">
             Remove Credentials
           </button>
         </div>
         <div>
-          <button type="button" id="save" class="btn btn-primary disabled">
+          <button type="button" id="save-gcs" class="btn btn-primary">
             Save
           </button>
-          <button type="button" id="cancel" class="btn btn-primary">
+          <button type="button" id="cancel-gcs" class="btn btn-primary">
             Cancel
           </button>
         </div>
       </section>
       <section id="local">
+	<span class="btn-group" id="storage-destination"></span>
+	<div>
+          <button type="button" id="save-local" class="btn btn-primary">
+            Save
+          </button>
+          <button type="button" id="cancel-local" class="btn btn-primary">
+            Cancel
+          </button>
+        </div>
       </section>
     </section>
     <hr />

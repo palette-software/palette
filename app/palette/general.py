@@ -19,6 +19,83 @@ from .s3 import S3Application
 from .gcs import GCSApplication
 from .workbooks import CredentialMixin
 
+class GeneralS3Application(PaletteRESTApplication):
+    """Handler for the 'STORAGE LOCATION' S3 section."""
+    def service_GET(self, req):
+        if 'action' in req.environ:
+            raise exc.HTTPNotFound()
+        return {}
+
+    # FIXME: required_parameters
+    def save(self, req):
+        return {} # FIXME
+
+    # FIXME: required_parameters
+    def test(self, req):
+        return {'status': 'OK'} # FIXME
+
+    def remove(self, req):
+        return {'status': 'OK'} # FIXME
+
+    @required_parameters('action')
+    def service_POST(self, req):
+        action = req.params_get('action')
+        if action == 'save':
+            return self.save(req)
+        if action == 'test':
+            return self.test(req)
+        if action == 'remove':
+            return self.remove(req)
+        raise exc.HTTPBadRequest(req)
+
+
+class GeneralGCSApplication(PaletteRESTApplication):
+    """Handler for the 'STORAGE LOCATION' GCS section."""
+    def service_GET(self, req):
+        return {}
+    def service_POST(self, req):
+        # FIXME: same as S3
+        return {}
+
+
+class GeneralLocalApplication(PaletteRESTApplication):
+    """Handler for the 'STORAGE LOCATION' My Machine section."""
+    def service_GET(self, req):
+        return {}
+    def service_POST(self, req):
+        return {}
+
+
+class _GeneralStorageApplication(PaletteRESTApplication):
+    """Overall GET handler for /rest/general/storage"""
+    def __init__(self):
+        super(_GeneralStorageApplication, self).__init__()
+        self.s3 = GeneralS3Application()
+        self.gcs = GeneralGCSApplication()
+        self.local = GeneralLocalApplication()
+
+    def service_GET(self, req):
+        data = {}
+        data['storage-type'] = 'none' # FIXME: none, s3, gcs, local
+        # FIXME: return data based on type return values
+        # FIXME: local - needs options for 'storage-destination'.
+        # FIXME: s3/gcs - access-key, secret-key, url
+        # extend(data, self.s3.service_GET(req))
+        # extend(data, self.gcs.service_GET(req))
+        # extend(data, self.local.service_GET(req))
+        return data
+
+
+class GeneralStorageApplication(Router):
+    """Main handler/router for 'STORAGE LOCATION' section."""
+    def __init__(self):
+        super(GeneralStorageApplication, self).__init__()
+        self.add_route(r'/\Z', _GeneralStorageApplication())
+        self.add_route(r'/s3(/(?P<action>[^\s]+))?\Z', GeneralS3Application())
+        self.add_route(r'/gcs(/(?P<action>[^\s]+))?\Z', GeneralGCSApplication())
+        self.add_route(r'/local\Z', GeneralLocalApplication())
+
+
 class GeneralBackupApplication(PaletteRESTApplication):
     """Handler for the 'BACKUPS' section."""
     SCHEDULED_BACKUP_PERIOD_RANGE = [1, 2, 3, 4, 6, 8, 12, 24]
@@ -516,6 +593,7 @@ class _GeneralApplication(PaletteRESTApplication):
         self.email_alert = EmailAlertApplication()
         self.ziplog = GeneralZiplogApplication()
         self.archive = GeneralArchiveApplication()
+        self.storage = _GeneralStorageApplication() # Don't use the Router
 
     def service_GET(self, req):
         data = {}
@@ -523,6 +601,7 @@ class _GeneralApplication(PaletteRESTApplication):
         extend(data, self.email_alert.service_GET(req))
         extend(data, self.ziplog.service_GET(req))
         extend(data, self.archive.service_GET(req))
+        extend(data, self.storage.service_GET(req))
         return data
 
 
@@ -534,6 +613,8 @@ class GeneralApplication(Router):
         self.add_route(r'/backup\Z', GeneralBackupApplication())
         self.add_route(r'/email/alerts?\Z', EmailAlertApplication())
         self.add_route(r'/ziplog\Z', GeneralZiplogApplication())
+        self.add_route(r'/storage\Z|/storage/', GeneralStorageApplication())
+
 
 class GeneralPage(PalettePage, CredentialMixin):
     TEMPLATE = "general.mako"
@@ -555,6 +636,7 @@ class GeneralPage(PalettePage, CredentialMixin):
         else:
             req.secondary_user = req.secondary_pw = ''
         return super(GeneralPage, self).render(req, obj=obj)
+
 
 def make_general(global_conf, aes_key_file=None):
     # FIXME: should be actually global.
