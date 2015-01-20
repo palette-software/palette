@@ -7,12 +7,173 @@ function ($, template, configure, common, Dropdown, OnOff)
     var authData = null;
 
     /*
+     * gatherURLData()
+     */
+    function gatherURLData()
+    {
+        return {'server-url': $('#server-url').val()}
+    }
+
+    /*
+     * maySaveURL()
+     * Return true if the 'Server URL' section has changed and is valid.
+     */
+    function maySaveURL(data)
+    {
+        var server_url = data['server-url'];
+        if (common.validURL(server_url)
+            && (server_url != urlData['server-url']))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /*
+     * mayCancelURL()
+     * Return true if 'Server URL' section has changed.
+     */
+    function mayCancelURL(data)
+    {
+        var server_url = data['server-url'];
+        if (server_url != urlData['server-url'])
+        {
+            return true;
+        }
+        return false;
+    }
+
+    /*
+     * validateURL()
+     * Enable/disable the Save and Cancel buttons in the 'Server URL' section.
+     */
+    function validateURL()
+    {
+        var data = gatherURLData();
+        if (maySaveURL(data)) {
+            $('#save-url').removeClass('disabled');
+        } else {
+            $('#save-url').addClass('disabled');
+        }
+        if (mayCancelURL(data)) {
+            $('#cancel-url').removeClass('disabled');
+        } else {
+            $('#cancel-url').addClass('disabled');
+        }
+    }
+
+    /*
+     * saveURL()
+     * Callback for the 'Save' button in the Server URL section.
+     */
+    function saveURL() {
+        $('#save-url, #cancel-url').addClass('disabled');
+        var data = gatherURLData();
+        data['action'] = 'save';
+
+        $.ajax({
+            type: 'POST',
+            url: '/rest/setup/url',
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function(data) {
+                urlData = data;
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(this.url + ": " +
+                      jqXHR.status + " (" + errorThrown + ")");
+            }
+        });
+
+        validate();
+    }
+
+    /*
+     * cancelURL()
+     * Callback for the 'Cancel' button in the Server URL section.
+     */
+    function cancelURL()
+    {
+        $('#server-url').val(urlData['server-url']);
+        $('#save-url, #cancel-url').addClass('disabled');
+    }
+
+    /*
+     * gatherAdminData()
+     */
+    function gatherAdminData()
+    {
+        return {
+            'password': $('#password').val(),
+            'confirm-password': $('#confirm-password').val(),
+        }
+    }
+
+    /*
+     * maySaveURL()
+     * Return true if the 'Palette Admin' section has changed and is valid.
+     */
+    function maySaveAdmin(data)
+    {
+        var password = data['password'];
+        if (common.validPassword(password)
+            && (password == data['confirm-password']))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /*
+     * mayCancelAdmin()
+     * Return true if 'Palette Admin' section has changed.
+     */
+    function mayCancelAdmin(data)
+    {
+        var password = data['password'];
+        if (data['password'].length > 0)
+        {
+            return true;
+        }
+        if (data['confirm-password'].length > 0)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    /*
+     * validateAdmin()
+     * Enable/disable the Save and Cancel buttons in the 'Admin' section.
+     */
+    function validateAdmin()
+    {
+        var data = gatherAdminData();
+        if (maySaveAdmin(data)) {
+            $('#save-admin').removeClass('disabled');
+        } else {
+            $('#save-admin').addClass('disabled');
+        }
+        if (mayCancelAdmin(data)) {
+            $('#cancel-admin').removeClass('disabled');
+        } else {
+            $('#cancel-admin').addClass('disabled');
+        }
+    }
+
+    /*
      * saveAdmin()
      * Callback for the 'Save' button in the 'Admin Password' section.
      */
     function saveAdmin() {
-        var data = {'action': 'save'}
-        data['password'] = $('#password').val();
+        $('#save-admin, #cancel-admin').addClass('disabled');
+        data = gatherAdminData();
+        data['action'] = 'save';
+        delete data['confirm-password'];
 
         var result = null;
         $.ajax({
@@ -28,10 +189,20 @@ function ($, template, configure, common, Dropdown, OnOff)
             error: function (jqXHR, textStatus, errorThrown) {
                 alert(this.url + ": " +
                       jqXHR.status + " (" + errorThrown + ")");
-                sucess = false;
             }
         });
-        /* FIXME: failure case? */
+        validate();
+    }
+
+    /*
+     * cancelAdmin()
+     * Callback for the 'Cancel' button in the 'Admin Password' section.
+     */
+    function cancelAdmin()
+    {
+        $('#password').val('');
+        $('#confirm-password').val('');
+        $('#save-admin, #cancel-admin').addClass('disabled');
     }
 
     /*
@@ -145,101 +316,6 @@ function ($, template, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * gatherURLData()
-     */
-    function gatherURLData()
-    {
-        return {'server-url': $('#server-url').val()}
-    }
-
-    /*
-     * maySaveURL()
-     * Return true if the 'Server URL' section has changed and is valid.
-     */
-    function maySaveURL(data)
-    {
-        var server_url = data['server-url'];
-        if (common.validURL(server_url)
-            && (server_url != urlData['server-url']))
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    /*
-     * mayCancelURL()
-     * Return true if 'Server URL' section has changed.
-     */
-    function mayCancelURL(data)
-    {
-        var server_url = data['server-url'];
-        if (server_url != urlData['server-url'])
-        {
-            return true;
-        }
-        return false;
-    }
-
-    /*
-     * validateURL()
-     * Enable/disable the Save and Cancel buttons in the 'Server URL' section.
-     */
-    function validateURL()
-    {
-        var data = gatherURLData();
-        if (maySaveURL(data)) {
-            $('#save-url').removeClass('disabled');
-        } else {
-            $('#save-url').addClass('disabled');
-        }
-        if (mayCancelURL(data)) {
-            $('#cancel-url').removeClass('disabled');
-        } else {
-            $('#cancel-url').addClass('disabled');
-        }
-    }
-
-    /*
-     * saveURL()
-     * Callback for the 'Save' button in the Server URL section.
-     */
-    function saveURL() {
-        $('#save-url, #cancel-url').addClass('disabled');
-        var data = gatherURLData();
-        data['action'] = 'save';
-
-        $.ajax({
-            type: 'POST',
-            url: '/rest/setup/url',
-            data: data,
-            dataType: 'json',
-            async: false,
-
-            success: function(data) {
-                urlData = data;
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                alert(this.url + ": " +
-                      jqXHR.status + " (" + errorThrown + ")");
-            }
-        });
-
-        validate();
-    }
-
-    /*
-     * cancelURL()
-     * Callback for the 'Cancel' button in the Server URL section.
-     */
-    function cancelURL()
-    {
-        $('#server-url').val(urlData['server-url']);
-        $('#save-url, #cancel-url').addClass('disabled');
-    }
-
-    /*
      * cancel()
      * Callback for the 'Cancel' button.
      */
@@ -325,6 +401,7 @@ function ($, template, configure, common, Dropdown, OnOff)
         }
 
         validateURL();
+        validateAdmin();
     }
 
     /* deprecated */
@@ -363,6 +440,9 @@ function ($, template, configure, common, Dropdown, OnOff)
         $('#save-url').bind('click', saveURL);
         $('#cancel-url').bind('click', cancelURL);
         urlData = gatherURLData();
+
+        $('#save-admin').bind('click', saveAdmin);
+        $('#cancel-admin').bind('click', cancelAdmin);
 
         /* FIXME: need startMonitor() */
         validate();

@@ -38,10 +38,10 @@
       <input type="password" id="confirm-password" />
       <!--<label for="confirm-password">&nbsp;</label>-->
       <div>
-        <button type="button" id="save-admin" class="btn btn-primary">
+        <button type="button" id="save-admin" class="btn btn-primary disabled">
           Save
         </button>
-        <button type="button" id="cancel" class="btn btn-primary">
+        <button type="button" id="cancel-admin" class="btn btn-primary disabled">
           Cancel
         </button>
       </div>
