@@ -19,10 +19,10 @@
       <p>This is the domain name url that you will type into your browser to view your Palette Server</p>
       <input type="text" id="server-url" />
       <div>
-        <button type="button" id="save-url" class="btn btn-primary">
+        <button type="button" id="save-url" class="btn btn-primary disabled">
           Save
         </button>
-        <button type="button" id="cancel-url" class="btn btn-primary">
+        <button type="button" id="cancel-url" class="btn btn-primary disabled">
           Cancel
         </button>
       </div>

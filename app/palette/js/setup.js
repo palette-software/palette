@@ -7,14 +7,6 @@ function ($, template, configure, common, Dropdown, OnOff)
     var authData = null;
 
     /*
-     * clear()
-     * Empty all input fields.
-     */
-    function clear() {
-        $('input[type="text"], input[type="password"').val(null);
-    }
-
-    /*
      * saveAdmin()
      * Callback for the 'Save' button in the 'Admin Password' section.
      */
@@ -85,7 +77,7 @@ function ($, template, configure, common, Dropdown, OnOff)
 
     /*
      * validateAuthData()
-     * Return frue if the 'Authentication' section has changed,
+     * Return true if the 'Authentication' section has changed,
      *  and return false otherwise.
      */
     function validateAuthData()
@@ -153,12 +145,70 @@ function ($, template, configure, common, Dropdown, OnOff)
     }
 
     /*
+     * gatherURLData()
+     */
+    function gatherURLData()
+    {
+        return {'server-url': $('#server-url').val()}
+    }
+
+    /*
+     * maySaveURL()
+     * Return true if the 'Server URL' section has changed and is valid.
+     */
+    function maySaveURL(data)
+    {
+        var server_url = data['server-url'];
+        if (common.validURL(server_url)
+            && (server_url != urlData['server-url']))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /*
+     * mayCancelURL()
+     * Return true if 'Server URL' section has changed.
+     */
+    function mayCancelURL(data)
+    {
+        var server_url = data['server-url'];
+        if (server_url != urlData['server-url'])
+        {
+            return true;
+        }
+        return false;
+    }
+
+    /*
+     * validateURL()
+     * Enable/disable the Save and Cancel buttons in the 'Server URL' section.
+     */
+    function validateURL()
+    {
+        var data = gatherURLData();
+        if (maySaveURL(data)) {
+            $('#save-url').removeClass('disabled');
+        } else {
+            $('#save-url').addClass('disabled');
+        }
+        if (mayCancelURL(data)) {
+            $('#cancel-url').removeClass('disabled');
+        } else {
+            $('#cancel-url').addClass('disabled');
+        }
+    }
+
+    /*
      * saveURL()
      * Callback for the 'Save' button in the Server URL section.
      */
     function saveURL() {
-        var data = {'action': 'save'}
-        data['server-url'] = $('#server-url').val();
+        $('#save-url, #cancel-url').addClass('disabled');
+        var data = gatherURLData();
+        data['action'] = 'save';
 
         $.ajax({
             type: 'POST',
@@ -175,6 +225,18 @@ function ($, template, configure, common, Dropdown, OnOff)
                       jqXHR.status + " (" + errorThrown + ")");
             }
         });
+
+        validate();
+    }
+
+    /*
+     * cancelURL()
+     * Callback for the 'Cancel' button in the Server URL section.
+     */
+    function cancelURL()
+    {
+        $('#server-url').val(urlData['server-url']);
+        $('#save-url, #cancel-url').addClass('disabled');
     }
 
     /*
@@ -261,6 +323,8 @@ function ($, template, configure, common, Dropdown, OnOff)
         } else {
             $('#test').addClass('disabled');
         }
+
+        validateURL();
     }
 
     /* deprecated */
@@ -295,6 +359,12 @@ function ($, template, configure, common, Dropdown, OnOff)
         //$('#cancel-auth').bind('click', cancelAuth);
         authData = gatherAuthData();
 
+        $('#server-url').val(data['server-url']);
+        $('#save-url').bind('click', saveURL);
+        $('#cancel-url').bind('click', cancelURL);
+        urlData = gatherURLData();
+
+        /* FIXME: need startMonitor() */
         validate();
     }
 
