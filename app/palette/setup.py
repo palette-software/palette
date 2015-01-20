@@ -113,7 +113,6 @@ class SetupAdminApplication(BaseSetupApplication):
 
     @required_parameters('password')
     def service_POST(self, req):
-        dump(req)
         passwd = req.params_get('password')
         hashed_password = tableau_hash(passwd, '')
         meta.Session.query(UserProfile).\

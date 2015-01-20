@@ -184,7 +184,7 @@ function ($, template, configure, common, Dropdown, OnOff)
             async: false,
 
             success: function(data) {
-                result = data;
+                $('#password, #confirm-password').val('');
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 alert(this.url + ": " +
@@ -200,8 +200,7 @@ function ($, template, configure, common, Dropdown, OnOff)
      */
     function cancelAdmin()
     {
-        $('#password').val('');
-        $('#confirm-password').val('');
+        $('#password, #confirm-password').val('');
         $('#save-admin, #cancel-admin').addClass('disabled');
     }
 
