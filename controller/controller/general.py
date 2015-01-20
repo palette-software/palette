@@ -213,7 +213,8 @@ class SystemConfig(object):
             return self._getstring(self.FROM_EMAIL,
                         default="Palette Alerts <alerts@palette-software.com>")
         if name == 'mail_server_type':
-            return self._getstring(self.MAIL_SERVER_TYPE)
+            # 1 = No mail server
+            return self._getstring(self.MAIL_SERVER_TYPE, default='1')
         if name == 'mail_domain':
             return self._getstring(self.MAIL_DOMAIN)
         if name == 'mail_enable_tls':
@@ -221,11 +222,11 @@ class SystemConfig(object):
         if name == 'mail_smtp_server':
             return self._getstring(self.MAIL_SMTP_SERVER)
         if name == 'mail_smtp_port':
-            return self._getint(self.MAIL_SMTP_PORT)
+            return self._getint(self.MAIL_SMTP_PORT, default=None)
         if name == 'mail_username':
-            return self._getstring(self.MAIL_USERNAME, default='')
+            return self._getstring(self.MAIL_USERNAME, default=None)
         if name == 'mail_password':
-            return self._getstring(self.MAIL_PASSWORD, default='')
+            return self._getstring(self.MAIL_PASSWORD, default=None)
         if name == 'server_url':
             return self._getstring(self.SERVER_URL, default='localhost')
         if name == "authentication_type":
