@@ -22,50 +22,6 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
     modification_time = Column(DateTime, server_default=func.now(),
                                onupdate=func.current_timestamp())
 
-    defaults = [{'envid':1, 'key':'disk-watermark-low', 'value':str(50)},
-                {'envid':1, 'key':'disk-watermark-high', 'value':str(80)},
-                {'envid':1, 'key':SystemConfig.STORAGE_ENCRYPT, 'value': 'no'},
-                {'envid':1,
-                 'key':SystemConfig.WORKBOOKS_AS_TWB,
-                 'value': 'no'},
-                {'envid':1,
-                 'key':SystemConfig.BACKUP_AUTO_RETAIN_COUNT,
-                 'value': '3'},
-                {'envid':1,
-                 'key':SystemConfig.BACKUP_USER_RETAIN_COUNT,
-                 'value': '5'},
-                {'envid':1,
-                 'key':SystemConfig.BACKUP_DEST_TYPE,
-                 'value': FileManager.STORAGE_TYPE_VOL},
-                {'envid':1,
-                 'key':SystemConfig.LOG_ARCHIVE_RETAIN_COUNT,
-                 'value': '5'},
-                {'envid':1, 'key':'http-load-warn', 'value':str(10)},
-                {'envid':1, 'key':'http-load-error', 'value':str(20)},
-                {'envid':1, 'key':'http-load-re', 'value':r'.+\.xml(\Z|\?)'},
-                {'envid':1, 'key':'ping-request-interval', 'value':str(10)},
-                {'envid':1, 'key':'socket-timeout', 'value':str(60)},
-                {'envid':1, 'key':'ssl-handshake-timeout', 'value':str(5)},
-                {'envid':1, 'key':'event-degraded-min', 'value':str(180)},
-                {'envid':1, 'key':'status-request-interval', 'value':str(10)},
-                {'envid':1, 'key': SystemConfig.ALERTS_ENABLED, 'value':'no'},
-                {'envid':1, 'key': SystemConfig.ALERTS_ADMIN_ENABLED,
-                                                                'value':'yes'},
-                {'envid':1, 'key': SystemConfig.ALERTS_PUBLISHER_ENABLED,
-                                                                'value':'yes'},
-                {'envid':1, 'key': SystemConfig.UPGRADING, 'value':'no'},
-                {'envid':1, 'key': SystemConfig.CPU_LOAD_WARN, 'value':'80'},
-                {'envid':1, 'key': SystemConfig.CPU_LOAD_ERROR, 'value':'95'},
-                {'envid':1, 'key': SystemConfig.CPU_PERIOD_WARN, 'value':'60'},
-                {'envid':1, 'key': SystemConfig.CPU_PERIOD_ERROR,
-                                                                'value':'60'},
-                {'envid':1, 'key': SystemConfig.METRIC_SAVE_DAYS, 'value':'7'},
-                {'envid':1, 'key': SystemConfig.DEBUG_LEVEL, 'value':'DEBUG'},
-                {'envid':1, 'key': SystemConfig.FROM_EMAIL,
-                        'value':'Palette Alerts <alerts@palette-software.com>'}
-        # Note: No default volid set.
-    ]
-
     @classmethod
     def get_by_key(cls, envid, key, **kwargs):
         filters = {'envid':envid, 'key':key}
@@ -75,6 +31,8 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
     def get_all(cls, envid):
         filters = {'envid':envid}
         return cls.get_all_by_keys(filters)
+
+    defaults_filename = 'system.json'
 
 
 # Merge with 'System' in the webapp.
