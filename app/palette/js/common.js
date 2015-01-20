@@ -85,6 +85,18 @@ function ($, topic, template, items, paging)
     }
 
     /*
+     * Test if the value is a valid URL or not.
+     */
+    function validURL(url) {
+        if (url.toLowerCase() == 'localhost') {
+            /* FIXME: allow 'localhost' for testing. */
+            return true;
+        }
+        var regex = /^(([a-zA-Z0-9-])+\.)([a-zA-Z0-9]{2,4})+$/;
+        return regex.test(url);
+    }
+
+    /*
      * setCookie()
      */
     function setCookie(cname, cvalue, exdays) {
@@ -670,5 +682,6 @@ function ($, topic, template, items, paging)
             'getDropdownValueById': getDropdownValueById,
             'setupOkCancel' : setupOkCancel,
             'validEmail' : validEmail,
+            'validURL' : validURL,
            };
 });

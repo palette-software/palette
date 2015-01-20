@@ -90,7 +90,6 @@ class SetupURLApplication(BaseSetupApplication):
 
     @required_parameters('server-url')
     def service_POST(self, req):
-        dump(req)
         url = req.params_get('server-url')
         req.system.save(SystemConfig.SERVER_URL, url)
         return {'server-url': url}
