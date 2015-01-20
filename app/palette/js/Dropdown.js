@@ -5,14 +5,21 @@ function($, template) {
         this.node = node;
         this.callback = callback;
         this.error = error;
+        this.options = {}
 
         this.template = $('#dropdown-template').html();
         template.parse(this.template);
 
+        for (var i in data['options']) {
+            var option = data['options'][i];
+            this.options[option.id] = option.item;
+        }
+
         var html = template.render(this.template, data);
         $(node).html(html);
 
-        this.set = function (id, value) {
+        this.set = function (id) {
+            value = this.options[id]
             var $div = $('button > div', this.node);
             $div.attr('data-id', id);
             $div.text(value);
@@ -54,7 +61,7 @@ function($, template) {
             }
 
             if (success) {
-                this.set(id, value);
+                this.set(id);
             }
         }
 
@@ -98,6 +105,20 @@ function($, template) {
     {
         var dd = $('#' + id).data();
         return dd.getDataId();
+    }
+
+    Dropdown.setValueById = function(id, value)
+    {
+        var dd = $('#' + id).data();
+        return dd.set(value);
+    }
+
+    Dropdown.setCallback = function(selector, callback)
+    {
+        $(selector).each(function (index) {
+            var dd = $(this).data();
+            dd.callback = callback;
+        });
     }
 
     return Dropdown;

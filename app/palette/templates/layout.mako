@@ -24,6 +24,7 @@
   var require = {
     paths: {
       'jquery': '/app/module/palette/js/vendor/jquery',
+      'underscore': '/app/module/palette/js/vendor/underscore',
       'topic': '/app/module/palette/js/vendor/pubsub',
       'template' : '/app/module/palette/js/vendor/mustache',
       'domReady': '/app/module/palette/js/vendor/domReady',

@@ -52,11 +52,10 @@
       <p>The Palette Server will send you alerts using this mail server and email address</p>
       <%include file="mail.mako" />
       <div>
-        <button type="button" id="save-mail-settings"
-                class="btn btn-primary disabled">
+        <button type="button" id="save-mail" class="btn btn-primary disabled">
           Save
         </button>
-        <button type="button" id="cancel" class="btn btn-primary">
+        <button type="button" id="cancel-mail" class="btn btn-primary disabled">
           Cancel
         </button>
       </div>

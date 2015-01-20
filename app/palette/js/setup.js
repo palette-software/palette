@@ -1,10 +1,31 @@
-require(['jquery', 'template', 'configure', 'common',
+require(['jquery', 'underscore', 'template', 'configure', 'common',
          'Dropdown', 'OnOff', 'bootstrap'],
-function ($, template, configure, common, Dropdown, OnOff)
+function ($, _, template, configure, common, Dropdown, OnOff)
 {
+
+    var MAIL_NONE = 3;
 
     var urlData = null;
     var authData = null;
+    var mailData = null;
+
+    /*
+     * validateSection()
+     */
+    function validateSection(name, gather, maySave, mayCancel)
+    {
+        var data = gather();
+        if (maySave(data)) {
+            $('#save-'+name).removeClass('disabled');
+        } else {
+            $('#save-'+name).addClass('disabled');
+        }
+        if (mayCancel(data)) {
+            $('#cancel-'+name).removeClass('disabled');
+        } else {
+            $('#cancel-'+name).addClass('disabled');
+        }
+    }
 
     /*
      * gatherURLData()
@@ -205,12 +226,106 @@ function ($, template, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * saveMailSettings()
+     * gatherAdminData()
+     */
+    function gatherMailData()
+    {
+        var type = Number(Dropdown.getValueById('mail-server-type'));
+        if (type == MAIL_NONE) {
+            return {'mail-server-type': type}
+        }
+      
+        return {
+            'mail-server-type': type,
+            'alert-email-name': $('#alert-email-name').val(),
+            'alert-email-address': $('#alert-email-address').val(),
+            'smtp-server': $('#smtp-server').val(),
+            'smtp-port': Number($('#smtp-port').val()),
+            'smtp-username': $('#smtp-username').val(),
+            'smtp-password': $('#smtp-password').val(),
+            'enable-tls': OnOff.getValueById('enable-tls')
+        }
+    }
+
+    /*
+     * maySaveMail()
+     * Return true if the 'Mail Server' section has changed and is valid.
+     */
+    function maySaveMail(data)
+    {
+        if (_.isEqual(data, mailData)) {
+            return false;
+        }
+
+        var type = Number(Dropdown.getValueById('mail-server-type'));
+        if (type == MAIL_NONE) {
+            return false;
+        }
+
+        if (data['alert-email-name'].length == 0) {
+            return false;
+        }
+        if (!common.validEmail(data['alert-email-address'])) {
+            return false;
+        }
+        if (!common.validURL(data['smtp-server'])) {
+            return false;
+        }
+        if (isNaN(data['smtp-port'])) {
+            return false;
+        }
+        if (data['smtp-username'].length == 0) {
+            return false;
+        }
+        if (data['smtp-password'].length == 0) {
+            return false;
+        }
+        return true;
+    }
+
+    /*
+     * mayCancelMail()
+     * Return true if 'Mail Server' section has changed.
+     */
+    function mayCancelMail(data)
+    {
+        return !_.isEqual(data, mailData);
+    }
+
+    /*
+     * validateMail()
+     */
+    function validateMail()
+    {
+        var testEmailRecipient = $('test-email-recipient').val();
+
+        var data = gatherMailData();
+        if (maySaveMail(data)) {
+            $('#save-mail').removeClass('disabled');
+            if (common.validEmail(testEmailRecipient)) {
+                $('#test-mail').removeClass(disabled);
+            } else {
+                $('#test-mail').addClass('disabled');
+            }
+        } else {
+            $('#test-mail').addClass('disabled');
+            $('#save-mail').addClass('disabled');
+        }
+        if (mayCancelMail(data)) {
+            $('#cancel-mail').removeClass('disabled');
+        } else {
+            $('#cancel-mail').addClass('disabled');
+        }
+    }
+
+    /*
+     * saveMail()
      * Callback for the 'Save' button in the 'Mail Server' section.
      */
-    function saveMailSettings() {
-        var data = {'action': 'save'}
-        $.extend(data, configure.gatherEmailData());
+    function saveMail() {
+         $('#save-mail, #cancel-mail').addClass('disabled');
+        var data = gatherMailData();
+        data['action'] = 'save';
 
         var result = null;
         $.ajax({
@@ -226,10 +341,63 @@ function ($, template, configure, common, Dropdown, OnOff)
             error: function (jqXHR, textStatus, errorThrown) {
                 alert(this.url + ": " +
                       jqXHR.status + " (" + errorThrown + ")");
-                sucess = false;
             }
         });
-        /* FIXME: failure case? */
+        validate();
+    }
+
+    /*
+     * cancelMail()
+     * Callback for the 'Cancel' button in the 'Mail Server' section.
+     */
+    function cancelMail()
+    {
+        Dropdown.setValueById('mail-server-type', mailData['mail-server-type']);
+        $('#save-mail, #cancel-mail').addClass('disabled');
+    }
+
+    /*
+     * testMail()
+     * Callback for the 'Test Email' button.
+     */
+    function testMail() {
+        var data = gatherMailData();
+        data['test-email-recipient'] = $('#test-email-recipient').val();
+        data['action'] = 'test';
+
+        $.ajax({
+            type: 'POST',
+            url: '/rest/setup/email',
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function(data) {
+                result = data;
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(this.url + ": " +
+                      jqXHR.status + " (" + errorThrown + ")");
+            }
+        });
+        if (result != null) {
+            alert('OK');
+        }
+    }
+
+    /*
+     * changeMail()
+     * Callback for the 'Mail Server Type' dropdown.
+     */
+    function changeMail()
+    {
+        var value = Number(Dropdown.getValueById('mail-server-type'));
+        if (value == MAIL_NONE) {
+            $(".mail-setting").addClass('hidden');
+        } else {
+            $(".mail-setting").removeClass('hidden');
+        }
+        validateMail()
     }
 
     /*
@@ -324,46 +492,6 @@ function ($, template, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * test()
-     * Callback for the 'Test Email' button.
-     */
-    function test() {
-        var fields = ['test-email-recipient',
-                      'alert-email-name', 'alert-email-address',
-                      'smtp-server', 'smtp-port',
-                      'smtp-username', 'smtp-password']
-
-        var data = {'action': 'test'}
-        for (var index = 0; index < fields.length; index++) {
-            data[fields[index]] = $('#' + fields[index]).val();
-        };
-        data['mail-server-type'] = $('#mail-server-type > button > div').attr('data-id');
-        data['enable-tls'] = $('#enable-tls .onoffswitch-checkbox').prop("checked");
-
-        var result = null;
-        $.ajax({
-            type: 'POST',
-            url: '/rest/setup/email',
-            data: data,
-            dataType: 'json',
-            async: false,
-
-            success: function(data) {
-                result = data;
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                alert(this.url + ": " +
-                      jqXHR.status + " (" + errorThrown + ")");
-                sucess = false;
-            }
-        });
-        if (result != null) {
-            alert('OK');
-        }
-    }
-
-
-    /*
      * save_valid()
      * Test input and return true/false.
      */
@@ -401,12 +529,12 @@ function ($, template, configure, common, Dropdown, OnOff)
 
         validateURL();
         validateAdmin();
+        validateMail();
     }
 
     /* deprecated */
     $().ready(function() {
         $('#save-url').bind('click', saveURL);
-        $('#save-mail-settings').bind('click', saveMailSettings);
         $('#save-ssl').bind('click', saveSSL);
         $('#save-admin').bind('click', saveAdmin);
         $('#cancel').bind('click', cancel);
@@ -442,6 +570,13 @@ function ($, template, configure, common, Dropdown, OnOff)
 
         $('#save-admin').bind('click', saveAdmin);
         $('#cancel-admin').bind('click', cancelAdmin);
+
+        $('#save-mail').bind('click', saveMail);
+        $('#cancel-mail').bind('click', cancelMail);
+        $('#test-mail').bind('click', testMail);
+        Dropdown.setCallback('#mail-server-type', changeMail);
+        mailData = gatherMailData();
+        changeMail();
 
         /* FIXME: need startMonitor() */
         validate();
