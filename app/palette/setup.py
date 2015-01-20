@@ -152,7 +152,6 @@ class SetupMailApplication(JSONProxy):
         return data
 
     def service_GET(self, req):
-        # pylint: disable=unused-argument
         scfg = SystemConfig(req.system)
 
         mail_server_type = req.system.get(scfg.MAIL_SERVER_TYPE, default=None)
@@ -175,8 +174,6 @@ class SetupMailApplication(JSONProxy):
 
         data['alert-email'] = parts[0]
 
-        #data['mail-server-type'] = scfg.mail_server_type
-        data['mail-server-type'] = int(mail_server_type)
         # data['smtp-server'] = scfg.mail_smtp_server
         _ = req.system.getint(scfg.MAIL_SMTP_PORT, default=None)
         if not _ is None:
@@ -191,11 +188,22 @@ class SetupMailApplication(JSONProxy):
 
         return data
 
+    def fake_POST(self, req):
+        data = {}
+        for key in req.params:
+            data[key] = req.params[key]
+        return self.postprocess(req, data)
+
+    def service_POST(self, req):
+        # FIXME: test for valid POST data
+        # return self.fake_POST(req)
+        return super(SetupMailApplication, self).service(req)
+
     def service(self, req):
         if req.method == 'GET':
             return self.service_GET(req)
         elif req.method == 'POST':
-            return super(SetupMailApplication, self).service(req)
+            return self.service_POST(req);
         else:
             raise exc.HTTPMethodNotAllowed()
 
