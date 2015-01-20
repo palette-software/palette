@@ -100,7 +100,7 @@ function ($, topic, template, items, paging)
      * Test if the value is a valid password or not.
      */
     function validPassword(value) {
-        var regex = /^([a-zA-Z0-9-!@#$%^&]){8}$/;
+        var regex = /^([a-zA-Z0-9-!@#$%^&]){8,}$/;
         return regex.test(value);
     }
 
