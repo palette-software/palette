@@ -157,12 +157,13 @@ class SetupMailApplication(JSONProxy):
         # pylint: disable=unused-argument
         scfg = SystemConfig(req.system)
 
-        mail_server_type = scfg.mail_server_type
-        if mail_server_type == '1':
+        mail_server_type = req.system.get(scfg.MAIL_SERVER_TYPE, default=None)
+        if mail_server_type == str(MailServerType.DIRECT):
             mst = MailServerType(MailServerType.DIRECT)
-        elif mail_server_type == '2':
-            mst = MailServerType(MailServerType.DIRECT)
+        elif mail_server_type == str(MailServerType.RELAY):
+            mst = MailServerType(MailServerType.RELAY)
         else:
+            mail_server_type = str(MailServerType.NONE)
             mst = MailServerType(MailServerType.NONE)
         config = [mst.default()]
         data = {'config': config}
@@ -176,11 +177,19 @@ class SetupMailApplication(JSONProxy):
 
         data['alert-email'] = parts[0]
 
-        data['mail-server-type'] = scfg.mail_server_type
-        data['smtp-server'] = scfg.mail_smtp_server
-        data['smtp-port'] = scfg.mail_smtp_port
-        data['smtp-username'] = scfg.mail_username
-        data['smtp-password'] = scfg.mail_password
+        #data['mail-server-type'] = scfg.mail_server_type
+        data['mail-server-type'] = int(mail_server_type)
+        # data['smtp-server'] = scfg.mail_smtp_server
+        _ = req.system.getint(scfg.MAIL_SMTP_PORT, default=None)
+        if not _ is None:
+            data['smtp-port'] = _
+        # data['smtp-username'] = scfg.mail_username
+        _ = req.system.getint(scfg.MAIL_USERNAME, default=None)
+        if not _ is None:
+            data['smtp-username'] = _
+        _ = req.system.getint(scfg.MAIL_PASSWORD, default=None)
+        if not _ is None:
+            data['smtp-password'] = '********' # FIXME
 
         return data
 
