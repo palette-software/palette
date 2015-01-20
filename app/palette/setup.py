@@ -135,15 +135,15 @@ class SetupMailApplication(JSONProxy):
         if 'error' in data:
             return data
 
-        req.system.save(SystemConfig.FROM_EMAIL, data['from_email'])
-        req.system.save(SystemConfig.MAIL_DOMAIN, data['mail_domain'])
-        req.system.save(SystemConfig.MAIL_SERVER_TYPE, data['mail_server_type'])
+        req.system.save(SystemConfig.FROM_EMAIL, data['from-email'])
+        req.system.save(SystemConfig.MAIL_DOMAIN, data['mail-domain'])
+        req.system.save(SystemConfig.MAIL_SERVER_TYPE, data['mail-server-type'])
 
         if data['mail_server_type'] == '2':
-            req.system.save(SystemConfig.MAIL_SMTP_SERVER, data['smtp_server'])
-            req.system.save(SystemConfig.MAIL_SMTP_PORT, data['smtp_port'])
-            req.system.save(SystemConfig.MAIL_USERNAME, data['smtp_username'])
-            req.system.save(SystemConfig.MAIL_PASSWORD, data['smtp_password'])
+            req.system.save(SystemConfig.MAIL_SMTP_SERVER, data['smtp-server'])
+            req.system.save(SystemConfig.MAIL_SMTP_PORT, data['smtp-port'])
+            req.system.save(SystemConfig.MAIL_USERNAME, data['smtp-username'])
+            req.system.save(SystemConfig.MAIL_PASSWORD, data['smtp-password'])
         else:
             req.system.save(SystemConfig.MAIL_SMTP_SERVER, "")
             req.system.save(SystemConfig.MAIL_SMTP_PORT, "")
@@ -174,17 +174,18 @@ class SetupMailApplication(JSONProxy):
 
         data['alert-email'] = parts[0]
 
-        # data['smtp-server'] = scfg.mail_smtp_server
+        data['smtp-server'] = scfg.mail_smtp_server
+        data['smtp-port'] = scfg.mail_smtp_port
         _ = req.system.getint(scfg.MAIL_SMTP_PORT, default=None)
         if not _ is None:
             data['smtp-port'] = _
-        # data['smtp-username'] = scfg.mail_username
-        _ = req.system.getint(scfg.MAIL_USERNAME, default=None)
+        data['smtp-username'] = scfg.mail_username
+        _ = req.system.get(scfg.MAIL_USERNAME, default=None)
         if not _ is None:
             data['smtp-username'] = _
-        _ = req.system.getint(scfg.MAIL_PASSWORD, default=None)
+        _ = req.system.get(scfg.MAIL_PASSWORD, default=None)
         if not _ is None:
-            data['smtp-password'] = '********' # FIXME
+            data['smtp-password'] = _
 
         return data
 
@@ -203,7 +204,7 @@ class SetupMailApplication(JSONProxy):
         if req.method == 'GET':
             return self.service_GET(req)
         elif req.method == 'POST':
-            return self.service_POST(req);
+            return self.service_POST(req)
         else:
             raise exc.HTTPMethodNotAllowed()
 
