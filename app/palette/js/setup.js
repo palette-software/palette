@@ -8,8 +8,8 @@ function ($, _, template, configure, common, Dropdown, OnOff)
     var MAIL_NONE = 3;
 
     var urlData = null;
-    var authData = null;
     var mailData = null;
+    var authData = null;
 
     /*
      * validateSection()
@@ -65,25 +65,6 @@ function ($, _, template, configure, common, Dropdown, OnOff)
             return true;
         }
         return false;
-    }
-
-    /*
-     * validateURL()
-     * Enable/disable the Save and Cancel buttons in the 'Server URL' section.
-     */
-    function validateURL()
-    {
-        var data = gatherURLData();
-        if (maySaveURL(data)) {
-            $('#save-url').removeClass('disabled');
-        } else {
-            $('#save-url').addClass('disabled');
-        }
-        if (mayCancelURL(data)) {
-            $('#cancel-url').removeClass('disabled');
-        } else {
-            $('#cancel-url').addClass('disabled');
-        }
     }
 
     /*
@@ -168,25 +149,6 @@ function ($, _, template, configure, common, Dropdown, OnOff)
             return true;
         }
         return false;
-    }
-
-    /*
-     * validateAdmin()
-     * Enable/disable the Save and Cancel buttons in the 'Admin' section.
-     */
-    function validateAdmin()
-    {
-        var data = gatherAdminData();
-        if (maySaveAdmin(data)) {
-            $('#save-admin').removeClass('disabled');
-        } else {
-            $('#save-admin').addClass('disabled');
-        }
-        if (mayCancelAdmin(data)) {
-            $('#cancel-admin').removeClass('disabled');
-        } else {
-            $('#cancel-admin').addClass('disabled');
-        }
     }
 
     /*
@@ -523,17 +485,12 @@ function ($, _, template, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * validateAuthData()
-     * Return true if the 'Authentication' section has changed,
-     *  and return false otherwise.
+     * maySaveCancelAuth()
+     * Return true if the 'Authentication' section has changed.
      */
-    function validateAuthData()
+    function maySaveCancelAuth(data)
     {
-        var data = gatherAuthData();
-        if (data['authetication-type'] != authData['authentication-type']) {
-            return false;
-        }
-        return true;
+        return !_.isEqual(data, authData);
     }
 
     /*
@@ -541,10 +498,8 @@ function ($, _, template, configure, common, Dropdown, OnOff)
      * Callback for the 'Save' button in the Authentication section.
      */
     function saveAuth() {
-        var data = {'action': 'save'}
-
-        var id = 'authentication-type';
-        data[id] = Dropdown.getValueById(id);
+        var data = gatherAuthData();
+        data['action'] = 'save';
 
         $.ajax({
             type: 'POST',
@@ -553,7 +508,8 @@ function ($, _, template, configure, common, Dropdown, OnOff)
             dataType: 'json',
             async: false,
 
-            success: function(data) {
+            success: function() {
+                delete data['action'];
                 authData = data;
             },
             error: function (jqXHR, textStatus, errorThrown) {
@@ -561,6 +517,17 @@ function ($, _, template, configure, common, Dropdown, OnOff)
                       jqXHR.status + " (" + errorThrown + ")");
             }
         });
+        validate();
+    }
+
+    /*
+     * cancelAuth()
+     * Callback for the 'Cancel' button in the Authentication section.
+     */
+    function cancelAuth() {
+        var id = 'authentication-type';
+        Dropdown.setValueById(id, authData[id]);
+        $('#save-auth, #cancel-auth').addClass('disabled');
     }
 
     /*
@@ -568,10 +535,12 @@ function ($, _, template, configure, common, Dropdown, OnOff)
      * Enable/disable the buttons based on the field values.
      */
     function validate() {
-        validateURL();
-        validateAdmin();
+        validateSection('url', gatherURLData, maySaveURL, mayCancelURL);
+        validateSection('admin', gatherAdminData, maySaveAdmin, mayCancelAdmin);
         validateMail();
         validateSection('ssl', gatherSSLData, maySaveSSL, mayCancelSSL);
+        validateSection('auth', gatherAuthData,
+                        maySaveCancelAuth, maySaveCancelAuth);
     }
 
     /*
@@ -582,19 +551,17 @@ function ($, _, template, configure, common, Dropdown, OnOff)
         Dropdown.setupAll(data);
         OnOff.setup();
 
-        $('#save-auth').off('click');
-        $('#save-auth').bind('click', saveAuth);
-        //$('#cancel-auth').bind('click', cancelAuth);
-        authData = gatherAuthData();
-
+        /* URL */
         $('#server-url').val(data['server-url']);
         $('#save-url').bind('click', saveURL);
         $('#cancel-url').bind('click', cancelURL);
         urlData = gatherURLData();
 
+        /* Admin */
         $('#save-admin').bind('click', saveAdmin);
         $('#cancel-admin').bind('click', cancelAdmin);
 
+        /* Mail */
         $('#alert-email-name').val(data['alert-email-name']);
         $('#alert-email-address').val(data['alert-email-address']);
         $('#smtp-server').val(data['smtp-server']);
@@ -607,9 +574,18 @@ function ($, _, template, configure, common, Dropdown, OnOff)
         mailData = gatherMailData();
         changeMail();
 
+        /* SSL */
         $('#save-ssl').bind('click', saveSSL);
         $('#cancel-ssl').bind('click', cancelSSL);
 
+        /* Authentication */
+        $('#save-auth').off('click');
+        $('#save-auth').bind('click', saveAuth);
+        $('#cancel-auth').bind('click', cancelAuth);
+        Dropdown.setCallback('#authentication-type', validate);
+        authData = gatherAuthData();
+
+        /* validation */
         $('input[type="text"], input[type="password"], textarea').on('paste', function() {
             setTimeout(function() {
                 /* validate after paste completes by using a timeout. */
@@ -620,10 +596,11 @@ function ($, _, template, configure, common, Dropdown, OnOff)
             validate();
         });
 
-        /* FIXME: need startMonitor() */
         validate();
     }
 
+    common.startMonitor(false);
+    
     /* fire. */
     $.ajax({
         url: '/rest/setup',
