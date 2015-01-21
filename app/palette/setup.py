@@ -17,7 +17,7 @@ from controller.util import extend
 
 from .page import PalettePage
 from .option import DictOption
-from .rest import PaletteRESTApplication, required_parameters
+from .rest import PaletteRESTApplication, required_parameters, required_role
 
 
 # FIXME: add required_role to all the GET/POST handlers.
@@ -102,7 +102,7 @@ class SetupAdminApplication(BaseSetupApplication):
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
-        return {'password': passwd}
+        return {}
 
     @required_parameters('password')
     def service_POST(self, req):
@@ -149,6 +149,7 @@ class SetupMailApplication(JSONProxy):
 
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
+        # pylint: disable=bad-builtin
         scfg = SystemConfig(req.system)
 
         mail_server_type = req.system.get(scfg.MAIL_SERVER_TYPE, default=None)
