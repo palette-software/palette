@@ -312,8 +312,13 @@ class SetupTestApp(GenericWSGI):
             # If REMOTE_USER is set - presumably from auth_tkt,
             # then setup has already been done.
             return None
+
+        # FIXME: redundant
+        from .routing import req_getattr
+        req.getattr = req_getattr
+
         entry = UserProfile.get(req.envid, 0) # user '0', likely 'palette'
-        if not entry.password:
+        if not entry.hashed_password:
             raise exc.HTTPTemporaryRedirect(location='/setup')
         return None
 
