@@ -283,7 +283,7 @@ function ($, _, template, configure, common, Dropdown, OnOff)
             return true;
         }
 
-        if (!common.validURL(data['smtp-server'])) {
+        if (data['smtp-server'].length == 0) {
             return false;
         }
         if (isNaN(data['smtp-port'])) {
