@@ -757,27 +757,8 @@ h1.page-title {
     vertical-align: bottom;
     text-transform: uppercase;
 }
-.about-page h1.page-title, .profile-page h1.page-title, .general-page h1.page-title, .integration h1.page-title {
+.about-page h1.page-title, .profile-page h1.page-title, .general-page h1.page-title {
     margin-bottom: 20px;
-}
-/* FIXME: remove all .integration classes */
-.integration h2.page-subtitle {
-    margin-bottom: 20px;
-}
-.integration h3, .setup-page h3 {
-    margin: 10px 0 0 0;
-}
-.integration label {
-    font-size: 13px;
-    color: red;
-    margin: 0 0 15px 0;
-}
-.integration input[type="text"], .integration input[type="password"] {
-    font-size: 16px;
-    margin: 5px 0;
-}
-.integration div button {
-    margin-right: 5px;
 }
 /* standard bootstrap class */
 nav.navbar {
@@ -1634,9 +1615,6 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
 section.run-as-user {
     margin-top: 15px;
 }
-.setup-page {
-    max-width: 900px;
-}
 .setup-page .btn-group {
     width: 100%;
     margin-bottom: 15px;
@@ -1646,11 +1624,6 @@ section.run-as-user {
 }
 .setup-page #test-email-recipient {
     width: 50%;
-}
-.setup-page #test {
-    margin-left: 5px;
-    height: 34px;
-    vertical-align: baseline;
 }
 input[name="storage-type"] {
     display: inline-block;
@@ -1665,7 +1638,6 @@ label[for*="s3-"], label[for*="gcs-"] {
 label + input[type="text"], label + input[type="password"] {
     margin-top: 0;
 }
-#enable-tls {
-    margin: 5px 0 15px 0;
+#authentication {
+    margin-bottom: 35px;
 }
-

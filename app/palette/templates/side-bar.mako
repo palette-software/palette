@@ -27,26 +27,6 @@
         <i class="fa fa-fw fa-wrench"></i><span>Manage Tableau</span>
       </a>
     </li>
-%if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:
-    <li class="category">
-      <a>
-        <i class="fa fa-fw fa-gears"></i><span>Integration</span>
-        <i class="fa fa-fw fa-angle-${obj.integration and 'up' or 'down'} expand"></i>
-      </a>
-      <ul ${obj.integration and 'class="visible"' or ''}>
-        <li ${obj.active=='s3' and 'class="active"' or ''}>
-          <a href="/configure/s3">
-            <i class="fa fa-fw fa-cubes"></i><span>AWS S3</span>
-          </a>
-        </li>
-        <li ${obj.active=='gcs' and 'class="active"' or ''}>
-          <a href="/configure/gcs">
-            <i class="fa fa-fw fa-google"></i><span>Google Storage</span>
-          </a>
-        </li>
-      </ul>
-    </li>
-%endif
     <li class="category">
       <a>
         <i class="fa fa-fw fa-cog"></i><span>Configuration</span>
