@@ -141,7 +141,7 @@ class SetupMailApplication(JSONProxy):
         req.system.save(SystemConfig.MAIL_SERVER_TYPE,
                                             str(data['mail-server-type']))
 
-        if data['mail-server-type'] == 2:  # FIXME: use .RELAY
+        if data['mail-server-type'] == MailServerType.RELAY:
             req.system.save(SystemConfig.MAIL_SMTP_SERVER, data['smtp-server'])
             req.system.save(SystemConfig.MAIL_SMTP_PORT, str(data['smtp-port']))
             req.system.save(SystemConfig.MAIL_USERNAME, data['smtp-username'])
@@ -152,6 +152,8 @@ class SetupMailApplication(JSONProxy):
             req.system.delete(SystemConfig.MAIL_USERNAME)
             req.system.delete(SystemConfig.MAIL_PASSWORD)
         # FIXME: don't return smtp-password to the UX
+        if 'smtp-password' in data:
+            del data['smtp-password']
         return data
 
     def service_GET(self, req):
@@ -175,7 +177,8 @@ class SetupMailApplication(JSONProxy):
         else:
             data['alert-email-name'] = ""
 
-        data['alert-email-address'] = parts[0] # FIXME: remove brackets.
+        table = dict.fromkeys(map(ord, '<>'), None)
+        data['alert-email-address'] = parts[0].translate(table)
 
         data['smtp-server'] = scfg.mail_smtp_server
         data['smtp-port'] = scfg.mail_smtp_port
