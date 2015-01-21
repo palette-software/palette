@@ -82,6 +82,7 @@ class BaseSetupApplication(PaletteRESTApplication):
 class SetupURLApplication(BaseSetupApplication):
     """Handler for the 'SERVER URL' section."""
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
         scfg = SystemConfig(req.system)
@@ -100,6 +101,7 @@ class SetupAdminApplication(BaseSetupApplication):
 
     PASSWD = '********' # FIXME: remove
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
         entry = meta.Session.query(UserProfile).\
@@ -151,11 +153,11 @@ class SetupMailApplication(JSONProxy):
             req.system.delete(SystemConfig.MAIL_SMTP_PORT)
             req.system.delete(SystemConfig.MAIL_USERNAME)
             req.system.delete(SystemConfig.MAIL_PASSWORD)
-        # FIXME: don't return smtp-password to the UX
         if 'smtp-password' in data:
             del data['smtp-password']
         return data
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         scfg = SystemConfig(req.system)
 
@@ -189,12 +191,10 @@ class SetupMailApplication(JSONProxy):
         _ = req.system.get(scfg.MAIL_USERNAME, default=None)
         if not _ is None:
             data['smtp-username'] = _
-        _ = req.system.get(scfg.MAIL_PASSWORD, default=None)
-        if not _ is None: # FIXME: don't return password.
-            data['smtp-password'] = _
 
         return data
 
+    @required_role(Role.MANAGER_ADMIN)
     def fake_POST(self, req):
         data = {}
         for key in req.params:
@@ -206,11 +206,13 @@ class SetupMailApplication(JSONProxy):
             data['mail-domain'] = mail_domain
         return self.postprocess(req, data)
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         # FIXME: test for valid POST data
         return self.fake_POST(req)
         return super(SetupMailApplication, self).service(req)
 
+    @required_role(Role.MANAGER_ADMIN)
     def service(self, req):
         if req.method == 'GET':
             return self.service_GET(req)
@@ -223,12 +225,14 @@ class SetupMailApplication(JSONProxy):
 class SetupSSLApplication(BaseSetupApplication):
     """Handler for the 'SERVER SSL CERTIFICATE' section."""
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
         data = {}
         data['enable-ssl'] = True # FIXME
         return data
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         dump(req)
         enable_ssl = req.params_getbool('enable-ssl')
@@ -242,6 +246,7 @@ class SetupSSLApplication(BaseSetupApplication):
 class SetupAuthApplication(BaseSetupApplication):
     """Handler for the 'AUTHENTICATION' section."""
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
         scfg = SystemConfig(req.system)
@@ -257,6 +262,7 @@ class SetupAuthApplication(BaseSetupApplication):
         data = {'config': config}
         return data
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         dump(req)
         authtype = req.params_getint('authentication-type')
@@ -277,6 +283,7 @@ class _SetupApplication(BaseSetupApplication):
         self.auth = SetupAuthApplication()
         self.url = SetupURLApplication()
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         data = {}
         extend(data, self.admin.service_GET(req))
