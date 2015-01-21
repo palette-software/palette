@@ -35,11 +35,11 @@ p {
     line-height: 20px;
     font-size: 16px;
 }
-/* FIXME: remove */
-input[type="file"] {
-    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
-    color: #5F6670;
-    margin-bottom: 35px;
+textarea {
+    width: 100%;
+    resize: none;
+    border: 1px solid #ebebeb;
+    margin-bottom: 15px;
 }
 a img {
     border: 0 !important;
