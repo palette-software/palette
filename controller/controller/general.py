@@ -216,21 +216,21 @@ class SystemConfig(object):
             # 1 = No mail server
             return self._getstring(self.MAIL_SERVER_TYPE, default='1')
         if name == 'mail_domain':
-            return self._getstring(self.MAIL_DOMAIN)
+            return self._getstring(self.MAIL_DOMAIN, default="")
         if name == 'mail_enable_tls':
             return self._getyesorno(self.MAIL_ENABLE_TLS)
         if name == 'mail_smtp_server':
-            return self._getstring(self.MAIL_SMTP_SERVER)
+            return self._getstring(self.MAIL_SMTP_SERVER, default="")
         if name == 'mail_smtp_port':
-            return self._getint(self.MAIL_SMTP_PORT, default=None)
+            return self._getstring(self.MAIL_SMTP_PORT, default="")
         if name == 'mail_username':
-            return self._getstring(self.MAIL_USERNAME, default=None)
+            return self._getstring(self.MAIL_USERNAME, default="")
         if name == 'mail_password':
-            return self._getstring(self.MAIL_PASSWORD, default=None)
+            return self._getstring(self.MAIL_PASSWORD, default="")
         if name == 'server_url':
             return self._getstring(self.SERVER_URL, default='localhost')
         if name == "authentication_type":
-            return self._getint(self.AUTHENTICATION_TYPE, default=1)
+            return self._getstring(self.AUTHENTICATION_TYPE, default="1")
         raise AttributeError(name)
 
     def todict(self):
