@@ -8,8 +8,8 @@ function ($, _, template, configure, common, Dropdown, OnOff)
     var MAIL_NONE = 3;
 
     var urlData = null;
-    var authData = null;
     var mailData = null;
+    var authData = null;
 
     /*
      * validateSection()
@@ -65,25 +65,6 @@ function ($, _, template, configure, common, Dropdown, OnOff)
             return true;
         }
         return false;
-    }
-
-    /*
-     * validateURL()
-     * Enable/disable the Save and Cancel buttons in the 'Server URL' section.
-     */
-    function validateURL()
-    {
-        var data = gatherURLData();
-        if (maySaveURL(data)) {
-            $('#save-url').removeClass('disabled');
-        } else {
-            $('#save-url').addClass('disabled');
-        }
-        if (mayCancelURL(data)) {
-            $('#cancel-url').removeClass('disabled');
-        } else {
-            $('#cancel-url').addClass('disabled');
-        }
     }
 
     /*
@@ -171,25 +152,6 @@ function ($, _, template, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * validateAdmin()
-     * Enable/disable the Save and Cancel buttons in the 'Admin' section.
-     */
-    function validateAdmin()
-    {
-        var data = gatherAdminData();
-        if (maySaveAdmin(data)) {
-            $('#save-admin').removeClass('disabled');
-        } else {
-            $('#save-admin').addClass('disabled');
-        }
-        if (mayCancelAdmin(data)) {
-            $('#cancel-admin').removeClass('disabled');
-        } else {
-            $('#cancel-admin').addClass('disabled');
-        }
-    }
-
-    /*
      * saveAdmin()
      * Callback for the 'Save' button in the 'Admin Password' section.
      */
@@ -229,7 +191,7 @@ function ($, _, template, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * gatherAdminData()
+     * gatherMailData()
      */
     function gatherMailData()
     {
@@ -427,6 +389,89 @@ function ($, _, template, configure, common, Dropdown, OnOff)
     }
 
     /*
+     * gatherSSLData()
+     */
+    function gatherSSLData()
+    {
+        return {
+            'ssl-certificate-file': $('#ssl-certificate-file').val(),
+            'ssl-certificate-key-file': $('#ssl-certificate-key-file').val(),
+            'ssl-certificate-chain-file': $('#ssl-certificate-chain-file').val()
+        }
+    }
+
+    /*
+     * maySaveSSL()
+     * Return true if the 'Server SSL' section has changed and is valid.
+     */
+    function maySaveSSL(data)
+    {
+        if (data['ssl-certificate-file'].length == 0) {
+            return false;
+        }
+        if (data['ssl-certificate-key-file'].length == 0) {
+            return false;
+        }
+        return true;
+    }
+
+    /*
+     * mayCancelSSL()
+     * Return true if 'Server SSL' section has changed.
+     */
+    function mayCancelSSL(data)
+    {
+        if (data['ssl-certificate-file'].length > 0) {
+            return true
+        }
+        if (data['ssl-certificate-key-file'].length > 0) {
+            return true;
+        }
+         if (data['ssl-certificate-chain-file'].length > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    /*
+     * saveSSL()
+     * Callback for the 'Save' button in the SSL Certificate section.
+     */
+    function saveSSL() {
+        var data = gatherSSLData();
+        data['action'] = 'save';
+
+        var result = null;
+        $.ajax({
+            type: 'POST',
+            url: '/rest/setup/ssl',
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function() {
+                cancelSSL();
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(this.url + ": " +
+                      jqXHR.status + " (" + errorThrown + ")");
+            }
+        });
+    }
+
+    /*
+     * cancelSSL()
+     * Callback for the 'Cancel' button in the 'Server SSL' section.
+     */
+    function cancelSSL()
+    {
+        $('#ssl-certificate-file').val('');
+        $('#ssl-certificate-key-file').val('');
+        $('#ssl-certificate-chain-file').val('');
+        $('#save-ssl, #cancel-ssl').addClass('disabled');
+    }
+
+    /*
      * gatherAuthData()
      * Return the current settings in the 'Authentication' section as a dict.
      */
@@ -440,17 +485,12 @@ function ($, _, template, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * validateAuthData()
-     * Return true if the 'Authentication' section has changed,
-     *  and return false otherwise.
+     * maySaveCancelAuth()
+     * Return true if the 'Authentication' section has changed.
      */
-    function validateAuthData()
+    function maySaveCancelAuth(data)
     {
-        var data = gatherAuthData();
-        if (data['authetication-type'] != authData['authentication-type']) {
-            return false;
-        }
-        return true;
+        return !_.isEqual(data, authData);
     }
 
     /*
@@ -458,10 +498,8 @@ function ($, _, template, configure, common, Dropdown, OnOff)
      * Callback for the 'Save' button in the Authentication section.
      */
     function saveAuth() {
-        var data = {'action': 'save'}
-
-        var id = 'authentication-type';
-        data[id] = Dropdown.getValueById(id);
+        var data = gatherAuthData();
+        data['action'] = 'save';
 
         $.ajax({
             type: 'POST',
@@ -470,7 +508,8 @@ function ($, _, template, configure, common, Dropdown, OnOff)
             dataType: 'json',
             async: false,
 
-            success: function(data) {
+            success: function() {
+                delete data['action'];
                 authData = data;
             },
             error: function (jqXHR, textStatus, errorThrown) {
@@ -478,34 +517,17 @@ function ($, _, template, configure, common, Dropdown, OnOff)
                       jqXHR.status + " (" + errorThrown + ")");
             }
         });
+        validate();
     }
 
     /*
-     * saveSSL()
-     * Callback for the 'Save' button in the SSL Certificate section.
+     * cancelAuth()
+     * Callback for the 'Cancel' button in the Authentication section.
      */
-    function saveSSL() {
-        var data = {'action': 'save'}
-        data['enable-ssl'] = OnOff.getValueById('enable-ssl');
-
-        var result = null;
-        $.ajax({
-            type: 'POST',
-            url: '/rest/setup/ssl',
-            data: data,
-            dataType: 'json',
-            async: false,
-
-            success: function(data) {
-                result = data;
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                alert(this.url + ": " +
-                      jqXHR.status + " (" + errorThrown + ")");
-                sucess = false;
-            }
-        });
-        /* FIXME: failure case? */
+    function cancelAuth() {
+        var id = 'authentication-type';
+        Dropdown.setValueById(id, authData[id]);
+        $('#save-auth, #cancel-auth').addClass('disabled');
     }
 
     /*
@@ -513,9 +535,12 @@ function ($, _, template, configure, common, Dropdown, OnOff)
      * Enable/disable the buttons based on the field values.
      */
     function validate() {
-        validateURL();
-        validateAdmin();
+        validateSection('url', gatherURLData, maySaveURL, mayCancelURL);
+        validateSection('admin', gatherAdminData, maySaveAdmin, mayCancelAdmin);
         validateMail();
+        validateSection('ssl', gatherSSLData, maySaveSSL, mayCancelSSL);
+        validateSection('auth', gatherAuthData,
+                        maySaveCancelAuth, maySaveCancelAuth);
     }
 
     /*
@@ -526,19 +551,17 @@ function ($, _, template, configure, common, Dropdown, OnOff)
         Dropdown.setupAll(data);
         OnOff.setup();
 
-        $('#save-auth').off('click');
-        $('#save-auth').bind('click', saveAuth);
-        //$('#cancel-auth').bind('click', cancelAuth);
-        authData = gatherAuthData();
-
+        /* URL */
         $('#server-url').val(data['server-url']);
         $('#save-url').bind('click', saveURL);
         $('#cancel-url').bind('click', cancelURL);
         urlData = gatherURLData();
 
+        /* Admin */
         $('#save-admin').bind('click', saveAdmin);
         $('#cancel-admin').bind('click', cancelAdmin);
 
+        /* Mail */
         $('#alert-email-name').val(data['alert-email-name']);
         $('#alert-email-address').val(data['alert-email-address']);
         $('#smtp-server').val(data['smtp-server']);
@@ -551,20 +574,33 @@ function ($, _, template, configure, common, Dropdown, OnOff)
         mailData = gatherMailData();
         changeMail();
 
-        $('input[type="text"], input[type="password"]').on('paste', function() {
+        /* SSL */
+        $('#save-ssl').bind('click', saveSSL);
+        $('#cancel-ssl').bind('click', cancelSSL);
+
+        /* Authentication */
+        $('#save-auth').off('click');
+        $('#save-auth').bind('click', saveAuth);
+        $('#cancel-auth').bind('click', cancelAuth);
+        Dropdown.setCallback('#authentication-type', validate);
+        authData = gatherAuthData();
+
+        /* validation */
+        $('input[type="text"], input[type="password"], textarea').on('paste', function() {
             setTimeout(function() {
                 /* validate after paste completes by using a timeout. */
                 validate();
             }, 100);
         });
-        $('input[type="text"], input[type="password"]').on('keyup', function() {
+        $('input[type="text"], input[type="password"], textarea').on('keyup', function() {
             validate();
         });
 
-        /* FIXME: need startMonitor() */
         validate();
     }
 
+    common.startMonitor(false);
+    
     /* fire. */
     $.ajax({
         url: '/rest/setup',
