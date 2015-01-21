@@ -740,12 +740,14 @@ ul.processes.visible {
     color: #5F6670;
     text-transform: uppercase;
 }
+/*
 .dynamic-content input[type="text"] {
     width: 50%;
 }
 .general-page input[type="text"] {
     width: 100%;
 }
+*/
 h1.page-title {
     font-size: 28px;
     display: inline-block;
