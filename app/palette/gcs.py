@@ -1,8 +1,6 @@
-from controller.profile import Role
 from controller.cloud import CloudManager, GCS_ID
 
 from .cloud import CloudApplication
-from .page import PalettePage
 
 __all__ = ["GCSApplication"]
 
@@ -28,12 +26,3 @@ class GCSApplication(CloudApplication):
 
     def bucket_to_url(self, bucket):
         return 'gs://' + bucket
-
-class GCSPage(PalettePage):
-    TEMPLATE = 'gcs.mako'
-    active = 'gcs'
-    integration = True
-    required_role = Role.MANAGER_ADMIN
-
-def make_gcs(global_conf):
-    return GCSPage(global_conf)
