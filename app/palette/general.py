@@ -18,7 +18,6 @@ from .rest import required_parameters, required_role, PaletteRESTApplication
 from .s3 import S3Application
 from .gcs import GCSApplication
 from .workbooks import CredentialMixin
-from .cloud import CloudApplication
 
 class GeneralS3Application(PaletteRESTApplication, S3Application):
     """Handler for the 'STORAGE LOCATION' S3 section."""
@@ -34,6 +33,7 @@ class GeneralS3Application(PaletteRESTApplication, S3Application):
 
     @required_parameters('access-key', 'secret-key', 'url')
     def test(self, req):
+        # pylint: disable=unused-argument
         return {'status': 'OK'} # FIXME
 
     @required_parameters('access-key', 'secret-key', 'url')
@@ -66,6 +66,7 @@ class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
 
     @required_parameters('access-key', 'secret-key', 'url')
     def test(self, req):
+        # pylint: disable=unused-argument
         return {'status': 'OK'} # FIXME
 
     def remove(self, req):
@@ -87,8 +88,10 @@ class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
 class GeneralLocalApplication(PaletteRESTApplication):
     """Handler for the 'STORAGE LOCATION' My Machine section."""
     def service_GET(self, req):
+        # pylint: disable=unused-argument
         return {}
     def service_POST(self, req):
+        # pylint: disable=unused-argument
         return {}
 
 
@@ -96,9 +99,10 @@ class _GeneralStorageApplication(PaletteRESTApplication):
     """Overall GET handler for /rest/general/storage"""
     def __init__(self):
         super(_GeneralStorageApplication, self).__init__()
-        self.s3 = GeneralS3Application()
         self.gcs = GeneralGCSApplication()
         self.local = GeneralLocalApplication()
+        # pylint: disable=invalid-name
+        self.s3 = GeneralS3Application()
 
     def service_GET(self, req):
         scfg = SystemConfig(req.system)

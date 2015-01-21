@@ -196,6 +196,7 @@ class SetupMailApplication(JSONProxy):
 
     @required_role(Role.MANAGER_ADMIN)
     def fake_POST(self, req):
+        # pylint: disable=invalid-name
         data = {}
         for key in req.params:
             data[key] = req.params[key]
@@ -209,7 +210,7 @@ class SetupMailApplication(JSONProxy):
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         # FIXME: test for valid POST data
-        return self.fake_POST(req)
+        # return self.fake_POST(req)
         return super(SetupMailApplication, self).service(req)
 
     @required_role(Role.MANAGER_ADMIN)
