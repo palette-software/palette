@@ -35,11 +35,13 @@ class CloudApplication(object):
             return None
         return cloudid
 
-    def _get(self, req):
+    def get_req(self, req):
         cloudid = self._get_cloudid(req)
         if cloudid is None:
             return None
-        return CloudEntry.get_by_envid_cloudid(req.envid, cloudid)
+        entry = CloudEntry.get_by_envid_cloudid(req.envid, cloudid)
+        print "entry:", self._todict(entry)
+        return self._todict(entry)
 
     # Not used yet.  Will be used when multiple cloud names for
     # one cloud type are supported.
