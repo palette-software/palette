@@ -6,9 +6,8 @@ from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
 from controller.cloud import CloudEntry
-from .rest import required_parameters, PaletteRESTApplication
 
-class CloudApplication(PaletteRESTApplication):
+class CloudApplication(object):
 
     __metaclass__ = ABCMeta
 
@@ -68,14 +67,7 @@ class CloudApplication(PaletteRESTApplication):
         data['url'] = self.bucket_to_url(data['bucket'])
         return data
 
-    def handle_GET(self, req):
-        entry = self._get(req)
-        if entry is None:
-            return {}
-        return self._todict(entry)
-
-    @required_parameters('access-key', 'secret-key', 'url')
-    def handle_save_POST(self, req):
+    def cloud_save(self, req):
         # pylint: disable=invalid-name
         bucket = self.url_to_bucket(req.POST['url'])
         if not bucket:
@@ -96,25 +88,9 @@ class CloudApplication(PaletteRESTApplication):
 
         return self._todict(entry)
 
-    @required_parameters('action')
-    def handle_delete_POST(self, req):
+    def cloud_remove(self, req):
         # pylint: disable=invalid-name
         # 'action' is just sanity check, its not used.
         req.system.delete(self.KEY)
         meta.Session().commit()
         return {}
-
-    def service(self, req):
-        if 'action' in req.environ:
-            action = req.environ['action']
-            if req.method != 'POST':
-                raise exc.HTTPMethodNotAllowed()
-            if action == 'save':
-                return self.handle_save_POST(req)
-            elif action == 'delete':
-                return self.handle_delete_POST(req)
-            raise exc.HTTPNotFound()
-
-        if req.method != 'GET':
-            raise exc.HTTPMethodNotAllowed()
-        return self.handle_GET(req)

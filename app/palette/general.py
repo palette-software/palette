@@ -18,24 +18,28 @@ from .rest import required_parameters, required_role, PaletteRESTApplication
 from .s3 import S3Application
 from .gcs import GCSApplication
 from .workbooks import CredentialMixin
+from .cloud import CloudApplication
 
-class GeneralS3Application(PaletteRESTApplication):
+class GeneralS3Application(PaletteRESTApplication, S3Application):
     """Handler for the 'STORAGE LOCATION' S3 section."""
     def service_GET(self, req):
         if 'action' in req.environ:
             raise exc.HTTPNotFound()
         return {}
 
-    # FIXME: required_parameters
+    @required_parameters('access-key', 'secret-key', 'url')
     def save(self, req):
-        return {} # FIXME
+        print req.POST
+        return self.cloud_save(req)
 
-    # FIXME: required_parameters
+    @required_parameters('access-key', 'secret-key', 'url')
     def test(self, req):
         return {'status': 'OK'} # FIXME
 
+    @required_parameters('access-key', 'secret-key', 'url')
     def remove(self, req):
-        return {'status': 'OK'} # FIXME
+        print req.POST
+        return self.cloud_remove(req)
 
     @required_parameters('action')
     def service_POST(self, req):
@@ -48,15 +52,37 @@ class GeneralS3Application(PaletteRESTApplication):
             return self.remove(req)
         raise exc.HTTPBadRequest(req)
 
-
-class GeneralGCSApplication(PaletteRESTApplication):
+class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
     """Handler for the 'STORAGE LOCATION' GCS section."""
     def service_GET(self, req):
-        return {}
-    def service_POST(self, req):
-        # FIXME: same as S3
+        if 'action' in req.environ:
+            raise exc.HTTPNotFound()
         return {}
 
+    @required_parameters('access-key', 'secret-key', 'url')
+    def save(self, req):
+        print req.POST
+        return self.cloud_save(req)
+
+    @required_parameters('access-key', 'secret-key', 'url')
+    def test(self, req):
+        return {'status': 'OK'} # FIXME
+
+    def remove(self, req):
+        print req.POST
+        return self.cloud_remove(req)
+
+    @required_parameters('action')
+    def service_POST(self, req):
+        action = req.params_get('action')
+        if action == 'save':
+            return self.save(req)
+        if action == 'test':
+            return self.test(req)
+        if action == 'remove':
+            print 'remove'
+            return self.remove(req)
+        raise exc.HTTPBadRequest(req)
 
 class GeneralLocalApplication(PaletteRESTApplication):
     """Handler for the 'STORAGE LOCATION' My Machine section."""
