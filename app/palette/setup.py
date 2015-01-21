@@ -128,10 +128,12 @@ class SetupMailApplication(JSONProxy):
         if 'error' in data:
             return data
 
-        req.system.save(SystemConfig.FROM_EMAIL, data['from-email'])
-        req.system.save(SystemConfig.MAIL_DOMAIN, data['mail-domain'])
         req.system.save(SystemConfig.MAIL_SERVER_TYPE,
                                             str(data['mail-server-type']))
+
+        if data['mail-server-type'] != MailServerType.NONE:
+            req.system.save(SystemConfig.FROM_EMAIL, data['from-email'])
+            req.system.save(SystemConfig.MAIL_DOMAIN, data['mail-domain'])
 
         if data['mail-server-type'] == MailServerType.RELAY:
             req.system.save(SystemConfig.MAIL_SMTP_SERVER, data['smtp-server'])
