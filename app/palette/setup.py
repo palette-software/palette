@@ -222,19 +222,14 @@ class SetupSSLApplication(BaseSetupApplication):
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
-        data = {}
-        data['enable-ssl'] = True # FIXME
-        return data
+        return {}
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         dump(req)
-        enable_ssl = req.params_getbool('enable-ssl')
-        if enable_ssl == None:
-            raise exc.HTTPBadRequest()
-        # FIXME: save value
+        # FIXME: check for required parameters
         # FIXME: save cert, cert key, cert chain
-        return {'enable-ssl': enable_ssl}
+        return {}
 
 
 class SetupAuthApplication(BaseSetupApplication):
@@ -317,8 +312,13 @@ class SetupTestApp(GenericWSGI):
             # If REMOTE_USER is set - presumably from auth_tkt,
             # then setup has already been done.
             return None
+
+        # FIXME: redundant
+        from .routing import req_getattr
+        req.getattr = req_getattr
+
         entry = UserProfile.get(req.envid, 0) # user '0', likely 'palette'
-        if not entry.password:
+        if not entry.hashed_password:
             raise exc.HTTPTemporaryRedirect(location='/setup')
         return None
 
