@@ -3,6 +3,8 @@ require(['jquery', 'underscore', 'template', 'configure', 'common',
 function ($, _, template, configure, common, Dropdown, OnOff)
 {
 
+    var MAIL_DIRECT = 1;
+    var MAIL_RELAY = 2;
     var MAIL_NONE = 3;
 
     var urlData = null;
@@ -100,7 +102,8 @@ function ($, _, template, configure, common, Dropdown, OnOff)
             dataType: 'json',
             async: false,
 
-            success: function(data) {
+            success: function() {
+                delete data['action'];
                 urlData = data;
             },
             error: function (jqXHR, textStatus, errorThrown) {
@@ -204,7 +207,7 @@ function ($, _, template, configure, common, Dropdown, OnOff)
             dataType: 'json',
             async: false,
 
-            success: function(data) {
+            success: function() {
                 $('#password, #confirm-password').val('');
             },
             error: function (jqXHR, textStatus, errorThrown) {
@@ -232,9 +235,15 @@ function ($, _, template, configure, common, Dropdown, OnOff)
     {
         var type = Number(Dropdown.getValueById('mail-server-type'));
         if (type == MAIL_NONE) {
-            return {'mail-server-type': type}
+            return {'mail-server-type': type};
         }
-      
+        if (type == MAIL_DIRECT) {
+            return {
+                'mail-server-type': type,
+                'alert-email-name': $('#alert-email-name').val(),
+                'alert-email-address': $('#alert-email-address').val()
+            };
+        }
         return {
             'mail-server-type': type,
             'alert-email-name': $('#alert-email-name').val(),
@@ -244,7 +253,7 @@ function ($, _, template, configure, common, Dropdown, OnOff)
             'smtp-username': $('#smtp-username').val(),
             'smtp-password': $('#smtp-password').val(),
             'enable-tls': OnOff.getValueById('enable-tls')
-        }
+        };
     }
 
     /*
@@ -259,7 +268,8 @@ function ($, _, template, configure, common, Dropdown, OnOff)
 
         var type = Number(Dropdown.getValueById('mail-server-type'));
         if (type == MAIL_NONE) {
-            return false;
+            /* Getting here implies mail server type changed. */
+            return true;
         }
 
         if (data['alert-email-name'].length == 0) {
@@ -268,6 +278,11 @@ function ($, _, template, configure, common, Dropdown, OnOff)
         if (!common.validEmail(data['alert-email-address'])) {
             return false;
         }
+
+        if (type == MAIL_DIRECT) {
+            return true;
+        }
+
         if (!common.validURL(data['smtp-server'])) {
             return false;
         }
@@ -335,8 +350,10 @@ function ($, _, template, configure, common, Dropdown, OnOff)
             dataType: 'json',
             async: false,
 
-            success: function(data) {
-                result = data;
+            success: function() {
+                delete data['action'];
+                mailData = data;
+                $('#smtp-password').val('');
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 alert(this.url + ": " +
@@ -353,6 +370,12 @@ function ($, _, template, configure, common, Dropdown, OnOff)
     function cancelMail()
     {
         Dropdown.setValueById('mail-server-type', mailData['mail-server-type']);
+        $('#alert-email-name').val(mailData['alert-email-name']);
+        $('#alert-email-address').val(mailData['alert-email-address']);
+        $('#smtp-server').val(mailData['smtp-server']);
+        $('#smtp-port').val(mailData['smtp-port']);
+        $('#smtp-username').val(mailData['smtp-username']);
+        $('#smtp-password').val('');
         $('#save-mail, #cancel-mail').addClass('disabled');
     }
 
@@ -396,6 +419,9 @@ function ($, _, template, configure, common, Dropdown, OnOff)
             $(".mail-setting").addClass('hidden');
         } else {
             $(".mail-setting").removeClass('hidden');
+            if (value == MAIL_DIRECT) {
+                $(".smtp").addClass('hidden');
+            }
         }
         validateMail()
     }
@@ -483,72 +509,14 @@ function ($, _, template, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * cancel()
-     * Callback for the 'Cancel' button.
-     */
-    function cancel() {
-        clear();
-        validate();
-    }
-
-    /*
-     * save_valid()
-     * Test input and return true/false.
-     */
-    function save_valid() {
-        return true;
-    }
-
-    /*
-     * test_valid()
-     * Test input and return true/false.
-     */
-    function test_valid() {
-        var recipient = $('#test-email-recipient').val();
-        return common.validEmail(recipient);
-    }
-
-    /*
      * validate()
      * Enable/disable the buttons based on the field values.
      */
     function validate() {
-        var save_enabled = save_valid();
-        if (save_enabled) {
-            $('#save-mail-settings').removeClass('disabled');
-        } else {
-            $('#save-mail-settings').addClass('disabled');
-        }
-
-        var test_enabled = test_valid();
-        if (test_enabled) {
-            $('#test').removeClass('disabled');
-        } else {
-            $('#test').addClass('disabled');
-        }
-
         validateURL();
         validateAdmin();
         validateMail();
     }
-
-    /* deprecated */
-    $().ready(function() {
-        $('#save-url').bind('click', saveURL);
-        $('#save-ssl').bind('click', saveSSL);
-        $('#save-admin').bind('click', saveAdmin);
-        $('#cancel').bind('click', cancel);
-        $('#test').bind('click', test);
-        $('input[type="text"], input[type="password"]').on('paste', function() {
-            setTimeout(function() {
-                /* validate after paste completes by using a timeout. */
-                validate();
-            }, 100);
-        });
-        $('input[type="text"], input[type="password"]').on('keyup', function() {
-            validate();
-        });
-    });
 
     /*
      * setup()
@@ -571,12 +539,27 @@ function ($, _, template, configure, common, Dropdown, OnOff)
         $('#save-admin').bind('click', saveAdmin);
         $('#cancel-admin').bind('click', cancelAdmin);
 
+        $('#alert-email-name').val(data['alert-email-name']);
+        $('#alert-email-address').val(data['alert-email-address']);
+        $('#smtp-server').val(data['smtp-server']);
+        $('#smtp-port').val(data['smtp-port']);
+        $('#smtp-username').val(data['smtp-username']);
         $('#save-mail').bind('click', saveMail);
         $('#cancel-mail').bind('click', cancelMail);
         $('#test-mail').bind('click', testMail);
         Dropdown.setCallback('#mail-server-type', changeMail);
         mailData = gatherMailData();
         changeMail();
+
+        $('input[type="text"], input[type="password"]').on('paste', function() {
+            setTimeout(function() {
+                /* validate after paste completes by using a timeout. */
+                validate();
+            }, 100);
+        });
+        $('input[type="text"], input[type="password"]').on('keyup', function() {
+            validate();
+        });
 
         /* FIXME: need startMonitor() */
         validate();

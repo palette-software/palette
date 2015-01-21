@@ -98,13 +98,14 @@ class SetupURLApplication(BaseSetupApplication):
 class SetupAdminApplication(BaseSetupApplication):
     """Handler for the 'AUTHENTICATION' section."""
 
-    PASSWD = '********'
+    PASSWD = '********' # FIXME: remove
 
     def service_GET(self, req):
         # pylint: disable=unused-argument
         entry = meta.Session.query(UserProfile).\
             filter(UserProfile.name == 'palette').one()
 
+        # FIXME: don't return ANY passwords to the UX.
         if entry.hashed_password:
             passwd = self.PASSWD
         else:
@@ -140,7 +141,7 @@ class SetupMailApplication(JSONProxy):
         req.system.save(SystemConfig.MAIL_SERVER_TYPE,
                                             str(data['mail-server-type']))
 
-        if data['mail-server-type'] == 2:
+        if data['mail-server-type'] == 2:  # FIXME: use .RELAY
             req.system.save(SystemConfig.MAIL_SMTP_SERVER, data['smtp-server'])
             req.system.save(SystemConfig.MAIL_SMTP_PORT, str(data['smtp-port']))
             req.system.save(SystemConfig.MAIL_USERNAME, data['smtp-username'])
@@ -150,6 +151,7 @@ class SetupMailApplication(JSONProxy):
             req.system.delete(SystemConfig.MAIL_SMTP_PORT)
             req.system.delete(SystemConfig.MAIL_USERNAME)
             req.system.delete(SystemConfig.MAIL_PASSWORD)
+        # FIXME: don't return smtp-password to the UX
         return data
 
     def service_GET(self, req):
@@ -173,7 +175,7 @@ class SetupMailApplication(JSONProxy):
         else:
             data['alert-email-name'] = ""
 
-        data['alert-email'] = parts[0]
+        data['alert-email-address'] = parts[0] # FIXME: remove brackets.
 
         data['smtp-server'] = scfg.mail_smtp_server
         data['smtp-port'] = scfg.mail_smtp_port
@@ -185,7 +187,7 @@ class SetupMailApplication(JSONProxy):
         if not _ is None:
             data['smtp-username'] = _
         _ = req.system.get(scfg.MAIL_PASSWORD, default=None)
-        if not _ is None:
+        if not _ is None: # FIXME: don't return password.
             data['smtp-password'] = _
 
         return data
@@ -194,11 +196,16 @@ class SetupMailApplication(JSONProxy):
         data = {}
         for key in req.params:
             data[key] = req.params[key]
+        mail_server_type = int(data['mail-server-type'])
+        if mail_server_type != MailServerType.NONE:
+            data['from-email'] = data['alert-email-address'] # FIXME
+            _, mail_domain = data['from-email'].split('@', 1)
+            data['mail-domain'] = mail_domain
         return self.postprocess(req, data)
 
     def service_POST(self, req):
         # FIXME: test for valid POST data
-        # return self.fake_POST(req)
+        return self.fake_POST(req)
         return super(SetupMailApplication, self).service(req)
 
     def service(self, req):
