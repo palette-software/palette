@@ -99,19 +99,9 @@ class SetupURLApplication(BaseSetupApplication):
 class SetupAdminApplication(BaseSetupApplication):
     """Handler for the 'AUTHENTICATION' section."""
 
-    PASSWD = '********' # FIXME: remove
-
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
-        entry = meta.Session.query(UserProfile).\
-            filter(UserProfile.name == 'palette').one()
-
-        # FIXME: don't return ANY passwords to the UX.
-        if entry.hashed_password:
-            passwd = self.PASSWD
-        else:
-            passwd = ''
         return {'password': passwd}
 
     @required_parameters('password')
