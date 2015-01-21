@@ -25,7 +25,7 @@ class GeneralS3Application(PaletteRESTApplication, S3Application):
     def service_GET(self, req):
         if 'action' in req.environ:
             raise exc.HTTPNotFound()
-        return {}
+        return self.get_req(req)
 
     @required_parameters('access-key', 'secret-key', 'url')
     def save(self, req):
@@ -57,7 +57,7 @@ class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
     def service_GET(self, req):
         if 'action' in req.environ:
             raise exc.HTTPNotFound()
-        return {}
+        return self.get_req(req)
 
     @required_parameters('access-key', 'secret-key', 'url')
     def save(self, req):
@@ -101,14 +101,29 @@ class _GeneralStorageApplication(PaletteRESTApplication):
         self.local = GeneralLocalApplication()
 
     def service_GET(self, req):
+        scfg = SystemConfig(req.system)
         data = {}
-        data['storage-type'] = 'none' # FIXME: none, s3, gcs, local
+        dest_type = scfg.backup_dest_type
+        if dest_type == FileManager.STORAGE_TYPE_VOL:
+            data['storage-type'] = 'local'
+        elif dest_type == FileManager.STORAGE_TYPE_CLOUD:
+            dest_id = scfg.backup_dest_id
+            entry = CloudEntry.get_by_envid_cloudid(req.envid, dest_id)
+            data['storage-type'] = entry.cloud_type
+            if entry.cloud_type == S3Application.NAME:
+                extend(data, self.s3.service_GET(req))
+            elif entry.cloud_type == GCSApplication.NAME:
+                extend(data, self.gcs.service_GET(req))
+            else:
+                print "bad cloud type:", entry.cloud_type
+                raise exc.HTTPBadRequest()
+        else:
+            raise exc.HTTPBadRequest()
         # FIXME: return data based on type return values
         # FIXME: local - needs options for 'storage-destination'.
         # FIXME: s3/gcs - access-key, secret-key, url
-        # extend(data, self.s3.service_GET(req))
-        # extend(data, self.gcs.service_GET(req))
         # extend(data, self.local.service_GET(req))
+        print "data:", data
         return data
 
 

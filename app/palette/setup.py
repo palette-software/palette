@@ -137,18 +137,19 @@ class SetupMailApplication(JSONProxy):
 
         req.system.save(SystemConfig.FROM_EMAIL, data['from-email'])
         req.system.save(SystemConfig.MAIL_DOMAIN, data['mail-domain'])
-        req.system.save(SystemConfig.MAIL_SERVER_TYPE, data['mail-server-type'])
+        req.system.save(SystemConfig.MAIL_SERVER_TYPE,
+                                            str(data['mail-server-type']))
 
-        if data['mail_server_type'] == '2':
+        if data['mail-server-type'] == 2:
             req.system.save(SystemConfig.MAIL_SMTP_SERVER, data['smtp-server'])
-            req.system.save(SystemConfig.MAIL_SMTP_PORT, data['smtp-port'])
+            req.system.save(SystemConfig.MAIL_SMTP_PORT, str(data['smtp-port']))
             req.system.save(SystemConfig.MAIL_USERNAME, data['smtp-username'])
             req.system.save(SystemConfig.MAIL_PASSWORD, data['smtp-password'])
         else:
-            req.system.save(SystemConfig.MAIL_SMTP_SERVER, "")
-            req.system.save(SystemConfig.MAIL_SMTP_PORT, "")
-            req.system.save(SystemConfig.MAIL_USERNAME, "")
-            req.system.save(SystemConfig.MAIL_PASSWORD, "")
+            req.system.delete(SystemConfig.MAIL_SMTP_SERVER)
+            req.system.delete(SystemConfig.MAIL_SMTP_PORT)
+            req.system.delete(SystemConfig.MAIL_USERNAME)
+            req.system.delete(SystemConfig.MAIL_PASSWORD)
         return data
 
     def service_GET(self, req):
