@@ -6,6 +6,9 @@ from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
 from controller.cloud import CloudEntry
+from controller.general import SystemConfig
+from controller.files import FileManager
+
 
 class CloudApplication(object):
 
@@ -87,6 +90,10 @@ class CloudApplication(object):
 
         req.system.save(self.KEY, entry.cloudid)
         session.commit()
+
+        req.system.save(SystemConfig.BACKUP_DEST_ID, entry.cloudid)
+        req.system.save(SystemConfig.BACKUP_DEST_TYPE,
+                                            FileManager.STORAGE_TYPE_CLOUD)
 
         return self._todict(entry)
 
