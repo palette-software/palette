@@ -229,7 +229,7 @@ function ($, _, template, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * gatherAdminData()
+     * gatherMailData()
      */
     function gatherMailData()
     {
@@ -427,6 +427,89 @@ function ($, _, template, configure, common, Dropdown, OnOff)
     }
 
     /*
+     * gatherSSLData()
+     */
+    function gatherSSLData()
+    {
+        return {
+            'ssl-certificate-file': $('#ssl-certificate-file').val(),
+            'ssl-certificate-key-file': $('#ssl-certificate-key-file').val(),
+            'ssl-certificate-chain-file': $('#ssl-certificate-chain-file').val()
+        }
+    }
+
+    /*
+     * maySaveSSL()
+     * Return true if the 'Server SSL' section has changed and is valid.
+     */
+    function maySaveSSL(data)
+    {
+        if (data['ssl-certificate-file'].length == 0) {
+            return false;
+        }
+        if (data['ssl-certificate-key-file'].length == 0) {
+            return false;
+        }
+        return true;
+    }
+
+    /*
+     * mayCancelSSL()
+     * Return true if 'Server SSL' section has changed.
+     */
+    function mayCancelSSL(data)
+    {
+        if (data['ssl-certificate-file'].length > 0) {
+            return true
+        }
+        if (data['ssl-certificate-key-file'].length > 0) {
+            return true;
+        }
+         if (data['ssl-certificate-chain-file'].length > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    /*
+     * saveSSL()
+     * Callback for the 'Save' button in the SSL Certificate section.
+     */
+    function saveSSL() {
+        var data = gatherSSLData();
+        data['action'] = 'save';
+
+        var result = null;
+        $.ajax({
+            type: 'POST',
+            url: '/rest/setup/ssl',
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function() {
+                cancelSSL();
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(this.url + ": " +
+                      jqXHR.status + " (" + errorThrown + ")");
+            }
+        });
+    }
+
+    /*
+     * cancelSSL()
+     * Callback for the 'Cancel' button in the 'Server SSL' section.
+     */
+    function cancelSSL()
+    {
+        $('#ssl-certificate-file').val('');
+        $('#ssl-certificate-key-file').val('');
+        $('#ssl-certificate-chain-file').val('');
+        $('#save-ssl, #cancel-ssl').addClass('disabled');
+    }
+
+    /*
      * gatherAuthData()
      * Return the current settings in the 'Authentication' section as a dict.
      */
@@ -481,34 +564,6 @@ function ($, _, template, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * saveSSL()
-     * Callback for the 'Save' button in the SSL Certificate section.
-     */
-    function saveSSL() {
-        var data = {'action': 'save'}
-        data['enable-ssl'] = OnOff.getValueById('enable-ssl');
-
-        var result = null;
-        $.ajax({
-            type: 'POST',
-            url: '/rest/setup/ssl',
-            data: data,
-            dataType: 'json',
-            async: false,
-
-            success: function(data) {
-                result = data;
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                alert(this.url + ": " +
-                      jqXHR.status + " (" + errorThrown + ")");
-                sucess = false;
-            }
-        });
-        /* FIXME: failure case? */
-    }
-
-    /*
      * validate()
      * Enable/disable the buttons based on the field values.
      */
@@ -516,6 +571,7 @@ function ($, _, template, configure, common, Dropdown, OnOff)
         validateURL();
         validateAdmin();
         validateMail();
+        validateSection('ssl', gatherSSLData, maySaveSSL, mayCancelSSL);
     }
 
     /*
@@ -551,13 +607,16 @@ function ($, _, template, configure, common, Dropdown, OnOff)
         mailData = gatherMailData();
         changeMail();
 
-        $('input[type="text"], input[type="password"]').on('paste', function() {
+        $('#save-ssl').bind('click', saveSSL);
+        $('#cancel-ssl').bind('click', cancelSSL);
+
+        $('input[type="text"], input[type="password"], textarea').on('paste', function() {
             setTimeout(function() {
                 /* validate after paste completes by using a timeout. */
                 validate();
             }, 100);
         });
-        $('input[type="text"], input[type="password"]').on('keyup', function() {
+        $('input[type="text"], input[type="password"], textarea').on('keyup', function() {
             validate();
         });
 
