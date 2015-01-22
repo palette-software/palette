@@ -11,6 +11,7 @@ from controller.files import FileManager
 from controller.agent import AgentVolumesEntry
 from controller.cloud import CloudManager, CloudEntry
 from controller.passwd import set_aes_key_file
+from controller.palapi import CommException
 
 from .option import ListOption
 from .page import PalettePage, FAKEPW
@@ -33,8 +34,11 @@ class GeneralS3Application(PaletteRESTApplication, S3Application):
 
     @required_parameters('access-key', 'secret-key', 'url')
     def test(self, req):
-        # pylint: disable=unused-argument
-        return {'status': 'OK'} # FIXME
+        try:
+            self.commapp.send_cmd('s3 test', req=req)
+        except CommException:
+            return {'status': 'FAIL'}
+        return {'status': 'OK'}
 
     @required_parameters('access-key', 'secret-key', 'url')
     def remove(self, req):
@@ -66,8 +70,11 @@ class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
 
     @required_parameters('access-key', 'secret-key', 'url')
     def test(self, req):
-        # pylint: disable=unused-argument
-        return {'status': 'OK'} # FIXME
+        try:
+            self.commapp.send_cmd('gcs test', req=req)
+        except CommException:
+            return {'status': 'FAIL'}
+        return {'status': 'OK'}
 
     def remove(self, req):
         print req.POST
@@ -87,23 +94,59 @@ class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
 
 class GeneralLocalApplication(PaletteRESTApplication):
     """Handler for the 'STORAGE LOCATION' My Machine section."""
+
+    def build_item_for_volume(self, volume):
+        fmt = "%s %s %s free of %s"
+        name = volume.name
+        if volume.agent.iswin and len(name) == 1:
+            name = name + ':'
+        return fmt % (volume.agent.displayname, name,
+                      sizestr(volume.available_space), sizestr(volume.size))
+
+    def destid(self, scfg):
+        """Return the id of the current selection (built from SystemConfig)."""
+        dest_id = scfg.backup_dest_id
+        if dest_id == None:
+            dest_id = 0
+
+        return "%s:%d" % (scfg.backup_dest_type, dest_id)
+
     def service_GET(self, req):
-        # pylint: disable=unused-argument
-        config = {
-            "options": [
-                {"item": "C:", "id": 1},
-                {"item": "D:", "id": 2},
-                {"item": "E:",  "id": 3}
-                ],
-            "name": "storage-destination",
-            "value": "C:",
-            "id": 1
-            }
-        return {'config': [config]}
+        scfg = SystemConfig(req.system)
+        data = {SystemConfig.STORAGE_ENCRYPT: scfg.storage_encrypt,
+                SystemConfig.WORKBOOKS_AS_TWB: scfg.workbooks_as_twb}
+
+        # populate the storage destination type
+        dest = {'name': 'storage-destination'}
+        options = []
+
+        value = None
+        destid = self.destid(scfg)
+        for volume in AgentVolumesEntry.get_archives_by_envid(req.envid):
+            item = self.build_item_for_volume(volume)
+            ourid = '%s:%d' % (FileManager.STORAGE_TYPE_VOL, volume.volid)
+            options.append({'id': ourid, 'item':item})
+            if destid == ourid:
+                value = item
+
+        if not options:
+            # Placeholder until an agent connects.
+            value = scfg.text(FileManager.STORAGE_TYPE_VOL)
+            options.append({'id': FileManager.STORAGE_TYPE_VOL,
+                            'item': value})
+
+        if value is None:
+            value = scfg.text(destid)
+
+        dest['value'] = value
+        dest['options'] = options
+
+        data['config'] = [dest]
+        return data
+
     def service_POST(self, req):
         # pylint: disable=unused-argument
         return {}
-
 
 class _GeneralStorageApplication(PaletteRESTApplication):
     """Overall GET handler for /rest/general/storage"""
