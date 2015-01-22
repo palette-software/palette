@@ -216,8 +216,16 @@ class SetupMailApplication(JSONProxy):
             raise exc.HTTPMethodNotAllowed()
 
 
-class SetupSSLApplication(BaseSetupApplication):
+class SetupSSLApplication(JSONProxy):
     """Handler for the 'SERVER SSL CERTIFICATE' section."""
+
+    def __init__(self):
+        super(SetupSSLApplication, self).__init__('http://localhost:9092', \
+                                    allowed_request_methods=('GET', 'POST'))
+
+    def postprocess(self, req, data):
+        return data
+
 
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
@@ -229,7 +237,7 @@ class SetupSSLApplication(BaseSetupApplication):
         dump(req)
         # FIXME: check for required parameters
         # FIXME: save cert, cert key, cert chain
-        return {}
+        return super(SetupSSLApplication, self).service(req)
 
 
 class SetupAuthApplication(BaseSetupApplication):
