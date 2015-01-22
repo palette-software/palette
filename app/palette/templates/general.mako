@@ -7,6 +7,8 @@
 
 <div class="dynamic-content configuration general-page">
   <div class="scrollable">
+
+    <a name="storage"></a>
     <section class="top-zone">
       <section class="row">
         <section class="col-xs-12">
@@ -15,7 +17,7 @@
       </section>
     </section>
 
-    <section>
+    <section id="storage">
       <h2>Storage Location</h2>
       <!-- data-href="/rest/general/dest" -->
       <input type="radio" id="storage-none" name="storage-type" value="none" />
@@ -94,9 +96,10 @@
         </div>
       </section>
     </section>
-    <hr />
 
-    <section>
+    <a name="email-alerts"></a>
+    <hr />
+    <section id="email-alerts">
       <h2>Email Alerts</h2>
       <p class="slider-group">
         <span>Send Alerts to Palette Admins
@@ -108,9 +111,10 @@
         </span>
       </p>
     </section>
-    <hr />
 
-    <section>
+    <a name="backups"></a>
+    <hr />
+    <section id="backups">
       <h2>Backups</h2>
       <p class="slider-group">
         <span>Scheduled Backups
@@ -119,23 +123,26 @@
       </p>
       <h3>Retained Scheduled Backups</h3>
       <p>The number of scheduled Backups you want Palette to keep in storage</p>
-      <p><span id="backup-auto-retain-count" class="btn-group"></span> Backups</p>
+      <p><span id="backup-auto-retain-count" class="btn-group count"></span> Backups</p>
+<!--
       <h3>Frequency and Time of Scheduled Backups</h3>
       <p>
         <span>Run Backup Every
-          <span id="scheduled-backup-period" class="btn-group"></span> Hours</span>
-        &nbsp;<span>Starting at <span id="scheduled-backup-hour" class="btn-group"></span> : <span id="scheduled-backup-minute" class="btn-group"></span> : <span id="scheduled-backup-ampm" class="btn-group"></span>
-      <span class="timezone"></span></span>
+          <span id="scheduled-backup-period" class="btn-group count"></span> Hours</span>
+        &nbsp;<span>Starting at <span id="scheduled-backup-hour" class="btn-group count"></span> : <span id="scheduled-backup-minute" class="btn-group count"></span> : <span id="scheduled-backup-ampm" class="btn-group ampm"></span>
+          <span class="timezone"></span></span>
       </p>
+-->
       <h3>Retained User Requested Backups</h3>
       <p>The number of user requested Backups you want Palette to keep in storage</p>
       <p>
-        <span id="backup-user-retain-count" class="btn-group"></span> Backups
+        <span id="backup-user-retain-count" class="btn-group count"></span> Backups
       </p>
     </section>
-    <hr />
 
-    <section>
+    <a name="ziplogs"></a>
+    <hr />
+    <section id="ziplogs">
       <h2>Ziplogs</h2>
       <p class="slider-group">
         <span>Scheduled Ziplogs
@@ -145,17 +152,18 @@
       <h3>Retained Scheduled Ziplogs</h3>
       <p>The number of scheduled Ziplogs you want Palette to keep in storage</p>
       <p>
-        <span id="ziplog-auto-retain-count" class="btn-group"></span> Ziplogs
+        <span id="ziplog-auto-retain-count" class="btn-group count"></span> Ziplogs
       </p>
       <h3>Retained User Requested Ziplogs</h3>
       <p>The number of user requested Ziplogs you want Palette to keep in storage</p>
       <p>
-        <span id="ziplog-user-retain-count" class="btn-group"></span> Ziplogs
+        <span id="ziplog-user-retain-count" class="btn-group count"></span> Ziplogs
       </p>
     </section>
-    <hr />
 
-    <section>
+    <a name="workbooks"></a>
+    <hr />
+    <section id="workbooks">
       <h2>Workbook Archive</h2>
       <p class="slider-group">
         <span>Archive
@@ -173,9 +181,10 @@
         </div>
       </div>
     </section>
-    <hr />
 
-    <section>
+    <a name="monitoring"></a>
+    <hr />
+    <section id="monitoring">
       <h2>Monitoring</h2>
 
       <h3>Storage</h3>
@@ -184,28 +193,28 @@
         <span>Warning Alert at <span id="disk-watermark-low" data-href="/rest/general/low" class="btn-group"></span> %</span>
         &nbsp;<span>Error Alert at <span id="disk-watermark-high" data-href="/rest/general/high" class="btn-group"></span> %</span>
       </p>
-    </section>
 
-    <section class="cpu">      
-      <h3>CPU</h3>
-      <p>
-        <span>Warning Alert at <span id="cpu-warning" class="btn-group"></span> %</span>
-        &nbsp;<span>for <span id="cpu-warning-duration" class="btn-group"></span> minutes</span>
-      </p>
-      <p>
-        <span>Error Alert at <span id="cpu-error" class="btn-group"></span> %</span>
-        &nbsp;<span>for <span id="cpu-error-duration" class="btn-group"></span> minutes</span>
-      </p>
-    </section>
-    <hr />
+      <section class="cpu">      
+        <h3>CPU</h3>
+        <p>
+          <span>Warning Alert at <span id="cpu-warning" class="btn-group"></span> %</span>
+          &nbsp;<span>for <span id="cpu-warning-duration" class="btn-group"></span> minutes</span>
+        </p>
+        <p>
+          <span>Error Alert at <span id="cpu-error" class="btn-group"></span> %</span>
+          &nbsp;<span>for <span id="cpu-error-duration" class="btn-group"></span> minutes</span>
+        </p>
+      </section>
+      <hr />
 
-    <section>
-      <h2>Workbook</h2>
-      <p>Alert When Workbook Web View Load Times Exceed These Thresholds</p>
-      <p>
-        Warning Alert at <span id="http-load-warn" class="btn-group up"></span>
-        &nbsp;Error Alert at <span id="http-load-error" class="btn-group up"></span>
-      </p>
+      <section>
+        <h2>Workbook</h2>
+        <p>Alert When Workbook Web View Load Times Exceed These Thresholds</p>
+        <p>
+          Warning Alert at <span id="http-load-warn" class="btn-group up"></span>
+          &nbsp;Error Alert at <span id="http-load-error" class="btn-group up"></span>
+        </p>
+      </section>
     </section>
     <hr />
 
