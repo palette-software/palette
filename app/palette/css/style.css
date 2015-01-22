@@ -1615,7 +1615,7 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
 section.run-as-user {
     margin-top: 15px;
 }
-.setup-page .btn-group {
+.configuration .btn-group {
     width: 100%;
     margin-bottom: 15px;
 }
@@ -1627,6 +1627,7 @@ section.run-as-user {
 }
 input[name="storage-type"] {
     display: inline-block;
+    margin-bottom: 25px;
 }
 input[name="storage-type"] + label {
     display: inline-block;

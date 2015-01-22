@@ -174,7 +174,8 @@ def extend(dict1, dict2):
     for key in dict2:
         value2 = dict2[key]
         if key in dict1:
-            if hasattr(value2, '__getitem__'):
+            if hasattr(value2, '__getitem__') \
+                    and not isinstance(value2, basestring):
                 dict1[key] += value2
             else:
                 raise KeyError("'" + key + "' exists.")
