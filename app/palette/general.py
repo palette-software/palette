@@ -199,6 +199,8 @@ class EmailAlertApplication(PaletteRESTApplication):
         data['alert-publishers'] = scfg.alerts_publisher_enabled
         return data
 
+    # FIXME: add POST
+
 
 class GeneralZiplogApplication(PaletteRESTApplication):
     """Handler for the 'ZIPLOGSS' section."""
