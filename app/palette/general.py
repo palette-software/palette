@@ -242,6 +242,8 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         # pylint: disable=unused-argument
         scfg = SystemConfig(req.system)
 
+        # FIXME: make each of these an option in config, not just values.
+        # FIXME: also allow them not to be set in the system table.
         data = {}
         data['storage-warning'] = scfg.watermark_low
         data['storage-error'] = scfg.watermark_high
@@ -253,7 +255,9 @@ class GeneralMonitorApplication(PaletteRESTApplication):
 
         data['workbook-warn'] = scfg.workbook_load_warn
         data['workbook-error'] = scfg.workbook_load_error
+
         return data
+
 
 class OldGeneralApplication(PaletteRESTApplication):
     NAME = 'general'
@@ -649,6 +653,7 @@ class _GeneralApplication(PaletteRESTApplication):
         self.ziplog = GeneralZiplogApplication()
         self.archive = GeneralArchiveApplication()
         self.storage = _GeneralStorageApplication() # Don't use the Router
+        self.monitor = GeneralMonitorApplication()
 
     def service_GET(self, req):
         data = {}
@@ -657,6 +662,8 @@ class _GeneralApplication(PaletteRESTApplication):
         extend(data, self.ziplog.service_GET(req))
         extend(data, self.archive.service_GET(req))
         extend(data, self.storage.service_GET(req))
+        # FIXME: uncomment
+        # extend(data, self.monitor.service_GET(req))
         return data
 
 
@@ -665,10 +672,13 @@ class GeneralApplication(Router):
     def __init__(self):
         super(GeneralApplication, self).__init__()
         self.add_route(r'/\Z', _GeneralApplication())
-        self.add_route(r'/backup\Z', GeneralBackupApplication())
-        self.add_route(r'/email/alerts?\Z', EmailAlertApplication())
-        self.add_route(r'/ziplog\Z', GeneralZiplogApplication())
         self.add_route(r'/storage\Z|/storage/', GeneralStorageApplication())
+        self.add_route(r'/email/alerts?\Z', EmailAlertApplication())
+        self.add_route(r'/backup\Z', GeneralBackupApplication())
+        self.add_route(r'/ziplog\Z', GeneralZiplogApplication())
+        self.add_route(r'/monitor\Z', GeneralMonitorApplication())
+        self.add_route(r'/archive\Z|/workbook-archive\Z|/workbook\Z',
+                       GeneralArchiveApplication())
 
 
 class GeneralPage(PalettePage, CredentialMixin):

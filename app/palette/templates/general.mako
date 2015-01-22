@@ -216,12 +216,6 @@
         </p>
       </section>
     </section>
-    <hr />
-
-    <section>
-      <h2>Authentication</h2>
-    </section>
-  </div>
 </div>
 
 <script id="dropdown-template" type="x-tmpl-mustache">
