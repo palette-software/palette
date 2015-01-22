@@ -61,10 +61,10 @@ function($, template) {
             }
 
             if (success) {
+                $('input[type="checkbox"]', this.node).prop("checked", !checked);
                 if (this.callback) {
                     this.callback(!checked);
                 }
-                $('input[type="checkbox"]', this.node).prop("checked", !checked);
             }
         }
 
@@ -94,6 +94,20 @@ function($, template) {
     OnOff.getValueById = function(id)
     {
         return $('#'+id+' .onoffswitch-checkbox').prop("checked");
+    }
+
+    OnOff.setValueById = function(id, value)
+    {
+        var onoff = $('#'+id+' .onoffswitch-checkbox');
+        onoff.prop("checked", value);
+    }
+
+    OnOff.setCallback = function(selector, callback)
+    {
+        $(selector).each(function (index) {
+            var onoff = $(this).data();
+            onoff.callback = callback;
+        });
     }
 
     return OnOff;

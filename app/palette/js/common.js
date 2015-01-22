@@ -535,7 +535,6 @@ function ($, topic, template, items, paging)
              * is changed while a request is in-flight.
              */
             if (n != eventFilter.seq) {
-                console.log('skip: ' + data['seq'] + ', expected: ' + eventFilter.seq);
                 return false;
             }
         }
