@@ -110,6 +110,14 @@
           <span id="alert-publishers" class="onoffswitch yesno"></span>
         </span>
       </p>
+      <div>
+        <button type="button" id="save-email-alerts" class="btn btn-primary disabled">
+          Save
+        </button>
+        <button type="button" id="cancel-email-alerts" class="btn btn-primary disabled">
+          Cancel
+        </button>
+      </div>
     </section>
 
     <a name="backups"></a>

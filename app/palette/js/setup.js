@@ -12,29 +12,11 @@ function ($, _, template, configure, common, Dropdown, OnOff)
     var authData = null;
 
     /*
-     * validateSection()
-     */
-    function validateSection(name, gather, maySave, mayCancel)
-    {
-        var data = gather();
-        if (maySave(data)) {
-            $('#save-'+name).removeClass('disabled');
-        } else {
-            $('#save-'+name).addClass('disabled');
-        }
-        if (mayCancel(data)) {
-            $('#cancel-'+name).removeClass('disabled');
-        } else {
-            $('#cancel-'+name).addClass('disabled');
-        }
-    }
-
-    /*
      * gatherURLData()
      */
     function gatherURLData()
     {
-        return {'server-url': $('#server-url').val()}
+        return {'server-url': $('#server-url').val()};
     }
 
     /*
@@ -540,12 +522,15 @@ function ($, _, template, configure, common, Dropdown, OnOff)
      * Enable/disable the buttons based on the field values.
      */
     function validate() {
-        validateSection('url', gatherURLData, maySaveURL, mayCancelURL);
-        validateSection('admin', gatherAdminData, maySaveAdmin, mayCancelAdmin);
+        configure.validateSection('url', gatherURLData,
+                                  maySaveURL, mayCancelURL);
+        configure.validateSection('admin', gatherAdminData,
+                                  maySaveAdmin, mayCancelAdmin);
         validateMail();
-        validateSection('ssl', gatherSSLData, maySaveSSL, mayCancelSSL);
-        validateSection('auth', gatherAuthData,
-                        maySaveCancelAuth, maySaveCancelAuth);
+        configure.validateSection('ssl', gatherSSLData,
+                                  maySaveSSL, mayCancelSSL);
+        configure.validateSection('auth', gatherAuthData,
+                                  maySaveCancelAuth, maySaveCancelAuth);
     }
 
     /*
