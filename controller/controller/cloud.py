@@ -82,12 +82,22 @@ class CloudManager(Manager):
         # pylint: disable=invalid-name
         self.s3 = S3(server)
         self.gcs = GCS(server)
+        self.server = server
 
     def get_by_name(self, name, cloud_type):
         return CloudEntry.get_by_envid_name(self.envid, name, cloud_type)
 
     def get_clouds(self):
         return CloudEntry.get_all_by_envid(self.envid)
+
+    def get_cloud_entry(self, cloud_type_id):
+        """Return the current entry of cloud_type_id (S3_ID or GCS_ID),
+           or None if there isn't one."""
+        cloudid = self.server.system.getint(cloud_type_id, default=None)
+        if not cloudid:
+            return None
+
+        return self.get_by_cloudid(cloudid)
 
     # FIXME: use get_unique_by_keys()
     def get_by_cloudid(self, cloudid):

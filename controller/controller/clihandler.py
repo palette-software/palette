@@ -1864,6 +1864,55 @@ class CliHandler(socketserver.StreamRequestHandler):
         agent.connection.http_send_json("/hup", {})
         self.report_status({})
 
+    def _do_cloud_test(self, cloud_type):
+        """Test cloud credentials/commands by putting and then
+           deleting a file on cloud storage of "cloud_type"."""
+        if cloud_type == CloudManager.CLOUD_TYPE_S3:
+            cloud_type_id = S3_ID
+            cloud_instance = self.server.cloud.s3
+        elif cloud_type == CloudManager.CLOUD_TYPE_GCS:
+            cloud_type_id = GCS_ID
+            cloud_instance = self.server.cloud.gcs
+        else:
+            raise ValueError('cloud_type')
+
+        entry = self.server.cloud.get_cloud_entry(cloud_type_id)
+        if not entry:
+            self.error(clierror.ERROR_COMMAND_FAILED,
+                       "No cloud credentials saved for cloud type " % \
+                       cloud_type)
+            return
+
+        agent = self.server.agentmanager.agent_by_type(
+                                            AgentManager.AGENT_TYPE_PRIMARY)
+        if not agent:
+            self.error(clierror.ERROR_AGENT_NOT_CONNECTED,
+                   "Primary agent must be connected for 'test' command.")
+            return
+
+        self.ack()
+
+        # This file must exist on the agent.
+        keypath = "palette_logo.png"
+        dirpath = agent.path.join(agent.install_dir, "maint", "www", "image")
+        body = cloud_instance.put(agent, entry, keypath, dirpath)
+        if failed(body):
+            self.server.log.info("Put to keypath '%s', dirpath '%s', " + \
+                                 "cloud type '%d' failed.",
+                                 keypath, dirpath, cloud_type)
+            self.error(clierror.ERROR_COMMAND_FAILED, str(body))
+            return
+
+        delete_body = cloud_instance.delete_file(entry, keypath)
+        if failed(delete_body):
+            self.server.log.info("Delete path '%s', " + \
+                                 "cloud type '%d' failed.",
+                                 keypath, cloud_type)
+            self.error(clierror.ERROR_COMMAND_FAILED, str(delete_body))
+            return
+
+        self.report_status(body)
+
     def _do_cloud(self, cloud_type, usage_msg, cmd):
         # pylint: disable=too-many-branches
 
@@ -1876,6 +1925,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             raise ValueError('cloud_type')
 
+        if len(cmd.args) == 1 and cmd.args[0].upper() == 'TEST':
+            return self._do_cloud_test(cloud_type)
         if len(cmd.args) == 2:
             dirpath = None
         elif len(cmd.args) == 3:
@@ -1930,7 +1981,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
     # 's3-name' is now a slash ('/') parameter
-    @usage('s3 [GET|PUT|DELETE] <key-or-path> [dirpath]')
+    @usage('s3 { [GET|PUT|DELETE] <key-or-path> [dirpath] | TEST }')
     def do_s3(self, cmd):
         """Send a file to or receive a file from an S3 bucket"""
         return self._do_cloud(CloudManager.CLOUD_TYPE_S3,
@@ -1938,7 +1989,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                               cmd)
 
     # 'gcs-name' is now a slash ('/') parameter
-    @usage('gcs [GET|PUT|DELETE] <key-or-path> [dirpath]')
+    @usage('gcs { [GET|PUT|DELETE] <key-or-path> [dirpath] | TEST }')
     def do_gcs(self, cmd):
         """Send a file to or receive a file from a GCP bucket"""
         return self._do_cloud(CloudManager.CLOUD_TYPE_GCS,
