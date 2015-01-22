@@ -7,6 +7,8 @@
 
 <div class="dynamic-content configuration setup-page">
   <div class="scrollable">
+
+    <a name="url"></a>
     <section class="top-zone">
       <section class="row">
         <section class="col-xs-12">
@@ -27,8 +29,10 @@
         </button>
       </div>
     </section>
+
+    <a name="admin"></a>
     <hr />
-    <section>
+    <section id="admin">
       <h2>Palette Admin Password</h2>
       <p>You will use this password to login to your Palette Server using the "Palette" username</p>
       <h3>Password *</h3>
@@ -46,8 +50,10 @@
         </button>
       </div>
     </section>
+
+    <a name="mail"></a>
     <hr />
-    <section >
+    <section id="mail">
       <h2>Mail Server</h2>
       <p>The Palette Server will send you alerts using this mail server and email address</p>
       <%include file="mail.mako" />
@@ -60,6 +66,8 @@
         </button>
       </div>
     </section>
+
+    <a name="ssl"></a>
     <hr />
     <section id="ssl">
       <h2>Server SSL Certificate</h2>
@@ -81,8 +89,10 @@
         </button>
       </div>
     </section>
+
+    <a name="auth"></a>
     <hr />
-    <section id="authentication">
+    <section id="auth">
       <h2>Authentication</h2>
       <p>
         <span id="authentication-type" class="btn-group"></span>

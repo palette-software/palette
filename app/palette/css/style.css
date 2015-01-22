@@ -1619,6 +1619,9 @@ section.run-as-user {
     width: 100%;
     margin-bottom: 15px;
 }
+.configuration .btn-group.count, .configuration .btn-group.ampm  {
+    width: 65px;
+}
 .setup-page #smtp-port {
     width: 64px;
 }
@@ -1639,6 +1642,6 @@ label[for*="s3-"], label[for*="gcs-"] {
 label + input[type="text"], label + input[type="password"] {
     margin-top: 0;
 }
-#authentication {
+#auth {
     margin-bottom: 35px;
 }
