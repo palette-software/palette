@@ -10,8 +10,8 @@
         </a>
         <ul>
           <li>
-            <a href="http://hello.palette-software.com" target="_blank">
-              <i class="fa fa-fw fa-envelope"></i> Contact Palette
+            <a href="http://hello.palette-software.com/hc/en-us/requests" target="_blank">
+              <i class="fa fa-fw fa-envelope"></i> My Support Requests
             </a>
           </li>
           <li>

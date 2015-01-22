@@ -1191,7 +1191,7 @@ ul.title-area > li > h1 > a {
 #mainNav ul.nav li > ul {
     position: absolute;
     top: 60px;
-    width: 170px;
+    width: 210px;
     right: 0;
     background-color: #f8f8f8;
     list-style-type: none;
