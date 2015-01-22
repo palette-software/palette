@@ -40,7 +40,7 @@
   <div class="col-xs-10">
     <h3>Test Email Recipient</h3>
     <input type="text" id="test-email-recipient" />
-    <button type="button" id="test" class="btn disabled">
+    <button type="button" id="test-mail" class="btn disabled">
       Test Email
     </button>
   </div>

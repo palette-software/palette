@@ -274,24 +274,29 @@ function ($, _, template, configure, common, Dropdown, OnOff)
      */
     function validateMail()
     {
-        var testEmailRecipient = $('test-email-recipient').val();
+        var maySave;
+        var testEmailRecipient = $('#test-email-recipient').val();
 
         var data = gatherMailData();
         if (maySaveMail(data)) {
             $('#save-mail').removeClass('disabled');
-            if (common.validEmail(testEmailRecipient)) {
-                $('#test-mail').removeClass(disabled);
-            } else {
-                $('#test-mail').addClass('disabled');
-            }
+            maySave = true;
         } else {
-            $('#test-mail').addClass('disabled');
+            maySave = false;
             $('#save-mail').addClass('disabled');
         }
         if (mayCancelMail(data)) {
             $('#cancel-mail').removeClass('disabled');
         } else {
             $('#cancel-mail').addClass('disabled');
+        }
+
+        if (common.validEmail(testEmailRecipient)) {
+            if (maySave || _.isEqual(data, mailData)) {
+                $('#test-mail').removeClass('disabled');
+            } else {
+                $('#test-mail').addClass('disabled');
+            }
         }
     }
 
