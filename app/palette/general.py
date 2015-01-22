@@ -89,7 +89,17 @@ class GeneralLocalApplication(PaletteRESTApplication):
     """Handler for the 'STORAGE LOCATION' My Machine section."""
     def service_GET(self, req):
         # pylint: disable=unused-argument
-        return {}
+        config = {
+            "options": [
+                {"item": "C:", "id": 1},
+                {"item": "D:", "id": 2},
+                {"item": "E:",  "id": 3}
+                ],
+            "name": "storage-destination",
+            "value": "C:",
+            "id": 1
+            }
+        return {'config': [config]}
     def service_POST(self, req):
         # pylint: disable=unused-argument
         return {}
@@ -126,7 +136,7 @@ class _GeneralStorageApplication(PaletteRESTApplication):
         # FIXME: return data based on type return values
         # FIXME: local - needs options for 'storage-destination'.
         # FIXME: s3/gcs - access-key, secret-key, url
-        # extend(data, self.local.service_GET(req))
+        extend(data, self.local.service_GET(req))
         print "data:", data
         return data
 

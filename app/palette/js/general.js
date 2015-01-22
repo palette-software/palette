@@ -1,5 +1,5 @@
-require(['jquery', 'template', 'common', 'EditBox', 'OnOff', 'bootstrap'],
-function ($, template, common, EditBox, OnOff)
+require(['jquery', 'template', 'common', 'Dropdown', 'OnOff', 'bootstrap'],
+function ($, template, common, Dropdown, OnOff)
 {
     common.startMonitor(false);
 
@@ -143,11 +143,7 @@ function ($, template, common, EditBox, OnOff)
     }
 
     function setup(data) {
-        $('input:radio[name="storage-type"]').change(function() {
-            changeStorageLocation($(this).val());
-        });
-        $('#storage-'+data['storage-type']).prop('checked', true);
-        changeStorageLocation(data['storage-type']);
+        Dropdown.setupAll(data);
 
         $('#save-s3').bind('click', function() {save('s3');});
         $('#test-s3').bind('click', function() {test('s3');});
@@ -158,6 +154,12 @@ function ($, template, common, EditBox, OnOff)
         $('#remove-gcs').bind('click', function() {remove('gcs');});
 
         $('#save-local').bind('click', saveLocal);
+
+        $('input:radio[name="storage-type"]').change(function() {
+            changeStorageLocation($(this).val());
+        });
+        $('#storage-'+data['storage-type']).prop('checked', true);
+        changeStorageLocation(data['storage-type']);
     }
 
     $.ajax({
@@ -165,7 +167,6 @@ function ($, template, common, EditBox, OnOff)
         success: function(data) {
             $().ready(function() {
                 setup(data);
-                EditBox.setup();
                 OnOff.setup();
                 common.setupDropdowns(); // FIXME
             });
