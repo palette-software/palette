@@ -11,16 +11,16 @@ class SystemConfig(object):
     BACKUP_DEST_TYPE = "backup-dest-type"   # "vol" or "cloud"
     BACKUP_DEST_ID = "backup-dest-id"
 
-    SCHEDULED_BACKUP_PERIOD = "scheduled-backup-period"
-    SCHEDULED_BACKUP_HOUR = "scheduled-backup-hour"
-    SCHEDULED_BACKUP_MINUTE = "scheduled-backup-minute"
-    SCHEDULED_BACKUP_AMPM = "scheduled-backup-ampm"
-    SCHEDULED_BACKUP_ENABLED = "scheduled-backup-enabled"
+    BACKUP_SCHEDULED_PERIOD = "backup-scheduled-period"
+    BACKUP_SCHEDULED_HOUR = "backup-scheduled-hour"
+    BACKUP_SCHEDULED_MINUTE = "backup-scheduled-minute"
+    BACKUP_SCHEDULED_AMPM = "backup-scheuled-ampm"
+    BACKUP_SCHEDULED_ENABLED = "backup-scheduled-enabled"
 
     ZIPLOG_AUTO_RETAIN_COUNT = "ziplog-auto-retain-count"
     ZIPLOG_USER_RETAIN_COUNT = "ziplog-user-retain-count"
     ZIPLOG_ENABLED = "ziplog-enabled"
-    SCHEDULED_ZIPLOG_ENABLED = "scheduled-ziplog-enabled"
+    ZIPLOG_SCHEDULED_ENABLED = "ziplog-scheduled-enabled"
 
     ARCHIVE_USERNAME = "archive-username"
     ARCHIVE_PASSWORD = "archive-password"
@@ -139,23 +139,23 @@ class SystemConfig(object):
         if name == 'backup_dest_type':
             return self._backup_dest_type()
 
-        if name == "scheduled_backup_period":
-            return self._getint(self.SCHEDULED_BACKUP_PERIOD, default=24)
-        if name == "scheduled_backup_hour":
-            return self._getint(self.SCHEDULED_BACKUP_HOUR, default=12)
-        if name == "scheduled_backup_minute":
-            return self._getstring(self.SCHEDULED_BACKUP_MINUTE, default='00')
-        if name == "scheduled_backup_ampm":
-            return self._getstring(self.SCHEDULED_BACKUP_AMPM, default="AM")
-        if name == "scheduled_backup_enabled":
-            return self._getyesno(self.SCHEDULED_BACKUP_ENABLED, default='yes')
+        if name == "backup_scheduled_period":
+            return self._getint(self.BACKUP_SCHEDULED_PERIOD, default=24)
+        if name == "backup_scheduled_hour":
+            return self._getint(self.BACKUP_SCHEDULED_HOUR, default=12)
+        if name == "backup_scheduled_minute":
+            return self._getstring(self.BACKUP_SCHEDULED_MINUTE, default='00')
+        if name == "backup_scheduled_ampm":
+            return self._getstring(self.BACKUP_SCHEDULED_AMPM, default="AM")
+        if name == "backup_scheduled_enabled":
+            return self._getyesno(self.BACKUP_SCHEDULED_ENABLED, default='yes')
 
         if name == "ziplog_auto_retain_count":
             return self._getint(self.ZIPLOG_AUTO_RETAIN_COUNT, default=10)
         if name == "ziplog_user_retain_count":
             return self._getint(self.ZIPLOG_USER_RETAIN_COUNT, default=5)
-        if name == "scheduled_ziplog_enabled":
-            return self._getyesno(self.SCHEDULED_ZIPLOG_ENABLED,
+        if name == "ziplog_scheduled_enabled":
+            return self._getyesno(self.ZIPLOG_SCHEDULED_ENABLED,
                                   default='yes')
 
         if name == "archive_username":
@@ -240,15 +240,15 @@ class SystemConfig(object):
             self.BACKUP_USER_RETAIN_COUNT: self.backup_user_retain_count,
             self.BACKUP_DEST_TYPE: self.backup_dest_type,
             self.BACKUP_DEST_ID: self.backup_dest_id,
-            self.SCHEDULED_BACKUP_PERIOD: self.scheduled_backup_period,
-            self.SCHEDULED_BACKUP_HOUR: self.scheduled_backup_hour,
-            self.SCHEDULED_BACKUP_MINUTE: self.scheduled_backup_minute,
-            self.SCHEDULED_BACKUP_AMPM: self.scheduled_backup_ampm,
-            self.SCHEDULED_BACKUP_ENABLED: self.scheduled_backup_enabled,
+            self.BACKUP_SCHEDULED_PERIOD: self.backup_scheduled_period,
+            self.BACKUP_SCHEDULED_HOUR: self.backup_scheduled_hour,
+            self.BACKUP_SCHEDULED_MINUTE: self.backup_scheduled_minute,
+            self.BACKUP_SCHEDULED_AMPM: self.backup_scheduled_ampm,
+            self.BACKUP_SCHEDULED_ENABLED: self.backup_scheduled_enabled,
             self.ZIPLOG_AUTO_RETAIN_COUNT: self.ziplog_auto_retain_count,
             self.ZIPLOG_USER_RETAIN_COUNT: self.ziplog_user_retain_count,
             self.ZIPLOG_ENABLED: self.ziplog_enabled,
-            self.SCHEDULED_ZIPLOG_ENABLED: self.scheduled_ziplog_enabled,
+            self.ZIPLOG_SCHEDULED_ENABLED: self.ziplog_scheduled_enabled,
             self.ARCHIVE_USERNAME: self.archive_username,
             self.ARCHIVE_PASSWORD: self.archive_password,
             self.ARCHIVE_ENABLED: self.archive_enabled,
