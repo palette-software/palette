@@ -252,6 +252,7 @@ class GeneralBackupApplication(PaletteRESTApplication):
 class EmailAlertApplication(PaletteRESTApplication):
     """Handler for the 'EMAIL ALERTS' section."""
     def service_GET(self, req):
+        print 'alert GET', req
         scfg = SystemConfig(req.system)
         data = {}
         data['alert-admins'] = scfg.alerts_admin_enabled
@@ -260,7 +261,7 @@ class EmailAlertApplication(PaletteRESTApplication):
 
     # FIXME: finish POST
     def service_POST(self, req):
-        print 'alert', req
+        print 'alert POST', req
 
         # Fixme: Add something like the following after the js is finished
         value = req.POST['id']
