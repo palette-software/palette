@@ -16,8 +16,8 @@
         <i class="fa fa-fw fa-copy"></i><span>Events</span>
       </a>
     </li>
-    <li class="${obj.active=='activity' and 'active' or ''}">
-      <a href="/activity">
+    <li class="${obj.active=='workbook-archive' and 'active' or ''}">
+      <a href="/workbook/archive">
         <i class="fa fa-fw fa-book"></i><span>Workbook Archive</span>
       </a>
     </li>
