@@ -5,7 +5,10 @@ from .cloud import CloudApplication
 __all__ = ["GCSApplication"]
 
 class GCSApplication(CloudApplication):
-    NAME = 'gcs'
+
+    @property
+    def NAME(self):
+        return 'gcs'
 
     @property
     def KEY(self):

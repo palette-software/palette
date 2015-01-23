@@ -6,7 +6,9 @@ __all__ = ["S3Application"]
 
 class S3Application(CloudApplication):
 
-    NAME = 's3'
+    @property
+    def NAME(self):
+        return 's3'
 
     @property
     def KEY(self):
