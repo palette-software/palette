@@ -323,6 +323,20 @@ class GeneralArchiveApplication(PaletteRESTApplication):
         data['archive'] = scfg.archive_enabled
         return data
 
+    def service_POST(self, req):
+        print 'archive', req
+        if req.POST['enable-archive'] == 'false':
+            req.system.save(SystemConfig.ARCHIVE_ENABLED, 'no')
+        else:
+            req.system.save(SystemConfig.ARCHIVE_ENABLED, 'yes')
+
+        req.system.save(SystemConfig.ARCHIVE_USERNAME,
+                             req.POST['archive-username'])
+        req.system.save(SystemConfig.ARCHIVE_PASSWORD,
+                             req.POST['archive-password'])
+
+        return {}
+
 
 # Maybe break this into Storage, CPU, Workbook?
 class GeneralMonitorApplication(PaletteRESTApplication):
@@ -336,6 +350,10 @@ class GeneralMonitorApplication(PaletteRESTApplication):
     CPU_LOAD_ERROR_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
     CPU_PERIOD_WARN_RANGE = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30]
     CPU_PERIOD_ERROR_RANGE = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30]
+    WORKBOOK_LOAD_WARN_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40,
+                                45]
+    WORKBOOK_LOAD_ERROR_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40,
+                                45]
 
     def build_item_for_web_request(self, x):
         if x == 0:
@@ -348,7 +366,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         # pylint: disable=unused-argument
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-statements
-        print 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+        # pylint: disable=too-many-branches
         scfg = SystemConfig(req.system)
 
         # FIXME: make each of these an option in config, not just values.
@@ -400,6 +418,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
             options.append({'id':x, 'item': str(x)})
         logs['options'] = options
 
+        # http
         value = self.build_item_for_web_request(scfg.http_load_warn)
         http_load_warn = {'name': SystemConfig.HTTP_LOAD_WARN, 'value': value}
 
@@ -419,6 +438,28 @@ class GeneralMonitorApplication(PaletteRESTApplication):
             options.append({'id':x, 'item': item})
         http_load_error['options'] = options
 
+        # workbook
+        value = self.build_item_for_web_request(scfg.workbook_load_warn)
+        workbook_load_warn = {'name': SystemConfig.WORKBOOK_LOAD_WARN,
+                              'value': value}
+
+        options = []
+        for x in self.WORKBOOK_LOAD_WARN_RANGE:
+            item = self.build_item_for_web_request(x)
+            options.append({'id':x, 'item': item})
+        workbook_load_warn['options'] = options
+
+        value = self.build_item_for_web_request(scfg.workbook_load_error)
+        workbook_load_error = {'name': SystemConfig.WORKBOOK_LOAD_ERROR,
+                           'value': value}
+
+        options = []
+        for x in self.WORKBOOK_LOAD_ERROR_RANGE:
+            item = self.build_item_for_web_request(x)
+            options.append({'id':x, 'item': item})
+        workbook_load_error['options'] = options
+
+        # cpu
         cpu_load_warn = {'name': SystemConfig.CPU_LOAD_WARN,
                          'value': str(scfg.cpu_load_warn)}
         options = []
@@ -448,6 +489,8 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         cpu_period_error['options'] = options
 
         data['config'] = [low, high, auto, user, logs,
+                          http_load_warn, http_load_error,
+                          workbook_load_warn, workbook_load_error,
                           cpu_load_warn, cpu_load_error,
                           cpu_period_warn, cpu_period_error]
 
