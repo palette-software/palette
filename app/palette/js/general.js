@@ -3,6 +3,9 @@ require(['jquery', 'underscore', 'configure', 'common',
 function ($, _, configure, common, Dropdown, OnOff)
 {
     var emailAlertData = null;
+    var backupData = null;
+    var ziplogData = null;
+    var workbookData = null;
 
     /*
      * save()
@@ -118,14 +121,23 @@ function ($, _, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * gatherEmailAlertData()
+     * getEmailAlertData()
      */
-    function gatherEmailAlertData()
+    function getEmailAlertData()
     {
         return {
             'alert-publishers': OnOff.getValueById('alert-publishers'),
             'alert-admins': OnOff.getValueById('alert-admins'),
         };
+    }
+
+    /*
+     * setEmailAlertData()
+     */
+    function setEmailAlertData(data)
+    {
+        OnOff.setValueById('alert-publishers', data['alert-publishers']);
+        OnOff.setValueById('alert-admins', data['alert-admins']);
     }
 
     /*
@@ -172,11 +184,222 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function cancelEmailAlerts()
     {
-        OnOff.setValueById('alert-publishers',
-                           emailAlertData['alert-publishers']);
-        OnOff.setValueById('alert-admins',
-                           emailAlertData['alert-admins']);
+        setEmailAlertData(emailAlertData);
         $('#save-email-alerts, #cancel-email-alerts').addClass('disabled');
+    }
+
+    /*
+     * getBackupData()
+     */
+    function getBackupData()
+    {
+        return {
+            'scheduled-backups': OnOff.getValueById('scheduled-backups'),
+            'backup-auto-retain-count': Dropdown.getValueById('backup-auto-retain-count'),
+            'backup-user-retain-count': Dropdown.getValueById('backup-user-retain-count')
+        };
+    }
+
+    /*
+     * setBackupData()
+     */
+    function setBackupData(data)
+    {
+        OnOff.setValueById('scheduled-backups', data['scheduled-backups']);
+        Dropdown.setValueById('backup-auto-retain-count',
+                              data['backup-auto-retain-count']);
+        Dropdown.setValueById('backup-user-retain-count',
+                              data['backup-user-retain-count']);
+    }
+
+    /*
+     * maySaveCancelBackup()
+     * Return true if the 'Backups' section has changed.
+     */
+    function maySaveCancelBackup(data)
+    {
+        return !_.isEqual(data, backupData);
+    }
+
+    /*
+     * saveBackups()
+     * Callback for the 'Save' button in the 'Backups' section.
+     */
+    function saveBackups() {
+        $('#save-backups, #cancel-backups').addClass('disabled');
+        var data = getBackupData();
+        data['action'] = 'save';
+
+        $.ajax({
+            type: 'POST',
+            url: '/rest/general/backup',
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function() {
+                delete data['action'];
+                backupData = data;
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(this.url + ": " +
+                      jqXHR.status + " (" + errorThrown + ")");
+            }
+        });
+
+        validate();
+    }
+
+    /*
+     * cancelBackups()
+     * Callback for the 'Cancel' button in the 'Backups' section.
+     */
+    function cancelBackups()
+    {
+        setBackupData(backupData);
+        $('#save-backups, #cancel-backups').addClass('disabled');
+    }
+
+    /*
+     * getZiplogData()
+     */
+    function getZiplogData()
+    {
+        return {
+            'scheduled-ziplogs': OnOff.getValueById('scheduled-ziplogs'),
+            'ziplog-auto-retain-count': Dropdown.getValueById('ziplog-auto-retain-count'),
+            'ziplog-user-retain-count': Dropdown.getValueById('ziplog-user-retain-count')
+        };
+    }
+
+    /*
+     * setZiplogData()
+     */
+    function setZiplogData(data)
+    {
+        OnOff.setValueById('scheduled-ziplogs', data['scheduled-ziplogs']);
+        Dropdown.setValueById('ziplog-auto-retain-count',
+                              data['ziplog-auto-retain-count']);
+        Dropdown.setValueById('ziplog-user-retain-count',
+                              data['ziplog-user-retain-count']);
+    }
+
+    /*
+     * maySaveCancelZiplog()
+     * Return true if the 'Ziplogs' section has changed.
+     */
+    function maySaveCancelZiplog(data)
+    {
+        return !_.isEqual(data, ziplogData);
+    }
+
+    /*
+     * saveZiplogs()
+     * Callback for the 'Save' button in the 'Ziplogs' section.
+     */
+    function saveZiplogs() {
+        $('#save-ziplogs, #cancel-ziplogs').addClass('disabled');
+        var data = getZiplogData();
+        data['action'] = 'save';
+
+        $.ajax({
+            type: 'POST',
+            url: '/rest/general/ziplog',
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function() {
+                delete data['action'];
+                ziplogData = data;
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(this.url + ": " +
+                      jqXHR.status + " (" + errorThrown + ")");
+            }
+        });
+
+        validate();
+    }
+
+    /*
+     * cancelZiplogs()
+     * Callback for the 'Cancel' button in the 'Ziplogs' section.
+     */
+    function cancelZiplogs()
+    {
+        setZiplogData(ziplogData);
+        $('#save-ziplogs, #cancel-ziplogs').addClass('disabled');
+    }
+
+    /*
+     * getWorkbookData()
+     */
+    function getWorkbookData()
+    {
+        return {
+            'enable-archive': OnOff.getValueById('enable-archive'),
+            'archive-username': $('#archive-username').val(),
+            'archive-password': $('#archive-password').val()
+        };
+    }
+
+    /*
+     * setWorkbookData()
+     */
+    function setWorkbookData(data)
+    {
+        OnOff.setValueById('enable-archive', data['enable-archive']);
+        $('#archive-username').val(data['archive-username']);
+        $('#archive-password').val(data['archive-password']);
+    }
+
+    /*
+     * maySaveCancelWorkbook()
+     * Return true if the 'Workbooks' section has changed.
+     */
+    function maySaveCancelWorkbook(data)
+    {
+        return !_.isEqual(data, workbookData);
+    }
+
+    /*
+     * saveWorkbooks()
+     * Callback for the 'Save' button in the 'Workbooks' section.
+     */
+    function saveWorkbooks() {
+        $('#save-workbooks, #cancel-workbooks').addClass('disabled');
+        var data = getWorkbookData();
+        data['action'] = 'save';
+
+        $.ajax({
+            type: 'POST',
+            url: '/rest/general/workbook',
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function() {
+                delete data['action'];
+                workbookData = data;
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(this.url + ": " +
+                      jqXHR.status + " (" + errorThrown + ")");
+            }
+        });
+
+        validate();
+    }
+
+    /*
+     * cancelWorkbooks()
+     * Callback for the 'Cancel' button in the 'Workbooks' section.
+     */
+    function cancelWorkbooks()
+    {
+        setWorkbookData(workbookData);
+        $('#save-workbooks, #cancel-workbooks').addClass('disabled');
     }
 
     /*
@@ -184,32 +407,22 @@ function ($, _, configure, common, Dropdown, OnOff)
      * Enable/disable the buttons based on the field values.
      */
     function validate() {
-        configure.validateSection('email-alerts', gatherEmailAlertData,
+        configure.validateSection('email-alerts', getEmailAlertData,
                                   maySaveCancelEmailAlerts,
                                   maySaveCancelEmailAlerts);
+        configure.validateSection('backups', getBackupData,
+                                  maySaveCancelBackup, maySaveCancelBackup);
+        configure.validateSection('ziplogs', getZiplogData,
+                                  maySaveCancelZiplog, maySaveCancelZiplog);
+        configure.validateSection('workbooks', getWorkbookData,
+                                  maySaveCancelWorkbook, maySaveCancelWorkbook);
     }
 
-    /* deprecated */
-    function update(data) {
-        /* populate the dropdowns */
-        var checked = data['storage-encrypt'];
-        $("#storage-encrypt .onoffswitch-checkbox").prop("checked", checked);
 
-        checked = data['workbooks-as-twb'];
-        $("#workbook-as-twb .onoffswitch-checkbox").prop("checked", checked);
-
-        var config = data['config'];
-        if (config == null) return;
-
-        for (var i in config) {
-            var data = config[i];
-            var name = data['name'];
-
-            //var rendered = template.render(dropdown_template, data);
-            //$('#'+name).html(rendered);
-        }
-    }
-
+    /*
+     * setup()
+     * Inital setup after the AJAX call returns and the DOM tree is ready.
+     */
     function setup(data) {
         Dropdown.setupAll(data);
         OnOff.setup();
@@ -232,12 +445,32 @@ function ($, _, configure, common, Dropdown, OnOff)
         changeStorageLocation(data['storage-type']);
 
         /* Email Alerts */
-        OnOff.setValueById('alert-publishers', data['alert-publishers']);
-        OnOff.setValueById('alert-admins', data['alert-admins']);
+        setEmailAlertData(data);
         $('#save-email-alerts').bind('click', saveEmailAlerts);
         $('#cancel-email-alerts').bind('click', cancelEmailAlerts);
-        OnOff.setCallback('#alert-publishers, #alert-admins', validate);
-        emailAlertData = gatherEmailAlertData();
+        emailAlertData = getEmailAlertData();
+
+        /* Backups */
+        setBackupData(data);
+        $('#save-backups').bind('click', saveBackups);
+        $('#cancel-backups').bind('click', cancelBackups);
+        backupData = getBackupData();
+
+        /* Ziplogs */
+        setZiplogData(data);
+        $('#save-ziplogs').bind('click', saveZiplogs);
+        $('#cancel-ziplogs').bind('click', cancelZiplogs);
+        ziplogData = getZiplogData();
+
+        /* Workbooks */
+        setWorkbookData(data);
+        $('#save-workbooks').bind('click', saveWorkbooks);
+        $('#cancel-workbooks').bind('click', cancelWorkbooks);
+        workbookData = getWorkbookData();
+
+        OnOff.setCallback(validate);
+        Dropdown.setCallback(validate);
+
 
          /* validation */
         $('input[type="text"], input[type="password"], textarea').on('paste', function() {

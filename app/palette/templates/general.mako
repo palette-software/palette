@@ -146,6 +146,14 @@
       <p>
         <span id="backup-user-retain-count" class="btn-group count"></span> Backups
       </p>
+      <div>
+        <button type="button" id="save-backups" class="btn btn-primary disabled">
+          Save
+        </button>
+        <button type="button" id="cancel-backups" class="btn btn-primary disabled">
+          Cancel
+        </button>
+      </div>
     </section>
 
     <a name="ziplogs"></a>
@@ -167,6 +175,14 @@
       <p>
         <span id="ziplog-user-retain-count" class="btn-group count"></span> Ziplogs
       </p>
+      <div>
+        <button type="button" id="save-ziplogs" class="btn btn-primary disabled">
+          Save
+        </button>
+        <button type="button" id="cancel-ziplogs" class="btn btn-primary disabled">
+          Cancel
+        </button>
+      </div>
     </section>
 
     <a name="workbooks"></a>
@@ -175,18 +191,26 @@
       <h2>Workbook Archive</h2>
       <p class="slider-group">
         <span>Archive
-          <span id="archive" class="onoffswitch yesno"></span>
+          <span id="enable-archive" class="onoffswitch yesno"></span>
         </span>
       </p>
       <div class="row">
         <div class="col-xs-6">
           <h3>Tableau Server Admin Username</h3>
-          <input type="text" id="username" />
+          <input type="text" id="archive-username" />
         </div>
         <div class="col-xs-6">
           <h3>Tableau Server Admin Password</h3>
-          <input type="password" id="password" />
+          <input type="password" id="archive-password" />
         </div>
+      </div>
+      <div>
+        <button type="button" id="save-workbooks" class="btn btn-primary disabled">
+          Save
+        </button>
+        <button type="button" id="cancel-workbooks" class="btn btn-primary disabled">
+          Cancel
+        </button>
       </div>
     </section>
 
