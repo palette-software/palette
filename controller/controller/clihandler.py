@@ -287,16 +287,21 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = self.server.cli_cmd("tabadmin status -v", agent, timeout=60*30)
         self.report_status(body)
 
-    @usage('test email')
+    @usage('test email [recipient-email-address]')
     def do_test(self, cmd):
         if len(cmd.args) < 1:
             self.print_usage(self.do_test.__usage__)
             return
 
         action = cmd.args[0].lower()
-        if action != 'email':
+        if action != 'email' or len(cmd.args) > 2:
             self.print_usage(self.do_test.__usage__)
             return
+
+        if len(cmd.args) == 2:
+            recipient = cmd.args[1]
+        else:
+            recipient = None
 
         event_control = self.server.event_control
 
@@ -317,7 +322,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         }
 
         try:
-            self.server.event_control.alert_email.send(event_entry, data)
+            self.server.event_control.alert_email.send(event_entry, data,
+                                                       recipient)
         except StandardError:
             self.server.log.exception('CliHandler exception:')
             self.error(clierror.ERROR_COMMAND_FAILED, traceback_string())
@@ -1915,6 +1921,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     def _do_cloud(self, cloud_type, usage_msg, cmd):
         # pylint: disable=too-many-branches
+        # pylint: disable=too-many-return-statements
 
         if cloud_type == CloudManager.CLOUD_TYPE_S3:
             cloud_type_id = S3_ID

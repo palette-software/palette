@@ -134,7 +134,7 @@ class AlertEmail(object):
 
         return [entry.email]
 
-    def send(self, event_entry, data):
+    def send(self, event_entry, data, recipient=None):
         """Send an alert.
             Arguments:
                 key:    The key to look up.
@@ -174,16 +174,30 @@ class AlertEmail(object):
             # message is empty, set it to be the subject
             message = subject
 
-        try:
-            self.enabled = self.st_config.alerts_enabled
-        except ValueError:
-            self.enabled = self.DEFAULT_ALERTS_ENABLED
+        if recipient:
+            # Force to only one test recipient.
+            # It is sent even if alerts are disabled.
+            to_emails = [recipient]
+        else:
+            try:
+                self.enabled = self.st_config.alerts_enabled
+            except ValueError:
+                self.enabled = self.DEFAULT_ALERTS_ENABLED
 
-        if not self.enabled:
-            self.log.info(
-                "Alerts disabled.  Not sending: Subject: %s, Message: %s",
-                subject, message)
-            return
+            if not self.enabled:
+                self.log.info(
+                    "Alerts disabled.  Not sending: Subject: %s, Message: %s",
+                    subject, message)
+                return
+
+            if event_entry.key in (EventControl.EXTRACT_OK,
+                                   EventControl.EXTRACT_FAILED):
+                to_emails = self.admin_emails() + self.publisher_email(data)
+            else:
+                to_emails = self.admin_emails()
+
+        # Remove any duplicates
+        to_emails = list(set(to_emails))
 
         try:
             self.admin_enabled = self.st_config.alerts_admin_enabled
@@ -191,17 +205,8 @@ class AlertEmail(object):
             # If not there, then set to enabled
             self.admin_enabled = True
 
-        if event_entry.key in (EventControl.EXTRACT_OK,
-                               EventControl.EXTRACT_FAILED):
-            to_emails = self.admin_emails() + self.publisher_email(data)
-        else:
-            to_emails = self.admin_emails()
-
-        # Remove any duplicates
-        to_emails = list(set(to_emails))
-
         bcc = None
-        if not self.standalone and self.admin_enabled:
+        if not self.standalone and self.admin_enabled and not recipient:
             # Get the diagnostics email and bcc it there if it exists.
             entry = UserProfile.get(self.envid, 0)
             if entry and entry.email != None and entry.email != "":
