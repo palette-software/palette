@@ -200,39 +200,53 @@ class GeneralStorageApplication(Router):
 
 class GeneralBackupApplication(PaletteRESTApplication):
     """Handler for the 'BACKUPS' section."""
-    SCHEDULED_BACKUP_PERIOD_RANGE = [1, 2, 3, 4, 6, 8, 12, 24]
-    SCHEDULED_BACKUP_HOUR_RANGE = range(1, 12)
-    SCHEDULED_BACKUP_MINUTE_RANGE = ['00', '15', '30', '45']
-    SCHEDULED_BACKUP_RETAIN_RANGE = [7, 14, 21, 28]
+    BACKUP_SCHEDULED_PERIOD_RANGE = [1, 2, 3, 4, 6, 8, 12, 24]
+    BACKUP_SCHEDULED_HOUR_RANGE = range(1, 12)
+    BACKUP_SCHEDULED_MINUTE_RANGE = ['00', '15', '30', '45']
+    BACKUP_SCHEDULED_RETAIN_RANGE = [7, 14, 21, 28]
     USER_BACKUP_RETAIN_RANGE = range(1, 11)
 
     def service_GET(self, req):
         scfg = SystemConfig(req.system)
 
-        config = [ListOption(SystemConfig.SCHEDULED_BACKUP_PERIOD,
-                             scfg.scheduled_backup_period,
-                             self.SCHEDULED_BACKUP_PERIOD_RANGE),
+        config = [ListOption(SystemConfig.BACKUP_SCHEDULED_PERIOD,
+                             scfg.backup_scheduled_period,
+                             self.BACKUP_SCHEDULED_PERIOD_RANGE),
                   ListOption(SystemConfig.BACKUP_AUTO_RETAIN_COUNT,
                              scfg.backup_auto_retain_count,
-                             self.SCHEDULED_BACKUP_RETAIN_RANGE),
+                             self.BACKUP_SCHEDULED_RETAIN_RANGE),
                   ListOption(SystemConfig.BACKUP_USER_RETAIN_COUNT,
                              scfg.backup_user_retain_count,
                              self.USER_BACKUP_RETAIN_RANGE),
-                  ListOption(SystemConfig.SCHEDULED_BACKUP_HOUR,
-                             scfg.scheduled_backup_hour,
-                             self.SCHEDULED_BACKUP_HOUR_RANGE),
-                  ListOption(SystemConfig.SCHEDULED_BACKUP_MINUTE,
-                             scfg.scheduled_backup_minute,
-                             self.SCHEDULED_BACKUP_MINUTE_RANGE),
-                  ListOption(SystemConfig.SCHEDULED_BACKUP_AMPM,
-                             scfg.scheduled_backup_ampm,
+                  ListOption(SystemConfig.BACKUP_SCHEDULED_HOUR,
+                             scfg.backup_scheduled_hour,
+                             self.BACKUP_SCHEDULED_HOUR_RANGE),
+                  ListOption(SystemConfig.BACKUP_SCHEDULED_MINUTE,
+                             scfg.backup_scheduled_minute,
+                             self.BACKUP_SCHEDULED_MINUTE_RANGE),
+                  ListOption(SystemConfig.BACKUP_SCHEDULED_AMPM,
+                             scfg.backup_scheduled_ampm,
                              ['AM', 'PM'])]
 
         data = {}
         data['config'] = [option.default() for option in config]
-        data['schedule-backups'] = scfg.scheduled_backup_enabled
+        data['scheduled-backups'] = scfg.backup_scheduled_enabled
         data['timezone'] = time.strftime("%Z")
         return data
+
+    def service_POST(self, req):
+        print 'backup', req
+        if req.POST['scheduled-backups'] == 'false':
+            req.system.save(SystemConfig.BACKUP_SCHEDULED_ENABLED, 'no')
+        else:
+            req.system.save(SystemConfig.BACKUP_SCHEDULED_ENABLED, 'yes')
+
+        req.system.save(SystemConfig.BACKUP_AUTO_RETAIN_COUNT,
+                             req.POST['backup-auto-retain-count'])
+        req.system.save(SystemConfig.BACKUP_USER_RETAIN_COUNT,
+                             req.POST['backup-user-retain-count'])
+
+        return {}
 
 
 class EmailAlertApplication(PaletteRESTApplication):
@@ -279,9 +293,23 @@ class GeneralZiplogApplication(PaletteRESTApplication):
                              self.USER_RETAIN_RANGE)]
         data = {}
         data['config'] = [option.default() for option in config]
-        data['schedule-ziplogs'] = scfg.scheduled_ziplog_enabled
+        data['schedule-ziplogs'] = scfg.ziplog_scheduled_enabled
         return data
 
+    def service_POST(self, req):
+        print 'ziplogs', req
+
+        if req.POST['scheduled-ziplogs'] == 'false':
+            req.system.save(SystemConfig.ZIPLOG_SCHEDULED_ENABLED, 'no')
+        else:
+            req.system.save(SystemConfig.ZIPLOG_SCHEDULED_ENABLED, 'yes')
+
+        req.system.save(SystemConfig.ZIPLOG_AUTO_RETAIN_COUNT,
+                             req.POST['ziplog-auto-retain-count'])
+        req.system.save(SystemConfig.ZIPLOG_USER_RETAIN_COUNT,
+                             req.POST['ziplog-user-retain-count'])
+
+        return {}
 
 class GeneralArchiveApplication(PaletteRESTApplication):
     """Handler for 'WORKBOOK ARCHIVE' section."""
