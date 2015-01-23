@@ -19,7 +19,7 @@ function($, template) {
         $(node).html(html);
 
         this.set = function (id) {
-            value = this.options[id]
+            var value = this.options[id]
             var $div = $('button > div', this.node);
             $div.attr('data-id', id);
             $div.text(value);
@@ -113,8 +113,11 @@ function($, template) {
         return dd.set(value);
     }
 
-    Dropdown.setCallback = function(selector, callback)
+    Dropdown.setCallback = function(callback, selector)
     {
+        if (selector == null) {
+            selector = '.btn-group';
+        }
         $(selector).each(function (index) {
             var dd = $(this).data();
             dd.callback = callback;

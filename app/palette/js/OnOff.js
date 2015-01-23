@@ -102,8 +102,11 @@ function($, template) {
         onoff.prop("checked", value);
     }
 
-    OnOff.setCallback = function(selector, callback)
+    OnOff.setCallback = function(callback, selector)
     {
+        if (selector == null) {
+            selector = '.onoffswitch';
+        }
         $(selector).each(function (index) {
             var onoff = $(this).data();
             onoff.callback = callback;
