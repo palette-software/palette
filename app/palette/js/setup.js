@@ -560,7 +560,6 @@ function ($, _, template, configure, common, Dropdown, OnOff)
         $('#save-mail').bind('click', saveMail);
         $('#cancel-mail').bind('click', cancelMail);
         $('#test-mail').bind('click', testMail);
-        Dropdown.setCallback('#mail-server-type', changeMail);
         mailData = gatherMailData();
         changeMail();
 
@@ -572,10 +571,12 @@ function ($, _, template, configure, common, Dropdown, OnOff)
         $('#save-auth').off('click');
         $('#save-auth').bind('click', saveAuth);
         $('#cancel-auth').bind('click', cancelAuth);
-        Dropdown.setCallback('#authentication-type', validate);
         authData = gatherAuthData();
 
         /* validation */
+        Dropdown.setCallback(validate);
+        Dropdown.setCallback(changeMail, '#mail-server-type');
+
         $('input[type="text"], input[type="password"], textarea').on('paste', function() {
             setTimeout(function() {
                 /* validate after paste completes by using a timeout. */
