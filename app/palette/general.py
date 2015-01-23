@@ -136,7 +136,7 @@ class GeneralLocalApplication(PaletteRESTApplication):
                             'item': value})
 
         if value is None:
-            value = scfg.text(destid)
+            value = scfg.text(FileManager.STORAGE_TYPE_VOL)
 
         dest['value'] = value
         dest['options'] = options
@@ -146,7 +146,20 @@ class GeneralLocalApplication(PaletteRESTApplication):
 
     def service_POST(self, req):
         # pylint: disable=unused-argument
+        print 'post', req
         return {}
+
+        # Fixme: Add something like the following after the js is finished
+        value = req.POST['id']
+        parts = value.split(':')
+        if len(parts) != 2:
+            print "Bad value:", value
+            raise exc.HTTPBadRequest()
+
+        (desttype, destid) = parts
+        req.system.save(SystemConfig.BACKUP_DEST_ID, destid)
+        req.system.save(SystemConfig.BACKUP_DEST_TYPE, desttype)
+        return {'id':value}
 
 class _GeneralStorageApplication(PaletteRESTApplication):
     """Overall GET handler for /rest/general/storage"""
@@ -167,15 +180,10 @@ class _GeneralStorageApplication(PaletteRESTApplication):
             dest_id = scfg.backup_dest_id
             entry = CloudEntry.get_by_envid_cloudid(req.envid, dest_id)
             data['storage-type'] = entry.cloud_type
-            if entry.cloud_type == S3Application.NAME:
-                extend(data, self.s3.service_GET(req))
-            elif entry.cloud_type == GCSApplication.NAME:
-                extend(data, self.gcs.service_GET(req))
-            else:
-                print "bad cloud type:", entry.cloud_type
-                raise exc.HTTPBadRequest()
-        else:
-            raise exc.HTTPBadRequest()
+
+        extend(data, self.s3.service_GET(req))
+        extend(data, self.gcs.service_GET(req))
+
         # FIXME: return data based on type return values
         # FIXME: local - needs options for 'storage-destination'.
         # FIXME: s3/gcs - access-key, secret-key, url
@@ -234,15 +242,29 @@ class GeneralBackupApplication(PaletteRESTApplication):
 class EmailAlertApplication(PaletteRESTApplication):
     """Handler for the 'EMAIL ALERTS' section."""
     def service_GET(self, req):
-        # pylint: disable=unused-argument
-
         scfg = SystemConfig(req.system)
         data = {}
         data['alert-admins'] = scfg.alerts_admin_enabled
         data['alert-publishers'] = scfg.alerts_publisher_enabled
         return data
 
-    # FIXME: add POST
+    # FIXME: finish POST
+    def service_POST(self, req):
+        print 'alert', req
+
+        return
+
+        # Fixme: Add something like the following after the js is finished
+        value = req.POST['id']
+        parts = value.split(':')
+        if len(parts) != 2:
+            print "Bad value:", value
+            raise exc.HTTPBadRequest()
+
+        (desttype, destid) = parts
+        req.system.save(SystemConfig.BACKUP_DEST_ID, destid)
+        req.system.save(SystemConfig.BACKUP_DEST_TYPE, desttype)
+        return {'id':value}
 
 
 class GeneralZiplogApplication(PaletteRESTApplication):
@@ -379,7 +401,7 @@ class OldGeneralApplication(PaletteRESTApplication):
                             'item': value})
 
         if value is None:
-            value = scfg.text(destid)
+            value = scfg.text(FileManager.STORAGE_TYPE_VOL)
 
         dest['value'] = value
         dest['options'] = options

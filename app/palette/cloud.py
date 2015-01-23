@@ -66,10 +66,10 @@ class CloudApplication(object):
         return entry
 
     def _todict(self, entry):
-        data = entry.todict(pretty=True)
-        data['secret-key'] = data['secret']
-        del data['secret']
-        data['url'] = self.bucket_to_url(data['bucket'])
+        data = {}
+        data[self.NAME + '-access-key'] = entry.access_key
+        data[self.NAME + '-secret-key'] = entry.secret
+        data[self.NAME + '-url'] = self.bucket_to_url(entry.bucket)
         return data
 
     def cloud_save(self, req):
