@@ -15,6 +15,11 @@ class CloudApplication(object):
     __metaclass__ = ABCMeta
 
     @abstractproperty
+    def NAME(self):
+        # pylint: disable=invalid-name
+        pass
+
+    @abstractproperty
     def KEY(self):
         # pylint: disable=invalid-name
         pass

@@ -142,12 +142,12 @@ class GeneralLocalApplication(PaletteRESTApplication):
         dest['options'] = options
 
         data['config'] = [dest]
+
         return data
 
     def service_POST(self, req):
         # pylint: disable=unused-argument
         print 'post', req
-        return {}
 
         # Fixme: Add something like the following after the js is finished
         value = req.POST['id']
@@ -181,13 +181,9 @@ class _GeneralStorageApplication(PaletteRESTApplication):
             entry = CloudEntry.get_by_envid_cloudid(req.envid, dest_id)
             data['storage-type'] = entry.cloud_type
 
+        extend(data, self.local.service_GET(req))
         extend(data, self.s3.service_GET(req))
         extend(data, self.gcs.service_GET(req))
-
-        # FIXME: return data based on type return values
-        # FIXME: local - needs options for 'storage-destination'.
-        # FIXME: s3/gcs - access-key, secret-key, url
-        extend(data, self.local.service_GET(req))
         print "data:", data
         return data
 
@@ -252,8 +248,6 @@ class EmailAlertApplication(PaletteRESTApplication):
     def service_POST(self, req):
         print 'alert', req
 
-        return
-
         # Fixme: Add something like the following after the js is finished
         value = req.POST['id']
         parts = value.split(':')
@@ -305,24 +299,131 @@ class GeneralArchiveApplication(PaletteRESTApplication):
 # Maybe break this into Storage, CPU, Workbook?
 class GeneralMonitorApplication(PaletteRESTApplication):
     """Handler from 'MONITORING' section."""
+
+    LOW_WATERMARK_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+    HIGH_WATERMARK_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+    HTTP_LOAD_WARN_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45]
+    HTTP_LOAD_ERROR_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45]
+    CPU_LOAD_WARN_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+    CPU_LOAD_ERROR_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+    CPU_PERIOD_WARN_RANGE = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30]
+    CPU_PERIOD_ERROR_RANGE = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30]
+
+    def build_item_for_web_request(self, x):
+        if x == 0:
+            return 'Do not monitor'
+        if x == 1:
+            return '1 second'
+        return '%d seconds' % x
+
     def service_GET(self, req):
         # pylint: disable=unused-argument
+        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-statements
+        print 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
         scfg = SystemConfig(req.system)
 
         # FIXME: make each of these an option in config, not just values.
         # FIXME: also allow them not to be set in the system table.
         data = {}
-        data['storage-warning'] = scfg.watermark_low
-        data['storage-error'] = scfg.watermark_high
+        #data['storage-warning'] = scfg.watermark_low
+        #data['storage-error'] = scfg.watermark_high
 
-        data['cpu-warning'] = scfg.cpu_load_warn
-        data['cpu-error'] = scfg.cpu_load_error
-        data['cpu-period-warn'] = scfg.cpu_period_warn
-        data['cpu-period-error'] = scfg.cpu_period_error
+        #data['cpu-warning'] = scfg.cpu_load_warn
+        #data['cpu-error'] = scfg.cpu_load_error
+        #data['cpu-period-warn'] = scfg.cpu_period_warn
+        #data['cpu-period-error'] = scfg.cpu_period_error
 
-        data['workbook-warn'] = scfg.workbook_load_warn
-        data['workbook-error'] = scfg.workbook_load_error
+        #data['workbook-warn'] = scfg.workbook_load_warn
+        #data['workbook-error'] = scfg.workbook_load_error
 
+        low = {'name': SystemConfig.WATERMARK_LOW,
+               'value': str(scfg.watermark_low)}
+        options = []
+        for x in self.LOW_WATERMARK_RANGE:
+            options.append({'id':x, 'item': str(x)})
+        low['options'] = options
+
+        high = {'name': SystemConfig.WATERMARK_HIGH,
+               'value': str(scfg.watermark_high)}
+        options = []
+        for x in self.HIGH_WATERMARK_RANGE:
+            options.append({'id':x, 'item': str(x)})
+        high['options'] = options
+
+        auto = {'name': SystemConfig.BACKUP_AUTO_RETAIN_COUNT,
+               'value': str(scfg.backup_auto_retain_count)}
+        options = []
+        for x in [7, 14, 21, 28]:
+            options.append({'id':x, 'item': str(x)})
+        auto['options'] = options
+
+        options = []
+        user = {'name': SystemConfig.BACKUP_USER_RETAIN_COUNT,
+               'value': str(scfg.backup_user_retain_count)}
+        for x in range(1, 11):
+            options.append({'id':x, 'item': str(x)})
+        user['options'] = options
+
+        logs = {'name': SystemConfig.LOG_ARCHIVE_RETAIN_COUNT,
+               'value': str(scfg.log_archive_retain_count)}
+        options = []
+        for x in range(1, 11):
+            options.append({'id':x, 'item': str(x)})
+        logs['options'] = options
+
+        value = self.build_item_for_web_request(scfg.http_load_warn)
+        http_load_warn = {'name': SystemConfig.HTTP_LOAD_WARN, 'value': value}
+
+        options = []
+        for x in self.HTTP_LOAD_WARN_RANGE:
+            item = self.build_item_for_web_request(x)
+            options.append({'id':x, 'item': item})
+        http_load_warn['options'] = options
+
+        value = self.build_item_for_web_request(scfg.http_load_error)
+        http_load_error = {'name': SystemConfig.HTTP_LOAD_ERROR,
+                           'value': value}
+
+        options = []
+        for x in self.HTTP_LOAD_ERROR_RANGE:
+            item = self.build_item_for_web_request(x)
+            options.append({'id':x, 'item': item})
+        http_load_error['options'] = options
+
+        cpu_load_warn = {'name': SystemConfig.CPU_LOAD_WARN,
+                         'value': str(scfg.cpu_load_warn)}
+        options = []
+        for x in self.CPU_LOAD_WARN_RANGE:
+            options.append({'id':x, 'item': str(x)})
+        cpu_load_warn['options'] = options
+
+        cpu_load_error = {'name': SystemConfig.CPU_LOAD_ERROR,
+                          'value': str(scfg.cpu_load_error)}
+        options = []
+        for x in self.CPU_LOAD_ERROR_RANGE:
+            options.append({'id':x, 'item': str(x)})
+        cpu_load_error['options'] = options
+
+        cpu_period_warn = {'name': SystemConfig.CPU_PERIOD_WARN,
+                           'value': str(scfg.cpu_period_warn / 60)}
+        options = []
+        for x in self.CPU_PERIOD_WARN_RANGE:
+            options.append({'id':x * 60, 'item': str(x)})
+        cpu_period_warn['options'] = options
+
+        cpu_period_error = {'name': SystemConfig.CPU_PERIOD_ERROR,
+                            'value': str(scfg.cpu_period_error / 60)}
+        options = []
+        for x in self.CPU_PERIOD_ERROR_RANGE:
+            options.append({'id':x * 60, 'item': str(x)})
+        cpu_period_error['options'] = options
+
+        data['config'] = [low, high, auto, user, logs,
+                          cpu_load_warn, cpu_load_error,
+                          cpu_period_warn, cpu_period_error]
+
+        print 'monitoring data:', data
         return data
 
 
