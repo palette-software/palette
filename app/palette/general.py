@@ -727,7 +727,7 @@ class GeneralApplication(Router):
 
 
 class GeneralPage(PalettePage, CredentialMixin):
-    TEMPLATE = "general.mako"
+    TEMPLATE = "config/general.mako"
     active = 'general'
     expanded = True
     required_role = Role.MANAGER_ADMIN
