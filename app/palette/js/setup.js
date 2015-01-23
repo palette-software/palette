@@ -339,7 +339,7 @@ function ($, _, template, configure, common, Dropdown, OnOff)
 
         $.ajax({
             type: 'POST',
-            url: '/rest/setup/email',
+            url: '/rest/setup/email/test',
             data: data,
             dataType: 'json',
             async: false,
