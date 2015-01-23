@@ -236,7 +236,6 @@ class SetupSSLApplication(JSONProxy):
     def service_POST(self, req):
         dump(req)
         # FIXME: check for required parameters
-        # FIXME: save cert, cert key, cert chain
         return super(SetupSSLApplication, self).service(req)
 
 
@@ -292,7 +291,17 @@ class _SetupApplication(BaseSetupApplication):
 
 
 class SetupMailTestApplication(BaseSetupApplication):
-    pass
+
+    @required_parameters('test-email-recipient')
+    def service_POST(self, req):
+        print 'here'
+        test_email_recipient = req.params_get('test-email-recipient').strip()
+        # Sanity check
+        if test_email_recipient.count(' ') or \
+                                      test_email_recipient.find('@') == -1:
+            return {'status': 'FAIL'}
+        self.commapp.send_cmd('test email ' + test_email_recipient)
+        return {'status': 'OK'}
 
 
 class SetupApplication(Router):
