@@ -115,9 +115,7 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function changeStorageLocation(value) {
         $('#s3, #gcs, #local').addClass('hidden');
-        if (value != 'none') {
-            $('#' + value).removeClass('hidden');
-        }
+        $('#' + value).removeClass('hidden');
     }
 
     /*

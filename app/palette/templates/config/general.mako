@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-<%inherit file="layout.mako" />
+<%inherit file="../layout.mako" />
 
 <%block name="title">
 <title>Palette - General Configuration</title>
@@ -19,15 +19,23 @@
 
     <section id="storage">
       <h2>Storage Location</h2>
-      <!-- data-href="/rest/general/dest" -->
-      <input type="radio" id="storage-none" name="storage-type" value="none" />
-      <label for="storage-none">None</label>
+      <input type="radio" id="storage-local" name="storage-type" value="local" />
+      <label for="storage-local">My Machine</label>
       <input type="radio" id="storage-s3" name="storage-type" value="s3" />
       <label for="storage-s3">Amazon S3</label>
       <input type="radio" id="storage-gcs" name="storage-type" value="gcs" />
       <label for="storage-gcs">Google Cloud Storage</label>
-      <input type="radio" id="storage-local" name="storage-type" value="local" />
-      <label for="storage-local">My Machine</label>
+      <section id="local" class="hidden">
+	<span class="btn-group" id="storage-destination"></span>
+	<div>
+          <button type="button" id="save-local" class="btn btn-primary">
+            Save
+          </button>
+          <button type="button" id="cancel-local" class="btn btn-primary">
+            Cancel
+          </button>
+        </div>
+      </section>
       <section id="s3" class="hidden">
         <h3>Credentials</h3>
         <label for="s3-access-key">Access Key ID</label>
@@ -80,17 +88,6 @@
             Save
           </button>
           <button type="button" id="cancel-gcs" class="btn btn-primary">
-            Cancel
-          </button>
-        </div>
-      </section>
-      <section id="local">
-	<span class="btn-group" id="storage-destination"></span>
-	<div>
-          <button type="button" id="save-local" class="btn btn-primary">
-            Save
-          </button>
-          <button type="button" id="cancel-local" class="btn btn-primary">
             Cancel
           </button>
         </div>
