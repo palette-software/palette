@@ -369,3 +369,12 @@ class WorkbookData(BaseApplication):
 
 def make_workbook_data(global_conf, path=None):
     return WorkbookData(global_conf, path=path)
+
+from page import PalettePage
+
+class WorkbookArchive(PalettePage):
+    TEMPLATE = 'workbook.mako'
+    active = 'workbook-archive'
+
+def make_workbook_archive(global_conf):
+    return WorkbookArchive(global_conf)
