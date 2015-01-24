@@ -219,19 +219,19 @@
       <h3>Storage</h3>
       <p>Alert When My Machine Attached Volumes Exceed These Thresholds</p>
       <p>
-        <span>Warning Alert at <span id="disk-watermark-low" data-href="/rest/general/low" class="btn-group"></span> %</span>
-        &nbsp;<span>Error Alert at <span id="disk-watermark-high" data-href="/rest/general/high" class="btn-group"></span> %</span>
+        <span>Warning Alert at <span id="disk-watermark-low" data-href="/rest/general/low" class="btn-group count"></span> %</span>
+        &nbsp;<span>Error Alert at <span id="disk-watermark-high" data-href="/rest/general/high" class="btn-group count"></span> %</span>
       </p>
 
       <section class="cpu">      
         <h3>CPU</h3>
         <p>
-          <span>Warning Alert at <span id="cpu-warning" class="btn-group"></span> %</span>
-          &nbsp;<span>for <span id="cpu-warning-duration" class="btn-group"></span> minutes</span>
+          <span>Warning Alert at <span id="cpu-load-warn" class="btn-group count"></span> %</span>
+          &nbsp;<span>for <span id="cpu-period-warn" class="btn-group count"></span> minutes</span>
         </p>
         <p>
-          <span>Error Alert at <span id="cpu-error" class="btn-group"></span> %</span>
-          &nbsp;<span>for <span id="cpu-error-duration" class="btn-group"></span> minutes</span>
+          <span>Error Alert at <span id="cpu-load-error" class="btn-group count"></span> %</span>
+          &nbsp;<span>for <span id="cpu-period-error" class="btn-group count"></span> minutes</span>
         </p>
       </section>
       <hr />
@@ -240,8 +240,8 @@
         <h2>Workbook</h2>
         <p>Alert When Workbook Web View Load Times Exceed These Thresholds</p>
         <p>
-          Warning Alert at <span id="http-load-warn" class="btn-group up"></span>
-          &nbsp;Error Alert at <span id="http-load-error" class="btn-group up"></span>
+          Warning Alert at <span id="http-load-warn" class="btn-group count up"></span>
+          &nbsp;Error Alert at <span id="http-load-error" class="btn-group count up"></span>
         </p>
       </section>
     </section>

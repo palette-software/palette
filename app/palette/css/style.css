@@ -1609,18 +1609,14 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
 #cpu-error {
     padding-left: 23px;
 }
-#cpu-load-warn, #cpu-load-error, #cpu-period-warn, #cpu-period-error {
-    width: 60px;
-}
 section.run-as-user {
     margin-top: 15px;
 }
 .configuration .btn-group {
     width: 100%;
-    margin-bottom: 15px;
 }
 .configuration .btn-group.count, .configuration .btn-group.ampm  {
-    width: 65px;
+    width: 60px;
 }
 .setup-page #smtp-port {
     width: 64px;
@@ -1644,4 +1640,7 @@ label + input[type="text"], label + input[type="password"] {
 }
 #auth {
     margin-bottom: 35px;
+}
+#storage-destination {
+    margin-bottom: 25px;
 }
