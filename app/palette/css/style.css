@@ -1641,6 +1641,6 @@ label + input[type="text"], label + input[type="password"] {
 #auth {
     margin-bottom: 35px;
 }
-#storage-destination {
+#storage-destination, #mail-server-type, #authentication-type {
     margin-bottom: 25px;
 }

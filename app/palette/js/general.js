@@ -153,7 +153,7 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function saveEmailAlerts() {
         $('#save-email-alerts, #cancel-emails-alerts').addClass('disabled');
-        var data = gatherEmailAlertData();
+        var data = getEmailAlertData();
         data['action'] = 'save';
 
         $.ajax({
@@ -465,6 +465,8 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#save-workbooks').bind('click', saveWorkbooks);
         $('#cancel-workbooks').bind('click', cancelWorkbooks);
         workbookData = getWorkbookData();
+
+        /* Monitoring */
 
         OnOff.setCallback(validate);
         Dropdown.setCallback(validate);
