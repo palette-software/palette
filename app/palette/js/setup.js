@@ -1,6 +1,6 @@
-require(['jquery', 'underscore', 'template', 'configure', 'common',
+require(['jquery', 'underscore', 'configure', 'common',
          'Dropdown', 'OnOff', 'bootstrap'],
-function ($, _, template, configure, common, Dropdown, OnOff)
+function ($, _, configure, common, Dropdown, OnOff)
 {
 
     var MAIL_DIRECT = 1;
@@ -235,10 +235,10 @@ function ($, _, template, configure, common, Dropdown, OnOff)
         if (isNaN(data['smtp-port'])) {
             return false;
         }
-        if (data['smtp-username'].length == 0) {
-            return false;
-        }
-        if (data['smtp-password'].length == 0) {
+
+        /* SMTP username and password are optional */
+        if (data['smtp-username'].length > 0
+            && data['smtp-password'].length == 0) {
             return false;
         }
         return true;
