@@ -264,17 +264,17 @@ class EmailAlertApplication(PaletteRESTApplication):
     def service_POST(self, req):
         print 'alert POST', req
 
-        # Fixme: Add something like the following after the js is finished
-        value = req.POST['id']
-        parts = value.split(':')
-        if len(parts) != 2:
-            print "Bad value:", value
-            raise exc.HTTPBadRequest()
+        if req.POST['alert-publishers'] == 'false':
+            req.system.save(SystemConfig.ALERTS_PUBLISHER_ENABLED, 'no')
+        else:
+            req.system.save(SystemConfig.ALERTS_PUBLISHER_ENABLED, 'yes')
 
-        (desttype, destid) = parts
-        req.system.save(SystemConfig.BACKUP_DEST_ID, destid)
-        req.system.save(SystemConfig.BACKUP_DEST_TYPE, desttype)
-        return {'id':value}
+        if req.POST['alert-admins'] == 'false':
+            req.system.save(SystemConfig.ALERTS_ADMIN_ENABLED, 'no')
+        else:
+            req.system.save(SystemConfig.ALERTS_ADMIN_ENABLED, 'yes')
+
+        return {}
 
 
 class GeneralZiplogApplication(PaletteRESTApplication):
