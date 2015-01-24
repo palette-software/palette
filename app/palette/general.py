@@ -499,6 +499,11 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         print 'monitoring data:', data
         return data
 
+    def service_POST(self, req):
+        # pylint: disable=unused-argument
+        print 'post', req
+
+        return {}
 
 class _GeneralApplication(PaletteRESTApplication):
 
