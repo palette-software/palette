@@ -178,7 +178,7 @@ class SystemConfig(object):
             return self._getyesno(self.WORKBOOKS_AS_TWB)
         if name == "workbook_load_warn":
             return self._getint(self.WORKBOOK_LOAD_WARN, default=30)
-        if name == "workbook-load-error":
+        if name == "workbook_load_error":
             return self._getint(self.WORKBOOK_LOAD_ERROR, default=60)
 
         if name == 'http_load_warn':
