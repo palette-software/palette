@@ -185,7 +185,7 @@ class _GeneralStorageApplication(PaletteRESTApplication):
         extend(data, self.local.service_GET(req))
         extend(data, self.s3.service_GET(req))
         extend(data, self.gcs.service_GET(req))
-        print "data:", data
+        print "storage data:", data
         return data
 
 
@@ -405,7 +405,8 @@ class GeneralMonitorApplication(PaletteRESTApplication):
 
         # http warn
         value = self.build_item_for_web_request(scfg.http_load_warn)
-        http_load_warn = {'name': SystemConfig.HTTP_LOAD_WARN, 'value': value}
+        http_load_warn = {'name': SystemConfig.HTTP_LOAD_WARN, 'value': value,
+                          'id': scfg.http_load_warn}
 
         options = []
         for x in self.HTTP_LOAD_WARN_RANGE:
@@ -415,7 +416,8 @@ class GeneralMonitorApplication(PaletteRESTApplication):
 
         value = self.build_item_for_web_request(scfg.http_load_error)
         http_load_error = {'name': SystemConfig.HTTP_LOAD_ERROR,
-                           'value': value}
+                           'value': value,
+                           'id': scfg.http_load_error}
 
         options = []
         for x in self.HTTP_LOAD_ERROR_RANGE:
@@ -426,7 +428,8 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         # workbook warn
         value = self.build_item_for_web_request(scfg.workbook_load_warn)
         workbook_load_warn = {'name': SystemConfig.WORKBOOK_LOAD_WARN,
-                              'value': value}
+                              'value': value,
+                              'id': scfg.workbook_load_warn}
 
         options = []
         for x in self.WORKBOOK_LOAD_WARN_RANGE:
@@ -437,7 +440,8 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         # workbook error
         value = self.build_item_for_web_request(scfg.workbook_load_error)
         workbook_load_error = {'name': SystemConfig.WORKBOOK_LOAD_ERROR,
-                           'value': value}
+                               'value': value,
+                               'id': scfg.workbook_load_error}
 
         options = []
         for x in self.WORKBOOK_LOAD_ERROR_RANGE:
@@ -447,7 +451,8 @@ class GeneralMonitorApplication(PaletteRESTApplication):
 
         # cpu load warn
         cpu_load_warn = {'name': SystemConfig.CPU_LOAD_WARN,
-                         'value': str(scfg.cpu_load_warn)}
+                         'value': str(scfg.cpu_load_warn),
+                         'id': scfg.cpu_load_warn}
         options = []
         for x in self.CPU_LOAD_WARN_RANGE:
             options.append({'id':x, 'item': str(x)})
@@ -455,14 +460,16 @@ class GeneralMonitorApplication(PaletteRESTApplication):
 
         # cpu load error
         cpu_load_error = {'name': SystemConfig.CPU_LOAD_ERROR,
-                          'value': str(scfg.cpu_load_error)}
+                          'value': str(scfg.cpu_load_error),
+                          'id': scfg.cpu_load_error}
         options = []
         for x in self.CPU_LOAD_ERROR_RANGE:
             options.append({'id':x, 'item': str(x)})
         cpu_load_error['options'] = options
 
         cpu_period_warn = {'name': SystemConfig.CPU_PERIOD_WARN,
-                           'value': str(scfg.cpu_period_warn / 60)}
+                           'value': str(scfg.cpu_period_warn / 60),
+                           'id': scfg.cpu_period_warn / 60}
         # cpu period warn
         options = []
         for x in self.CPU_PERIOD_WARN_RANGE:
@@ -470,7 +477,8 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         cpu_period_warn['options'] = options
 
         cpu_period_error = {'name': SystemConfig.CPU_PERIOD_ERROR,
-                            'value': str(scfg.cpu_period_error / 60)}
+                            'value': str(scfg.cpu_period_error / 60),
+                            'id': scfg.cpu_period_error / 60}
         # cpu period error
         options = []
         for x in self.CPU_PERIOD_ERROR_RANGE:
@@ -489,6 +497,28 @@ class GeneralMonitorApplication(PaletteRESTApplication):
     def service_POST(self, req):
         # pylint: disable=unused-argument
         print 'post', req
+
+        req.system.save(SystemConfig.WATERMARK_LOW,
+                                                req.POST['disk-watermark-low'])
+        req.system.save(SystemConfig.WATERMARK_HIGH,
+                                                req.POST['disk-watermark-high'])
+
+        req.system.save(SystemConfig.CPU_LOAD_WARN,
+                                            req.POST['cpu-load-warn'])
+        req.system.save(SystemConfig.CPU_LOAD_ERROR,
+                                            req.POST['cpu-load-error'])
+
+        req.system.save(SystemConfig.CPU_PERIOD_WARN,
+                                            req.POST['cpu-period-warn'])
+        req.system.save(SystemConfig.CPU_PERIOD_ERROR,
+                                            req.POST['cpu-period-error'])
+
+        if 0:
+            # fix: UI not done yet
+            req.system.save(SystemConfig.WORKBOOK_LOAD_WARN,
+                                            req.POST['workbook-load-warn'])
+            req.system.save(SystemConfig.CPU_PERIOD_ERROR,
+                                            req.POST['workbook-load-error'])
 
         return {}
 
