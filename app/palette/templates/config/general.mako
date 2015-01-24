@@ -27,7 +27,7 @@
       <label for="storage-gcs">Google Cloud Storage</label>
       <section id="local" class="hidden">
 	<span class="btn-group" id="storage-destination"></span>
-	<div>
+	<div class="save-cancel">
           <button type="button" id="save-local" class="btn btn-primary">
             Save
           </button>
@@ -55,7 +55,7 @@
             Remove Credentials
           </button>
         </div>
-        <div>
+        <div class="save-cancel">
           <button type="button" id="save-s3" class="btn btn-primary">
             Save
           </button>
@@ -83,7 +83,7 @@
             Remove Credentials
           </button>
         </div>
-        <div>
+        <div class="save-cancel">
           <button type="button" id="save-gcs" class="btn btn-primary">
             Save
           </button>
@@ -107,7 +107,7 @@
           <span id="alert-publishers" class="onoffswitch yesno"></span>
         </span>
       </p>
-      <div>
+      <div class="save-cancel">
         <button type="button" id="save-email-alerts" class="btn btn-primary disabled">
           Save
         </button>
@@ -145,7 +145,7 @@
       <p>
         <span id="backup-user-retain-count" class="btn-group count"></span> Backups
       </p>
-      <div>
+      <div class="save-cancel">
         <button type="button" id="save-backups" class="btn btn-primary disabled">
           Save
         </button>
@@ -176,7 +176,7 @@
       <p>
         <span id="ziplog-user-retain-count" class="btn-group count"></span> Ziplogs
       </p>
-      <div>
+      <div class="save-cancel">
         <button type="button" id="save-ziplogs" class="btn btn-primary disabled">
           Save
         </button>
@@ -205,7 +205,7 @@
           <input type="password" id="archive-password" />
         </div>
       </div>
-      <div>
+      <div class="save-cancel">
         <button type="button" id="save-workbooks" class="btn btn-primary disabled">
           Save
         </button>
@@ -227,7 +227,7 @@
         &nbsp;<span>Error Alert at <span id="disk-watermark-high" data-href="/rest/general/high" class="btn-group count"></span> %</span>
       </p>
 
-      <section class="cpu">      
+      <section>
         <h3>CPU</h3>
         <p>
           <span>Warning Alert at <span id="cpu-load-warn" class="btn-group count"></span> %</span>
@@ -238,8 +238,6 @@
           &nbsp;<span>for <span id="cpu-period-error" class="btn-group count"></span> minutes</span>
         </p>
       </section>
-      <hr />
-
       <section>
         <h2>Workbook</h2>
         <p>Alert When Workbook Web View Load Times Exceed These Thresholds</p>
@@ -248,6 +246,14 @@
           &nbsp;Error Alert at <span id="http-load-error" class="btn-group count up"></span>
         </p>
       </section>
+      <div class="save-cancel">
+        <button type="button" id="save-monitors" class="btn btn-primary disabled">
+          Save
+        </button>
+        <button type="button" id="cancel-monitors" class="btn btn-primary disabled">
+          Cancel
+        </button>
+      </div>
     </section>
 </div>
 

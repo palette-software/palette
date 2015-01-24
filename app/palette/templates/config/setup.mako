@@ -20,7 +20,7 @@
       <h2>Palette Server URL</h2>
       <p>This is the domain name url that you will type into your browser to view your Palette Server</p>
       <input type="text" id="server-url" />
-      <div>
+      <div class="save-cancel">
         <button type="button" id="save-url" class="btn btn-primary disabled">
           Save
         </button>
@@ -41,7 +41,7 @@
       <h3>Confirm Password *</h3>
       <input type="password" id="confirm-password" />
       <!--<label for="confirm-password">&nbsp;</label>-->
-      <div>
+      <div class="save-cancel">
         <button type="button" id="save-admin" class="btn btn-primary disabled">
           Save
         </button>
@@ -57,7 +57,7 @@
       <h2>Mail Server</h2>
       <p>The Palette Server will send you alerts using this mail server and email address</p>
       <%include file="mail.mako" />
-      <div>
+      <div class="save-cancel">
         <button type="button" id="save-mail" class="btn btn-primary disabled">
           Save
         </button>
@@ -80,7 +80,7 @@
       <h3>SSL Certificate Chain File (Optional)</h3>
       <p>Some certificate providers issue two certificate files.  The second certificate is a chain file, which is a concatenation of all the certificates that from the certificate chain for the server certificate.  All certificates in the file must be x509 PEM-encoded and the file must have a .crt extension (not .pem)</p>
       <textarea id="ssl-certificate-chain-file"></textarea>
-      <div>
+      <div class="save-cancel">
         <button type="button" id="save-ssl" class="btn btn-primary">
           Save
         </button>
@@ -97,7 +97,7 @@
       <p>
         <span id="authentication-type" class="btn-group"></span>
       </p>
-      <div>
+      <div class="save-cancel">
         <button type="button" id="save-auth" class="btn btn-primary">
           Save
         </button>
