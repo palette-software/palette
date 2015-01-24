@@ -215,10 +215,12 @@ function ($, _, template, configure, common, Dropdown, OnOff)
             /* Getting here implies mail server type changed. */
             return true;
         }
-
+        /*
+         * allow alert-email.name to be unspecified.
         if (data['alert-email-name'].length == 0) {
             return false;
         }
+        */
         if (!common.validEmail(data['alert-email-address'])) {
             return false;
         }
@@ -337,9 +339,10 @@ function ($, _, template, configure, common, Dropdown, OnOff)
         data['test-email-recipient'] = $('#test-email-recipient').val();
         data['action'] = 'test';
 
+        var result = null;
         $.ajax({
             type: 'POST',
-            url: '/rest/setup/email/test',
+            url: '/rest/setup/mail/test',
             data: data,
             dataType: 'json',
             async: false,
