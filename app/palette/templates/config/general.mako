@@ -121,11 +121,13 @@
     <hr />
     <section id="backups">
       <h2>Backups</h2>
+<!---
       <p class="slider-group">
         <span>Scheduled Backups
           <span id="scheduled-backups" class="onoffswitch yesno"></span>
         </span>
       </p>
+-->
       <h3>Retained Scheduled Backups</h3>
       <p>The number of scheduled Backups you want Palette to keep in storage</p>
       <p><span id="backup-auto-retain-count" class="btn-group count"></span> Backups</p>
@@ -157,11 +159,13 @@
     <hr />
     <section id="ziplogs">
       <h2>Ziplogs</h2>
+<!--
       <p class="slider-group">
         <span>Scheduled Ziplogs
           <span id="scheduled-ziplogs" class="onoffswitch yesno"></span>
         </span>
       </p>
+-->
       <h3>Retained Scheduled Ziplogs</h3>
       <p>The number of scheduled Ziplogs you want Palette to keep in storage</p>
       <p>
