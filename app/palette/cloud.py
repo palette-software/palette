@@ -46,7 +46,7 @@ class CloudApplication(object):
     def get_req(self, req):
         cloudid = self._get_cloudid(req)
         if cloudid is None:
-            return None
+            return {}
         entry = CloudEntry.get_by_envid_cloudid(req.envid, cloudid)
         print "entry:", self._todict(entry)
         return self._todict(entry)
