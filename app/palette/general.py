@@ -385,42 +385,25 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         #data['workbook-warn'] = scfg.workbook_load_warn
         #data['workbook-error'] = scfg.workbook_load_error
 
+        # watermark low
         low = {'name': SystemConfig.WATERMARK_LOW,
-               'value': str(scfg.watermark_low)}
+               'value': str(scfg.watermark_low),
+               'id': scfg.watermark_low}
         options = []
         for x in self.LOW_WATERMARK_RANGE:
             options.append({'id':x, 'item': str(x)})
         low['options'] = options
 
+        # watermark high
         high = {'name': SystemConfig.WATERMARK_HIGH,
-               'value': str(scfg.watermark_high)}
+               'value': str(scfg.watermark_high),
+               'id': scfg.watermark_high}
         options = []
         for x in self.HIGH_WATERMARK_RANGE:
             options.append({'id':x, 'item': str(x)})
         high['options'] = options
 
-        auto = {'name': SystemConfig.BACKUP_AUTO_RETAIN_COUNT,
-               'value': str(scfg.backup_auto_retain_count)}
-        options = []
-        for x in [7, 14, 21, 28]:
-            options.append({'id':x, 'item': str(x)})
-        auto['options'] = options
-
-        options = []
-        user = {'name': SystemConfig.BACKUP_USER_RETAIN_COUNT,
-               'value': str(scfg.backup_user_retain_count)}
-        for x in range(1, 11):
-            options.append({'id':x, 'item': str(x)})
-        user['options'] = options
-
-        logs = {'name': SystemConfig.LOG_ARCHIVE_RETAIN_COUNT,
-               'value': str(scfg.log_archive_retain_count)}
-        options = []
-        for x in range(1, 11):
-            options.append({'id':x, 'item': str(x)})
-        logs['options'] = options
-
-        # http
+        # http warn
         value = self.build_item_for_web_request(scfg.http_load_warn)
         http_load_warn = {'name': SystemConfig.HTTP_LOAD_WARN, 'value': value}
 
@@ -440,7 +423,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
             options.append({'id':x, 'item': item})
         http_load_error['options'] = options
 
-        # workbook
+        # workbook warn
         value = self.build_item_for_web_request(scfg.workbook_load_warn)
         workbook_load_warn = {'name': SystemConfig.WORKBOOK_LOAD_WARN,
                               'value': value}
@@ -451,6 +434,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
             options.append({'id':x, 'item': item})
         workbook_load_warn['options'] = options
 
+        # workbook error
         value = self.build_item_for_web_request(scfg.workbook_load_error)
         workbook_load_error = {'name': SystemConfig.WORKBOOK_LOAD_ERROR,
                            'value': value}
@@ -461,7 +445,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
             options.append({'id':x, 'item': item})
         workbook_load_error['options'] = options
 
-        # cpu
+        # cpu load warn
         cpu_load_warn = {'name': SystemConfig.CPU_LOAD_WARN,
                          'value': str(scfg.cpu_load_warn)}
         options = []
@@ -469,6 +453,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
             options.append({'id':x, 'item': str(x)})
         cpu_load_warn['options'] = options
 
+        # cpu load error
         cpu_load_error = {'name': SystemConfig.CPU_LOAD_ERROR,
                           'value': str(scfg.cpu_load_error)}
         options = []
@@ -478,6 +463,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
 
         cpu_period_warn = {'name': SystemConfig.CPU_PERIOD_WARN,
                            'value': str(scfg.cpu_period_warn / 60)}
+        # cpu period warn
         options = []
         for x in self.CPU_PERIOD_WARN_RANGE:
             options.append({'id':x * 60, 'item': str(x)})
@@ -485,12 +471,13 @@ class GeneralMonitorApplication(PaletteRESTApplication):
 
         cpu_period_error = {'name': SystemConfig.CPU_PERIOD_ERROR,
                             'value': str(scfg.cpu_period_error / 60)}
+        # cpu period error
         options = []
         for x in self.CPU_PERIOD_ERROR_RANGE:
             options.append({'id':x * 60, 'item': str(x)})
         cpu_period_error['options'] = options
 
-        data['config'] = [low, high, auto, user, logs,
+        data['config'] = [low, high,
                           http_load_warn, http_load_error,
                           workbook_load_warn, workbook_load_error,
                           cpu_load_warn, cpu_load_error,
