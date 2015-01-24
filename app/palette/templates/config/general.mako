@@ -223,8 +223,8 @@
       <h3>Storage</h3>
       <p>Alert When My Machine Attached Volumes Exceed These Thresholds</p>
       <p>
-        <span>Warning Alert at <span id="disk-watermark-low" data-href="/rest/general/low" class="btn-group count"></span> %</span>
-        &nbsp;<span>Error Alert at <span id="disk-watermark-high" data-href="/rest/general/high" class="btn-group count"></span> %</span>
+        <span>Warning Alert at <span id="disk-watermark-low" class="btn-group count"></span> %</span>
+        &nbsp;<span>Error Alert at <span id="disk-watermark-high" class="btn-group count"></span> %</span>
       </p>
 
       <section>
@@ -256,16 +256,6 @@
       </div>
     </section>
 </div>
-
-<script id="dropdown-template" type="x-tmpl-mustache">
-  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div data-id="{{id}}">{{value}}</div><span class="caret"></span>
-  </button>
-  <ul class="dropdown-menu" role="menu">
-    {{#options}}
-    <li><a data-id="{{id}}">{{item}}</a></li>
-    {{/options}}
-  </ul>
-</script>
 
 <script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/general.js">
 </script>
