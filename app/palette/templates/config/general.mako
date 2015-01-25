@@ -55,6 +55,7 @@
             Remove Credentials
           </button>
         </div>
+        <p id="s3-test-message" class="hidden"></p>
         <div class="save-cancel">
           <button type="button" id="save-s3" class="btn btn-primary">
             Save
