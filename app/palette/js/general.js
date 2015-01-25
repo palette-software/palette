@@ -7,6 +7,9 @@ function ($, _, configure, common, Dropdown, OnOff)
                                 'cpu-load-error', 'cpu-period-error',
                                 'http-load-warn', 'http-load-error'];
 
+    var localData = null;
+    var s3Data = null;
+    var gcsData = null;
     var emailAlertData = null;
     var backupData = null;
     var ziplogData = null;
@@ -14,15 +17,61 @@ function ($, _, configure, common, Dropdown, OnOff)
     var monitorData = null;
 
     /*
+     * changeStorageLocation()
+     * Set the value of the 'Storage Location' radio button.
+     */
+    function changeStorageLocation(value) {
+        $('#s3, #gcs, #local').addClass('hidden');
+        $('#' + value).removeClass('hidden');
+    }
+
+    /*
+     * getData()
+     * Get either the S3 or GCS data.
+     */
+    function getData(name)
+    {
+        var location = $('input:radio[name="storage-type"]:checked').val();
+        return {
+            'storage-location': location,
+            'access-key': $('#'+name+'-access-key').val(),
+            'secret-key': $('#'+name+'-secret-key').val(),
+            'url': $('#'+name+'-url').val()
+        }
+    }
+
+    /*
+     * setData()
+     * Set either the S3 or GCS data.
+     */
+    function setData(name, data)
+    {
+        $('#'+name+'-access-key').val(data[name+'-access-key']);
+        $('#'+name+'-secret-key').val(data[name+'-secret-key']);
+        $('#'+name+'-url').val(data[name+'-url']);
+    }
+
+    /*
+     * resetTestMessage()
+     * Hide the test message paragraph.
+     */
+    function resetTestMessage(name)
+    {
+        $('#'+name+'-test-message').html("");
+        $('#'+name+'-test-message').addClass('hidden');
+        $('#'+name+'-test-message').removeClass('green red');
+    }
+
+    /*
      * save()
      * Callback for 'Save' when GCS/S3 is selected in 'Storage Location'.
      *  id: either S3 or GCS.
      */
     function save(id) {
-        var data = {'action': 'save'}
-        data['access-key'] = $('#'+id+'-access-key').val();
-        data['secret-key'] = $('#'+id+'-secret-key').val();
-        data['url'] = $('#'+id+'-url').val();
+        $('#'+id+'-save', '#'+id+'-cancel').addClass('disabled');
+
+        var data = getData(id);
+        data['action'] = 'save';
 
         $.ajax({
             type: 'POST',
@@ -31,13 +80,39 @@ function ($, _, configure, common, Dropdown, OnOff)
             dataType: 'json',
             async: false,
 
-            success: function(data) {
+            success: function(returnData) {
+                delete data['action'];
+                if (id == 's3') {
+                    data['url'] = returnData['s3-url'];
+                    s3Data = data;
+                } else if (id == 'gcs') {
+                    data['url'] = returnData['gcs-url'];
+                    gcsData = data;
+                }
+                $('#'+id+'-url').val(data['url']);
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 alert(this.url + ": " +
                       jqXHR.status + " (" + errorThrown + ")");
             }
         });
+
+        resetTestMessage(id);
+        validate();
+    }
+
+    /*
+     * cancel()
+     * Callback for 'Cancel' when GCS/S3 is selected in 'Storage Location'.
+     *  name: either S3 or GCS.
+     */
+    function cancel(name, data)
+    {
+        $('#'+name+'-access-key').val(data['access-key']);
+        $('#'+name+'-secret-key').val(data['secret-key']);
+        $('#'+name+'-url').val(data['url']);
+        resetTestMessage(name);
+        validate();
     }
 
     /*
@@ -46,11 +121,14 @@ function ($, _, configure, common, Dropdown, OnOff)
      *  id: either S3 or GCS.
      */
     function test(id) {
+        $('#'+id+'-save', '#'+id+'-cancel').addClass('disabled');
+
         var data = {'action': 'test'}
         data['access-key'] = $('#'+id+'-access-key').val();
         data['secret-key'] = $('#'+id+'-secret-key').val();
         data['url'] = $('#'+id+'-url').val();
 
+        var result = {};
         $.ajax({
             type: 'POST',
             url: '/rest/general/storage/'+id,
@@ -59,36 +137,24 @@ function ($, _, configure, common, Dropdown, OnOff)
             async: false,
 
             success: function(data) {
+                result = data;
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 alert(this.url + ": " +
                       jqXHR.status + " (" + errorThrown + ")");
             }
         });
-    }
 
-    /*
-     * saveLocal()
-     * Callback for 'Save' when 'My Machine' is selected in 'Storage Location'.
-     */
-    function saveLocal() {
-        var data = {'action': 'save'}
-        data['storage-destination'] = 'foo'; // FIXME
-
-        $.ajax({
-            type: 'POST',
-            url: '/rest/general/storage/local',
-            data: data,
-            dataType: 'json',
-            async: false,
-
-            success: function(data) {
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                alert(this.url + ": " +
-                      jqXHR.status + " (" + errorThrown + ")");
-            }
-        });
+        if (result['status'] == 'OK') {
+            $('#'+id+'-test-message').html("OK");
+            $('#'+id+'-test-message').addClass('green');
+            $('#'+id+'-test-message').removeClass('red hidden');
+        } else {
+            $('#'+id+'-test-message').html("FAILED");
+            $('#'+id+'-test-message').addClass('red');
+            $('#'+id+'-test-message').removeClass('green hidden');
+        }
+        validate();
     }
 
     /*
@@ -116,12 +182,128 @@ function ($, _, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * changeStorageLocation()
-     * Set the value of the 'Storage Location' radio button.
+     * maySave()
+     * Return true if the S3/GCS section has changed.
      */
-    function changeStorageLocation(value) {
-        $('#s3, #gcs, #local').addClass('hidden');
-        $('#' + value).removeClass('hidden');
+    function maySave(data, storedData)
+    {
+        if (_.isEqual(data, storedData)) {
+            return false;
+        }
+        if (data['access-key'].length == 0) {
+            return false;
+        }
+        if (data['secret-key'].length == 0) {
+            return false;
+        }
+        if (data['url'].length == 0) {
+            return false;
+        }
+        return true;
+    }
+
+    /*
+     * mayCancel()
+     * Return true if the S3/GCS section can be reset.
+     */
+    function mayCancel(data, storedData)
+    {
+        return !_.isEqual(data, storedData);
+    }
+
+    /*
+     * mayTest()
+     * Return true if the S3/GCS section can be tested.
+     */
+    function mayTest(data, storedData)
+    {
+        if (_.isEqual(data, storedData)) {
+            return true;
+        }
+        if (data['access-key'].length == 0) {
+            return false;
+        }
+        if (data['secret-key'].length == 0) {
+            return false;
+        }
+        if (data['url'].length == 0) {
+            return false;
+        }
+        return true;
+    }
+
+    /*
+     * mayRemove()
+     * Return true if 'Remove Credentials' should be enabled.
+     */
+    function mayRemove(storedData)
+    {
+        /* FIXME */
+        return true;
+    }
+
+    /*
+     * getLocalData()
+     * Return 'My Machine' data.
+     */
+    function getLocalData() {
+        var storage_destination = Dropdown.getValueById('storage-destination');
+        return {'storage-destination': storage_destination};
+    }
+
+    /*
+     * setLocalData()
+     */
+    function setLocalData(data) {
+        var destination = data['storage-destination'];
+        Dropdown.setValueById('storage-destination', destination);
+    }
+
+    /*
+     * saveLocal()
+     * Callback for 'Save' when 'My Machine' is selected in 'Storage Location'.
+     */
+    function saveLocal() {
+        data = getLocalData();
+        data['action'] = 'save';
+
+        $.ajax({
+            type: 'POST',
+            url: '/rest/general/storage/local',
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function(data) {
+                delete data['action'];
+                localData = data;
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(this.url + ": " +
+                      jqXHR.status + " (" + errorThrown + ")");
+            }
+        });
+
+        validate();
+    }
+
+    /*
+     * maySaveCancelLocal()
+     * Return true if the 'My Machine' section has changed.
+     */
+    function maySaveCancelLocal(data)
+    {
+        return !_.isEqual(data, localData);
+    }
+
+    /*
+     * cancelLocal()
+     * Callback for the 'Cancel' button in 'My Machine'.
+     */
+    function cancelLocal()
+    {
+        setLocalData(localData);
+        $('#save-local, #cancel-local').addClass('disabled');
     }
 
     /*
@@ -364,6 +546,7 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function maySaveCancelWorkbook(data)
     {
+        /* FIXME: test for archive-username, archive-password */
         return !_.isEqual(data, workbookData);
     }
 
@@ -479,10 +662,43 @@ function ($, _, configure, common, Dropdown, OnOff)
     }
 
     /*
+     * validateS3()
+     * Enable/Disable the Save and Cancel buttons on S3/GCS sections.
+     */
+    function validateS3orGCS(name, storedData)
+    {
+        var data = getData(name);
+        if (maySave(data, storedData)) {
+            $('#save-'+name).removeClass('disabled');
+        } else {
+            $('#save-'+name).addClass('disabled');
+        }
+        if (mayCancel(data, storedData)) {
+            $('#cancel-'+name).removeClass('disabled');
+        } else {
+            $('#cancel-'+name).addClass('disabled');
+        }
+        if (mayTest(data, storedData)) {
+            $('#test-'+name).removeClass('disabled');
+        } else {
+            $('#test-'+name).addClass('disabled');
+        }
+        if (mayRemove(data, storedData)) {
+            $('#remove-'+name).removeClass('disabled');
+        } else {
+            $('#remove-'+name).addClass('disabled');
+        }
+    }
+
+    /*
      * validate()
      * Enable/disable the buttons based on the field values.
      */
     function validate() {
+        configure.validateSection('local', getLocalData,
+                                  maySaveCancelLocal, maySaveCancelLocal);
+        validateS3orGCS('s3', s3Data);
+        validateS3orGCS('gcs', gcsData);
         configure.validateSection('email-alerts', getEmailAlertData,
                                   maySaveCancelEmailAlerts,
                                   maySaveCancelEmailAlerts);
@@ -505,22 +721,33 @@ function ($, _, configure, common, Dropdown, OnOff)
         Dropdown.setupAll(data);
         OnOff.setup();
 
-        /* Storage */
-        $('#save-s3').bind('click', function() {save('s3');});
-        $('#test-s3').bind('click', function() {test('s3');});
-        $('#remove-s3').bind('click', function() {remove('s3');});
-
-        $('#save-gcs').bind('click', function() {save('gcs');});
-        $('#test-gcs').bind('click', function() {test('gcs');});
-        $('#remove-gcs').bind('click', function() {remove('gcs');});
-
-        $('#save-local').bind('click', saveLocal);
-
+        /* Storage location radio button. */
         $('input:radio[name="storage-type"]').change(function() {
             changeStorageLocation($(this).val());
         });
         $('#storage-'+data['storage-type']).prop('checked', true);
         changeStorageLocation(data['storage-type']);
+
+        /* My Machine */
+        setLocalData(data);
+        $('#save-local').bind('click', saveLocal);
+        $('#cancel-local').bind('click', cancelLocal);
+        localData = getLocalData();
+
+        /* S3/GCS Storage */
+        setData('s3', data);
+        $('#save-s3').bind('click', function() {save('s3');});
+        $('#cancel-s3').bind('click', function() {cancel('s3', s3Data);});
+        $('#test-s3').bind('click', function() {test('s3');});
+        $('#remove-s3').bind('click', function() {remove('s3');});
+        s3Data = getData('s3');
+
+        setData('gcs', data);
+        $('#save-gcs').bind('click', function() {save('gcs');});
+        $('#cancel-gcs').bind('click', function() {cancel('gcs', gcsData);});
+        $('#test-gcs').bind('click', function() {test('gcs');});
+        $('#remove-gcs').bind('click', function() {remove('gcs');});
+        gcsData = getData('gcs');
 
         /* Email Alerts */
         setEmailAlertData(data);

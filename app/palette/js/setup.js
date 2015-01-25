@@ -289,7 +289,7 @@ function ($, _, configure, common, Dropdown, OnOff)
      * Callback for the 'Save' button in the 'Mail Server' section.
      */
     function saveMail() {
-         $('#save-mail, #cancel-mail').addClass('disabled');
+        $('#save-mail, #cancel-mail').addClass('disabled');
         var data = gatherMailData();
         data['action'] = 'save';
 
