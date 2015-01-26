@@ -359,7 +359,7 @@ article.popup p {
     width: 250px;
 }
 .btn-bar {
-    margin: 0 0 15px 0;
+    margin: 15px 0 15px 0;
 }
 .btn-group {
     max-width: 320px;
@@ -968,7 +968,7 @@ label {
     font-size: 17px;
     font-weight: 300;
 }
-.configuration label {
+.configuration label:not(.onoffswitch-label) {
     margin: 15px 0 3px 0;
 }
 
