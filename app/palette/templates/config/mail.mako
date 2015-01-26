@@ -14,17 +14,17 @@
     <input type="text" id="alert-email-name" />
   </div>
   <div class="col-xs-6">
-    <label for="alert-email-address">Palette Alert Email Address</label>
+    <label for="alert-email-address">Palette Alert Email Address *</label>
     <input type="text" id="alert-email-address" />
   </div>
 </div>
 <div class="row mail-setting smtp">
   <div class="col-xs-6">
-    <label for="smtp-server">SMTP Mail Server</label>
+    <label for="smtp-server">SMTP Mail Server *</label>
     <input type="text" id="smtp-server" />
   </div>
   <div class="col-xs-6">
-    <label for="smtp-port">Port</label>
+    <label for="smtp-port">Port *</label>
     <input type="text" id="smtp-port" />
   </div>
 </div>
