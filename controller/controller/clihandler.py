@@ -21,7 +21,7 @@ from event_control import EventControl
 from files import FileManager
 from general import SystemConfig
 from get_file import GetFile
-from cloud import CloudManager, S3_ID, GCS_ID
+from cloud import CloudManager, S3_ID, GCS_ID, CloudEntry
 from system import SystemEntry
 from state import StateManager
 from state_control import StateControl
@@ -1870,7 +1870,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         agent.connection.http_send_json("/hup", {})
         self.report_status({})
 
-    def _do_cloud_test(self, cloud_type):
+    def _do_cloud_test(self, cloud_type, cmd):
         """Test cloud credentials/commands by putting and then
            deleting a file on cloud storage of "cloud_type"."""
         if cloud_type == CloudManager.CLOUD_TYPE_S3:
@@ -1882,12 +1882,31 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             raise ValueError('cloud_type')
 
-        entry = self.server.cloud.get_cloud_entry(cloud_type_id)
-        if not entry:
-            self.error(clierror.ERROR_COMMAND_FAILED,
-                       "No cloud credentials saved for cloud type " % \
-                       cloud_type)
-            return
+        option_count = 0
+        for option in ['access-key', 'secret-key', 'bucket']:
+            if option in cmd.dict:
+                option_count += 1
+
+        if option_count:
+            if option_count != 3:
+                self.error(clierror.ERROR_COMMAND_SYNTAX_ERROR,
+                   "Credentials require all of: /access-key, /secret-key " + \
+                   "and /bucket.")
+                return
+
+            # Create a temporary, in-memory cloud entry just for testing.
+            entry = CloudEntry(cloud_type=cloud_type,
+                               name=cmd.dict['bucket'],
+                               bucket=cmd.dict['bucket'],
+                               access_key=cmd.dict['access-key'],
+                               secret=cmd.dict['secret-key'])
+        else:
+            entry = self.server.cloud.get_cloud_entry(cloud_type_id)
+            if not entry:
+                self.error(clierror.ERROR_COMMAND_FAILED,
+                           "No cloud credentials saved for cloud type %s" % \
+                           cloud_type)
+                return
 
         agent = self.server.agentmanager.agent_by_type(
                                             AgentManager.AGENT_TYPE_PRIMARY)
@@ -1904,7 +1923,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = cloud_instance.put(agent, entry, keypath, dirpath)
         if failed(body):
             self.server.log.info("Put to keypath '%s', dirpath '%s', " + \
-                                 "cloud type '%d' failed.",
+                                 "cloud type '%s' failed.",
                                  keypath, dirpath, cloud_type)
             self.error(clierror.ERROR_COMMAND_FAILED, str(body))
             return
@@ -1912,7 +1931,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         delete_body = cloud_instance.delete_file(entry, keypath)
         if failed(delete_body):
             self.server.log.info("Delete path '%s', " + \
-                                 "cloud type '%d' failed.",
+                                 "cloud type '%s' failed.",
                                  keypath, cloud_type)
             self.error(clierror.ERROR_COMMAND_FAILED, str(delete_body))
             return
@@ -1933,7 +1952,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             raise ValueError('cloud_type')
 
         if len(cmd.args) == 1 and cmd.args[0].upper() == 'TEST':
-            return self._do_cloud_test(cloud_type)
+            return self._do_cloud_test(cloud_type, cmd)
         if len(cmd.args) == 2:
             dirpath = None
         elif len(cmd.args) == 3:
@@ -1988,7 +2007,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
     # 's3-name' is now a slash ('/') parameter
-    @usage('s3 { [GET|PUT|DELETE] <key-or-path> [dirpath] | TEST }')
+    @usage('s3 { [get|put|delete] <key-or-path> [dirpath] | ' + \
+           '[/access-key=X /secret-key=Y /bucket=Z] s3 test }')
     def do_s3(self, cmd):
         """Send a file to or receive a file from an S3 bucket"""
         return self._do_cloud(CloudManager.CLOUD_TYPE_S3,
@@ -1996,7 +2016,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                               cmd)
 
     # 'gcs-name' is now a slash ('/') parameter
-    @usage('gcs { [GET|PUT|DELETE] <key-or-path> [dirpath] | TEST }')
+    @usage('gcs { [GET|PUT|DELETE] <key-or-path> [dirpath] | ' + \
+           '[/access-key=X /secret-key=Y /bucket=Z] gcs test }')
     def do_gcs(self, cmd):
         """Send a file to or receive a file from a GCP bucket"""
         return self._do_cloud(CloudManager.CLOUD_TYPE_GCS,
