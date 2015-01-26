@@ -328,6 +328,8 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#smtp-username').val(mailData['smtp-username']);
         $('#smtp-password').val('');
         $('#save-mail, #cancel-mail').addClass('disabled');
+        $('#mail-test-message').addClass('hidden');
+        $('#mail-test-message').removeClass('green red');
     }
 
     /*
@@ -339,7 +341,7 @@ function ($, _, configure, common, Dropdown, OnOff)
         data['test-email-recipient'] = $('#test-email-recipient').val();
         data['action'] = 'test';
 
-        var result = null;
+        var result = {};
         $.ajax({
             type: 'POST',
             url: '/rest/setup/mail/test',
@@ -355,8 +357,19 @@ function ($, _, configure, common, Dropdown, OnOff)
                       jqXHR.status + " (" + errorThrown + ")");
             }
         });
-        if (result != null) {
-            alert('OK');
+
+        if (result['status'] == 'OK') {
+            $('#mail-test-message').html("OK");
+            $('#mail-test-message').addClass('green');
+            $('#mail-test-message').removeClass('red hidden');
+        } else {
+            var html = 'FAILED';
+            if (result['error'] != null && result['error'].length > 0) {
+                html += ': ' + result['error'];
+            }
+            $('#mail-test-message').html(html);
+            $('#mail-test-message').addClass('red');
+            $('#mail-test-message').removeClass('green hidden');
         }
     }
 

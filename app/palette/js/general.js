@@ -150,7 +150,11 @@ function ($, _, configure, common, Dropdown, OnOff)
             $('#'+id+'-test-message').addClass('green');
             $('#'+id+'-test-message').removeClass('red hidden');
         } else {
-            $('#'+id+'-test-message').html("FAILED");
+            var html = 'FAILED';
+            if (result['error'] != null && result['error'].length > 0) {
+                html += ': ' + result['error'];
+            }
+            $('#'+id+'-test-message').html(html);
             $('#'+id+'-test-message').addClass('red');
             $('#'+id+'-test-message').removeClass('green hidden');
         }
