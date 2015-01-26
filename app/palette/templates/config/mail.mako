@@ -16,7 +16,7 @@
   <div class="col-xs-6">
     <label for="alert-email-address">Palette Alert Email Address</label>
     <input type="text" id="alert-email-address" />
-  </div>        
+  </div>
 </div>
 <div class="row mail-setting smtp">
   <div class="col-xs-6">
@@ -45,5 +45,10 @@
     <button type="button" id="test-mail" class="btn disabled">
       Test Email
     </button>
+  </div>
+</div>
+<div class="row">
+  <div class="col-xs-10">
+    <p id="mail-test-message" class="hidden"></p>
   </div>
 </div>

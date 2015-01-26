@@ -1644,11 +1644,11 @@ section.run-as-user {
     min-width: 370px;
 }
 
-input[name="storage-type"] {
+.configuration input[name="storage-type"] {
     display: inline-block;
     margin-bottom: 25px;
 }
-input[name="storage-type"] + label {
+.configuration input[name="storage-type"] + label {
     display: inline-block;
     margin: 0 25px 0 3px;
 }
