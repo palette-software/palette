@@ -23,6 +23,9 @@ body {
     background: #f8f8f8;
     margin: 0px;
 }
+body.scrollable {
+    overflow-y: auto;
+}
 h1 {
     font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
 }
@@ -767,6 +770,12 @@ nav.navbar {
     border: none;
     border-radius: 0;
     border-bottom: 3px solid #8D96A3;
+    margin-bottom: 0;
+}
+.main-container {
+    margin: 63px 0 0 0;
+    overflow-y: auto;
+    height: auto;
 }
 .navbar-header {
     background-image: url('/app/module/palette/images/palette_logo_600dpi-2.png');
@@ -958,6 +967,9 @@ label {
     color: #5f6670;
     font-size: 17px;
     font-weight: 300;
+}
+.configuration label {
+    margin: 15px 0 3px 0;
 }
 
 input[type="text"], input[type="password"], input[type="email"] {
@@ -1579,12 +1591,6 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
     line-height: inherit;
     font-size: 12px;
 }
-
-/* Individual Elements */
-#storage-destination, #storage-destination ul, #storage-destination ul li {
-    min-width: 370px;
-}
-
 .paging {
     display: none;
     float: right;
@@ -1618,12 +1624,26 @@ section.run-as-user {
 .configuration .btn-group.count, .configuration .btn-group.ampm  {
     width: 60px;
 }
+.center-container {
+    width: 860px;
+    margin: 0 auto 0 auto;
+}
+.center-container.initial {
+    margin-top: 10px;
+    margin-bottom: 50px;
+}
+
+/* Individual Elements */
 .setup-page #smtp-port {
     width: 64px;
 }
 .setup-page #test-email-recipient {
     width: 50%;
 }
+#storage-destination, #storage-destination ul, #storage-destination ul li {
+    min-width: 370px;
+}
+
 input[name="storage-type"] {
     display: inline-block;
     margin-bottom: 25px;
@@ -1637,6 +1657,7 @@ label[for*="s3-"], label[for*="gcs-"] {
 }
 label + input[type="text"], label + input[type="password"] {
     margin-top: 0;
+    margin-bottom: 5px;
 }
 #auth {
     margin-bottom: 35px;
@@ -1646,6 +1667,9 @@ label + input[type="text"], label + input[type="password"] {
     margin-bottom: 25px;
 }
 */
+#mail-server-type {
+    margin-bottom: 10px;
+}
 div.save-cancel {
     margin-top: 25px;
 }

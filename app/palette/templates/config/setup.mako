@@ -17,9 +17,7 @@
       </section>
     </section>
     <section>
-      <h2>Palette Server URL</h2>
-      <p>This is the domain name url that you will type into your browser to view your Palette Server</p>
-      <input type="text" id="server-url" />
+      <%include file="server-url.mako" />
       <div class="save-cancel">
         <button type="button" id="save-url" class="btn btn-primary disabled">
           Save
@@ -33,14 +31,7 @@
     <a name="admin"></a>
     <hr />
     <section id="admin">
-      <h2>Palette Admin Password</h2>
-      <p>You will use this password to login to your Palette Server using the "Palette" username</p>
-      <h3>Password *</h3>
-      <input type="password" id="password" />
-      <!--<label for="password">&nbsp;</label>-->
-      <h3>Confirm Password *</h3>
-      <input type="password" id="confirm-password" />
-      <!--<label for="confirm-password">&nbsp;</label>-->
+      <%include file="admin.mako" />
       <div class="save-cancel">
         <button type="button" id="save-admin" class="btn btn-primary disabled">
           Save
@@ -54,8 +45,6 @@
     <a name="mail"></a>
     <hr />
     <section id="mail">
-      <h2>Mail Server</h2>
-      <p>The Palette Server will send you alerts using this mail server and email address</p>
       <%include file="mail.mako" />
       <div class="save-cancel">
         <button type="button" id="save-mail" class="btn btn-primary disabled">

@@ -1,3 +1,5 @@
+<h2>Mail Server</h2>
+<p>The Palette Server will send you alerts using this mail server and email address</p>
 <div class="row">
   <div class="col-xs-6">
     <h3>Mail Server Type</h3>
@@ -8,37 +10,37 @@
 </div>
 <div class="row mail-setting">
   <div class="col-xs-6">
-    <h3>Palette Alert Email Name</h3>
+    <label for="alert-email-name">Palette Alert Email Name</label>
     <input type="text" id="alert-email-name" />
   </div>
   <div class="col-xs-6">
-    <h3>Palette Alert Email Address</h3>
+    <label for="alert-email-address">Palette Alert Email Address</label>
     <input type="text" id="alert-email-address" />
   </div>        
 </div>
 <div class="row mail-setting smtp">
   <div class="col-xs-6">
-    <h3>SMTP Mail Server</h3>
+    <label for="smtp-server">SMTP Mail Server</label>
     <input type="text" id="smtp-server" />
   </div>
   <div class="col-xs-6">
-    <h3>Port</h3>
+    <label for="smtp-port">Port</label>
     <input type="text" id="smtp-port" />
   </div>
 </div>
 <div class="row mail-setting smtp">
   <div class="col-xs-6">
-    <h3>SMTP Username</h3>
+    <label for="smtp-username">SMTP Username</label>
     <input type="text" id="smtp-username" />
   </div>
     <div class="col-xs-6">
-    <h3>SMTP Password</h3>
+    <label for="smtp-password">SMTP Password</label>
     <input type="password" id="smtp-password" />
   </div>
 </div>
 <div class="row mail-setting">
   <div class="col-xs-10">
-    <h3>Test Email Recipient</h3>
+    <label for="test-email-recipient">Test Email Recipient</label>
     <input type="text" id="test-email-recipient" />
     <button type="button" id="test-mail" class="btn disabled">
       Test Email
