@@ -32,41 +32,37 @@
 
 </head>
 
-<body>
+<body class="scrollable">
   <nav class="navbar">
     <div class="navbar-header"></div>
   </nav>
-  <div class="main-container">
-    <div class="center-block setup-page">
+  <div class="center-container configuration setup-page initial">
+
       <!-- top-zone? -->
       <section>
         <h1>Welcome to Palette Software Server Setup</h1>
         <p>Please set up your Mail, Hostname and SSL Certificate Settings for your Palette Server</p>
-        <hr />
       </section>
+
       <section>
-        <h3>Password *</h3>
-        <input type="password" id="password" />
-        <!--<label for="password">&nbsp;</label>-->
-        <h3>Confirm Password *</h3>
-        <input type="password" id="confirm-password" />
-        <!--<label for="confirm-password">&nbsp;</label>-->
+	<%include file="config/server-url.mako" />
       </section>
       <hr />
-      <section>
+      <section id="admin">
+	<%include file="config/admin.mako" />
+      </section>
+      <hr />
+      <section id="mail">
         <%include file="config/mail.mako" />
       </section>
       <hr />
-      <section>
-        <button type="button" id="save" class="btn btn-primary disabled">
-          Save
-        </button>
-        <button type="button" id="cancel" class="btn btn-primary">
-          Cancel
-        </button>
+      <section id="ssl">
+	<%include file="config/ssl.mako" />
       </section>
+      <button type="button" id="save" class="btn btn-primary disabled">
+        Save Setting
+      </button>
     </div>
-  </div>
 
   <!-- FIXME: mako template, duplicate with general.mako -->
   <script id="dropdown-template" type="x-tmpl-mustache">
