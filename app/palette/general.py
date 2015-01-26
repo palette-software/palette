@@ -41,7 +41,6 @@ class GeneralS3Application(PaletteRESTApplication, S3Application):
             return {'status': 'FAIL'}
         return {'status': 'OK'}
 
-    @required_parameters('access-key', 'secret-key', 'url')
     def remove(self, req):
         print req.POST
         return self.cloud_remove(req)
