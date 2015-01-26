@@ -36,7 +36,10 @@ class GeneralS3Application(PaletteRESTApplication, S3Application):
     @required_parameters('access-key', 'secret-key', 'url')
     def test(self, req):
         try:
-            self.commapp.send_cmd('s3 test', req=req)
+            self.commapp.send_cmd(
+                '/access-key=%s /secret-key=%s /bucket=%s s3 test' % \
+                (req.POST['access-key'], req.POST['secret-key'],
+                 req.POST['url']), req=req)
         except CommException as ex:
             return {'status': 'FAIL', 'error': str(ex)}
         return {'status': 'OK'}
@@ -71,7 +74,10 @@ class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
     @required_parameters('access-key', 'secret-key', 'url')
     def test(self, req):
         try:
-            self.commapp.send_cmd('gcs test', req=req)
+            self.commapp.send_cmd(
+                '/access-key=%s /secret-key=%s /bucket=%s gcs test' % \
+                (req.POST['access-key'], req.POST['secret-key'],
+                 req.POST['url']), req=req)
         except CommException as ex:
             return {'status': 'FAIL', 'error': str(ex)}
         return {'status': 'OK'}
