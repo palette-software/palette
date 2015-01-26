@@ -28,6 +28,10 @@
     <h2>Tableau Server User Publisher Role</h2>
     <p>Publisher</p>
     %endif
+
+    <h2>Palette Role</h2>
+    <p>${req.remote_user.display_role()}</p>
+
     <h2>Email Notifications</h2>
     <div class="onoffswitch"
          data-name="${req.remote_user.name}"
