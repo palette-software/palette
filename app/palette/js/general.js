@@ -160,25 +160,33 @@ function ($, _, configure, common, Dropdown, OnOff)
     /*
      * remove()
      * Callback for 'Remove Credentials' in 'Storage Location'.
-     *  id: either S3 or GCS.
+     *  name: either S3 or GCS.
      */
-    function remove(id) {
+    function remove(name, storedData) {
         var data = {'action': 'remove'}
 
         $.ajax({
             type: 'POST',
-            url: '/rest/general/storage/'+id,
+            url: '/rest/general/storage/'+name,
             data: data,
             dataType: 'json',
             async: false,
 
             success: function(data) {
+                $('#'+name+'-access-key').val("");
+                $('#'+name+'-secret-key').val("");
+                $('#'+name+'-url').val("");
+                storedData['access-key'] = '';
+                storedData['secret-key'] = '';
+                storedData['url'] = '';
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 alert(this.url + ": " +
                       jqXHR.status + " (" + errorThrown + ")");
             }
         });
+
+        validate();
     }
 
     /*
@@ -208,7 +216,17 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function mayCancel(data, storedData)
     {
-        return !_.isEqual(data, storedData);
+        /* Don't compare storage-destination, so can't use isEqual() */
+        if (data['access-key'] != storedData['access-key']) {
+            return true;
+        }
+        if (data['secret-key'] != storedData['secret-key']) {
+            return true;
+        }
+        if (data['url'] != storedData['url']) {
+            return true;
+        }
+        return false;
     }
 
     /*
@@ -217,9 +235,6 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function mayTest(data, storedData)
     {
-        if (_.isEqual(data, storedData)) {
-            return true;
-        }
         if (data['access-key'].length == 0) {
             return false;
         }
@@ -238,8 +253,16 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function mayRemove(storedData)
     {
-        /* FIXME */
-        return true;
+        if (storedData['access-key'].length > 0) {
+            return true;
+        }
+        if (storedData['secret-key'].length > 0) {
+            return true;
+        }
+        if (storedData['url'].length > 0) {
+            return true;
+        }
+        return false;
     }
 
     /*
@@ -683,7 +706,7 @@ function ($, _, configure, common, Dropdown, OnOff)
         } else {
             $('#test-'+name).addClass('disabled');
         }
-        if (mayRemove(data, storedData)) {
+        if (mayRemove(storedData)) {
             $('#remove-'+name).removeClass('disabled');
         } else {
             $('#remove-'+name).addClass('disabled');
@@ -739,14 +762,14 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#save-s3').bind('click', function() {save('s3');});
         $('#cancel-s3').bind('click', function() {cancel('s3', s3Data);});
         $('#test-s3').bind('click', function() {test('s3');});
-        $('#remove-s3').bind('click', function() {remove('s3');});
+        $('#remove-s3').bind('click', function() {remove('s3', s3Data);});
         s3Data = getData('s3');
 
         setData('gcs', data);
         $('#save-gcs').bind('click', function() {save('gcs');});
         $('#cancel-gcs').bind('click', function() {cancel('gcs', gcsData);});
         $('#test-gcs').bind('click', function() {test('gcs');});
-        $('#remove-gcs').bind('click', function() {remove('gcs');});
+        $('#remove-gcs').bind('click', function() {remove('gcs', gcsData);});
         gcsData = getData('gcs');
 
         /* Email Alerts */
