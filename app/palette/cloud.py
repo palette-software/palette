@@ -8,6 +8,7 @@ from akiri.framework.ext.sqlalchemy import meta
 from controller.cloud import CloudEntry
 from controller.general import SystemConfig
 from controller.files import FileManager
+from controller.passwd import aes_encrypt
 
 
 class CloudApplication(object):
@@ -90,7 +91,7 @@ class CloudApplication(object):
         entry.name = bucket
         entry.bucket = bucket
         entry.access_key = req.POST['access-key']
-        entry.secret = req.POST['secret-key']
+        entry.secret = aes_encrypt(req.POST['secret-key'])
         session.commit()
 
         req.system.save(self.KEY, entry.cloudid)

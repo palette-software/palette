@@ -4,6 +4,7 @@ from akiri.framework.route import Router
 from .request import System
 from controller.environment import Environment
 from controller.profile import UserProfile
+from controller.passwd import set_aes_key_file
 
 # FIXME: this is mostly duplicate with request.py
 def req_getattr(req, name):
@@ -45,8 +46,11 @@ from .user import UserApplication
 from .yml import YmlApplication
 from .workbooks import WorkbookApplication
 
-def make_rest(global_conf):
+def make_rest(global_conf, aes_key_file=None):
     # pylint: disable=unused-argument
+    if aes_key_file:
+        set_aes_key_file(aes_key_file)
+
     app = PaletteRouter()
     app.add_route(r'/backup\Z', BackupApplication())
     app.add_route(r'/environment\Z', EnvironmentApplication())

@@ -1894,7 +1894,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                    "and /bucket.")
                 return
 
-            # Create a temporary, in-memory cloud entry just for testing.
+            # Create a temporary, in-memory cloud entry just for
+            # testing the cloud connection.
             entry = CloudEntry(cloud_type=cloud_type,
                                name=cmd.dict['bucket'],
                                bucket=cmd.dict['bucket'],
@@ -1925,7 +1926,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.server.log.info("Put to keypath '%s', dirpath '%s', " + \
                                  "cloud type '%s' failed.",
                                  keypath, dirpath, cloud_type)
-            self.error(clierror.ERROR_COMMAND_FAILED, str(body))
+            self.report_status(body)
             return
 
         delete_body = cloud_instance.delete_file(entry, keypath)
@@ -1933,7 +1934,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.server.log.info("Delete path '%s', " + \
                                  "cloud type '%s' failed.",
                                  keypath, cloud_type)
-            self.error(clierror.ERROR_COMMAND_FAILED, str(delete_body))
+            self.report_status(delete_body)
             return
 
         self.report_status(body)
