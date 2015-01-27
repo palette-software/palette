@@ -89,6 +89,9 @@ class SetupURLApplication(BaseSetupApplication):
         # pylint: disable=unused-argument
         scfg = SystemConfig(req.system)
 
+        if scfg.server_url == 'localhost':
+            req.system.save(SystemConfig.SERVER_URL, req.environ['HTTP_HOST'])
+
         return {'server-url': scfg.server_url}
 
     @required_parameters('server-url')
