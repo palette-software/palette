@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, BigInteger, DateTime, func
+from sqlalchemy import Column, String, BigInteger, DateTime, func, Boolean
 
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
@@ -13,6 +13,10 @@ class Domain(meta.Base, BaseMixin):
                            autoincrement=True, primary_key=True)
     name = Column(String, unique=True, nullable=False, index=True)
     license_key = Column(String)
+    systemid = Column(String)
+    expiration_time = Column(DateTime)
+    contact_time = Column(DateTime)
+    trial = Column(Boolean)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(),
                                    server_onupdate=func.current_timestamp())
