@@ -28,7 +28,7 @@ function ($, configure, common, Dropdown, OnOff)
      */
     function save() {
         var data = {'action': 'save'}
-        $.extend(data, gather_email_data());
+        $.extend(data, gatherData());
 
         var result = null;
         $.ajax({
@@ -164,6 +164,7 @@ function ($, configure, common, Dropdown, OnOff)
             configure.changeMail();
             validate();
         }, '#mail-server-type');
+        configure.changeMail();
         /* this assumes no other OnOff sliders on the initial setup page. */
         OnOff.setCallback(function (checked) {
             configure.changeSSL(checked);
