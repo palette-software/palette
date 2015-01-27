@@ -16,6 +16,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from mixin import BaseMixin, BaseDictMixin, OnlineMixin
 from manager import Manager
+from passwd import aes_decrypt
 
 # FIXME: This policy is *way* too permissive.
 S3_POLICY = '{"Statement":[{"Effect":"Allow","Action": "s3:*","Resource":"*"}]}'
@@ -198,8 +199,9 @@ class S3(CloudInstance):
                u'PWD': pwd}
         """
 
+        secret = aes_decrypt(cloud_entry.secret)
         env = {u'ACCESS_KEY': cloud_entry.access_key,
-               u'SECRET_KEY': cloud_entry.secret}
+               u'SECRET_KEY': secret}
 
         if pwd:
             env['PWD'] = pwd
@@ -219,7 +221,8 @@ class S3(CloudInstance):
         bucket_name, filename = move_bucket_subdirs_to_path(entry.bucket, path)
 
         # fixme: use temporary token if configured for it
-        conn = connection.S3Connection(entry.access_key, entry.secret)
+        secret = aes_decrypt(entry.secret)
+        conn = connection.S3Connection(entry.access_key, secret)
 
         bucket = connection.Bucket(conn, bucket_name)
 
@@ -248,8 +251,9 @@ class GCS(CloudInstance):
         #        can replace boto.connect_s3, there is no GCS
         #        equivalent for boto.connect_sts, so we may need
         #        to move away from boto to get GCS temporary tokens.
+        secret = aes_decrypt(cloud_entry.secret)
         env = {u'ACCESS_KEY': cloud_entry.access_key,
-               u'SECRET_KEY': cloud_entry.secret}
+               u'SECRET_KEY': secret}
 
         if pwd:
             env['PWD'] = pwd

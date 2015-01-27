@@ -10,7 +10,7 @@ from controller.general import SystemConfig
 from controller.files import FileManager
 from controller.agent import AgentVolumesEntry
 from controller.cloud import CloudEntry
-from controller.passwd import set_aes_key_file
+from controller.passwd import aes_encrypt
 from controller.palapi import CommException
 
 from .option import ListOption
@@ -38,8 +38,8 @@ class GeneralS3Application(PaletteRESTApplication, S3Application):
         try:
             self.commapp.send_cmd(
                 '/access-key=%s /secret-key=%s /bucket=%s s3 test' % \
-                (req.POST['access-key'], req.POST['secret-key'],
-                 req.POST['url']), req=req)
+                (req.POST['access-key'], aes_encrypt(req.POST['secret-key']),
+                 self.url_to_bucket(req.POST['url'])), req=req)
         except CommException as ex:
             return {'status': 'FAIL', 'error': str(ex)}
         return {'status': 'OK'}
@@ -76,8 +76,8 @@ class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
         try:
             self.commapp.send_cmd(
                 '/access-key=%s /secret-key=%s /bucket=%s gcs test' % \
-                (req.POST['access-key'], req.POST['secret-key'],
-                 req.POST['url']), req=req)
+                (req.POST['access-key'], aes_encrypt(req.POST['secret-key']),
+                 self.url_to_bucket(req.POST['url'])), req=req)
         except CommException as ex:
             return {'status': 'FAIL', 'error': str(ex)}
         return {'status': 'OK'}
@@ -583,10 +583,3 @@ class GeneralPage(PalettePage, CredentialMixin):
         else:
             req.secondary_user = req.secondary_pw = ''
         return super(GeneralPage, self).render(req, obj=obj)
-
-
-def make_general(global_conf, aes_key_file=None):
-    # FIXME: should be actually global.
-    if aes_key_file:
-        set_aes_key_file(aes_key_file)
-    return GeneralPage(global_conf)
