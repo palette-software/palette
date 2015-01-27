@@ -38,51 +38,40 @@
   </nav>
   <div class="center-container configuration setup-page initial">
 
-      <!-- top-zone? -->
-      <section>
-        <h1>Welcome to Palette Software Server Setup</h1>
-        <p>Please set up your Mail, Hostname and SSL Certificate Settings for your Palette Server</p>
-      </section>
+    <!-- top-zone? -->
+    <section>
+      <h1>Welcome to Palette Software Server Setup</h1>
+      <p>Please set up your Mail, Hostname and SSL Certificate Settings for your Palette Server</p>
+    </section>
 
-      <section>
-	<%include file="config/server-url.mako" />
-      </section>
-      <hr />
-      <section id="admin">
-	<%include file="config/admin.mako" />
-      </section>
-      <hr />
-      <section id="mail">
-        <%include file="config/mail.mako" />
-      </section>
-      <hr />
-      <section id="ssl">
-	<%include file="config/ssl.mako" />
-      </section>
-      <button type="button" id="save" class="btn btn-primary disabled">
-        Save Setting
-      </button>
-    </div>
-
-  <!-- FIXME: mako template, duplicate with general.mako -->
-  <script id="dropdown-template" type="x-tmpl-mustache">
-    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div data-id="{{id}}">{{value}}</div><span class="caret"></span>
+    <section>
+      <%include file="config/server-url.mako" />
+    </section>
+    <hr />
+    <section>
+      <h2>Palette License Key</h2>
+      <p>Please enter your License Key below.</p>
+      <input type="text" id="license-key" />
+    </section>
+    <hr />
+    <section id="admin">
+      <%include file="config/admin.mako" />
+    </section>
+    <hr />
+    <section id="mail">
+      <%include file="config/mail.mako" />
+    </section>
+    <hr />
+    <section id="ssl">
+      <%include file="config/ssl.mako" />
+    </section>
+    <button type="button" id="save" class="btn btn-primary disabled">
+      Save Setting
     </button>
-    <ul class="dropdown-menu" role="menu">
-      {{#options}}
-      <li><a data-id="{{id}}">{{option}}</a></li>
-      {{/options}}
-    </ul>
-  </script>
+  </div>
 
-   <!-- FIXME: mako template, duplicate with layout.mako -->
-  <script id="onoffswitch" type="x-tmpl-mustache">
-  <input type="checkbox" class="onoffswitch-checkbox" {{checked}}>
-    <label class="onoffswitch-label">
-      <span class="onoffswitch-inner"></span>
-      <span class="onoffswitch-switch"></span>
-    </label>
-  </script>
+  <%include file="dropdown.mako" />
+  <%include file="onoff.mako" />
 
   <script src="/app/module/palette/js/vendor/require.js"
           data-main="/app/module/palette/js/initial.js" >

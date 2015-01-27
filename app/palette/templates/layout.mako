@@ -115,14 +115,7 @@
   <i class="fa fa-fw fa-times cancel"></i>
 </script>
 
-<script id="onoffswitch" type="x-tmpl-mustache">
-  <input type="checkbox" class="onoffswitch-checkbox" {{checked}}>
-    <label class="onoffswitch-label">
-      <span class="onoffswitch-inner"></span>
-      <span class="onoffswitch-switch"></span>
-    </label>
-</script>
-
+<!-- FIXME: duplicated? -->
 <script id="filter-dropdown" type="x-tmpl-mustache">
   <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div data-id="{{id}}">{{value}}</div><span class="caret"></span>
   </button>
@@ -133,16 +126,6 @@
   </ul>
 </script>
 
-<!-- FIXME: duplicated? -->
-<script id="dropdown-template" type="x-tmpl-mustache">
-  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div data-id="{{id}}">{{value}}</div><span class="caret"></span>
-  </button>
-  <ul class="dropdown-menu" role="menu">
-    {{#options}}
-    <li><a data-id="{{id}}">{{item}}</a></li>
-    {{/options}}
-  </ul>
-</script>
 
 </head>
 <body>
@@ -180,6 +163,9 @@ ${next.body()}
   </section>
   <div class="shade">&nbsp;</div>
 </article>
+
+<%include file="dropdown.mako" />
+<%include file="onoff.mako" />
 
 </body>
 </html>

@@ -1,12 +1,25 @@
-require(['jquery', 'template', 'configure', 'common', 'OnOff', 'bootstrap'],
-function ($, template, configure, common, OnOff)
+require(['jquery', 'configure', 'common', 'Dropdown', 'OnOff', 'bootstrap'],
+function ($, configure, common, Dropdown, OnOff)
 {    
     /*
-     * clear()
-     * Empty all input fields.
+     * inputValid()
+     * Return whether or not an input field has been filed in (at all) by id.
      */
-    function clear() {
-        $('input[type="text"], input[type="password"').val(null);
+    function inputValid(id) {
+        return ($('#'+id).val().length > 0);
+    }
+
+    /*
+     * gatherData()
+     */
+    function gatherData() {
+        var data = {};
+        data['license-key'] = $('#license-key').val();
+        $.extend(data, configure.gatherURLData());
+        $.extend(data, configure.gatherAdminData());
+        $.extend(data, configure.gatherMailData());
+        $.extend(data, configure.gatherSSLData());
+        return data;
     }
 
     /*
@@ -37,20 +50,6 @@ function ($, template, configure, common, OnOff)
         if (result != null) {
             window.location.replace("/");
         }
-    }
-
-    /*
-     * save_mail_settings()
-     * Callback for the 'Save' button on the Settings configure page.
-     */
-
-    /*
-     * cancel()
-     * Callback for the 'Cancel' button.
-     */
-    function cancel() {
-        clear();
-        validate();
     }
 
     /*
@@ -88,35 +87,40 @@ function ($, template, configure, common, OnOff)
             }
         });
         if (result != null) {
+            /* FIXME */
             alert('OK');
         }
     }
 
 
     /*
-     * save_valid()
+     * maySave()
      * Test input and return true/false.
      */
-    function save_valid() {
-        var password = $('#password').val();
-        if (password.length == 0) {
+    function maySave(data) {
+        if (!common.validURL(data['server-url'])) {
             return false;
         }
-        var confirm_password = $('#confirm-password').val();
-        if (confirm_password.length == 0) {
+        if (data['license-key'].length < 2) { // FIXME //
             return false;
         }
-        if (password != confirm_password) {
+        if (!configure.validAdminData(data)) {
+            return false;
+        }
+        if (!configure.validMailData(data)) {
+            return false;
+        }
+        if (!configure.validSSLData(data)) {
             return false;
         }
         return true;
     }
 
     /*
-     * test_valid()
+     * mayTest()
      * Test input and return true/false.
      */
-    function test_valid() {
+    function mayTest() {
         var recipient = $('#test-email-recipient').val();
         if (recipient.length < 3) {
             return false;
@@ -132,51 +136,48 @@ function ($, template, configure, common, OnOff)
      * Enable/disable the 'Save' button based on the field values.
      */
     function validate() {
-        var save_enabled = save_valid();
-        if (save_enabled) {
+        var data = gatherData();
+        if (maySave(data)) {
             $('#save').removeClass('disabled');
         } else {
             $('#save').addClass('disabled');
         }
 
-        var test_enabled = test_valid();
-        if (test_enabled) {
+        if (mayTest()) {
             $('#test').removeClass('disabled');
         } else {
             $('#test').addClass('disabled');
         }
     }
 
-    /* start */
-    var dropdown_template = $('#dropdown-template').html();
-    template.parse(dropdown_template);
+    function setup(data)
+    {
+        Dropdown.setupAll(data);
+        OnOff.setup();
 
-    $().ready(function() {
         $('#save').bind('click', save);
-        $('#cancel').bind('click', cancel);
         $('#test').bind('click', test);
-        $('input[type="text"], input[type="password"]').on('paste', function() {
-            setTimeout(function() {
-                /* validate after paste completes by using a timeout. */
-                validate();
-            }, 100);
-        });
-        $('input[type="text"], input[type="password"]').on('keyup', function() {
+
+        /* validation */
+        Dropdown.setCallback(validate);
+        Dropdown.setCallback(function () {
+            configure.changeMail();
             validate();
-        });
-    });
+        }, '#mail-server-type');
+        /* this assumes no other OnOff sliders on the initial setup page. */
+        OnOff.setCallback(function (checked) {
+            configure.changeSSL(checked);
+            validate();
+        }, '#enable-ssl');
+        configure.setInputCallback(validate);
+        /* no need to call validate(), the form can't be valid yet. */
+    }
 
     $.ajax({
         url: '/rest/setup',
         success: function(data) {
             $().ready(function() {
-                for (var i in data['config']) {
-                    var option = data['config'][i];
-                    var rendered = template.render(dropdown_template, option);
-                    $('#'+option['name']).html(rendered);
-                }
-                OnOff.setup();
-                common.setupDropdowns();
+                setup(data);
             });
         },
         error: common.ajaxError,

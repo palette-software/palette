@@ -2,22 +2,9 @@ require(['jquery', 'underscore', 'configure', 'common',
          'Dropdown', 'OnOff', 'bootstrap'],
 function ($, _, configure, common, Dropdown, OnOff)
 {
-
-    var MAIL_DIRECT = 1;
-    var MAIL_RELAY = 2;
-    var MAIL_NONE = 3;
-
     var urlData = null;
     var mailData = null;
     var authData = null;
-
-    /*
-     * gatherURLData()
-     */
-    function gatherURLData()
-    {
-        return {'server-url': $('#server-url').val()};
-    }
 
     /*
      * maySaveURL()
@@ -55,7 +42,7 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function saveURL() {
         $('#save-url, #cancel-url').addClass('disabled');
-        var data = gatherURLData();
+        var data = configure.gatherURLData();
         data['action'] = 'save';
 
         $.ajax({
@@ -89,33 +76,6 @@ function ($, _, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * gatherAdminData()
-     */
-    function gatherAdminData()
-    {
-        return {
-            'password': $('#password').val(),
-            'confirm-password': $('#confirm-password').val(),
-        }
-    }
-
-    /*
-     * maySaveURL()
-     * Return true if the 'Palette Admin' section has changed and is valid.
-     */
-    function maySaveAdmin(data)
-    {
-        var password = data['password'];
-        if (common.validPassword(password)
-            && (password == data['confirm-password']))
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    /*
      * mayCancelAdmin()
      * Return true if 'Palette Admin' section has changed.
      */
@@ -139,7 +99,7 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function saveAdmin() {
         $('#save-admin, #cancel-admin').addClass('disabled');
-        data = gatherAdminData();
+        data = configure.gatherAdminData();
         data['action'] = 'save';
         delete data['confirm-password'];
 
@@ -173,34 +133,6 @@ function ($, _, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * gatherMailData()
-     */
-    function gatherMailData()
-    {
-        var type = Number(Dropdown.getValueById('mail-server-type'));
-        if (type == MAIL_NONE) {
-            return {'mail-server-type': type};
-        }
-        if (type == MAIL_DIRECT) {
-            return {
-                'mail-server-type': type,
-                'alert-email-name': $('#alert-email-name').val(),
-                'alert-email-address': $('#alert-email-address').val()
-            };
-        }
-        return {
-            'mail-server-type': type,
-            'alert-email-name': $('#alert-email-name').val(),
-            'alert-email-address': $('#alert-email-address').val(),
-            'smtp-server': $('#smtp-server').val(),
-            'smtp-port': Number($('#smtp-port').val()),
-            'smtp-username': $('#smtp-username').val(),
-            'smtp-password': $('#smtp-password').val(),
-            'enable-tls': OnOff.getValueById('enable-tls')
-        };
-    }
-
-    /*
      * maySaveMail()
      * Return true if the 'Mail Server' section has changed and is valid.
      */
@@ -209,39 +141,7 @@ function ($, _, configure, common, Dropdown, OnOff)
         if (_.isEqual(data, mailData)) {
             return false;
         }
-
-        var type = Number(Dropdown.getValueById('mail-server-type'));
-        if (type == MAIL_NONE) {
-            /* Getting here implies mail server type changed. */
-            return true;
-        }
-        /*
-         * allow alert-email.name to be unspecified.
-        if (data['alert-email-name'].length == 0) {
-            return false;
-        }
-        */
-        if (!common.validEmail(data['alert-email-address'])) {
-            return false;
-        }
-
-        if (type == MAIL_DIRECT) {
-            return true;
-        }
-
-        if (data['smtp-server'].length == 0) {
-            return false;
-        }
-        if (isNaN(data['smtp-port'])) {
-            return false;
-        }
-
-        /* SMTP username and password are optional */
-        if (data['smtp-username'].length > 0
-            && data['smtp-password'].length == 0) {
-            return false;
-        }
-        return true;
+        return configure.validMailData(data);
     }
 
     /*
@@ -261,7 +161,7 @@ function ($, _, configure, common, Dropdown, OnOff)
         var maySave;
         var testEmailRecipient = $('#test-email-recipient').val();
 
-        var data = gatherMailData();
+        var data = configure.gatherMailData();
         if (maySaveMail(data)) {
             $('#save-mail').removeClass('disabled');
             maySave = true;
@@ -290,7 +190,7 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function saveMail() {
         $('#save-mail, #cancel-mail').addClass('disabled');
-        var data = gatherMailData();
+        var data = configure.gatherMailData();
         data['action'] = 'save';
 
         var result = null;
@@ -337,7 +237,7 @@ function ($, _, configure, common, Dropdown, OnOff)
      * Callback for the 'Test Email' button.
      */
     function testMail() {
-        var data = gatherMailData();
+        var data = configure.gatherMailData();
         data['test-email-recipient'] = $('#test-email-recipient').val();
         data['action'] = 'test';
 
@@ -374,51 +274,6 @@ function ($, _, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * changeMail()
-     * Callback for the 'Mail Server Type' dropdown.
-     */
-    function changeMail()
-    {
-        var value = Number(Dropdown.getValueById('mail-server-type'));
-        if (value == MAIL_NONE) {
-            $(".mail-setting").addClass('hidden');
-        } else {
-            $(".mail-setting").removeClass('hidden');
-            if (value == MAIL_DIRECT) {
-                $(".smtp").addClass('hidden');
-            }
-        }
-        validateMail()
-    }
-
-    /*
-     * gatherSSLData()
-     */
-    function gatherSSLData()
-    {
-        return {
-            'ssl-certificate-file': $('#ssl-certificate-file').val(),
-            'ssl-certificate-key-file': $('#ssl-certificate-key-file').val(),
-            'ssl-certificate-chain-file': $('#ssl-certificate-chain-file').val()
-        }
-    }
-
-    /*
-     * maySaveSSL()
-     * Return true if the 'Server SSL' section has changed and is valid.
-     */
-    function maySaveSSL(data)
-    {
-        if (data['ssl-certificate-file'].length == 0) {
-            return false;
-        }
-        if (data['ssl-certificate-key-file'].length == 0) {
-            return false;
-        }
-        return true;
-    }
-
-    /*
      * mayCancelSSL()
      * Return true if 'Server SSL' section has changed.
      */
@@ -441,7 +296,7 @@ function ($, _, configure, common, Dropdown, OnOff)
      * Callback for the 'Save' button in the SSL Certificate section.
      */
     function saveSSL() {
-        var data = gatherSSLData();
+        var data = configure.gatherSSLData();
         data['action'] = 'save';
 
         var result = null;
@@ -538,13 +393,13 @@ function ($, _, configure, common, Dropdown, OnOff)
      * Enable/disable the buttons based on the field values.
      */
     function validate() {
-        configure.validateSection('url', gatherURLData,
+        configure.validateSection('url', configure.gatherURLData,
                                   maySaveURL, mayCancelURL);
-        configure.validateSection('admin', gatherAdminData,
-                                  maySaveAdmin, mayCancelAdmin);
+        configure.validateSection('admin', configure.gatherAdminData,
+                                  configure.validAdminData, mayCancelAdmin);
         validateMail();
-        configure.validateSection('ssl', gatherSSLData,
-                                  maySaveSSL, mayCancelSSL);
+        configure.validateSection('ssl', configure.gatherSSLData,
+                                  configure.validSSLData, mayCancelSSL);
         configure.validateSection('auth', gatherAuthData,
                                   maySaveCancelAuth, maySaveCancelAuth);
     }
@@ -561,7 +416,7 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#server-url').val(data['server-url']);
         $('#save-url').bind('click', saveURL);
         $('#cancel-url').bind('click', cancelURL);
-        urlData = gatherURLData();
+        urlData = configure.gatherURLData();
 
         /* Admin */
         $('#save-admin').bind('click', saveAdmin);
@@ -576,12 +431,14 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#save-mail').bind('click', saveMail);
         $('#cancel-mail').bind('click', cancelMail);
         $('#test-mail').bind('click', testMail);
-        mailData = gatherMailData();
-        changeMail();
+        mailData = configure.gatherMailData();
+        configure.changeMail();
 
         /* SSL */
         $('#save-ssl').bind('click', saveSSL);
         $('#cancel-ssl').bind('click', cancelSSL);
+        $('#enable-ssl').val(data['enable-ssl']);
+        configure.changeSSL();
 
         /* Authentication */
         $('#save-auth').off('click');
@@ -591,18 +448,16 @@ function ($, _, configure, common, Dropdown, OnOff)
 
         /* validation */
         Dropdown.setCallback(validate);
-        Dropdown.setCallback(changeMail, '#mail-server-type');
-
-        $('input[type="text"], input[type="password"], textarea').on('paste', function() {
-            setTimeout(function() {
-                /* validate after paste completes by using a timeout. */
-                validate();
-            }, 100);
-        });
-        $('input[type="text"], input[type="password"], textarea').on('keyup', function() {
+        Dropdown.setCallback(function () {
+            configure.changeMail();
             validate();
-        });
-
+        }, '#mail-server-type');
+        OnOff.setCallback(validate);
+        OnOff.setCallback(function (checked) {
+            configure.changeSSL(checked);
+            validate();
+        }, '#enable-ssl');
+        configure.setInputCallback(validate);
         validate();
     }
 
