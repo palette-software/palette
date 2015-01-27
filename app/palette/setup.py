@@ -7,6 +7,7 @@ from akiri.framework.proxy import JSONProxy
 from akiri.framework.route import Router
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
+import akiri.framework.config as config
 
 from collections import OrderedDict
 
@@ -14,6 +15,7 @@ from controller.profile import UserProfile, Role
 from controller.passwd import tableau_hash
 from controller.general import SystemConfig
 from controller.util import extend
+from controller.domain import Domain
 
 from .page import PalettePage
 from .option import DictOption
@@ -87,6 +89,9 @@ class SetupURLApplication(BaseSetupApplication):
         # pylint: disable=unused-argument
         scfg = SystemConfig(req.system)
 
+        if scfg.server_url == 'localhost':
+            req.system.save(SystemConfig.SERVER_URL, req.environ['HTTP_HOST'])
+
         return {'server-url': scfg.server_url}
 
     @required_parameters('server-url')
@@ -121,9 +126,11 @@ class SetupAdminApplication(BaseSetupApplication):
 class SetupMailApplication(JSONProxy):
 
     def __init__(self):
+        print 'in mail'
         super(SetupMailApplication, self).__init__('http://localhost:9091', \
                                     allowed_request_methods=('GET', 'POST'))
 
+    @required_role(Role.MANAGER_ADMIN)
     def postprocess(self, req, data):
         if 'error' in data:
             return data
@@ -162,8 +169,7 @@ class SetupMailApplication(JSONProxy):
         else:
             mail_server_type = str(MailServerType.NONE)
             mst = MailServerType(MailServerType.NONE)
-        config = [mst.default()]
-        data = {'config': config}
+        data = {'config': [mst.default()]}
 
         parts = scfg.from_email.rsplit(" ", 1)
         if len(parts) == 2:
@@ -204,6 +210,7 @@ class SetupMailApplication(JSONProxy):
     def service_POST(self, req):
         # FIXME: test for valid POST data
         # return self.fake_POST(req)
+        print 'got to mail----------------'
         return super(SetupMailApplication, self).service(req)
 
     @required_role(Role.MANAGER_ADMIN)
@@ -254,8 +261,7 @@ class SetupAuthApplication(BaseSetupApplication):
         else:
             atype = AuthType(AuthType.LOCAL)
 
-        config = [atype.default()]
-        data = {'config': config}
+        data = {'config': [atype.default()]}
         return data
 
     @required_role(Role.MANAGER_ADMIN)
@@ -266,6 +272,24 @@ class SetupAuthApplication(BaseSetupApplication):
             raise exc.HTTPBadRequest()
         req.system.save(SystemConfig.AUTHENTICATION_TYPE, authtype)
         return {'authentication-type': authtype}
+
+class SetupLicenseApplication(BaseSetupApplication):
+    """Handler for the 'PALETTE LICENSE KEY' section."""
+
+    @required_role(Role.MANAGER_ADMIN)
+    @required_parameters('license-key')
+    def service_POST(self, req):
+        license_key = req.params_get('license-key')
+        domainname = config.store.get("palette", "domainname")
+
+        meta.Session.query(Domain).\
+            filter(Domain.name == domainname).\
+            update({"license_key": license_key},
+                    synchronize_session=False)
+
+        meta.Session.commit()
+
+        return {}
 
 
 class _SetupApplication(BaseSetupApplication):
@@ -278,6 +302,7 @@ class _SetupApplication(BaseSetupApplication):
         self.ssl = SetupSSLApplication()
         self.auth = SetupAuthApplication()
         self.url = SetupURLApplication()
+        self.license = SetupLicenseApplication()
 
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
@@ -289,9 +314,23 @@ class _SetupApplication(BaseSetupApplication):
         extend(data, self.url.service_GET(req))
         return data
 
+    @required_role(Role.MANAGER_ADMIN)
+    def service_POST(self, req):
+        print 'setup:', req
+        self.license.service_POST(req)
+        self.admin.service_POST(req)
+        print 'before mail'
+        self.mail.service_POST(req)
+        print 'after mail'
+        self.ssl.service_POST(req)
+        self.url.service_POST(req)
+        print 'and done'
+        return {}
+
 
 class SetupMailTestApplication(BaseSetupApplication):
 
+    @required_role(Role.MANAGER_ADMIN)
     @required_parameters('test-email-recipient')
     def service_POST(self, req):
         print 'here'
@@ -320,7 +359,6 @@ class SetupApplication(Router):
         self.add_route(r'/mail/test\Z', SetupMailTestApplication())
         self.add_route(r'/admin\Z', SetupURLApplication())
         self.add_route(r'/url\Z', SetupURLApplication())
-
 
 class SetupTestApp(GenericWSGI):
     """ WSGI Middleware to test whether the system has been initially setup."""
