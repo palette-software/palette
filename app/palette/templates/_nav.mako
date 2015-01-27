@@ -10,13 +10,18 @@
         </a>
         <ul>
           <li>
+            <a href="http://kb.palette-software.com" target="_blank">
+              Knowledge Base
+            </a>
+          </li>
+          <li>
             <a href="http://hello.palette-software.com/hc/en-us/requests" target="_blank">
-              <i class="fa fa-fw fa-envelope"></i> My Support Requests
+              Support Requests
             </a>
           </li>
           <li>
             <a href="/support/about">
-              <i class="fa fa-fw fa-info-circle"></i> About Palette
+              About Palette
             </a>
           </li>
         </ul>
@@ -30,12 +35,12 @@
         <ul>
           <li>
             <a href="/profile">
-              <i class="fa fa-fw fa-user"></i> Edit Profile
+              My Profile
             </a>
           </li>
           <li>
             <a href="/logout">
-              <i class="fa fa-fw fa-sign-out"></i> Log out
+              Log out
             </a>
           </li>
         </ul>
