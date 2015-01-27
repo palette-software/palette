@@ -1,7 +1,7 @@
 <h2>Server SSL Certificate</h2>
 <p class="slider-group">
-  <span>SSL
-    <span id="enable-ssl" class="onoffswitch yesno"></span>
+  <span>Custom SSL
+    <span id="enable-ssl" class="onoffswitch"></span>
   </span>
 </p>
 <div class="hidden">
