@@ -1,7 +1,7 @@
 <nav id="mainNav" data-topbar>
   <div class="container">
     <a class="site-id" href="/"></a>
-    <span id="toggle-main-menu" class="fi-list"></span>
+    <span class="message"></span>
     <ul class="nav">
       <li class="more">
         <a class="help" href="javascript:void(0)">

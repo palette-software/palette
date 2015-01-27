@@ -797,6 +797,14 @@ nav.navbar {
     top: 0;
     z-index: 9001;
 }
+/* trial message */
+#mainNav .message {
+    position: fixed;
+    top: 0;
+    left: 257px;
+    padding-left: 20px;
+    line-height: 63px;
+}
 /* formerly #mainNav a.site-id */
 a.site-id {
     background-image: url('/app/module/palette/images/palette_logo_600dpi-2.png');
@@ -811,10 +819,6 @@ a.site-id {
     box-sizing: content-box;
     background-repeat: no-repeat;
     margin-left: 15px;
-}
-#mainNav .arrow-down {
-    left: 7px;
-    border-top: 7px solid #fff;
 }
 /* FIXME: redundant with bootstrap */
 .text-center {

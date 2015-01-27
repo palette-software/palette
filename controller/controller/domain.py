@@ -1,12 +1,13 @@
+from datetime import datetime
 from sqlalchemy import Column, String, BigInteger, DateTime, func, Boolean
 
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
-from mixin import BaseMixin
+from mixin import BaseMixin, BaseDictMixin
 
-class Domain(meta.Base, BaseMixin):
+class Domain(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'domain'
 
     domainid = Column(BigInteger, unique=True, nullable=False,
@@ -21,7 +22,15 @@ class Domain(meta.Base, BaseMixin):
     modification_time = Column(DateTime, server_default=func.now(),
                                    server_onupdate=func.current_timestamp())
 
-    defaults = [{'domainid':1, 'name':'default.local'}]
+    defaults = [{'domainid':0, 'name':'default.local'}]
+
+    def trial_days(self):
+        if not self.trial:
+            return None
+        timedelta =  self.expiration_time - datetime.now()
+        if timedelta.days > 0:
+            return timedelta.days
+        return 0
 
     @classmethod
     def get_by_name(cls, name):
@@ -30,3 +39,7 @@ class Domain(meta.Base, BaseMixin):
         entry = meta.Session.query(Domain).\
             filter(Domain.name == name).one()
         return entry
+
+    @classmethod
+    def getone(cls):
+        return meta.Session.query(Domain).one()
