@@ -353,8 +353,6 @@ class GeneralMonitorApplication(PaletteRESTApplication):
 
     LOW_WATERMARK_RANGE = [101, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
     HIGH_WATERMARK_RANGE = [101, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
-    HTTP_LOAD_WARN_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45]
-    HTTP_LOAD_ERROR_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45]
     CPU_LOAD_WARN_RANGE = [101, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
     CPU_LOAD_ERROR_RANGE = [101, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
     CPU_PERIOD_WARN_RANGE = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30]
@@ -426,35 +424,11 @@ class GeneralMonitorApplication(PaletteRESTApplication):
                 options.append({'id':x, 'item': '%s%%' % str(x)})
         high['options'] = options
 
-        # http warn
+        # workbook warn (formerly http load warn)
         value = self.build_item_for_web_request(scfg.http_load_warn)
-        http_load_warn = {'name': SystemConfig.HTTP_LOAD_WARN,
-                          'value': value,
-                          'id': scfg.http_load_warn}
-
-        options = []
-        for x in self.HTTP_LOAD_WARN_RANGE:
-            item = self.build_item_for_web_request(x)
-            options.append({'id':x, 'item': item})
-        http_load_warn['options'] = options
-
-        value = self.build_item_for_web_request(scfg.http_load_error)
-        http_load_error = {'name': SystemConfig.HTTP_LOAD_ERROR,
-                           'value': value,
-                           'id': scfg.http_load_error}
-
-        options = []
-        for x in self.HTTP_LOAD_ERROR_RANGE:
-            item = self.build_item_for_web_request(x)
-            options.append({'id':x, 'item': item})
-        http_load_error['options'] = options
-
-        # workbook warn
-        value = self.build_item_for_web_request(scfg.workbook_load_warn)
-        print "value = ", value
-        workbook_load_warn = {'name': SystemConfig.WORKBOOK_LOAD_WARN,
+        workbook_load_warn = {'name': SystemConfig.HTTP_LOAD_WARN,
                               'value': value,
-                              'id': scfg.workbook_load_warn}
+                              'id': scfg.http_load_warn}
 
         options = []
         for x in self.WORKBOOK_LOAD_WARN_RANGE:
@@ -462,11 +436,11 @@ class GeneralMonitorApplication(PaletteRESTApplication):
             options.append({'id':x, 'item': item})
         workbook_load_warn['options'] = options
 
-        # workbook error
-        value = self.build_item_for_web_request(scfg.workbook_load_error)
-        workbook_load_error = {'name': SystemConfig.WORKBOOK_LOAD_ERROR,
+        # workbook error (formerly http load error)
+        value = self.build_item_for_web_request(scfg.http_load_error)
+        workbook_load_error = {'name': SystemConfig.HTTP_LOAD_ERROR,
                                'value': value,
-                               'id': scfg.workbook_load_error}
+                               'id': scfg.http_load_error}
 
         options = []
         for x in self.WORKBOOK_LOAD_ERROR_RANGE:
@@ -564,12 +538,10 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         req.system.save(SystemConfig.CPU_PERIOD_ERROR,
                                             req.POST['cpu-period-error'])
 
-        if 0:
-            # fix: UI not done yet
-            req.system.save(SystemConfig.WORKBOOK_LOAD_WARN,
-                                            req.POST['workbook-load-warn'])
-            req.system.save(SystemConfig.CPU_PERIOD_ERROR,
-                                            req.POST['workbook-load-error'])
+        req.system.save(SystemConfig.HTTP_LOAD_WARN,
+                                        req.POST['http-load-warn'])
+        req.system.save(SystemConfig.HTTP_LOAD_ERROR,
+                                        req.POST['http-load-error'])
 
         return {}
 
