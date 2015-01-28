@@ -91,6 +91,7 @@ class SetupURLApplication(BaseSetupApplication):
         # pylint: disable=unused-argument
         scfg = SystemConfig(req.system)
 
+        # FIXME (later): allow non-443 ports?
         if scfg.server_url == 'localhost':
             req.system.save(SystemConfig.SERVER_URL, req.environ['HTTP_HOST'])
 
