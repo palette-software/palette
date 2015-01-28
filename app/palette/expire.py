@@ -29,7 +29,7 @@ class ExpireMiddleware(GenericWSGI):
             else:
                 location += '&n=0'
         raise exc.HTTPTemporaryRedirect(location=location)
-        
+
 
 def make_expire_filter(app, global_conf):
     # pylint: disable=unused-argument

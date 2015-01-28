@@ -63,6 +63,16 @@ function ($, _, configure, common, Dropdown, OnOff)
     }
 
     /*
+     * resetTestMessage()
+     * Hide the test message paragraph.
+     */
+    function resetTestMessages()
+    {
+        resetTestMessage('s3');
+        resetTestMessage('gcs');
+    }
+
+    /*
      * save()
      * Callback for 'Save' when GCS/S3 is selected in 'Storage Location'.
      *  id: either S3 or GCS.
@@ -97,7 +107,7 @@ function ($, _, configure, common, Dropdown, OnOff)
             }
         });
 
-        resetTestMessage(id);
+        resetTestMessages();
         validate();
     }
 
@@ -111,7 +121,7 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#'+name+'-access-key').val(data['access-key']);
         $('#'+name+'-secret-key').val(data['secret-key']);
         $('#'+name+'-url').val(data['url']);
-        resetTestMessage(name);
+        resetTestMessages();
         validate();
     }
 
@@ -307,7 +317,7 @@ function ($, _, configure, common, Dropdown, OnOff)
             dataType: 'json',
             async: false,
 
-            success: function(data) {
+            success: function() {
                 delete data['action'];
                 localData = data;
             },
