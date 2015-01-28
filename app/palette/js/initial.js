@@ -1,6 +1,8 @@
 require(['jquery', 'configure', 'common', 'Dropdown', 'OnOff', 'bootstrap'],
 function ($, configure, common, Dropdown, OnOff)
-{    
+{
+    var LICENSE_TIMEOUT = 1000; // 1 sec;
+
     /*
      * inputValid()
      * Return whether or not an input field has been filed in (at all) by id.
@@ -173,6 +175,28 @@ function ($, configure, common, Dropdown, OnOff)
         configure.setInputCallback(validate);
         /* no need to call validate(), the form can't be valid yet. */
     }
+
+    /*
+     * queryLicensing()
+     */
+    function queryLicensing()
+    {
+        $.ajax({
+            url: '/licensing',
+            success: function(data) {
+                $('div.error-page').addClass('hidden');
+                $('div.setup-page').removeClass('hidden');
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                $('div.setup-page').addClass('hidden');
+                $('div.error-page').removeClass('hidden');
+                setTimeout(queryLicensing, LICENSE_TIMEOUT);
+            }
+        });
+    }
+
+    /* start */
+    queryLicensing();
 
     $.ajax({
         url: '/open/setup',
