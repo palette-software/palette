@@ -3,7 +3,6 @@ from webob import exc
 from akiri.framework.api import RESTApplication
 from akiri.framework import GenericWSGIApplication
 
-#from controller.domain import Domain
 from controller.profile import Role
 from controller.palapi import CommHandlerApp
 

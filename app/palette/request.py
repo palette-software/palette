@@ -1,70 +1,13 @@
-from akiri.framework.api import Request as apiRequest
+from akiri.framework import GenericWSGI
 
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
+from controller.domain import Domain
 from controller.environment import Environment
-from controller.profile import UserProfile
 from controller.system import SystemEntry
 from controller.util import DATEFMT
-
-def get(req, name, default=None):
-    if not name in req.params:
-        return default
-    return req.params[name]
-
-def getint(req, name, default=None):
-    try:
-        return int(req.params[name])
-    except StandardError:
-        pass
-    return default
-
-def getfloat(req, name, default=None):
-    try:
-        return float(req.params[name])
-    except StandardError:
-        pass
-    return default
-
-def getbool(req, name, default=None):
-    try:
-        value = req.params[name].lower()
-        if value == 'true' or value == '1':
-            return True
-        if value == 'false' or value == '0':
-            return False
-        return default
-    except StandardError:
-        pass
-    return default
-
-class Request(apiRequest):
-    """ This class may be called more than once in the WSGI Pipeline. """
-    # pylint: disable=too-many-public-methods
-    def __init__(self, environ):
-        super(Request, self).__init__(environ)
-        if not 'PALETTE_ENVIRONMENT' in environ:
-            environ['PALETTE_ENVIRONMENT'] = Environment.get()
-        self.envid = environ['PALETTE_ENVIRONMENT'].envid
-
-        if isinstance(self.remote_user, basestring):
-            self.remote_user = UserProfile.get_by_name(self.envid,
-                                                       self.remote_user)
-
-        if 'PALETTE_SYSTEM' in self.environ:
-            self.system = environ['PALETTE_SYSTEM']
-        else:
-            self.system = System(self.envid)
-            environ['PALETTE_SYSTEM'] = self.system
-
-    # deprecated
-    get = get
-    getint = getint
-    getfloat = getfloat
-    getbool = getbool
-
 
 # FIXME: merge with SystemManager.
 class System(object):
@@ -155,3 +98,31 @@ class System(object):
             self.data[key] = entry
         entry.value = str(value)
         session.commit()
+
+ENVIRON_ENVIRONMENT_NAME = 'palette.environment'
+ENVIRON_DOMAIN_NAME = 'palette.domain'
+
+def req_getattr(req, name):
+    if name == 'envid':
+        if not ENVIRON_ENVIRONMENT_NAME in req.environ:
+            req.environ[ENVIRON_ENVIRONMENT_NAME] = Environment.get()
+        return req.environ[ENVIRON_ENVIRONMENT_NAME].envid
+    if name == 'palette_domain': # webob already has a 'domain' property.
+        if not ENVIRON_DOMAIN_NAME in req.environ:
+            req.environ[ENVIRON_DOMAIN_NAME] = Domain.getone()
+        return req.environ[ENVIRON_DOMAIN_NAME]
+    if name == 'system':
+        return System(req.envid)
+
+    raise AttributeError(name)
+
+
+class BaseMiddleware(GenericWSGI):
+    """Do initial setup of the request object."""
+    def service(self, req):
+        req.getattr = req_getattr
+        return None
+
+def make_base(app, global_conf):
+    # pylint: disable=unused-argument
+    return BaseMiddleware(app)

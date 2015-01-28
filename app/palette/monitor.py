@@ -7,7 +7,6 @@ from collections import OrderedDict
 from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
-from controller.domain import Domain
 from controller.tableau import TableauProcess
 from controller.state import StateManager
 from controller.agent import Agent, AgentVolumesEntry
@@ -495,21 +494,19 @@ class MonitorApplication(PaletteRESTApplication):
             else:
                 color_num = Colors.RED_NUM
 
-        domain = Domain.getone()
-        trial_days = domain.trial_days()
+        trial_days = req.palette_domain.trial_days()
 
         environments = [{"name": "My Machines", "agents": agents}]
 
-        data =  {'state': main_state,
-                 'allowable-actions': allowable_actions,
-                 'text': state_control_entry.text,
-                 'icon': state_control_entry.icon,
-                 'color': Colors.color_to_str[color_num],
-                 'user-action-in-progress': user_action_in_progress,
-                 #'domain': domain,
-                 'environments': environments,
-                 'admin': True,
-                 }
+        data = {'state': main_state,
+                'allowable-actions': allowable_actions,
+                'text': state_control_entry.text,
+                'icon': state_control_entry.icon,
+                'color': Colors.color_to_str[color_num],
+                'user-action-in-progress': user_action_in_progress,
+                'environments': environments,
+                'admin': True,
+                }
         if not trial_days is None:
             data['nav-message'] = 'Remaining Days in Trial: ' + str(trial_days)
         return data

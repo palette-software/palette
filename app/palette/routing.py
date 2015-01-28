@@ -1,23 +1,7 @@
 from akiri.framework.route import Router
 
-# TEMP
-from .request import System
-from controller.environment import Environment
 from controller.profile import UserProfile
 from controller.passwd import set_aes_key_file
-
-# FIXME: this is mostly duplicate with request.py
-def req_getattr(req, name):
-    if name == 'envid':
-        if not 'PALETTE_ENVIRONMENT' in req.environ:
-            req.environ['PALETTE_ENVIRONMENT'] = Environment.get()
-        return req.environ['PALETTE_ENVIRONMENT'].envid
-    if name == 'system':
-        return System(req.envid)
-
-    raise AttributeError(name)
-
-
 
 class PaletteRouter(Router):
     """
@@ -27,7 +11,6 @@ class PaletteRouter(Router):
     def service(self, req):
         # FIXME: don't override the existing remote_user, instead create
         # a different member like 'remote_user_profile'.
-        req.getattr = req_getattr
         req.remote_user = UserProfile.get_by_name(req.envid,
                                                   req.remote_user)
         return super(PaletteRouter, self).service(req)
