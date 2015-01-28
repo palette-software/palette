@@ -18,7 +18,7 @@ class Environment(meta.Base, BaseMixin):
     modification_time = Column(DateTime, server_default=func.now(), \
                                server_onupdate=func.current_timestamp())
 
-    defaults = [{'envid':1, 'domainid':1, 'name':'Production'}]
+    defaults = [{'envid':1, 'domainid':0, 'name':'Production'}]
 
     @classmethod
     def get(cls):
