@@ -160,7 +160,7 @@ class GeneralLocalApplication(PaletteRESTApplication):
         print 'post', req
 
         # Fixme: Add something like the following after the js is finished
-        value = req.POST['id']
+        value = req.POST['storage-destination']
         parts = value.split(':')
         if len(parts) != 2:
             print "Bad value:", value
@@ -399,7 +399,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
                    'id': scfg.watermark_low}
         else:
             low = {'name': SystemConfig.WATERMARK_LOW,
-                   'value': "%d%%" % str(scfg.watermark_low),
+                   'value': "%d%%" % scfg.watermark_low,
                    'id': scfg.watermark_low}
         options = []
         for x in self.LOW_WATERMARK_RANGE:
@@ -416,7 +416,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
                    'id': scfg.watermark_high}
         else:
             high = {'name': SystemConfig.WATERMARK_HIGH,
-                   'value': '%d%%' % str(scfg.watermark_high),
+                   'value': '%d%%' % scfg.watermark_high,
                    'id': scfg.watermark_high}
         options = []
         for x in self.HIGH_WATERMARK_RANGE:
