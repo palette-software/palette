@@ -177,9 +177,9 @@ class SystemConfig(object):
         if name == 'workbooks_as_twb':
             return self._getyesno(self.WORKBOOKS_AS_TWB)
         if name == "workbook_load_warn":
-            return self._getint(self.WORKBOOK_LOAD_WARN, default=30)
+            return self._getint(self.WORKBOOK_LOAD_WARN, default=0)
         if name == "workbook_load_error":
-            return self._getint(self.WORKBOOK_LOAD_ERROR, default=60)
+            return self._getint(self.WORKBOOK_LOAD_ERROR, default=0)
 
         if name == 'http_load_warn':
             return self._http_load_warn(self.HTTP_LOAD_WARN)
@@ -194,13 +194,13 @@ class SystemConfig(object):
         if name == 'upgrading':
             return self._getyesno(self.UPGRADING)
         if name == 'cpu_load_warn':
-            return self._getint(self.CPU_LOAD_WARN, default=80)
+            return self._getint(self.CPU_LOAD_WARN, default=101)
         if name == 'cpu_load_error':
-            return self._getint(self.CPU_LOAD_ERROR, default=95)
+            return self._getint(self.CPU_LOAD_ERROR, default=101)
         if name == 'cpu_period_warn':
-            return self._getint(self.CPU_PERIOD_WARN, default=60)
+            return self._getint(self.CPU_PERIOD_WARN, default=101)
         if name == 'cpu_period_error':
-            return self._getint(self.CPU_PERIOD_ERROR, default=60)
+            return self._getint(self.CPU_PERIOD_ERROR, default=101)
         if name == 'metric_save_days':
             return self._getint(self.METRIC_SAVE_DAYS, default=1)
         if name == 'debug_level':

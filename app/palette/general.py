@@ -123,7 +123,6 @@ class GeneralLocalApplication(PaletteRESTApplication):
                 SystemConfig.WORKBOOKS_AS_TWB: scfg.workbooks_as_twb}
 
         # populate the storage destination type
-        dest = {'name': 'storage-destination'}
         options = []
 
         value = None
@@ -135,19 +134,24 @@ class GeneralLocalApplication(PaletteRESTApplication):
             if destid == ourid:
                 value = item
 
+        # We don't know about any volumes yet
         if not options:
-            # Placeholder until an agent connects.
-            value = scfg.text(FileManager.STORAGE_TYPE_VOL)
-            options.append({'id': FileManager.STORAGE_TYPE_VOL,
-                            'item': value})
+            return {}
 
+        # There is no volume currently selected.
         if value is None:
-            value = scfg.text(FileManager.STORAGE_TYPE_VOL)
+            # Arbitrarily choose the first one.
+            value = options[0]['item']
+            destid = options[0]['id']
 
-        dest['value'] = value
+        dest = {'name': 'storage-destination',
+                'value': value,
+                'id': destid}
+
         dest['options'] = options
-
         data['config'] = [dest]
+
+        print "disk data:", data
 
         return data
 
@@ -209,8 +213,8 @@ class GeneralBackupApplication(PaletteRESTApplication):
     BACKUP_SCHEDULED_PERIOD_RANGE = [1, 2, 3, 4, 6, 8, 12, 24]
     BACKUP_SCHEDULED_HOUR_RANGE = range(1, 12)
     BACKUP_SCHEDULED_MINUTE_RANGE = ['00', '15', '30', '45']
-    BACKUP_SCHEDULED_RETAIN_RANGE = [7, 14, 21, 28]
-    USER_BACKUP_RETAIN_RANGE = range(1, 11)
+    BACKUP_SCHEDULED_RETAIN_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25]
+    USER_BACKUP_RETAIN_RANGE = BACKUP_SCHEDULED_RETAIN_RANGE
 
     def service_GET(self, req):
         scfg = SystemConfig(req.system)
@@ -284,8 +288,8 @@ class EmailAlertApplication(PaletteRESTApplication):
 
 class GeneralZiplogApplication(PaletteRESTApplication):
     """Handler for the 'ZIPLOGSS' section."""
-    SCHEDULED_RETAIN_RANGE = range(1, 10)
-    USER_RETAIN_RANGE = range(1, 10)
+    SCHEDULED_RETAIN_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25]
+    USER_RETAIN_RANGE = SCHEDULED_RETAIN_RANGE
 
     def service_GET(self, req):
         # pylint: disable=unused-argument
@@ -304,8 +308,6 @@ class GeneralZiplogApplication(PaletteRESTApplication):
         return data
 
     def service_POST(self, req):
-        print 'ziplogs', req
-
         if req.POST['scheduled-ziplogs'] == 'false':
             req.system.save(SystemConfig.ZIPLOG_SCHEDULED_ENABLED, 'no')
         else:
@@ -349,18 +351,18 @@ class GeneralArchiveApplication(PaletteRESTApplication):
 class GeneralMonitorApplication(PaletteRESTApplication):
     """Handler from 'MONITORING' section."""
 
-    LOW_WATERMARK_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
-    HIGH_WATERMARK_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+    LOW_WATERMARK_RANGE = [101, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+    HIGH_WATERMARK_RANGE = [101, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
     HTTP_LOAD_WARN_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45]
     HTTP_LOAD_ERROR_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45]
-    CPU_LOAD_WARN_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
-    CPU_LOAD_ERROR_RANGE = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+    CPU_LOAD_WARN_RANGE = [101, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+    CPU_LOAD_ERROR_RANGE = [101, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
     CPU_PERIOD_WARN_RANGE = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30]
     CPU_PERIOD_ERROR_RANGE = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30]
-    WORKBOOK_LOAD_WARN_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40,
-                                45]
-    WORKBOOK_LOAD_ERROR_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40,
-                                45]
+    WORKBOOK_LOAD_WARN_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30,
+                                35, 40, 45]
+    WORKBOOK_LOAD_ERROR_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30,
+                                 35, 40, 45]
 
     def build_item_for_web_request(self, x):
         if x == 0:
@@ -391,26 +393,43 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         #data['workbook-error'] = scfg.workbook_load_error
 
         # watermark low
-        low = {'name': SystemConfig.WATERMARK_LOW,
-               'value': str(scfg.watermark_low),
-               'id': scfg.watermark_low}
+        if scfg.watermark_low > 100:
+            low = {'name': SystemConfig.WATERMARK_LOW,
+                   'value': "Do not monitor",
+                   'id': scfg.watermark_low}
+        else:
+            low = {'name': SystemConfig.WATERMARK_LOW,
+                   'value': "%d%%" % str(scfg.watermark_low),
+                   'id': scfg.watermark_low}
         options = []
         for x in self.LOW_WATERMARK_RANGE:
-            options.append({'id':x, 'item': str(x)})
+            if x > 100:
+                options.append({'id':x, 'item': "Do not monitor"})
+            else:
+                options.append({'id':x, 'item': "%s%%" % str(x)})
         low['options'] = options
 
         # watermark high
-        high = {'name': SystemConfig.WATERMARK_HIGH,
-               'value': str(scfg.watermark_high),
-               'id': scfg.watermark_high}
+        if scfg.watermark_high > 100:
+            high = {'name': SystemConfig.WATERMARK_HIGH,
+                   'value': "Do not monitor",
+                   'id': scfg.watermark_high}
+        else:
+            high = {'name': SystemConfig.WATERMARK_HIGH,
+                   'value': '%d%%' % str(scfg.watermark_high),
+                   'id': scfg.watermark_high}
         options = []
         for x in self.HIGH_WATERMARK_RANGE:
-            options.append({'id':x, 'item': str(x)})
+            if x > 100:
+                options.append({'id':x, 'item': 'Do not monitor'})
+            else:
+                options.append({'id':x, 'item': '%s%%' % str(x)})
         high['options'] = options
 
         # http warn
         value = self.build_item_for_web_request(scfg.http_load_warn)
-        http_load_warn = {'name': SystemConfig.HTTP_LOAD_WARN, 'value': value,
+        http_load_warn = {'name': SystemConfig.HTTP_LOAD_WARN,
+                          'value': value,
                           'id': scfg.http_load_warn}
 
         options = []
@@ -432,6 +451,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
 
         # workbook warn
         value = self.build_item_for_web_request(scfg.workbook_load_warn)
+        print "value = ", value
         workbook_load_warn = {'name': SystemConfig.WORKBOOK_LOAD_WARN,
                               'value': value,
                               'id': scfg.workbook_load_warn}
@@ -455,36 +475,63 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         workbook_load_error['options'] = options
 
         # cpu load warn
-        cpu_load_warn = {'name': SystemConfig.CPU_LOAD_WARN,
-                         'value': str(scfg.cpu_load_warn),
-                         'id': scfg.cpu_load_warn}
+        if scfg.cpu_load_warn > 100:
+            cpu_load_warn = {'name': SystemConfig.CPU_LOAD_WARN,
+                             'value': 'Do not monitor',
+                             'id': 101}
+
+        else:
+            cpu_load_warn = {'name': SystemConfig.CPU_LOAD_WARN,
+                             'value': str(scfg.cpu_load_warn),
+                             'id': scfg.cpu_load_warn}
         options = []
         for x in self.CPU_LOAD_WARN_RANGE:
-            options.append({'id':x, 'item': str(x)})
+            if x > 100:
+                options.append({'id':x, 'item': "Do not monitor"})
+            else:
+                options.append({'id':x, 'item': '%s%%' % str(x)})
         cpu_load_warn['options'] = options
 
         # cpu load error
-        cpu_load_error = {'name': SystemConfig.CPU_LOAD_ERROR,
-                          'value': str(scfg.cpu_load_error),
-                          'id': scfg.cpu_load_error}
+        if scfg.cpu_load_error > 100:
+            cpu_load_error = {'name': SystemConfig.CPU_LOAD_ERROR,
+                              'value': 'Do not monitor',
+                              'id': 101}
+        else:
+            cpu_load_error = {'name': SystemConfig.CPU_LOAD_ERROR,
+                              'value': str(scfg.cpu_load_error),
+                              'id': scfg.cpu_load_error}
         options = []
         for x in self.CPU_LOAD_ERROR_RANGE:
-            options.append({'id':x, 'item': str(x)})
+            if x > 100:
+                options.append({'id':x, 'item': 'Do not monitor'})
+            else:
+                options.append({'id':x, 'item': '%s%%' % str(x)})
         cpu_load_error['options'] = options
 
-        cpu_period_warn = {'name': SystemConfig.CPU_PERIOD_WARN,
-                           'value': str(scfg.cpu_period_warn / 60),
-                           'id': scfg.cpu_period_warn / 60}
         # cpu period warn
+        if scfg.cpu_load_warn > 100:
+            cpu_period_warn = {'name': SystemConfig.CPU_PERIOD_WARN,
+                               'value': "Do Not Monitor",
+                               'id': scfg.cpu_period_warn / 60}
+        else:
+            cpu_period_warn = {'name': SystemConfig.CPU_PERIOD_WARN,
+                               'value': str(scfg.cpu_period_warn / 60),
+                               'id': scfg.cpu_period_warn / 60}
         options = []
         for x in self.CPU_PERIOD_WARN_RANGE:
             options.append({'id':x * 60, 'item': str(x)})
         cpu_period_warn['options'] = options
 
-        cpu_period_error = {'name': SystemConfig.CPU_PERIOD_ERROR,
-                            'value': str(scfg.cpu_period_error / 60),
-                            'id': scfg.cpu_period_error / 60}
         # cpu period error
+        if scfg.cpu_load_error > 100:
+            cpu_period_error = {'name': SystemConfig.CPU_PERIOD_ERROR,
+                                'value': "Do Not Monitor",
+                                'id': scfg.cpu_period_error / 60}
+        else:
+            cpu_period_error = {'name': SystemConfig.CPU_PERIOD_ERROR,
+                                'value': str(scfg.cpu_period_error / 60),
+                                'id': scfg.cpu_period_error / 60}
         options = []
         for x in self.CPU_PERIOD_ERROR_RANGE:
             options.append({'id':x * 60, 'item': str(x)})
@@ -496,7 +543,6 @@ class GeneralMonitorApplication(PaletteRESTApplication):
                           cpu_load_warn, cpu_load_error,
                           cpu_period_warn, cpu_period_error]
 
-        print 'monitoring data:', data
         return data
 
     def service_POST(self, req):
