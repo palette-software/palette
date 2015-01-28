@@ -274,8 +274,12 @@ function ($, _, configure, common, Dropdown, OnOff)
      * Return 'My Machine' data.
      */
     function getLocalData() {
-        var storage_destination = Dropdown.getValueById('storage-destination');
-        return {'storage-destination': storage_destination};
+        try {
+            var destination = Dropdown.getValueById('storage-destination');
+        } catch (e) {
+            destination = null;
+        }
+        return {'storage-destination': destination};
     }
 
     /*
@@ -283,7 +287,9 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function setLocalData(data) {
         var destination = data['storage-destination'];
-        Dropdown.setValueById('storage-destination', destination);
+        if (destination != null) {
+            Dropdown.setValueById('storage-destination', destination);
+        }
     }
 
     /*
