@@ -340,7 +340,7 @@ function ($, topic, template, items, paging)
     }
 
     /*
-     * setupConfigure
+     * setupCategories
      * Enable the configure expansion item on main sidebar.
      */
     function setupCategories() {
@@ -594,6 +594,12 @@ function ($, topic, template, items, paging)
         setStatusColor(color);
 
         /* FIXME: break above into separate monitorUpdateStatus() function. */
+
+        if (data['nav-message'] != null) {
+            $('#mainNav .message').html(data['nav-message']);
+        } else {
+            $('#mainNav .message').html('');
+        }
 
         var rendered = template.render(server_list_template, data);
         $('#server-list').html(rendered);
