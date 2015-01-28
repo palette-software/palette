@@ -169,7 +169,7 @@ class GeneralLocalApplication(PaletteRESTApplication):
         (desttype, destid) = parts
         req.system.save(SystemConfig.BACKUP_DEST_ID, destid)
         req.system.save(SystemConfig.BACKUP_DEST_TYPE, desttype)
-        return {'id':value}
+        return {'storage-destination':value}
 
 class _GeneralStorageApplication(PaletteRESTApplication):
     """Overall GET handler for /rest/general/storage"""
