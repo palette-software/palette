@@ -500,7 +500,7 @@ class MonitorApplication(PaletteRESTApplication):
 
         environments = [{"name": "My Machines", "agents": agents}]
 
-        data =  {'state': main_state,
+        data = {'state': main_state,
                  'allowable-actions': allowable_actions,
                  'text': state_control_entry.text,
                  'icon': state_control_entry.icon,

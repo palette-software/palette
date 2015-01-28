@@ -83,7 +83,7 @@ class BaseSetupApplication(PaletteRESTApplication):
     def service(self, req):
         # Requires manager admin for all subclasses.
         return super(BaseSetupApplication, self).service(req)
-    
+
 
 class SetupURLApplication(BaseSetupApplication):
     """Handler for the 'SERVER URL' section."""
@@ -101,6 +101,7 @@ class SetupURLApplication(BaseSetupApplication):
     @required_parameters('server-url')
     def service_POST(self, req):
         url = req.params_get('server-url')
+        print 'url = ', url
         req.system.save(SystemConfig.SERVER_URL, url)
         return {'server-url': url}
 

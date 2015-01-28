@@ -512,7 +512,6 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         cpu_period_error['options'] = options
 
         data['config'] = [low, high,
-                          http_load_warn, http_load_error,
                           workbook_load_warn, workbook_load_error,
                           cpu_load_warn, cpu_load_error,
                           cpu_period_warn, cpu_period_error]
