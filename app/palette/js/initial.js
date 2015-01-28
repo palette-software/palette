@@ -33,7 +33,7 @@ function ($, configure, common, Dropdown, OnOff)
         var result = null;
         $.ajax({
             type: 'POST',
-            url: '/rest/setup',
+            url: '/open/setup',
             data: data,
             dataType: 'json',
             async: false,
@@ -72,7 +72,7 @@ function ($, configure, common, Dropdown, OnOff)
         var result = null;
         $.ajax({
             type: 'POST',
-            url: '/rest/setup/email',
+            url: '/open/setup/email',
             data: data,
             dataType: 'json',
             async: false,
@@ -175,7 +175,7 @@ function ($, configure, common, Dropdown, OnOff)
     }
 
     $.ajax({
-        url: '/rest/setup',
+        url: '/open/setup',
         success: function(data) {
             $().ready(function() {
                 setup(data);

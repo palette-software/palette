@@ -78,13 +78,16 @@ class AuthType(DictOption):
 
 
 class BaseSetupApplication(PaletteRESTApplication):
-    pass
 
+    @required_role(Role.MANAGER_ADMIN)
+    def service(self, req):
+        # Requires manager admin for all subclasses.
+        return super(BaseSetupApplication, self).service(req)
+    
 
 class SetupURLApplication(BaseSetupApplication):
     """Handler for the 'SERVER URL' section."""
 
-    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
         scfg = SystemConfig(req.system)
@@ -94,6 +97,7 @@ class SetupURLApplication(BaseSetupApplication):
 
         return {'server-url': scfg.server_url}
 
+    # FIXME: move to initial
     @required_parameters('server-url')
     def service_POST(self, req):
         url = req.params_get('server-url')
@@ -104,7 +108,6 @@ class SetupURLApplication(BaseSetupApplication):
 class SetupAdminApplication(BaseSetupApplication):
     """Handler for the 'AUTHENTICATION' section."""
 
-    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
         return {}
@@ -156,7 +159,6 @@ class SetupMailApplication(JSONProxy):
             del data['smtp-password']
         return data
 
-    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=bad-builtin
         scfg = SystemConfig(req.system)
@@ -193,23 +195,9 @@ class SetupMailApplication(JSONProxy):
 
         return data
 
-    @required_role(Role.MANAGER_ADMIN)
-    def fake_POST(self, req):
-        # pylint: disable=invalid-name
-        data = {}
-        for key in req.params:
-            data[key] = req.params[key]
-        mail_server_type = int(data['mail-server-type'])
-        if mail_server_type != MailServerType.NONE:
-            data['from-email'] = data['alert-email-address'] # FIXME
-            _, mail_domain = data['from-email'].split('@', 1)
-            data['mail-domain'] = mail_domain
-        return self.postprocess(req, data)
-
-    @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         # FIXME: test for valid POST data
-        # return self.fake_POST(req)
+        # FIXME -
         print 'got to mail----------------'
         return super(SetupMailApplication, self).service(req)
 
@@ -233,13 +221,19 @@ class SetupSSLApplication(JSONProxy):
     def postprocess(self, req, data):
         return data
 
-
     @required_role(Role.MANAGER_ADMIN)
+    def service(self, req):
+        if req.method == 'GET':
+            return self.service_GET(req)
+        elif req.method == 'POST':
+            return self.service_POST(req)
+        else:
+            raise exc.HTTPMethodNotAllowed()
+
     def service_GET(self, req):
         # pylint: disable=unused-argument
         return {}
 
-    @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         dump(req)
         # FIXME: check for required parameters
@@ -249,7 +243,6 @@ class SetupSSLApplication(JSONProxy):
 class SetupAuthApplication(BaseSetupApplication):
     """Handler for the 'AUTHENTICATION' section."""
 
-    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
         scfg = SystemConfig(req.system)
@@ -264,7 +257,6 @@ class SetupAuthApplication(BaseSetupApplication):
         data = {'config': [atype.default()]}
         return data
 
-    @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         dump(req)
         authtype = req.params_getint('authentication-type')
@@ -272,25 +264,6 @@ class SetupAuthApplication(BaseSetupApplication):
             raise exc.HTTPBadRequest()
         req.system.save(SystemConfig.AUTHENTICATION_TYPE, authtype)
         return {'authentication-type': authtype}
-
-class SetupLicenseApplication(BaseSetupApplication):
-    """Handler for the 'PALETTE LICENSE KEY' section."""
-
-    @required_role(Role.MANAGER_ADMIN)
-    @required_parameters('license-key')
-    def service_POST(self, req):
-        license_key = req.params_get('license-key')
-        domainname = config.store.get("palette", "domainname")
-
-        meta.Session.query(Domain).\
-            filter(Domain.name == domainname).\
-            update({"license_key": license_key},
-                    synchronize_session=False)
-
-        meta.Session.commit()
-
-        return {}
-
 
 class _SetupApplication(BaseSetupApplication):
     """Handler for initial page GET requests."""
@@ -302,9 +275,7 @@ class _SetupApplication(BaseSetupApplication):
         self.ssl = SetupSSLApplication()
         self.auth = SetupAuthApplication()
         self.url = SetupURLApplication()
-        self.license = SetupLicenseApplication()
 
-    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         data = {}
         extend(data, self.admin.service_GET(req))
@@ -314,23 +285,8 @@ class _SetupApplication(BaseSetupApplication):
         extend(data, self.url.service_GET(req))
         return data
 
-    @required_role(Role.MANAGER_ADMIN)
-    def service_POST(self, req):
-        print 'setup:', req
-        self.license.service_POST(req)
-        self.admin.service_POST(req)
-        print 'before mail'
-        self.mail.service_POST(req)
-        print 'after mail'
-        self.ssl.service_POST(req)
-        self.url.service_POST(req)
-        print 'and done'
-        return {}
-
-
 class SetupMailTestApplication(BaseSetupApplication):
 
-    @required_role(Role.MANAGER_ADMIN)
     @required_parameters('test-email-recipient')
     def service_POST(self, req):
         print 'here'
@@ -359,24 +315,3 @@ class SetupApplication(Router):
         self.add_route(r'/mail/test\Z', SetupMailTestApplication())
         self.add_route(r'/admin\Z', SetupURLApplication())
         self.add_route(r'/url\Z', SetupURLApplication())
-
-class SetupTestApp(GenericWSGI):
-    """ WSGI Middleware to test whether the system has been initially setup."""
-    def service(self, req):
-        if 'REMOTE_USER' in req.environ:
-            # If REMOTE_USER is set - presumably from auth_tkt,
-            # then setup has already been done.
-            return None
-
-        # FIXME: redundant
-        from .routing import req_getattr
-        req.getattr = req_getattr
-
-        entry = UserProfile.get(req.envid, 0) # user '0', likely 'palette'
-        if not entry.hashed_password:
-            raise exc.HTTPTemporaryRedirect(location='/setup')
-        return None
-
-def make_setup_test(app, global_conf):
-    # pylint: disable=unused-argument
-    return SetupTestApp(app)

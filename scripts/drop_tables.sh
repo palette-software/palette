@@ -1,7 +1,7 @@
 #!/bin/bash
 # script to drop tables from postgres
 
-psql -U palette -W -d paldb -h localhost << EOF
+psql -U palette -d paldb -h localhost << EOF
 drop table agent cascade;
 drop table agent_info cascade;
 drop table agent_volumes cascade;
