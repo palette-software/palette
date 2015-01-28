@@ -136,8 +136,8 @@
       <h3>Frequency and Time of Scheduled Backups</h3>
       <p>
         <span>Run Backup Every
-          <span id="scheduled-backup-period" class="btn-group count"></span> Hours</span>
-        &nbsp;<span>Starting at <span id="scheduled-backup-hour" class="btn-group count"></span> : <span id="scheduled-backup-minute" class="btn-group count"></span> : <span id="scheduled-backup-ampm" class="btn-group ampm"></span>
+          <span id="scheduled-backup-period" class="btn-group percentage"></span> Hours</span>
+        &nbsp;<span>Starting at <span id="scheduled-backup-hour" class="btn-group percentage"></span> : <span id="scheduled-backup-minute" class="btn-group percentage"></span> : <span id="scheduled-backup-ampm" class="btn-group ampm"></span>
           <span class="timezone"></span></span>
       </p>
 -->
@@ -224,27 +224,23 @@
       <h3>Storage</h3>
       <p>Alert When My Machine Attached Volumes Exceed These Thresholds</p>
       <p>
-        <span>Warning Alert at <span id="disk-watermark-low" class="btn-group count"></span> %</span>
-        &nbsp;<span>Error Alert at <span id="disk-watermark-high" class="btn-group count"></span> %</span>
+        <span>Warning Alert at <span id="disk-watermark-low" class="btn-group percentage"></span></span>&nbsp;<span>Error Alert at <span id="disk-watermark-high" class="btn-group percentage"></span></span>
       </p>
 
       <section>
         <h3>CPU</h3>
         <p>
-          <span>Warning Alert at <span id="cpu-load-warn" class="btn-group count"></span> %</span>
-          &nbsp;<span>for <span id="cpu-period-warn" class="btn-group count"></span> minutes</span>
+          <span>Warning Alert at <span id="cpu-load-warn" class="btn-group percentage"></span></span>&nbsp;<span>for <span id="cpu-period-warn" class="btn-group percentage"></span> minutes</span>
         </p>
         <p>
-          <span>Error Alert at <span id="cpu-load-error" class="btn-group count"></span> %</span>
-          &nbsp;<span>for <span id="cpu-period-error" class="btn-group count"></span> minutes</span>
+          <span>Error Alert at <span id="cpu-load-error" class="btn-group percentage"></span></span>&nbsp;<span>for <span id="cpu-period-error" class="btn-group percentage"></span> minutes</span>
         </p>
       </section>
       <section>
         <h2>Workbook</h2>
         <p>Alert When Workbook Web View Load Times Exceed These Thresholds</p>
         <p>
-          Warning Alert at <span id="http-load-warn" class="btn-group count up"></span>
-          &nbsp;Error Alert at <span id="http-load-error" class="btn-group count up"></span>
+          Warning Alert at <span id="http-load-warn" class="btn-group percentage up"></span>&nbsp;Error Alert at <span id="http-load-error" class="btn-group percentage up"></span>
         </p>
       </section>
       <div class="save-cancel">
