@@ -56,6 +56,10 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
         return entry
 
     @classmethod
+    def all(cls):
+        return cls.get_all_by_keys({})
+
+    @classmethod
     def parse(cls, output):
         # pylint: disable=anomalous-backslash-in-string
         pattern = '(?P<interactors>\d+) interactors, (?P<viewers>\d+) viewers'

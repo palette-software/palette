@@ -2,12 +2,12 @@ import sys
 from webob import exc
 
 from akiri.framework.api import Page
-from akiri.framework import GenericWSGI
 from akiri.framework.proxy import JSONProxy
 from akiri.framework.route import Router
+
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
-import akiri.framework.config as config
+# pylint: enable=import-error,no-name-in-module
 
 from collections import OrderedDict
 
@@ -15,7 +15,6 @@ from controller.profile import UserProfile, Role
 from controller.passwd import tableau_hash
 from controller.general import SystemConfig
 from controller.util import extend
-from controller.domain import Domain
 
 from .page import PalettePage
 from .option import DictOption
@@ -83,7 +82,7 @@ class BaseSetupApplication(PaletteRESTApplication):
     def service(self, req):
         # Requires manager admin for all subclasses.
         return super(BaseSetupApplication, self).service(req)
-    
+
 
 class SetupURLApplication(BaseSetupApplication):
     """Handler for the 'SERVER URL' section."""

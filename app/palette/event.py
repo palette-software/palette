@@ -10,8 +10,6 @@ from akiri.framework.ext.sqlalchemy import meta
 from controller.event import EventEntry
 from controller.profile import Role
 
-from .request import get, getint, getfloat
-
 __all__ = ["EventHandler"]
 
 class EventHandler(object):
@@ -121,7 +119,7 @@ class EventHandler(object):
 
     # ts is epoch seconds as a float.
     def handle_GET(self, req):
-        timestamp = getfloat(req, 'ts')
+        timestamp = req.params_getfloat('ts')
         if not timestamp is None:
             timestamp = datetime.utcfromtimestamp(timestamp)
 
@@ -129,20 +127,20 @@ class EventHandler(object):
         if req.remote_user.roleid == Role.NO_ADMIN:
             publisher = req.remote_user.system_user_id
 
-        page = getint(req, 'page')
+        page = req.params_getint('page')
         if page is None:
             return self.query_mostrecent(req.envid,
-                                         status=get(req, 'status'),
-                                         event_type=get(req, 'type'),
+                                         status=req.params_get('status'),
+                                         event_type=req.params_get('type'),
                                          timestamp=timestamp,
-                                         limit=getint(req, 'limit'),
+                                         limit=req.params_getint('limit'),
                                          publisher=publisher)
         else:
             return self.query_page(req.envid, page,
-                                   status=get(req, 'status'),
-                                   event_type=get(req, 'type'),
+                                   status=req.params_get('status'),
+                                   event_type=req.params_get('type'),
                                    timestamp=timestamp,
-                                   limit=getint(req, 'limit'),
+                                   limit=req.params_getint('limit'),
                                    publisher=publisher)
 
     def handle(self, req):
