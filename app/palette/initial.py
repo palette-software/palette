@@ -12,7 +12,7 @@ from .rest import required_parameters
 
 class OpenApplication(GenericWSGIApplication):
     """REST-like handler that responds only to the initial setup AJAX call."""
-    
+
     def __init__(self):
         self.setup = _SetupApplication()
 
@@ -51,7 +51,7 @@ class OpenApplication(GenericWSGIApplication):
 
 
 def make_open(global_conf):
-    return OpenApplication();
+    return OpenApplication()
 
 class SetupTestApp(GenericWSGIApplication):
     """ WSGI Middleware to test whether the system has been initially setup."""

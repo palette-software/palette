@@ -1091,37 +1091,41 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status({"info": pinfos})
 
-    @usage('license [repair]')
+    @usage('license [repair | info]')
     @upgrade_rwlock
     def do_license(self, cmd):
         """Run license check."""
-        repair = False
+        action = 'update'
         if len(cmd.args) > 1:
             self.print_usage(self.do_license.__usage__)
             return
         if len(cmd.args) == 1:
             action = cmd.args[0].lower()
-            if action == 'repair':
-                repair = True
-            elif action != 'check':
+            if not action in ['repair', 'info']:
                 self.print_usage(self.do_license.__usage__)
                 return
 
         agent = self.get_agent(cmd.dict)
-        if not agent:
+        state = self.server.state_manager.get_state()
+        if not agent and action != 'info':
+            self.error(clierror.ERROR_AGENT_NOT_CONNECTED,
+                       "FAIL: Main state is " + state)
             return
 
-        if not self.server.odbc_ok():
-            state = self.server.state_manager.get_state()
+        if not self.server.odbc_ok() and action != 'info':
             self.error(clierror.ERROR_WRONG_STATE,
                        "FAIL: Main state is " + state)
             return
 
         self.ack()
-        if repair:
+        if action == 'repair':
             body = self.server.license_manager.repair(agent)
-        else:
+        elif action == 'update':
             body = self.server.license_manager.check(agent)
+        elif action == 'info':
+            body = self.server.license_manager.info(agent)
+        else:
+            self.print_usage(self.do_license.__usage__)
         self.report_status(body)
 
     @usage('yml')

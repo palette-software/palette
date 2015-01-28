@@ -15,6 +15,12 @@ from event_control import EventControl
 from manager import Manager
 from mixin import BaseMixin, BaseDictMixin
 
+from agent import Agent
+from agentmanager import AgentManager
+from domain import Domain
+from general import SystemConfig
+from yml import YmlEntry
+
 class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'license'
 
@@ -142,3 +148,51 @@ class LicenseManager(Manager):
             server.event_control.gen(EventControl.LICENSE_REPAIR_FINISHED, data)
         return body
 
+    def info(self, agent):
+        """Don't do anything very active since this can run when
+           in UPGRADE state, etc."""
+
+        server = self.server
+        envid = server.environment.envid
+
+        data = {}
+        entry = Domain.getone()
+        data['license-key'] = entry.license_key
+        data['systemid'] = entry.systemid
+        data['expiration-time'] = entry.expiration_time
+        data['contact-time'] = entry.contact_time
+        data['trial'] = entry.trial
+
+        data['palette-version'] = self.server.system.get(
+                                        SystemConfig.PALETTE_VERSION,
+                                        default='unknown')
+
+        if not agent:
+            # primary agent isn't connected, so get the older data.
+            try:
+                agent = meta.Session.query(Agent).\
+                   filter(Agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY).\
+                   one()
+
+            except NoResultFound:
+                print "No primary agents ever connected."
+                return data
+
+        entry = LicenseEntry.get_by_agentid(agent.agentid)
+        data['tableau-license-type'] = entry.gettype()
+        data['tableau-license-interactors'] = entry.interactors
+        data['tableau-license-viewers'] = entry.viewers
+
+        data['tableau-version'] = YmlEntry.get(envid, 'version.external',
+                                               default='unknown')
+
+        data['tableau-bitness'] = YmlEntry.get(envid, 'version.bitness',
+                                       default='unknown')
+
+        data['processor-type'] = agent.processor_type
+        data['processor-count'] = agent.processor_count
+        data['processor-bitness'] = agent.bitness
+
+        data['primary-uuid'] = agent.uuid
+
+        return data
