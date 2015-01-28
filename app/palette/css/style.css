@@ -1625,6 +1625,9 @@ section.run-as-user {
 .configuration .btn-group {
     width: 100%;
 }
+.configuration .btn-group.percentage {
+    width: 120px;
+}
 .configuration .btn-group.count, .configuration .btn-group.ampm  {
     width: 60px;
 }
