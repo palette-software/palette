@@ -171,6 +171,7 @@ class GeneralLocalApplication(PaletteRESTApplication):
         req.system.save(SystemConfig.BACKUP_DEST_TYPE, desttype)
         return {'storage-destination':value}
 
+
 class _GeneralStorageApplication(PaletteRESTApplication):
     """Overall GET handler for /rest/general/storage"""
     def __init__(self):

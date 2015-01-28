@@ -160,6 +160,8 @@ function ($, configure, common, Dropdown, OnOff)
         $('#save').bind('click', save);
         $('#test').bind('click', test);
 
+        $('#server-url').val(data['server-url']);
+
         /* validation */
         Dropdown.setCallback(validate);
         Dropdown.setCallback(function () {
