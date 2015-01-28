@@ -27,7 +27,7 @@ class Domain(meta.Base, BaseMixin, BaseDictMixin):
     def trial_days(self):
         if not self.trial:
             return None
-        timedelta =  self.expiration_time - datetime.now()
+        timedelta = self.expiration_time - datetime.now()
         if timedelta.days > 0:
             return timedelta.days
         return 0
