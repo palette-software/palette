@@ -507,6 +507,7 @@ class MonitorApplication(PaletteRESTApplication):
                 'environments': environments,
                 'admin': True,
                 }
+
         if not trial_days is None:
             data['nav-message'] = 'Remaining Days in Trial: ' + str(trial_days)
         return data

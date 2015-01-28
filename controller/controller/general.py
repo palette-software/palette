@@ -109,13 +109,13 @@ class SystemConfig(object):
         try:
             return int(self.system.get(name))
         except StandardError:
-            return 10
+            return 0
 
     def _http_load_error(self, name):
         try:
             return int(self.system.get(name))
         except StandardError:
-            return 20
+            return 0
 
     def _debug_level(self, name, **kwargs):
         """Returns an integer level, based on the logging level string."""
@@ -193,6 +193,7 @@ class SystemConfig(object):
             return self._getyesno(self.ALERTS_PUBLISHER_ENABLED)
         if name == 'upgrading':
             return self._getyesno(self.UPGRADING)
+
         if name == 'cpu_load_warn':
             return self._getint(self.CPU_LOAD_WARN, default=101)
         if name == 'cpu_load_error':

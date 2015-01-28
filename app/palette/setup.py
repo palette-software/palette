@@ -100,6 +100,7 @@ class SetupURLApplication(BaseSetupApplication):
     @required_parameters('server-url')
     def service_POST(self, req):
         url = req.params_get('server-url')
+        print 'url = ', url
         req.system.save(SystemConfig.SERVER_URL, url)
         return {'server-url': url}
 
