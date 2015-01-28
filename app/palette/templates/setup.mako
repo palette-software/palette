@@ -36,6 +36,9 @@
   <nav class="navbar">
     <div class="navbar-header"></div>
   </nav>
+  <div class="center-container error-page hidden">
+    <p>HTTPS(443) on licensing.palette-software.com is not reachable.  This error must be fixed immediately.</p>
+  </div>
   <div class="center-container configuration setup-page initial">
 
     <!-- top-zone? -->

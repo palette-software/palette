@@ -1469,6 +1469,11 @@ div.refresh {
 .workbook-page .item .summary div.col2 div {
     text-align: right;
 }
+.error-page p {
+    color: #ef5557;
+    margin: 20px 0;
+    text-align: center;
+}
 
 /* OnOff */
 .onoffswitch {
