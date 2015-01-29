@@ -509,7 +509,7 @@ class MonitorApplication(PaletteRESTApplication):
                 }
 
         if not trial_days is None:
-            data['nav-message'] = 'Remaining Days in Trial: ' + str(trial_days)
+            data['trial-days'] = trial_days;
         return data
 
     def get_publisher_view(self, main_state):

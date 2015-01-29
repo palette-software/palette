@@ -4,6 +4,7 @@
  * #555A60; secondary-side-bar background;
  * #8d96a4; button background.
  * #5f6670; font color
+ * #2AB8DC; light-blue
  * 
  * navbar height: 63px;
  */
@@ -809,7 +810,15 @@ nav.navbar {
     left: 257px;
     padding-left: 20px;
     line-height: 63px;
+    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 20px;
+    color: #333333;
 }
+#mainNav .message span.highlight {
+    color: #2AB8DC;
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
 /* formerly #mainNav a.site-id */
 a.site-id {
     background-image: url('/app/module/palette/images/palette_logo_600dpi-2.png');
