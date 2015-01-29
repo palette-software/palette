@@ -35,7 +35,8 @@ class BackupApplication(PaletteRESTApplication):
         if 'password' in req.POST and len(req.POST['password']):
             cmd += ' "%s"' % req.POST['password']
 
-        if req.POST['restore-type'] == 'data-only':
+        if 'restore-type' in req.POST and \
+                                    req.POST['restore-type'] == 'data-only':
             cmd = '/noconfig ' + cmd
 
         if not req.params_getbool('backup'):
