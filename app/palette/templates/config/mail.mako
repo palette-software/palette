@@ -1,3 +1,4 @@
+<a id="" href="#"><i class="fa fa-question-circle help"></i></a>
 <h2>Mail Server</h2>
 <p>The Palette Server will send you alerts using this mail server and email address</p>
 <div class="row">
