@@ -5,6 +5,7 @@ function ($, _, configure, common, Dropdown, OnOff)
     var urlData = null;
     var mailData = null;
     var authData = null;
+    var sslData = null;
 
     /*
      * maySaveURL()
@@ -73,6 +74,7 @@ function ($, _, configure, common, Dropdown, OnOff)
     {
         $('#server-url').val(urlData['server-url']);
         $('#save-url, #cancel-url').addClass('disabled');
+        validate();
     }
 
     /*
@@ -130,6 +132,7 @@ function ($, _, configure, common, Dropdown, OnOff)
     {
         $('#password, #confirm-password').val('');
         $('#save-admin, #cancel-admin').addClass('disabled');
+        validate();
     }
 
     /*
@@ -230,6 +233,7 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#save-mail, #cancel-mail').addClass('disabled');
         $('#mail-test-message').addClass('hidden');
         $('#mail-test-message').removeClass('green red');
+        validate();
     }
 
     /*
@@ -279,6 +283,12 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function mayCancelSSL(data)
     {
+        if (data['enable-ssl'] != sslData['enable-ssl']) {
+            return true;
+        }
+        if (!data['enable-ssl']) {
+            return false;
+        }
         if (data['ssl-certificate-file'].length > 0) {
             return true
         }
@@ -315,6 +325,7 @@ function ($, _, configure, common, Dropdown, OnOff)
                       jqXHR.status + " (" + errorThrown + ")");
             }
         });
+        validate();
     }
 
     /*
@@ -323,10 +334,13 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function cancelSSL()
     {
+        OnOff.setValueById('enable-ssl', sslData['enable-ssl']);
         $('#ssl-certificate-file').val('');
         $('#ssl-certificate-key-file').val('');
         $('#ssl-certificate-chain-file').val('');
         $('#save-ssl, #cancel-ssl').addClass('disabled');
+        configure.changeSSL();
+        validate();
     }
 
     /*
@@ -386,6 +400,7 @@ function ($, _, configure, common, Dropdown, OnOff)
         var id = 'authentication-type';
         Dropdown.setValueById(id, authData[id]);
         $('#save-auth, #cancel-auth').addClass('disabled');
+        validate();
     }
 
     /*
@@ -435,9 +450,10 @@ function ($, _, configure, common, Dropdown, OnOff)
         configure.changeMail();
 
         /* SSL */
+        $('#enable-ssl').val(data['enable-ssl']);
         $('#save-ssl').bind('click', saveSSL);
         $('#cancel-ssl').bind('click', cancelSSL);
-        $('#enable-ssl').val(data['enable-ssl']);
+        sslData = configure.gatherSSLData();
         configure.changeSSL();
 
         /* Authentication */

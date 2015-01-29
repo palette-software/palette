@@ -597,6 +597,10 @@ function ($, topic, template, items, paging)
 
         if (data['nav-message'] != null) {
             $('#mainNav .message').html(data['nav-message']);
+        } else if (data['trial-days'] != null) {
+            var msg = 'Trial Status: <span class="highlight">';
+            msg += data['trial-days']+' Days Remaining</span>';
+            $('#mainNav .message').html(msg);
         } else {
             $('#mainNav .message').html('');
         }
