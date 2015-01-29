@@ -73,6 +73,7 @@
     <a name="auth"></a>
     <hr />
     <section id="auth">
+      <a id="" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Authentication</h2>
       <p>
         <span id="authentication-type" class="btn-group"></span>

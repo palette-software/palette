@@ -459,6 +459,10 @@ function ($, _, configure, common, Dropdown, OnOff)
         }, '#enable-ssl');
         configure.setInputCallback(validate);
         validate();
+
+        /* help */
+        // FIXME: e.g.
+        // configure.lightbox(id, title);
     }
 
     common.startMonitor(false);
