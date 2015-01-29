@@ -73,8 +73,8 @@ class ServerApplication(PaletteRESTApplication):
 
             servers.append(d)
 
-        name = req.environ['PALETTE_ENVIRONMENT'].name
-        return {'servers': servers, 'environment': name}
+        return {'servers': servers,
+                'environment': req.palette_environment.name}
 
     @required_role(Role.MANAGER_ADMIN)
     @required_parameters('id', 'value')
