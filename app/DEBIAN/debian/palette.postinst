@@ -12,7 +12,7 @@ then
 fi
 
 set +x
-chmod 640 /etc/ssl/private/ssl-cert-palette-software.key
+chmod 640 /etc/ssl/private/server.key
 
 /usr/sbin/a2enmod ssl rewrite
 
