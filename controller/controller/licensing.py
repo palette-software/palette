@@ -1,6 +1,10 @@
 # This module is named licensing to avoid the Python reserved keyword 'license'.
 
+import urllib
+import httplib
+import json
 import re
+import datetime
 
 from sqlalchemy import Column, Integer, BigInteger, DateTime, Boolean
 from sqlalchemy import func
@@ -20,6 +24,10 @@ from agentmanager import AgentManager
 from domain import Domain
 from general import SystemConfig
 from yml import YmlEntry
+
+class LicenseException(Exception):
+    def __init__(self, errmsg):
+        Exception.__init__(self, errmsg)
 
 class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'license'
@@ -99,6 +107,8 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
 
 
 class LicenseManager(Manager):
+    MAX_SILENCE_TIME = 72 * 60 * 60     # 72 hours
+    RESEND_AFTER_TIME = 12 * 60 * 60
 
     def check(self, agent):
         server = self.server
@@ -152,7 +162,7 @@ class LicenseManager(Manager):
             server.event_control.gen(EventControl.LICENSE_REPAIR_FINISHED, data)
         return body
 
-    def info(self, agent):
+    def info(self):
         """Don't do anything very active since this can run when
            in UPGRADE state, etc."""
 
@@ -171,18 +181,20 @@ class LicenseManager(Manager):
                                         SystemConfig.PALETTE_VERSION,
                                         default='unknown')
 
-        if not agent:
-            # primary agent isn't connected, so get the older data.
-            try:
-                agent = meta.Session.query(Agent).\
-                   filter(Agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY).\
-                   one()
+        try:
+            agent = meta.Session.query(Agent).\
+               filter(Agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY).\
+               one()
 
-            except NoResultFound:
-                print "No primary agents ever connected."
-                return data
+        except NoResultFound:
+            print "No primary agents ever connected."
+            return data
 
         entry = LicenseEntry.get_by_agentid(agent.agentid)
+        if not entry:
+            self.server.log.debug("No tableau license entry yet.")
+            return data
+
         data['tableau-license-type'] = entry.gettype()
         data['tableau-license-interactors'] = entry.interactors
         data['tableau-license-viewers'] = entry.viewers
@@ -200,3 +212,144 @@ class LicenseManager(Manager):
         data['primary-uuid'] = agent.uuid
 
         return data
+
+    def verify(self):
+        entry = Domain.getone()
+        if not entry.license_key:
+            # If there is no license key, don't bother checking the
+            # validity of it or attempt to contact the palette
+            # license server.
+            self.log.debug("license verify: No license key.")
+            return {'status': "OK", "info": "No license key"}
+
+        data = self.info()
+
+        try:
+            body = self._send(data)
+        except (IOError, LicenseException) as ex:
+            self.server.log.debug(
+                    "license send exception failed with status %s", ex)
+
+            self._callfailed(str(ex))
+            return {"error": str(ex)}
+
+        # FIXME: Use real reply
+        body['trial'] = True
+        body['expiration'] = "2015-02-28 00:00:00"
+
+        if not 'trial' in body:
+            self.server.log.debug('no trial value in reply: %s', str(body))
+            self._callfailed("Invalid reply from license server")
+            return {"error": "Invalid reply from license server"}
+
+        if not 'expiration' in body:
+            self.server.log.debug("No expiration value in reply: %s", str(body))
+            self._callfailed("License reply invalid")
+            return {"error": "License reply invalid: " + str(body)}
+
+        entry.trial = body['trial']
+        entry.expiration_time = body['expiration']
+        meta.Session.commit()
+
+        self._callok()
+
+        return body
+
+    def _send(self, data):
+        params = urllib.urlencode(data)
+
+        conn = urllib.urlopen(
+                        "https://licensing.palette-software.com/license",
+                        params)
+
+        reply_json = conn.read()
+        conn.close()
+
+        if conn.getcode() != httplib.OK:
+            self.server.log.debug("phone home failed with status %d",
+                                                            conn.getcode())
+            raise LicenseException("Failed with status " + str(conn.getcode))
+
+        reply = json.loads(reply_json)
+
+        return reply
+
+    def _callfailed(self, info):
+        session = meta.Session()
+
+        data = {}
+
+        entry = Domain.getone()
+        if not entry.contact_failures:
+            entry.contact_failures = 1
+        else:
+            entry.contact_failures += 1
+        session.commit()
+
+        if entry.contact_time:
+#            print "contact_time:", entry.contact_time
+#            print "timestamp thing:", datetime.datetime.now()
+            silence_time = (datetime.datetime.now() - \
+                            entry.contact_time).total_seconds()
+            if silence_time <= self.MAX_SILENCE_TIME:
+                self.server.log.debug("Silence time: %d <= max of: %d",
+                                            silence_time, self.MAX_SILENCE_TIME)
+                return
+            data['failure_hours'] = \
+                    int((datetime.datetime.now() - \
+                        entry.contact_time).total_seconds() / 3600)
+        else:
+            # 0 means never connected.
+            # Could happen when the controller is running, but
+            # the firewall isn't configured yet.
+            data['failure_hours'] = 0
+
+        self.server.log.debug("failure hours was longer than: %d : %d",
+                              self.MAX_SILENCE_TIME, data['failure_hours'])
+
+        notification = self.server.notifications.get("phonehome")
+        notification.description = info
+
+        data['contact_failures'] = entry.contact_failures
+        data['last_contact_time'] = entry.contact_time
+        data['max_silence_time'] = self.MAX_SILENCE_TIME/(60*60)
+
+        if notification.color != 'red':
+            self.server.event_control.gen(EventControl.PHONE_HOME_FAILED, data)
+
+            notification.color = 'red'
+            notification.notified_color = 'red'
+            # Remember when we sent the notification
+            notification.modification_time = func.now()
+            session.commit()
+            return
+
+        # It was already red, but if > 12 hours passed since the last
+        # notification, send another.
+        if (datetime.datetime.now() - \
+                notification.modification_time).total_seconds() > \
+                                                        self.RESEND_AFTER_TIME:
+            self.server.log.debug(
+                "Sending a reminder notification. still can't phone home.")
+            self.server.event_control.gen(EventControl.PHONE_HOME_FAILED, data)
+            notification.modification_time = func.now()
+            session.commit()
+
+    def _callok(self):
+
+        session = meta.Session()
+        entry = Domain.getone()
+        data = {'contact_failures': entry.contact_failures}
+
+        entry.contact_failures = 0
+        entry.contact_time = func.now()
+
+        notification = self.server.notifications.get("phonehome")
+
+        if notification.color == 'red':
+            self.server.event_control.gen(EventControl.PHONE_HOME_OK, data)
+            notification.modification_time = func.now()
+            notification.color = 'green'
+            notification.notified_color = 'green'
+
+        session.commit()

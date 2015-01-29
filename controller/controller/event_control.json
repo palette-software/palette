@@ -1475,6 +1475,42 @@
 "event_label_desc":null,
 "admin_visibility":false,
 "publisher_visibility":false
+},
+{
+"eventid":84,
+"key":"PHONE-HOME-FAILED",
+"level":"E",
+"send_email":"t",
+"subject":"PALETTE ALERTS: Could not contact the Palette Licensing Server (%(eventid)s)",
+"event_description":"SUMMARY\nCould not contact the Palette Licensing Server.\n\nDETAILS\nTime: ${timestamp}\nEvent Type: ${event_type_label}\nEnvironment: ${environment}.\nThe maximum amount of time that can elapse without being able to contact the Palette Licensing Server is ${\"%d\" % int(max_silence_time)} hours.\n% if failure_hours == 0:\nThe Palete License Server has never been successfully contacted.\n% else:\nIt has been ${failure_hours} hours since successful contact with the Palette Licensing Server.\n% endif\n",
+"email_subject":null,
+"email_message":"SUMMARY\nCould not contact the Palette licensing server.\n\nDETAILS\nTime: ${timestamp}\nEvent Type: ${event_type_label}\nEnvironment: ${environment}.\nThe maximum amount of time that can elapse without being able to contact the Palette Licensing Server is ${max_silence_time} hours.\n% if failure_hours == 0:\nThe Palete License Server has never been successfully contacted.\n% else:\nIt has been ${failure_hours} hours since successful contact with the Palette Licensing Server.\n% endif\nThis message was sent from your Palette Server at ${server_url}\nYou can turn off these email alerts on your profile page found at ${server_url}/profile\n",
+"icon":"",
+"color":"red",
+"event_type":"license",
+"event_type_label":"Licensing",
+"event_label":"",
+"event_label_desc":null,
+"admin_visibility":false,
+"publisher_visibility":false
+},
+{
+"eventid":85,
+"key":"PHONE-HOME-OK",
+"level":"I",
+"send_email":"t",
+"subject":"PALETTE ALERTS: Can now contact the Palette Licensing Server. (%(eventid)s)",
+"event_description":"SUMMARY\nCan now contact the Palette Licensing Server.",
+"email_subject":null,
+"email_message":"SUMMARY\nCan now contact the Palette Licensing Server.\n\nDETAILS\nTime: ${timestamp}\nEvent Type: ${event_type_label}\nEnvironment: ${environment}.\nThis message was sent from your Palette Server at ${server_url}\nYou can turn off these email alerts on your profile page found at ${server_url}/profile\n",
+"icon":"",
+"color":"green",
+"event_type":"licensing",
+"event_type_label":"Licensing",
+"event_label":"",
+"event_label_desc":null,
+"admin_visibility":false,
+"publisher_visibility":false
 }
 ]
 }

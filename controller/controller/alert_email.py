@@ -4,6 +4,7 @@
 import sys
 import traceback
 import smtplib
+import datetime
 from email.mime.text import MIMEText
 from email.header import Header
 
@@ -13,6 +14,7 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from sqlalchemy.orm.exc import NoResultFound
 
+from domain import Domain
 from general import SystemConfig
 from event_control import EventControl
 from profile import UserProfile
@@ -217,6 +219,19 @@ class AlertEmail(object):
                 "No admin users exist with enabled email addresses.  " + \
                 "Not sending: Subject: %s, Message: %s" % (subject, message))
             return
+
+        # Send only PHONE-HOME related events if their palette license
+        # has expired.
+        if event_entry.key not in [EventControl.PHONE_HOME_FAILED,
+                                   EventControl.PHONE_HOME_OK,
+                                   EventControl.EMAIL_TEST]:
+            entry = Domain.getone()
+            if entry.expiration_time and \
+                                datetime.datetime.now() > entry.expiration_time:
+                self.log.debug("License expired. " +
+                                    "Not sending: Subject: %s, Message: %s" % \
+                                    (subject, message))
+                return
 
         # Convert from Unicode to utf-8
         message = message.encode('utf-8')    # prevent unicode exception

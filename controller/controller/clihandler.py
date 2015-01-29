@@ -1101,18 +1101,19 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
         if len(cmd.args) == 1:
             action = cmd.args[0].lower()
-            if not action in ['repair', 'info']:
+            if not action in ['repair', 'info', 'verify']:
                 self.print_usage(self.do_license.__usage__)
                 return
 
-        agent = self.get_agent(cmd.dict)
         state = self.server.state_manager.get_state()
-        if not agent and action != 'info':
-            self.error(clierror.ERROR_AGENT_NOT_CONNECTED,
+        if action not in ['info', 'verify']:
+            agent = self.get_agent(cmd.dict)
+            if not agent:
+                self.error(clierror.ERROR_AGENT_NOT_CONNECTED,
                        "FAIL: Main state is " + state)
-            return
+                return
 
-        if not self.server.odbc_ok() and action != 'info':
+        if not self.server.odbc_ok() and action not in ['info', 'verify']:
             self.error(clierror.ERROR_WRONG_STATE,
                        "FAIL: Main state is " + state)
             return
@@ -1123,7 +1124,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         elif action == 'update':
             body = self.server.license_manager.check(agent)
         elif action == 'info':
-            body = self.server.license_manager.info(agent)
+            body = self.server.license_manager.info()
+        elif action == 'verify':
+            body = self.server.license_manager.verify()
         else:
             self.print_usage(self.do_license.__usage__)
         self.report_status(body)
