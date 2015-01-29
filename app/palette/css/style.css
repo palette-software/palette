@@ -50,6 +50,7 @@ a img {
     outline: 0;
 }
 a i.help {
+    color: #697078;
     float: right;
     line-height: 18px;
     font-size: 17px;
