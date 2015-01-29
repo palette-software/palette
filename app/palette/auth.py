@@ -10,7 +10,11 @@ from akiri.framework.auth import AuthFilter
 from controller.profile import UserProfile
 from controller.environment import Environment
 from controller.palapi import CommHandlerApp
+from controller.general import SystemConfig
+from controller.system import SystemEntry
 from controller.yml import YmlEntry
+
+from setup import AuthType
 
 class TableauAuthenticator(Authenticator):
 
@@ -29,18 +33,39 @@ class TableauAuthenticator(Authenticator):
         if entry and username == entry.name:
             # 'palette' always uses local authentication
             return UserProfile.verify(envid, username, password)
-        value = YmlEntry.get(self.environment.envid,
-                             'wgserver.authenticate',
-                             default=None)
-        if not value or value.lower() != 'activedirectory':
+
+        # Use the configured authentication method.
+        auth_entry = SystemEntry.get_by_key(envid,
+                                           SystemConfig.AUTHENTICATION_TYPE,
+                                           default=None)
+
+        if auth_entry is None:
+            auth_type = AuthType.TABLEAU
+        else:
+            auth_type = int(auth_entry.value)
+
+        if auth_type == AuthType.TABLEAU:
+            value = YmlEntry.get(self.environment.envid,
+                                 'wgserver.authenticate',
+                                 default=None)
+            if value or value.lower() != 'activedirectory':
+                return UserProfile.verify(envid, username, password)
+            auth_type = AuthType.ACTIVE_DIRECTORY
+
+        if auth_type == AuthType.ACTIVE_DIRECTORY:
+            cmd = "ad verify " + username + " " + password
+            try:
+                self.commapp.send_cmd(cmd, read_response=True)
+            except StandardError:
+                return False
+            # if no exception was thrown, then authentication was successful.
+            return True
+
+        if auth_type == AuthType.LOCAL:
             return UserProfile.verify(envid, username, password)
-        cmd = "ad verify " + username + " " + password
-        try:
-            self.commapp.send_cmd(cmd, read_response=True)
-        except StandardError:
-            return False
-        # if no exception was thrown, then authentication was successful.
-        return True
+
+        raise ValueError("Invalid authentication configuration: " + \
+                          str(auth_type))
 
 
 class TableauAuthFilter(AuthFilter):
