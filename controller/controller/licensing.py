@@ -108,7 +108,6 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
 
 class LicenseManager(Manager):
     MAX_SILENCE_TIME = 72 * 60 * 60     # 72 hours
-    RESEND_AFTER_TIME = 12 * 60 * 60
 
     def check(self, agent):
         server = self.server
@@ -321,19 +320,8 @@ class LicenseManager(Manager):
             notification.notified_color = 'red'
             # Remember when we sent the notification
             notification.modification_time = func.now()
-            session.commit()
-            return
 
-        # It was already red, but if > 12 hours passed since the last
-        # notification, send another.
-        if (datetime.datetime.now() - \
-                notification.modification_time).total_seconds() > \
-                                                        self.RESEND_AFTER_TIME:
-            self.server.log.debug(
-                "Sending a reminder notification. still can't phone home.")
-            self.server.event_control.gen(EventControl.PHONE_HOME_FAILED, data)
-            notification.modification_time = func.now()
-            session.commit()
+        session.commit()
 
     def _callok(self):
 
@@ -351,5 +339,6 @@ class LicenseManager(Manager):
             notification.modification_time = func.now()
             notification.color = 'green'
             notification.notified_color = 'green'
+            notification.description = None
 
         session.commit()

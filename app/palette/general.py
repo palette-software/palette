@@ -10,7 +10,7 @@ from controller.general import SystemConfig
 from controller.files import FileManager
 from controller.agent import AgentVolumesEntry
 from controller.cloud import CloudEntry
-from controller.passwd import aes_encrypt
+from controller.passwd import aes_encrypt, aes_decrypt
 from controller.palapi import CommException
 
 from .option import ListOption
@@ -26,7 +26,11 @@ class GeneralS3Application(PaletteRESTApplication, S3Application):
     def service_GET(self, req):
         if 'action' in req.environ:
             raise exc.HTTPNotFound()
-        return self.get_req(req)
+        entry_dict = self.get_req(req)
+        if entry_dict:
+            entry_dict['s3-secret-key'] = \
+                                    aes_decrypt(entry_dict['s3-secret-key'])
+        return entry_dict
 
     @required_parameters('access-key', 'secret-key', 'url')
     def save(self, req):
@@ -64,7 +68,11 @@ class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
     def service_GET(self, req):
         if 'action' in req.environ:
             raise exc.HTTPNotFound()
-        return self.get_req(req)
+        entry_dict = self.get_req(req)
+        if entry_dict:
+            entry_dict['gcs-secret-key'] = \
+                                    aes_decrypt(entry_dict['gcs-secret-key'])
+        return entry_dict
 
     @required_parameters('access-key', 'secret-key', 'url')
     def save(self, req):
@@ -150,8 +158,6 @@ class GeneralLocalApplication(PaletteRESTApplication):
 
         dest['options'] = options
         data['config'] = [dest]
-
-        print "disk data:", data
 
         return data
 
