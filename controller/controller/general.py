@@ -231,7 +231,7 @@ class SystemConfig(object):
         if name == 'server_url':
             return self._getstring(self.SERVER_URL, default='localhost')
         if name == "authentication_type":
-            return self._getstring(self.AUTHENTICATION_TYPE, default="1")
+            return self._getint(self.AUTHENTICATION_TYPE, default=1)
         raise AttributeError(name)
 
     def todict(self):
