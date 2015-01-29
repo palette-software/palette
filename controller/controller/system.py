@@ -48,8 +48,8 @@ class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
                  'key':SystemConfig.LOG_ARCHIVE_RETAIN_COUNT,
                  'value': '5'},
 
-                {'envid':1, 'key':'http-load-warn', 'value':str(10)},
-                {'envid':1, 'key':'http-load-error', 'value':str(20)},
+                {'envid':1, 'key':'http-load-warn', 'value':str(0)},
+                {'envid':1, 'key':'http-load-error', 'value':str(0)},
                 {'envid':1,
                  'key':'http-load-re',
                  'value': r'.+(\.(xml|png|pdf)(\Z|?)?|format=(xml|png|pdf))'},
