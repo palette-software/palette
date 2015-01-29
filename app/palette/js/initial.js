@@ -176,6 +176,11 @@ function ($, configure, common, Dropdown, OnOff)
         }, '#enable-ssl');
         configure.setInputCallback(validate);
         /* no need to call validate(), the form can't be valid yet. */
+
+        /* help */
+        // FIXME: e.g.
+        // configure.lightbox(id, title);
+
     }
 
     /*
