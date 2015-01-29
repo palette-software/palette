@@ -1,3 +1,7 @@
+from sqlalchemy.orm.exc import NoResultFound
+
+from akiri.framework.ext.sqlalchemy import meta
+
 from datetime import datetime
 
 from webob import exc
@@ -5,6 +9,7 @@ from webob import exc
 from akiri.framework import GenericWSGI
 
 from controller.licensing import LicenseEntry
+from controller.agent import Agent
 
 LICENSE_EXPIRED = 'http://www.palette-software.com/license-expired'
 TRIAL_EXPIRED = 'http://www.palette-software.com/trial-expired'
@@ -27,7 +32,16 @@ class ExpireMiddleware(GenericWSGI):
             if entry.interactors:
                 location += '&n=' + entry.interactors
             else:
-                location += '&n=0'
+                try:
+                    agent_entry = meta.Session.query(Agent).\
+                        filter(Agent.agentid == entry.agentid).\
+                        one()
+                except NoResultFound:
+                    print 'expire: No agent with agentid', entry.agentid
+                    location += '&n=0'
+                else:
+                    location += '&n=' + str(agent_entry.processor_count)
+
         raise exc.HTTPTemporaryRedirect(location=location)
 
 
