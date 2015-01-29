@@ -18,6 +18,7 @@
     </section>
 
     <section id="storage">
+      <a id="229204" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Storage Location</h2>
       <input type="radio" id="storage-local" name="storage-type" value="local" />
       <label for="storage-local">My Machine</label>
@@ -26,8 +27,8 @@
       <input type="radio" id="storage-gcs" name="storage-type" value="gcs" />
       <label for="storage-gcs">Google Cloud Storage</label>
       <section id="local" class="hidden">
-	<span class="btn-group" id="storage-destination"></span>
-	<div class="save-cancel">
+        <span class="btn-group" id="storage-destination"></span>
+        <div class="save-cancel">
           <button type="button" id="save-local" class="btn btn-primary">
             Save
           </button>
@@ -98,6 +99,7 @@
     <a name="email-alerts"></a>
     <hr />
     <section id="email-alerts">
+      <a id="229207" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Email Alerts</h2>
       <p class="slider-group">
         <span>Send Alerts to Palette Admins
@@ -121,26 +123,27 @@
     <a name="backups"></a>
     <hr />
     <section id="backups">
+      <a id="229213" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Backups</h2>
-<!---
-      <p class="slider-group">
-        <span>Scheduled Backups
-          <span id="scheduled-backups" class="onoffswitch yesno"></span>
-        </span>
-      </p>
--->
+      <!---
+          <p class="slider-group">
+            <span>Scheduled Backups
+              <span id="scheduled-backups" class="onoffswitch yesno"></span>
+            </span>
+          </p>
+          -->
       <h3>Retained Scheduled Backups</h3>
       <p>The number of scheduled Backups you want Palette to keep in storage</p>
       <p><span id="backup-auto-retain-count" class="btn-group count"></span> Backups</p>
-<!--
-      <h3>Frequency and Time of Scheduled Backups</h3>
-      <p>
-        <span>Run Backup Every
-          <span id="scheduled-backup-period" class="btn-group percentage"></span> Hours</span>
-        &nbsp;<span>Starting at <span id="scheduled-backup-hour" class="btn-group percentage"></span> : <span id="scheduled-backup-minute" class="btn-group percentage"></span> : <span id="scheduled-backup-ampm" class="btn-group ampm"></span>
-          <span class="timezone"></span></span>
-      </p>
--->
+      <!--
+          <h3>Frequency and Time of Scheduled Backups</h3>
+          <p>
+            <span>Run Backup Every
+              <span id="scheduled-backup-period" class="btn-group percentage"></span> Hours</span>
+            &nbsp;<span>Starting at <span id="scheduled-backup-hour" class="btn-group percentage"></span> : <span id="scheduled-backup-minute" class="btn-group percentage"></span> : <span id="scheduled-backup-ampm" class="btn-group ampm"></span>
+              <span class="timezone"></span></span>
+          </p>
+          -->
       <h3>Retained User Requested Backups</h3>
       <p>The number of user requested Backups you want Palette to keep in storage</p>
       <p>
@@ -159,14 +162,15 @@
     <a name="ziplogs"></a>
     <hr />
     <section id="ziplogs">
+      <a id="229214" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Ziplogs</h2>
-<!--
-      <p class="slider-group">
-        <span>Scheduled Ziplogs
-          <span id="scheduled-ziplogs" class="onoffswitch yesno"></span>
-        </span>
-      </p>
--->
+      <!--
+          <p class="slider-group">
+            <span>Scheduled Ziplogs
+              <span id="scheduled-ziplogs" class="onoffswitch yesno"></span>
+            </span>
+          </p>
+          -->
       <h3>Retained Scheduled Ziplogs</h3>
       <p>The number of scheduled Ziplogs you want Palette to keep in storage</p>
       <p>
@@ -190,6 +194,7 @@
     <a name="workbooks"></a>
     <hr />
     <section id="workbooks">
+      <a id="229215" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Workbook Archive</h2>
       <p class="slider-group">
         <span>Archive
@@ -219,6 +224,7 @@
     <a name="monitoring"></a>
     <hr />
     <section id="monitoring">
+      <a id="229216" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Monitoring</h2>
 
       <h3>Storage</h3>
@@ -252,6 +258,7 @@
         </button>
       </div>
     </section>
+  </div>
 </div>
 
 <script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/general.js">

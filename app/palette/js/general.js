@@ -794,7 +794,6 @@ function ($, _, configure, common, Dropdown, OnOff)
                                   maySaveCancelMonitor, maySaveCancelMonitor);
     }
 
-
     /*
      * setup()
      * Inital setup after the AJAX call returns and the DOM tree is ready.
@@ -868,6 +867,14 @@ function ($, _, configure, common, Dropdown, OnOff)
 
         configure.setInputCallback(validate);
         changeWorkbooks(); /* implicitly calls validate() */
+
+        /* help */
+        configure.lightbox(229204, 'Storage Location');
+        configure.lightbox(229207, 'Email Alerts');
+        configure.lightbox(229213, 'Backups');
+        configure.lightbox(229214, 'Ziplogs');
+        configure.lightbox(229215, 'Workbook Archive');
+        configure.lightbox(229216, 'Monitoring');
     }
 
     common.startMonitor(false);

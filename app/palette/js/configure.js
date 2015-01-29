@@ -1,9 +1,24 @@
-define(['jquery', 'common', 'Dropdown', 'OnOff'],
+define(['jquery', 'common', 'Dropdown', 'OnOff', 'lightbox'],
 function ($, common, Dropdown, OnOff)
 {
     var MAIL_DIRECT = 1;
     var MAIL_RELAY = 2;
     var MAIL_NONE = 3;
+
+    /*
+     * lightbox()
+     * Create lightboxes that bind to the help icons.
+     */
+    function lightbox(id, title) {
+        var lb = new TopicLightBox({
+            baseUrl: 'http://kb.palette-software.com',
+            id: id,
+            title: title,
+            background: true,
+            width: 700,
+            height: 500
+        });
+    }
 
     /*
      * changeMail()
@@ -226,5 +241,6 @@ function ($, common, Dropdown, OnOff)
         'validMailData': validMailData,
         'validSSLData': validSSLData,
         'setInputCallback': setInputCallback,
+        'lightbox': lightbox,
     }
 });
