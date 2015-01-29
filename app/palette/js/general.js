@@ -347,6 +347,7 @@ function ($, _, configure, common, Dropdown, OnOff)
     {
         setLocalData(localData);
         $('#save-local, #cancel-local').addClass('disabled');
+        validate();
     }
 
     /*
@@ -415,6 +416,7 @@ function ($, _, configure, common, Dropdown, OnOff)
     {
         setEmailAlertData(emailAlertData);
         $('#save-email-alerts, #cancel-email-alerts').addClass('disabled');
+        validate();
     }
 
     /*
@@ -487,6 +489,7 @@ function ($, _, configure, common, Dropdown, OnOff)
     {
         setBackupData(backupData);
         $('#save-backups, #cancel-backups').addClass('disabled');
+        validate();
     }
 
     /*
@@ -559,6 +562,7 @@ function ($, _, configure, common, Dropdown, OnOff)
     {
         setZiplogData(ziplogData);
         $('#save-ziplogs, #cancel-ziplogs').addClass('disabled');
+        validate();
     }
 
     /*
@@ -585,9 +589,27 @@ function ($, _, configure, common, Dropdown, OnOff)
 
     /*
      * maySaveCancelWorkbook()
+     * Return true if the 'Workbooks' section has changed and is valid.
+     */
+    function maySaveWorkbook(data)
+    {
+        if (_.isEqual(data, workbookData)) {
+            return false;
+        }
+        if ($('#archive-username').val().length == 0) {
+            return false;
+        }
+        if ($('#archive-password').val().length == 0) {
+            return false;
+        }
+        return true;
+    }
+
+    /*
+     * mayCancelWorkbook()
      * Return true if the 'Workbooks' section has changed.
      */
-    function maySaveCancelWorkbook(data)
+    function mayCancelWorkbook(data)
     {
         /* FIXME: test for archive-username, archive-password */
         return !_.isEqual(data, workbookData);
@@ -630,7 +652,23 @@ function ($, _, configure, common, Dropdown, OnOff)
     {
         setWorkbookData(workbookData);
         $('#save-workbooks, #cancel-workbooks').addClass('disabled');
+        changeWorkbooks();
     }
+
+    /*
+     * changeWorkbooks()
+     * Callback for the 'Archive' On/Off slider.
+     */
+    function changeWorkbooks(checked)
+    {
+        if (checked) {
+            $('#workbooks div:first').removeClass('hidden');
+        } else {
+            $('#workbooks div:first').addClass('hidden');
+        }
+        validate();
+    }
+
 
     /*
      * getMonitorData()
@@ -702,6 +740,7 @@ function ($, _, configure, common, Dropdown, OnOff)
     {
         setMonitorData(monitorData);
         $('#save-monitors, #cancel-monitors').addClass('disabled');
+        validate();
     }
 
     /*
@@ -750,7 +789,7 @@ function ($, _, configure, common, Dropdown, OnOff)
         configure.validateSection('ziplogs', getZiplogData,
                                   maySaveCancelZiplog, maySaveCancelZiplog);
         configure.validateSection('workbooks', getWorkbookData,
-                                  maySaveCancelWorkbook, maySaveCancelWorkbook);
+                                  maySaveWorkbook, mayCancelWorkbook);
         configure.validateSection('monitors', getMonitorData,
                                   maySaveCancelMonitor, maySaveCancelMonitor);
     }
@@ -822,22 +861,13 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#cancel-monitors').bind('click', cancelMonitors);
         monitorData = getMonitorData();
 
-        OnOff.setCallback(validate);
+        /* validation */
         Dropdown.setCallback(validate);
+        OnOff.setCallback(validate);
+        OnOff.setCallback(changeWorkbooks, '#enable-archive');
 
-
-         /* validation */
-        $('input[type="text"], input[type="password"], textarea').on('paste', function() {
-            setTimeout(function() {
-                /* validate after paste completes by using a timeout. */
-                validate();
-            }, 100);
-        });
-        $('input[type="text"], input[type="password"], textarea').on('keyup', function() {
-            validate();
-        });
-
-        validate();
+        configure.setInputCallback(validate);
+        changeWorkbooks(); /* implicitly calls validate() */
     }
 
     common.startMonitor(false);
