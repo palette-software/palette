@@ -328,9 +328,9 @@ class GeneralArchiveApplication(PaletteRESTApplication):
         scfg = SystemConfig(req.system)
 
         data = {}
-        data['username'] = scfg.archive_username
-        data['password'] = '*' * len(scfg.archive_password)
-        data['archive'] = scfg.archive_enabled
+        data['archive-username'] = scfg.archive_username
+        data['archive-password'] = '*' * len(scfg.archive_password)
+        data['enable-archive'] = scfg.archive_enabled
         return data
 
     def service_POST(self, req):

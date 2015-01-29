@@ -688,7 +688,8 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function setMonitorData(data)
     {
-         for (var i = 0; i < MONITOR_DROPDOWN_IDS.length; i++) {
+        OnOff.setValueById('enable-archive', data['enable-archive']);
+        for (var i = 0; i < MONITOR_DROPDOWN_IDS.length; i++) {
              var id = MONITOR_DROPDOWN_IDS[i];
              Dropdown.setValueById(id, data[id]);
         }
@@ -866,7 +867,8 @@ function ($, _, configure, common, Dropdown, OnOff)
         OnOff.setCallback(changeWorkbooks, '#enable-archive');
 
         configure.setInputCallback(validate);
-        changeWorkbooks(); /* implicitly calls validate() */
+        /* implicitly calls validate() */
+        changeWorkbooks(workbookData['enable-archive']);
 
         /* help */
         configure.lightbox(229204, 'Storage Location');
