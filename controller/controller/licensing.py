@@ -108,7 +108,6 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
 
 class LicenseManager(Manager):
     MAX_SILENCE_TIME = 72 * 60 * 60     # 72 hours
-    MAX_SILENCE_TIME = 1
 
     def check(self, agent):
         server = self.server
