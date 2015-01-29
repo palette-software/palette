@@ -48,6 +48,11 @@ a img {
     border: 0 !important;
     outline: 0;
 }
+a i.help {
+    float: right;
+    line-height: 18px;
+    font-size: 17px;
+}
 i.expand {
     position: absolute;
     right: 0;

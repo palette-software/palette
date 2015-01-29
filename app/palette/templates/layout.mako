@@ -29,12 +29,17 @@
       'template' : '/app/module/palette/js/vendor/mustache',
       'domReady': '/app/module/palette/js/vendor/domReady',
 
-      'bootstrap': '/app/module/palette/js/vendor/bootstrap'
+      'bootstrap': '/app/module/palette/js/vendor/bootstrap',
+      'lightbox': 'http://www.helpdocsonline.com/v2/lightbox'
     },
     shim: {
       'bootstrap': {
          deps: ['jquery']
+      },
+      'lightbox': {
+         deps: ['jquery']
       }
+
     }
   };
 </script>
