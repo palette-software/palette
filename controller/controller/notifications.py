@@ -15,8 +15,7 @@ class NotificationEntry(meta.Base):
 
     envid = Column(BigInteger, ForeignKey("environment.envid"))
     name = Column(String)   # 'cpu', 'memory', etc.
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"),
-                                                     nullable=False)
+    agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=True)
 
     color = Column(String)
     notified_color = Column(String)
@@ -32,16 +31,20 @@ class NotificationManager(object):
         self.log = server.log
         self.envid = server.environment.envid
 
-    def get(self, name, agentid):
+    def get(self, name, agentid=None):
+        query = meta.Session.query(NotificationEntry).\
+            filter(NotificationEntry.envid == self.envid).\
+            filter(NotificationEntry.name == name)
+
+        if agentid:
+            query = query.filter(NotificationEntry.agentid == agentid)
+
         try:
-            entry = meta.Session.query(NotificationEntry).\
-                filter(NotificationEntry.envid == self.envid).\
-                filter(NotificationEntry.name == name).\
-                filter(NotificationEntry.agentid == agentid).\
-                one()
+            entry = query.one()
         except NoResultFound:
-            entry = NotificationEntry(envid=self.envid, name=name,
-                                      agentid=agentid)
+            entry = NotificationEntry(envid=self.envid, name=name)
+            if agentid:
+                entry.agentid = agentid
             meta.Session.add(entry)
         return entry
 

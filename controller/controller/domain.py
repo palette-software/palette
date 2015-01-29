@@ -1,11 +1,13 @@
 from datetime import datetime
 from sqlalchemy import Column, String, BigInteger, DateTime, func, Boolean
+from sqlalchemy import Integer
 
 # pylint: disable=import-error,no-name-in-module
 from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
 from mixin import BaseMixin, BaseDictMixin
+import uuid
 
 class Domain(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'domain'
@@ -17,12 +19,15 @@ class Domain(meta.Base, BaseMixin, BaseDictMixin):
     systemid = Column(String)
     expiration_time = Column(DateTime)
     contact_time = Column(DateTime)
+    contact_failures = Column(Integer)
     trial = Column(Boolean)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(),
                                    server_onupdate=func.current_timestamp())
 
-    defaults = [{'domainid':0, 'name':'default.local'}]
+    defaults = [{'domainid': 0,
+                 'name': 'default.local',
+                 'systemid': str(uuid.uuid1())}]
 
     def trial_days(self):
         if not self.trial:

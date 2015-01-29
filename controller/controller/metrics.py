@@ -136,7 +136,7 @@ class MetricManager(object):
         # pylint: disable=too-many-arguments
         """
             Generates an event, if appropriate and updates the
-            relevant. notification row.
+            relevant notification row.
 
             Arguments:
                 text name used for the notifications table and
