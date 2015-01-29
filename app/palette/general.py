@@ -32,11 +32,13 @@ class GeneralS3Application(PaletteRESTApplication, S3Application):
                                     aes_decrypt(entry_dict['s3-secret-key'])
         return entry_dict
 
+    @required_role(Role.MANAGER_ADMIN)
     @required_parameters('access-key', 'secret-key', 'url')
     def save(self, req):
         print req.POST
         return self.cloud_save(req)
 
+    @required_role(Role.MANAGER_ADMIN)
     @required_parameters('access-key', 'secret-key', 'url')
     def test(self, req):
         try:
@@ -52,6 +54,7 @@ class GeneralS3Application(PaletteRESTApplication, S3Application):
         print req.POST
         return self.cloud_remove(req)
 
+    @required_role(Role.MANAGER_ADMIN)
     @required_parameters('action')
     def service_POST(self, req):
         action = req.params_get('action')
@@ -65,6 +68,7 @@ class GeneralS3Application(PaletteRESTApplication, S3Application):
 
 class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
     """Handler for the 'STORAGE LOCATION' GCS section."""
+    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         if 'action' in req.environ:
             raise exc.HTTPNotFound()
@@ -74,11 +78,13 @@ class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
                                     aes_decrypt(entry_dict['gcs-secret-key'])
         return entry_dict
 
+    @required_role(Role.MANAGER_ADMIN)
     @required_parameters('access-key', 'secret-key', 'url')
     def save(self, req):
         print req.POST
         return self.cloud_save(req)
 
+    @required_role(Role.MANAGER_ADMIN)
     @required_parameters('access-key', 'secret-key', 'url')
     def test(self, req):
         try:
@@ -90,10 +96,12 @@ class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
             return {'status': 'FAIL', 'error': str(ex)}
         return {'status': 'OK'}
 
+    @required_role(Role.MANAGER_ADMIN)
     def remove(self, req):
         print req.POST
         return self.cloud_remove(req)
 
+    @required_role(Role.MANAGER_ADMIN)
     @required_parameters('action')
     def service_POST(self, req):
         action = req.params_get('action')
@@ -125,6 +133,7 @@ class GeneralLocalApplication(PaletteRESTApplication):
 
         return "%s:%d" % (scfg.backup_dest_type, dest_id)
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         scfg = SystemConfig(req.system)
         data = {SystemConfig.STORAGE_ENCRYPT: scfg.storage_encrypt,
@@ -161,11 +170,11 @@ class GeneralLocalApplication(PaletteRESTApplication):
 
         return data
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         # pylint: disable=unused-argument
         print 'post', req
 
-        # Fixme: Add something like the following after the js is finished
         value = req.POST['storage-destination']
         parts = value.split(':')
         if len(parts) != 2:
@@ -187,6 +196,7 @@ class _GeneralStorageApplication(PaletteRESTApplication):
         # pylint: disable=invalid-name
         self.s3 = GeneralS3Application()
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         scfg = SystemConfig(req.system)
         data = {}
@@ -223,6 +233,7 @@ class GeneralBackupApplication(PaletteRESTApplication):
     BACKUP_SCHEDULED_RETAIN_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25]
     USER_BACKUP_RETAIN_RANGE = BACKUP_SCHEDULED_RETAIN_RANGE
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         scfg = SystemConfig(req.system)
 
@@ -251,6 +262,7 @@ class GeneralBackupApplication(PaletteRESTApplication):
         data['timezone'] = time.strftime("%Z")
         return data
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         print 'backup', req
         if req.POST['scheduled-backups'] == 'false':
@@ -268,6 +280,7 @@ class GeneralBackupApplication(PaletteRESTApplication):
 
 class EmailAlertApplication(PaletteRESTApplication):
     """Handler for the 'EMAIL ALERTS' section."""
+    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         print 'alert GET', req
         scfg = SystemConfig(req.system)
@@ -276,7 +289,7 @@ class EmailAlertApplication(PaletteRESTApplication):
         data['alert-publishers'] = scfg.alerts_publisher_enabled
         return data
 
-    # FIXME: finish POST
+    @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         print 'alert POST', req
 
@@ -298,6 +311,7 @@ class GeneralZiplogApplication(PaletteRESTApplication):
     SCHEDULED_RETAIN_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25]
     USER_RETAIN_RANGE = SCHEDULED_RETAIN_RANGE
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
 
@@ -314,6 +328,7 @@ class GeneralZiplogApplication(PaletteRESTApplication):
         data['schedule-ziplogs'] = scfg.ziplog_scheduled_enabled
         return data
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         if req.POST['scheduled-ziplogs'] == 'false':
             req.system.save(SystemConfig.ZIPLOG_SCHEDULED_ENABLED, 'no')
@@ -329,6 +344,7 @@ class GeneralZiplogApplication(PaletteRESTApplication):
 
 class GeneralArchiveApplication(PaletteRESTApplication):
     """Handler for 'WORKBOOK ARCHIVE' section."""
+    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
         scfg = SystemConfig(req.system)
@@ -339,6 +355,7 @@ class GeneralArchiveApplication(PaletteRESTApplication):
         data['enable-archive'] = scfg.archive_enabled
         return data
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         print 'archive', req
         if req.POST['enable-archive'] == 'false':
@@ -376,6 +393,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
             return '1 second'
         return '%d seconds' % x
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
         # pylint: disable=too-many-locals
@@ -525,6 +543,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
 
         return data
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         # pylint: disable=unused-argument
         print 'post', req
@@ -562,6 +581,7 @@ class _GeneralApplication(PaletteRESTApplication):
         self.storage = _GeneralStorageApplication() # Don't use the Router
         self.monitor = GeneralMonitorApplication()
 
+    @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         data = {}
         extend(data, self.backup.service_GET(req))
