@@ -477,8 +477,12 @@ function ($, _, configure, common, Dropdown, OnOff)
         validate();
 
         /* help */
-        // FIXME: e.g.
-        // configure.lightbox(id, title);
+        configure.lightbox(236535, 'Palette Server URL');
+        configure.lightbox(236536, 'Palette Admin Password');
+        configure.lightbox(236542, 'Mail Server');
+        configure.lightbox(236543, 'Server SSL Certificate');
+        configure.lightbox(236544, 'Authentication');
+
     }
 
     common.startMonitor(false);
