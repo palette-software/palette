@@ -30,7 +30,7 @@
       'domReady': '/app/module/palette/js/vendor/domReady',
 
       'bootstrap': '/app/module/palette/js/vendor/bootstrap',
-      'lightbox': 'http://www.helpdocsonline.com/v2/lightbox'
+      'lightbox': '//www.helpdocsonline.com/v2/lightbox'
     },
     shim: {
       'bootstrap': {
@@ -39,7 +39,6 @@
       'lightbox': {
          deps: ['jquery']
       }
-
     }
   };
 </script>
