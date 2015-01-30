@@ -39,7 +39,6 @@
       'lightbox': {
          deps: ['jquery']
       }
-
     }
   };
 </script>

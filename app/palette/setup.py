@@ -21,8 +21,6 @@ from .option import DictOption
 from .rest import PaletteRESTApplication, required_parameters, required_role
 
 
-# FIXME: add required_role to all the GET/POST handlers.
-
 def dump(req):
     print >> sys.stderr, str(req)
 
@@ -197,8 +195,7 @@ class SetupMailApplication(JSONProxy):
         return data
 
     def service_POST(self, req):
-        # FIXME: test for valid POST data
-        # FIXME -
+        # Validation of POST data is done by the service.
         print 'got to mail----------------'
         return super(SetupMailApplication, self).service(req)
 
@@ -237,7 +234,7 @@ class SetupSSLApplication(JSONProxy):
 
     def service_POST(self, req):
         dump(req)
-        # FIXME: check for required parameters
+        # Validation of required parameters is done by the service
         return super(SetupSSLApplication, self).service(req)
 
 
