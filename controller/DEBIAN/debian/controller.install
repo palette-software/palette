@@ -14,6 +14,7 @@ var/palette/sched/extract    /var/palette/sched
 var/palette/sched/http_request    /var/palette/sched
 var/palette/sched/info_all    /var/palette/sched
 var/palette/sched/license_check    /var/palette/sched
+var/palette/sched/license_verify    /var/palette/sched
 var/palette/sched/metrics_prune    /var/palette/sched
 var/palette/sched/sync    /var/palette/sched
 var/palette/sched/workbook    /var/palette/sched
