@@ -65,6 +65,8 @@ class SystemConfig(object):
     SERVER_URL = "server-url"
     AUTHENTICATION_TYPE = "authentication-type"
 
+    TIMEZONE = "timezone"
+
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
     def __init__(self, system):
@@ -232,6 +234,8 @@ class SystemConfig(object):
             return self._getstring(self.SERVER_URL, default='localhost')
         if name == "authentication_type":
             return self._getint(self.AUTHENTICATION_TYPE, default=1)
+        if name == "timezone":
+            return self._getstring(self.TIMEZONE, default="America/Los_Angeles")
         raise AttributeError(name)
 
     def todict(self):
@@ -279,7 +283,8 @@ class SystemConfig(object):
             self.MAIL_USERNAME: self.mail_username,
             self.MAIL_PASSWORD: self.mail_password,
             self.SERVER_URL: self.server_url,
-            self.AUTHENTICATION_TYPE: self.authentication_type
+            self.AUTHENTICATION_TYPE: self.authentication_type,
+            self.TIMEZONE: self.timezone
             }
 
     def text(self, value):
