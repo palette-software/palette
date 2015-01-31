@@ -1,5 +1,6 @@
 import sys
 from webob import exc
+from pytz import common_timezones as timezones
 
 from akiri.framework.api import Page
 from akiri.framework.proxy import JSONProxy
@@ -237,6 +238,43 @@ class SetupSSLApplication(JSONProxy):
         # Validation of required parameters is done by the service
         return super(SetupSSLApplication, self).service(req)
 
+
+class SetupTimezoneApplication(JSONProxy):
+    """Handler for the timezone configuration section."""
+
+    def __init__(self):
+        super(SetupTimezoneApplication, self).__init__(
+            'http://localhost:9093', allowed_request_methods=('GET', 'POST'))
+
+    @required_role(Role.MANAGER_ADMIN)
+    def postprocess(self, req, data):
+        print 'after timezone service:', data
+        if 'error' in data:
+            return data
+
+        if not 'timezone' in data or not data['timezone']:
+            return {'error': 'post process missing timezone'}
+
+        req.system.save(SystemConfig.TIMEZONE, data['timezone'])
+        return data
+
+    def service_GET(self, req):
+        # pylint: disable=unused-argument
+        options = OrderedDict({})
+        for timezone in timezones:
+            options[timezone] = timezone
+
+        scfg = SystemConfig(req.system)
+        tzconfig = DictOption('timezone', scfg.timezone, options)
+        tzconfig = DictOption('authentication-type', scfg.timezone, options)
+        data = {'config': [tzconfig.default()]}
+        return data
+
+    def service_POST(self, req):
+        dump(req)
+        if req.params['timezone'] is None:
+            raise exc.HTTPBadRequest()
+        return super(SetupTimezoneApplication, self).service(req)
 
 class SetupAuthApplication(BaseSetupApplication):
     """Handler for the 'AUTHENTICATION' section."""
