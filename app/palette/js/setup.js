@@ -283,9 +283,6 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function mayCancelSSL(data)
     {
-        if (data['enable-ssl'] != sslData['enable-ssl']) {
-            return true;
-        }
         if (!data['enable-ssl']) {
             return false;
         }
