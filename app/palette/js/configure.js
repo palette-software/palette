@@ -111,8 +111,7 @@ function ($, common, Dropdown, OnOff)
             'smtp-server': $('#smtp-server').val(),
             'smtp-port': Number($('#smtp-port').val()),
             'smtp-username': $('#smtp-username').val(),
-            'smtp-password': $('#smtp-password').val(),
-            'enable-tls': OnOff.getValueById('enable-tls')
+            'smtp-password': $('#smtp-password').val()
         };
     }
 
@@ -176,10 +175,10 @@ function ($, common, Dropdown, OnOff)
             return true;
         }
 
-        if (data['smtp-server'].length == 0) {
+        if (!common.validURL(data['smtp-server'])) {
             return false;
         }
-        if (isNaN(data['smtp-port'])) {
+        if ((data['smtp-port'].length == 0) || (isNaN(data['smtp-port']))) {
             return false;
         }
 

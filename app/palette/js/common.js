@@ -88,11 +88,8 @@ function ($, topic, template, items, paging)
      * Test if the value is a valid URL or not.
      */
     function validURL(url) {
-        if (url.toLowerCase() == 'localhost') {
-            /* FIXME: allow 'localhost' for testing. */
-            return true;
-        }
-        var regex = /^(([a-zA-Z0-9-\.])+\.)([a-zA-Z0-9]{2,4})+$/;
+        // var regex = /^(([a-zA-Z0-9-\.])+\.)([a-zA-Z0-9]{2,4})+$/;
+        var regex = /^\S+$/;
         return regex.test(url);
     }
 
