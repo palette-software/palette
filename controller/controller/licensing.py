@@ -161,7 +161,7 @@ class LicenseManager(Manager):
             server.event_control.gen(EventControl.LICENSE_REPAIR_FINISHED, data)
         return body
 
-    def info(self):
+    def _info(self):
         """Don't do anything very active since this can run when
            in UPGRADE state, etc."""
 
@@ -171,7 +171,11 @@ class LicenseManager(Manager):
         data = {}
         entry = Domain.getone()
         data['license-key'] = entry.license_key
-        data['systemid'] = entry.systemid
+        # fixme
+        data['license-type'] = "Named-user"
+        data['license-quantity'] = 10
+        data['system-id'] = entry.systemid
+
         data['expiration-time'] = entry.expiration_time
         data['contact-time'] = entry.contact_time
         data['trial'] = entry.trial
@@ -194,9 +198,12 @@ class LicenseManager(Manager):
             self.server.log.debug("No tableau license entry yet.")
             return data
 
-        data['tableau-license-type'] = entry.gettype()
-        data['tableau-license-interactors'] = entry.interactors
-        data['tableau-license-viewers'] = entry.viewers
+        data['license-type'] = entry.gettype()
+        # fixme
+        data['license-type'] = "Named-user"
+        data['license-quantity'] = entry.interactors
+
+        data['tableau-quantity'] = entry.viewers
 
         data['tableau-version'] = YmlEntry.get(envid, 'version.external',
                                                default='unknown')
@@ -221,7 +228,9 @@ class LicenseManager(Manager):
             self.log.debug("license verify: No license key.")
             return {'status': "OK", "info": "No license key"}
 
-        data = self.info()
+        data = self._info()
+
+        print "data = ", data
 
         try:
             body = self._send(data)
