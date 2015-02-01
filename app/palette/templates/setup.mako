@@ -56,6 +56,10 @@
     </section>
     <hr />
     <section>
+      <%include file="config/tableau-server-url.mako" />
+    </section>
+    <hr />
+    <section>
       <h2>Palette License Key</h2>
       <p>Please enter your License Key below.</p>
       <input type="text" id="license-key" />

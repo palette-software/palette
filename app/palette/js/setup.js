@@ -3,6 +3,7 @@ require(['jquery', 'underscore', 'configure', 'common',
 function ($, _, configure, common, Dropdown, OnOff)
 {
     var urlData = null;
+    var tableauURLData = null;
     var mailData = null;
     var authData = null;
     var sslData = null;
@@ -74,6 +75,76 @@ function ($, _, configure, common, Dropdown, OnOff)
     {
         $('#server-url').val(urlData['server-url']);
         $('#save-url, #cancel-url').addClass('disabled');
+        validate();
+    }
+
+    /*
+     * maySaveTableauURL()
+     * Return true if the 'Tableau Server URL' section has changed and is valid.
+     */
+    function maySaveTableauURL(data)
+    {
+        var server_url = data['tableau-server-url'];
+        if (common.validURL(server_url)
+            && (server_url != tableauURLData['tableau-server-url']))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /*
+     * mayCancelTableauURL()
+     * Return true if 'TableauServer URL' section has changed.
+     */
+    function mayCancelTableauURL(data)
+    {
+        var server_url = data['tableau-server-url'];
+        if (server_url != tableauURLData['tableau-server-url'])
+        {
+            return true;
+        }
+        return false;
+    }
+
+    /*
+     * saveTableauURL()
+     * Callback for the 'Save' button in the Server URL section.
+     */
+    function saveTableauURL() {
+        $('#save-tableau-url, #cancel-tableau-url').addClass('disabled');
+        var data = configure.gatherURLData();
+        data['action'] = 'save';
+
+        $.ajax({
+            type: 'POST',
+            url: '/rest/setup/tableau-url',
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function() {
+                delete data['action'];
+                urlData = data;
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(this.url + ": " +
+                      jqXHR.status + " (" + errorThrown + ")");
+            }
+        });
+
+        validate();
+    }
+
+    /*
+     * cancelTableauURL()
+     * Callback for the 'Cancel' button in the Tableau Server URL section.
+     */
+    function cancelTableauURL()
+    {
+        $('#tableau-server-url').val(tableauURLData['tableau-server-url']);
+        $('#save-tableau-url, #cancel-tableau-url').addClass('disabled');
         validate();
     }
 
@@ -407,6 +478,8 @@ function ($, _, configure, common, Dropdown, OnOff)
     function validate() {
         configure.validateSection('url', configure.gatherURLData,
                                   maySaveURL, mayCancelURL);
+        configure.validateSection('tableau-url', configure.gatherTableauURLData,
+                                  maySaveTableauURL, mayCancelTableauURL);
         configure.validateSection('admin', configure.gatherAdminData,
                                   configure.validAdminData, mayCancelAdmin);
         validateMail();
@@ -429,6 +502,12 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#save-url').bind('click', saveURL);
         $('#cancel-url').bind('click', cancelURL);
         urlData = configure.gatherURLData();
+
+        /* Tableau URL */
+        $('#tableau-server-url').val(data['tableau-server-url']);
+        $('#save-tableau-url').bind('click', saveTableauURL);
+        $('#cancel-tableau-url').bind('click', cancelTableauURL);
+        tableauURLData = configure.gatherTableauURLData();
 
         /* Admin */
         $('#save-admin').bind('click', saveAdmin);

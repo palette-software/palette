@@ -28,6 +28,20 @@
       </div>
     </section>
 
+    <a name="tableau-server-url"></a>
+    <hr />
+    <section>
+      <%include file="tableau-server-url.mako" />
+      <div class="save-cancel">
+        <button type="button" id="save-tableau-url" class="btn btn-primary disabled">
+          Save
+        </button>
+        <button type="button" id="cancel-tableau-url" class="btn btn-primary disabled">
+          Cancel
+        </button>
+      </div>
+    </section>
+
     <a name="admin"></a>
     <hr />
     <section id="admin">
