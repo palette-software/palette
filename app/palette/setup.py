@@ -104,6 +104,27 @@ class SetupURLApplication(BaseSetupApplication):
         req.system.save(SystemConfig.SERVER_URL, url)
         return {'server-url': url}
 
+class SetupTableauURLApplication(BaseSetupApplication):
+    """Handler for the 'TABLEAU SERVER URL' section."""
+
+    def service_GET(self, req):
+        # pylint: disable=unused-argument
+        scfg = SystemConfig(req.system)
+
+        # FIXME (later): allow non-443 ports?
+        if scfg.tableau_server_url == 'localhost':
+            req.system.save(SystemConfig.TABLEAU_SERVER_URL,
+                            req.environ['HTTP_HOST'])
+
+        return {'tableau-server-url': scfg.tableau_server_url}
+
+    # FIXME: move to initial
+    @required_parameters('tableau-server-url')
+    def service_POST(self, req):
+        url = req.params_get('tableau-server-url')
+        print 'tableau server url = ', url
+        req.system.save(SystemConfig.TABLEAU_SERVER_URL, url)
+        return {'tableau-server-url': url}
 
 class SetupAdminApplication(BaseSetupApplication):
     """Handler for the 'AUTHENTICATION' section."""
@@ -311,6 +332,7 @@ class _SetupApplication(BaseSetupApplication):
         self.ssl = SetupSSLApplication()
         self.auth = SetupAuthApplication()
         self.url = SetupURLApplication()
+        self.turl = SetupTableauURLApplication()
 
     def service_GET(self, req):
         data = {}
@@ -319,6 +341,7 @@ class _SetupApplication(BaseSetupApplication):
         extend(data, self.ssl.service_GET(req))
         extend(data, self.auth.service_GET(req))
         extend(data, self.url.service_GET(req))
+        extend(data, self.turl.service_GET(req))
         return data
 
 class SetupMailTestApplication(BaseSetupApplication):
@@ -351,3 +374,4 @@ class SetupApplication(Router):
         self.add_route(r'/mail/test\Z', SetupMailTestApplication())
         self.add_route(r'/admin\Z', SetupURLApplication())
         self.add_route(r'/url\Z', SetupURLApplication())
+        self.add_route(r'/turl\Z', SetupTableauURLApplication())
