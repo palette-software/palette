@@ -110,12 +110,7 @@ class SetupTableauURLApplication(BaseSetupApplication):
     def service_GET(self, req):
         # pylint: disable=unused-argument
         scfg = SystemConfig(req.system)
-
-        # FIXME (later): allow non-443 ports?
-        if scfg.tableau_server_url == 'localhost':
-            req.system.save(SystemConfig.TABLEAU_SERVER_URL,
-                            req.environ['HTTP_HOST'])
-
+        print 'turl is ', scfg.tableau_server_url
         return {'tableau-server-url': scfg.tableau_server_url}
 
     # FIXME: move to initial

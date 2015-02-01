@@ -234,7 +234,7 @@ class SystemConfig(object):
         if name == 'server_url':
             return self._getstring(self.SERVER_URL, default='localhost')
         if name == 'tableau_server_url':
-            return self._getstring(self.TABLEAU_SERVER_URL, default='localhost')
+            return self._getstring(self.TABLEAU_SERVER_URL, default='')
         if name == "authentication_type":
             return self._getint(self.AUTHENTICATION_TYPE, default=1)
         if name == "timezone":
