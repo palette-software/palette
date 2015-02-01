@@ -78,6 +78,14 @@ function ($, common, Dropdown, OnOff)
     }
 
     /*
+     * gatherTableauURLData()
+     */
+    function gatherTableauURLData()
+    {
+        return {'tableau-server-url': $('#tableau-server-url').val()};
+    }
+
+    /*
      * gatherAdminData()
      */
     function gatherAdminData()
@@ -233,6 +241,7 @@ function ($, common, Dropdown, OnOff)
         'changeSSL': changeSSL,
         'validateSection': validateSection,
         'gatherURLData': gatherURLData,
+        'gatherTableauURLData': gatherTableauURLData,
         'gatherAdminData': gatherAdminData,
         'gatherMailData': gatherMailData,
         'gatherSSLData': gatherSSLData,

@@ -18,6 +18,7 @@ function ($, configure, common, Dropdown, OnOff)
         var data = {};
         data['license-key'] = $('#license-key').val();
         $.extend(data, configure.gatherURLData());
+        $.extend(data, configure.gatherTableauURLData());
         $.extend(data, configure.gatherAdminData());
         $.extend(data, configure.gatherMailData());
         $.extend(data, configure.gatherSSLData());
@@ -103,6 +104,9 @@ function ($, configure, common, Dropdown, OnOff)
         if (!common.validURL(data['server-url'])) {
             return false;
         }
+        if (!common.validURL(data['tableau-server-url'])) {
+            return false;
+        }
         if (data['license-key'].length < 2) { // FIXME //
             return false;
         }
@@ -161,6 +165,7 @@ function ($, configure, common, Dropdown, OnOff)
         $('#test').bind('click', test);
 
         $('#server-url').val(data['server-url']);
+        $('#tableau-server-url').val(data['server-url']);
 
         /* validation */
         Dropdown.setCallback(validate);
