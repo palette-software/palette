@@ -335,7 +335,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def public_url(self):
         """ Generate a url for Tableau that is reportable to a user."""
-        url = self.system.get('tableau-server-url', default=None)
+        url = self.system.get(SystemConfig.TABLEAU_SERVER_URL, default=None)
         if url:
             return url
 
