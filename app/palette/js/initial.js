@@ -22,6 +22,7 @@ function ($, configure, common, Dropdown, OnOff)
         $.extend(data, configure.gatherAdminData());
         $.extend(data, configure.gatherMailData());
         $.extend(data, configure.gatherSSLData());
+        $.extend(data, configure.gatherTzData());
         return data;
     }
 
@@ -47,7 +48,6 @@ function ($, configure, common, Dropdown, OnOff)
             error: function (jqXHR, textStatus, errorThrown) {
                 alert(this.url + ": " +
                       jqXHR.status + " (" + errorThrown + ")");
-                sucess = false;
             }
         });
         if (result != null) {
@@ -56,45 +56,50 @@ function ($, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * test()
+     * testMail()
      * Callback for the 'Test Email' button.
      */
-    function test() {
-        var fields = ['test-email-recipient',
-                      'alert-email-name', 'alert-email-address',
-                      'smtp-server', 'smtp-port',
-                      'smtp-username', 'smtp-password']
-
+    function testMail() {
         var data = {'action': 'test'}
-        for (var index = 0; index < fields.length; index++) {
-            data[fields[index]] = $('#' + fields[index]).val();
-        };
-        data['mail-server-type'] = $('#mail-server-type > button > div').attr('data-id');
-        data['enable-tls'] = $('#enable-tls .onoffswitch-checkbox').prop("checked");
+        $.extend(data, configure.gatherMailData());
 
-        var result = null;
+        var result = {};
         $.ajax({
             type: 'POST',
-            url: '/open/setup/email',
+            url: '/open/setup/mail',
             data: data,
             dataType: 'json',
             async: false,
 
-            success: function(data) {
+            success: function() {
                 result = data;
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 alert(this.url + ": " +
                       jqXHR.status + " (" + errorThrown + ")");
-                sucess = false;
             }
         });
+
+        if (result['status'] == 'OK') {
+            $('#mail-test-message').html("OK");
+            $('#mail-test-message').addClass('green');
+            $('#mail-test-message').removeClass('red hidden');
+        } else {
+            var html = 'FAILED';
+            if (result['error'] != null && result['error'].length > 0) {
+                html += ': ' + result['error'];
+            }
+            $('#mail-test-message').html(html);
+            $('#mail-test-message').addClass('red');
+            $('#mail-test-message').removeClass('green hidden');
+        }
+
+
         if (result != null) {
             /* FIXME */
             alert('OK');
         }
     }
-
 
     /*
      * maySave()
@@ -126,15 +131,12 @@ function ($, configure, common, Dropdown, OnOff)
      * mayTest()
      * Test input and return true/false.
      */
-    function mayTest() {
+    function mayTest(data) {
         var recipient = $('#test-email-recipient').val();
-        if (recipient.length < 3) {
+        if (!common.validEmail(recipient)) {
             return false;
         }
-        if (recipient.indexOf('@') == -1) {
-            return false;
-        }
-        return true;
+        return configure.validMailData(data);
     }
 
     /*
@@ -149,10 +151,10 @@ function ($, configure, common, Dropdown, OnOff)
             $('#save').addClass('disabled');
         }
 
-        if (mayTest()) {
-            $('#test').removeClass('disabled');
+        if (mayTest(data)) {
+            $('#test-mail').removeClass('disabled');
         } else {
-            $('#test').addClass('disabled');
+            $('#test-mail').addClass('disabled');
         }
     }
 
@@ -162,7 +164,7 @@ function ($, configure, common, Dropdown, OnOff)
         OnOff.setup();
 
         $('#save').bind('click', save);
-        $('#test').bind('click', test);
+        $('#test').bind('click', testMail);
 
         $('#server-url').val(data['server-url']);
         $('#tableau-server-url').val(data['server-url']);

@@ -76,6 +76,9 @@
     <section id="ssl">
       <%include file="config/ssl.mako" />
     </section>
+    <section id="tz">
+      <%include file="config/tz.mako" />
+    </section>
     <button type="button" id="save" class="btn btn-primary disabled">
       Save Setting
     </button>

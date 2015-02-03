@@ -141,6 +141,19 @@ function ($, common, Dropdown, OnOff)
     }
 
     /*
+     * gatherTzData()
+     * Return the current settings in the 'Timezone' section as a dict.
+     */
+    function gatherTzData() {
+        var data = {};
+
+        var id = 'timezone';
+        data[id] = Dropdown.getValueById(id);
+
+        return data;
+    }
+
+    /*
      * validAdminData(data)
      */
     function validAdminData(data)
@@ -245,6 +258,7 @@ function ($, common, Dropdown, OnOff)
         'gatherAdminData': gatherAdminData,
         'gatherMailData': gatherMailData,
         'gatherSSLData': gatherSSLData,
+        'gatherTzData': gatherTzData,
         'validAdminData': validAdminData,
         'validMailData': validMailData,
         'validSSLData': validSSLData,
