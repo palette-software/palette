@@ -238,7 +238,7 @@ class SystemConfig(object):
         if name == "authentication_type":
             return self._getint(self.AUTHENTICATION_TYPE, default=1)
         if name == "timezone":
-            return self._getstring(self.TIMEZONE, default="America/Los_Angeles")
+            return self._getstring(self.TIMEZONE, default="US/Pacific")
         raise AttributeError(name)
 
     def todict(self):

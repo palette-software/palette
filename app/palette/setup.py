@@ -109,6 +109,7 @@ class SetupTableauURLApplication(BaseSetupApplication):
 
     def service_GET(self, req):
         # pylint: disable=unused-argument
+        print 'in turl'
         scfg = SystemConfig(req.system)
         print 'turl is ', scfg.tableau_server_url
         return {'tableau-server-url': scfg.tableau_server_url}
@@ -116,6 +117,7 @@ class SetupTableauURLApplication(BaseSetupApplication):
     # FIXME: move to initial
     @required_parameters('tableau-server-url')
     def service_POST(self, req):
+        print 'set tableau url'
         url = req.params_get('tableau-server-url')
         print 'tableau server url = ', url
         req.system.save(SystemConfig.TABLEAU_SERVER_URL, url)
@@ -282,7 +284,6 @@ class SetupTimezoneApplication(JSONProxy):
 
         scfg = SystemConfig(req.system)
         tzconfig = DictOption('timezone', scfg.timezone, options)
-        tzconfig = DictOption('authentication-type', scfg.timezone, options)
         data = {'config': [tzconfig.default()]}
         return data
 
@@ -327,7 +328,8 @@ class _SetupApplication(BaseSetupApplication):
         self.ssl = SetupSSLApplication()
         self.auth = SetupAuthApplication()
         self.url = SetupURLApplication()
-        self.turl = SetupTableauURLApplication()
+        self.tableau_url = SetupTableauURLApplication()
+        self.timezone = SetupTimezoneApplication()
 
     def service_GET(self, req):
         data = {}
@@ -336,7 +338,8 @@ class _SetupApplication(BaseSetupApplication):
         extend(data, self.ssl.service_GET(req))
         extend(data, self.auth.service_GET(req))
         extend(data, self.url.service_GET(req))
-        extend(data, self.turl.service_GET(req))
+        extend(data, self.tableau_url.service_GET(req))
+        extend(data, self.timezone.service_GET(req))
         return data
 
 class SetupMailTestApplication(BaseSetupApplication):
@@ -369,4 +372,5 @@ class SetupApplication(Router):
         self.add_route(r'/mail/test\Z', SetupMailTestApplication())
         self.add_route(r'/admin\Z', SetupURLApplication())
         self.add_route(r'/url\Z', SetupURLApplication())
-        self.add_route(r'/turl\Z', SetupTableauURLApplication())
+        self.add_route(r'/tableau-url\Z', SetupTableauURLApplication())
+        self.add_route(r'/tz\Z', SetupTimezoneApplication())
