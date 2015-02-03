@@ -84,6 +84,20 @@
       </div>
     </section>
 
+    <a name="tz"></a>
+    <hr />
+    <section id="tz">
+      <%include file="tz.mako" />
+      <div class="save-cancel">
+        <button type="button" id="save-tz" class="btn btn-primary">
+          Save
+        </button>
+        <button type="button" id="cancel-tz" class="btn btn-primary">
+          Cancel
+        </button>
+      </div>
+    </section>
+
     <a name="auth"></a>
     <hr />
     <section id="auth">

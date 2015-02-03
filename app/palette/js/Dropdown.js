@@ -103,8 +103,12 @@ function($, template) {
 
     Dropdown.getValueById = function(id)
     {
-        var dd = $('#' + id).data();
-        return dd.getDataId();
+        try {
+            var dd = $('#' + id).data();
+            return dd.getDataId();
+        } catch (err) {
+            return null;
+        }
     }
 
     Dropdown.setValueById = function(id, value)

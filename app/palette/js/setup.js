@@ -5,8 +5,9 @@ function ($, _, configure, common, Dropdown, OnOff)
     var urlData = null;
     var tableauURLData = null;
     var mailData = null;
-    var authData = null;
     var sslData = null;
+    var tzData = null;
+    var authData = null;
 
     /*
      * maySaveURL()
@@ -250,7 +251,7 @@ function ($, _, configure, common, Dropdown, OnOff)
         }
 
         if (common.validEmail(testEmailRecipient)) {
-            if (maySave || _.isEqual(data, mailData)) {
+            if (_.isEqual(data, mailData)) {
                 $('#test-mail').removeClass('disabled');
             } else {
                 $('#test-mail').addClass('disabled');
@@ -319,7 +320,7 @@ function ($, _, configure, common, Dropdown, OnOff)
         var result = {};
         $.ajax({
             type: 'POST',
-            url: '/rest/setup/mail/test',
+            url: '/rest/setup/mail',
             data: data,
             dataType: 'json',
             async: false,
@@ -408,6 +409,53 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#ssl-certificate-chain-file').val('');
         $('#save-ssl, #cancel-ssl').addClass('disabled');
         configure.changeSSL();
+        validate();
+    }
+
+    /*
+     * maySaveCancelTz()
+     * Return true if the 'Authentication' section has changed.
+     */
+    function maySaveCancelTz(data)
+    {
+        return !_.isEqual(data, tzData);
+    }
+
+    /*
+     * saveTz()
+     * Callback for the 'Save' button in the Timezone section.
+     */
+    function saveTz() {
+        var data = configure.gatherTzData();
+        data['action'] = 'save';
+
+        $.ajax({
+            type: 'POST',
+            url: '/rest/setup/tz',
+            data: data,
+            dataType: 'json',
+            async: false,
+
+            success: function() {
+                delete data['action'];
+                tzData = data;
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(this.url + ": " +
+                      jqXHR.status + " (" + errorThrown + ")");
+            }
+        });
+        validate();
+    }
+
+    /*
+     * cancelTz()
+     * Callback for the 'Cancel' button in the Timezone section.
+     */
+    function cancelTz() {
+        var id = 'timezone';
+        Dropdown.setValueById(id, authData[id]);
+        $('#save-tz, #cancel-tz').addClass('disabled');
         validate();
     }
 
@@ -531,6 +579,12 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#cancel-ssl').bind('click', cancelSSL);
         sslData = configure.gatherSSLData();
         configure.changeSSL();
+
+        /* Timezone */
+        $('#save-tz').off('click');
+        $('#save-tz').bind('click', saveTz);
+        $('#cancel-tz').bind('click', cancelTz);
+        tzData = configure.gatherTzData();
 
         /* Authentication */
         $('#save-auth').off('click');
