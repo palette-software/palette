@@ -62,6 +62,7 @@ function ($, configure, common, Dropdown, OnOff)
     function testMail() {
         var data = {'action': 'test'}
         $.extend(data, configure.gatherMailData());
+        data['test-email-recipient'] = $('#test-email-recipient').val();
 
         var result = {};
         $.ajax({
@@ -92,12 +93,6 @@ function ($, configure, common, Dropdown, OnOff)
             $('#mail-test-message').html(html);
             $('#mail-test-message').addClass('red');
             $('#mail-test-message').removeClass('green hidden');
-        }
-
-
-        if (result != null) {
-            /* FIXME */
-            alert('OK');
         }
     }
 
@@ -164,10 +159,12 @@ function ($, configure, common, Dropdown, OnOff)
         OnOff.setup();
 
         $('#save').bind('click', save);
-        $('#test').bind('click', testMail);
+        $('#test-mail').bind('click', testMail);
 
         $('#server-url').val(data['server-url']);
         $('#tableau-server-url').val(data['server-url']);
+        $('#alert-email-name').val(data['alert-email-name']);
+        $('#alert-email-address').val(data['alert-email-address']);
 
         /* validation */
         Dropdown.setCallback(validate);
