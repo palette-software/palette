@@ -20,6 +20,7 @@
     <section id="storage">
       <a id="229204" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Storage Location</h2>
+      <p>Your Backups, Ziplogs, and Workbooks will be saved in this location</p>
       <input type="radio" id="storage-local" name="storage-type" value="local" />
       <label for="storage-local">My Machine</label>
       <input type="radio" id="storage-s3" name="storage-type" value="s3" />
@@ -101,12 +102,12 @@
     <section id="email-alerts">
       <a id="229207" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Email Alerts</h2>
+      <p>Designate which groups of Palette Users receive Email Alerts</p>
       <p class="slider-group">
-        <span>Send Alerts to Palette Admins
+        <span>Allow Email Alerts to Palette Administrators
           <span id="alert-admins" class="onoffswitch yesno"></span>
         </span>&nbsp;
-        <span>
-          Send Alerts to Palette Publishers
+        <span>Allow Email Alerts to Tableau Publishers
           <span id="alert-publishers" class="onoffswitch yesno"></span>
         </span>
       </p>
@@ -196,18 +197,19 @@
     <section id="workbooks">
       <a id="229215" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Workbook Archive</h2>
+      <p>If enabled, Palette will archive all published Tableau Workbooks</p>
       <p class="slider-group">
-        <span>Archive
+        <span>Enable Archive
           <span id="enable-archive" class="onoffswitch yesno"></span>
         </span>
       </p>
       <div class="row">
         <div class="col-xs-6">
-          <h3>Tableau Server Admin Username</h3>
+          <h3>Tableau Server Admin Username *</h3>
           <input type="text" id="archive-username" />
         </div>
         <div class="col-xs-6">
-          <h3>Tableau Server Admin Password</h3>
+          <h3>Tableau Server Admin Password *</h3>
           <input type="password" id="archive-password" />
         </div>
       </div>
@@ -228,7 +230,7 @@
       <h2>Monitoring</h2>
 
       <h3>Storage</h3>
-      <p>Alert When My Machine Attached Volumes Exceed These Thresholds</p>
+      <p>Alert when my Machine attached volumes exceed these thresholds</p>
       <p>
         <span>Warning Alert at <span id="disk-watermark-low" class="btn-group percentage"></span></span>&nbsp;<span>Error Alert at <span id="disk-watermark-high" class="btn-group percentage"></span></span>
       </p>
@@ -244,7 +246,7 @@
       </section>
       <section>
         <h2>Workbook</h2>
-        <p>Alert When Workbook Web View Load Times Exceed These Thresholds</p>
+        <p>Alert when workbook web view Page Load Times exceed these thresholds</p>
         <p>
           Warning Alert at <span id="http-load-warn" class="btn-group percentage up"></span>&nbsp;Error Alert at <span id="http-load-error" class="btn-group percentage up"></span>
         </p>
