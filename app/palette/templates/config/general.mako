@@ -104,10 +104,10 @@
       <h2>Email Alerts</h2>
       <p>Designate which groups of Palette Users receive Email Alerts</p>
       <p class="slider-group">
-        <span>Allow Email Alerts to Palette Administrators
+        <span>Allow Email Alerts to Palette Admins
           <span id="alert-admins" class="onoffswitch yesno"></span>
         </span>&nbsp;
-        <span>Allow Email Alerts to Tableau Publishers
+        <span>Allow Email Alerts to Publishers
           <span id="alert-publishers" class="onoffswitch yesno"></span>
         </span>
       </p>
