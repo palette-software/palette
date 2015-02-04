@@ -13,8 +13,8 @@ from akiri.framework import GenericWSGI
 from controller.licensing import LicenseEntry
 from controller.agent import Agent
 
-LICENSE_EXPIRED = 'http://www.palette-software.com/license-expired'
-TRIAL_EXPIRED = 'http://www.palette-software.com/trial-expired'
+LICENSE_EXPIRED = 'https://licensing.palette-software.com/license-expired'
+TRIAL_EXPIRED = 'https://licensing.palette-software.com/trial-expired'
 
 class ExpireMiddleware(GenericWSGI):
     """Check for expired trials/licenses and redirect if necessary."""
@@ -27,12 +27,15 @@ class ExpireMiddleware(GenericWSGI):
         else:
             location = LICENSE_EXPIRED
 
-        location += '?key=' + req.palette_domain.license_key
+        if req.palette_domain.license_key:
+            location += '?key=' + req.palette_domain.license_key
+        else:
+            location += '?key=' # development only
 
         for entry in LicenseEntry.all():
-            location += '&type=' + entry.gettype()
+            location += '&type=' + entry.gettype().lower()
             if entry.interactors:
-                location += '&n=' + entry.interactors
+                location += '&n=' + str(entry.interactors)
             else:
                 try:
                     agent_entry = meta.Session.query(Agent).\
