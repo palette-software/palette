@@ -20,6 +20,10 @@ class OpenApplication(GenericWSGIApplication):
 
     def service_GET(self, req):
         # This is required in order to bypass the required role.
+        entry = UserProfile.get(req.envid, 0) # user '0', likely 'palette'
+        if entry.hashed_password:
+            # Configuration was already done
+            raise exc.HTTPServiceUnavailable()
         return self.setup.service_GET(req)
 
     def _set_license_key(self, req):
@@ -31,7 +35,10 @@ class OpenApplication(GenericWSGIApplication):
     # The new framework session middleware will do this implicitly.
     @required_parameters('license-key')
     def service_save(self, req):
-        # FIXME: test for null password in palette.
+        entry = UserProfile.get(req.envid, 0) # user '0', likely 'palette'
+        if entry.hashed_password:
+            # Configuration was already done
+            raise exc.HTTPServiceUnavailable()
         self._set_license_key(req)
         self.setup.admin.service_POST(req)
         self.setup.mail.service_POST(req)
