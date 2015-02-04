@@ -5,6 +5,7 @@
     <span id="enable-ssl" class="onoffswitch"></span>
   </span>
 </p>
+    <p>If your Palette Server is self-hosted we recommend that you enable Custom SSL</p>
 <div class="hidden">
   <h3>SSL Certificate File</h3>
   <p>Must be a valid PEM-encoded x509 certificate with the extension .crt</p>

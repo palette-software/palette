@@ -103,9 +103,8 @@
     <section id="auth">
       <a id="236544" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Authentication</h2>
-      <p>
-        <span id="authentication-type" class="btn-group"></span>
-      </p>
+      <p>This setting overrides Palette's default Authentication Method</p>
+      <span id="authentication-type" class="btn-group"></span>
       <div class="save-cancel">
         <button type="button" id="save-auth" class="btn btn-primary">
           Save
