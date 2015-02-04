@@ -1,4 +1,5 @@
-from webob import exc
+from webob import exc, Response
+from paste.auth.auth_tkt import AuthTicket
 
 from akiri.framework import GenericWSGIApplication
 
@@ -14,8 +15,9 @@ from .rest import required_parameters
 class OpenApplication(GenericWSGIApplication):
     """REST-like handler that responds only to the initial setup AJAX call."""
 
-    def __init__(self):
+    def __init__(self, secret):
         self.setup = _SetupApplication()
+        self.secret = secret
         super(OpenApplication, self).__init__()
 
     def service_GET(self, req):
@@ -44,8 +46,15 @@ class OpenApplication(GenericWSGIApplication):
         self.setup.mail.service_POST(req)
         self.setup.ssl.service_POST(req)
         self.setup.url.service_POST(req)
-        # FIXME: login the user.
-        return {}
+
+        res = Response()
+        tkt = AuthTicket(self.secret, entry.name, req.environ['REMOTE_ADDR'])
+        # FIXME (later): make configurable.
+        res.set_cookie('auth_tkt', tkt.cookie_value(),
+                       max_age=2592000, path='/')
+        res.content_type = 'application/json'
+        res.body = '{}\n'
+        return res
 
     @required_parameters('action')
     def service_POST(self, req):
@@ -60,7 +69,7 @@ class OpenApplication(GenericWSGIApplication):
 
 def make_open(global_conf):
     # pylint: disable=unused-argument
-    return OpenApplication()
+    return OpenApplication(global_conf['shared'])
 
 class InitialApp(GenericWSGIApplication):
     """ Test whether the system has been initially setup."""
