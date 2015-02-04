@@ -8,8 +8,6 @@ from akiri.framework.ext.sqlalchemy import meta
 
 from mixin import BaseMixin, BaseDictMixin
 from manager import Manager
-from general import SystemConfig
-from files import FileManager
 
 class SystemEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'system'
