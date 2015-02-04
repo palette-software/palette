@@ -115,7 +115,7 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function saveTableauURL() {
         $('#save-tableau-url, #cancel-tableau-url').addClass('disabled');
-        var data = configure.gatherURLData();
+        var data = configure.gatherTableauURLData();
         data['action'] = 'save';
 
         $.ajax({
@@ -127,7 +127,7 @@ function ($, _, configure, common, Dropdown, OnOff)
 
             success: function() {
                 delete data['action'];
-                urlData = data;
+                tableauURLData = data;
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 alert(this.url + ": " +
