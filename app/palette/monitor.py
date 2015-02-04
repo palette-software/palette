@@ -26,6 +26,8 @@ from .rest import PaletteRESTApplication
 
 __all__ = ["MonitorApplication"]
 
+BUY_URL = 'https://licensing.palette-software.com/buy'
+
 class Colors(object):
     RED_NUM = 1
     YELLOW_NUM = 2
@@ -495,6 +497,10 @@ class MonitorApplication(PaletteRESTApplication):
                 color_num = Colors.RED_NUM
 
         trial_days = req.palette_domain.trial_days()
+        license_key = req.palette_domain.license_key
+        if license_key is None:
+            license_key = '' # development only
+        buy_url = BUY_URL + '?key=' + license_key
 
         environments = [{"name": "My Machines", "agents": agents}]
 
@@ -506,10 +512,12 @@ class MonitorApplication(PaletteRESTApplication):
                 'user-action-in-progress': user_action_in_progress,
                 'environments': environments,
                 'admin': True,
+                'license-key': req.palette_domain.license_key
                 }
 
         if not trial_days is None:
             data['trial-days'] = trial_days
+            data['buy-url'] = buy_url
         return data
 
     def get_publisher_view(self, main_state):
