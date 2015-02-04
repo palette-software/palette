@@ -72,7 +72,7 @@ function ($, configure, common, Dropdown, OnOff)
             dataType: 'json',
             async: false,
 
-            success: function() {
+            success: function(data) {
                 result = data;
             },
             error: function (jqXHR, textStatus, errorThrown) {
