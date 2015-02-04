@@ -27,10 +27,12 @@ class OpenApplication(GenericWSGIApplication):
         req.palette_domain.license_key = license_key
         meta.Session.commit()
 
-    # FIXME: required_parameters...
+    @required_parameters('action', 'mail-server-type', 'alert-email-address',
+                         'test-email-recipient')
     def service_test(self, req):
         # pylint: disable=unused-argument
         print 'test'
+        self.setup.mail.service_POST(req)
         # FIXME: return {'status': 'OK'} or {'error': ...}
         return {}
 
@@ -39,25 +41,22 @@ class OpenApplication(GenericWSGIApplication):
     @required_parameters('license-key')
     def service_save(self, req):
         # FIXME: test for null password in palette.
-        print 'setup:', req
         self._set_license_key(req)
         self.setup.admin.service_POST(req)
-        print 'before mail'
         self.setup.mail.service_POST(req)
-        print 'after mail'
         self.setup.ssl.service_POST(req)
         self.setup.url.service_POST(req)
-        print 'and done'
         # FIXME: login the user.
         return {}
 
     @required_parameters('action')
     def service_POST(self, req):
         action = req.params['action']
+        print 'init req:', req.POST, 'action:', action
         if action == 'save':
             return self.service_save(req)
         if action == 'test':
-            return self.service_test(req)
+            return self.setup.mail.service_POST(req, initial_page=True)
         raise exc.HTTPBadRequest(req)
 
 

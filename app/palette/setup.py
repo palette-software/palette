@@ -144,18 +144,26 @@ class SetupAdminApplication(BaseSetupApplication):
         return {'password': passwd}
 
 
-class SetupMailApplication(JSONProxy):
+class SetupMailApplication(JSONProxy, PaletteRESTApplication):
 
     def __init__(self):
         print 'in mail'
-        super(SetupMailApplication, self).__init__('http://localhost:9091', \
+        JSONProxy.__init__(self, 'http://localhost:9091',
                                     allowed_request_methods=('GET', 'POST'))
+        PaletteRESTApplication.__init__(self)
 
-    @required_role(Role.MANAGER_ADMIN)
     def postprocess(self, req, data):
+        print 'in mail post process, data:', data
         if 'error' in data:
             return data
 
+        self._save_config(req, data)
+        if 'smtp-password' in data:
+            del data['smtp-password']
+        return data
+
+    def _save_config(self, req, data):
+        """Save the configuration to the system table."""
         req.system.save(SystemConfig.MAIL_SERVER_TYPE,
                                             str(data['mail-server-type']))
 
@@ -173,9 +181,6 @@ class SetupMailApplication(JSONProxy):
             req.system.delete(SystemConfig.MAIL_SMTP_PORT)
             req.system.delete(SystemConfig.MAIL_USERNAME)
             req.system.delete(SystemConfig.MAIL_PASSWORD)
-        if 'smtp-password' in data:
-            del data['smtp-password']
-        return data
 
     def service_GET(self, req):
         # pylint: disable=bad-builtin
@@ -213,12 +218,40 @@ class SetupMailApplication(JSONProxy):
 
         return data
 
-    def service_POST(self, req):
+    @required_parameters('action', 'mail-server-type')
+    def service_POST(self, req, initial_page=False):
         # Validation of POST data is done by the service.
-        print 'got to mail----------------'
-        return super(SetupMailApplication, self).service(req)
+        print 'got to mail----------------post = ', req.POST
+        print "initial_page = ", initial_page
+        action = req.params_get('action')
+        print 'action = ', action
+        if action == 'test':
+            # Sanity check
+            test_email_recipient = req.params_get('test-email-recipient').\
+                                                  strip()
+            if test_email_recipient.count(' ') or \
+                                          test_email_recipient.find('@') == -1:
+                return {'status': 'FAIL'}
 
-    @required_role(Role.MANAGER_ADMIN)
+        if action == 'test' and initial_page:
+            # If 'Test Email' from the initial page, we have to
+            # configure postfix and save the config to the system table.
+            data = super(SetupMailApplication, self).service(req)
+            print 'after super, data:', data
+            if 'error' in data:
+                return data
+
+            self.commapp.send_cmd('test email ' + test_email_recipient)
+            return {'status': 'OK'}
+
+        if action == 'save':
+            return super(SetupMailApplication, self).service(req)
+        elif action == 'test':
+            self.commapp.send_cmd('test email ' + test_email_recipient)
+            return {'status': 'OK'}
+        else:
+            raise exc.HTTPBadRequest(req)
+
     def service(self, req):
         if req.method == 'GET':
             return self.service_GET(req)
@@ -226,6 +259,18 @@ class SetupMailApplication(JSONProxy):
             return self.service_POST(req)
         else:
             raise exc.HTTPMethodNotAllowed()
+
+class SetupMailTestApplication(BaseSetupApplication):
+
+    def service_POST(self, req):
+        print 'here'
+        test_email_recipient = req.params_get('test-email-recipient').strip()
+        # Sanity check
+        if test_email_recipient.count(' ') or \
+                                      test_email_recipient.find('@') == -1:
+            return {'status': 'FAIL'}
+        self.commapp.send_cmd('test email ' + test_email_recipient)
+        return {'status': 'OK'}
 
 
 class SetupSSLApplication(JSONProxy):
@@ -342,20 +387,6 @@ class _SetupApplication(BaseSetupApplication):
         extend(data, self.timezone.service_GET(req))
         return data
 
-class SetupMailTestApplication(BaseSetupApplication):
-
-    @required_parameters('test-email-recipient')
-    def service_POST(self, req):
-        print 'here'
-        test_email_recipient = req.params_get('test-email-recipient').strip()
-        # Sanity check
-        if test_email_recipient.count(' ') or \
-                                      test_email_recipient.find('@') == -1:
-            return {'status': 'FAIL'}
-        self.commapp.send_cmd('test email ' + test_email_recipient)
-        return {'status': 'OK'}
-
-
 class SetupApplication(Router):
     """
     This is the main handler for /rest/setup, but it just delegates to
@@ -369,7 +400,6 @@ class SetupApplication(Router):
         self.add_route(r'/auth\Z|/authenticate\Z', SetupAuthApplication())
         self.add_route(r'/ssl\Z|/SSL\Z', SetupSSLApplication())
         self.add_route(r'/mail\Z', SetupMailApplication())
-        self.add_route(r'/mail/test\Z', SetupMailTestApplication())
         self.add_route(r'/admin\Z', SetupURLApplication())
         self.add_route(r'/url\Z', SetupURLApplication())
         self.add_route(r'/tableau-url\Z', SetupTableauURLApplication())
