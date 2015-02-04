@@ -265,10 +265,11 @@ class GeneralBackupApplication(PaletteRESTApplication):
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         print 'backup', req
-        if req.POST['scheduled-backups'] == 'false':
-            req.system.save(SystemConfig.BACKUP_SCHEDULED_ENABLED, 'no')
-        else:
-            req.system.save(SystemConfig.BACKUP_SCHEDULED_ENABLED, 'yes')
+        if 'scheduled-backups' in req.POST:
+            if req.POST['scheduled-backups'] == 'false':
+                req.system.save(SystemConfig.BACKUP_SCHEDULED_ENABLED, 'no')
+            else:
+                req.system.save(SystemConfig.BACKUP_SCHEDULED_ENABLED, 'yes')
 
         req.system.save(SystemConfig.BACKUP_AUTO_RETAIN_COUNT,
                              req.POST['backup-auto-retain-count'])
@@ -330,10 +331,11 @@ class GeneralZiplogApplication(PaletteRESTApplication):
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
-        if req.POST['scheduled-ziplogs'] == 'false':
-            req.system.save(SystemConfig.ZIPLOG_SCHEDULED_ENABLED, 'no')
-        else:
-            req.system.save(SystemConfig.ZIPLOG_SCHEDULED_ENABLED, 'yes')
+        if 'scheduled-ziplogs' in req.POST:
+            if req.POST['scheduled-ziplogs'] == 'false':
+                req.system.save(SystemConfig.ZIPLOG_SCHEDULED_ENABLED, 'no')
+            else:
+                req.system.save(SystemConfig.ZIPLOG_SCHEDULED_ENABLED, 'yes')
 
         req.system.save(SystemConfig.ZIPLOG_AUTO_RETAIN_COUNT,
                              req.POST['ziplog-auto-retain-count'])
