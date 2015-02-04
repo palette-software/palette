@@ -27,15 +27,6 @@ class OpenApplication(GenericWSGIApplication):
         req.palette_domain.license_key = license_key
         meta.Session.commit()
 
-    @required_parameters('action', 'mail-server-type', 'alert-email-address',
-                         'test-email-recipient')
-    def service_test(self, req):
-        # pylint: disable=unused-argument
-        print 'test'
-        self.setup.mail.service_POST(req)
-        # FIXME: return {'status': 'OK'} or {'error': ...}
-        return {}
-
     # FIXME (later): this should be one big database transaction.
     # The new framework session middleware will do this implicitly.
     @required_parameters('license-key')
