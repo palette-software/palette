@@ -1091,7 +1091,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status({"info": pinfos})
 
-    @usage('license [repair | info]')
+    @usage('license [update | info | verify | repair]')
     @upgrade_rwlock
     def do_license(self, cmd):
         """Run license check."""
@@ -1101,7 +1101,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
         if len(cmd.args) == 1:
             action = cmd.args[0].lower()
-            if not action in ['repair', 'info', 'verify']:
+            if not action in ['repair', 'info', 'verify', 'update']:
                 self.print_usage(self.do_license.__usage__)
                 return
 

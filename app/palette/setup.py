@@ -147,7 +147,6 @@ class SetupAdminApplication(BaseSetupApplication):
 class SetupMailApplication(JSONProxy, PaletteRESTApplication):
 
     def __init__(self):
-        print 'in mail'
         JSONProxy.__init__(self, 'http://localhost:9091',
                                     allowed_request_methods=('GET', 'POST'))
         PaletteRESTApplication.__init__(self)

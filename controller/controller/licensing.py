@@ -6,7 +6,7 @@ import json
 import re
 import datetime
 
-from sqlalchemy import Column, Integer, BigInteger, DateTime, Boolean
+from sqlalchemy import Column, Integer, BigInteger, DateTime, Boolean, String
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.schema import ForeignKey
@@ -32,11 +32,16 @@ class LicenseException(Exception):
 class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'license'
 
+    LICENSE_TYPE_NAMED_USER = "Named-user"
+    LICENSE_TYPE_CORE = "Core"
+
     licenseid = Column(BigInteger, primary_key=True)
     agentid = Column(BigInteger, ForeignKey("agent.agentid"),
                      nullable=False, unique=True)
     interactors = Column(Integer)
     viewers = Column(Integer)
+    cores = Column(Integer)
+    license_type = Column(String)
     notified = Column(Boolean, nullable=False, default=False)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(),
@@ -53,7 +58,7 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
         return entry
 
     @classmethod
-    def get(cls, agentid, interactors=None, viewers=None):
+    def get(cls, agentid, interactors=None, viewers=None, cores=None):
         session = meta.Session()
         entry = cls.get_by_agentid(agentid)
         if not entry:
@@ -62,6 +67,12 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
 
         entry.interactors = interactors
         entry.viewers = viewers
+        entry.cores = cores
+
+        if cores:
+            entry.license_type = LicenseEntry.LICENSE_TYPE_CORE
+        elif entry.interactors or entry.viewers:
+            entry.license_type = LicenseEntry.LICENSE_TYPE_NAMED_USER
 
         # If the entry is valid, reset the notification field.
         if entry.valid():
@@ -76,29 +87,44 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
     @classmethod
     def parse(cls, output):
         # pylint: disable=anomalous-backslash-in-string
+        if output.find("Cores licensed") != -1:
+            try:
+                cores = int(output.split()[-1])
+            except (IndexError, ValueError):
+                print "Invalid format for license report:", output
+                return {}
+            return {'cores': cores}
         pattern = '(?P<interactors>\d+) interactors, (?P<viewers>\d+) viewers'
         match = re.search(pattern, output)
         if not match:
             return {}
         return match.groupdict()
 
-    def invalid(self):
-        if self.interactors is None:
-            return False
-        self.interactors = int(self.interactors)
-        if self.viewers is None:
-            return False
-        self.viewers = int(self.viewers)
-        return self.interactors == 0 and self.viewers == 0
-
     def valid(self):
-        return not self.invalid()
+        # pylint: disable=too-many-return-statements
+        if self.license_type == LicenseEntry.LICENSE_TYPE_CORE:
+            if self.cores:
+                return True
+            else:
+                return False
+        elif self.license_type == LicenseEntry.LICENSE_TYPE_NAMED_USER:
+            if self.interactors or self.viewers:
+                return True
+            else:
+                return False
+        elif self.license_type is None:
+            # License hasn't been retrieved yet: OK unless proved otherwise.
+            return True
 
-    def gettype(self):
-        if self.interactors is None and self.viewers is None:
-            return "Core"
-        else:
-            return "Named-user"
+        if self.interactors is None and self.viewers is None and \
+                                                        self.cores is None:
+            # License hasn't been retrieved yet: OK unless proved otherwise.
+            return True
+
+        return False
+
+    def invalid(self):
+        return not self.valid()
 
     def capacity(self):
         if self.interactors is None and self.viewers is None:
@@ -125,17 +151,26 @@ class LicenseManager(Manager):
         session.commit()
 
         if entry.invalid():
+            msg = "License type: %s, " % str(entry.license_type)
+            if entry.license_type == LicenseEntry.LICENSE_TYPE_NAMED_USER:
+                msg += "interactors: %s, viewers: %s" % \
+                            (str(entry.interactors), str(entry.viewers))
+            elif entry.license_type == LicenseEntry.LICENSE_TYPE_CORE:
+                msg += "cores: %s" % str(entry.cores)
+            else:
+                msg += "interactors: %s, viewers: %s, cores: %s" \
+                            % (str(entry.interactors), str(entry.viewers),
+                               str(entry.cores))
+
             if not entry.notified:
                 # Generate an event
                 data = agent.todict()
-                data['error'] = "interactors: %s, viewers: %s" % \
-                                (entry.interactors, entry.viewers)
+                data['error'] = msg
                 server.event_control.gen(EventControl.LICENSE_INVALID, data)
                 entry.notified = True
                 session.commit()
-            return server.error(\
-                "License invalid on '%s': interactors: %s, viewers: %s" % \
-                    (agent.displayname, entry.interactors, entry.viewers))
+            return server.error("License invalid on '%s': %s" % \
+                                (agent.displayname, msg))
 
         return license_data
 
@@ -161,7 +196,7 @@ class LicenseManager(Manager):
             server.event_control.gen(EventControl.LICENSE_REPAIR_FINISHED, data)
         return body
 
-    def _info(self):
+    def info(self):
         """Don't do anything very active since this can run when
            in UPGRADE state, etc."""
 
@@ -171,11 +206,7 @@ class LicenseManager(Manager):
         data = {}
         entry = Domain.getone()
         data['license-key'] = entry.license_key
-        # fixme
-        data['license-type'] = "Named-user"
-        data['license-quantity'] = 10
         data['system-id'] = entry.systemid
-
         data['expiration-time'] = entry.expiration_time
         data['contact-time'] = entry.contact_time
         data['trial'] = entry.trial
@@ -198,12 +229,14 @@ class LicenseManager(Manager):
             self.server.log.debug("No tableau license entry yet.")
             return data
 
-        data['license-type'] = entry.gettype()
-        # fixme
-        data['license-type'] = "Named-user"
-        data['license-quantity'] = entry.interactors
+        data['license-type'] = entry.license_type
 
-        data['tableau-quantity'] = entry.viewers
+        if entry.license_type == LicenseEntry.LICENSE_TYPE_NAMED_USER:
+            data['license-quantity'] = entry.interactors
+        elif entry.license_type == LicenseEntry.LICENSE_TYPE_CORE:
+            data['license-quantity'] = entry.cores
+        else:
+            data['license-quantity'] = None
 
         data['tableau-version'] = YmlEntry.get(envid, 'version.external',
                                                default='unknown')
@@ -225,12 +258,10 @@ class LicenseManager(Manager):
             # If there is no license key, don't bother checking the
             # validity of it or attempt to contact the palette
             # license server.
-            self.log.debug("license verify: No license key.")
+            self.server.log.debug("license verify: No license key.")
             return {'status': "OK", "info": "No license key"}
 
-        data = self._info()
-
-        print "data = ", data
+        data = self.info()
 
         try:
             body = self._send(data)
@@ -274,9 +305,10 @@ class LicenseManager(Manager):
         conn.close()
 
         if conn.getcode() != httplib.OK:
-            self.server.log.debug("phone home failed with status %d",
-                                                            conn.getcode())
-            raise LicenseException("Failed with status " + str(conn.getcode))
+            self.server.log.debug("phone home failed with status %d: %s",
+                                        conn.getcode(), reply_json)
+            raise LicenseException("Failed with status: %s: %s " % \
+                                    (str(conn.getcode), reply_json))
 
         reply = json.loads(reply_json)
 
