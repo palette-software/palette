@@ -1,6 +1,6 @@
 <a id="236542" href="#"><i class="fa fa-question-circle help"></i></a>
 <h2>Mail Server</h2>
-<p>The Palette Server will send you alerts using this mail server and email address</p>
+<p>The Palette Server will send alerts using the Mail Server settings below</p>
 <div class="row">
   <div class="col-xs-6">
     <h3>Mail Server Type</h3>
