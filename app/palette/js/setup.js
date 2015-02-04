@@ -535,6 +535,8 @@ function ($, _, configure, common, Dropdown, OnOff)
                                   configure.validSSLData, mayCancelSSL);
         configure.validateSection('auth', gatherAuthData,
                                   maySaveCancelAuth, maySaveCancelAuth);
+        configure.validateSection('tz', configure.gatherTzData,
+                                  maySaveCancelTz, maySaveCancelTz);
     }
 
     /*
