@@ -109,9 +109,7 @@ class SetupTableauURLApplication(BaseSetupApplication):
 
     def service_GET(self, req):
         # pylint: disable=unused-argument
-        print 'in turl'
         scfg = SystemConfig(req.system)
-        print 'turl is ', scfg.tableau_server_url
         return {'tableau-server-url': scfg.tableau_server_url}
 
     # FIXME: move to initial
