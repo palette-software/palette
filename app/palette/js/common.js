@@ -596,11 +596,28 @@ function ($, topic, template, items, paging)
             $('#mainNav .message').html(data['nav-message']);
         } else if (data['trial-days'] != null) {
             var msg = 'Trial Status: <span class="highlight">';
-            msg += data['trial-days']+' Days Remaining</span>';
+            if (data['trial-days'] == 1) {
+                msg += '1 Day Remaining';
+            } else {
+                msg += data['trial-days']+' Days Remaining';
+            }
+            msg += '</span>';
             $('#mainNav .message').html(msg);
         } else {
             $('#mainNav .message').html('');
         }
+
+        if (data['trial-days'] == null) {
+            $('#mainNav li.buy').addClass('hidden');
+        } else {
+            $('#mainNav li.buy').removeClass('hidden');
+            if (data['trial-days'] <= 3) {
+                $('#mainNav li.buy, #mainNav .message').addClass('urgent');
+            } else {
+                $('#mainNav li.buy, #mainNav .message').removeClass('urgent');
+            }
+        }
+        $('#mainNav li.buy a').prop('href', data['buy-url']);
 
         var rendered = template.render(server_list_template, data);
         $('#server-list').html(rendered);
