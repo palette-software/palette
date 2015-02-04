@@ -366,7 +366,7 @@ article.popup p {
     width: 250px;
 }
 .btn-bar {
-    margin: 15px 0 15px 0;
+    margin: 0 0 15px 0;
 }
 .btn-group {
     max-width: 320px;
@@ -374,9 +374,9 @@ article.popup p {
 .btn-group button {
     width: 100%;
     text-align: left;
-    color: white;
-    background-color: #697078;
-    border: 0;
+    color: #697078;
+    background-color: #fff;
+    border: 1px solid #ebebeb;
     border-radius: 0;
 }
 .btn-group button .caret {
@@ -384,24 +384,27 @@ article.popup p {
     right: 11px;
     top: 50%;
     margin-top: -2px;
-    border-top: 5px solid white;
+    border-top: 5px solid #818284;
     border-right: 5px solid transparent;
     border-left: 5px solid transparent;
 }
 .btn-default:hover, .btn-default:focus, .btn-default:active, .btn-default.active, .open .dropdown-toggle.btn-default {
-    background-color: #5e646b;
-    color: white;
+    background-color: #fff;
+    color: #697078;
+    border: 1px solid #e1e1e1;
+    -webkit-box-shadow: inset 0 3px 5px rgba(0,0,0,0)
 }
 .dropdown-menu {
     width: 100%;
-    border: 0;
+    border: 1px solid #ebebeb;
     border-radius: 0;
-    background-color: #697078;
+    background-color: #fff;
     overflow: hidden;
     margin: 0;
     padding: 0;
     min-width: 0;
     max-width: 320px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0);
 }
 .up .dropdown-menu {
     top: auto;
@@ -424,12 +427,12 @@ ul.dropdown-menu a {
     position: relative;
     display: block;
     font-weight: 300;
-    color: white;
+    color: #697078;
 }
 
 ul.dropdown-menu a:hover {
-    background-color: #5e646b;
-    color: white;
+    background-color: #F0F1F1;
+    color: #697078;
 }
 .main-side-bar {
     height: 100%;
@@ -759,13 +762,13 @@ ul.processes.visible {
 }
 */
 h1.page-title {
-    font-size: 28px;
+    font-size: 33px;
     display: inline-block;
     line-height: 32px;
-    margin: 32px 0 12px 0;
+    margin: 32px 0 0px 0;
     color: #697078;
     vertical-align: bottom;
-    text-transform: uppercase;
+    text-transform: none;
 }
 .about-page h1.page-title, .profile-page h1.page-title, .general-page h1.page-title {
     margin-bottom: 20px;
@@ -798,7 +801,7 @@ nav.navbar {
     background: #fff;
     position: fixed;
     height: 63px;
-    border-bottom: 3px solid #8D96A3;
+    border-bottom: 1px solid #8D96A3;
     display: block;
     width: 100%;
     top: 0;
@@ -834,6 +837,10 @@ a.site-id {
     box-sizing: content-box;
     background-repeat: no-repeat;
     margin-left: 15px;
+}
+#mainNav .arrow-down {
+    left: 7px;
+    border-top: 7px solid #fff;
 }
 /* FIXME: redundant with bootstrap */
 .text-center {
@@ -984,7 +991,7 @@ label {
     text-align: left;
     display: block;
     color: #5f6670;
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 300;
 }
 .configuration label:not(.onoffswitch-label) {
@@ -1009,7 +1016,7 @@ input[type="text"], input[type="password"], input[type="email"], select {
 }    
 
 input[type="text"]:focus, input[type="password"]:focus, input[type="date"]:focus, input[type="datetime"]:focus, input[type="datetime-local"]:focus, input[type="month"]:focus, input[type="week"]:focus, input[type="email"]:focus, input[type="number"]:focus, input[type="search"]:focus, input[type="tel"]:focus, input[type="time"]:focus, input[type="url"]:focus, textarea:focus {
-    border: 1px solid #a6a6a6;
+    border: 1px solid #e1e1e1;
     outline: 0;
     box-shadow: 0 0;
 }
@@ -1202,7 +1209,7 @@ ul.title-area > li > h1 > a {
     height: 100%;
     padding: 0 15px;
     line-height: 60px;
-    font-size: 16px;
+    font-size: 15px;
     vertical-align: middle;
 }
 #mainNav ul.nav li > a:hover {
@@ -1468,14 +1475,19 @@ div.refresh {
     margin: 0px;
 }
 
-.configuration h2, .configuration h3 {
-    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
-    color: #5f6670;
-    font-size: 17px;
-}
 .configuration h2 {
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
+    color: #474D54;
+    font-size: 19px;
     margin-top: 30px;
-    text-transform: uppercase;
+    text-transform: none;
+}
+
+.configuration h3 {
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
+    color: #50555C;
+    font-size: 18px;
+    margin-top: 29px;
 }
 
 .general-page {
@@ -1537,7 +1549,7 @@ div.refresh {
 .onoffswitch-inner:before {
     content: "ON";
     padding-left: 11px;
-    background-color: #76e259; color: #FFFFFF;
+   background-color: #5AC0DC; color: #FFFFFF;
 }
 .onoffswitch-inner:after {
     content: "OFF";
@@ -1564,20 +1576,21 @@ input[type="checkbox"].onoffswitch-checkbox:checked + .onoffswitch-label .onoffs
 .yesno span.onoffswitch-inner:before {
     content: "Yes";
     padding-left: 11px;
-    background-color: #76e259; color: #FFFFFF;
+    background-color: #5AC0DC; color: #FFFFFF;
 }
 .yesno span.onoffswitch-inner:after {
     content: "No";
     padding-right: 11px;
     background-color: #EEEEEE; color: #999999;
     text-align: right;
-}
+} 
 .slider-group {
     height: 26px;
     margin-bottom: 25px;
 }
 .slider-group > span {
-    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 17px;
     line-height: 26px;
     vertical-align: top;
     margin-right: 25px;
@@ -1671,11 +1684,11 @@ section.run-as-user {
     min-width: 370px;
 }
 
-.configuration input[name="storage-type"] {
+input[name="storage-type"] {
     display: inline-block;
     margin-bottom: 25px;
 }
-.configuration input[name="storage-type"] + label {
+input[name="storage-type"] + label {
     display: inline-block;
     margin: 0 25px 0 3px;
 }
