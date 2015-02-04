@@ -27,10 +27,17 @@ class OpenApplication(GenericWSGIApplication):
         req.palette_domain.license_key = license_key
         meta.Session.commit()
 
+    # FIXME: required_parameters...
+    def service_test(self, req):
+        # pylint: disable=unused-argument
+        print 'test'
+        # FIXME: return {'status': 'OK'} or {'error': ...}
+        return {}
+
     # FIXME (later): this should be one big database transaction.
     # The new framework session middleware will do this implicitly.
     @required_parameters('license-key')
-    def service_POST(self, req):
+    def service_save(self, req):
         # FIXME: test for null password in palette.
         print 'setup:', req
         self._set_license_key(req)
@@ -43,6 +50,15 @@ class OpenApplication(GenericWSGIApplication):
         print 'and done'
         # FIXME: login the user.
         return {}
+
+    @required_parameters('action')
+    def service_POST(self, req):
+        action = req.params['action']
+        if action == 'save':
+            return self.service_save(req)
+        if action == 'test':
+            return self.service_test(req)
+        raise exc.HTTPBadRequest(req)
 
 
 def make_open(global_conf):
