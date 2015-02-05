@@ -513,7 +513,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         # cpu period warn
         if scfg.cpu_load_warn > 100:
             cpu_period_warn = {'name': SystemConfig.CPU_PERIOD_WARN,
-                               'value': "Do Not Monitor",
+                               'value': "Do not Monitor",
                                'id': scfg.cpu_period_warn / 60}
         else:
             cpu_period_warn = {'name': SystemConfig.CPU_PERIOD_WARN,
@@ -527,7 +527,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         # cpu period error
         if scfg.cpu_load_error > 100:
             cpu_period_error = {'name': SystemConfig.CPU_PERIOD_ERROR,
-                                'value': "Do Not Monitor",
+                                'value': "Do not monitor",
                                 'id': scfg.cpu_period_error / 60}
         else:
             cpu_period_error = {'name': SystemConfig.CPU_PERIOD_ERROR,
