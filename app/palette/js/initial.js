@@ -182,9 +182,14 @@ function ($, configure, common, Dropdown, OnOff)
         /* no need to call validate(), the form can't be valid yet. */
 
         /* help */
-        // FIXME: e.g.
-        // configure.lightbox(id, title);
-
+        configure.lightbox(236535, 'Palette Server URL');
+        configure.lightbox(237794, 'Tableau Server URL');
+        configure.lightbox(237795, 'License Key');
+        configure.lightbox(236536, 'Palette Admin Password');
+        configure.lightbox(236542, 'Mail Server');
+        configure.lightbox(236543, 'Server SSL Certificate');
+        configure.lightbox(236544, 'Authentication');
+        configure.lightbox(237785, 'Timezone');
     }
 
     /*
