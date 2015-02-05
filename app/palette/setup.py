@@ -307,6 +307,9 @@ class SetupTimezoneApplication(JSONProxy):
             'http://localhost:9093', allowed_request_methods=('GET', 'POST'))
 
     @required_role(Role.MANAGER_ADMIN)
+    def service(self, req):
+        return super(SetupTimezoneApplication, self).super(req)
+
     def postprocess(self, req, data):
         print 'after timezone service:', data
         if 'error' in data:
