@@ -1,0 +1,13 @@
+#!/bin/sh
+
+action="$1"
+
+if [ "$action" = upgrade ]; then
+    exit 0
+fi
+
+update-rc.d -f framework-postfix remove
+update-rc.d -f framework-ssl remove
+update-rc.d -f framework-timezone remove
+
+exit 0
