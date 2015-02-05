@@ -162,7 +162,7 @@ function ($, configure, common, Dropdown, OnOff)
         $('#test-mail').bind('click', testMail);
 
         $('#server-url').val(data['server-url']);
-        $('#tableau-server-url').val(data['server-url']);
+        $('#tableau-server-url').val(data['tableau-server-url']);
         $('#alert-email-name').val(data['alert-email-name']);
         $('#alert-email-address').val(data['alert-email-address']);
 
