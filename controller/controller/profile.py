@@ -95,7 +95,6 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     defaults = [{'userid':0, 'envid':1, 'name':PALETTE_DEFAULT_NAME,
                  'friendly_name':PALETTE_DEFAULT_FRIENDLY_NAME,
                  'email':None, 'salt':'', 'roleid':3, # SUPER_ADMIN
-                 'hashed_password':tableau_hash(PALETTE_DEFAULT_PASSWORD, ''),
                  'system_user_id':0}]
 
 class Role(meta.Base, BaseMixin):
