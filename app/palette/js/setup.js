@@ -610,11 +610,12 @@ function ($, _, configure, common, Dropdown, OnOff)
 
         /* help */
         configure.lightbox(236535, 'Palette Server URL');
+        configure.lightbox(237794, 'Tableau Server URL');
         configure.lightbox(236536, 'Palette Admin Password');
         configure.lightbox(236542, 'Mail Server');
         configure.lightbox(236543, 'Server SSL Certificate');
         configure.lightbox(236544, 'Authentication');
-
+        configure.lightbox(237785, 'Timezone');
     }
 
     common.startMonitor(false);

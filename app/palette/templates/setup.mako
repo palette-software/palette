@@ -60,6 +60,7 @@
     </section>
     <hr />
     <section>
+      <a id="237795" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Palette License Key</h2>
       <p>Please enter your License Key below.</p>
       <input type="text" id="license-key" />
@@ -76,6 +77,7 @@
     <section id="ssl">
       <%include file="config/ssl.mako" />
     </section>
+    <hr />
     <section id="tz">
       <%include file="config/tz.mako" />
     </section>
