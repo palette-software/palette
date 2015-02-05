@@ -26,8 +26,11 @@ from general import SystemConfig
 from yml import YmlEntry
 
 class LicenseException(Exception):
-    def __init__(self, errmsg):
-        Exception.__init__(self, errmsg)
+    def __init__(self, status, reason):
+        message = str(status) + ' ' + reason
+        Exception.__init__(self, message)
+        self.status = status
+        self.reason = reason
 
 class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'license'
@@ -99,6 +102,9 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
         if not match:
             return {}
         return match.groupdict()
+
+    def gettype(self):
+        return str(self.license_type)
 
     def valid(self):
         # pylint: disable=too-many-return-statements
@@ -253,6 +259,7 @@ class LicenseManager(Manager):
         return data
 
     def verify(self):
+        # pylint: disable=too-many-return-statements
         entry = Domain.getone()
         if not entry.license_key:
             # If there is no license key, don't bother checking the
@@ -262,14 +269,23 @@ class LicenseManager(Manager):
             return {'status': "OK", "info": "No license key"}
 
         data = self.info()
+        if not 'license-type' in data:
+            self.server.log.debug(
+                            "license verify: No tableau license info yet.")
+            return {'status': "OK", "info": "No tableau license info yet."}
 
         try:
             body = self._send(data)
-        except (IOError, LicenseException) as ex:
+        except IOError as ex:
             self.server.log.debug(
                     "license send exception failed with status %s", ex)
-
-            self._callfailed(str(ex))
+            self._callfailed(str(ex), str(ex))
+            return {"error": str(ex)}
+        except LicenseException as ex:
+            self.server.log.debug(
+                    "license send exception failed with status %d, reason %s",
+                                                        ex.status, ex.reason)
+            self._callfailed(ex.reason, ex.status)
             return {"error": str(ex)}
 
         # FIXME: Use real reply
@@ -307,14 +323,16 @@ class LicenseManager(Manager):
         if conn.getcode() != httplib.OK:
             self.server.log.debug("phone home failed with status %d: %s",
                                         conn.getcode(), reply_json)
-            raise LicenseException("Failed with status: %s: %s " % \
-                                    (str(conn.getcode), reply_json))
+            raise LicenseException(conn.getcode(),
+                "Failed with status %d. Reply: %s " % \
+                                            (conn.getcode(), reply_json))
 
         reply = json.loads(reply_json)
 
         return reply
 
-    def _callfailed(self, info):
+    def _callfailed(self, reason, status=None):
+        """If answered=True, it answered, but returned an invalid response."""
         session = meta.Session()
 
         data = {}
@@ -324,31 +342,48 @@ class LicenseManager(Manager):
             entry.contact_failures = 1
         else:
             entry.contact_failures += 1
-        session.commit()
+
+        if status == 404:
+            # The license was not found.
+            # Set the expiration to now.
+            entry.expiration_time = func.now()
+            session.commit()
+            return
 
         if entry.contact_time:
-#            print "contact_time:", entry.contact_time
-#            print "timestamp thing:", datetime.datetime.now()
+            print "contact_time:", entry.contact_time
+            print "timestamp thing:", datetime.datetime.now()
             silence_time = (datetime.datetime.now() - \
                             entry.contact_time).total_seconds()
             if silence_time <= self.MAX_SILENCE_TIME:
                 self.server.log.debug("Silence time: %d <= max of: %d",
                                             silence_time, self.MAX_SILENCE_TIME)
+                # If they had no expiration time (like on initial install)
+                # then expire it now.
+                if not entry.expiration_time:
+                    entry.expiration_time = func.now()
+                session.commit()
                 return
-            data['failure_hours'] = \
-                    int((datetime.datetime.now() - \
-                        entry.contact_time).total_seconds() / 3600)
+            data['failure_hours'] = int((datetime.datetime.now() - \
+                                    entry.contact_time).total_seconds() / 3600)
         else:
-            # 0 means never connected.
-            # Could happen when the controller is running, but
-            # the firewall isn't configured yet.
-            data['failure_hours'] = 0
+            # Never connected successfully to the license server.
+            # Could happen on initial installation.
+            # Give them 72 hours to get this sorted out by pretending
+            # they contacted the server on initial attempt.
+            entry.contact_time = func.now()
+            session.commit()
+            return
+
+        session.commit()
 
         self.server.log.debug("failure hours was longer than: %d : %d",
                               self.MAX_SILENCE_TIME, data['failure_hours'])
 
         notification = self.server.notifications.get("phonehome")
-        notification.description = info
+        notification.description = reason
+        if not status is None:
+            notification.description += ', status: ' + str(status)
 
         data['contact_failures'] = entry.contact_failures
         data['last_contact_time'] = entry.contact_time
