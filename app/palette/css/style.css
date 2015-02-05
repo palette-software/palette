@@ -50,10 +50,12 @@ a img {
     outline: 0;
 }
 a i.help {
-    color: #697078;
+    color: #c1c1c1;
     float: right;
     line-height: 18px;
-    font-size: 17px;
+    font-size: 23px;
+    -webkit-text-stroke-width: 1px;
+    -webkit-text-stroke-color: #BDBDBD;
 }
 i.expand {
     position: absolute;
@@ -363,7 +365,7 @@ article.popup p {
     text-transform: uppercase;
 }
 .btn-test {
-    width: 250px;
+    width: 158px;
 }
 .btn-bar {
     margin: 0 0 15px 0;
@@ -770,7 +772,7 @@ h1.page-title {
     vertical-align: bottom;
     text-transform: none;
 }
-.about-page h1.page-title, .profile-page h1.page-title, .general-page h1.page-title {
+.about-page h1.page-title, .profile-page h1.page-title {
     margin-bottom: 20px;
 }
 /* standard bootstrap class */
@@ -995,7 +997,7 @@ label {
     font-weight: 300;
 }
 .configuration label:not(.onoffswitch-label) {
-    margin: 15px 0 3px 0;
+    margin: 15px 50px 3px 0;
 }
 
 input[type="text"], input[type="password"], input[type="email"] {
@@ -1193,7 +1195,7 @@ ul.title-area > li > h1 > a {
     text-indent: 0;
     display: inline-block;
     position: relative;
-    height: 62px;
+    height: 60px;
     color: #8D96A3;
 }
 #mainNav ul.nav li > i {
@@ -1202,18 +1204,19 @@ ul.title-area > li > h1 > a {
 #mainNav ul.nav li > a {
     color: #8D96A3;
     text-decoration: none;
-    line-height: 63px;
+    line-height: 60px;
     font-weight: 300;
     display: inline-block;
     width: auto;
     height: 100%;
     padding: 0 15px;
+    line-height: 60px;
     font-size: 15px;
     vertical-align: middle;
 }
 #mainNav ul.nav li > a:hover {
-    color: #b6bbc2!important /*#8D96A3*/;
-    background-color: rgba(250, 250, 250, 0.1) !important;
+    color: #697078!important /*#8D96A3*/;
+    background-color: #f0f1f1 !important;
 }
 #mainNav ul.nav li.buy > a, #mainNav ul.nav li.buy > a:hover {
     color: white !important;
@@ -1280,8 +1283,8 @@ ul.title-area > li > h1 > a {
 }
 #mainNav ul.nav li > ul li a:hover {
     text-decoration: none;
-    color: #697078;
-    background-color: #fff;
+    color: #697078!important /*#8D96A3*/;
+    background-color: #f0f1f1 !important;
 }
 article.item {
     background-color: #e5e5e5;
