@@ -48,7 +48,7 @@ class TableauAuthenticator(Authenticator):
             value = YmlEntry.get(self.environment.envid,
                                  'wgserver.authenticate',
                                  default=None)
-            if value or value.lower() != 'activedirectory':
+            if not value or value.lower() != 'activedirectory':
                 return UserProfile.verify(envid, username, password)
             auth_type = AuthType.ACTIVE_DIRECTORY
 
