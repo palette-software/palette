@@ -1,4 +1,5 @@
 include etc/*
+include etc/init.d/*
 include etc/ssl/certs/*
 include etc/ssl/private/*
 include etc/apache2/sites-available/*

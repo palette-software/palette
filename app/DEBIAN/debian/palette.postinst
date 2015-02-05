@@ -41,6 +41,15 @@ if [ -d /etc/apache2/conf.d ]; then
     ln -s -f ../conf-available/palette.conf /etc/apache2/conf.d/
 fi
 
+update-rc.d framework-postfix defaults
+service framework-postfix start
+
+update-rc.d framework-ssl defaults
+service framework-ssl start
+
+update-rc.d framework-timezone defaults
+service framework-timezone start
+
 service apache2 stop || true
 service apache2 start
 

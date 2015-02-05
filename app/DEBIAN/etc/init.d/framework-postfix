@@ -1,0 +1,80 @@
+#!/bin/sh
+#
+# framework-postfix
+
+### BEGIN INIT INFO
+# Provides: framework-postfix
+# Required-Start:
+# Required-Stop:
+# Should-Start:
+# Should-Stop:
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: Framework Postfix Configurator
+# Description: Framework Postfix Configuration
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+NAME=framework-postfix
+EXEC=/usr/lib/python2.7/dist-packages/akiri/framework/servers/utils/postfix.wsgi
+PIDFILE=/var/run/${NAME}.pid
+DAEMON=/usr/bin/daemon
+
+ACCEPTABLE=600 # minimum non-error runtime
+ATTEMPTS=5  # Number of retries after failure
+DELAY=86400 # respawn delay after all $ATTEMPTS failures (1 day)
+
+start() {
+    log_daemon_msg "Starting Palette controller" "controller"
+    $DAEMON --name=$NAME --acceptable=$ACCEPTABLE --attempts=$ATTEMPTS --delay=$DELAY --respawn --pidfile $PIDFILE $EXEC
+    RETVAL=$?
+    log_end_msg $RETVAL
+    return $RETVAL
+}
+
+stop() {
+    log_daemon_msg "Stopping Palette controller" "controller"
+    $DAEMON --name=$NAME --stop
+    RETVAL=$?
+    log_end_msg $RETVAL
+    return $RETVAL
+}
+
+restart() {
+    log_daemon_msg "Restarting Palette controller" "controller"
+    $DAEMON --name=$NAME --restart
+    RETVAL=$?
+    log_end_msg $RETVAL
+    return $RETVAL
+}
+
+status() {
+    $DAEMON --name=$NAME --running -v
+}
+
+case "$1" in
+    start)
+        $1
+        ;;
+    stop)
+        $1
+        ;;
+    status)
+        $1
+        ;;
+    restart)
+        $1
+        ;;
+    reload)
+        restart
+        ;;
+    force-reload)
+        restart
+        ;;
+    *)
+        log_action_msg "Usage: /etc/init.d/cron {start|stop|status|restart|reload|force-reload}"
+        exit 1
+        ;;
+esac
+exit $?

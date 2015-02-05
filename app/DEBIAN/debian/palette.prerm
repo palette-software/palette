@@ -13,6 +13,19 @@ case "$1" in
 	if [ -e /etc/apache2/conf.d/palette.conf ]; then
 	    rm /etc/apache2/conf.d/palette.conf
 	fi
+
+    if [ -x /etc/init.d/framework-postfix ]; then
+        /etc/init.d/framework-postfix stop
+    fi
+
+    if [ -x /etc/init.d/framework-ssl ]; then
+        /etc/init.d/framework-ssl stop
+    fi
+
+    if [ -x /etc/init.d/framework-timezone ]; then
+        /etc/init.d/framework-timezone stop
+    fi
+
     ;;
     upgrade)
         ;;
