@@ -46,6 +46,8 @@ class OpenApplication(GenericWSGIApplication):
         self.setup.mail.service_POST(req)
         self.setup.ssl.service_POST(req)
         self.setup.url.service_POST(req)
+        self.setup.tableau_url.service_POST(req)
+        self.setup.timezone.service_POST(req)
 
         res = Response()
         tkt = AuthTicket(self.secret, entry.name, req.environ['REMOTE_ADDR'])
