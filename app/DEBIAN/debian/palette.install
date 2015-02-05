@@ -3,7 +3,6 @@
 ../etc/apache2/sites-available/palette-software-ssl.conf	/etc/apache2/sites-available
 ../etc/apache2/sites-available/palette-software.conf	/etc/apache2/sites-available
 ../etc/ssl/certs/server.crt	/etc/ssl/certs
-../etc/ssl/certs/server-ca.crt	/etc/ssl/certs
 ../etc/ssl/private/server.key	/etc/ssl/private
 ../opt/palette.wsgi		/opt/palette
 ../etc/init.d/framework-postfix	/etc/init.d
