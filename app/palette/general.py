@@ -3,6 +3,7 @@ import time
 from webob import exc
 
 from akiri.framework.route import Router
+from akiri.framework.ext.sqlalchemy import meta
 
 from controller.profile import Role
 from controller.util import sizestr, extend
@@ -12,9 +13,10 @@ from controller.agent import AgentVolumesEntry
 from controller.cloud import CloudEntry
 from controller.passwd import aes_encrypt, aes_decrypt
 from controller.palapi import CommException
+from controller.credential import CredentialEntry
 
 from .option import ListOption
-from .page import PalettePage, FAKEPW
+from .page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
 from .s3 import S3Application
 from .gcs import GCSApplication
@@ -344,7 +346,7 @@ class GeneralZiplogApplication(PaletteRESTApplication):
 
         return {}
 
-class GeneralArchiveApplication(PaletteRESTApplication):
+class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
     """Handler for 'WORKBOOK ARCHIVE' section."""
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
@@ -352,26 +354,40 @@ class GeneralArchiveApplication(PaletteRESTApplication):
         scfg = SystemConfig(req.system)
 
         data = {}
-        data['archive-username'] = scfg.archive_username
-        data['archive-password'] = '*' * len(scfg.archive_password)
         data['enable-archive'] = scfg.archive_enabled
+
+        primary = self.get_cred(req.envid, self.PRIMARY_KEY)
+        secondary = self.get_cred(req.envid, self.SECONDARY_KEY)
+        if primary:
+            data['archive-username'] = primary.user
+            data['archive-password'] = primary.getpasswd()
+        elif secondary:
+            data['archive-username'] = secondary.user
+            data['archive-password'] = secondary.getpasswd()
+        else:
+            data['archive-username'] = data['archive-password'] = ''
+
         return data
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
-        print 'archive', req
         if req.POST['enable-archive'] == 'false':
             req.system.save(SystemConfig.ARCHIVE_ENABLED, 'no')
             self.commapp.send_cmd("sched delete workbook")
-        else:
+        elif req.POST['enable-archive'] == 'true':
             req.system.save(SystemConfig.ARCHIVE_ENABLED, 'yes')
             self.commapp.send_cmd("sched add 3/5 * * * * workbook")
+        else:
+            print "bad value for enable-archive:", req.POST['enable-archive']
 
-        req.system.save(SystemConfig.ARCHIVE_USERNAME,
-                             req.POST['archive-username'])
-        req.system.save(SystemConfig.ARCHIVE_PASSWORD,
-                             req.POST['archive-password'])
+        cred = self.get_cred(req.envid, self.PRIMARY_KEY)
+        if not cred:
+            cred = CredentialEntry(envid=req.envid, key=self.PRIMARY_KEY)
+            meta.Session.add(cred)
 
+        cred.user = req.POST['archive-username']
+        cred.setpasswd(req.POST['archive-password'])
+        meta.Session.commit()
         return {}
 
 
@@ -611,23 +627,8 @@ class GeneralApplication(Router):
                        GeneralArchiveApplication())
 
 
-class GeneralPage(PalettePage, CredentialMixin):
+class GeneralPage(PalettePage):
     TEMPLATE = "config/general.mako"
     active = 'general'
     expanded = True
     required_role = Role.MANAGER_ADMIN
-
-    def render(self, req, obj=None):
-        primary = self.get_cred(req.envid, self.PRIMARY_KEY)
-        if primary:
-            req.primary_user = primary.user
-            req.primary_pw = primary.embedded and FAKEPW or ''
-        else:
-            req.primary_user = req.primary_pw = ''
-        secondary = self.get_cred(req.envid, self.SECONDARY_KEY)
-        if secondary:
-            req.secondary_user = secondary.user
-            req.secondary_pw = secondary.embedded and FAKEPW or ''
-        else:
-            req.secondary_user = req.secondary_pw = ''
-        return super(GeneralPage, self).render(req, obj=obj)
