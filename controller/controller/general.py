@@ -166,7 +166,7 @@ class SystemConfig(object):
         if name == "archive_password":
             return self._getstring(self.ARCHIVE_PASSWORD, default="")
         if name == "archive_enabled":
-            return self._getyesno(self.ARCHIVE_ENABLED, default='yes')
+            return self._getyesno(self.ARCHIVE_ENABLED, default='no')
 
         if name == 'log_archive_retain_count':
             return self._getint(self.LOG_ARCHIVE_RETAIN_COUNT)
