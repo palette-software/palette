@@ -22,8 +22,6 @@ class SystemConfig(object):
     ZIPLOG_ENABLED = "ziplog-enabled"
     ZIPLOG_SCHEDULED_ENABLED = "ziplog-scheduled-enabled"
 
-    ARCHIVE_USERNAME = "archive-username"
-    ARCHIVE_PASSWORD = "archive-password"
     ARCHIVE_ENABLED = "archive-enabled"
 
     WORKBOOK_LOAD_WARN = "workbook-load-warn"
@@ -161,10 +159,6 @@ class SystemConfig(object):
             return self._getyesno(self.ZIPLOG_SCHEDULED_ENABLED,
                                   default='yes')
 
-        if name == "archive_username":
-            return self._getstring(self.ARCHIVE_USERNAME, default="")
-        if name == "archive_password":
-            return self._getstring(self.ARCHIVE_PASSWORD, default="")
         if name == "archive_enabled":
             return self._getyesno(self.ARCHIVE_ENABLED, default='no')
 
@@ -257,8 +251,6 @@ class SystemConfig(object):
             self.ZIPLOG_USER_RETAIN_COUNT: self.ziplog_user_retain_count,
             self.ZIPLOG_ENABLED: self.ziplog_enabled,
             self.ZIPLOG_SCHEDULED_ENABLED: self.ziplog_scheduled_enabled,
-            self.ARCHIVE_USERNAME: self.archive_username,
-            self.ARCHIVE_PASSWORD: self.archive_password,
             self.ARCHIVE_ENABLED: self.archive_enabled,
             self.WORKBOOK_LOAD_WARN: self.workbook_load_warn,
             self.WORKBOOK_LOAD_ERROR: self.workbook_load_error,
