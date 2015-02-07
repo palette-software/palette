@@ -185,9 +185,9 @@ class SystemConfig(object):
         if name == 'alerts_enabled':
             return self._getyesno(self.ALERTS_ENABLED)
         if name == 'alerts_admin_enabled':
-            return self._getyesno(self.ALERTS_ADMIN_ENABLED)
+            return self._getyesno(self.ALERTS_ADMIN_ENABLED, default='no')
         if name == 'alerts_publisher_enabled':
-            return self._getyesno(self.ALERTS_PUBLISHER_ENABLED)
+            return self._getyesno(self.ALERTS_PUBLISHER_ENABLED, default='no')
         if name == 'upgrading':
             return self._getyesno(self.UPGRADING)
 
@@ -211,8 +211,8 @@ class SystemConfig(object):
             return self._getstring(self.FROM_EMAIL,
                         default="Palette Alerts <alerts@palette-software.com>")
         if name == 'mail_server_type':
-            # 1 = No mail server
-            return self._getstring(self.MAIL_SERVER_TYPE, default='1')
+            # 3 = No mail server
+            return self._getstring(self.MAIL_SERVER_TYPE, default='3')
         if name == 'mail_domain':
             return self._getstring(self.MAIL_DOMAIN, default="")
         if name == 'mail_enable_tls':

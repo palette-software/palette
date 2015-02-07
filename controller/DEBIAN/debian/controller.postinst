@@ -29,8 +29,19 @@ fi
 if [ "$oldversion" = "1.0.1" ]; then
     echo Upgrading from 1.0.1 ...
     psql paldb << XYZZY
-    alter table cron add column enabled boolean default True;
-    alter table notifications add column description varchar;
+    drop table cron;
+    drop table event_control;
+    drop table notifications;
+
+    alter table domain add column systemid character varying;
+    alter table domain add expiration_time timestamp;
+    alter table domain add contact_time timestamp;
+    alter table domain add contact_failures integer;
+    alter table domain add trial boolean;
+
+    alter table license add column cores integer;
+    alter table license add column license_type character varying;
+    update license set license_type='Named-user';
 XYZZY
 
     update-rc.d controller defaults
