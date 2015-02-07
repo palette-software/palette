@@ -147,11 +147,6 @@
 },
 {
 "envid":"1",
-"key":"server-url",
-"value":"localhost"
-},
-{
-"envid":"1",
 "key":"state",
 "value":"DISCONNECTED"
 }
