@@ -1,6 +1,7 @@
 import sys
 from webob import exc
 from pytz import common_timezones as timezones
+from urlparse import urlparse
 
 from akiri.framework.api import Page
 from akiri.framework.proxy import JSONProxy
@@ -90,17 +91,22 @@ class SetupURLApplication(BaseSetupApplication):
         # pylint: disable=unused-argument
         scfg = SystemConfig(req.system)
 
-        # FIXME (later): allow non-443 ports?
-        if scfg.server_url == 'localhost':
-            req.system.save(SystemConfig.SERVER_URL, req.environ['HTTP_HOST'])
+        url = scfg.server_url
 
-        return {'server-url': scfg.server_url}
+        # FIXME (later): allow non-443 ports?
+        if url == 'https://localhost':
+            url = 'https://' + req.environ['HTTP_HOST']
+            req.system.save(SystemConfig.SERVER_URL, url)
+
+        return {'server-url': url}
 
     # FIXME: move to initial
     @required_parameters('server-url')
     def service_POST(self, req):
         url = req.params_get('server-url')
         print 'url = ', url
+        result = urlparse(url)
+        url = 'https://%s' % result.netloc
         req.system.save(SystemConfig.SERVER_URL, url)
         return {'server-url': url}
 
@@ -184,7 +190,6 @@ class SetupMailApplication(JSONProxy, PaletteRESTApplication):
         scfg = SystemConfig(req.system)
 
         mail_server_type = scfg.mail_server_type
-        print 'mail server type:', mail_server_type
 
         if mail_server_type == str(MailServerType.DIRECT):
             mst = MailServerType(MailServerType.DIRECT)

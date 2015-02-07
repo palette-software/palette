@@ -226,7 +226,7 @@ class SystemConfig(object):
         if name == 'mail_password':
             return self._getstring(self.MAIL_PASSWORD, default="")
         if name == 'server_url':
-            return self._getstring(self.SERVER_URL, default='localhost')
+            return self._getstring(self.SERVER_URL, default='https://localhost')
         if name == 'tableau_server_url':
             return self._getstring(self.TABLEAU_SERVER_URL, default='')
         if name == "authentication_type":
