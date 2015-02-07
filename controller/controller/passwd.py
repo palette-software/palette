@@ -37,10 +37,8 @@ def genaeskey():
 
 def aeskey():
     if not os.path.isfile(aes_key_file):
-        print 'returning new key from', aes_key_file
         return genaeskey()
     with open(aes_key_file, 'r') as f:
-        print 'returning old key from', aes_key_file
         key = f.read(AES_KEY_BYTES)
     return key
 
