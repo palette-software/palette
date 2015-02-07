@@ -183,7 +183,9 @@ class SetupMailApplication(JSONProxy, PaletteRESTApplication):
         # pylint: disable=bad-builtin
         scfg = SystemConfig(req.system)
 
-        mail_server_type = req.system.get(scfg.MAIL_SERVER_TYPE, default=None)
+        mail_server_type = scfg.mail_server_type
+        print 'mail server type:', mail_server_type
+
         if mail_server_type == str(MailServerType.DIRECT):
             mst = MailServerType(MailServerType.DIRECT)
         elif mail_server_type == str(MailServerType.RELAY):

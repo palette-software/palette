@@ -12,6 +12,7 @@ import exc
 
 import httplib
 import ntpath
+import uuid as uuidbuild
 
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -28,7 +29,9 @@ from agent import Agent, AgentVolumesEntry
 from alert_email import AlertEmail
 from auth import AuthManager
 from cli_cmd import CliCmd
+from cloud import CloudEntry
 from config import Config
+from passwd import aes_encrypt
 from credential import CredentialEntry, CredentialManager
 from diskcheck import DiskCheck, DiskException
 from datasources import DataSource
@@ -1275,11 +1278,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.event_control.gen(EventControl.CONTROLLER_STARTED, body)
 
         if self.version == last_version:
-            return
+            return last_version, self.version
 
         self.system.save(SystemConfig.PALETTE_VERSION, self.version)
 
         self.event_control.gen(EventControl.PALETTE_UPDATED, body)
+
+        return last_version, self.version
 
     def httperror(self, res, error='HTTP failure',
                   displayname=None, method='GET', uri=None, body=None):
@@ -1431,6 +1436,41 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.statusmon.remove_all_status()
             session.commit()
 
+    def upgrade_version(self, last_version, new_version):
+        """Make changes to the database, etc. as required for upgrading
+           from last_version to new_version."""
+
+        self.log.debug("Upgrade from %s to %s", last_version, new_version)
+
+        last_version = '1.0.1'
+
+        if last_version == new_version:
+            return
+
+        if last_version != '1.0.1':
+            return
+
+        entry = CloudEntry.get_by_envid_type(self.environment.envid, "s3")
+        if not entry:
+            return
+
+        try:
+            _ = int(entry.secret, 16)
+        except ValueError:
+            # The secret wasn't a hex digest, so we need to convert it to one.
+            entry.secret = aes_encrypt(entry.secret)
+            meta.Session.commit()
+
+        entry = Domain.getone()
+        if not entry.systemid:
+            entry.systemid = str(uuidbuild.uuid1())
+            meta.Session.commit()
+
+        # Set default mail server type to direct.
+        # We do this to match the UI configuration with the configuration
+        # of current installations.
+        self.system.save(SystemConfig.MAIL_SERVER_TYPE, '1')
+
 import logging
 
 class StreamLogger(object):
@@ -1562,7 +1602,7 @@ def main():
 
     server.version = version()
     # Send controller started and potentially "new version" events.
-    server.controller_init_events()
+    old_version, new_version = server.controller_init_events()
 
     server.upgrade_rwlock = RWLock()
 
@@ -1578,6 +1618,8 @@ def main():
 
     server.ports = PortManager(server)
     server.ports.populate()
+
+    server.upgrade_version(old_version, new_version)
 
     clicmdclass = CliCmd(server)
     server.cli_cmd = clicmdclass.cli_cmd
