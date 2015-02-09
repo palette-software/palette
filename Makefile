@@ -69,5 +69,5 @@ clean:
 .PHONY: clean
 
 build-setup:
-	sudo apt-get install -y debhelper reprepro python-setuptools pylint python-passlib python-pytz
+	sudo apt-get install -y debhelper reprepro python-setuptools pylint python-passlib python-tz
 .PHONY: build-setup
