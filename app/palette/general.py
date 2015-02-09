@@ -37,7 +37,6 @@ class GeneralS3Application(PaletteRESTApplication, S3Application):
     @required_role(Role.MANAGER_ADMIN)
     @required_parameters('access-key', 'secret-key', 'url')
     def save(self, req):
-        print req.POST
         return self.cloud_save(req)
 
     @required_role(Role.MANAGER_ADMIN)
@@ -53,7 +52,6 @@ class GeneralS3Application(PaletteRESTApplication, S3Application):
         return {'status': 'OK'}
 
     def remove(self, req):
-        print req.POST
         return self.cloud_remove(req)
 
     @required_role(Role.MANAGER_ADMIN)
@@ -83,7 +81,6 @@ class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
     @required_role(Role.MANAGER_ADMIN)
     @required_parameters('access-key', 'secret-key', 'url')
     def save(self, req):
-        print req.POST
         return self.cloud_save(req)
 
     @required_role(Role.MANAGER_ADMIN)
@@ -100,7 +97,6 @@ class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
 
     @required_role(Role.MANAGER_ADMIN)
     def remove(self, req):
-        print req.POST
         return self.cloud_remove(req)
 
     @required_role(Role.MANAGER_ADMIN)
@@ -112,7 +108,6 @@ class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
         if action == 'test':
             return self.test(req)
         if action == 'remove':
-            print 'remove'
             return self.remove(req)
         raise exc.HTTPBadRequest(req)
 
@@ -175,8 +170,6 @@ class GeneralLocalApplication(PaletteRESTApplication):
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         # pylint: disable=unused-argument
-        print 'post', req
-
         value = req.POST['storage-destination']
         parts = value.split(':')
         if len(parts) != 2:
@@ -213,7 +206,6 @@ class _GeneralStorageApplication(PaletteRESTApplication):
         extend(data, self.local.service_GET(req))
         extend(data, self.s3.service_GET(req))
         extend(data, self.gcs.service_GET(req))
-        print "storage data:", data
         return data
 
 
@@ -266,7 +258,6 @@ class GeneralBackupApplication(PaletteRESTApplication):
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
-        print 'backup', req
         if 'scheduled-backups' in req.POST:
             if req.POST['scheduled-backups'] == 'false':
                 req.system.save(SystemConfig.BACKUP_SCHEDULED_ENABLED, 'no')
@@ -285,7 +276,6 @@ class EmailAlertApplication(PaletteRESTApplication):
     """Handler for the 'EMAIL ALERTS' section."""
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
-        print 'alert GET', req
         scfg = SystemConfig(req.system)
         data = {}
         data['alert-admins'] = scfg.alerts_admin_enabled
@@ -294,7 +284,6 @@ class EmailAlertApplication(PaletteRESTApplication):
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
-        print 'alert POST', req
 
         if req.POST['alert-publishers'] == 'false':
             req.system.save(SystemConfig.ALERTS_PUBLISHER_ENABLED, 'no')

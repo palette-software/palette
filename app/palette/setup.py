@@ -104,7 +104,6 @@ class SetupURLApplication(BaseSetupApplication):
     @required_parameters('server-url')
     def service_POST(self, req):
         url = req.params_get('server-url')
-        print 'url = ', url
         result = urlparse(url)
         url = 'https://%s' % result.netloc
         req.system.save(SystemConfig.SERVER_URL, url)
@@ -121,9 +120,7 @@ class SetupTableauURLApplication(BaseSetupApplication):
     # FIXME: move to initial
     @required_parameters('tableau-server-url')
     def service_POST(self, req):
-        print 'set tableau url'
         url = req.params_get('tableau-server-url')
-        print 'tableau server url = ', url
         req.system.save(SystemConfig.TABLEAU_SERVER_URL, url)
         return {'tableau-server-url': url}
 
@@ -156,7 +153,6 @@ class SetupMailApplication(JSONProxy, PaletteRESTApplication):
         PaletteRESTApplication.__init__(self)
 
     def postprocess(self, req, data):
-        print 'in mail post process, data:', data
         if 'error' in data:
             return data
 
@@ -225,10 +221,7 @@ class SetupMailApplication(JSONProxy, PaletteRESTApplication):
     @required_parameters('action', 'mail-server-type')
     def service_POST(self, req, initial_page=False):
         # Validation of POST data is done by the service.
-        print 'got to mail----------------post = ', req.POST
-        print "initial_page = ", initial_page
         action = req.params_get('action')
-        print 'action = ', action
         if action == 'test':
             # Sanity check
             test_email_recipient = req.params_get('test-email-recipient').\
@@ -241,7 +234,6 @@ class SetupMailApplication(JSONProxy, PaletteRESTApplication):
             # If 'Test Email' from the initial page, we have to
             # configure postfix and save the config to the system table.
             data = super(SetupMailApplication, self).service(req)
-            print 'after super, data:', data
             if 'error' in data:
                 return data
 
@@ -267,7 +259,6 @@ class SetupMailApplication(JSONProxy, PaletteRESTApplication):
 class SetupMailTestApplication(BaseSetupApplication):
 
     def service_POST(self, req):
-        print 'here'
         test_email_recipient = req.params_get('test-email-recipient').strip()
         # Sanity check
         if test_email_recipient.count(' ') or \
@@ -301,7 +292,7 @@ class SetupSSLApplication(JSONProxy):
         return {}
 
     def service_POST(self, req):
-        dump(req)
+#        dump(req)
         # Validation of required parameters is done by the service
         return super(SetupSSLApplication, self).service(req)
 
@@ -318,7 +309,6 @@ class SetupTimezoneApplication(JSONProxy):
         return super(SetupTimezoneApplication, self).super(req)
 
     def postprocess(self, req, data):
-        print 'after timezone service:', data
         if 'error' in data:
             return data
 
@@ -340,7 +330,6 @@ class SetupTimezoneApplication(JSONProxy):
         return data
 
     def service_POST(self, req):
-        dump(req)
         if req.params['timezone'] is None:
             raise exc.HTTPBadRequest()
         return super(SetupTimezoneApplication, self).service(req)
@@ -363,7 +352,6 @@ class SetupAuthApplication(BaseSetupApplication):
         return data
 
     def service_POST(self, req):
-        dump(req)
         authtype = req.params_getint('authentication-type')
         if authtype == None:
             raise exc.HTTPBadRequest()

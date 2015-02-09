@@ -61,7 +61,6 @@ class OpenApplication(GenericWSGIApplication):
     @required_parameters('action')
     def service_POST(self, req):
         action = req.params['action']
-        print 'init req:', req.POST, 'action:', action
         if action == 'save':
             return self.service_save(req)
         if action == 'test':
