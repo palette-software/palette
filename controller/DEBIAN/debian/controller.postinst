@@ -9,6 +9,9 @@ then
       exit 1
 fi
 
+rm -f /etc/ssl/private/ssl-cert-palette-software.key
+rm -f /etc/ssl/certs/star_palette-software_com.crt
+
 if [ "$oldversion" = "1.0.0" ]; then
     echo Upgrading from 1.0.0 ...
     psql paldb << XYZZY
