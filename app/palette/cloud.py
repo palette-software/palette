@@ -49,7 +49,7 @@ class CloudApplication(object):
         if cloudid is None:
             return {}
         entry = CloudEntry.get_by_envid_cloudid(req.envid, cloudid)
-        print "entry:", self._todict(entry)
+#        print "entry:", self._todict(entry)
         return self._todict(entry)
 
     # Not used yet.  Will be used when multiple cloud names for
