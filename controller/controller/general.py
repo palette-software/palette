@@ -208,8 +208,7 @@ class SystemConfig(object):
         if name == 'gcs_id':
             return self._getint(GCS_ID, default=0)
         if name == 'from_email':
-            return self._getstring(self.FROM_EMAIL,
-                        default="Palette Alerts <alerts@palette-software.com>")
+            return self._getstring(self.FROM_EMAIL, default="")
         if name == 'mail_server_type':
             # 3 = No mail server
             return self._getstring(self.MAIL_SERVER_TYPE, default='3')
