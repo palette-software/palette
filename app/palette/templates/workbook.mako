@@ -47,7 +47,12 @@
             <span class="label">Site</span>{{site}} and <span class="label">Project</span>{{project}}
           </div>
           <div>
+            {{#url}}
             <a href="{{url}}">rev{{current-revision}} {{last-updated-at}}</a>
+            {{/url}}
+            {{^url}}
+            rev{{current-revision}} {{last-updated-at}}
+            {{/url}}
           </div>
         </div>
       </div>
