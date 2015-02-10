@@ -293,6 +293,9 @@ class SetupSSLApplication(JSONProxy):
 
     def service_POST(self, req):
 #        dump(req)
+        if req.POST['enable-ssl'] == 'false':
+            return {'status': 'OK'}
+
         # Validation of required parameters is done by the service
         return super(SetupSSLApplication, self).service(req)
 
