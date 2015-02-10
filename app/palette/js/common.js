@@ -89,8 +89,8 @@ function ($, topic, template, items, paging)
      */
     function validURL(url) {
         // var regex = /^(([a-zA-Z0-9-\.])+\.)([a-zA-Z0-9]{2,4})+$/;
-        var regex = /^\S+$/;
-        return regex.test(url);
+        var regex = /^http:\/\/\S+$|^https:\/\/\S+$/;
+        return regex.test(url.toLowerCase());
     }
 
     /*
