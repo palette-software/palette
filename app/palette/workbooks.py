@@ -296,7 +296,8 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
                 data['last-updated-by'] = current['username']
                 data['last-updated-at'] = current['timestamp']
                 data['current-revision'] = current['revision']
-                data['url'] = current['url']
+                if 'url' in current and current['url']:
+                    data['url'] = current['url']
 
             if entry.site_id in sites:
                 data['site'] = sites[entry.site_id].name
