@@ -7,6 +7,7 @@ function ($, _, configure, common, Dropdown, OnOff)
                                 'cpu-load-error', 'cpu-period-error',
                                 'http-load-warn', 'http-load-error'];
 
+    var storageLocation = null;
     var localData = null;
     var s3Data = null;
     var gcsData = null;
@@ -23,6 +24,8 @@ function ($, _, configure, common, Dropdown, OnOff)
     function changeStorageLocation(value) {
         $('#s3, #gcs, #local').addClass('hidden');
         $('#' + value).removeClass('hidden');
+        validate();
+        storageLocation = value;
     }
 
     /*
@@ -31,9 +34,7 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function getData(name)
     {
-        var location = $('input:radio[name="storage-type"]:checked').val();
         return {
-            'storage-location': location,
             'access-key': $('#'+name+'-access-key').val(),
             'secret-key': $('#'+name+'-secret-key').val(),
             'url': $('#'+name+'-url').val()
@@ -209,7 +210,8 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function maySave(data, storedData)
     {
-        if (_.isEqual(data, storedData)) {
+        var location = $('input:radio[name="storage-type"]:checked').val();
+        if (_.isEqual(data, storedData) && location == storageLocation) {
             return false;
         }
         if (data['access-key'].length == 0) {
@@ -285,11 +287,12 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function getLocalData() {
         try {
+            // FIXME
             var destination = Dropdown.getValueById('storage-destination');
         } catch (e) {
             destination = null;
         }
-        return {'storage-destination': destination};
+        return {'storage-destination': destination}
     }
 
     /*
@@ -331,10 +334,23 @@ function ($, _, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * maySaveCancelLocal()
+     * maySaveLocal()
+     * Return true if the 'My Machine' section or storage location has changed.
+     */
+    function maySaveLocal(data)
+    {
+        var location = $('input:radio[name="storage-type"]:checked').val();
+        if (location != storageLocation) {
+            return true;
+        }
+        return !_.isEqual(data, localData);
+    }
+
+    /*
+     * mayCancelLocal()
      * Return true if the 'My Machine' section has changed.
      */
-    function maySaveCancelLocal(data)
+    function mayCancelLocal(data)
     {
         return !_.isEqual(data, localData);
     }
@@ -779,7 +795,7 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function validate() {
         configure.validateSection('local', getLocalData,
-                                  maySaveCancelLocal, maySaveCancelLocal);
+                                  maySaveLocal, mayCancelLocal);
         validateS3orGCS('s3', s3Data);
         validateS3orGCS('gcs', gcsData);
         configure.validateSection('email-alerts', getEmailAlertData,
@@ -808,7 +824,6 @@ function ($, _, configure, common, Dropdown, OnOff)
             changeStorageLocation($(this).val());
         });
         $('#storage-'+data['storage-type']).prop('checked', true);
-        changeStorageLocation(data['storage-type']);
 
         /* My Machine */
         setLocalData(data);
@@ -868,6 +883,7 @@ function ($, _, configure, common, Dropdown, OnOff)
 
         configure.setInputCallback(validate);
         /* implicitly calls validate() */
+        changeStorageLocation(data['storage-type']);
         changeWorkbooks(workbookData['enable-archive']);
 
         /* help */
