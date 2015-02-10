@@ -2,6 +2,7 @@ require(['jquery', 'configure', 'common', 'Dropdown', 'OnOff', 'bootstrap'],
 function ($, configure, common, Dropdown, OnOff)
 {
     var LICENSE_TIMEOUT = 1000; // 1 sec;
+    var setupDone = false;
 
     /*
      * inputValid()
@@ -105,6 +106,9 @@ function ($, configure, common, Dropdown, OnOff)
      * Test input and return true/false.
      */
     function maySave(data) {
+        if (!setupDone) {
+            return false;
+        }
         if (!common.validURL(data['server-url'])) {
             return false;
         }
@@ -194,6 +198,8 @@ function ($, configure, common, Dropdown, OnOff)
         configure.lightbox(236543, 'Server SSL Certificate');
         configure.lightbox(236544, 'Authentication');
         configure.lightbox(237785, 'Timezone');
+
+        setupDone = true;
     }
 
     /*
@@ -225,6 +231,8 @@ function ($, configure, common, Dropdown, OnOff)
                 setup(data);
             });
         },
-        error: common.ajaxError,
+        error: function (jqXHR, textStatus, errorThrown) {
+            /* FIXME: do something... */
+        }
     });
 });
