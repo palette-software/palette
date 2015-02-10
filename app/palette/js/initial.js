@@ -60,6 +60,10 @@ function ($, configure, common, Dropdown, OnOff)
      * Callback for the 'Test Email' button.
      */
     function testMail() {
+        $('#mail-test-message').html("");
+        $('#mail-test-message').addClass('hidden');
+        $('#mail-test-message').removeClass('green red');
+
         var data = {'action': 'test'}
         $.extend(data, configure.gatherMailData());
         data['test-email-recipient'] = $('#test-email-recipient').val();
