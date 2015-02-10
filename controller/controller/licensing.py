@@ -227,7 +227,7 @@ class LicenseManager(Manager):
                one()
 
         except NoResultFound:
-            print "No primary agents ever connected."
+#            print "No primary agents ever connected."
             return data
 
         entry = LicenseEntry.get_by_agentid(agent.agentid)
@@ -351,8 +351,8 @@ class LicenseManager(Manager):
             return
 
         if entry.contact_time:
-            print "contact_time:", entry.contact_time
-            print "timestamp thing:", datetime.datetime.now()
+#            print "contact_time:", entry.contact_time
+#            print "timestamp thing:", datetime.datetime.now()
             silence_time = (datetime.datetime.now() - \
                             entry.contact_time).total_seconds()
             if silence_time <= self.MAX_SILENCE_TIME:
