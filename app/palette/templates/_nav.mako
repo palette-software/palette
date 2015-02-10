@@ -27,6 +27,11 @@
               About Palette
             </a>
           </li>
+	  <li>
+            <a href="http://www.palette-software.com/agent">
+	      Download Palette Agent
+	    </a>
+          </li>
         </ul>
       </li>
 
