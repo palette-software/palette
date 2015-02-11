@@ -68,11 +68,14 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
             entry = LicenseEntry(agentid=agentid)
             session.add(entry)
 
-        entry.interactors = interactors
-        entry.viewers = viewers
-        entry.cores = cores
+        if interactors and interactors.isdigit():
+            entry.interactors = int(interactors)
+        if viewers and viewers.isdigit():
+            entry.viewers = int(viewers)
+        if cores and cores.isdigit():
+            entry.cores = cores
 
-        if cores:
+        if entry.cores:
             entry.license_type = LicenseEntry.LICENSE_TYPE_CORE
         elif entry.interactors or entry.viewers:
             entry.license_type = LicenseEntry.LICENSE_TYPE_NAMED_USER
@@ -115,8 +118,10 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
                 return False
         elif self.license_type == LicenseEntry.LICENSE_TYPE_NAMED_USER:
             if self.interactors or self.viewers:
+                print 'valid returning true', self.interactors, self.viewers
                 return True
             else:
+                print 'valid returning false'
                 return False
         elif self.license_type is None:
             # License hasn't been retrieved yet: OK unless proved otherwise.
@@ -143,6 +148,7 @@ class LicenseManager(Manager):
 
     def check(self, agent):
         server = self.server
+
         body = server.cli_cmd('tabadmin license', agent, timeout=60*10)
 
         if not 'exit-status' in body or body['exit-status'] != 0:
@@ -177,6 +183,14 @@ class LicenseManager(Manager):
                 session.commit()
             return server.error("License invalid on '%s': %s" % \
                                 (agent.displayname, msg))
+
+        if entry.notified:
+            # License was invalid, but is now valid.
+            # There is no event for this, but remember that the license
+            # is valid so if it becomes invalid again, the user will get
+            # an event.
+            entry.notified = False
+            session.commit()
 
         return license_data
 
