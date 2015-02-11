@@ -118,10 +118,8 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
                 return False
         elif self.license_type == LicenseEntry.LICENSE_TYPE_NAMED_USER:
             if self.interactors or self.viewers:
-                print 'valid returning true', self.interactors, self.viewers
                 return True
             else:
-                print 'valid returning false'
                 return False
         elif self.license_type is None:
             # License hasn't been retrieved yet: OK unless proved otherwise.
