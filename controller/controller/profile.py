@@ -94,6 +94,7 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
 
     defaults = [{'userid':0, 'envid':1, 'name':PALETTE_DEFAULT_NAME,
                  'friendly_name':PALETTE_DEFAULT_FRIENDLY_NAME,
+                 'email_level':1,
                  'email':None, 'salt':'', 'roleid':3, # SUPER_ADMIN
                  'system_user_id':0}]
 
