@@ -88,6 +88,7 @@ class AuthManager(Manager):
             entry = UserProfile.get_by_name(envid, name)
             if not entry:
                 entry = UserProfile(envid=envid, name=name)
+                entry.email_level = 0   # disable email by default
                 session.add(entry)
 
             entry.email = row[1]
