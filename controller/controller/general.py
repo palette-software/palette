@@ -152,9 +152,9 @@ class SystemConfig(object):
             return self._getyesno(self.BACKUP_SCHEDULED_ENABLED, default='yes')
 
         if name == "ziplog_auto_retain_count":
-            return self._getint(self.ZIPLOG_AUTO_RETAIN_COUNT, default=10)
+            return self._getint(self.ZIPLOG_AUTO_RETAIN_COUNT, default=1)
         if name == "ziplog_user_retain_count":
-            return self._getint(self.ZIPLOG_USER_RETAIN_COUNT, default=5)
+            return self._getint(self.ZIPLOG_USER_RETAIN_COUNT, default=1)
         if name == "ziplog_scheduled_enabled":
             return self._getyesno(self.ZIPLOG_SCHEDULED_ENABLED,
                                   default='yes')

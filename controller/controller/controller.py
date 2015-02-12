@@ -215,13 +215,19 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def rotate_ziplogs(self):
         """Rotate/delete old ziplog files."""
-        st_config = SystemConfig(self.system)
-        find_method = self.files.all_by_type
-        find_name = ""
         file_type = FileManager.FILE_TYPE_ZIPLOG
+        st_config = SystemConfig(self.system)
+        find_method = self.files.find_by_auto_envid
+        find_name = "scheduled"
 
-        info = self.file_rotate(st_config.log_archive_retain_count,
+        info = self.file_rotate(st_config.ziplog_auto_retain_count,
                                 find_method, find_name, file_type)
+
+        find_method = self.files.find_by_non_auto_envid
+        find_name = "user generated"
+
+        info += self.file_rotate(st_config.ziplog_user_retain_count,
+                                 find_method, find_name, file_type)
 
         return info
 
@@ -1442,14 +1448,35 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         self.log.debug("Upgrade from %s to %s", last_version, new_version)
 
-        last_version = '1.0.1'
-
         if last_version == new_version:
             return
 
         if last_version != '1.0.1':
             return
 
+        entry = Domain.getone()
+        if not entry.systemid:
+            entry.systemid = str(uuidbuild.uuid1())
+            meta.Session.commit()
+
+        # Set default mail server type to direct.
+        # We do this to match the UI configuration with the configuration
+        # of current installations.
+        self.system.save(SystemConfig.MAIL_SERVER_TYPE, '1')
+
+        # Migrate/copy system table entry from "log-archive-retain-count"
+        # to both:
+        #   ZIPLOG_AUTO_RETAIN_COUNT
+        #   ZIPLOG_USER_RETAIN_COUNT
+        ziplog_retain_count = self.system.get(
+                                        SystemConfig.LOG_ARCHIVE_RETAIN_COUNT)
+        self.system.save(SystemConfig.ZIPLOG_AUTO_RETAIN_COUNT,
+                         ziplog_retain_count)
+
+        self.system.save(SystemConfig.ZIPLOG_USER_RETAIN_COUNT,
+                         ziplog_retain_count)
+
+        # The rest is for the s3 cloud entry.
         entry = CloudEntry.get_by_envid_type(self.environment.envid, "s3")
         if not entry:
             return
@@ -1461,15 +1488,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             entry.secret = aes_encrypt(entry.secret)
             meta.Session.commit()
 
-        entry = Domain.getone()
-        if not entry.systemid:
-            entry.systemid = str(uuidbuild.uuid1())
-            meta.Session.commit()
-
-        # Set default mail server type to direct.
-        # We do this to match the UI configuration with the configuration
-        # of current installations.
-        self.system.save(SystemConfig.MAIL_SERVER_TYPE, '1')
 
 import logging
 
