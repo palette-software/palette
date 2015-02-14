@@ -300,22 +300,18 @@ class LicenseManager(Manager):
             self._callfailed(ex.reason, ex.status)
             return {"error": str(ex)}
 
-        # FIXME: Use real reply
-        body['trial'] = True
-        body['expiration'] = "2015-02-28 00:00:00"
-
         if not 'trial' in body:
             self.server.log.debug('no trial value in reply: %s', str(body))
             self._callfailed("Invalid reply from license server")
             return {"error": "Invalid reply from license server"}
 
-        if not 'expiration' in body:
+        if not 'expiration-time' in body:
             self.server.log.debug("No expiration value in reply: %s", str(body))
             self._callfailed("License reply invalid")
             return {"error": "License reply invalid: " + str(body)}
 
         entry.trial = body['trial']
-        entry.expiration_time = body['expiration']
+        entry.expiration_time = body['expiration-time']
         meta.Session.commit()
 
         self._callok()
