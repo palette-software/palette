@@ -2,9 +2,7 @@ from sqlalchemy import Column, Integer, BigInteger, String, DateTime, Boolean
 from sqlalchemy import Index, func
 from sqlalchemy.schema import ForeignKey
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from mixin import BaseMixin, BaseDictMixin
 from util import utctotimestamp

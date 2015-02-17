@@ -4,9 +4,7 @@ from sqlalchemy import Column, BigInteger, Float, DateTime, func
 
 from sqlalchemy.schema import ForeignKey
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from event_control import EventControl
 from general import SystemConfig
@@ -55,7 +53,7 @@ class MetricManager(object):
                 "WHERE creation_time < NOW() - INTERVAL '%d DAYS'") % \
                 (metric_save_days)
 
-        connection = meta.engine.connect()
+        connection = meta.get_connection()
         result = connection.execute(stmt)
         connection.close()
 
@@ -75,7 +73,7 @@ class MetricManager(object):
         except ValueError as ex:
             return {'error': str(ex)}
 
-        connection = meta.engine.connect()
+        connection = meta.get_connection()
 
         results = []
 

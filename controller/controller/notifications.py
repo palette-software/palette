@@ -2,9 +2,7 @@ from sqlalchemy import Column, BigInteger, DateTime, String, func
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.schema import ForeignKey
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 class NotificationEntry(meta.Base):
     # pylint: disable=no-init

@@ -15,11 +15,7 @@ import ntpath
 import uuid as uuidbuild
 
 import sqlalchemy
-from sqlalchemy.orm import sessionmaker, scoped_session
-
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 # These are need for create_all().
 # FIXME: these should logically go in __init__.py.
@@ -1565,12 +1561,9 @@ def main():
 
     # engine is once per single application process.
     # see http://docs.sqlalchemy.org/en/rel_0_9/core/connections.html
-    meta.engine = sqlalchemy.create_engine(url, echo=echo,
-                                           max_overflow=max_overflow)
-    # Create the table definition ONCE, before all the other threads start.
-    meta.Base.metadata.create_all(bind=meta.engine)
-    meta.Session = scoped_session(sessionmaker(bind=meta.engine,
-                                   autoflush=False, expire_on_commit=False))
+    meta.create_engine(url, echo=echo, max_overflow=max_overflow)
+    meta.Session.autoflush = False
+    meta.Session.expire_on_commit = False
 
     server = Controller((host, port), CliHandler)
     server.config = config

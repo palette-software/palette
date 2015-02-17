@@ -1,8 +1,7 @@
 from datetime import datetime
 from sqlalchemy import not_
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+
+import akiri.framework.sqlalchemy as meta
 
 from manager import Manager, synchronized
 from profile import UserProfile, Publisher, License

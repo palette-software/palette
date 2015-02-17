@@ -10,9 +10,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from util import traceback_string
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from state import StateManager
 from agentmanager import AgentManager

@@ -9,6 +9,13 @@ import traceback
 import exc
 import httplib
 
+from sqlalchemy import func, or_
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.orm.session import make_transient
+
+import akiri.framework.sqlalchemy as meta
+
 from agent import Agent, AgentVolumesEntry
 from diskcheck import DiskCheck, DiskException
 from state import StateManager
@@ -18,16 +25,6 @@ from odbc import ODBC
 from filemanager import FileManager
 from general import SystemConfig
 from util import sizestr, is_ip, traceback_string, failed
-
-from sqlalchemy import func, or_
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.exc import InvalidRequestError
-from sqlalchemy.orm.session import make_transient
-#from sqlalchemy.inspection import inspect
-
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
 
 def protected(f):
     """Decorater."""

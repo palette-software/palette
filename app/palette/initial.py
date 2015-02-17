@@ -2,10 +2,7 @@ from webob import exc, Response
 from paste.auth.auth_tkt import AuthTicket
 
 from akiri.framework import GenericWSGIApplication
-
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from controller.profile import UserProfile
 

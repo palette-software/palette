@@ -5,9 +5,7 @@ from sqlalchemy import Column, String, DateTime, Integer, BigInteger
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.schema import ForeignKey
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from cache import TableauCacheManager
 from manager import synchronized

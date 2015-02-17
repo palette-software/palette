@@ -1,9 +1,7 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from webob import exc
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from controller.cloud import CloudEntry
 from controller.general import SystemConfig
@@ -107,5 +105,5 @@ class CloudApplication(object):
         # pylint: disable=invalid-name
         # 'action' is just sanity check, its not used.
         req.system.delete(self.KEY)
-        meta.Session().commit()
+        meta.Session.commit()
         return {}

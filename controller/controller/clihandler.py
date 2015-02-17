@@ -11,9 +11,7 @@ import subprocess
 import sqlalchemy
 from sqlalchemy.orm.session import make_transient
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from agent import Agent
 from agentmanager import AgentManager

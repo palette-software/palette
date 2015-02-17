@@ -3,9 +3,7 @@ import re
 from sqlalchemy import Column, String, Integer, BigInteger, DateTime
 from sqlalchemy import func
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from mixin import BaseMixin
 

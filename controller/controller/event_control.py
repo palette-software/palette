@@ -9,9 +9,7 @@ import mako.runtime
 from sqlalchemy import Column, BigInteger, String, Boolean
 from sqlalchemy.orm.exc import NoResultFound
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from event import EventEntry
 from general import SystemConfig
@@ -240,7 +238,7 @@ class EventControlManager(Manager):
 
     def get_event_control_entry(self, key):
         try:
-            entry = meta.Session.query(EventControl).\
+            entry = meta.DBSession.query(EventControl).\
                 filter(EventControl.key == key).one()
         except NoResultFound:
             return None
@@ -365,8 +363,10 @@ class EventControlManager(Manager):
 
         # Create the row to get the eventid before doing subject/description
         # substitution.
-        session = meta.Session()
+        session = meta.DBSession()
         entry = EventEntry(complete=False, key='incomplete')
+        # set the timestamp here in case it has tzinfo.
+        entry.timestamp = timestamp
         session.add(entry)
         session.commit()
 
@@ -421,7 +421,7 @@ class EventControlManager(Manager):
         entry.summary = summary
         entry.userid = userid
         entry.site_id = site_id
-        entry.timestamp = timestamp
+        #entry.timestamp = timestamp
 
         session.merge(entry)
         session.commit()

@@ -3,7 +3,7 @@ import time
 from webob import exc
 
 from akiri.framework.route import Router
-from akiri.framework.ext.sqlalchemy import meta
+import akiri.framework.sqlalchemy as meta
 
 from controller.profile import Role
 from controller.util import sizestr, extend

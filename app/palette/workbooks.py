@@ -5,10 +5,7 @@ from webob import exc
 from paste.fileapp import FileApp
 
 from akiri.framework.api import BaseApplication
-
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from controller.workbooks import WorkbookEntry, WorkbookUpdateEntry
 from controller.util import UNDEFINED, safe_int
