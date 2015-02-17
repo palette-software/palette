@@ -3,9 +3,7 @@ from sqlalchemy import Column, String, BigInteger, Integer, DateTime
 from sqlalchemy import func, not_, UniqueConstraint
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from mixin import BaseMixin, BaseDictMixin
 from manager import Manager

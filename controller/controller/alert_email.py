@@ -7,12 +7,9 @@ import smtplib
 import datetime
 from email.mime.text import MIMEText
 from email.header import Header
-
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
-
 from sqlalchemy.orm.exc import NoResultFound
+
+import akiri.framework.sqlalchemy as meta
 
 from domain import Domain
 from general import SystemConfig

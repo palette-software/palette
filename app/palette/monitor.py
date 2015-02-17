@@ -1,11 +1,8 @@
 from sqlalchemy import or_
 from webob import exc
-
 from collections import OrderedDict
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from controller.tableau import TableauProcess
 from controller.state import StateManager

@@ -3,9 +3,7 @@ from datetime import datetime
 from webob import exc
 import re
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from controller.event import EventEntry
 from controller.profile import Role

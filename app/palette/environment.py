@@ -1,8 +1,6 @@
 from webob import exc
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from controller.environment import Environment
 from .rest import PaletteRESTApplication

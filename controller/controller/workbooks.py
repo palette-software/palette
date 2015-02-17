@@ -5,9 +5,7 @@ from sqlalchemy import UniqueConstraint
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm import relationship, backref
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from mixin import BaseMixin, BaseDictMixin
 from cache import TableauCacheManager #FIXME
@@ -251,7 +249,7 @@ class WorkbookManager(TableauCacheManager):
     @synchronized('workbook.fixup')
     def fixup(self, agent):
 
-        connection = meta.engine.connect()
+        connection = meta.get_connection()
 
         stmt = \
             "SELECT wuid FROM workbook_updates " +\

@@ -4,12 +4,10 @@ import httplib
 
 from sqlalchemy import Column, String, BigInteger, DateTime, func
 
+import akiri.framework.sqlalchemy as meta
+
 from event_control import EventControl
 from util import safecmd
-
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
 
 class XIDEntry(meta.Base):
     #pylint: disable=no-init

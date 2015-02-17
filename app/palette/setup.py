@@ -6,10 +6,7 @@ from urlparse import urlparse
 from akiri.framework.api import Page
 from akiri.framework.proxy import JSONProxy
 from akiri.framework.route import Router
-
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from collections import OrderedDict
 
@@ -21,7 +18,6 @@ from controller.util import extend
 from .page import PalettePage
 from .option import DictOption
 from .rest import PaletteRESTApplication, required_parameters, required_role
-
 
 def dump(req):
     print >> sys.stderr, str(req)

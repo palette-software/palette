@@ -1,8 +1,6 @@
 from sqlalchemy import func
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from akiri.framework.api import Authenticator
 from akiri.framework.auth import AuthFilter

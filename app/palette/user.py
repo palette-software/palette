@@ -1,9 +1,6 @@
 from webob import exc
 from sqlalchemy import func
-
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from controller.auth import AUTH_TIMESTAMP_SYSTEM_KEY
 from controller.profile import UserProfile, Role, Admin, License
@@ -21,7 +18,7 @@ class UserApplication(PaletteRESTApplication):
 
     def alpha_count(self, envid):
         data = {}
-        connection = meta.engine.connect()
+        connection = meta.get_connection()
 
         stmt = \
             "SELECT UPPER(SUBSTR(friendly_name, 1, 1)) AS alpha, " +\

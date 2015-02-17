@@ -5,9 +5,7 @@ from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy import Boolean, Float
 from sqlalchemy.schema import ForeignKey
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from agent import Agent
 from event_control import EventControl

@@ -10,9 +10,7 @@ from sqlalchemy import Column, BigInteger, DateTime, String, func
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import ForeignKey, UniqueConstraint
 
-# pylint: disable=import-error,no-name-in-module
-from akiri.framework.ext.sqlalchemy import meta
-# pylint: enable=import-error,no-name-in-module
+import akiri.framework.sqlalchemy as meta
 
 from mixin import BaseMixin, BaseDictMixin, OnlineMixin
 from manager import Manager
