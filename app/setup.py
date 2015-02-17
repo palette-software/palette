@@ -18,7 +18,8 @@ setup(name='palette',
         'palette':
 	    ['templates/*.mako', 'templates/config/*.mako', 'data/*',
              'images/*', 'img/*',
-             'js/*.js', 'js/templates/*', 'css/*.css', 'js/vendor/*.js',
+             'js/*.js', 'js/templates/*', 'css/*.css', 'css/*.css.map',
+             'js/vendor/*.js',
              'fonts/svgs/*', 'fonts/*.eot', 'fonts/*.svg', 'fonts/*.tff',
              'fonts/*.woff', 'fonts/*.css', 'fonts/webfonts/*.woff',
              'fonts/webfonts/*.ttf']

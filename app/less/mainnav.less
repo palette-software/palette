@@ -1,0 +1,139 @@
+@item-height:            45px;
+
+#mainNav {
+    color: @text-color;
+    background: #fff;
+    position: fixed;
+    height: @header-height;
+    border-bottom: @header-bottom-border-width solid #8D96A3;
+    display: block;
+    width: 100%;
+    top: 0;
+    z-index: 9001;
+}
+
+/* logo */
+#mainNav a.site-id {
+    background-image: url('/app/module/palette/images/palette_logo_600dpi-2.png');
+    background-size: 100%;
+    background-position: 50%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: block;
+    height: 60px;
+    width: 242px;
+    box-sizing: content-box;
+    background-repeat: no-repeat;
+    margin-left: 15px;
+}
+
+/* trial messages */
+#mainNav .message {
+    position: fixed;
+    top: 0;
+    left: 257px;
+    padding-left: 20px;
+    line-height: @header-line-height;
+    font-family: @font-family-bold;
+    font-size: 20px;
+    color: #333333;
+}
+
+#mainNav .message span {
+    color: @blue;
+}
+
+#mainNav .message.urgent span {
+    color: @orange;
+}
+
+/* right-side menus */
+#mainNav ul.nav {
+    float: right;
+}
+
+/* all menu icons */
+#mainNav ul.nav i {
+    font-size: 22px;
+    vertical-align: middle;
+}
+
+/* all links */
+#mainNav ul.nav a {
+    color: @text-color;
+    text-decoration: none;
+}
+
+/* all list items both initially visible and in the dropdowns */
+#mainNav ul.nav li {
+    text-indent: 0;
+    display: inline-block;
+    position: relative;
+    background-color: @body-bg;
+}
+
+/* primary menu items */
+#mainNav ul.nav > li > a {
+    line-height: @header-line-height;
+    font-weight: 300;
+    display: inline-block;
+    width: auto;
+    height: 100%;
+    padding: 0 15px;
+    font-size: 15px;
+    vertical-align: middle;
+}
+
+#mainNav ul.nav > li > a span {
+    margin-left: 5px;
+    text-transform: uppercase;
+    font-family: @font-family-bold;
+}
+
+/* secondary menus */
+#mainNav ul.nav > li > ul {
+    position: absolute;
+    top: @header-line-height;
+    width: 210px;
+    right: 0;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: none;
+    z-index: 9001;
+    border:0 1px 1px 1px;
+}
+
+#mainNav ul.nav > li > ul > li {
+    display: block;
+    padding: 0;
+    position: relative;
+}
+
+#mainNav ul.nav > li > ul li a {
+    line-height: @item-height;
+    padding: 0 0 0 10px;
+    width: 100%;
+    height: 100%;
+    display: block;
+    font-size: 16px;
+}
+
+#mainNav ul.nav > li > ul li a:hover {
+    background-color: @link-hover-bg;
+}
+
+/* buy link overrides */
+#mainNav ul.nav li.buy > a, #mainNav ul.nav li.buy > a:hover {
+    color: white; /* fixme */
+    background-color: @blue;
+    font-size: 20px;
+    font-family: @font-family-bold;
+}
+
+#mainNav ul.nav li.buy.urgent > a, #mainNav ul.nav li.buy.urgent > a:hover {
+    background-color: @orange;
+}
+
+/* FIXME: why is there a gap between buy and help? */

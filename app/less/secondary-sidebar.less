@@ -1,0 +1,265 @@
+/* FIXME: clean this up... */
+.secondary-side-bar {
+    height: 100%;
+    display: block;
+    position: fixed;
+    top: 63px;
+    left: 250px;
+    width: 300px;
+    background-color: #555A60;
+    color: white;
+    z-index: 20;
+    -webkit-transition: all 0.3s ease-out;
+    -moz-transition: all 0.3s ease-out;
+    -ms-transition: all 0.3s ease-out;
+    -o-transition: all 0.3s ease-out;
+    transition: all 0.3s ease-out;
+    overflow-y:scroll;
+    overflow-x:hidden;
+    padding-bottom: 64px;
+    max-width: 600px;
+    white-space: nowrap;
+    -ms-overflow-style: none;
+}
+.secondary-side-bar h1, .secondary-side-bar h2, .secondary-side-bar h3, .secondary-side-bar h4, .secondary-side-bar h5 {
+    color: white;
+}
+.secondary-side-bar h1, .secondary-side-bar h2, .secondary-side-bar h5 {
+    width: 100%;
+    padding: 0 0 0 26px;
+    overflow: visible;
+    white-space: nowrap;
+    text-overflow:ellipsis;
+    margin: 32px 0 8px 0;
+    font-size: 16px;
+    font-weight: 300;
+    text-transform: uppercase;
+}
+.secondary-side-bar h1 {
+    line-height: 30px;
+    font-size: 28px;
+}
+.secondary-side-bar h2 {
+    font-size: 22px;
+}
+.secondary-side-bar h5.sub {
+    padding: 10px 0 0 26px;
+    margin: 0 0 5px 0;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 14px;
+    text-transform: none;
+    
+}
+.secondary-side-bar h5.backup-page, .secondary-side-bar h5.logs-page {
+    margin-top: 50px;
+}
+.secondary-side-bar h5 i {
+    text-align: left;
+    font-size: 28px;
+    vertical-align: middle;
+}
+.secondary-side-bar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+.secondary-side-bar ul > li {
+    padding: 0;
+}
+
+.secondary-side-bar ul > li.backup {
+    color: white;
+    padding: 0;
+    margin: 0 0 5px 0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.secondary-side-bar ul > li a {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: block;
+    padding: 12px 0 12px 25px;
+    -webkit-transition: all 0.1s ease-in;
+    -moz-transition: all 0.1s ease-in;
+    -ms-transition: all 0.1s ease-in;
+    -o-transition: all 0.1s ease-in;
+    transition: all 0.1s ease-in;
+    cursor: pointer;
+    color: white;
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+.secondary-side-bar ul > li a span.filename {
+    display: none;
+}
+.secondary-side-bar ul > li a:hover {
+    color: white;
+    background-color: #697078;
+    text-decoration: none;
+}
+.secondary-side-bar ul > li a.inactive, .secondary-side-bar ul.actions > li a.inactive, .secondary-side-bar ul.actions > li a.inactive i {
+    color: #444;
+}
+.secondary-side-bar ul > li a.inactive:hover, .secondary-side-bar ul.actions > li a.inactive:hover, .secondary-side-bar ul.actions > li a.inactive:hover i {
+    cursor: default;
+    background: none;
+}
+.secondary-side-bar > ul > li > a > i {
+    line-height: 40px;
+    font-size: 40px;
+    text-align: center;
+    width: 40px;
+    position: relative;
+}
+.secondary-side-bar ul > li h5 {
+    position: relative;
+    margin: 0 0 10px 0;
+    padding: 0;
+    font-size: 18px;
+    font-weight: 300;
+    width: 100%;
+    overflow: visible;
+    text-overflow:ellipsis;
+    white-space: nowrap;
+    display: block;
+    float: left;
+}
+
+/* Servers / My Machine list */
+.secondary-side-bar.servers {
+    width: 0px;
+}
+.secondary-side-bar.servers.servers-visible {
+    width: 300px;
+}
+.secondary-side-bar.servers-visible {
+    left: 550px;
+}
+.secondary-side-bar.servers.servers-visible {
+    left: 250px;
+    border-right: 1px solid rgba(0,0,0,0.2);
+}
+.secondary-side-bar.collapsed.servers-visible {
+    left: 360px;
+}
+.secondary-side-bar.servers.collapsed.servers-visible {
+    left: 60px;
+}
+.secondary-side-bar ul.server-list > li > a {
+    height: 100px;
+}
+.secondary-side-bar ul.server-list > li > a > div {
+    position: absolute;
+    left:80px;
+    top: 15px;
+}
+.secondary-side-bar ul.server-list > li > a > div > span {
+    position: relative;
+    margin: 0 0 0 0;
+    font-size: 16px;
+    font-weight: 300;
+    vertical-align: bottom;
+    width: 100%;
+    overflow: hidden;
+    text-overflow:ellipsis;
+    white-space: nowrap;
+    display: block;
+    float: left;
+}
+.secondary-side-bar ul.server-list > li > a > i {
+    position: absolute;
+    line-height: 100px;
+    top: 0;
+    left: 0;
+    width: 80px;
+    font-size: 50px;
+}
+.secondary-side-bar ul.server-list > li > a > i.down-arrow  {
+    position: absolute;
+    line-height: 100px;
+    top: 0;
+    left: 240px;
+    font-size: 26px;
+}
+.secondary-side-bar ul.actions li.active a:after {
+    content:"";
+    position: absolute;
+    right: 0;
+    top: 50%;
+    margin-top: -12px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 12px 12px 12px 0;
+    border-color: transparent #ececec transparent transparent;
+    display: block;
+}
+.secondary-side-bar ul.actions li a {
+    padding: 0 12px;
+}
+.secondary-side-bar > div.btn-group {
+    display: block;
+    margin: 10px 25px;
+    height: 32px;
+}
+.secondary-side-bar::-webkit-scrollbar {
+    width: 0 !important;
+    position: fixed;
+    z-index: 11000;
+}
+
+// Process list
+.secondary-side-bar .processes {
+    display: none;
+    background-color: rgba(0,0,0,0.1); // FIXME
+    border-bottom: 1px solid rgba(0,0,0,0.2);
+}
+.secondary-side-bar .processes.visible {
+    display: block;
+}
+.secondary-side-bar ul.processes > li {
+    padding: 4px 15px 4px 15px;
+    font-size: 14px;
+    font-family: @font-family-light;
+}
+.secondary-side-bar > ul.actions {
+    margin: 0;
+    padding:0;
+    list-style-type: none;
+}
+.secondary-side-bar > ul.actions li i {
+    color: #ffffff;
+    font-size: 25px;
+    line-height: 55px;
+    margin: 0 0px 0 4px;
+    vertical-align: middle;
+}
+.secondary-side-bar > ul.actions li:hover i {
+    color: #D3D3D3;
+}
+.secondary-side-bar > ul.actions li a {
+    line-height: 55px;
+    width: 100%;
+    display: block;
+    font-size: 18px;
+    color: #ffffff;
+    font-weight: 500;
+    vertical-align: top;
+    position: relative;
+    -webkit-transition: all 0.1s ease-in;
+    -moz-transition: all 0.1s ease-in;
+    -ms-transition: all 0.1s ease-in;
+    -o-transition: all 0.1s ease-in;
+    transition: all 0.1s ease-in;
+    width: 100%;
+    overflow: hidden;
+    text-overflow:ellipsis;
+    white-space: nowrap;
+}
+.secondary-side-bar ul.actions li.divider {
+    height: 2px;
+    display: block;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.1);
+}

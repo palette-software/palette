@@ -1,0 +1,572 @@
+/*
+ * #5e646b; main-side-bar selected li, main-side-bar hover, button hover.
+ * #697078; main-side-bar background, dropdowns, secondary-side-bar hover
+ * #555A60; secondary-side-bar background;
+ * #8d96a4; button background.
+ * #5f6670; font color
+ * #2AB8DC; light-blue
+ * #FC7E6F; orange 
+ * navbar height: 63px;
+ */
+
+html {
+    overflow: hidden;
+}
+html, body {
+    min-width: 0 !important;
+    font-family: @font-family-base;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+body {
+    background: #f8f8f8;
+    margin: 0px;
+}
+body.scrollable {
+    overflow-y: auto;
+}
+h1 {
+    font-family: @font-family-light;
+}
+p {
+    font-family: @font-family-light;
+    line-height: 20px;
+    font-size: 16px;
+}
+textarea {
+    width: 100%;
+    resize: none;
+    border: 1px solid #ebebeb;
+    margin-bottom: 15px;
+}
+a img {
+    border: 0 !important;
+    outline: 0;
+}
+a i.help {
+    color: #c1c1c1;
+    float: right;
+    line-height: 18px;
+    font-size: 23px;
+    -webkit-text-stroke-width: 1px;
+    -webkit-text-stroke-color: #BDBDBD;
+}
+i.expand {
+    position: absolute;
+    right: 0;
+    color: white;
+    font-size: 26px !important;
+    clear: none !important;
+}
+i.tableau {
+    background:url(/app/module/palette/images/tableau.svg);
+    background-repeat: no-repeat;
+    background-size: 100%;
+    height: 28px;
+    width: 28px;
+    margin: 13px 14px 13px 17px !important;
+}
+.row {
+    max-width: none !important;
+    height: 100%;
+}
+.wrapper {
+    height: 100%;
+}
+.hidden {
+    visibility: hidden;
+}
+.visible {
+    display: block !important;
+}
+
+/* FIXME: get rid of classes named after style
+    -> replace with err, warn, ok - or similar.
+*/
+.red {
+    color: #ef5557;
+}
+.yellow {
+    color: #dc994c;
+}
+.green {
+    color: #76e259;
+}
+
+input[type="text"].invalid, input[type="text"].invalid:focus, input[type="password"].invalid, input[type="password"].invalid:focus {
+    border: 1px solid red;
+}
+.container {
+    width: 100%;
+    display: block;
+    position: relative;
+    left: 0;
+    margin: 0;
+    height: 100%;
+    padding: 0;
+}
+article.popup {
+    position: fixed;
+    top: 40%;
+    text-align: center; 
+    width:100%;
+    margin:0 auto;
+    display: none;
+    z-index:10000;   
+}
+article.popup.visible {
+    display: block;
+}
+article.popup .popup-body {
+    margin: 0 auto;
+    display: inline-block;
+    padding: 25px 60px;
+    width: 90%;
+    max-width: 400px;
+    margin:0 auto;
+    background-color: #fafafa;
+    position: relative;
+    z-index: 9999;
+}
+article.popup .shade {
+    content: "";
+    display: block;
+    height: 100%;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-color: rgba(0,0,0,0.2);
+    z-index: 9998;
+}
+article.popup p {
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 17px;
+}
+.btn-test {
+    width: 158px;
+}
+.btn-bar {
+    margin: 0 0 15px 0;
+}
+.btn-group {
+    max-width: 320px;
+}
+.btn-group button {
+    width: 100%;
+    text-align: left;
+    color: #697078;
+    background-color: #fff;
+    border: 1px solid #ebebeb;
+    border-radius: 0;
+}
+.btn-group button .caret {
+    position: absolute;
+    right: 11px;
+    top: 50%;
+    margin-top: -2px;
+    border-top: 5px solid #818284;
+    border-right: 5px solid transparent;
+    border-left: 5px solid transparent;
+}
+h1.page-title {
+    font-size: 33px;
+    display: inline-block;
+    line-height: 32px;
+    margin: 32px 0 0px 0;
+    color: #697078;
+    vertical-align: bottom;
+    text-transform: none;
+}
+/* standard bootstrap class */
+nav.navbar {
+    background: #fff;
+    height: 63px;
+    border: none;
+    border-radius: 0;
+    border-bottom: 3px solid #8D96A3;
+    margin-bottom: 0;
+}
+.main-container {
+    margin: 63px 0 0 0;
+    overflow-y: auto;
+    height: auto;
+}
+.navbar-header {
+    background-image: url('/app/module/palette/images/palette_logo_600dpi-2.png');
+    height: 60px;
+    width: 242px;
+    background-size: 100%;
+    background-repeat: no-repeat;
+    background-position: 50%;
+    box-sizing: content-box;
+    margin-left: 15px;
+}
+/* FIXME: formerly #mainNav a.site-id, redundant */
+a.site-id {
+    background-image: url('/app/module/palette/images/palette_logo_600dpi-2.png');
+    background-size: 100%;
+    background-position: 50%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: block;
+    height: 60px;
+    width: 242px;
+    box-sizing: content-box;
+    background-repeat: no-repeat;
+    margin-left: 15px;
+}
+/* FIXME: redundant with bootstrap */
+.text-center {
+    text-align: center;
+}
+.text-left {
+    text-align: left;
+}
+.text-small {
+    font-size: 11px;
+    font-weight: 500;
+}
+.large {
+    font-size: 2em;
+}
+p.large {
+    margin: 0;
+}
+.margin-top {
+    margin-top: 12px !important;
+}
+
+/* FIXME remove a.button */
+a.button {
+    text-decoration: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* FIXME: merge with active/inactive */
+.disabled {
+    top: 0 !important;
+    color: #aaa !important;
+    background: #ddd !important;
+    text-shadow: 1px 1px 0 #fff;
+    cursor: not-allowed;
+}
+.disabled:focus {
+    border: none;
+    outline: 0;
+}
+label {
+    margin: 25px 0 8px 0;
+    text-align: left;
+    display: block;
+    color: #5f6670;
+    font-size: 16px;
+    font-weight: 300;
+}
+input[type="text"], input[type="password"], input[type="email"] {
+    margin: 5px 0 15px 0;
+    color: black;
+}
+input[type="text"], input[type="password"], input[type="email"], select {
+    width: 100%;
+    border: 1px solid #ebebeb;
+    outline: 0;
+    border-radius: 0;
+    box-shadow: 0 0;
+    height: 34px;
+    padding: 0 8px;
+    box-sizing:border-box;
+    font-size: 14px;
+    max-width: 320px;
+}    
+
+input[type="text"]:focus, input[type="password"]:focus, input[type="date"]:focus, input[type="datetime"]:focus, input[type="datetime-local"]:focus, input[type="month"]:focus, input[type="week"]:focus, input[type="email"]:focus, input[type="number"]:focus, input[type="search"]:focus, input[type="tel"]:focus, input[type="time"]:focus, input[type="url"]:focus, textarea:focus {
+    border: 1px solid #e1e1e1;
+    outline: 0;
+    box-shadow: 0 0;
+}
+
+label.checkbox-label {
+    font-weight: 300;
+    text-transform: none;
+    display: inline-block;
+    margin: 4px 15px 0 0;
+}
+label.error {
+    width: 100%;
+    font-size: 14px;
+    text-align: center;
+    margin: 0px 0 15px 0;
+    color: #E52C22;
+}
+p.error {
+    width: 100%;
+    font-size: 14px;
+    text-align: center;
+    margin: 0px 0 15px 0;
+    color: #E52C22;
+    margin-top: 10px;
+}
+.checkbox, .radio {
+    padding: 0;
+}
+article.popup p.radio-text {
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 17px;
+    text-align: left;
+    line-height: 25px;
+    margin-left: 30px;
+}
+
+ul.checkbox, ul.radio {
+    margin: 15px 0;
+    list-style-type: none;
+}
+ul.checkbox li, ul.radio li {
+    position: relative;
+    height: 28px;
+    width: 100%;
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0 0 5px 0;
+}
+
+ul.checkbox li label, ul.radio li label {
+    font-family: "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
+    margin-bottom: 0;
+    margin-top: 7px;
+    display: inline-block;
+    font-weight: 300;
+    float: left;
+    line-height: 18px;
+}
+
+ul.checkbox li input[type="checkbox"], ul.radio li input[type="radio"] {
+    display: block;
+    width: 16px;
+    height: 16px;
+    float: right;
+    position: absolute;
+    top: 50%;
+    margin-top: -7px;
+    right: 0;
+    z-index: 0;
+}
+
+ul.checkbox li label span, ul.radio li label span {
+    background-color: #ddd;
+    border-radius: 2px;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: block;
+    float: right;
+    box-sizing: content-box;
+    vertical-align: middle;
+    position: absolute;
+    top: 50%;
+    pointer-events: none;
+    margin-top: -9px;
+    right: 0;
+    z-index: 2;
+    -webkit-transition: all 0.2s ease-out;
+    -moz-transition: all 0.2s ease-out;
+    -ms-transition: all 0.2s ease-out;
+    -o-transition: all 0.2s ease-out;
+    transition: all 0.2s ease-out;
+}
+
+ul.radio li label span {
+    border-radius: 50%;
+}
+
+ul.checkbox li label div, ul.radio li label div {
+    display: inline-block;
+}
+
+ul.checkbox li input[type="checkbox"]:hover, ul.radio li input[type="radio"]:hover  {
+    cursor: pointer;
+}
+
+ul.checkbox li input[type="checkbox"]:checked + label span, ul.radio li input[type="radio"]:checked + label span {
+    background-color: #a2adbd;
+}
+
+ul.checkbox li input[type="checkbox"]:checked + label span:after, ul.radio li input[type="radio"]:checked + label span:after {
+    content: "\f00c";
+    display: inline-block;
+    font-family: FontAwesome;
+    font-style: normal;
+    font-weight: normal;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    line-height: 18px;
+    text-align: center;
+    width: 18px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: #fff;
+    font-size: 12px;
+}
+
+/* items are generic events workbooks, users etc. */
+article.item {
+    background-color: #e5e5e5;
+    display: block;
+    min-height: 55px;
+    width: 100%;
+    color: @text-color;
+    font-size: 14px;
+    margin-bottom: 8px;
+    -webkit-transition: all 0.3s ease-in;
+    -moz-transition: all 0.3s ease-in;
+    -ms-transition: all 0.3s ease-in;
+    -o-transition: all 0.3s ease-in;
+    transition: all 0.3s ease-in;
+    position: relative;
+    overflow: hidden;
+}
+article.item.open {
+    height: auto;
+}
+article.item:hover {
+    background-color: #e1e1e1;
+}
+article.item .summary > i, article.item .summary > span > i {
+    float: left;
+    width: 60px;
+    display: block;
+    text-align: center;
+    line-height: 55px;
+    font-size: 28px;
+    -webkit-transition: all 0.1s ease-in;
+    -moz-transition: all 0.1s ease-in;
+    -ms-transition: all 0.1s ease-in;
+    -o-transition: all 0.1s ease-in;
+    transition: all 0.1s ease-in;
+}
+article.item .summary > span.fa-stack {
+    float: left;
+}
+article.item .summary i.fa-circle.fa-stack-1x {
+    color: white;
+}
+article.item .summary i.expand {
+    color: #5f6670;
+}
+article.item i.help {
+    float: none;
+    display: inline-block;
+    line-height: inherit;
+    font-size: 1.5em;
+    width: inherit;
+}
+article.item a.edit {
+    text-decoration: none;
+}
+article.item a.edit i {
+    display: inline;
+    position: static;
+    font-size: 14px;
+    line-height: 20px;
+    margin: 0 0 0 5px;
+}
+article.item .col2 {
+    float: left;
+    width: 50%;
+}
+article.item > div.description > div {
+    padding: 0 50px 0 0;
+}
+article.item > div.summary {
+    height: 55px;
+    cursor: pointer;
+}
+article.item > div.summary > div {
+    position: absolute;
+    left: 0;
+    top: 0;
+    padding: 10px 60px;
+    width: 100%;
+    height: 55px;
+}
+article.item > div.summary div.col2 {
+    padding: 0 10px 0 0;
+}
+article.item > div.summary h3 {
+    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
+    line-height: 20px;
+    font-size: 15px;
+    margin: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow:ellipsis;
+}
+article.item > div.summary p {
+    font-size: 14px;
+    font-weight: 300 !important;
+    color: #5F6670;
+    margin: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow:ellipsis;
+}
+article.item input[type="text"] {
+    height:20px;
+    margin: 0;
+}
+article.item > div.description {
+    display: none;
+}
+article.item.open > div.description {
+    display: block;
+    padding: 0 10px 20px 60px;
+    width: 100%;
+}
+article.item li {
+    list-style-type: none;
+}
+article.item article {
+    padding-top: 5px;
+}
+
+/* rows of sliders */
+.slider-group {
+    height: 26px;
+    margin-bottom: 25px;
+}
+.slider-group > span {
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 17px;
+    line-height: 26px;
+    vertical-align: top;
+    margin-right: 25px;
+}
+.slider-group > span > span {
+    margin-left: 5px;
+}
+
+/* Individual Elements */
+#type-dropdown, #status-dropdown, #sort-dropdown, #show-dropdown {
+    min-width: 150px;
+}
+#site-project-dropdown {
+    min-width: 175px;
+}
+label + input[type="text"], label + input[type="password"] {
+    margin-top: 0;
+    margin-bottom: 5px;
+}
+div.save-cancel {
+    margin-top: 25px;
+}

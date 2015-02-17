@@ -1,5 +1,10 @@
+*.css
+*.css.map
 /build
 /dist
 /data
 /*.ini
+/bootstrap-*
+/downloads
+/node_modules
 webapp.log

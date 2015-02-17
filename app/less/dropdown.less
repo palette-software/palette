@@ -1,0 +1,63 @@
+/* Dropdown definitions : used with btn. */
+
+// These are all marked important to override .btn.
+.dropdown-toggle {
+    background-color: @btn-dd-bg !important;
+    color: @text-color !important;
+    border: 1px solid #e1e1e1 !important;
+    -webkit-box-shadow: inset 0 3px 5px rgba(0,0,0,0) !important;
+}
+
+.dropdown-menu {
+    width: 100%;
+    border: 1px solid #ebebeb;
+    border-radius: 0;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    max-width: 320px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0);
+}
+
+.up .dropdown-menu {
+    top: auto;
+    bottom: 100%;
+}
+
+.dropdown-menu {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.dropdown-menu > li {
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.dropdown-menu > li > a {
+    color: @text-color;
+    padding: 5px 20px 5px 10px !important;
+    text-decoration: none !important;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: block;
+    font-weight: 300;
+}
+
+/* Dropdowns on the top of content used to filter events, workbooks etc. */
+.filter-dropdowns {
+    margin-bottom: 11px;
+}
+
+.filter-dropdowns div {
+    margin-right: 10px;
+}
+
+.filter-dropdowns > span {
+    font-weight: bold;
+    margin-right: 5px;
+}
+

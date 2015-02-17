@@ -1,0 +1,34 @@
+/* configuration -> general styles */
+
+.general-page {
+    padding-bottom: 67px;
+}
+
+/* Overrides for per-page onoff switches */
+.monitor {
+    position: relative;
+}
+.monitor .onoffswitch {
+    width: 52px;
+    position: absolute;
+    top: 0;
+    left: 60px;
+    height: 20px;
+}
+.monitor .onoffswitch-inner:after {
+    padding-right: 7px;
+}
+.monitor .onoffswitch-switch {
+    width: 12px;
+    right: 32px;
+}
+.monitor .onoffswitch-inner:before, .monitor .onoffswitch-inner:after {
+    height: 16px;
+    line-height: inherit;
+    font-size: 12px;
+}
+
+/* Specific elements */
+#http-load-warn, #http-load-error {
+    min-width: 110px;
+}
