@@ -9,13 +9,13 @@ except ImportError:
     VERSION = version()
     DATE = builddate()
 
-class About(PalettePage):
+class AboutPage(PalettePage):
     TEMPLATE = 'about.mako'
     active = 'about'
     expanded = True
 
-    def __init__(self, global_conf):
-        super(About, self).__init__(global_conf)
+    def __init__(self):
+        super(AboutPage, self).__init__()
         if DATE:
             self.version = VERSION + ' - ' + DATE
         else:
@@ -23,8 +23,7 @@ class About(PalettePage):
         self.license_key = None
 
     def render(self, req, obj=None):
+        # FIXME: make obj separate or go to REST implementation.
         self.license_key = req.palette_domain.license_key
-        return super(About, self).render(req, obj=obj)
+        return super(AboutPage, self).render(req, obj=obj)
 
-def make_about(global_conf):
-    return About(global_conf)

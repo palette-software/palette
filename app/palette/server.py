@@ -112,6 +112,3 @@ class ServerConfigPage(PalettePage):
     active = 'servers'
     expanded = True
     required_role = Role.READONLY_ADMIN
-
-def make_servers(global_conf):
-    return ServerConfigPage(global_conf)

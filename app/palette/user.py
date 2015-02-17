@@ -201,6 +201,3 @@ class UserConfigPage(PalettePage):
     active = 'users'
     expanded = True
     required_role = Role.READONLY_ADMIN
-
-def make_users(global_conf):
-    return UserConfigPage(global_conf)

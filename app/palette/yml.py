@@ -31,6 +31,3 @@ class YmlPage(PalettePage):
     active = 'yml'
     expanded = True
     required_role = Role.READONLY_ADMIN
-
-def make_yml(global_conf):
-    return YmlPage(global_conf)

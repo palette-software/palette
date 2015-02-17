@@ -52,20 +52,3 @@ class PaletteRESTApplication(GenericWSGIApplication):
         super(PaletteRESTApplication, self).__init__()
         self.commapp = CommHandlerApp(self)
 
-import logging
-from akiri.framework.rest import REST
-
-# This call is only used for testing/profiling.
-# Production should use the native framework make_rest.
-def make_rest(global_conf):
-    formatter = logging.Formatter(fmt='[%(asctime)s] %(message)s')
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.INFO)
-    handler.setFormatter(formatter)
-    logger = logging.getLogger('sqlalchemy.engine')
-    logger.addHandler(handler)
-    logger.propagate = False
-    logger.setLevel(logging.INFO)
-
-    app = REST(global_conf)
-    return app

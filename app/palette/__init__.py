@@ -1,5 +1,4 @@
-from akiri.framework.api import MainPage, LoginPage
-
+# FIXME: test if these are still needed and/or use absolute import
 import auth
 import monitor
 import backup
@@ -10,17 +9,13 @@ import workbooks
 import yml
 import request
 
-from page import PalettePageMixin
+from page import PalettePage
 
-# This is essentially the home page.
-class DashboardPage(MainPage, PalettePageMixin):
+# Keep: this exposes to application.wsgi without a controller import
+from controller.passwd import set_aes_key_file
+
+class HomePage(PalettePage):
     TEMPLATE = 'dashboard.mako'
     active = 'home'
 
-    def render(self, req, obj=None):
-        obj = self.preprocess(req, obj)
-        return MainPage.render(self, req, obj=obj)
-
-class Login(LoginPage):
-    TEMPLATE = 'login.mako'
 

@@ -4,7 +4,7 @@ from collections import OrderedDict
 from webob import exc
 from paste.fileapp import FileApp
 
-from akiri.framework.api import BaseApplication
+from akiri.framework import GenericWSGIApplication
 import akiri.framework.sqlalchemy as meta
 
 from controller.workbooks import WorkbookEntry, WorkbookUpdateEntry
@@ -15,7 +15,7 @@ from controller.sites import Site
 from controller.projects import Project
 
 from .option import BaseStaticOption
-from .page import FAKEPW
+from .page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
 
 __all__ = ["WorkbookApplication"]
@@ -179,8 +179,7 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
         cred = self.get_cred(req.envid, key)
         if req.method == 'POST':
             return self.handle_passwd_POST(req, cred)
-        value = cred and FAKEPW or ''
-        return {'value': value}
+        return {'value': cred}
 
     # FIXME: covert to /workbook/<id>/note or /workbook/note/<id>
     # GET doesn't have a ready meaning.
@@ -331,13 +330,10 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
             raise exc.HTTPBadRequest()
 
 
-class WorkbookData(BaseApplication):
+class WorkbookData(GenericWSGIApplication):
 
-    def __init__(self, global_conf, path=None):
-        super(WorkbookData, self).__init__(global_conf)
-        if not path:
-            dirname = os.path.dirname(global_conf['__file__'])
-            path = os.path.join(dirname, 'data', 'workbook-archive')
+    def __init__(self, path):
+        super(WorkbookData, self).__init__()
         self.path = os.path.abspath(path)
         if not os.path.isdir(self.path):
             os.makedirs(self.path)
@@ -348,7 +344,7 @@ class WorkbookData(BaseApplication):
         if req.remote_user.system_user_id == update.workbook.system_user_id:
             return True
 
-    def handle(self, req):
+    def service_GET(self, req):
         path_info = req.environ['PATH_INFO']
         if path_info.startswith('/'):
             path_info = path_info[1:]
@@ -365,14 +361,7 @@ class WorkbookData(BaseApplication):
             return exc.HTTPGone()
         return FileApp(path)
 
-def make_workbook_data(global_conf, path=None):
-    return WorkbookData(global_conf, path=path)
-
-from page import PalettePage
 
 class WorkbookArchive(PalettePage):
     TEMPLATE = 'workbook.mako'
     active = 'workbook-archive'
-
-def make_workbook_archive(global_conf):
-    return WorkbookArchive(global_conf)
