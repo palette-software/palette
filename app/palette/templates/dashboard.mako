@@ -9,5 +9,5 @@
   <%include file="events.mako" />
 </section>
 
-<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/dashboard.js">
+<script src="/js/vendor/require.js" data-main="/js/dashboard.js">
 </script>

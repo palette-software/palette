@@ -41,5 +41,5 @@
   </div>
 </div>
 
-<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/profile.js">
+<script src="/js/vendor/require.js" data-main="/js/profile.js">
 </script>

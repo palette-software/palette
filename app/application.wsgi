@@ -95,9 +95,14 @@ if __name__ == '__main__':
 
     # serve static content
     docroot = os.path.dirname(os.path.abspath(__file__))
+
     cssdir = os.path.join(docroot, 'css')
     router.prepend_route(r'/css/', DirectoryApp(cssdir), profile=False)
     fontdir = os.path.join(docroot, 'fonts')
     router.prepend_route(r'/fonts/', DirectoryApp(fontdir), profile=False)
+    jsdir = os.path.join(docroot, 'js')
+    router.prepend_route(r'/js/', DirectoryApp(jsdir), profile=False)
+    imgdir = os.path.join(docroot, 'images')
+    router.prepend_route(r'/images/', DirectoryApp(imgdir), profile=False)
 
     runserver(application, use_reloader=True)

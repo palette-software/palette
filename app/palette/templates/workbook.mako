@@ -86,5 +86,5 @@
   {{/workbooks}}
 </script>
 
-<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/workbook.js">
+<script src="/js/vendor/require.js" data-main="/js/workbook.js">
 </script>

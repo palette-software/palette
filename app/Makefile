@@ -30,7 +30,7 @@ clean:
 	rm -rf *.egg-info dist build
 	find . -name \*.pyc -exec rm '{}' ';'
 	make -C DEBIAN clean
-	rm -f palette/css/style.css
+	rm -f css/style.css css/palette.css.map
 .PHONY: pylint
 
 realclean: clean

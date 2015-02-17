@@ -125,5 +125,5 @@
   {{/servers}}
 </script>
 
-<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/servers.js">
+<script src="/js/vendor/require.js" data-main="/js/servers.js">
 </script>

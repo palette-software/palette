@@ -7,19 +7,21 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=1000,minimal-ui" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <link rel="stylesheet" type="text/css" href="/app/module/palette/css/font-awesome.min.css" />
-  <link rel="stylesheet" type="text/css" href="/app/module/palette/fonts/fonts.css" />
-  <link rel="stylesheet" type="text/css" href="/app/module/palette/css/style.css" media="screen" />
+  <link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css" />
+  <link rel="stylesheet" type="text/css" href="/css/font-awesome.min.css" />
+  <link rel="stylesheet" type="text/css" href="/fonts/fonts.css" />
+  <link rel="stylesheet" type="text/css" href="/css/style.css" media="screen" />
 
+  <!-- FIXME: merge with layout.mako -->
   <script>
   var require = {
     paths: {
-      'jquery': '/app/module/palette/js/vendor/jquery',
-      'topic': '/app/module/palette/js/vendor/pubsub',
-      'template' : '/app/module/palette/js/vendor/mustache',
-      'domReady': '/app/module/palette/js/vendor/domReady',
+      'jquery': '/js/vendor/jquery',
+      'topic': '/js/vendor/pubsub',
+      'template' : '/js/vendor/mustache',
+      'domReady': '/js/vendor/domReady',
 
-      'bootstrap': '/app/module/palette/js/vendor/bootstrap',
+      'bootstrap': '/js/vendor/bootstrap',
       'lightbox': '//www.helpdocsonline.com/v2/lightbox'
     },
     shim: {
@@ -88,8 +90,7 @@
   <%include file="dropdown.mako" />
   <%include file="onoff.mako" />
 
-  <script src="/app/module/palette/js/vendor/require.js"
-          data-main="/app/module/palette/js/initial.js" >
+  <script src="/js/vendor/require.js" data-main="/js/initial.js" >
   </script>
 </body>
 </html>

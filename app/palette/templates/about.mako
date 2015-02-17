@@ -47,5 +47,5 @@
   </div>
 </section>
 
-<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/about.js">
+<script src="/js/vendor/require.js" data-main="/js/about.js">
 </script>
