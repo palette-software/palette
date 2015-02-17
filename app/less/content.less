@@ -1,0 +1,81 @@
+/* lower-right-hand dynamic content pane */
+
+.dynamic-content {
+    position: fixed;
+    height: inherit;
+    top: 63px;
+    right: 0;
+    left: 250px;
+    overflow: auto;
+    padding-bottom: 67px;
+}
+.dynamic-content > div.scrollable {
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: 100%;
+    padding: 0 15px 72px 18px;
+}
+.dynamic-content a, .dynamic-content a:hover {
+    color: #697078; /* FIXME */
+    text-decoration: underline;
+}
+.dynamic-content .letters a {
+    cursor: pointer;
+    text-decoration: none;
+}
+.dynamic-content.with-secondary-sidebar {
+    left: 550px;
+}
+.dynamic-content.servers-visible {
+    left: 550px;
+}
+.dynamic-content.collapsed.servers-visible {
+    left: 550px;
+}
+.dynamic-content.servers-visible.collapsed {
+    left: 660px;
+}
+.dynamic-content .top-zone {
+    width: 100%;
+}
+.dynamic-content .top-zone .row {
+    height: auto !important;
+}
+.btn-group>.btn, .btn-group-vertical>.btn {
+    padding-right: 30px;
+}
+.dynamic-content .top-zone .btn-group:first-of-type {
+    margin-left: 0;
+}
+.dynamic-content label {
+    text-align: left;
+}
+.dynamic-content .key, .dynamic-content .label {
+    display: inline;
+    font-family: @font-family-bold;
+    font-size: inherit;
+    color: @text-color;
+    text-align: left;
+    overflow: hidden;
+    text-overflow:ellipsis;
+    white-space: nowrap;
+    padding: 0;
+    font-weight: 400;
+}
+.dynamic-content .key {
+    padding: .25em .25em .25em 1em;
+}
+.dynamic-content .label {
+    padding: 0 .25em 0 0;
+}
+.dynamic-content p.heading {
+    width: 80%;
+    font-weight: 500 !important;
+    border-bottom: 2px solid @text-color;
+    padding: 10px 0 0 0;
+    margin: 0;
+    font-family: @font-family-bold;
+    font-size: 14px;
+    color: @text-color;
+    text-transform: uppercase;
+}

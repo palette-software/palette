@@ -1,0 +1,127 @@
+/* Individual page definitions not worthy of a separate LESS file. */
+
+/* initial setup */
+.center-container {
+    width: 860px;
+    margin: 0 auto 0 auto;
+}
+.center-container.initial {
+    margin-top: 10px;
+    margin-bottom: 50px;
+}
+.error-page p {
+    color: #ef5557;
+    margin: 20px 0;
+    text-align: center;
+}
+
+/* manage */
+section.run-as-user {
+    margin-top: 15px;
+}
+
+/* about */
+.about-page h1.page-title {
+    margin-bottom: 20px;
+}
+.about-page h2 {
+    margin-top: 50px;
+    margin-bottom: 5px;
+}
+.about-page h2:first-of-type {
+    margin-top: 0px;
+}
+.about-page p {
+    margin: 0px;
+}
+.about-page button {
+    margin-top: 50px;
+    width: 200px;
+}
+
+/* profile */
+.profile-page h1.page-title {
+    margin-bottom: 20px;
+}
+.profile-page h2 {
+    margin-top: 50px;
+    margin-bottom: 5px;
+}
+.profile-page h2:first-of-type {
+    margin-top: 0px;
+}
+.profile-page p {
+    margin: 0px;
+}
+
+/* setup */
+.setup-page #smtp-port {
+    width: 64px;
+}
+.setup-page #test-email-recipient {
+    width: 50%;
+}
+input[name="storage-type"] {
+    display: inline-block;
+    margin-bottom: 25px;
+}
+input[name="storage-type"] + label {
+    display: inline-block;
+    margin: 0 25px 0 3px;
+}
+label[for*="s3-"], label[for*="gcs-"] {
+    margin: 0;
+}
+#storage-destination, #storage-destination ul, #storage-destination ul li {
+    min-width: 370px;
+}
+#auth {
+    margin-bottom: 35px;
+}
+#mail-server-type {
+    margin-bottom: 10px;
+}
+
+/* workbooks */
+.workbook-page .item .summary div.col2 div {
+    text-align: right;
+}
+#workbook-list ul {
+    padding-left: 0;
+}
+
+/* users */
+
+/* FIXME: make .onoffswitch.small instead */
+
+.email-level {
+    position: relative;
+}
+.email-level .onoffswitch {
+    width: 52px;
+    position: absolute;
+    top: 0;
+    left: 60px;
+    height: 20px;
+    left: 85px;
+}
+.email-level .onoffswitch {
+    left: 85px;
+}
+.email-level .onoffswitch-inner:before, .email-level .onoffswitch-inner:after {
+    font-size: 12px;
+    line-height: 18px;
+    height: 16px;
+}
+.email-level .onoffswitch-inner:before {
+    padding-left: 8px;
+}
+
+#user-list .btn-group.dropdown {
+    min-width: 150px;
+}
+#user-list div.description {
+    min-height: 200px;
+}
+
+

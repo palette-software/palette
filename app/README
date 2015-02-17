@@ -1,3 +1,19 @@
+Developing in the UX
+
+# Linux
+sudo apt-get install -y npm nodejs-legacy
+
+# Mac
+see: http://nodejs.org/
+
+# from the directory containing this file
+sudo npm install -g less
+sudo npm install -g grunt-cli
+../scripts/ux-setup.sh
+
+
+---
+
 If you have not installed the "palette" Debian package, and you want
 to run httpserver with the development code:
 

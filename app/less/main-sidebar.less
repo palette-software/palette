@@ -1,0 +1,168 @@
+.main-side-bar {
+    height: 100%;
+    display: block;
+    position: fixed;
+    left: 0;
+    width: 250px;
+    top: 63px;
+    background-color: #697078;
+    color: white;
+    z-index: 100;
+    -webkit-transition: all 0.3s ease-out;
+    -moz-transition: all 0.3s ease-out;
+    -ms-transition: all 0.3s ease-out;
+    -o-transition: all 0.3s ease-out;
+    -ms-overflow-style: none;
+    transition: all 0.3s ease-out;
+    overflow-y:scroll;
+    padding-bottom: 64px;
+    overflow: -moz-scrollbars-none;
+}
+.main-side-bar::-webkit-scrollbar {
+    width: 0 !important;
+    position: fixed;
+    z-index: 11000;
+}
+.main-side-bar .status {
+    position: relative;
+    top: 0;
+    width: 100%;
+    display: block;
+    height: 120px;
+    color: #5f6670;
+    background-color: white;
+}
+.main-side-bar .status > i {
+    position: absolute;
+    display: block;
+    top: 34px;
+    font-size: 30px;
+    left: 213px;
+}
+.main-side-bar .status span.fa-stack {
+    position: absolute;
+    font-size: 80px;
+    line-height: 64px;
+    height: 64px;
+    width: 64px;
+    top: 15px;
+    right: 20px;
+    color: white;
+    left: 135px;
+/*
+    -webkit-transition: all 0.2s ease-in;
+    -moz-transition: all 0.2s ease-in;
+    -ms-transition: all 0.2s ease-in;
+    -o-transition: all 0.2s ease-in;
+    transition: all 0.2s ease-in;
+*/
+}
+.main-side-bar .status h1 {
+    position: absolute;
+    top: 32px;
+    left: 15px;
+    font-size: 28px;
+    line-height: 30px;
+    margin: 0;
+    font-weight: 300;
+    color: #697078;
+}
+.main-side-bar .status h3 {
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
+    position: absolute;
+    top: 94px;
+    left: 16px;
+    display: block;
+    font-size: 16px;
+    font-weight: 300;
+    width: 220px;
+    overflow: visible;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    margin: 0;
+    text-align: left;
+}
+.main-side-bar ul.actions li.active a, .main-side-bar ul.actions li a:hover {
+    background-color: #5e646b;
+    box-shadow:0 -1px rgba(0,0,0,0.1);
+}
+.main-side-bar ul.actions li.active a:after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 50%;
+    margin-top: -12px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 12px 12px 12px 0;
+    border-color: transparent #f8f8f8 transparent transparent;
+    display: block;
+    -webkit-transition-delay: 0.3s;
+    -moz-transition-delay: 0.3s;
+    -ms-transition-delay: 0.3s;
+    -o-transition-delay: 0.3s;
+    transition-delay: 0.3s;
+}
+.main-side-bar ul.actions li.has-side-bar a:after {
+    border-color: transparent #555A60 transparent transparent;
+}
+.main-side-bar ul.actions li.active.servers-visible a:after {
+    border-color: transparent #555A60 transparent transparent;
+    -webkit-transition: all 0.3s ease-in;
+    -moz-transition: all 0.3s ease-in;
+    -ms-transition: all 0.3s ease-in;
+    -o-transition: all 0.3s ease-in;
+    transition: all 0.3s ease-in;
+
+}
+.main-side-bar ul.actions li ul {
+    padding: 0;
+    display: none;
+}
+.main-side-bar > ul.actions {
+    margin: 0;
+    padding:0;
+    list-style-type: none;
+}
+.main-side-bar > ul.actions li {
+    border-top: 1px solid #777a7e;
+}
+.main-side-bar > ul.actions li:last-child {
+    border-bottom: 1px solid #777a7e;
+}
+.main-side-bar > ul.actions li i {
+    color: white;
+    font-size: 27px;
+    line-height: 55px;
+    margin: 0 7px 0 15px;
+    vertical-align: middle;
+}
+.main-side-bar > ul.actions li a {
+    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
+    text-transform: uppercase;
+    line-height: 55px;
+    width: 100%;
+    display: block;
+    font-size: 16px;
+    letter-spacing: .6px;
+    color: white;
+    vertical-align: top;
+    position: relative;
+    -webkit-transition: all 0.1s ease-in;
+    -moz-transition: all 0.1s ease-in;
+    -ms-transition: all 0.1s ease-in;
+    -o-transition: all 0.1s ease-in;
+    transition: all 0.1s ease-in;
+    width: 100%;
+    overflow: hidden;
+    text-overflow:ellipsis;
+    white-space: nowrap;
+}
+.main-side-bar > ul.actions li a:hover {
+    text-decoration: none;
+}
+/* For IE11 */
+.main-side-bar ul.actions li.category ul.visible li {
+    display: block;
+}

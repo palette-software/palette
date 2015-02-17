@@ -25,7 +25,7 @@
 </head>
 <body class="full-size-box">
   <section class="login-box">
-    <div class="center-box">
+    <div>
       <a href="/">
         <img class="login" src="/app/module/palette/images/palette_logo.png">
       </a>
@@ -36,7 +36,7 @@
         <input type="password" name="password" id="password">
         <section class="row">
           <section class="col-xs-12">
-            <button type="submit" name="login" id="login">
+            <button class="btn btn-primary" type="submit" name="login" id="login">
               Login
             </button>
           </section>
