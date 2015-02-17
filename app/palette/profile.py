@@ -3,11 +3,8 @@ from webob import exc
 from .page import PalettePage
 from .rest import PaletteRESTApplication
 
-class Profile(PalettePage):
+class ProfilePage(PalettePage):
     TEMPLATE = "profile.mako"
-
-def make_profile(global_conf):
-    return Profile(global_conf)
 
 class ProfileApplication(PaletteRESTApplication):
 

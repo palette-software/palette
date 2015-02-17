@@ -3,7 +3,6 @@ from webob import exc
 from pytz import common_timezones as timezones
 from urlparse import urlparse
 
-from akiri.framework.api import Page
 from akiri.framework.proxy import JSONProxy
 from akiri.framework.route import Router
 import akiri.framework.sqlalchemy as meta
@@ -15,7 +14,7 @@ from controller.passwd import tableau_hash
 from controller.general import SystemConfig
 from controller.util import extend
 
-from .page import PalettePage
+from .page import Page, PalettePage
 from .option import DictOption
 from .rest import PaletteRESTApplication, required_parameters, required_role
 
@@ -25,21 +24,12 @@ def dump(req):
 class SetupPage(Page):
     TEMPLATE = "setup.mako"
 
-    def render(self, req, obj=None):
-        return super(SetupPage, self).render(req, obj=obj)
-
-def make_setup(global_conf):
-    return SetupPage(global_conf)
-
 
 class SetupConfigPage(PalettePage):
     TEMPLATE = "config/setup.mako"
     active = 'setup'
     expanded = True
     required_role = Role.MANAGER_ADMIN
-
-def make_setup_config(global_conf):
-    return SetupConfigPage(global_conf)
 
 
 class MailServerType(DictOption):

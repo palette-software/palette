@@ -14,8 +14,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=900, minimal-ui">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="stylesheet" type="text/css" href="/app/module/palette/fonts/fonts.css" media="screen">
-<link rel="stylesheet" type="text/css" href="/app/module/palette/css/style.css" media="screen">
+<link rel="stylesheet" type="text/css" href="/fonts/fonts.css" media="screen">
+<link rel="stylesheet" type="text/css" href="/css/style.css" media="screen">
 
 <script src="/app/module/palette/js/vendor/require.js"
         data-main="/app/module/palette/js/login.js" >
@@ -29,7 +29,7 @@
       <a href="/">
         <img class="login" src="/app/module/palette/images/palette_logo.png">
       </a>
-      <form method="POST" action="/login" id="form">
+      <form method="POST" action="/login/authenticate" id="form">
         <label for="username">Tableau Server Username</label>
         <input type="text" name="username" id="username">
         <label for="password">Tableau Server Password</label>

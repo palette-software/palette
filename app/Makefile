@@ -18,6 +18,7 @@ grunt:
 .PHONY: grunt
 
 pylint:
+	$(PYLINT) application.wsgi
 	$(PYLINT) palette
 .PHONY: pylint
 

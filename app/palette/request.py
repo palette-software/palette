@@ -1,8 +1,11 @@
+from webob import exc
+
 from akiri.framework import GenericWSGI
 import akiri.framework.sqlalchemy as meta
 
 from controller.domain import Domain
 from controller.environment import Environment
+from controller.profile import UserProfile
 from controller.system import SystemEntry
 from controller.util import DATEFMT
 
@@ -120,8 +123,17 @@ class BaseMiddleware(GenericWSGI):
     """Do initial setup of the request object."""
     def service(self, req):
         req.getattr = req_getattr
-        return None
 
-def make_base(app, global_conf):
-    # pylint: disable=unused-argument
-    return BaseMiddleware(app)
+
+class RemoteUserMiddleware(GenericWSGI):
+    """Convert req.remote_user string to UserProfile instance."""
+    def service(self, req):
+        # req.remote_user can possibly be None if AD authentication works,
+        # but there is a problem importing the user database from Tableau.
+        if req.remote_user is None:
+            # FIXME: print to the error log?
+            raise exc.HTTPTemporaryRedirect(location='/login')
+        # FIXME: don't override the existing remote_user, instead create
+        # a different member like 'remote_user_profile'.
+        req.remote_user = UserProfile.get_by_name(req.envid,
+                                                  req.remote_user)

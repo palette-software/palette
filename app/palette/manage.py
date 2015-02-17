@@ -86,10 +86,8 @@ class ManageApplication(PaletteRESTApplication):
         raise exc.HTTPBadRequest()
 
 
-class Manage(PalettePage):
+class ManagePage(PalettePage):
     TEMPLATE = 'manage.mako'
     active = 'manage'
     required_role = Role.READONLY_ADMIN
 
-def make_manage(global_conf):
-    return Manage(global_conf)

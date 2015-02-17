@@ -1,10 +1,30 @@
+import os
+import pkg_resources
+from mako.lookup import TemplateLookup
 from webob import exc
 
-from akiri.framework.api import Page
+from akiri.framework import GenericWSGIApplication
 
-FAKEPW = '********'
+class Page(GenericWSGIApplication):
+    """Generic Page base class - for both 'internal' and 'external' pages."""
+    # pylint: disable=no-member
+    def __init__(self):
+        super(Page, self).__init__()
+        modname = self.__class__.__module__
+        directory = pkg_resources.resource_filename(modname, 'templates')
+        self.template_lookup_directories = [os.path.abspath(directory)]
 
-class PalettePageMixin(object):
+    def render(self, req, obj=None):
+        lookup = TemplateLookup(directories=self.template_lookup_directories)
+        if obj is None:
+            obj = self
+        template = lookup.get_template(self.TEMPLATE)
+        return template.render(obj=obj, req=req)
+
+    def service_GET(self, req):
+        return self.render(req)
+
+class PalettePage(Page):
     # The active page on the mainNav
     active = ''
     # Whether or not to show the expanded configure items.
@@ -23,7 +43,7 @@ class PalettePageMixin(object):
             return 'fa-times-circle red'
         return ''
 
-    def preprocess(self, req, obj):
+    def render(self, req, obj=None):
         # pylint: disable=attribute-defined-outside-init
         # req.remote_user can possibly be None if AD authentication works,
         # but there is a problem importing the user database from Tableau.
@@ -33,21 +53,15 @@ class PalettePageMixin(object):
         if not self.required_role is None:
             if req.remote_user.roleid < self.required_role:
                 raise exc.HTTPForbidden
-        if obj is None:
-            obj = self
+
         if 'status_color' in req.cookies:
             color = req.cookies['status_color']
-            obj.status_class = self.build_status_class(color)
+            self.status_class = self.build_status_class(color)
         else:
-            obj.status_class = ''
+            self.status_class = ''
         if 'status_text' in req.cookies:
-            obj.status_text = req.cookies['status_text'].replace("_", " ")
+            self.status_text = req.cookies['status_text'].replace("_", " ")
         else:
-            obj.status_text = ''
-        return obj
+            self.status_text = ''
+        return super(PalettePage, self).render(req, obj=self)
 
-class PalettePage(Page, PalettePageMixin):
-
-    def render(self, req, obj=None):
-        obj = self.preprocess(req, obj)
-        return super(PalettePage, self).render(req, obj=obj)

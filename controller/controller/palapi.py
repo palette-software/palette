@@ -6,11 +6,6 @@ import hashlib
 import ntpath
 import posixpath
 
-# FIXME: deprecate the use of 'store'
-# pylint: disable=import-error,no-name-in-module
-import akiri.framework.config as config
-# pylint: enable=import-error,no-name-in-module
-
 import clierror
 
 class CommError(object):
@@ -218,14 +213,14 @@ class CommBase(object):
                             "Agent not found: %s %s" % \
                                         (self.spec_str, self.spec_val))
 
+
 class CommHandlerApp(CommBase):
-    def __init__(self, app):
+    def __init__(self, app, hostname='localhost', port=9000):
         super(CommHandlerApp, self).__init__()
 
         self.app = app
-        self.port = config.store.getint("palette", "telnet_port", default=9000)
-        self.hostname = config.store.get("palette", "telnet_hostname",
-                                         default="localhost")
+        self.hostname = hostname
+        self.port = port
 
 
 class CommHandlerArgs(CommBase):

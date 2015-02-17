@@ -1,7 +1,7 @@
 from webob import exc, Response
 from paste.auth.auth_tkt import AuthTicket
 
-from akiri.framework import GenericWSGIApplication
+from akiri.framework import GenericWSGIApplication, GenericWSGI
 import akiri.framework.sqlalchemy as meta
 
 from controller.profile import UserProfile
@@ -65,24 +65,15 @@ class OpenApplication(GenericWSGIApplication):
         raise exc.HTTPBadRequest(req)
 
 
-def make_open(global_conf):
-    # pylint: disable=unused-argument
-    return OpenApplication(global_conf['shared'])
-
-class InitialApp(GenericWSGIApplication):
+class InitialMiddleware(GenericWSGI):
     """ Test whether the system has been initially setup."""
 
     def service_GET(self, req):
         if 'REMOTE_USER' in req.environ:
             # If REMOTE_USER is set - presumably from auth_tkt,
             # then setup has already been done.
-            return None
+            return
 
         entry = UserProfile.get(req.envid, 0) # user '0', likely 'palette'
         if not entry.hashed_password:
             raise exc.HTTPTemporaryRedirect(location='/setup')
-        return None
-
-def make_initial_filter(app, global_conf):
-    # pylint: disable=unused-argument
-    return InitialApp(app)
