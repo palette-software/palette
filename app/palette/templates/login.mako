@@ -17,8 +17,7 @@
 <link rel="stylesheet" type="text/css" href="/fonts/fonts.css" media="screen">
 <link rel="stylesheet" type="text/css" href="/css/style.css" media="screen">
 
-<script src="/app/module/palette/js/vendor/require.js"
-        data-main="/app/module/palette/js/login.js" >
+<script src="/js/vendor/require.js" data-main="/js/login.js" >
 </script>
 </%block>
 
@@ -27,7 +26,7 @@
   <section class="login-box">
     <div>
       <a href="/">
-        <img class="login" src="/app/module/palette/images/palette_logo.png">
+        <img class="login" src="/images/palette_logo.png">
       </a>
       <form method="POST" action="/login/authenticate" id="form">
         <label for="username">Tableau Server Username</label>

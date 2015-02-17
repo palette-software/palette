@@ -5,4 +5,4 @@
 <title>Palette - Contact Us</title>
 </%block>
 
-<script src="/app/module/palette/js/contact.js"></script>
+<script src="/js/contact.js"></script>

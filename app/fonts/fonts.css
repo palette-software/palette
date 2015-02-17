@@ -1,0 +1,50 @@
+/**
+ * @license
+ * MyFonts Webfont Build ID 2834533, 2014-06-25T02:52:35-0400
+ * MyFonts Webfont Build ID 2835149, 2014-06-25T19:57:55-0400
+ *
+ * The fonts listed in this notice are subject to the End User License
+ * Agreement(s) entered into by the website owner. All other parties are
+ * explicitly restricted from using the Licensed Webfonts(s).
+ *
+ * You may obtain a valid license at the URLs below.
+ *
+ * Webfont: Proxima Nova Light by Mark Simonson
+ * URL: http://www.myfonts.com/fonts/marksimonson/proxima-nova/light/
+ *
+ * Webfont: Proxima Nova SemiBold by Mark Simonson
+ * URL: http://www.myfonts.com/fonts/marksimonson/proxima-nova/semibold/
+ *
+ * Webfont: Proxima Nova Regular by Mark Simonson
+ * URL: http://www.myfonts.com/fonts/marksimonson/proxima-nova/regular/
+ *
+ * Webfont: Proxima Nova Bold by Mark Simonson
+ * URL: http://www.myfonts.com/fonts/marksimonson/proxima-nova/bold/
+ *
+ * Webfont: Helvetica Neue 45 Light by Linotype
+ * URL: http://www.myfonts.com/fonts/linotype/neue-helvetica/helvetica-45-light/
+ *
+ * Webfont: Helvetica Neue 55 Roman by Linotype
+ * URL: http://www.myfonts.com/fonts/linotype/neue-helvetica/helvetica-55-roman/
+ *
+ * License: http://www.myfonts.com/viewlicense?type=web&buildid=2834533
+ * License: http://www.myfonts.com/viewlicense?type=web&buildid=2835149
+ * Licensed pageviews: 1,000,000
+ * Webfonts copyright: Copyright (c) Mark Simonson, 2005. All rights reserved.
+ * Webfonts copyright: Copyright &#x00A9; 1988, 1990, 1993, 2002 Adobe Systems Incorporated.  All Rights Reserved. &#x00A9; 1981, 2002 Heidelberger Druckmaschinen AG. All rights reserved.
+ *
+ * © 2014 MyFonts Inc
+*/
+
+
+@font-face {font-family: 'Proxima Nova Light';src: url('/app/module/palette/fonts/webfonts/2B4065_8_0.eot');src: url('/app/module/palette/fonts/webfonts/2B4065_8_0.eot?#iefix') format('embedded-opentype'),url('/app/module/palette/fonts/webfonts/2B4065_8_0.woff') format('woff'),url('/app/module/palette/fonts/webfonts/2B4065_8_0.ttf') format('truetype');}
+
+
+@font-face {font-family: 'Proxima Nova Semibold';src: url('webfonts/2B4065_9_0.eot');src: url('webfonts/2B4065_9_0.eot?#iefix') format('embedded-opentype'),url('webfonts/2B4065_9_0.woff') format('woff'),url('webfonts/2B4065_9_0.ttf') format('truetype');}
+
+
+@font-face {font-family: 'Proxima Nova Regular';src: url('/app/module/palette/fonts/webfonts/2B4065_A_0.eot');src: url('/app/module/palette/fonts/webfonts/2B4065_A_0.eot?#iefix') format('embedded-opentype'),url('/app/module/palette/fonts/webfonts/2B4065_A_0.woff') format('woff'),url('/app/module/palette/fonts/webfonts/2B4065_A_0.ttf') format('truetype');}
+
+
+@font-face {font-family: 'Helvetica Neue Light';src: url('/app/module/palette/fonts/webfonts/2B42CD_0_0.eot');src: url('/app/module/palette/fonts/webfonts/2B42CD_0_0.eot?#iefix') format('embedded-opentype'),url('/app/module/palette/fonts/webfonts/2B42CD_0_0.woff') format('woff'),url('/app/module/palette/fonts/webfonts/2B42CD_0_0.ttf') format('truetype');}
+

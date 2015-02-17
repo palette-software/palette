@@ -10,11 +10,11 @@ module.exports = function(grunt) {
           strictMath: true,
           sourceMap: true,
           outputSourceFiles: true,
-          sourceMapURL: '/app/module/palette/css/<%= pkg.name %>.css.map',
-          sourceMapFilename: 'palette/css/<%= pkg.name %>.css.map'
+          sourceMapURL: '/css/<%= pkg.name %>.css.map',
+          sourceMapFilename: 'css/<%= pkg.name %>.css.map'
         },
         src: 'less/style.less',
-        dest: 'palette/css/style.css'
+        dest: 'css/style.css'
       }
     }
 

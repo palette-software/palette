@@ -1,5 +1,5 @@
-*.css
-*.css.map
+/css/style.css
+/css/palette.css.map
 /build
 /dist
 /data
