@@ -309,7 +309,7 @@ class SetupTimezoneApplication(JSONProxy):
 
     @required_role(Role.MANAGER_ADMIN)
     def service(self, req):
-        return super(SetupTimezoneApplication, self).super(req)
+        return super(SetupTimezoneApplication, self).service(req)
 
     def postprocess(self, req, data):
         if 'error' in data:
