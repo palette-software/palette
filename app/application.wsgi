@@ -82,8 +82,7 @@ router.add_route(r'/', pages)
 
 # session -> base  -> main-router
 application = BaseMiddleware(router)
-application = SessionMiddleware(DATABASE, app=application,
-                                echo=False, max_overflow=45)
+application = SessionMiddleware(app=application)
 
 if __name__ == '__main__':
     from webob.static import DirectoryApp
