@@ -7,10 +7,12 @@ import os
 from paste.auth.auth_tkt import AuthTKTMiddleware
 from paste.proxy import Proxy
 
+from akiri.framework import Application
 from akiri.framework.admin import LogoutApplication
 from akiri.framework.middleware.auth import AuthForbiddenMiddleware
 from akiri.framework.middleware.auth import AuthRedirectMiddleware
 from akiri.framework.route import Router
+from akiri.framework.sqlalchemy import create_engine
 from akiri.framework.middleware.sqlalchemy import SessionMiddleware
 
 from palette import HomePage, set_aes_key_file
@@ -82,7 +84,10 @@ router.add_route(r'/', pages)
 
 # session -> base  -> main-router
 application = BaseMiddleware(router)
-application = SessionMiddleware(app=application)
+
+engine = create_engine(DATABASE, echo=False, max_overflow=45)
+application = SessionMiddleware(app=application, bind=engine)
+application = Application(application)
 
 if __name__ == '__main__':
     from webob.static import DirectoryApp
@@ -92,9 +97,12 @@ if __name__ == '__main__':
     from paste.translogger import TransLogger
     application = TransLogger(application)
 
+    # debugging API
+    from akiri.framework.servers import MapApplication
+    router.prepend_route(r'/api/map', MapApplication())
+
     # serve static content
     docroot = os.path.dirname(os.path.abspath(__file__))
-
     cssdir = os.path.join(docroot, 'css')
     router.prepend_route(r'/css/', DirectoryApp(cssdir), profile=False)
     fontdir = os.path.join(docroot, 'fonts')
@@ -103,5 +111,7 @@ if __name__ == '__main__':
     router.prepend_route(r'/js/', DirectoryApp(jsdir), profile=False)
     imgdir = os.path.join(docroot, 'images')
     router.prepend_route(r'/images/', DirectoryApp(imgdir), profile=False)
+    dbgdir = os.path.join(docroot, 'd')
+    router.prepend_route(r'/d/', DirectoryApp(dbgdir), profile=False)
 
     runserver(application, use_reloader=True)
