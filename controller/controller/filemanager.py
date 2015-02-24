@@ -38,7 +38,7 @@ class FileManager(object):
         try:
             with open(target, "w") as f:
                 data = self.get(path)
-                f.write(self.get(path))
+                f.write(data)
             return {
                 'target': target,
                 'path': path,
