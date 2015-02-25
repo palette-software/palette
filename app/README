@@ -6,10 +6,10 @@ sudo apt-get install -y npm nodejs-legacy
 # Mac
 see: http://nodejs.org/
 
-# from the directory containing this file
+# from the directory containing this README file
 sudo npm install -g less
 sudo npm install -g grunt-cli
-../scripts/ux-setup.sh
+../scripts/setup.sh
 
 
 ---
