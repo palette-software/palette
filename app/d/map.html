@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<script>
+  var require = {
+    paths: {
+      'jquery': '/js/vendor/jquery',
+      'Map': 'https://www.akirisolutions.com/js/Map',
+    }
+  };
+</script>
+
+</head>
+<body>
+<div id="map_div"></div>
+
+<script src="/js/vendor/require.js"></script>
+<script>
+require(['Map'], function(Map) {
+  var map = new Map({size:"small"});
+});
+</script>
+
+</body>
+</html>
