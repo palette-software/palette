@@ -350,6 +350,23 @@ class WorkbookManager(TableauCacheManager):
             else:
                 file_size = file_size_body['size']
 
+        # Pull file over to the controller before sending the file away
+        # (and deleting it on the primary if it will reside elsewhere).
+        self.log.debug('Retrieving workbook: %s', dst)
+        try:
+            body = agent.filemanager.save(dst, target=self.path)
+        except IOError as ex:
+            self.log.debug("Error saving workbook '%s': %s", dst, str(ex))
+            return None
+
+        if failed(body):
+            self._eventgen(self, update, data=body)
+            return None
+        else:
+            self.log.debug('Retrieved workbook: %s', dst)
+
+        # Save the workbook .twb file on cloud storage, other agent,
+        # or leave on the primary.
         auto = True
         # Note: If the file is copied off the primary, then it is deleted
         # from the primary afterwards, due to "enable_delete=True":
@@ -367,19 +384,6 @@ class WorkbookManager(TableauCacheManager):
         if not path:
             # build_workbook prints errors and calls _eventgen().
             return None
-
-        self.log.debug('Retrieving workbook: %s', path)
-        try:
-            body = agent.filemanager.save(path, target=self.path)
-        except IOError as ex:
-            self.log.debug("Error saving workbook '%s': %s", path, str(ex))
-            return None
-
-        if failed(body):
-            self._eventgen(self, update, data=body)
-            return None
-        else:
-            self.log.debug('Retrieved workbook: %s', path)
 
         return agent.path.basename(path)
 
