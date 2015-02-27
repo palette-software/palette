@@ -77,7 +77,8 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
 
         if entry.cores:
             entry.license_type = LicenseEntry.LICENSE_TYPE_CORE
-        elif entry.interactors or entry.viewers:
+        else:
+            # Set a default type, if not yet licensed:
             entry.license_type = LicenseEntry.LICENSE_TYPE_NAMED_USER
 
         # If the entry is valid, reset the notification field.
