@@ -28,7 +28,7 @@
             </a>
           </li>
 	  <li>
-            <a href="http://www.palette-software.com/agent">
+            <a href="http://www.palette-software.com/agent" target="_blank">
 	      Download Palette Agent
 	    </a>
           </li>
