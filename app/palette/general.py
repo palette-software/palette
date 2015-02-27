@@ -570,9 +570,9 @@ class GeneralMonitorApplication(PaletteRESTApplication):
                                             req.POST['cpu-load-error'])
 
         req.system.save(SystemConfig.CPU_PERIOD_WARN,
-                                            req.POST['cpu-period-warn'])
+                                        int(req.POST['cpu-period-warn']) * 60)
         req.system.save(SystemConfig.CPU_PERIOD_ERROR,
-                                            req.POST['cpu-period-error'])
+                                        int(req.POST['cpu-period-error']) * 60)
 
         req.system.save(SystemConfig.HTTP_LOAD_WARN,
                                         req.POST['http-load-warn'])
