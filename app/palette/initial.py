@@ -29,7 +29,7 @@ class OpenApplication(GenericWSGIApplication):
         return self.setup.service_GET(req)
 
     def _set_license_key(self, req):
-        license_key = req.params_get('license-key')
+        license_key = req.params_get('license-key').strip()
         req.palette_domain.license_key = license_key
         meta.Session.commit()
 
