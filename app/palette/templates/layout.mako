@@ -125,7 +125,7 @@
   </button>
   <ul class="dropdown-menu" role="menu">
     {{#options}}
-    <li><a data-id="{{id}}">{{option}}</a></li>
+    <li><a data-id="{{id}}">{{item}}</a></li>
     {{/options}}
   </ul>
 </script>

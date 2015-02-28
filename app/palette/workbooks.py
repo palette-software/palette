@@ -100,12 +100,12 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
 
     def site_project_options(self, sites, projects):
         # estimate: < 50 projects
-        options = [{'option': self.ALL_SITES_PROJECTS_OPTION, 'id': 0}]
+        options = [{'item': self.ALL_SITES_PROJECTS_OPTION, 'id': 0}]
         for site in sites.values():
             for project in projects.values():
                 if project.site_id != site.id:
                     continue
-                data = {'option': site.name + '/' + project.name,
+                data = {'item': site.name + '/' + project.name,
                         'id': str(site.id) + ':' + str(project.id)}
                 options.append(data)
         return options
