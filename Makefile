@@ -70,4 +70,9 @@ clean:
 
 build-setup:
 	sudo apt-get install -y debhelper reprepro python-setuptools pylint python-passlib python-tz
+	sudo apt-get install -y npm nodejs-legacy
+	sudo npm install -g less
+	sudo npm install -g grunt-cli
+	cd app; sudo ../scripts/setup.sh
+
 .PHONY: build-setup
