@@ -263,5 +263,5 @@
   </div>
 </div>
 
-<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/general.js">
+<script src="/js/vendor/require.js" data-main="/js/general.js">
 </script>

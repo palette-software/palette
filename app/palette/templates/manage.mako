@@ -296,5 +296,5 @@
   </ul>
 </script>
 
-<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/manage.js">
+<script src="/js/vendor/require.js" data-main="/js/manage.js">
 </script>
