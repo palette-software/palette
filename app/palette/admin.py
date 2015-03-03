@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from akiri.framework.admin import BaseLoginApplication
 
 from controller.profile import UserProfile
