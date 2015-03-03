@@ -27,9 +27,7 @@ XYZZY
     update-rc.d controller defaults
     service controller start
     exit 0
-fi
-
-if [ "$oldversion" = "1.0.1" ]; then
+elif [ "$oldversion" = "1.0.1" ]; then
     echo Upgrading from 1.0.1 ...
     psql paldb << XYZZY
     drop table cron;
@@ -50,6 +48,13 @@ XYZZY
     update-rc.d controller defaults
     service controller start
     exit 0
+elif [ "$oldversion" != "" ]; then
+    echo Upgrading $oldversion
+    # If we are upgrading from a previous version (vs. a new install),
+    # drop the event_control table as it almost always changes.
+    psql paldb << XYZZY
+    drop table event_control;
+XYZZY
 fi
 
 set +x
