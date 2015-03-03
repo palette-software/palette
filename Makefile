@@ -1,8 +1,7 @@
-PKG1:= akiri.framework-sqlalchemy_0.1_all.deb
-PKG2 = akiri.framework_0.4.5_all.deb
+PKG1 = akiri.framework_0.4.7_all.deb
 POOL_DIR = dpkg/pool
 DOWNLOAD_DIR = https://www.akirisolutions.com/download/framework/
-PREBUILT_PACKAGES = $(POOL_DIR)/$(PKG1) $(POOL_DIR)/$(PKG2)
+PREBUILT_PACKAGES = $(POOL_DIR)/$(PKG1)
 
 all: palette controller palette-agent palette-support
 
@@ -33,9 +32,6 @@ publish-dev3: $(PREBUILT_PACKAGES)
 
 $(POOL_DIR)/$(PKG1):
 	wget --directory-prefix=$(POOL_DIR) $(DOWNLOAD_DIR)/$(PKG1)
-
-$(POOL_DIR)/$(PKG2):
-	wget --directory-prefix=$(POOL_DIR) $(DOWNLOAD_DIR)/$(PKG2)
 
 palette: 
 	make -C app all
@@ -70,6 +66,7 @@ clean:
 
 build-setup:
 	sudo apt-get install -y debhelper reprepro python-setuptools pylint python-passlib python-tz
+	sudo apt-get install -y python-dateutil python-crypto python-boto
 	sudo apt-get install -y npm nodejs-legacy
 	sudo npm install -g less
 	sudo npm install -g grunt-cli

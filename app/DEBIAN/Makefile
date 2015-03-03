@@ -6,6 +6,13 @@ all:
 	cp -a ../$(PACKAGE) ../setup.py $(PACKAGE)-$(VERSION)/
 	rm -f $(PACKAGE)-$(VERSION)/$(PACKAGE)/controller
 	cp -a MANIFEST.in etc debian $(PACKAGE)-$(VERSION)/
+	mkdir -p var/www/css var/www/fonts var/www/images var/www/js
+	cp -a ../css var/www
+	cp -a ../fonts var/www
+	cp -a ../images var/www
+	cp -a ../js var/www
+	mkdir -p opt
+	cp -a ../application.wsgi opt
 	cd $(PACKAGE)-$(VERSION) && python setup.py sdist --dist-dir=../
 	mv $(PACKAGE)-$(VERSION).tar.gz $(PACKAGE)_$(VERSION).orig.tar.gz
 	../../scripts/genchangelog.sh $(PACKAGE) $(VERSION) >\

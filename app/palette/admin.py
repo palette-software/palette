@@ -1,12 +1,12 @@
 from __future__ import absolute_import
 from akiri.framework.admin import BaseLoginApplication
 
-from .controller.profile import UserProfile
-from .controller.environment import Environment
-from .controller.palapi import CommHandlerApp
-from .controller.general import SystemConfig
-from .controller.system import SystemEntry
-from .controller.yml import YmlEntry
+from controller.profile import UserProfile
+from controller.environment import Environment
+from controller.palapi import CommHandlerApp
+from controller.general import SystemConfig
+from controller.system import SystemEntry
+from controller.yml import YmlEntry
 
 from .setup import AuthType
 from .page import Page

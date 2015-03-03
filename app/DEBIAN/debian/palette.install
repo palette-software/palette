@@ -4,7 +4,11 @@
 ../etc/apache2/sites-available/palette-software.conf	/etc/apache2/sites-available
 ../etc/ssl/certs/server.crt	/etc/ssl/certs
 ../etc/ssl/private/server.key	/etc/ssl/private
-../opt/palette.wsgi		/opt/palette
+../opt/application.wsgi		/opt/palette
 ../etc/init.d/framework-postfix	/etc/init.d
 ../etc/init.d/framework-ssl	/etc/init.d
 ../etc/init.d/framework-timezone	/etc/init.d
+../var/www/css /var/www
+../var/www/fonts /var/www
+../var/www/images /var/www
+../var/www/js /var/www
