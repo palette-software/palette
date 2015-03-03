@@ -1,7 +1,7 @@
 require.config({
     paths: {
-        'jquery': '/app/module/palette/js/vendor/jquery',
-        'domReady': '/app/module/palette/js/vendor/domReady',
+        'jquery': '/js/vendor/jquery',
+        'domReady': '/js/vendor/domReady',
     }
 });
 

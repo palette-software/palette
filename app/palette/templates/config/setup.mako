@@ -127,5 +127,5 @@
   </ul>
 </script>
 
-<script src="/app/module/palette/js/vendor/require.js" data-main="/app/module/palette/js/setup.js">
+<script src="/js/vendor/require.js" data-main="/js/setup.js">
 </script>
