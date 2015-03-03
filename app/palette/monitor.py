@@ -51,13 +51,14 @@ class MonitorApplication(PaletteRESTApplication):
         super(MonitorApplication, self).__init__()
         self.event = EventHandler()
 
+    # FIXME: replace with class
     def status_options(self, req):
         current_key = 'status' in req.GET and req.GET['status'] or '0'
-        options = [{'option':'All Status', 'id':0}]
+        options = [{'item':'All Status', 'id':0}]
         for x in ['E', 'W', 'I']:
-            options.append({'option':EventControl.level_strings[x], 'id':x})
+            options.append({'item':EventControl.level_strings[x], 'id':x})
         if current_key == '0':
-            value = options[0]['option']
+            value = options[0]['item']
         else:
             value = EventControl.level_strings[current_key]
         return {'name':'status', 'value':value,
@@ -65,7 +66,7 @@ class MonitorApplication(PaletteRESTApplication):
 
     def type_options(self, req):
         current_key = 'type' in req.GET and req.GET['type'] or '0'
-        options = [{'option':'All Types', 'id':0}]
+        options = [{'item':'All Types', 'id':0}]
 
         d = {'name':'type'}
         types = OrderedDict()
@@ -76,9 +77,9 @@ class MonitorApplication(PaletteRESTApplication):
             if key == current_key:
                 d['value'] = types[key]
                 d['id'] = key
-            options.append({'option':types[key], 'id':key})
+            options.append({'item':types[key], 'id':key})
         if 'id' not in d:
-            d['value'] = options[0]['option']
+            d['value'] = options[0]['item']
             d['id'] = 0
         d['options'] = options
         return d
@@ -86,16 +87,16 @@ class MonitorApplication(PaletteRESTApplication):
     def publisher_options(self, req):
         sysid = req.params_getint('publisher', default=0)
 
-        options = [{'option':'All Publishers', 'id':0}]
+        options = [{'item':'All Publishers', 'id':0}]
         d = {'name':'publisher'}
         for publisher in ExtractManager.publishers():
             if publisher.system_user_id == sysid:
                 d['value'] = publisher.friendly_name
                 d['id'] = publisher.system_user_id
-            options.append({'option':publisher.friendly_name,
+            options.append({'item':publisher.friendly_name,
                       'id':publisher.system_user_id})
         if not 'id' in d:
-            d['value'] = options[0]['option']
+            d['value'] = options[0]['item']
             d['id'] = options[0]['id']
         d['options'] = options
         return d

@@ -84,20 +84,6 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
     def item_count(self, envid):
         return WorkbookEntry.count(filters={'envid':envid})
 
-    def site_options(self, sites):
-        options = [{'option': 'All Sites', 'id': 0}]
-        for site in sites.values():
-            data = {'option':site.name, 'id':site.id}
-            options.append(data)
-        return options
-
-    def project_options(self, projects):
-        options = [{'option': 'All Projects', 'id': 0}]
-        for project in projects.values():
-            data = {'option':project.name, 'id':project.id}
-            options.append(data)
-        return options
-
     def site_project_options(self, sites, projects):
         # estimate: < 50 projects
         options = [{'item': self.ALL_SITES_PROJECTS_OPTION, 'id': 0}]
