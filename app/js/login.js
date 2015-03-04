@@ -6,7 +6,7 @@ require.config({
 });
 
 require(['jquery', 'domReady!'],
-function (jquery)
+function ($)
 {
     var fields = [ "username", "password" ];
     var errmode = false;
@@ -14,7 +14,7 @@ function (jquery)
     function validate() {
         var data = {}
         for (var i = 0; i < fields.length; i++) {
-            var value = jquery.trim(jquery('#'+fields[i]).val());
+            var value = $.trim($('#'+fields[i]).val());
             if (value.length == 0) {
                 return false;
             }
@@ -46,16 +46,27 @@ function (jquery)
         return null;
     }
 
-    function submit() {
+    function submit(url) {
         var data = validate();
         if (!data) {
             return setErrorMode();
         }
-        var redirect = getParam("location");
-        if (redirect != null) {
-            jquery('#redirect').val(redirect);
+        var location = getParam("location");
+        if (location == null) {
+            location = '/';
         }
-        jquery('form').submit();
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: $('form').serialize(),
+            success: function () {
+                window.location.replace(location);
+            },
+            error: function () {
+                setErrorMode();
+                $('#error').removeClass('hidden');
+            }
+        });
     }
 
     function setErrorMode() {
@@ -63,7 +74,7 @@ function (jquery)
             return;
         }
         for (var i = 0; i < fields.length; i++) {
-            var node = jquery('#'+fields[i]); // must re-grab the node
+            var node = $('#'+fields[i]); // must re-grab the node
             node.keyup(function(event) {
                 change(node);
             });
@@ -71,16 +82,12 @@ function (jquery)
         }
         errmode = true;
 
-        jquery('#error').removeClass('hidden');
+        $('#error').removeClass('hidden');
     }
 
-    if (jquery('#auth-error').length) {
-        setErrorMode();
-        jquery('#error').removeClass('hidden');
-    }
-
-    jquery('#login').bind('click', function(event) {
+    var url = $('form').attr('action');
+    $('#login').bind('click', function(event) {
         event.preventDefault();
-        submit();
+        submit(url);
     });
 });
