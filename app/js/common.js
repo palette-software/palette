@@ -3,8 +3,8 @@
  * templates and should be named accordingly.
  */
 
-define(['jquery', 'topic', 'template', 'items', 'paging'],
-function ($, topic, template, items, paging)
+define(['jquery', 'topic', 'template', 'items', 'paging', 'Dropdown'],
+function ($, topic, template, items, paging, Dropdown)
 {
     var server_list_template = $('#server-list-template').html();
     template.parse(server_list_template);
@@ -307,27 +307,10 @@ function ($, topic, template, items, paging)
     }
 
     /*
-     * setupDropdowns()
-     * Enable the select-like elements created with the dropdown class.
-     */
-    function setupDropdowns() {
-        $('.dropdown-menu li').off('click');
-        $('.dropdown-menu li').bind('click', ddClick);
-    }
-
-    /*
-      * getDropdownValueById()
-      */
-    function getDropdownValueById(id) {
-        return $('#' + id + ' > button > div').attr('data-id');
-    }
-
-    /*
      * setupEventDropdowns()
-     * Enable the Event filters - if present.
+     * Connect the Event filters to the paging mechanism - if present.
      */
     function setupEventDropdowns() {
-        setupDropdowns()
         $('.filter-dropdowns div.btn-group').each(function () {
             $(this).data('callback', function(node, value) {
                 paging.set(1);
@@ -500,7 +483,7 @@ function ($, topic, template, items, paging)
     function monitorUpdateEvents(data)
     {
         updateEventList(data);
-        items.configFilters(data);
+        Dropdown.setupAll(data);
         paging.config(data);
 
         if (paging.getPageNumber() > 1) {
@@ -509,7 +492,6 @@ function ($, topic, template, items, paging)
 
         items.bind();
 
-        /* FIXME: do these once. */
         setupEventDropdowns();
         paging.bind(eventPageCallback);
     }
@@ -709,8 +691,7 @@ function ($, topic, template, items, paging)
     return {'startMonitor': startMonitor,
             'ajaxError': ajaxError,
             'setupDialogs': setupDialogs,
-            'setupDropdowns' : setupDropdowns,
-            'getDropdownValueById': getDropdownValueById,
+            'setupEventDropdowns' : setupEventDropdowns,
             'setupOkCancel' : setupOkCancel,
             'validEmail' : validEmail,
             'validURL' : validURL,

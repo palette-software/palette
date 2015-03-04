@@ -1,6 +1,6 @@
-require(['jquery', 'template', 'common', 'paging', 'items', 'EditBox',
-         'bootstrap'],
-function ($, template, common, paging, items, EditBox)
+require(['jquery', 'template', 'common', 'paging', 'items',
+         'Dropdown', 'EditBox', 'bootstrap'],
+function ($, template, common, paging, items, Dropdown, EditBox)
 {
     var t = $('#workbook-list-template').html();
     template.parse(t);
@@ -35,13 +35,12 @@ function ($, template, common, paging, items, EditBox)
         $('#workbook-list').html(rendered);
 
         items.bind();
-        items.configFilters(data);
+        EditBox.setup();
+        Dropdown.setupAll(data);
 
         paging.config(data);
         paging.show();
-
-        EditBox.setup();
-        common.setupDropdowns();
+        common.setupEventDropdowns();
 
         // selection change callback.
         $('.filter-dropdowns div.btn-group').each(function () {

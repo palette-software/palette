@@ -8,8 +8,8 @@
     </section>
     <section class="row">
       <section class="col-xs-12 filter-dropdowns">
-        <div id="status-dropdown" class="btn-group"></div>
-        <div id="type-dropdown" class="btn-group"></div>
+        <div id="status-dropdown" class="dropdown-toggle btn-group"></div>
+        <div id="type-dropdown" class="dropdown-toggle btn-group"></div>
       </section>
     </section>
   </section>

@@ -118,20 +118,8 @@
   <i class="fa fa-fw fa-check ok"></i>
   <i class="fa fa-fw fa-times cancel"></i>
 </script>
-
-<!-- FIXME: duplicated? -->
-<script id="filter-dropdown" type="x-tmpl-mustache">
-  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div data-id="{{id}}">{{value}}</div><span class="caret"></span>
-  </button>
-  <ul class="dropdown-menu" role="menu">
-    {{#options}}
-    <li><a data-id="{{id}}">{{option}}</a></li>
-    {{/options}}
-  </ul>
-</script>
-
-
 </head>
+
 <body>
 
 <%include file="mainnav.mako" />

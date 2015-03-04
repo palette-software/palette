@@ -16,11 +16,11 @@
       </section>
       <section class="row">
         <section class="col-xs-12 filter-dropdowns">
-          <div id="show-dropdown" class="btn-group"></div>
+          <div id="show-dropdown" class="dropdown-toggle btn-group"></div>
           <span>Sort by:</span>
-          <div id="sort-dropdown" class="btn-group"></div>
+          <div id="sort-dropdown" class="dropdown-toggle btn-group"></div>
           <span>Filter by:</span>
-          <div id="site-project-dropdown" class="btn-group"></div>
+          <div id="site-project-dropdown" class="dropdown-toggle btn-group"></div>
         </section>
       </section>
     </section>
