@@ -114,4 +114,4 @@ if __name__ == '__main__':
     dbgdir = os.path.join(docroot, 'd')
     router.prepend_route(r'/d/', DirectoryApp(dbgdir), profile=False)
 
-    runserver(application, use_reloader=True)
+    runserver(application, use_reloader=True, host='0.0.0.0')

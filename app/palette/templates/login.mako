@@ -40,11 +40,7 @@
             </button>
           </section>
         </section>
-        <input type="hidden" id="redirect" name="redirect" value=""/>
       </form>
-      %if 'AUTH_ERROR' in req.environ:
-      <section class="hidden" id="auth-error"></section>
-      %endif
       <p class="hidden error" id="error">
         <b>Unrecognized Username or Password</b>
       </p>
