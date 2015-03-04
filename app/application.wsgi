@@ -49,6 +49,10 @@ licensing_proxy = Proxy(LICENSING_URL, allowed_request_methods=['GET'])
 loginapp = LoginApplication(secret=SHARED,
                             max_age=LOGIN_MAX_AGE,
                             httponly=True)
+loginpage = LoginPage()
+loginpage = ExpireMiddleware(loginpage)
+loginpage = InitialMiddleware(loginpage)
+
 
 # remote_user -> auth_tkt -> 403 -> rest
 rest = RestRouter()
@@ -64,7 +68,6 @@ pages.add_route(r'/manage\Z', ManagePage())
 pages.add_route(r'/profile\Z', ProfilePage())
 pages.add_route(r'/configure/', ConfigureRouter())
 pages.add_route(r'/data/workbook-archive\Z', WorkbookData(WORKBOOK_DATA_PATH))
-pages.add_route(r'/setup\Z', SetupPage())
 pages.add_route(r'/licensing\Z', licensing_proxy)
 pages.add_route(r'/', HomePage())
 pages = RemoteUserMiddleware(pages)
@@ -76,8 +79,9 @@ pages = AuthTKTMiddleware(pages, secret=SHARED)
 # top-level, first called router
 router = Router()
 router.add_route(r'/open/setup\Z', OpenApplication(secret=SHARED))
+router.add_route(r'/setup\Z', SetupPage())
 router.add_route(r'/rest/', rest)
-router.add_route(LOGIN_URL + r'\Z', LoginPage())
+router.add_route(LOGIN_URL + r'\Z', loginpage)
 router.add_route(LOGIN_URL + r'/authenticate\Z', loginapp)
 router.add_route(r'/logout', LogoutApplication(redirect=LOGIN_URL))
 router.add_route(r'/', pages)
