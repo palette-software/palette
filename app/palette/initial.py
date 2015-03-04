@@ -65,7 +65,7 @@ class OpenApplication(GenericWSGIApplication):
         raise exc.HTTPBadRequest(req)
 
 
-class InitialMiddleware(GenericWSGI):
+class InitialMiddleware(GenericWSGIApplication):
     """ Test whether the system has been initially setup."""
 
     def service_GET(self, req):
