@@ -14,7 +14,7 @@ from controller.credential import CredentialEntry
 from controller.sites import Site
 from controller.projects import Project
 
-from .option import BaseStaticOption
+from .option import DictOption
 from .page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
 
@@ -28,16 +28,26 @@ class CredentialMixin(object):
     def get_cred(self, envid, name):
         return CredentialEntry.get_by_envid_key(envid, name, default=None)
 
-class WorkbookShow(BaseStaticOption):
+class WorkbookShow(DictOption):
+    """Options to show all workbooks or only for the current user."""
+    NAME = 'show-dropdown'
     ALL = 0
     MINE = 1
 
     @classmethod
     def items(cls):
-        return OrderedDict({cls.ALL:'All Workbooks', cls.MINE:'My Workbooks'})
+        return OrderedDict({
+            cls.ALL: 'All Workbooks',
+            cls.MINE: 'My Workbooks'})
 
-class WorkbookSort(BaseStaticOption):
-    NAME = 0
+    def __init__(self, valueid):
+        super(WorkbookShow, self).__init__(self.NAME, valueid,
+                                           self.__class__.items())
+
+class WorkbookSort(DictOption):
+    """Possible ways to sort workbooks."""
+    NAME = "sort-dropdown"
+    WORKBOOK = 0
     SITE = 1
     PROJECT = 2
     PUBLISHER = 3
@@ -45,9 +55,17 @@ class WorkbookSort(BaseStaticOption):
 
     @classmethod
     def items(cls):
-        return OrderedDict({cls.NAME:'Workbook', cls.SITE:'Site',
-                            cls.PROJECT:'Project', cls.PUBLISHER:'Publisher',
-                            cls.REVISION_DATE:'Revision Date'})
+        return OrderedDict({
+            cls.WORKBOOK: 'Workbook',
+            cls.SITE: 'Site',
+            cls.PROJECT: 'Project',
+            cls.PUBLISHER: 'Publisher',
+            cls.REVISION_DATE: 'Revision Date'})
+
+    def __init__(self, valueid):
+        super(WorkbookSort, self).__init__(self.NAME, valueid,
+                                           self.__class__.items())
+
 
 class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
     # pylint: disable=too-many-public-methods
@@ -81,28 +99,22 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
     def item_count(self, envid):
         return WorkbookEntry.count(filters={'envid':envid})
 
-    def site_options(self, sites):
-        options = [{'option': 'All Sites', 'id': 0}]
-        for site in sites.values():
-            data = {'option':site.name, 'id':site.id}
-            options.append(data)
-        return options
+    def show_options(self, req):
+        valueid = req.params_getint('show', WorkbookShow.ALL)
+        return WorkbookShow(valueid).default()
 
-    def project_options(self, projects):
-        options = [{'option': 'All Projects', 'id': 0}]
-        for project in projects.values():
-            data = {'option':project.name, 'id':project.id}
-            options.append(data)
-        return options
+    def sort_options(self, req):
+        valueid = req.params_getint('sort', WorkbookSort.WORKBOOK)
+        return WorkbookSort(valueid).default()
 
     def site_project_options(self, sites, projects):
         # estimate: < 50 projects
-        options = [{'option': self.ALL_SITES_PROJECTS_OPTION, 'id': 0}]
+        options = [{'item': self.ALL_SITES_PROJECTS_OPTION, 'id': 0}]
         for site in sites.values():
             for project in projects.values():
                 if project.site_id != site.id:
                     continue
-                data = {'option': site.name + '/' + project.name,
+                data = {'item': site.name + '/' + project.name,
                         'id': str(site.id) + ':' + str(project.id)}
                 options.append(data)
         return options
@@ -131,21 +143,13 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
         # pylint: disable=no-member
         # OPTIONS is created by __setattr__ of the metaclass so pylint warning.
         config = []
-        show_options = WorkbookShow.OPTIONS
-        showid = WorkbookShow.get(req, 'show')
-
-        config.append({'name': 'show', 'options': show_options,
-                       'id': showid, 'value': WorkbookShow.name(showid)})
-
-        sort_options = WorkbookSort.OPTIONS
-        sortid = WorkbookSort.get(req, 'sort')
-
-        config.append({'name': 'sort', 'options': sort_options,
-                       'id': sortid, 'value': WorkbookSort.name(sortid)})
+        config.append(self.show_options(req))
+        config.append(self.sort_options(req))
 
         site_project_options = self.site_project_options(sites, projects)
         spid, value = self.site_project_id_value(req, sites, projects)
-        config.append({'name': 'site-project', 'options': site_project_options,
+        config.append({'name': 'site-project-dropdown',
+                       'options': site_project_options,
                        'id': spid, 'value': value})
         return config
 
@@ -201,7 +205,7 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
         else:
             showid = req.params_getint('show')
             #pylint: disable=no-member
-            if showid is None or showid not in WorkbookShow.ITEMS:
+            if showid is None or showid not in WorkbookShow.items():
                 showid = WorkbookShow.ALL
         if showid == WorkbookShow.MINE:
             filters['system_user_id'] = req.remote_user.system_user_id
@@ -226,7 +230,7 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
         # pylint: disable=no-member
         # pylint: disable=maybe-no-member
         sort = req.params_getint('sort')
-        if sort is None or sort not in WorkbookSort.ITEMS:
+        if sort is None or sort not in WorkbookSort.items():
             sort = WorkbookSort.NAME
 
         if sort == WorkbookSort.SITE:

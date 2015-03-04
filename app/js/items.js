@@ -1,10 +1,6 @@
 define("items", ['jquery', 'template'],
 function($, template) 
 {
-    /* The filter-dropdown template is in layout.mako. */
-    var filter_dropdown = $('#filter-dropdown').html();
-    template.parse(filter_dropdown);
-
     /*
      * bind()
      * Expand/contract the individual items on user click.
@@ -20,17 +16,5 @@ function($, template)
         });
     }
 
-    /*
-     * configFilters
-     */
-    function configFilters(data) {
-        for (var i in data['config']) {
-            var d = data['config'][i];
-            var rendered = template.render(filter_dropdown, d);
-            $('#'+d['name']+'-dropdown').html(rendered);
-        }
-    }
-
-    return {'bind': bind,
-            'configFilters': configFilters}
+    return {'bind': bind}
 });

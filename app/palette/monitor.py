@@ -14,10 +14,10 @@ from controller.profile import Role
 from controller.state_control import StateControl
 from controller.util import sizestr, DATEFMT, utc2local
 from controller.licensing import LicenseEntry
-from controller.extracts import ExtractManager
 from controller.event_control import EventControl
 from controller.notifications import NotificationManager
 
+from .option import DictOption
 from .event import EventHandler
 from .rest import PaletteRESTApplication
 
@@ -42,6 +42,34 @@ class Colors(object):
         'green': GREEN_NUM
     }
 
+class EventStatus(DictOption):
+    """Representation for the Events status dropdown."""
+    NAME = 'status-dropdown'
+    ALL = 0
+    ERROR = EventControl.LEVEL_ERROR
+    WARNING = EventControl.LEVEL_WARNING
+    INFO = EventControl.LEVEL_INFO
+
+    def __init__(self, valueid):
+        options = OrderedDict({})
+        options[self.ALL] = 'All Status'
+        for level in [self.ERROR, self.WARNING, self.INFO]:
+            options[level] = EventControl.level_strings[level]
+        super(EventStatus, self).__init__(self.NAME, valueid, options)
+
+
+class EventType(DictOption):
+    """Representation for the Events type dropdown."""
+    NAME = 'type-dropdown'
+    ALL = 0
+
+    def __init__(self, valueid):
+        type_list = sorted(EventControl.all_types.items(),
+                           key=lambda item: item[0])
+        options = OrderedDict([(self.ALL, 'All Types')] + type_list)
+        super(EventType, self).__init__(self.NAME, valueid, options)
+
+
 class MonitorApplication(PaletteRESTApplication):
 
     def __init__(self):
@@ -49,53 +77,16 @@ class MonitorApplication(PaletteRESTApplication):
         self.event = EventHandler()
 
     def status_options(self, req):
-        current_key = 'status' in req.GET and req.GET['status'] or '0'
-        options = [{'option':'All Status', 'id':0}]
-        for x in ['E', 'W', 'I']:
-            options.append({'option':EventControl.level_strings[x], 'id':x})
-        if current_key == '0':
-            value = options[0]['option']
-        else:
-            value = EventControl.level_strings[current_key]
-        return {'name':'status', 'value':value,
-                'id':current_key, 'options':options}
+        valueid = req.params_get('status', '0')
+        if valueid == '0':
+            valueid = EventStatus.ALL
+        return EventStatus(valueid).default()
 
     def type_options(self, req):
-        current_key = 'type' in req.GET and req.GET['type'] or '0'
-        options = [{'option':'All Types', 'id':0}]
-
-        d = {'name':'type'}
-        types = OrderedDict()
-        items = sorted(EventControl.types().items(), key=lambda x: x[1])
-        for key, value in items:
-            types[key] = value
-        for key in types:
-            if key == current_key:
-                d['value'] = types[key]
-                d['id'] = key
-            options.append({'option':types[key], 'id':key})
-        if 'id' not in d:
-            d['value'] = options[0]['option']
-            d['id'] = 0
-        d['options'] = options
-        return d
-
-    def publisher_options(self, req):
-        sysid = req.params_getint('publisher', default=0)
-
-        options = [{'option':'All Publishers', 'id':0}]
-        d = {'name':'publisher'}
-        for publisher in ExtractManager.publishers():
-            if publisher.system_user_id == sysid:
-                d['value'] = publisher.friendly_name
-                d['id'] = publisher.system_user_id
-            options.append({'option':publisher.friendly_name,
-                      'id':publisher.system_user_id})
-        if not 'id' in d:
-            d['value'] = options[0]['option']
-            d['id'] = options[0]['id']
-        d['options'] = options
-        return d
+        valueid = req.params_get('type', '0')
+        if valueid == '0':
+            valueid = EventType.ALL
+        return EventType(valueid).default()
 
     def disk_watermark(self, req, name):
         """ Threshold for the disk indicator. (low|high) """
