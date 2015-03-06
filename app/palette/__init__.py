@@ -1,5 +1,4 @@
 # FIXME: test if these are still needed and/or use absolute import
-import auth
 import monitor
 import backup
 import environment
