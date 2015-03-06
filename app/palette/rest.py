@@ -1,6 +1,5 @@
 from webob import exc
 
-from akiri.framework.api import RESTApplication
 from akiri.framework import GenericWSGIApplication
 
 from controller.profile import Role
@@ -31,23 +30,9 @@ def required_role(name):
         return realf
     return wrapper
 
-class PaletteRESTHandler(RESTApplication):
-
-    def __init__(self, global_conf):
-        super(PaletteRESTHandler, self).__init__(global_conf)
-        self.commapp = CommHandlerApp(self)
-
-    def base_path_info(self, req):
-        # REST handlers return the handle path prefix too, strip it.
-        path_info = req.environ['PATH_INFO']
-        if path_info.startswith('/' + self.NAME):
-            path_info = path_info[len(self.NAME)+1:]
-        if path_info.startswith('/'):
-            path_info = path_info[1:]
-        return path_info
 
 class PaletteRESTApplication(GenericWSGIApplication):
-
+    """Base class for all REST handlers."""
     def __init__(self):
         super(PaletteRESTApplication, self).__init__()
         self.commapp = CommHandlerApp(self)
