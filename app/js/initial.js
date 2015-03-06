@@ -28,32 +28,38 @@ function ($, configure, common, Dropdown, OnOff)
     }
 
     /*
+     * save_callback()
+     * Callback when the save AJAX call was successfully sent to the server.
+     * NOTE: the *data* may still have an error.
+     */
+    function save_callback(data) {
+        if (data['status'] == 'OK') {
+            window.location.replace("/");
+        }
+
+        var error = data['error'] || 'Unknown server error';
+        $('div.setup-page').prepend('<p class="error">' + error + '</p>');
+    }
+
+    /*
      * save()
      * Callback for the 'Save' button.
      */
     function save() {
         var data = {'action': 'save'}
         $.extend(data, gatherData());
-
-        var result = null;
         $.ajax({
             type: 'POST',
             url: '/open/setup',
             data: data,
             dataType: 'json',
-            async: false,
 
-            success: function(data) {
-                result = data;
-            },
+            success: save_callback,
             error: function (jqXHR, textStatus, errorThrown) {
                 alert(this.url + ": " +
                       jqXHR.status + " (" + errorThrown + ")");
             }
         });
-        if (result != null) {
-            window.location.replace("/");
-        }
     }
 
     /*

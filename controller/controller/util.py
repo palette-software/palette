@@ -52,6 +52,7 @@ def odbc2dt(s):
     dt = _parseutc(s)
     return dt.replace(tzinfo=None)
 
+# FIXME: the import can never work...
 def version():
     try:
         # pylint: disable=import-error
