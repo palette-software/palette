@@ -1567,6 +1567,9 @@ def main():
 
     server = Controller((host, port), CliHandler)
     server.config = config
+
+    # FIXME: deprecated
+    # We always use the root logger so use logging. instead of server.log.
     server.log = log
     server.cli_get_status_interval = \
       config.getint('controller', 'cli_get_status_interval', default=10)

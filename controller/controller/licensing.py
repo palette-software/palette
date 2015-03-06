@@ -1,5 +1,6 @@
 # This module is named licensing to avoid the Python reserved keyword 'license'.
 
+import logging
 import urllib
 import httplib
 import json
@@ -16,17 +17,87 @@ import akiri.framework.sqlalchemy as meta
 from event_control import EventControl
 from manager import Manager
 from mixin import BaseMixin, BaseDictMixin
+from util import version
 
 from agent import Agent
 from agentmanager import AgentManager
 from domain import Domain
-from general import SystemConfig
+# from general import SystemConfig
 from yml import YmlEntry
 
-class LicenseException(Exception):
+
+LICENSING_URL = "https://licensing.palette-software.com"
+
+def licensing_send(uri, data):
+    params = urllib.urlencode(data)
+
+    conn = urllib.urlopen(LICENSING_URL + uri, params)
+    reply_json = conn.read()
+    conn.close()
+
+    if conn.getcode() != httplib.OK:
+        logging.warn("phone home failed with status %d: %s",
+                     conn.getcode(), reply_json)
+        raise LicenseException(conn.getcode(),
+                               "Failed with status %d. Reply: %s " % \
+                               (conn.getcode(), reply_json))
+
+    return json.loads(reply_json)
+
+def licensing_info(domain, envid):
+    """Don't do anything very active since this can run when
+    in UPGRADE state, etc."""
+
+    data = {}
+    data['license-key'] = domain.license_key
+    data['system-id'] = domain.systemid
+    data['expiration-time'] = domain.expiration_time
+    data['contact-time'] = domain.contact_time
+    data['trial'] = domain.trial
+
+    # FIXME: use the version() function when sorted out.
+    data['palette-version'] = version()
+
+    try:
+        agent = meta.Session.query(Agent).\
+                filter(Agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY).\
+                one()
+    except NoResultFound:
+        #            print "No primary agents ever connected."
+        return data
+
+    entry = LicenseEntry.get_by_agentid(agent.agentid)
+    if not entry:
+        logging.debug("No tableau license entry yet.")
+        return data
+
+    data['license-type'] = entry.license_type
+
+    if entry.license_type == LicenseEntry.LICENSE_TYPE_NAMED_USER:
+        data['license-quantity'] = entry.interactors
+    elif entry.license_type == LicenseEntry.LICENSE_TYPE_CORE:
+        data['license-quantity'] = entry.cores
+    else:
+        data['license-quantity'] = None
+
+    data['tableau-version'] = YmlEntry.get(envid, 'version.external',
+                                           default='unknown')
+
+    data['tableau-bitness'] = YmlEntry.get(envid, 'version.bitness',
+                                           default='unknown')
+
+    data['processor-type'] = agent.processor_type
+    data['processor-count'] = agent.processor_count
+    data['processor-bitness'] = agent.bitness
+    data['primary-uuid'] = agent.uuid
+
+    return data
+
+
+class LicenseException(StandardError):
     def __init__(self, status, reason):
         message = str(status) + ' ' + reason
-        Exception.__init__(self, message)
+        StandardError.__init__(self, message)
         self.status = status
         self.reason = reason
 
@@ -215,58 +286,7 @@ class LicenseManager(Manager):
     def info(self):
         """Don't do anything very active since this can run when
            in UPGRADE state, etc."""
-
-        server = self.server
-        envid = server.environment.envid
-
-        data = {}
-        entry = Domain.getone()
-        data['license-key'] = entry.license_key
-        data['system-id'] = entry.systemid
-        data['expiration-time'] = entry.expiration_time
-        data['contact-time'] = entry.contact_time
-        data['trial'] = entry.trial
-
-        data['palette-version'] = self.server.system.get(
-                                        SystemConfig.PALETTE_VERSION,
-                                        default='unknown')
-
-        try:
-            agent = meta.Session.query(Agent).\
-               filter(Agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY).\
-               one()
-
-        except NoResultFound:
-#            print "No primary agents ever connected."
-            return data
-
-        entry = LicenseEntry.get_by_agentid(agent.agentid)
-        if not entry:
-            self.server.log.debug("No tableau license entry yet.")
-            return data
-
-        data['license-type'] = entry.license_type
-
-        if entry.license_type == LicenseEntry.LICENSE_TYPE_NAMED_USER:
-            data['license-quantity'] = entry.interactors
-        elif entry.license_type == LicenseEntry.LICENSE_TYPE_CORE:
-            data['license-quantity'] = entry.cores
-        else:
-            data['license-quantity'] = None
-
-        data['tableau-version'] = YmlEntry.get(envid, 'version.external',
-                                               default='unknown')
-
-        data['tableau-bitness'] = YmlEntry.get(envid, 'version.bitness',
-                                       default='unknown')
-
-        data['processor-type'] = agent.processor_type
-        data['processor-count'] = agent.processor_count
-        data['processor-bitness'] = agent.bitness
-
-        data['primary-uuid'] = agent.uuid
-
-        return data
+        return licensing_info(self.server.domain, self.server.environment.envid)
 
     def verify(self):
         # pylint: disable=too-many-return-statements
@@ -275,36 +295,34 @@ class LicenseManager(Manager):
             # If there is no license key, don't bother checking the
             # validity of it or attempt to contact the palette
             # license server.
-            self.server.log.debug("license verify: No license key.")
+            logging.debug("license verify: No license key.")
             return {'status': "OK", "info": "No license key"}
 
         data = self.info()
         if not 'license-type' in data:
-            self.server.log.debug(
-                            "license verify: No tableau license info yet.")
+            logging.debug("license verify: No tableau license info yet.")
             return {'status': "OK", "info": "No tableau license info yet."}
 
         try:
-            body = self._send(data)
+            body = licensing_send('/license', data)
         except IOError as ex:
-            self.server.log.debug(
-                    "license send exception failed with status %s", ex)
+            logging.debug("license send exception failed with status %s", ex)
             self._callfailed(str(ex), str(ex))
             return {"error": str(ex)}
         except LicenseException as ex:
-            self.server.log.debug(
-                    "license send exception failed with status %d, reason %s",
-                                                        ex.status, ex.reason)
+            logging.debug(
+                "license send exception failed with status %d, reason %s",
+                ex.status, ex.reason)
             self._callfailed(ex.reason, ex.status)
             return {"error": str(ex)}
 
         if not 'trial' in body:
-            self.server.log.debug('no trial value in reply: %s', str(body))
+            logging.debug('no trial value in reply: %s', str(body))
             self._callfailed("Invalid reply from license server")
             return {"error": "Invalid reply from license server"}
 
         if not 'expiration-time' in body:
-            self.server.log.debug("No expiration value in reply: %s", str(body))
+            logging.debug("No expiration value in reply: %s", str(body))
             self._callfailed("License reply invalid")
             return {"error": "License reply invalid: " + str(body)}
 
@@ -327,7 +345,7 @@ class LicenseManager(Manager):
         conn.close()
 
         if conn.getcode() != httplib.OK:
-            self.server.log.debug("phone home failed with status %d: %s",
+            logging.debug("phone home failed with status %d: %s",
                                         conn.getcode(), reply_json)
             raise LicenseException(conn.getcode(),
                 "Failed with status %d. Reply: %s " % \
@@ -343,6 +361,7 @@ class LicenseManager(Manager):
 
         data = {}
 
+        # FIXME: pass as a parameter
         entry = Domain.getone()
         if not entry.contact_failures:
             entry.contact_failures = 1
@@ -362,8 +381,8 @@ class LicenseManager(Manager):
             silence_time = (datetime.datetime.now() - \
                             entry.contact_time).total_seconds()
             if silence_time <= self.MAX_SILENCE_TIME:
-                self.server.log.debug("Silence time: %d <= max of: %d",
-                                            silence_time, self.MAX_SILENCE_TIME)
+                logging.debug("Silence time: %d <= max of: %d",
+                              silence_time, self.MAX_SILENCE_TIME)
                 # If they had no expiration time (like on initial install)
                 # then expire it now.
                 if not entry.expiration_time:
@@ -383,8 +402,8 @@ class LicenseManager(Manager):
 
         session.commit()
 
-        self.server.log.debug("failure hours was longer than: %d : %d",
-                              self.MAX_SILENCE_TIME, data['failure_hours'])
+        logging.debug("failure hours was longer than: %d : %d",
+                      self.MAX_SILENCE_TIME, data['failure_hours'])
 
         notification = self.server.notifications.get("phonehome")
         notification.description = reason

@@ -1,10 +1,12 @@
 from webob import exc, Response
 from paste.auth.auth_tkt import AuthTicket
 
-from akiri.framework import GenericWSGIApplication, GenericWSGI
+from akiri.framework import GenericWSGIApplication
 import akiri.framework.sqlalchemy as meta
 
 from controller.profile import UserProfile
+from controller.licensing import licensing_send, licensing_info
+from controller.licensing import LicenseException
 
 from .setup import _SetupApplication
 from .rest import required_parameters
@@ -27,7 +29,16 @@ class OpenApplication(GenericWSGIApplication):
 
     def _set_license_key(self, req):
         license_key = req.params_get('license-key')
+
+        info = licensing_info(req.palette_domain, req.envid)
+        data = licensing_send('/api/trial-start', info)
+
         req.palette_domain.license_key = license_key
+        if 'trial' in data:
+            req.palette_domain.trial = data['trial']
+        if 'expiration-time' in data:
+            req.palette_domain.expiration_time = data['expiration-time']
+
         meta.Session.commit()
 
     # FIXME (later): this should be one big database transaction.
@@ -38,7 +49,15 @@ class OpenApplication(GenericWSGIApplication):
         if entry.hashed_password:
             # Configuration was already done
             raise exc.HTTPServiceUnavailable()
-        self._set_license_key(req)
+
+        try:
+            self._set_license_key(req)
+        except LicenseException, ex:
+            if ex.status == 404:
+                reason = 'Invalid license key'
+            else:
+                reason = ex.reason
+            return {'status': 'FAILED', 'error': reason}
         self.setup.admin.service_POST(req)
         self.setup.mail.service_POST(req)
         self.setup.ssl.service_POST(req)
@@ -52,7 +71,7 @@ class OpenApplication(GenericWSGIApplication):
         res.set_cookie('auth_tkt', tkt.cookie_value(),
                        max_age=2592000, path='/')
         res.content_type = 'application/json'
-        res.body = '{}\n'
+        res.body = '{"status":"OK"}\n'
         return res
 
     @required_parameters('action')
