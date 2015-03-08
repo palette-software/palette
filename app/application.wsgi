@@ -95,7 +95,6 @@ application = Application(application)
 
 if __name__ == '__main__':
     from webob.static import DirectoryApp
-    from akiri.framework.server import runserver
 
     # logging that would normally be handled by the webserver
     from paste.translogger import TransLogger
@@ -118,4 +117,10 @@ if __name__ == '__main__':
     dbgdir = os.path.join(docroot, 'd')
     router.prepend_route(r'/d/', DirectoryApp(dbgdir), profile=False)
 
-    runserver(application, use_reloader=True, host='0.0.0.0')
+    # reloader setup
+    from akiri.framework import reloader
+    reloader.watch_dir('less')
+    reloader.install()
+
+    import paste.httpserver
+    paste.httpserver.serve(application)
