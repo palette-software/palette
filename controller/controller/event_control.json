@@ -400,7 +400,7 @@
 "eventid":24,
 "key":"BACKUP-FINISHED-SCHEDULED",
 "level":"I",
-"send_email":"f",
+"send_email":"t",
 "subject":"INFO Scheduled Backup Completed (%(eventid)s)",
 "event_description":"SUMMARY\nYour scheduled backup has completed as expected. Full context is provided below for your reference. \n\nDETAILS\nEvent Type: ${event_type_label}\nEnvironment: ${environment}\n% if info is not UNDEFINED or stdout is not UNDEFINED or stderr is not UNDEFINED:\nSystem Message:\n% endif\n% if info is not UNDEFINED:\n${info}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif\n\nWHY THIS EVENT OCCURRED\nScheduled backups are essential to server health. To update your scheduled backup settings, click <a href=\"${server_url}/configure/general#backups\" target=\"_blank\">here</a>.",
 "email_subject":"INFO Scheduled Backup Completed (%(eventid)s)",

@@ -50,6 +50,16 @@ XYZZY
     update-rc.d controller defaults
     service controller start
     exit 0
+elif [ "$oldversion" != "" ]; then
+    echo Upgrading an older version: $oldversion
+    # If we are upgrading from a previous version (vs. a new install),
+    # drop the event_control table as it almost always changes.
+    # Drop the cron table for DST fix for backup.
+    psql paldb << XYZZY
+    drop table event_control;
+    drop table cron;
+XYZZY
+
 fi
 
 set +x
