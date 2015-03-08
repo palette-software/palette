@@ -35,10 +35,6 @@ class Sched(threading.Thread):
                                            "sched_dir",
                                            default="/var/palette/sched")
 
-        localtime = datetime.now()
-        utc = datetime.utcnow()
-        self.utc_ahead = (utc.hour - localtime.hour) % 24
-
         self.start()
 
     def run(self):
@@ -70,7 +66,7 @@ class Sched(threading.Thread):
         entry.minute = str(minute)
         if type(hour) == int or hour.isdigit():
             # convert hour to UTC
-            hour = (int(hour) + self.utc_ahead) % 24
+            hour = (int(hour) + self._utc_ahead()) % 24
 
         entry.hour = str(hour)
         entry.day_of_month = str(day_of_month)
@@ -81,11 +77,16 @@ class Sched(threading.Thread):
         meta.Session.commit()
         return {}
 
+    def _utc_ahead(self):
+        localtime = datetime.now()
+        utc = datetime.utcnow()
+        return (utc.hour - localtime.hour) % 24
+
     def status(self):
         jlist = [job.todict(pretty=True) for job in Crontab.get_jobs()]
         for job in jlist:
             if job['hour'].isdigit():
-                job['hour'] = (int(job['hour']) - self.utc_ahead) % 24
+                job['hour'] = (int(job['hour']) - self._utc_ahead) % 24
         return {'jobs': jlist}
 
     def delete(self, names):
