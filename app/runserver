@@ -1,0 +1,12 @@
+#!/bin/bash
+
+rc=3
+
+while ((rc == 3)); do
+    make grunt
+    if (($? != 0)); then
+	exit $?
+    fi
+    python application.wsgi
+    rc=$?
+done
