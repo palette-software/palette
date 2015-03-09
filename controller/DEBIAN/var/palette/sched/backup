@@ -10,12 +10,6 @@ if __name__ == "__main__":
     comm.verbose = 2
 
     try:
-        comm.send_cmd("sched delete backup", read_response=True,
-                      skip_on_wrong_state=False)
-        time.sleep(65)
-        comm.send_cmd("sched add 0 0 * * * backup", read_response=True,
-                      skip_on_wrong_state=False)
-
         comm.send_cmd("ziplogs", read_response=True, skip_on_wrong_state=True)
         print "ziplogs reply:", comm.response
 
