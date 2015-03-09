@@ -86,7 +86,7 @@ class Sched(threading.Thread):
         jlist = [job.todict(pretty=True) for job in Crontab.get_jobs()]
         for job in jlist:
             if job['hour'].isdigit():
-                job['hour'] = (int(job['hour']) - self._utc_ahead) % 24
+                job['hour'] = (int(job['hour']) - self._utc_ahead()) % 24
         return {'jobs': jlist}
 
     def delete(self, names):
@@ -105,6 +105,10 @@ class Sched(threading.Thread):
         jobs = Crontab.get_jobs()
         if jobs:
             self.server.log.debug("sched populate: already jobs")
+            # PD-4988: Backups and DST
+            self.delete('backup')
+            # Will be added correctly with respect to timezone
+            self.add_cron_job(name='backup', hour=0, minute=0)
             return
 
         self.server.log.debug("sched populate: adding jobs")
