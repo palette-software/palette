@@ -179,6 +179,7 @@ function ($, configure, common, Dropdown, OnOff)
         $('#tableau-server-url').val(data['tableau-server-url']);
         $('#alert-email-name').val(data['alert-email-name']);
         $('#alert-email-address').val(data['alert-email-address']);
+        $('#license-key').val(data['license-key']);
 
         /* validation */
         Dropdown.setCallback(validate);
