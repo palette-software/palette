@@ -92,6 +92,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # pylint: disable=too-many-branches
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-return-statements
+        # pylint: disable=too-many-statements
 
         if userid == None:
             auto = True     # It is an 'automatic/scheduled' backup
@@ -188,6 +189,27 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             stats += '\n'
 
         body['info'] += '\n' + stats
+
+        body['size'] = sizestr(backup_size)
+        body['destination-type'] = place.placed_file_entry.storage_type
+        if place.placed_file_entry.storage_type == \
+                                        FileManager.STORAGE_TYPE_CLOUD:
+            # cloud type (s3 or gcs, etc.)
+            body['destination-name'] = dcheck.target_entry.cloud_type
+            # bucket
+            body['destination-location'] = dcheck.target_entry.bucket
+        else:
+            if not place.copy_failed:
+                # displayname
+                body['destination-name'] = dcheck.target_agent.displayname
+                # volume + pathname
+                body['destination-location'] = dcheck.target_dir
+            else:
+                # Copy failed, so still on the primary
+                body['destination-name'] = agent.displayname
+                # volume + pathname
+                body['destination-location'] = agent.path.dirname(
+                                                             place.full_path)
         return body
 
     def rotate_backups(self):
