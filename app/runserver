@@ -7,6 +7,6 @@ while ((rc == 3)); do
     if (($? != 0)); then
 	exit $?
     fi
-    python application.wsgi
+    python application.wsgi $@
     rc=$?
 done

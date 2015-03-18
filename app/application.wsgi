@@ -94,7 +94,13 @@ application = SessionMiddleware(app=application, bind=engine)
 application = Application(application)
 
 if __name__ == '__main__':
+    import argparse
     from webob.static import DirectoryApp
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--host', default=None)
+    parser.add_argument('--port', type=int, default=8080)
+    args = parser.parse_args()
 
     # logging that would normally be handled by the webserver
     from paste.translogger import TransLogger
@@ -123,4 +129,4 @@ if __name__ == '__main__':
     reloader.install()
 
     import paste.httpserver
-    paste.httpserver.serve(application)
+    paste.httpserver.serve(application, host=args.host, port=args.port)
