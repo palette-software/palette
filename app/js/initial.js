@@ -21,6 +21,7 @@ function ($, configure, common, Dropdown, OnOff)
         $.extend(data, configure.gatherURLData());
         $.extend(data, configure.gatherTableauURLData());
         $.extend(data, configure.gatherAdminData());
+        $.extend(data, configure.gatherReadOnlyData());
         $.extend(data, configure.gatherMailData());
         $.extend(data, configure.gatherSSLData());
         $.extend(data, configure.gatherTzData());
@@ -180,6 +181,7 @@ function ($, configure, common, Dropdown, OnOff)
         $('#alert-email-name').val(data['alert-email-name']);
         $('#alert-email-address').val(data['alert-email-address']);
         $('#license-key').val(data['license-key']);
+        $('#readonly-password').val(data['readonly-password']);
 
         /* validation */
         Dropdown.setCallback(validate);

@@ -17,16 +17,9 @@ from controller.projects import Project
 from .option import DictOption
 from .page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
+from .mixin import CredentialMixin
 
 __all__ = ["WorkbookApplication"]
-
-class CredentialMixin(object):
-
-    PRIMARY_KEY = 'primary'
-    SECONDARY_KEY = 'secondary'
-
-    def get_cred(self, envid, name):
-        return CredentialEntry.get_by_envid_key(envid, name, default=None)
 
 class WorkbookShow(DictOption):
     """Options to show all workbooks or only for the current user."""
