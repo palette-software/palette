@@ -13,10 +13,12 @@ from controller.profile import UserProfile, Role
 from controller.passwd import tableau_hash
 from controller.general import SystemConfig
 from controller.util import extend
+from controller.credential import CredentialEntry
 
 from .page import Page, PalettePage
 from .option import DictOption
 from .rest import PaletteRESTApplication, required_parameters, required_role
+from .mixin import CredentialMixin
 
 def dump(req):
     print >> sys.stderr, str(req)
@@ -129,6 +131,36 @@ class SetupAdminApplication(BaseSetupApplication):
         meta.Session.commit()
 
         return {'password': passwd}
+
+
+class SetupReadOnlyApplication(BaseSetupApplication, CredentialMixin):
+    """Handler for setting the password of the read-only tableau user"""
+
+    def service_GET(self, req):
+        cred = self.get_cred(req.envid, self.READONLY_KEY)
+        if not cred:
+            return {}
+        return {'readonly-password': cred.getpasswd()}
+
+    @required_parameters('readonly-password')
+    def service_POST(self, req):
+        passwd = req.params_get('readonly-password')
+
+        session = meta.Session()
+        cred = self.get_cred(req.envid, self.READONLY_KEY)
+        if not cred:
+            if not passwd:
+                return {'readonly-password': passwd}
+            cred = CredentialEntry(envid=req.envid, key=self.READONLY_KEY)
+            session.add(cred)
+
+        if passwd:
+            cred.user = self.READONLY_KEY
+            cred.setpasswd(passwd)
+        else:
+            session.delete(cred)
+        session.commit()
+        return {'readonly-password': passwd}
 
 
 class SetupMailApplication(JSONProxy, PaletteRESTApplication):
@@ -349,10 +381,12 @@ class SetupAuthApplication(BaseSetupApplication):
 
 class _SetupApplication(BaseSetupApplication):
     """Handler for initial page GET requests."""
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self):
         super(_SetupApplication, self).__init__()
         self.admin = SetupAdminApplication()
+        self.readonly = SetupReadOnlyApplication()
         self.mail = SetupMailApplication()
         self.ssl = SetupSSLApplication()
         self.auth = SetupAuthApplication()
@@ -363,6 +397,7 @@ class _SetupApplication(BaseSetupApplication):
     def service_GET(self, req):
         data = {}
         extend(data, self.admin.service_GET(req))
+        extend(data, self.readonly.service_GET(req))
         extend(data, self.mail.service_GET(req))
         extend(data, self.ssl.service_GET(req))
         extend(data, self.auth.service_GET(req))
@@ -384,7 +419,7 @@ class SetupApplication(Router):
         self.add_route(r'/auth\Z|/authenticate\Z', SetupAuthApplication())
         self.add_route(r'/ssl\Z|/SSL\Z', SetupSSLApplication())
         self.add_route(r'/mail\Z', SetupMailApplication())
-        self.add_route(r'/admin\Z', SetupURLApplication())
+        self.add_route(r'/readonly\Z', SetupReadOnlyApplication())
         self.add_route(r'/url\Z', SetupURLApplication())
         self.add_route(r'/tableau-url\Z', SetupTableauURLApplication())
         self.add_route(r'/tz\Z', SetupTimezoneApplication())

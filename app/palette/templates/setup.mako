@@ -71,6 +71,10 @@
       <%include file="config/admin.mako" />
     </section>
     <hr />
+    <section id="readonly">
+      <%include file="config/readonly.mako" />
+    </section>
+    <hr />
     <section id="mail">
       <%include file="config/mail.mako" />
     </section>

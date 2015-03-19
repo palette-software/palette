@@ -20,7 +20,7 @@ from .page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
 from .s3 import S3Application
 from .gcs import GCSApplication
-from .workbooks import CredentialMixin
+from .mixin import CredentialMixin
 
 class GeneralS3Application(PaletteRESTApplication, S3Application):
     """Handler for the 'STORAGE LOCATION' S3 section."""
@@ -337,6 +337,7 @@ class GeneralZiplogApplication(PaletteRESTApplication):
 
 class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
     """Handler for 'WORKBOOK ARCHIVE' section."""
+
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
