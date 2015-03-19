@@ -1,8 +1,9 @@
 from collections import OrderedDict
 
 from util import odbc2dt
+from mixin import CredentialMixin
 
-class ODBC(object):
+class ODBC(CredentialMixin):
 
     URI = '/sql'
 
@@ -10,8 +11,6 @@ class ODBC(object):
     SERVER = '127.0.0.1'
     PORT = 8060
     DATABASE = 'workgroup'
-    UID = 'tblwgadmin'
-    PASSWD = ''
 
     def __init__(self, agent):
         self.agent = agent
@@ -39,12 +38,20 @@ class ODBC(object):
             host = self.SERVER
             port = str(self.PORT)
 
+        cred = self.get_cred(self.agent.envid, self.READONLY_KEY)
+        if cred:
+            uid = cred.user # Should be 'readonly'
+            passwd = cred.getpasswd()
+        else:
+            uid = 'tblwgadmin'
+            passwd = ''
+
         s = 'DRIVER=' + self.DRIVER +'; '
         s += 'Server=' + host + '; '
         s += 'Port=' + port + '; '
         s += 'Database=' + self.DATABASE + '; '
-        s += 'Uid=' + self.UID + '; '
-        s += 'Pwd=' + self.PASSWD + ';'
+        s += 'Uid=' + uid + '; '
+        s += 'Pwd=' + passwd + ';'
         return s
 
     def execute(self, stmt):
