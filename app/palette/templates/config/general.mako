@@ -22,7 +22,7 @@
       <h2>Storage Location</h2>
       <p>Your Backups, Ziplogs, and Workbooks will be saved in this location</p>
       <input type="radio" id="storage-local" name="storage-type" value="local" />
-      <label for="storage-local">My Machine</label>
+      <label for="storage-local">My Machine(s)</label>
       <input type="radio" id="storage-s3" name="storage-type" value="s3" />
       <label for="storage-s3">Amazon S3</label>
       <input type="radio" id="storage-gcs" name="storage-type" value="gcs" />
