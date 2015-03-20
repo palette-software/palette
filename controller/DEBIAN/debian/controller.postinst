@@ -48,6 +48,36 @@ XYZZY
     update-rc.d controller defaults
     service controller start
     exit 0
+elif [ "$oldversion" = "1.1.2" ]; then
+    echo Upgrading from 1.1.2 ...
+    psql paldb << XYZZY
+    drop table event_control;
+
+    alter table agent_volumes drop constraint agent_volumes_agentid_fkey;
+    alter table agent_volumes add foreign key (agentid) references agent(agentid) on delete cascade;
+
+    alter table firewall drop constraint firewall_agentid_fkey;
+    alter table firewall add foreign key (agentid) references agent(agentid) on delete cascade;
+
+    alter table license drop constraint license_agentid_fkey;
+    alter table license add foreign key (agentid) references agent(agentid) on delete cascade;
+
+    alter table metrics drop constraint metrics_agentid_fkey;
+    alter table metrics add foreign key (agentid) references agent(agentid) on delete cascade;
+
+    alter table notifications drop constraint notifications_agentid_fkey;
+    alter table notifications add foreign key (agentid) references agent(agentid) on delete cascade;
+
+    alter table ports drop constraint ports_agentid_fkey;
+    alter table ports add foreign key (agentid) references agent(agentid) on delete cascade;
+
+    alter table tableau_processes drop constraint tableau_processes_agentid_fkey;
+    alter table tableau_processes add foreign key (agentid) references agent(agentid) on delete cascade;
+
+XYZZY
+    update-rc.d controller defaults
+    service controller start
+    exit 0
 elif [ "$oldversion" != "" ]; then
     echo Upgrading $oldversion
     # If we are upgrading from a previous version (vs. a new install),
@@ -55,18 +85,17 @@ elif [ "$oldversion" != "" ]; then
     psql paldb << XYZZY
     drop table event_control;
 XYZZY
+elif [ "$oldversion" = "" ]; then
+    echo First install
+
+    # The "| echo" is so it returns exit status of 0 even if they already exist.
+    sudo -u postgres createuser --superuser $USER 2>&1 | echo
+
+    echo CREATE ROLE palette WITH SUPERUSER LOGIN PASSWORD \'palpass\' | sudo -u postgres psql 2>&1 | echo
+
+    sudo -u postgres createdb paldb 2>&1 | echo
+    update-rc.d controller defaults
 fi
-
-set +x
-
-apt-key add /usr/share/palette/conf/key.asc
-
-# The "| echo" is so it returns exit status of 0 even if they already exist.
-sudo -u postgres createuser --superuser $USER 2>&1 | echo
-
-echo CREATE ROLE palette WITH SUPERUSER LOGIN PASSWORD \'palpass\' | sudo -u postgres psql 2>&1 | echo
-
-sudo -u postgres createdb paldb 2>&1 | echo
 
 mkdir -p /var/log/palette /var/palette/data/workbook-archive
 if [ ! -f /var/palette/.aes ]; then
@@ -75,7 +104,8 @@ if [ ! -f /var/palette/.aes ]; then
     chmod 0400 /var/palette/.aes
 fi
 
-update-rc.d controller defaults
+apt-key add /usr/share/palette/conf/key.asc
+
 service controller start
 
 exit 0

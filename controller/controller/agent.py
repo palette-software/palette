@@ -245,7 +245,9 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
 
     volid = Column(Integer, unique=True, nullable=False, primary_key=True)
 
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=False)
+    agentid = Column(BigInteger,
+                      ForeignKey("agent.agentid", ondelete='CASCADE'),
+                      nullable=False)
 
     name = Column(String)
     path = Column(String)

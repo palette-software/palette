@@ -13,8 +13,9 @@ class FirewallEntry(meta.Base):
     firewallid = Column(BigInteger, unique=True, nullable=False,
                              autoincrement=True, primary_key=True)
 
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"),
-                                                     nullable=False)
+    agentid = Column(BigInteger,
+                     ForeignKey("agent.agentid", ondelete='CASCADE'),
+                     nullable=False)
 
     name = Column(String)   # "HTTP", "HTTPS", etc.
     port = Column(Integer, nullable=False)  # port that needs to be open
