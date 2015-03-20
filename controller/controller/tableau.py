@@ -31,7 +31,8 @@ class TableauProcess(meta.Base):
     STATUS_UNKNOWN = "UNKNOWN"    # We set this if we don't know yet.
 
     name = Column(String, nullable=False, primary_key=True)
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"),
+    agentid = Column(BigInteger,
+                     ForeignKey("agent.agentid", ondelete='CASCADE'),
                      nullable=False, primary_key=True)
     pid = Column(Integer)
     status = Column(String)

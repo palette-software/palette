@@ -18,8 +18,9 @@ class MetricEntry(meta.Base):
     metricid = Column(BigInteger, unique=True, nullable=False,
                              autoincrement=True, primary_key=True)
 
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"),
-                                                     nullable=False)
+    agentid = Column(BigInteger,
+                     ForeignKey("agent.agentid", ondelete='CASCADE'),
+                     nullable=False)
 
     cpu = Column(Float)
     creation_time = Column(DateTime, server_default=func.now())

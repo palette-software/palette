@@ -108,7 +108,8 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
     LICENSE_TYPE_CORE = "Core"
 
     licenseid = Column(BigInteger, primary_key=True)
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"),
+    agentid = Column(BigInteger,
+                    ForeignKey("agent.agentid", ondelete='CASCADE'),
                      nullable=False, unique=True)
     interactors = Column(Integer)
     viewers = Column(Integer)

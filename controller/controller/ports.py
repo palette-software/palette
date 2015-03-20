@@ -25,8 +25,9 @@ class PortEntry(meta.Base, BaseMixin):
     dest_host = Column(String, nullable=False)  # host to check
     dest_port = Column(Integer, nullable=False)  # port to check
     service_name = Column(String, nullable=False)  # user editable
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"),
-                                                     nullable=False)
+    agentid = Column(BigInteger,
+                     ForeignKey("agent.agentid", ondelete='CASCADE'),
+                     nullable=False)
     ip_address = Column(String)
     connect_time = Column(Float)
     max_time = Column(Integer, default=60, nullable=False)

@@ -13,7 +13,9 @@ class NotificationEntry(meta.Base):
 
     envid = Column(BigInteger, ForeignKey("environment.envid"))
     name = Column(String)   # 'cpu', 'memory', etc.
-    agentid = Column(BigInteger, ForeignKey("agent.agentid"), nullable=True)
+    agentid = Column(BigInteger,
+                     ForeignKey("agent.agentid", ondelete='CASCADE'),
+                     nullable=True)
 
     color = Column(String)
     notified_color = Column(String)
