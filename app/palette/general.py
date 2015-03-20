@@ -559,8 +559,6 @@ class GeneralMonitorApplication(PaletteRESTApplication):
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         # pylint: disable=unused-argument
-        print 'post', req
-
         req.system.save(SystemConfig.WATERMARK_LOW,
                                                 req.POST['disk-watermark-low'])
         req.system.save(SystemConfig.WATERMARK_HIGH,
