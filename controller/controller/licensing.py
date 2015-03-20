@@ -114,7 +114,7 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
     viewers = Column(Integer)
     cores = Column(Integer)
     license_type = Column(String)
-    notified = Column(Boolean, nullable=False, default=False)
+    notified = Column(Boolean, nullable=False, default=False) # deprecated
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(),
                                onupdate=func.current_timestamp())
@@ -146,12 +146,11 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
 
         if entry.cores:
             entry.license_type = LicenseEntry.LICENSE_TYPE_CORE
-        elif entry.interactors or entry.viewers:
+        else:
+            # Default setting to let us know the license info have been
+            # received. It could be 0 interactors and 0 viewers, which
+            # means "no license".
             entry.license_type = LicenseEntry.LICENSE_TYPE_NAMED_USER
-
-        # If the entry is valid, reset the notification field.
-        if entry.valid():
-            entry.notified = False
 
         return entry
 
@@ -229,37 +228,49 @@ class LicenseManager(Manager):
         entry = LicenseEntry.get(agentid=agent.agentid, **license_data)
         session.commit()
 
-        if entry.invalid():
-            msg = "License type: %s, " % str(entry.license_type)
-            if entry.license_type == LicenseEntry.LICENSE_TYPE_NAMED_USER:
-                msg += "interactors: %s, viewers: %s" % \
-                            (str(entry.interactors), str(entry.viewers))
-            elif entry.license_type == LicenseEntry.LICENSE_TYPE_CORE:
-                msg += "cores: %s" % str(entry.cores)
-            else:
-                msg += "interactors: %s, viewers: %s, cores: %s" \
-                            % (str(entry.interactors), str(entry.viewers),
-                               str(entry.cores))
+        msg = "License type: %s, " % str(entry.license_type)
+        if entry.license_type == LicenseEntry.LICENSE_TYPE_NAMED_USER:
+            msg += "interactors: %s, viewers: %s" % \
+                        (str(entry.interactors), str(entry.viewers))
+        elif entry.license_type == LicenseEntry.LICENSE_TYPE_CORE:
+            msg += "cores: %s" % str(entry.cores)
+        else:
+            msg += "interactors: %s, viewers: %s, cores: %s" \
+                        % (str(entry.interactors), str(entry.viewers),
+                           str(entry.cores))
 
+        notification = self.server.notifications.get("tlicense")
+
+        if entry.valid():
+            if notification.color == 'red':
+                data = agent.todict()
+                data['stdout'] = msg
+                self.server.event_control.gen(EventControl.LICENSE_VALID, data)
+                # Remember when we sent the notification
+                notification.modification_time = func.now()
+                notification.color = 'green'
+                notification.notified_color = 'green'
+                notification.description = None
+                session.commit()
+            return license_data
+        else:
+            # license is invalid
             if not entry.notified:
                 # Generate an event
                 data = agent.todict()
                 data['error'] = msg
-                server.event_control.gen(EventControl.LICENSE_INVALID, data)
-                entry.notified = True
+                if notification.color != 'red':
+                    self.server.event_control.gen(EventControl.LICENSE_INVALID,
+                                                  data)
+
+                notification.color = 'red'
+                notification.notified_color = 'red'
+                # Remember when we sent the notification
+                notification.modification_time = func.now()
+
                 session.commit()
             return server.error("License invalid on '%s': %s" % \
                                 (agent.displayname, msg))
-
-        if entry.notified:
-            # License was invalid, but is now valid.
-            # There is no event for this, but remember that the license
-            # is valid so if it becomes invalid again, the user will get
-            # an event.
-            entry.notified = False
-            session.commit()
-
-        return license_data
 
     def repair(self, agent):
         server = self.server
