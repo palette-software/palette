@@ -66,6 +66,8 @@ class SystemConfig(object):
 
     TIMEZONE = "timezone"
 
+    CONTROLLER_INITIAL_START = "controller-initial-start"
+
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
     def __init__(self, system):
@@ -232,6 +234,8 @@ class SystemConfig(object):
             return self._getint(self.AUTHENTICATION_TYPE, default=1)
         if name == "timezone":
             return self._getstring(self.TIMEZONE, default="US/Pacific")
+        if name == "controller_initial_start":
+            return self._getstring(self.CONTROLLER_INITIAL_START, default="")
         raise AttributeError(name)
 
     def todict(self):
@@ -279,7 +283,8 @@ class SystemConfig(object):
             self.SERVER_URL: self.server_url,
             self.TABLEAU_SERVER_URL: self.tableau_server_url,
             self.AUTHENTICATION_TYPE: self.authentication_type,
-            self.TIMEZONE: self.timezone
+            self.TIMEZONE: self.timezone,
+            self.CONTROLLER_INITIAL_START: self.controller_initial_start
             }
 
     def text(self, value):
