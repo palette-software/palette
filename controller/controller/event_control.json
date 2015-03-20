@@ -1511,6 +1511,24 @@
 "event_label_desc":null,
 "admin_visibility":false,
 "publisher_visibility":false
+},
+{
+"eventid":86,
+"key":"LICENSE-VALID",
+"level":"I",
+"send_email":"t",
+"subject":"INFO Tableau Server License Valid (%(eventid)s)",
+"event_description":"SUMMARY\nYour Tableau Server License is now valid. Full context is provided below for your reference. Please contact your Tableau Software Sales Representative if you have further problems.\n\nDETAILS\nEvent Type: ${event_type_label}\nEnvironment: ${environment}\n% if info is not UNDEFINED or error is not UNDEFINED or stderr is not UNDEFINED or stdout is not UNDEFINED:\nSystem Message:\n% endif\n% if info is not UNDEFINED:\n${info}\n% endif\n% if error is not UNDEFINED:\n${error}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif\n\nWHY THIS EVENT OCCURRED\nPalette performs scheduled and on-demand status checks for your Tableau Server License. This event is triggered when your License is valid after being invalid. ",
+"email_subject":"INFO Tableau Server License Valid (%(eventid)s)",
+"email_message":"SUMMARY\nYour Tableau Server License is valid. Full context is provided below for your reference. Please contact your Tableau Software Sales Representative if you have further problems.\n\nDETAILS\nTime: ${timestamp}\nEvent Type: ${event_type_label}\nEnvironment: ${environment}\n% if info is not UNDEFINED or error is not UNDEFINED or stderr is not UNDEFINED or stdout is not UNDEFINED:\nSystem Message:\n% endif\n% if info is not UNDEFINED:\n${info}\n% endif\n% if error is not UNDEFINED:\n${error}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif\n\nWHY THIS EVENT OCCURRED \nPalette performs scheduled and on-demand status checks for your Tableau Server License. This event is triggered when your License is valid after being invalid.\n\nHOW TO STOP RECEIVING THIS EMAIL ALERT\nThis message was sent from your Palette Server at ${server_url}. You can turn off these email alerts on your profile page found at ${server_url}/profile.",
+"icon":"",
+"color":"green",
+"event_type":"license",
+"event_type_label":"Licensing",
+"event_label":"",
+"event_label_desc":null,
+"admin_visibility":false,
+"publisher_visibility":false
 }
 ]
 }
