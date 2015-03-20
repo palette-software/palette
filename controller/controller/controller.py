@@ -1299,7 +1299,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         body = {'version_previous': last_version,
                 'version_current': self.version}
 
-        self.event_control.gen(EventControl.CONTROLLER_STARTED, body)
+        controller_initial_start = self.system.get(
+                                        SystemConfig.CONTROLLER_INITIAL_START,
+                                        default=None)
+
+        if not controller_initial_start:
+            self.system.save(SystemConfig.CONTROLLER_INITIAL_START,
+                                                                self.version)
+            self.event_control.gen(EventControl.CONTROLLER_STARTED, body)
+
+        else:
+            self.event_control.gen(EventControl.CONTROLLER_RESTARTED, body)
 
         if self.version == last_version:
             return last_version, self.version
@@ -1637,7 +1647,7 @@ def main():
     server.event_control = EventControlManager(server)
 
     server.version = version()
-    # Send controller started and potentially "new version" events.
+    # Send controller started/restarted and potentially "new version" events.
     old_version, new_version = server.controller_init_events()
 
     server.upgrade_rwlock = RWLock()
