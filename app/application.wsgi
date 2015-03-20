@@ -30,10 +30,9 @@ from palette.workbooks import WorkbookArchive, WorkbookData
 # settings
 if __name__ == '__main__':
     BASEDIR = os.path.dirname(os.path.abspath(__file__))
-    AES_KEY_FILE = os.path.expanduser('~/.aes')
 else:
     BASEDIR = '/var/palette'
-    AES_KEY_FILE = '/var/palette/.aes'
+AES_KEY_FILE = '/var/palette/.aes'
 SHARED = 'tableau2014'
 LOGIN_URL = '/login'
 LOGIN_MAX_AGE = 2592000

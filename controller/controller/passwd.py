@@ -7,7 +7,7 @@ from Crypto import Random
 
 AES_KEY_BITS = 256
 AES_KEY_BYTES = (AES_KEY_BITS/8)
-AES_KEY_FILE_DEFAULT = os.path.abspath(os.path.expanduser('~/.aes'))
+AES_KEY_FILE_DEFAULT = '/var/palette/.aes'
 
 # pylint: disable=invalid-name
 aes_key_file = AES_KEY_FILE_DEFAULT
