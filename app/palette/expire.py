@@ -15,7 +15,7 @@ class ExpireMiddleware(GenericWSGI):
     """Check for expired trials/licenses and redirect if necessary."""
     def service(self, req):
         if req.palette_domain.expiration_time is None \
-                or datetime.now() < req.palette_domain.expiration_time:
+                or datetime.utcnow() < req.palette_domain.expiration_time:
             return None
         if req.palette_domain.trial:
             location = TRIAL_EXPIRED
