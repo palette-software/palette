@@ -35,6 +35,9 @@ function ($, common, Dropdown, OnOff)
                 $(".smtp").addClass('hidden');
             }
         }
+        $('#mail-test-message').html("");
+        $('#mail-test-message').addClass('hidden');
+        $('#mail-test-message').removeClass('green red');
     }
 
     /*

@@ -276,6 +276,7 @@ class SetupMailApplication(JSONProxy, PaletteRESTApplication):
 
 class SetupMailTestApplication(BaseSetupApplication):
 
+    @required_parameters('action', 'mail-server-type')
     def service_POST(self, req):
         test_email_recipient = req.params_get('test-email-recipient').strip()
         # Sanity check
