@@ -94,6 +94,8 @@ elif [ "$oldversion" = "" ]; then
     echo CREATE ROLE palette WITH SUPERUSER LOGIN PASSWORD \'palpass\' | sudo -u postgres psql 2>&1 | echo
 
     sudo -u postgres createdb paldb 2>&1 | echo
+    psql paldb -c "ALTER DATABASE paldb SET timezone TO 'GMT'" 2>&1 | echo
+
     update-rc.d controller defaults
 fi
 
