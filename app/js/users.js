@@ -1,6 +1,6 @@
-require(['jquery', 'topic', 'template', 'common', 'items', 'OnOff',
-         'bootstrap'],
-function ($, topic, template, common, items, OnOff)
+require(['jquery', 'topic', 'template', 'common', 'items',
+         'Dropdown', 'OnOff', 'bootstrap'],
+        function ($, topic, template, common, items, Dropdown, OnOff)
 {
     var LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -55,12 +55,12 @@ function ($, topic, template, common, items, OnOff)
             counts = data['counts']
             total = counts['__total__']
             setup_letters();
-
-            $('div.dropdown').each(function () {
-                $(this).data('callback', ddCallback);
-            });
             items.bind();
-            common.setupDropdowns();
+            Dropdown.bind('.admin-type', data['admin-levels'], ddCallback);
+            $('.admin-type').each(function() {
+                var dd = $(this).data();
+                dd.set(parseInt(dd.original_html));
+            });
             OnOff.setup();
             var last_update = data['last-update']
             if (last_update != null) {

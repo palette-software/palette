@@ -15,6 +15,7 @@ function($, template) {
             this.options[option.id] = option.item;
         }
 
+        this.original_html = $(node).html();
         var html = template.render(this.template, data);
         $(node).html(html);
 
@@ -71,6 +72,14 @@ function($, template) {
             /* $(this) is the <a> tag in the <li> selected. */
             var id = $(this).attr('data-id');
             $(this).closest('.btn-group').data().change(id, $(this).text());
+        });
+    }
+
+    Dropdown.bind = function(selector, data, callback)
+    {
+        $(selector).each(function() {
+            var obj = new Dropdown(this, data, callback);
+            $(this).data(obj);
         });
     }
 

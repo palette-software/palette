@@ -77,20 +77,11 @@
           {{^current}}
           <article>
             <span class="label">Palette Admin Permissions</span>
-            <!-- <i class="fa fa-fw fa-question-circle fa-2x help"></i> -->
+	        <!---<a id="252067" href=""><i class="fa fa-question-circle help"></i></a>-->
           </article>
-          <div class="btn-group dropdown">
-            <button type="button" class="btn btn-default dropdown-toggle"
-                    data-toggle="dropdown">
-              <div>{{admin-type}}</div><span class="caret"></span>
-            </button>
-            <ul class="dropdown-menu" role="menu">
-              {{#admin-levels}}
-              <li><a data-userid="{{userid}}" data-roleid="{{id}}"
-                     href="/rest/users/admin">{{name}}</a></li>
-              {{/admin-levels}}
-            </ul>
-          </div>
+          <span class="btn-group admin-type">
+            {{roleid}}
+          </span>
           {{/current}}
 %endif
         </div>
