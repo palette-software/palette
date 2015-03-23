@@ -196,8 +196,6 @@ function ($, topic, template, common)
             $('#'+name).html(rendered);
         }
 
-        common.setupDropdowns();
-
         $('li.backup a').bind('click', function(event) {
             event.preventDefault();
             var ts = $('span.timestamp', this).text();
