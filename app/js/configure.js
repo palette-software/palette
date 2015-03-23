@@ -206,7 +206,7 @@ function ($, common, Dropdown, OnOff)
             return true;
         }
 
-        if (!common.validURL(data['smtp-server'])) {
+        if (data['smtp-server'].length == 0) {
             return false;
         }
         if ((data['smtp-port'].length == 0) || (isNaN(data['smtp-port']))) {
