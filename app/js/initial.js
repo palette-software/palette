@@ -79,7 +79,7 @@ function ($, configure, common, Dropdown, OnOff)
         var result = {};
         $.ajax({
             type: 'POST',
-            url: '/open/setup/mail',
+            url: '/open/setup',  /* fixme - maybe /open/setup/mail? */
             data: data,
             dataType: 'json',
             async: false,
