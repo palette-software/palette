@@ -106,12 +106,10 @@ def req_getattr(req, name):
     if name == 'envid':
         return req.palette_environment.envid
     if name == 'palette_environment': # to be consistent with palette_domain
-        if not ENVIRON_ENVIRONMENT_NAME in req.environ:
-            req.environ[ENVIRON_ENVIRONMENT_NAME] = Environment.get()
+        req.environ[ENVIRON_ENVIRONMENT_NAME] = Environment.get()
         return req.environ[ENVIRON_ENVIRONMENT_NAME]
     if name == 'palette_domain': # webob already has a 'domain' property.
-        if not ENVIRON_DOMAIN_NAME in req.environ:
-            req.environ[ENVIRON_DOMAIN_NAME] = Domain.getone()
+        req.environ[ENVIRON_DOMAIN_NAME] = Domain.getone()
         return req.environ[ENVIRON_DOMAIN_NAME]
     if name == 'system':
         return System(req.envid)
