@@ -14,7 +14,8 @@ class UserApplication(PaletteRESTApplication):
 
     def admin_levels(self):
         roles = meta.Session.query(Role).all()
-        return [{'name': x.name, 'id': x.roleid} for x in roles]
+        options = [{'item': x.name, 'id': x.roleid} for x in roles]
+        return {'options': options}
 
     def alpha_count(self, envid):
         data = {}
