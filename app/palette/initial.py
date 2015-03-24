@@ -30,7 +30,7 @@ class OpenApplication(GenericWSGIApplication):
         return data
 
     def _set_license_key(self, req):
-        license_key = req.params_get('license-key')
+        license_key = req.params_get('license-key').strip()
 
         info = licensing_info(req.palette_domain, req.envid)
         info['license-key'] = license_key
