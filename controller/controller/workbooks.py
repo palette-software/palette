@@ -12,6 +12,7 @@ from cache import TableauCacheManager #FIXME
 from manager import synchronized
 from util import failed, success
 from odbc import ODBC
+from general import SystemConfig
 
 from diskcheck import DiskCheck, DiskException
 from event_control import EventControl
@@ -133,7 +134,10 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
             project = str(self.workbook.project_id)
         filename = site + '-' + project + '-'
         filename += self.workbook.repository_url + '-rev' + self.revision
-        return filename.replace(' ', '_')
+        filename = filename.replace(' ', '_')
+        filename = filename.replace('/', '_')
+        filename = filename.replace('\\', '_')
+        return filename
 
     @classmethod
     def get(cls, wbid, revision, **kwargs):
@@ -161,6 +165,10 @@ class WorkbookManager(TableauCacheManager):
     @synchronized('workbooks')
     def load(self, agent):
         # pylint: disable=too-many-locals
+        if self.server.system.get(
+                        SystemConfig.ARCHIVE_ENABLED, default='no') == 'no':
+            return {u'error':
+                'Workbook Archives are not enabled. Will not load.'}
         if not self._cred_check():
             return {u'error': 'Can not load workbooks: missing credentials.'}
 
@@ -238,6 +246,12 @@ class WorkbookManager(TableauCacheManager):
 
         # Second pass - build the archive files.
         for update in updates:
+            if self.server.system.get(
+                        SystemConfig.ARCHIVE_ENABLED, default='no') == 'no':
+                self.log.info("Workbook Archive disabled while processing." + \
+                              "  Exiting for now.")
+                break
+
             session.refresh(update)
             self._archive_twb(agent, update)
 
@@ -248,6 +262,10 @@ class WorkbookManager(TableauCacheManager):
 
     @synchronized('workbook.fixup')
     def fixup(self, agent):
+        if self.server.system.get(
+                            SystemConfig.ARCHIVE_ENABLED, default='no') == 'no':
+            return {u'error':
+                'Workbook Archives are not enabled.  Fixup not done.'}
 
         connection = meta.get_connection()
 
@@ -263,16 +281,21 @@ class WorkbookManager(TableauCacheManager):
 
         session = meta.Session()
 
+        count = 0
         if ids:
             # potentially serveral thousand?
             updates = session.query(WorkbookUpdateEntry).\
                       filter(WorkbookUpdateEntry.wuid.in_(ids)).all()
 
             for update in updates:
+                if self.server.system.get(SystemConfig.ARCHIVE_ENABLED) == 'no':
+                    self.log.info(
+                              "Workbook Archive disabled during fixup." + \
+                              "  Exiting for now.")
+                    break
+
                 self._archive_twb(agent, update)
-            count = len(updates)
-        else:
-            count = 0
+                count += 1
 
         return {u'status': 'OK',
                 u'updates': count}
@@ -288,17 +311,38 @@ class WorkbookManager(TableauCacheManager):
             return None
 
         tmpdir = dcheck.primary_dir
-        ext = update.workbook.fileext()
-
-        dst = self._tabcmd_get(agent, update, tmpdir, ext)
+        dst = self._tabcmd_get(agent, update, tmpdir)
         if dst is None:
             # _tabcmd_get generates an event on failure.
             return None
-        if ext == 'twbx':
-            dst = self._extract_twb_from_twbx(agent, update, dst)
-            if not dst:
-                # _extract_twb_from_twbx generates an event on failure.
-                return None
+
+        # Workbooks are now always retrieved as 'twb' (never 'twbx'),
+        # So we don't need to check the type, extract, etc.
+#        try:
+#            type_body = agent.filemanager.filetype(dst)
+#        except IOError as ex:
+#            self.log.error("build_twb: filetype on '%s' failed with: %s",
+#                            dst, str(ex))
+#            return None
+#
+#        if type_body['type'] == 'OTHER':
+#            file_type = 'xml'
+#        else:
+#            file_type = 'zip'
+#
+#        self.log.debug("build_twb: File '%s' is type: %s", dst, file_type)
+#
+#        if file_type == 'zip':
+#            dst = self._extract_twb_from_twbx(agent, update, dst)
+#            if not dst:
+#                # _extract_twb_from_twbx generates an event on failure.
+#                return None
+#        else:
+#            # Rename .twbx to the .twb it really is.
+#            old_dst = dst
+#            dst = dst[0:-1] # drop the trailing 'x' from the file extension.
+#            agent.filemanager.move(old_dst, dst)
+#            self.log.debug("workbook: renamed %s to %s", old_dst, dst)
 
         # move twbx/twb to resting location.
         file_size = 0
@@ -315,12 +359,32 @@ class WorkbookManager(TableauCacheManager):
             else:
                 file_size = file_size_body['size']
 
+        # Pull file over to the controller before sending the file away
+        # (and deleting it on the primary if it will reside elsewhere).
+        self.log.debug('Retrieving workbook: %s', dst)
+        try:
+            body = agent.filemanager.save(dst, target=self.path)
+        except IOError as ex:
+            self.log.debug("Error saving workbook '%s': %s", dst, str(ex))
+            return None
+
+        if failed(body):
+            self._eventgen(self, update, data=body)
+            return None
+        else:
+            self.log.debug('Retrieved workbook: %s', dst)
+
+        # Save the workbook .twb file on cloud storage, other agent,
+        # or leave on the primary.
         auto = True
+        # Note: If the file is copied off the primary, then it is deleted
+        # from the primary afterwards, due to "enable_delete=True":
         place = PlaceFile(self.server, agent, dcheck, dst, file_size, auto,
-                          enable_delete=False)
+                          enable_delete=True)
         self.log.debug("build_workbook: %s", place.info)
         # Remember the fileid
         update.fileid = place.placed_file_entry.fileid
+
         return dst
 
     # returns the filename or None on error.
@@ -328,24 +392,6 @@ class WorkbookManager(TableauCacheManager):
         path = self._build_twb(agent, update)
         if not path:
             # build_workbook prints errors and calls _eventgen().
-            return None
-        self.log.debug('Retrieving workbook: %s', path)
-        try:
-            body = agent.filemanager.save(path, target=self.path)
-        except IOError as ex:
-            self.log.debug("Error saving workbook '%s': %s", path, str(ex))
-            return None
-
-        if failed(body):
-            self._eventgen(self, update, data=body)
-            return None
-        else:
-            self.log.debug('Retrieved workbook: %s', path)
-        try:
-            agent.filemanager.delete(path)
-        except IOError as ex:
-            self.log.debug("Error deleting workbook twb '%s': %s",
-                            path, str(ex))
             return None
 
         return agent.path.basename(path)
@@ -389,9 +435,12 @@ class WorkbookManager(TableauCacheManager):
 
     # Run 'tabcmd get' on the agent to retrieve the twb/twbx file
     # then return its path or None in the case of an error.
-    def _tabcmd_get(self, agent, update, tmpdir, ext):
-        url = '/workbooks/' + update.workbook.repository_url + '.' + ext
-        dst = agent.path.join(tmpdir, update.basename() + '.' + ext)
+    def _tabcmd_get(self, agent, update, tmpdir):
+        url = '/workbooks/' + update.workbook.repository_url
+        # It always comes as a twb (ascii, not zipped) if no extension is
+        # added to the repository_url, though this is not documented
+        # by Tableau.
+        dst = agent.path.join(tmpdir, update.basename() + '.twb')
         cmd = 'get %s -f "%s"' % (url, dst)
 
         self.log.debug('building workbook archive: ' + dst)
@@ -438,4 +487,12 @@ class WorkbookManager(TableauCacheManager):
         if error:
             self.log.error(error)
             data['error'] = error
+
+        username = self.get_username_from_system_user_id(
+                                                self.server.environment.envid,
+                                                update.system_user_id)
+
+        if username and not 'owner' in data:
+            data['owner'] = username
+
         return self.server.event_control.gen(key, data)

@@ -38,7 +38,7 @@ class FileManager(object):
         try:
             with open(target, "w") as f:
                 data = self.get(path)
-                f.write(self.get(path))
+                f.write(data)
             return {
                 'target': target,
                 'path': path,
@@ -110,7 +110,17 @@ class FileManager(object):
             return json.loads(body)
         except (exc.HTTPException, httplib.HTTPException,
                 EnvironmentError, ValueError) as ex:
-            raise IOError("filemanager.mkdirs failed: %s" % str(ex))
+            raise IOError("filemanager.filesize failed: %s" % str(ex))
+
+
+    def filetype(self, path):
+        data = {'action':'TYPE', 'path':path}
+        try:
+            body = self.agent.connection.http_send_json('/file', data)
+            return json.loads(body)
+        except (exc.HTTPException, httplib.HTTPException,
+                EnvironmentError, ValueError) as ex:
+            raise IOError("filemanager.filetype failed: %s" % str(ex))
 
     def sendfile(self, path, source):
         source = os.path.abspath(os.path.expanduser(source))

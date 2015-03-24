@@ -366,10 +366,8 @@ class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
     def service_POST(self, req):
         if req.POST['enable-archive'] == 'false':
             req.system.save(SystemConfig.ARCHIVE_ENABLED, 'no')
-            self.commapp.send_cmd("sched delete workbook")
         elif req.POST['enable-archive'] == 'true':
             req.system.save(SystemConfig.ARCHIVE_ENABLED, 'yes')
-            self.commapp.send_cmd("sched add 3/5 * * * * workbook")
         else:
             print "bad value for enable-archive:", req.POST['enable-archive']
 
@@ -570,9 +568,9 @@ class GeneralMonitorApplication(PaletteRESTApplication):
                                             req.POST['cpu-load-error'])
 
         req.system.save(SystemConfig.CPU_PERIOD_WARN,
-                                            req.POST['cpu-period-warn'])
+                                        int(req.POST['cpu-period-warn']) * 60)
         req.system.save(SystemConfig.CPU_PERIOD_ERROR,
-                                            req.POST['cpu-period-error'])
+                                        int(req.POST['cpu-period-error']) * 60)
 
         req.system.save(SystemConfig.HTTP_LOAD_WARN,
                                         req.POST['http-load-warn'])
