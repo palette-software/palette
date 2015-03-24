@@ -165,6 +165,10 @@ class WorkbookManager(TableauCacheManager):
     @synchronized('workbooks')
     def load(self, agent):
         # pylint: disable=too-many-locals
+        if self.server.system.get(
+                        SystemConfig.ARCHIVE_ENABLED, default='no') == 'no':
+            return {u'error':
+                'Workbook Archives are not enabled. Will not load.'}
         if not self._cred_check():
             return {u'error': 'Can not load workbooks: missing credentials.'}
 
@@ -242,7 +246,8 @@ class WorkbookManager(TableauCacheManager):
 
         # Second pass - build the archive files.
         for update in updates:
-            if self.server.system.get(SystemConfig.ARCHIVE_ENABLED) == 'no':
+            if self.server.system.get(
+                        SystemConfig.ARCHIVE_ENABLED, default='no') == 'no':
                 self.log.info("Workbook Archive disabled while processing." + \
                               "  Exiting for now.")
                 break
@@ -257,6 +262,10 @@ class WorkbookManager(TableauCacheManager):
 
     @synchronized('workbook.fixup')
     def fixup(self, agent):
+        if self.server.system.get(
+                            SystemConfig.ARCHIVE_ENABLED, default='no') == 'no':
+            return {u'error':
+                'Workbook Archives are not enabled.  Fixup not done.'}
 
         connection = meta.get_connection()
 

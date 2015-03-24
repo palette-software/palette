@@ -124,8 +124,7 @@ class Sched(threading.Thread):
         self.add_cron_job(name='sync', minute="3/5")
         self.add_cron_job(name='http_request', minute='3/5')
         self.add_cron_job(name='extract', minute="3/5")
-#       Disabled on install, can be enabled in the configuration UI.
-#       self.add_cron_job(name='workbook', minute='3/5')
+        self.add_cron_job(name='workbook', minute='3/5')
         self.add_cron_job(name='license_check', minute="4/5")
         self.add_cron_job(name='license_verify', minute=6)
         self.add_cron_job(name='checkports', minute="*")

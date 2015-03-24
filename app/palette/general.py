@@ -366,10 +366,8 @@ class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
     def service_POST(self, req):
         if req.POST['enable-archive'] == 'false':
             req.system.save(SystemConfig.ARCHIVE_ENABLED, 'no')
-            self.commapp.send_cmd("sched delete workbook")
         elif req.POST['enable-archive'] == 'true':
             req.system.save(SystemConfig.ARCHIVE_ENABLED, 'yes')
-            self.commapp.send_cmd("sched add 3/5 * * * * workbook")
         else:
             print "bad value for enable-archive:", req.POST['enable-archive']
 
