@@ -674,6 +674,7 @@ function ($, _, configure, common, Dropdown, OnOff)
         configure.lightbox(236535, 'Palette Server URL');
         configure.lightbox(237794, 'Tableau Server URL');
         configure.lightbox(236536, 'Palette Admin Password');
+        configure.lightbox(252063, 'Tableau Server Repository Database User Password');
         configure.lightbox(236542, 'Mail Server');
         configure.lightbox(236543, 'Server SSL Certificate');
         configure.lightbox(236544, 'Authentication');
