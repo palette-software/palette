@@ -52,6 +52,7 @@ elif [ "$oldversion" = "1.1.2" ]; then
     echo Upgrading from 1.1.2 ...
     psql paldb << XYZZY
     drop table event_control;
+    drop table cron;
 
     alter table agent_volumes drop constraint agent_volumes_agentid_fkey;
     alter table agent_volumes add foreign key (agentid) references agent(agentid) on delete cascade;
