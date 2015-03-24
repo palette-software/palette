@@ -138,12 +138,12 @@ class UserApplication(PaletteRESTApplication):
         return self.handle_GET(req)
 
     @required_role(Role.SUPER_ADMIN)
-    @required_parameters('userid', 'roleid')
+    @required_parameters('userid', 'id')
     def handle_admin(self, req):
         user = UserProfile.get(req.envid, int(req.POST['userid']))
         if not user:
             raise exc.HTTPGone()
-        roleid = int(req.POST['roleid'])
+        roleid = int(req.POST['id'])
         user.roleid = roleid
         meta.Session.commit()
         return {'roleid':roleid}

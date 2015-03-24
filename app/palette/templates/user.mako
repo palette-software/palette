@@ -79,7 +79,8 @@
             <span class="label">Palette Admin Permissions</span>
 	        <!---<a id="252067" href=""><i class="fa fa-question-circle help"></i></a>-->
           </article>
-          <span class="btn-group admin-type">
+          <span class="btn-group admin-type"
+                data-userid="{{userid}}" data-href="/rest/users/admin">
             {{roleid}}
           </span>
           {{/current}}
