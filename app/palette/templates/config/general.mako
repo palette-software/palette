@@ -203,15 +203,11 @@
           <span id="enable-archive" class="onoffswitch yesno"></span>
         </span>
       </p>
-      <div class="row">
-        <div class="col-xs-6">
-          <h3>Tableau Server Admin Username *</h3>
-          <input type="text" id="archive-username" />
-        </div>
-        <div class="col-xs-6">
-          <h3>Tableau Server Admin Password *</h3>
-          <input type="password" id="archive-password" />
-        </div>
+      <div>
+        <label for="archive-username">Tableau Server Admin Username *</label>
+        <input type="text" id="archive-username" />
+        <label for="archive-password">Tableau Server Admin Password *</label>
+        <input type="password" id="archive-password" />
       </div>
       <div class="save-cancel">
         <button type="button" id="save-workbooks" class="btn btn-primary disabled">
