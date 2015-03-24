@@ -142,7 +142,7 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
             entry.interactors = int(interactors)
         if viewers and viewers.isdigit():
             entry.viewers = int(viewers)
-        if cores and cores.isdigit():
+        if cores:
             entry.cores = cores
 
         if entry.cores:
