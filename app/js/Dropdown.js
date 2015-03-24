@@ -6,6 +6,7 @@ function($, template) {
         this.callback = callback;
         this.error = error;
         this.options = {}
+        this.href = $(node).attr('data-href');
 
         this.template = $('#dropdown-template').html();
         template.parse(this.template);
@@ -34,13 +35,29 @@ function($, template) {
             return $div.attr('data-id');
         }
 
+        this.customDataAttributes = function () {
+            var d = {}
+            for (var i=0, attrs=node.attributes, l=attrs.length; i<l; i++){
+                var name = attrs.item(i).nodeName;
+                if (!name.match('^data-') || name == 'data-href') {
+                    continue;
+                }
+                d[name.substring(5)] = attrs.item(i).value;
+            }
+            return d;
+        }
+
         this.change = function (id, value) {
             var success;
             if (this.href) {
+                var data = this.customDataAttributes();
+                data['id'] = id;
+                data['value'] = value;
+
                 $.ajax({
                     type: 'POST',
                     url: this.href,
-                    data: {'id': id, 'value': value},
+                    data: data,
                     dataType: 'json',
                     async: false,
 

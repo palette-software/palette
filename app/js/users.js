@@ -10,9 +10,10 @@ require(['jquery', 'topic', 'template', 'common', 'items',
     var startswith = null;
     var counts = null;
 
-    function ddCallback(node, value) {
-        var $section = $(node).closest('article');
-        var old = $('.display-role', $section).html();
+    function ddCallback(id, value) {
+        var $section = $(this.node).closest('article');
+        var $display_role = $('.display-role', $section);
+        var old = $display_role.html();
         if (/Publisher/i.test(old)) {
             if (value.toLowerCase() == 'none') {
                 value = 'Publisher';
