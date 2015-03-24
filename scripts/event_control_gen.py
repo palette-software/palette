@@ -1,7 +1,4 @@
-from akiri.framework.ext.sqlalchemy import meta
-
-import sqlalchemy
-from sqlalchemy.orm import sessionmaker, scoped_session
+from akiri.framework.sqlalchemy import create_engine
 
 import sys
 if len(sys.argv) == 1:
@@ -12,9 +9,7 @@ else:
     print >> sys.stderr, 'usage: event_control_gen.py [url]'
     sys.exit(1)
 
-meta.engine = sqlalchemy.create_engine(url, echo=False)
-meta.Base.metadata.create_all(bind=meta.engine)
-meta.Session = scoped_session(sessionmaker(bind=meta.engine))
+create_engine(url, echo=False, pool_size=20, max_overflow=30)
 
 envid = 1
 
