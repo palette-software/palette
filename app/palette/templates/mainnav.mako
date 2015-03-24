@@ -4,7 +4,7 @@
     <span class="message"></span>
     <ul class="nav">
       <li class="buy hidden">
-        <a href="javascript:void(0)">Buy Now</a>
+        <a href="javascript:void(0)">Subscribe Now</a>
       </li>
       <li class="more">
         <a class="help" href="javascript:void(0)">
