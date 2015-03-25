@@ -53,6 +53,7 @@ elif [ "$oldversion" = "1.1.2" ]; then
     psql paldb << XYZZY
     drop table event_control;
     drop table cron;
+    drop table sites;
 
     alter table agent_volumes drop constraint agent_volumes_agentid_fkey;
     alter table agent_volumes add foreign key (agentid) references agent(agentid) on delete cascade;
