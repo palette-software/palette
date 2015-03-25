@@ -22,6 +22,8 @@ from files import FileManager
 
 from sites import Site
 from projects import Project
+from yml import YmlEntry
+
 
 # NOTE: system_user_id is maintained in two places.  This is not ideal from
 # a db design perspective but makes the find-by-current-owner code clearer.
@@ -161,19 +163,24 @@ class WorkbookManager(TableauCacheManager):
         super(WorkbookManager, self).__init__(server)
         path = server.config.get('palette', 'workbook_archive_dir')
         self.path = os.path.abspath(path)
+        self.tableau_version = '8'  # default assumption
 
     # really sync *and* load
     @synchronized('workbooks')
     def load(self, agent):
         # pylint: disable=too-many-locals
+
+        envid = self.server.environment.envid
+        self.tableau_version = YmlEntry.get(envid,
+                                            'version.external', default='8')
+
         if self.server.system.get(
                         SystemConfig.ARCHIVE_ENABLED, default='no') == 'no':
-            return {u'error':
+            return {u'status':
                 'Workbook Archives are not enabled. Will not load.'}
         if not self._cred_check():
             return {u'error': 'Can not load workbooks: missing credentials.'}
 
-        envid = self.server.environment.envid
         users = self.load_users(agent)
 
         stmt = \
@@ -265,7 +272,7 @@ class WorkbookManager(TableauCacheManager):
     def fixup(self, agent):
         if self.server.system.get(
                             SystemConfig.ARCHIVE_ENABLED, default='no') == 'no':
-            return {u'error':
+            return {u'status':
                 'Workbook Archives are not enabled.  Fixup not done.'}
 
         connection = meta.get_connection()
@@ -303,6 +310,8 @@ class WorkbookManager(TableauCacheManager):
 
     # returns the filename *on the agent* or None on error.
     def _build_twb(self, agent, update):
+        # pylint: disable=too-many-return-statements
+        # pylint: disable=too-many-branches
         try:
             # fixme: Specify a minimum disk space required other than 0?
             dcheck = DiskCheck(self.server, agent, self.server.WORKBOOKS_DIR,
@@ -317,33 +326,31 @@ class WorkbookManager(TableauCacheManager):
             # _tabcmd_get generates an event on failure.
             return None
 
-        # Workbooks are now always retrieved as 'twb' (never 'twbx'),
-        # So we don't need to check the type, extract, etc.
-#        try:
-#            type_body = agent.filemanager.filetype(dst)
-#        except IOError as ex:
-#            self.log.error("build_twb: filetype on '%s' failed with: %s",
-#                            dst, str(ex))
-#            return None
-#
-#        if type_body['type'] == 'OTHER':
-#            file_type = 'xml'
-#        else:
-#            file_type = 'zip'
-#
-#        self.log.debug("build_twb: File '%s' is type: %s", dst, file_type)
-#
-#        if file_type == 'zip':
-#            dst = self._extract_twb_from_twbx(agent, update, dst)
-#            if not dst:
-#                # _extract_twb_from_twbx generates an event on failure.
-#                return None
-#        else:
-#            # Rename .twbx to the .twb it really is.
-#            old_dst = dst
-#            dst = dst[0:-1] # drop the trailing 'x' from the file extension.
-#            agent.filemanager.move(old_dst, dst)
-#            self.log.debug("workbook: renamed %s to %s", old_dst, dst)
+        try:
+            type_body = agent.filemanager.filetype(dst)
+        except IOError as ex:
+            self.log.error("build_twb: filetype on '%s' failed with: %s",
+                            dst, str(ex))
+            return None
+
+        if type_body['type'] == 'OTHER':
+            file_type = 'xml'
+        else:
+            file_type = 'zip'
+
+        self.log.debug("build_twb: File '%s' is type: %s", dst, file_type)
+
+        if file_type == 'zip':
+            dst = self._extract_twb_from_twbx(agent, update, dst)
+            if not dst:
+                # _extract_twb_from_twbx generates an event on failure.
+                return None
+        else:
+            # Rename .twbx to the .twb it really is.
+            old_dst = dst
+            dst = dst[0:-1] # drop the trailing 'x' from the file extension.
+            agent.filemanager.move(old_dst, dst)
+            self.log.debug("workbook: renamed %s to %s", old_dst, dst)
 
         # move twbx/twb to resting location.
         file_size = 0
@@ -452,14 +459,18 @@ class WorkbookManager(TableauCacheManager):
             self.log.error("Missing site id: %d", wb_entry.site_id)
             return None
 
-        url = '/workbooks/' + update.workbook.repository_url
+        url = '/workbooks/%s.twbx' % update.workbook.repository_url
         if site_entry.url_namespace:
-            url = '/t/' + site_entry.url_namespace + url
+            if self.tableau_version[0:1] == '8':
+                url = '/t/' + site_entry.url_namespace + url
+            else:
+                # assume tableau 9 and later works this way, for now:
+                url = '/#/site/' + site_entry.url_namespace + url
 
         # It always comes as a twb (ascii, not zipped) if no extension is
         # added to the repository_url, though this is not documented
         # by Tableau.
-        dst = agent.path.join(tmpdir, update.basename() + '.twb')
+        dst = agent.path.join(tmpdir, update.basename() + '.twbx')
         cmd = 'get %s -f "%s"' % (url, dst)
 
         self.log.debug('building workbook archive: ' + dst)

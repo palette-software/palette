@@ -346,6 +346,7 @@ class WorkbookData(GenericWSGIApplication):
         if path_info.startswith('/'):
             path_info = path_info[1:]
 
+        path_info = req.environ['name']
         update = WorkbookUpdateEntry.get_by_url(path_info, default=None)
         if update is None:
             return exc.HTTPNotFound()
