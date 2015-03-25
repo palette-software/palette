@@ -10,7 +10,8 @@ class Environment(meta.Base, BaseMixin):
 
     envid = Column(BigInteger, unique=True, nullable=False, \
                    autoincrement=True, primary_key=True)
-    domainid = Column(BigInteger, ForeignKey("domain.domainid"))
+    domainid = Column(BigInteger,
+                      ForeignKey("domain.domainid", onupdate='CASCADE'))
     name = Column(String, unique=True, nullable=False, index=True)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
