@@ -338,6 +338,9 @@ class LicenseManager(Manager):
             self._callfailed("License reply invalid")
             return {"error": "License reply invalid: " + str(body)}
 
+        if 'id' in body:
+            entry.domainid = int(body['id'])
+
         entry.trial = body['trial']
         entry.expiration_time = body['expiration-time']
         meta.Session.commit()
