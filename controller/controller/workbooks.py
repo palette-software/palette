@@ -4,6 +4,7 @@ from sqlalchemy import Column, BigInteger, Integer, Boolean, String, DateTime
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm.exc import NoResultFound
 
 import akiri.framework.sqlalchemy as meta
 
@@ -436,7 +437,25 @@ class WorkbookManager(TableauCacheManager):
     # Run 'tabcmd get' on the agent to retrieve the twb/twbx file
     # then return its path or None in the case of an error.
     def _tabcmd_get(self, agent, update, tmpdir):
+        try:
+            wb_entry = meta.Session.query(WorkbookEntry).\
+                filter(WorkbookEntry.workbookid == update.workbookid).\
+                one()
+        except NoResultFound:
+            self.log.error("Missing workbook id: %d", update.workbookdid)
+            return None
+
+        site_entry = Site.get(self.server.environment.envid, wb_entry.site_id,
+                              default=None)
+
+        if not site_entry:
+            self.log.error("Missing site id: %d", wb_entry.site_id)
+            return None
+
         url = '/workbooks/' + update.workbook.repository_url
+        if site_entry.url_namespace:
+            url = '/t/' + site_entry.url_namespace + url
+
         # It always comes as a twb (ascii, not zipped) if no extension is
         # added to the repository_url, though this is not documented
         # by Tableau.

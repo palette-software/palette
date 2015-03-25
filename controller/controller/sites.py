@@ -16,6 +16,7 @@ class Site(meta.Base, BaseMixin):
     envid = Column(Integer, ForeignKey("environment.envid"), primary_key=True)
     id = Column(Integer, nullable=False)
     name = Column(String, nullable=False)
+    url_namespace = Column(String)
     status = Column(String)
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
@@ -56,7 +57,7 @@ class Site(meta.Base, BaseMixin):
             'user_quota, content_admin_mode, storage_quota, metrics_level, '+\
             'status_reason, subscriptions_enabled, ' +\
             'custom_subscription_footer, custom_subscription_email, '+\
-            'luid, query_limit ' +\
+            'luid, query_limit, url_namespace ' +\
             'FROM sites'
 
         data = agent.odbc.execute(stmt)
@@ -88,6 +89,7 @@ class Site(meta.Base, BaseMixin):
             entry.custom_subscription_email = row[12]
             entry.luid = row[13]
             entry.query_limit = row[14]
+            entry.url_namespace = row[15]
             ids.append(entry.siteid)
 
         # FIXME: don't delete
