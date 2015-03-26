@@ -176,7 +176,7 @@ class WorkbookManager(TableauCacheManager):
 
         if self.server.system.get(
                         SystemConfig.ARCHIVE_ENABLED, default='no') == 'no':
-            return {u'status':
+            return {u'disabled':
                 'Workbook Archives are not enabled. Will not load.'}
         if not self._cred_check():
             return {u'error': 'Can not load workbooks: missing credentials.'}
@@ -272,7 +272,7 @@ class WorkbookManager(TableauCacheManager):
     def fixup(self, agent):
         if self.server.system.get(
                             SystemConfig.ARCHIVE_ENABLED, default='no') == 'no':
-            return {u'status':
+            return {u'disabled':
                 'Workbook Archives are not enabled.  Fixup not done.'}
 
         connection = meta.get_connection()
