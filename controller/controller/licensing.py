@@ -256,7 +256,7 @@ class LicenseManager(Manager):
             return license_data
         else:
             # license is invalid
-            if not entry.notified:
+            if notification.color != 'red':
                 # Generate an event
                 data = agent.todict()
                 data['error'] = msg

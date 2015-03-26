@@ -1547,6 +1547,42 @@
 "event_label_desc":null,
 "admin_visibility":false,
 "publisher_visibility":false
+},
+{
+"eventid":88,
+"key":"READONLY-DBPASSWORD-FAILED",
+"level":"E",
+"send_email":"t",
+"subject":"ERROR Read-only DB Password Failed (%(eventid)s)",
+"event_description":"SUMMARY\nThe Tableau Read-only Database Password entered to Palette failed.  Please verify that the password matches the configuration on your Tableau server, and that Tableau has been restarted. Full context is provided below for your reference. Please contact your Tableau Software Sales Representative if you have further problems.\n\nDETAILS\nEvent Type: ${event_type_label}\nEnvironment: ${environment}\n% if info is not UNDEFINED or error is not UNDEFINED or stderr is not UNDEFINED or stdout is not UNDEFINED:\nSystem Message:\n% endif\n% if info is not UNDEFINED:\n${info}\n% endif\n% if error is not UNDEFINED:\n${error}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif\n\nWHY THIS EVENT OCCURRED\nPalette reads from the Tableau database.  This event is triggered when the Read-only Database Password does not work to access the Tableau database.",
+"email_subject":"ERROR Rea-only DB Password Failed (%(eventid)s)",
+"email_message":"SUMMARY\nThe Tableau Read-Only Database Password entered to Palette failed.  Please verify that the password matches the configuration on your Tableau server, and that Tableau has been restarted.  Full context is provided below for your reference. Please contact your Tableau Software Sales Representative if you have further problems.\n\nDETAILS\nTime: ${timestamp}\nEvent Type: ${event_type_label}\nEnvironment: ${environment}\n% if info is not UNDEFINED or error is not UNDEFINED or stderr is not UNDEFINED or stdout is not UNDEFINED:\nSystem Message:\n% endif\n% if info is not UNDEFINED:\n${info}\n% endif\n% if error is not UNDEFINED:\n${error}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif\n\nWHY THIS EVENT OCCURRED \n.Palette reads from the Tableau database.  This event is triggered when the Read-only Database Password does not work to access the Tableau database. \n\nHOW TO STOP RECEIVING THIS EMAIL ALERT\nThis message was sent from your Palette Server at ${server_url}. You can turn off these email alerts on your profile page found at ${server_url}/profile.",
+"icon":"",
+"color":"red",
+"event_type":"agent",
+"event_type_label":"Palette Agent",
+"event_label":"Read-only DB Password Failed",
+"event_label_desc":null,
+"admin_visibility":false,
+"publisher_visibility":false
+},
+{
+"eventid":89,
+"key":"READONLY-DBPASSWORD-OKAY",
+"level":"I",
+"send_email":"t",
+"subject":"ERROR Read-only DB Password Now OKAY (%(eventid)s)",
+"event_description":"SUMMARY\nThe Tableau Read-only Database Password entered to Palette is now OKAY after having failed.  Full context is provided below for your reference. Please contact your Tableau Software Sales Representative if you have further problems.\n\nDETAILS\nEvent Type: ${event_type_label}\nEnvironment: ${environment}\n% if info is not UNDEFINED or error is not UNDEFINED or stderr is not UNDEFINED or stdout is not UNDEFINED:\nSystem Message:\n% endif\n% if info is not UNDEFINED:\n${info}\n% endif\n% if error is not UNDEFINED:\n${error}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif\n\nWHY THIS EVENT OCCURRED\nPalette reads from the Tableau database.  This event is triggered when the Read-only Database Password does work to access the Tableau database after it had failed.",
+"email_subject":"ERROR Rea-only DB Password Failed (%(eventid)s)",
+"email_message":"SUMMARY\nThe Tableau Read-Only Database Password entered to Palette is now OKAY after having failed.  Full context is provided below for your reference. Please contact your Tableau Software Sales Representative if you have further problems.\n\nDETAILS\nTime: ${timestamp}\nEvent Type: ${event_type_label}\nEnvironment: ${environment}\n% if info is not UNDEFINED or error is not UNDEFINED or stderr is not UNDEFINED or stdout is not UNDEFINED:\nSystem Message:\n% endif\n% if info is not UNDEFINED:\n${info}\n% endif\n% if error is not UNDEFINED:\n${error}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif\n\nWHY THIS EVENT OCCURRED \n.Palette reads from the Tableau database.  This event is triggered when the Read-only Database Password works to access the Tableau database after it had failed. \n\nHOW TO STOP RECEIVING THIS EMAIL ALERT\nThis message was sent from your Palette Server at ${server_url}. You can turn off these email alerts on your profile page found at ${server_url}/profile.",
+"icon":"",
+"color":"green",
+"event_type":"agent",
+"event_type_label":"Palette Agent",
+"event_label":"Read-only DB Password Now OKAY",
+"event_label_desc":null,
+"admin_visibility":false,
+"publisher_visibility":false
 }
 ]
 }
