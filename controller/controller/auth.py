@@ -1,11 +1,12 @@
 from datetime import datetime
-from sqlalchemy import not_
+from sqlalchemy import not_, func
 
 import akiri.framework.sqlalchemy as meta
 
 from manager import Manager, synchronized
+from event_control import EventControl
 from profile import UserProfile, Publisher, License
-from util import odbc2dt, DATEFMT
+from util import odbc2dt, DATEFMT, success
 
 AUTH_TIMESTAMP_SYSTEM_KEY = 'auth-timestamp'
 
@@ -51,6 +52,7 @@ class AuthManager(Manager):
     @synchronized('auth')
     def load(self, agent, check_odbc_state=True):
         # pylint: disable=too-many-locals
+        # pylint: disable=too-many-statements
         envid = self.server.environment.envid
 
         if check_odbc_state and not self.server.odbc_ok():
@@ -68,7 +70,30 @@ class AuthManager(Manager):
 
         data = agent.odbc.execute(stmt)
 
-        if 'error' in data:
+        notification = self.server.notifications.get("dbreadonly")
+        if success(data):
+            if notification.color == 'red':
+                adata = agent.todict()
+                self.server.event_control.gen(
+                                EventControl.READONLY_DBPASSWORD_OKAY, adata)
+                notification.modification_time = func.now()
+                notification.color = 'green'
+                notification.description = None
+                meta.Session.commit()
+        else:
+            # Failed
+            if notification.color != 'red':
+                if data['error'].find(
+                    "A password is required for this connection.") != -1 or \
+                    data['error'].find("password authentication failed") != -1:
+
+                    adata = agent.todict()
+                    self.server.event_control.gen(
+                                EventControl.READONLY_DBPASSWORD_FAILED, adata)
+                    notification.modification_time = func.now()
+                    notification.color = 'red'
+                    notification.description = None
+                    meta.Session.commit()
             return data
 
         session = meta.Session()
