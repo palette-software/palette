@@ -191,9 +191,9 @@ class WorkbookManager(TableauCacheManager):
 
         session = meta.Session()
 
-        last_created_at = self._last_created_at(envid)
-        if last_created_at:
-            stmt += " WHERE created_at > '" + last_created_at + "'"
+        last_updated_at = self._last_updated_at(envid)
+        if last_updated_at:
+            stmt += " WHERE updated_at > '" + last_updated_at + "'"
 
         data = agent.odbc.execute(stmt)
 
@@ -231,12 +231,11 @@ class WorkbookManager(TableauCacheManager):
                                           revision,
                                           default=None)
             if not wbu:
-                # A new row is created each time in the Tableau database,
-                # so the created_at time is actually the publish time.
+                # The updated_at time is the publish time.
                 wbu = WorkbookUpdateEntry(workbookid=wbe.workbookid,
                                           revision=revision,
                                           system_user_id=system_user_id,
-                                          timestamp=wbe.created_at,
+                                          timestamp=wbe.updated_at,
                                           url='')
                 session.add(wbu)
                 updates.append(wbu)
@@ -410,11 +409,9 @@ class WorkbookManager(TableauCacheManager):
         # retrieval is a long process, so commit after each.
         meta.Session.commit()
 
-    # This is the time the last revision was created - each revision is a new
-    # row, so created_at works (instead of updated_at).
-    # returns a UTC string or None
-    def _last_created_at(self, envid):
-        value = WorkbookEntry.max('created_at', filters={'envid':envid})
+    # This is the time the last revision was updated.
+    def _last_updated_at(self, envid):
+        value = WorkbookEntry.max('updated_at', filters={'envid':envid})
         if value is None:
             return None
         return str(value)
