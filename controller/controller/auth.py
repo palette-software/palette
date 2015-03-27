@@ -6,7 +6,7 @@ import akiri.framework.sqlalchemy as meta
 from manager import Manager, synchronized
 from event_control import EventControl
 from profile import UserProfile, Publisher, License
-from util import odbc2dt, DATEFMT, success
+from util import odbc2dt, DATEFMT, success, failed
 
 AUTH_TIMESTAMP_SYSTEM_KEY = 'auth-timestamp'
 
@@ -49,28 +49,22 @@ class AuthManager(Manager):
                 cache[sysid] = obj
         return cache
 
-    @synchronized('auth')
-    def load(self, agent, check_odbc_state=True):
-        # pylint: disable=too-many-locals
-        # pylint: disable=too-many-statements
-        envid = self.server.environment.envid
+    def _eventit(self, agent, data):
+        """Send a read-only password event failed/okay event if
+           the user has done setup with a chance to
+           configure one and appropriate."""
 
-        if check_odbc_state and not self.server.odbc_ok():
-            return {"error": "Cannot run command while in state: %s" % \
-                        self.server.state_manager.get_state()}
+        # user '0', likely 'palette'
+        entry = UserProfile.get(self.server.environment.envid, 0)
+            # Potentially send an event only after the user has
+            # finished with the "Setup" page (the passowrd will then be
+            # there).
 
-        stmt = \
-            'SELECT system_users.name, system_users.email, ' +\
-            ' system_users.hashed_password, system_users.salt, ' +\
-            ' system_users.friendly_name, system_users.admin_level, ' +\
-            ' system_users.created_at, system_users.id ' +\
-            'FROM system_users'
-
-        excludes = ['guest', '_system']
-
-        data = agent.odbc.execute(stmt)
+        if not entry.hashed_password:
+            return
 
         notification = self.server.notifications.get("dbreadonly")
+
         if success(data):
             if notification.color == 'red':
                 adata = agent.todict()
@@ -94,6 +88,33 @@ class AuthManager(Manager):
                     notification.color = 'red'
                     notification.description = None
                     meta.Session.commit()
+            return
+
+    @synchronized('auth')
+    def load(self, agent, check_odbc_state=True):
+        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-statements
+        envid = self.server.environment.envid
+
+        if check_odbc_state and not self.server.odbc_ok():
+            return {"error": "Cannot run command while in state: %s" % \
+                        self.server.state_manager.get_state()}
+
+        stmt = \
+            'SELECT system_users.name, system_users.email, ' +\
+            ' system_users.hashed_password, system_users.salt, ' +\
+            ' system_users.friendly_name, system_users.admin_level, ' +\
+            ' system_users.created_at, system_users.id ' +\
+            'FROM system_users'
+
+        excludes = ['guest', '_system']
+
+        data = agent.odbc.execute(stmt)
+
+        # Send tableau readonly password-related events if appropriate.
+        self._eventit(agent, data)
+
+        if failed(data):
             return data
 
         session = meta.Session()
