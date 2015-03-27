@@ -15,6 +15,7 @@ import akiri.framework.sqlalchemy as meta
 
 from agent import Agent
 from agentmanager import AgentManager
+from domain import Domain
 from event_control import EventControl
 from files import FileManager
 from general import SystemConfig
@@ -92,7 +93,8 @@ class Command(object):
 
         # FIXME: domain/env HACK
         if not 'domainid' in opts:
-            opts['domainid'] = self.server.domain.domainid
+            entry = Domain.getone()
+            opts['domainid'] = entry.domainid
         if not 'envid' in opts:
             opts['envid'] = self.server.environment.envid
 

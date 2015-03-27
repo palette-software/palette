@@ -1610,8 +1610,8 @@ def main():
                                            'event_debug',
                                            default=False)
     Domain.populate()
-    domainname = config.get('palette', 'domainname')
-    server.domain = Domain.get_by_name(domainname)
+    server.domainname = config.get('palette', 'domainname')
+    server.domain = Domain.get_by_name(server.domainname)
     Environment.populate()
     server.environment = Environment.get()
 
