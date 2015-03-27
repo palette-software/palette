@@ -42,6 +42,8 @@ class OpenApplication(GenericWSGIApplication):
             req.palette_domain.trial = data['trial']
         if 'expiration-time' in data:
             req.palette_domain.expiration_time = data['expiration-time']
+        if 'id' in data:
+            req.palette_domain.domainid = int(data['id'])
 
         meta.Session.commit()
 
