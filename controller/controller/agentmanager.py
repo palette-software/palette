@@ -1180,7 +1180,7 @@ class AgentManager(threading.Thread):
 
             # Get the latest controller license key in case it has changed.
             domain_entry = \
-                        self.server.domain.get_by_name(self.server.domain.name)
+                        self.server.domain.get_by_name(self.server.domainname)
             license_key = domain_entry.license_key
             if license_key:
                 if not body.has_key('license-key'):
