@@ -298,11 +298,13 @@ class LicenseManager(Manager):
     def info(self):
         """Don't do anything very active since this can run when
            in UPGRADE state, etc."""
-        return licensing_info(self.server.domain, self.server.environment.envid)
+        entry = Domain.get_by_name(self.server.domainname)
+        return licensing_info(entry, self.server.environment.envid)
 
     def verify(self):
         # pylint: disable=too-many-return-statements
         entry = Domain.getone()
+        logging.debug('license verify, license_id: %s', entry.license_key)
         if not entry.license_key:
             # If there is no license key, don't bother checking the
             # validity of it or attempt to contact the palette
