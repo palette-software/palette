@@ -403,7 +403,7 @@ class MonitorApplication(PaletteRESTApplication):
                     proc['pid'] = tab_entry.pid
                     proc['name'] = tab_entry.name
                     proc['status'] = tab_entry.status
-                    if tab_entry.status == 'running':
+                    if tab_entry.status.find('running') != -1:
                         proc['color'] = 'green'
                     else:
                         proc['color'] = 'red'
