@@ -3,6 +3,7 @@ import string
 import threading
 import time
 import os
+import re
 
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
@@ -395,27 +396,28 @@ class TableauStatusMonitor(threading.Thread):
 
         tableau_status = None
         for line in lines:
-            parts = line.strip().split(' ')
+            line = line.strip()
+            parts = line.split(' ')
 
             # 'Tableau Server Repository Database' (1764) is running.
             if parts[0] == "'Tableau" and parts[1] == 'Server':
                 if agentid:
-                    status = parts[-1:][0]     # "running."
-                    status = status[:-1]       # "running" (no period)
-                    pid_part = parts[-3:-2][0] # "(1764)"
-                    pid_str = pid_part[1:-1]   # "1764"
+                    pattern = r"'Tableau Server (.*)' \(([0-9]*)\) is (.*)\."
+                    match = re.search(pattern, line)
+                    if not match:
+                        self.log.debug("status-check: unmatched line: %s",
+                                        line)
+                        continue
+
+                    status = match.group(3)    # "running" or "running..."
+                    pid_str = match.group(2)   # "1764"
                     try:
                         pid = int(pid_str)
                     except StandardError:
                         self.log.error("status-check: Bad PID: " + pid_str)
                         continue
 
-                    del parts[0:2]  # Remove 'Tableau' and 'Server'
-                    del parts[-3:]  # Remove ['(1764)', 'is', 'running.']
-                    name = ' '.join(parts)  # "Repository Database'"
-                    if name[-1:] == "'":
-                        # Cut off trailing single quote (')
-                        name = name[:-1]
+                    name = match.group(1)     # "Repository'"
 
                     self._add(agentid, name, pid, status)
                     self.log.debug("status-check: logged: %s, %d, %s", name,
