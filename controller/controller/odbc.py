@@ -2,12 +2,13 @@ from collections import OrderedDict
 
 from util import odbc2dt
 from mixin import CredentialMixin
+from yml import YmlEntry
 
 class ODBC(CredentialMixin):
 
     URI = '/sql'
 
-    DRIVER = '{PostgreSQL Unicode(x64)}'
+    DRIVER = '' # filled in later depending on bitness of tableau install
     SERVER = '127.0.0.1'
     PORT = 8060
     DATABASE = 'workgroup'
@@ -26,6 +27,20 @@ class ODBC(CredentialMixin):
         key = 'pgsql' + worker_id + '.host'
         return self.server.yml.get(key, default=self.SERVER)
 
+    def _set_driver(self):
+        # pylint: disable=invalid-name
+
+        bitness = YmlEntry.get(self.agent.envid, 'version.bitness',
+                               default=None)
+        if not bitness:
+            self.server.log.error("odbc.connection: " + \
+                            "Missing yml 'version.bitness'.  Will use 64-bit.")
+        if bitness == '32':
+            self.DRIVER = '{PostgresSQL Unicode}'
+        else:
+            # Default
+            self.DRIVER = '{PostgreSQL Unicode(x64)}'
+
     def connection(self):
         # worker id points to the 'hot' database IP.
         worker_id = self.server.yml.get('pgsql.worker_id', default=None)
@@ -37,6 +52,9 @@ class ODBC(CredentialMixin):
         else:
             host = self.SERVER
             port = str(self.PORT)
+
+        if not self.DRIVER:
+            self._set_driver()
 
         cred = self.get_cred(self.agent.envid, self.READONLY_KEY)
         if cred:
