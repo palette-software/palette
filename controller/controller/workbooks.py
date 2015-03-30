@@ -320,24 +320,10 @@ class WorkbookManager(TableauCacheManager):
             return None
 
         tmpdir = dcheck.primary_dir
-        dst = self._tabcmd_get(agent, update, tmpdir)
+        dst, file_type = self._tabcmd_get(agent, update, tmpdir)
         if dst is None:
             # _tabcmd_get generates an event on failure.
             return None
-
-        try:
-            type_body = agent.filemanager.filetype(dst)
-        except IOError as ex:
-            self.log.error("build_twb: filetype on '%s' failed with: %s",
-                            dst, str(ex))
-            return None
-
-        if type_body['type'] == 'OTHER':
-            file_type = 'xml'
-        else:
-            file_type = 'zip'
-
-        self.log.debug("build_twb: File '%s' is type: %s", dst, file_type)
 
         if file_type == 'zip':
             dst = self._extract_twb_from_twbx(agent, update, dst)
@@ -345,7 +331,8 @@ class WorkbookManager(TableauCacheManager):
                 # _extract_twb_from_twbx generates an event on failure.
                 return None
         else:
-            # Rename .twbx to the .twb it really is.
+            # It is type 'xml'.
+            # Rename .twbx to the .twb (xml) it really is.
             old_dst = dst
             dst = dst[0:-1] # drop the trailing 'x' from the file extension.
             agent.filemanager.move(old_dst, dst)
@@ -441,20 +428,21 @@ class WorkbookManager(TableauCacheManager):
     # Run 'tabcmd get' on the agent to retrieve the twb/twbx file
     # then return its path or None in the case of an error.
     def _tabcmd_get(self, agent, update, tmpdir):
+        # pylint: disable=too-many-branches
         try:
             wb_entry = meta.Session.query(WorkbookEntry).\
                 filter(WorkbookEntry.workbookid == update.workbookid).\
                 one()
         except NoResultFound:
             self.log.error("Missing workbook id: %d", update.workbookdid)
-            return None
+            return None, None
 
         site_entry = Site.get(self.server.environment.envid, wb_entry.site_id,
                               default=None)
 
         if not site_entry:
             self.log.error("Missing site id: %d", wb_entry.site_id)
-            return None
+            return None, None
 
         url = '/workbooks/%s.twbx' % update.workbook.repository_url
         if site_entry.url_namespace:
@@ -464,9 +452,6 @@ class WorkbookManager(TableauCacheManager):
                 # assume tableau 9 and later works this way, for now:
                 url = '/#/site/' + site_entry.url_namespace + url
 
-        # It always comes as a twb (ascii, not zipped) if no extension is
-        # added to the repository_url, though this is not documented
-        # by Tableau.
         dst = agent.path.join(tmpdir, update.basename() + '.twbx')
         cmd = 'get %s -f "%s"' % (url, dst)
 
@@ -478,12 +463,39 @@ class WorkbookManager(TableauCacheManager):
                 if 'stderr' in body and 'Service Unavailable' in body['stderr']:
                     # 503 error, retry
                     self.log.debug(cmd + ' : 503 Service Unavailable, retrying')
-                    continue
+                    continue  # try again
                 break
             else:
-                return dst
+                # Make sure the file type is XML or zip.
+                try:
+                    type_body = agent.filemanager.filetype(dst)
+                except IOError as ex:
+                    self.log.error("_tabcmd_get: try %d: filetype on "
+                                    "'%s' failed with: %s",
+                                    _, dst, str(ex))
+                    continue    # try again
+
+                if type_body['type'] == 'ZIP':
+                    file_type = 'zip'
+                elif type_body['signature'][0] == ord('<') and \
+                                   type_body['signature'][1] == ord('?') and \
+                                   type_body['signature'][2] == ord('x') and \
+                                   type_body['signature'][3] == ord('m') and \
+                                   type_body['signature'][4] == ord('l'):
+                    file_type = 'xml'
+                else:
+                    self.log.error("_tabcmd_get try %d for '%s' file " + \
+                                   "type is '%s' and invalid signature: %s.",
+                                   _, dst, type_body['type'],
+                                   str(type_body['signature']))
+                    continue    # try again
+
+                self.log.debug("_tabcmd_get: try %d file '%s' is type: %s",
+                                _, dst, file_type)
+                return dst, file_type
+
         self._eventgen(update, data=body)
-        return None
+        return None, None
 
     # A twbx file is just a zipped twb + associated tde files.
     # Extract the twb and return the path.
