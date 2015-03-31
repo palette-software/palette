@@ -36,7 +36,7 @@ class ODBC(CredentialMixin):
             self.server.log.error("odbc.connection: " + \
                             "Missing yml 'version.bitness'.  Will use 64-bit.")
         if bitness == '32':
-            self.DRIVER = '{PostgresSQL Unicode}'
+            self.DRIVER = '{PostgreSQL Unicode}'
         else:
             # Default
             self.DRIVER = '{PostgreSQL Unicode(x64)}'
