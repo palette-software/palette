@@ -445,15 +445,14 @@ class WorkbookManager(TableauCacheManager):
             return None, None
 
         url = '/workbooks/%s.twbx' % update.workbook.repository_url
+
         if site_entry.url_namespace:
-            if self.tableau_version[0:1] == '8':
-                url = '/t/' + site_entry.url_namespace + url
-            else:
-                # assume tableau 9 and later works this way, for now:
-                url = '/#/site/' + site_entry.url_namespace + url
+            site = '--site %s' % site_entry.url_namespace
+        else:
+            site = ''
 
         dst = agent.path.join(tmpdir, update.basename() + '.twbx')
-        cmd = 'get %s -f "%s"' % (url, dst)
+        cmd = 'get %s %s -f "%s"' % (url, site, dst)
 
         self.log.debug('building workbook archive: ' + dst)
 
