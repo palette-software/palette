@@ -307,6 +307,41 @@ class WorkbookManager(TableauCacheManager):
         return {u'status': 'OK',
                 u'updates': count}
 
+    def _get_wb_type(self, agent, update, dst):
+        """Inspects the 'dst' file, checks to make sure it's valid,
+           sends an event if not.
+            Returns:
+                file_type ("xml" or "zip") on success
+                None on bad type.
+       """
+        try:
+            type_body = agent.filemanager.filetype(dst)
+        except IOError as ex:
+            self.log.error("get_wb_type: filetype on '%s' failed with: %s",
+                            dst, str(ex))
+            return None
+
+        if type_body['type'] == 'ZIP':
+            file_type = 'zip'
+        elif type_body['signature'][0] == ord('<') and \
+                           type_body['signature'][1] == ord('?') and \
+                           type_body['signature'][2] == ord('x') and \
+                           type_body['signature'][3] == ord('m') and \
+                           type_body['signature'][4] == ord('l'):
+            file_type = 'xml'
+        else:
+            sig = ''.join([chr(i) for i in type_body['signature']])
+            msg = ("file '%s' is an unknown " + \
+                  "type of '%s' with an invalid signature: '%s' %s.") % \
+                   (dst, type_body['type'], sig, str(type_body['signature']))
+
+            self.log.error("get_wb_type: %s", msg)
+            self._eventgen(update, error=msg)
+            return None
+
+        self.log.debug("get_wb_type: File '%s' is type: %s", dst, file_type)
+        return file_type
+
     # returns the filename *on the agent* or None on error.
     def _build_twb(self, agent, update):
         # pylint: disable=too-many-return-statements
@@ -320,9 +355,15 @@ class WorkbookManager(TableauCacheManager):
             return None
 
         tmpdir = dcheck.primary_dir
-        dst, file_type = self._tabcmd_get(agent, update, tmpdir)
+        dst = self._tabcmd_get(agent, update, tmpdir)
         if dst is None:
             # _tabcmd_get generates an event on failure.
+            return None
+
+        file_type = self._get_wb_type(agent, update, dst)
+
+        if not file_type:
+            # _get_wb_type sends  an event on failure
             return None
 
         if file_type == 'zip':
@@ -428,21 +469,20 @@ class WorkbookManager(TableauCacheManager):
     # Run 'tabcmd get' on the agent to retrieve the twb/twbx file
     # then return its path or None in the case of an error.
     def _tabcmd_get(self, agent, update, tmpdir):
-        # pylint: disable=too-many-branches
         try:
             wb_entry = meta.Session.query(WorkbookEntry).\
                 filter(WorkbookEntry.workbookid == update.workbookid).\
                 one()
         except NoResultFound:
             self.log.error("Missing workbook id: %d", update.workbookdid)
-            return None, None
+            return None
 
         site_entry = Site.get(self.server.environment.envid, wb_entry.site_id,
                               default=None)
 
         if not site_entry:
             self.log.error("Missing site id: %d", wb_entry.site_id)
-            return None, None
+            return None
 
         url = '/workbooks/%s.twbx' % update.workbook.repository_url
 
@@ -462,52 +502,27 @@ class WorkbookManager(TableauCacheManager):
                 if 'stderr' in body and 'Service Unavailable' in body['stderr']:
                     # 503 error, retry
                     self.log.debug(cmd + ' : 503 Service Unavailable, retrying')
-                    continue  # try again
+                    continue
                 break
             else:
-                # Make sure the file type is XML or zip.
-                try:
-                    type_body = agent.filemanager.filetype(dst)
-                except IOError as ex:
-                    self.log.error("_tabcmd_get: try %d: filetype on "
-                                    "'%s' failed with: %s",
-                                    _, dst, str(ex))
-                    continue    # try again
-
-                if type_body['type'] == 'ZIP':
-                    file_type = 'zip'
-                elif type_body['signature'][0] == ord('<') and \
-                                   type_body['signature'][1] == ord('?') and \
-                                   type_body['signature'][2] == ord('x') and \
-                                   type_body['signature'][3] == ord('m') and \
-                                   type_body['signature'][4] == ord('l'):
-                    file_type = 'xml'
-                else:
-                    self.log.error("_tabcmd_get try %d for '%s' file " + \
-                                   "type is '%s' and invalid signature: %s.",
-                                   _, dst, type_body['type'],
-                                   str(type_body['signature']))
-                    continue    # try again
-
-                self.log.debug("_tabcmd_get: try %d file '%s' is type: %s",
-                                _, dst, file_type)
-                return dst, file_type
-
+                return dst
         self._eventgen(update, data=body)
-        return None, None
+        return None
 
     # A twbx file is just a zipped twb + associated tde files.
     # Extract the twb and return the path.
     def _extract_twb_from_twbx(self, agent, update, dst):
         cmd = 'ptwbx ' + '"' + dst + '"'
         body = self.server.cli_cmd(cmd, agent, timeout=60*30)
+
+        # Delete the 'twbx' since we don't archive it.
+        try:
+            agent.filemanager.delete(dst)
+        except IOError as ex:
+            self.log.debug("Error deleting workbook dst '%s': %s",
+                            dst, str(ex))
         if failed(body):
             self._eventgen(update, data=body)
-            try:
-                agent.filemanager.delete(dst)
-            except IOError as ex:
-                self.log.debug("Error deleting workbook dst '%s': %s",
-                                dst, str(ex))
             return None
         dst = dst[0:-1] # drop the trailing 'x' from the file extension.
         return dst
