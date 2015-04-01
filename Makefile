@@ -3,7 +3,7 @@ POOL_DIR = dpkg/pool
 DOWNLOAD_DIR = https://www.akirisolutions.com/download/framework/
 PREBUILT_PACKAGES = $(POOL_DIR)/$(PKG1)
 
-all: palette controller palette-agent palette-support
+all: palette controller palette-agent palette-support myip
 
 publish-release: $(PREBUILT_PACKAGES)
 	make clean all
@@ -48,6 +48,10 @@ palette-agent:
 palette-support:
 	make -C ../palette-support all
 .PHONY: palette-support
+
+myip:
+	make -C ../myip
+.PHONY: myip
 
 debian:
 	make -C controller debian
