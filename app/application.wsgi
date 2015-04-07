@@ -68,7 +68,6 @@ pages.add_route(r'/profile\Z', ProfilePage())
 pages.add_route(r'/configure/', ConfigureRouter())
 pages.add_route(r'/data/workbook-archive/(?P<name>[^\s]+)\Z',
                 WorkbookData(WORKBOOK_DATA_PATH))
-pages.add_route(r'/licensing\Z', licensing_proxy)
 pages.add_route(r'/', HomePage())
 pages = RemoteUserMiddleware(pages)
 pages = AuthRedirectMiddleware(pages, redirect=LOGIN_URL)
@@ -78,6 +77,7 @@ pages = AuthTKTMiddleware(pages, secret=SHARED)
 
 # top-level, first called router
 router = Router()
+router.add_route(r'/licensing\Z', licensing_proxy)
 router.add_route(r'/open/setup\Z', OpenApplication(secret=SHARED))
 router.add_route(r'/setup\Z', SetupPage())
 router.add_route(r'/rest/', rest)
