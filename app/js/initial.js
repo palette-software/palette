@@ -36,10 +36,13 @@ function ($, configure, common, Dropdown, OnOff)
     function save_callback(data) {
         if (data['status'] == 'OK') {
             window.location.replace("/");
+            return;
         }
 
         var error = data['error'] || 'Unknown server error';
-        $('div.setup-page').prepend('<p class="error">' + error + '</p>');
+        var node = '<p class="error">' + error + '</p>';
+        $('div.setup-page').prepend(node);
+        $('#save').before(node);
     }
 
     /*
@@ -47,6 +50,7 @@ function ($, configure, common, Dropdown, OnOff)
      * Callback for the 'Save' button.
      */
     function save() {
+        $('p.error').remove();
         var data = {'action': 'save'}
         $.extend(data, gatherData());
         $.ajax({
