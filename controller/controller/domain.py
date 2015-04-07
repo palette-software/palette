@@ -31,7 +31,7 @@ class Domain(meta.Base, BaseMixin, BaseDictMixin):
         if not self.trial:
             return None
         timedelta = self.expiration_time - datetime.utcnow()
-        if timedelta.days > 0:
+        if timedelta.days >= 0:
             return timedelta.days + 1
         return 0
 
