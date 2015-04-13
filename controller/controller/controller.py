@@ -191,24 +191,24 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         body['info'] += '\n' + stats
 
         body['size'] = sizestr(backup_size)
-        body['destination-type'] = place.placed_file_entry.storage_type
+        body['destination_type'] = place.placed_file_entry.storage_type
         if place.placed_file_entry.storage_type == \
                                         FileManager.STORAGE_TYPE_CLOUD:
             # cloud type (s3 or gcs, etc.)
-            body['destination-name'] = dcheck.target_entry.cloud_type
+            body['destination_name'] = dcheck.target_entry.cloud_type
             # bucket
-            body['destination-location'] = dcheck.target_entry.bucket
+            body['destination_location'] = dcheck.target_entry.bucket
         else:
             if not place.copy_failed:
                 # displayname
-                body['destination-name'] = dcheck.target_agent.displayname
+                body['destination_name'] = dcheck.target_agent.displayname
                 # volume + pathname
-                body['destination-location'] = dcheck.target_dir
+                body['destination_location'] = dcheck.target_dir
             else:
                 # Copy failed, so still on the primary
-                body['destination-name'] = agent.displayname
+                body['destination_name'] = agent.displayname
                 # volume + pathname
-                body['destination-location'] = agent.path.dirname(
+                body['destination_location'] = agent.path.dirname(
                                                              place.full_path)
         return body
 
