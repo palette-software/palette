@@ -396,6 +396,12 @@ class EventControlManager(Manager):
                         exceptions.text_error_template().render() + \
                             "\ntemplate: " + event_description + \
                             "\ndata: " + str(data)
+            except TypeError as ex:
+                event_description = \
+                    "Mako template message conversion failure: " + \
+                    str(ex) + \
+                        "\ntemplate: " + event_description + \
+                        "\ndata: " + str(data)
         else:
             event_description = self.make_default_description(data)
 
