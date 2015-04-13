@@ -1125,11 +1125,22 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = self.server.license_manager.check(agent)
         elif action == 'info':
             body = self.server.license_manager.info()
+            # convert expiration-time and contact-time to strings
+            body = self._json_sanity(body)
         elif action == 'verify':
             body = self.server.license_manager.verify()
         else:
             self.print_usage(self.do_license.__usage__)
         self.report_status(body)
+
+    def _json_sanity(self, jdict):
+        """Convert any non-json-dumpable values to string.
+           fixme: Generalize and call from report_status()."""
+        for key in jdict:
+            if type(jdict[key]) not in [int, str]:
+                jdict[key] = str(jdict[key])
+
+        return jdict
 
     @usage('yml')
     @upgrade_rwlock
