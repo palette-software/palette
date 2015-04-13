@@ -4,6 +4,7 @@ from sqlalchemy import not_
 from akiri.framework.ext.sqlalchemy import meta
 # pylint: enable=import-error,no-name-in-module
 
+from general import SystemConfig
 from manager import Manager, synchronized
 from profile import UserProfile, Publisher, License
 from util import odbc2dt, DATEFMT
@@ -77,6 +78,13 @@ class AuthManager(Manager):
         names = ['palette']
         cache = self.load_users(agent)
 
+        alerts_new_user_enabled = self.server.system.get(
+                        SystemConfig.ALERTS_NEW_USER_ENABLED, default='no')
+        if alerts_new_user_enabled == 'yes':
+            default_email_level = 1
+        else:
+            default_email_level = 0
+
         for row in data['']:
             name = row[0]
             if name.lower() in excludes:
@@ -88,7 +96,7 @@ class AuthManager(Manager):
             entry = UserProfile.get_by_name(envid, name)
             if not entry:
                 entry = UserProfile(envid=envid, name=name)
-                entry.email_level = 0   # disable email by default
+                entry.email_level = default_email_level
                 session.add(entry)
 
             entry.email = row[1]
