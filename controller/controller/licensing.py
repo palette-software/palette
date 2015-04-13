@@ -51,8 +51,8 @@ def licensing_info(domain, envid):
     data = {}
     data['license-key'] = domain.license_key
     data['system-id'] = domain.systemid
-    data['expiration-time'] = domain.expiration_time
-    data['contact-time'] = domain.contact_time
+    data['expiration-time'] = str(domain.expiration_time)
+    data['contact-time'] = str(domain.contact_time)
     data['trial'] = domain.trial
 
     # FIXME: use the version() function when sorted out.
