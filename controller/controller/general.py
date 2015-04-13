@@ -44,6 +44,7 @@ class SystemConfig(object):
     ALERTS_ENABLED = "alerts-enabled"
     ALERTS_ADMIN_ENABLED = 'alerts-admin-enabled'
     ALERTS_PUBLISHER_ENABLED = 'alerts-publisher-enabled'
+    ALERTS_NEW_USER_ENABLED = "alerts-new-user-enabled"
 
     PALETTE_VERSION = "palette-version"
 
@@ -190,9 +191,10 @@ class SystemConfig(object):
             return self._getyesno(self.ALERTS_ADMIN_ENABLED, default='no')
         if name == 'alerts_publisher_enabled':
             return self._getyesno(self.ALERTS_PUBLISHER_ENABLED, default='no')
+        if name == 'alerts_new_user_enabled':
+            return self._getyesno(self.ALERTS_NEW_USER_ENABLED, default='no')
         if name == 'upgrading':
             return self._getyesno(self.UPGRADING)
-
         if name == 'cpu_load_warn':
             return self._getint(self.CPU_LOAD_WARN, default=101)
         if name == 'cpu_load_error':
@@ -265,6 +267,7 @@ class SystemConfig(object):
             self.ALERTS_ENABLED: self.alerts_enabled,
             self.ALERTS_ADMIN_ENABLED: self.alerts_admin_enabled,
             self.ALERTS_PUBLISHER_ENABLED: self.alerts_publisher_enabled,
+            self.ALERTS_NEW_USER_ENABLED: self.alerts_new_user_enabled,
             self.PALETTE_VERSION: self.palette_version,
             self.UPGRADING: self.upgrading,
             self.CPU_LOAD_WARN: self.cpu_load_warn,
