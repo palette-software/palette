@@ -12,6 +12,19 @@ fi
 rm -f /etc/ssl/private/ssl-cert-palette-software.key
 rm -f /etc/ssl/certs/star_palette-software_com.crt
 
+# Get the database in a state where we can ALTER it, if needed.
+set +o errexit
+service apache2 status
+APACHE_STATUS=$?
+set -o errexit
+
+if [ $APACHE_STATUS -eq 0 ];
+then
+    service apache2 stop
+fi
+
+service postgresql restart
+
 if [ "$oldversion" = "1.0.0" ]; then
     echo Upgrading from 1.0.0 ...
     psql paldb << XYZZY
@@ -24,9 +37,6 @@ if [ "$oldversion" = "1.0.0" ]; then
     create index events_envid_event_type_timestamp_idx on events (envid, event_type, timestamp);
 XYZZY
 
-    update-rc.d controller defaults
-    service controller start
-    exit 0
 elif [ "$oldversion" = "1.0.1" ]; then
     echo Upgrading from 1.0.1 ...
     psql paldb << XYZZY
@@ -45,9 +55,6 @@ elif [ "$oldversion" = "1.0.1" ]; then
     update license set license_type='Named-user';
 XYZZY
 
-    update-rc.d controller defaults
-    service controller start
-    exit 0
 elif [ "$oldversion" = "1.1.2" ]; then
     echo Upgrading from 1.1.2 ...
     psql paldb << XYZZY
@@ -80,9 +87,6 @@ elif [ "$oldversion" = "1.1.2" ]; then
     alter table tableau_processes add foreign key (agentid) references agent(agentid) on delete cascade;
 
 XYZZY
-    update-rc.d controller defaults
-    service controller start
-    exit 0
 elif [ "$oldversion" != "" ]; then
     echo Upgrading $oldversion
     # If we are upgrading from a previous version (vs. a new install),
@@ -101,18 +105,23 @@ elif [ "$oldversion" = "" ]; then
     sudo -u postgres createdb paldb 2>&1 | echo
     psql paldb -c "ALTER DATABASE paldb SET timezone TO 'GMT'" 2>&1 | echo
 
-    update-rc.d controller defaults
+    mkdir -p /var/log/palette /var/palette/data/workbook-archive
+    if [ ! -f /var/palette/.aes ]; then
+        dd if=/dev/urandom of=/var/palette/.aes bs=32 count=1
+        chown www-data /var/palette/.aes
+        chmod 0400 /var/palette/.aes
+    fi
+
+    apt-key add /usr/share/palette/conf/key.asc
 fi
 
-mkdir -p /var/log/palette /var/palette/data/workbook-archive
-if [ ! -f /var/palette/.aes ]; then
-    dd if=/dev/urandom of=/var/palette/.aes bs=32 count=1
-    chown www-data /var/palette/.aes
-    chmod 0400 /var/palette/.aes
-fi
-
-apt-key add /usr/share/palette/conf/key.asc
-
+update-rc.d controller defaults
 service controller start
+
+# Restart apache if it had been running before
+if [ $APACHE_STATUS -eq 0 ];
+then
+    service apache2 start
+fi
 
 exit 0
