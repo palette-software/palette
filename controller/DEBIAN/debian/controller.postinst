@@ -86,6 +86,10 @@ elif [ "$oldversion" = "1.1.2" ]; then
     alter table tableau_processes drop constraint tableau_processes_agentid_fkey;
     alter table tableau_processes add foreign key (agentid) references agent(agentid) on delete cascade;
 
+    alter table workbooks drop constraint workbooks_envid_id_key;
+
+    alter table workbooks add constraint workbooks_envid_id unique (envid, site_id, project_id, luid);
+
 XYZZY
 elif [ "$oldversion" != "" ]; then
     echo Upgrading $oldversion

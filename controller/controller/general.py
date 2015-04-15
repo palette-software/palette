@@ -23,6 +23,7 @@ class SystemConfig(object):
     ZIPLOG_SCHEDULED_ENABLED = "ziplog-scheduled-enabled"
 
     ARCHIVE_ENABLED = "archive-enabled"
+    ARCHIVE_SAVE_TWBX = "archive-save-twbx"
 
     WORKBOOK_LOAD_WARN = "workbook-load-warn"
     WORKBOOK_LOAD_ERROR = "workbook-load-error"
@@ -134,6 +135,7 @@ class SystemConfig(object):
     def __getattr__(self, name):
         # pylint: disable=too-many-return-statements
         # pylint: disable=too-many-branches
+        # pylint: disable=too-many-statements
         if name == 'watermark_low':
             return self._watermark(self.WATERMARK_LOW)
         if name == 'watermark_high':
@@ -164,6 +166,8 @@ class SystemConfig(object):
 
         if name == "archive_enabled":
             return self._getyesno(self.ARCHIVE_ENABLED, default='no')
+        if name == "archive_save_twbx":
+            return self._getyesno(self.ARCHIVE_SAVE_TWBX, default='no')
 
         if name == 'log_archive_retain_count':
             return self._getint(self.LOG_ARCHIVE_RETAIN_COUNT)
@@ -257,6 +261,7 @@ class SystemConfig(object):
             self.ZIPLOG_ENABLED: self.ziplog_enabled,
             self.ZIPLOG_SCHEDULED_ENABLED: self.ziplog_scheduled_enabled,
             self.ARCHIVE_ENABLED: self.archive_enabled,
+            self.ARCHIVE_SAVE_TWBX: self.archive_save_twbx,
             self.WORKBOOK_LOAD_WARN: self.workbook_load_warn,
             self.WORKBOOK_LOAD_ERROR: self.workbook_load_error,
             self.WATERMARK_LOW: self.watermark_low,
