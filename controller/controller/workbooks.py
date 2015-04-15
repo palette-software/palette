@@ -68,7 +68,8 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
     assert_key_id = Column(Integer)
     document_version = Column(String)
 
-    __table_args__ = (UniqueConstraint('envid', 'id'),)
+    __table_args__ = (UniqueConstraint('envid', 'site_id', 'project_id',
+                                       'luid'),)
 
     def __getattr__(self, name):
         if name == 'site':
@@ -83,9 +84,10 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
         return 'twb'
 
     @classmethod
-    def get(cls, envid, name, site_id, project_id, **kwargs):
-        keys = {'envid':envid, 'name':name,
-                'site_id':site_id, 'project_id':project_id}
+    def get(cls, envid, site_id, project_id, luid, **kwargs):
+        keys = {'envid':envid, 'site_id':site_id,
+            'project_id': project_id,
+            'luid': luid}
         return cls.get_unique_by_keys(keys, **kwargs)
 
     @classmethod
@@ -217,12 +219,13 @@ class WorkbookManager(TableauCacheManager):
             revision = odbcdata.data['revision']
             site_id = odbcdata.data['site_id']
             project_id = odbcdata.data['project_id']
+            luid = odbcdata.data['luid']
 
-            wbe = WorkbookEntry.get(envid, name, site_id, project_id,
-                                    default=None)
+            wbe = WorkbookEntry.get(envid, site_id, project_id, luid,
+                                                            default=None)
             if wbe is None:
-                wbe = WorkbookEntry(envid=envid, name=name,
-                                    site_id=site_id, project_id=project_id)
+                wbe = WorkbookEntry(envid=envid, site_id=site_id,
+                                    project_id=project_id, luid=luid)
                 session.add(wbe)
 
             # NOTE: id is updated with each revision.
@@ -515,12 +518,15 @@ class WorkbookManager(TableauCacheManager):
         cmd = 'ptwbx ' + '"' + dst + '"'
         body = self.server.cli_cmd(cmd, agent, timeout=60*30)
 
-        # Delete the 'twbx' since we don't archive it.
-        try:
-            agent.filemanager.delete(dst)
-        except IOError as ex:
-            self.log.debug("Error deleting workbook dst '%s': %s",
-                            dst, str(ex))
+        save_twbx = self.server.system.get(
+                                SystemConfig.ARCHIVE_SAVE_TWBX, default='no')
+        if save_twbx != 'yes':
+            # Delete the 'twbx' since we don't archive it.
+            try:
+                agent.filemanager.delete(dst)
+            except IOError as ex:
+                self.log.debug("Error deleting workbook dst '%s': %s",
+                                dst, str(ex))
         if failed(body):
             self._eventgen(update, data=body)
             return None
