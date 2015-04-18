@@ -91,6 +91,15 @@ elif [ "$oldversion" = "1.1.2" ]; then
     alter table workbooks add constraint workbooks_envid_id unique (envid, site_id, project_id, luid);
 
 XYZZY
+elif [ "$oldversion" = "1.2.1" ]; then
+    echo Upgrading from 1.2.1 ...
+    psql paldb << XYZZY
+    drop table event_control;
+
+    alter table workbooks drop constraint workbooks_envid_id_key;
+
+    alter table workbooks add constraint workbooks_envid_id unique (envid, site_id, project_id, luid);
+XYZZY
 elif [ "$oldversion" != "" ]; then
     echo Upgrading $oldversion
     # If we are upgrading from a previous version (vs. a new install),
