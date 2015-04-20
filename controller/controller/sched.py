@@ -35,7 +35,9 @@ class Sched(threading.Thread):
                                            "sched_dir",
                                            default="/var/palette/sched")
 
-        self.start()
+        # Don't start until populate() is called and finishes or
+        # the two threads (popualte and scheduler) can conflict with
+        # the database
 
     def run(self):
         while True:

@@ -262,6 +262,11 @@ class WorkbookManager(TableauCacheManager):
                               "  Exiting for now.")
                 break
 
+            if not self.server.odbc_ok():
+                self.log.info("Workbook Archive Load : Archive build " + \
+                              "stopping due to current state")
+                break
+
             session.refresh(update)
             self._archive_twb(agent, update)
 
@@ -302,6 +307,11 @@ class WorkbookManager(TableauCacheManager):
                     self.log.info(
                               "Workbook Archive disabled during fixup." + \
                               "  Exiting for now.")
+                    break
+
+                if not self.server.odbc_ok():
+                    self.log.info("Workbook Archive Fixup: Archive build " + \
+                              "stopping due to current state")
                     break
 
                 self._archive_twb(agent, update)
@@ -502,15 +512,39 @@ class WorkbookManager(TableauCacheManager):
         for _ in range(3):
             body = self.server.tabcmd(cmd, agent)
             if failed(body):
-                if 'stderr' in body and 'Service Unavailable' in body['stderr']:
-                    # 503 error, retry
-                    self.log.debug(cmd + ' : 503 Service Unavailable, retrying')
-                    continue
+                if 'stderr' in body:
+                    if 'Service Unavailable' in body['stderr']:
+                        # 503 error, retry
+                        self.log.debug(cmd + \
+                                        ' : 503 Service Unavailable, retrying')
+                        continue
+                    elif "404" in body['stderr'] and \
+                                                "Not Found" in body['stderr']:
+                        # The workbook update was deleted before we
+                        # got to it.  Subsequent attempts will also fail,
+                        # so delete the workbook update row to stop
+                        # attempting to retrieve it again.
+                        self._remove_wbu(update)
                 break
             else:
                 return dst
         self._eventgen(update, data=body)
         return None
+
+    def _remove_wbu(self, update):
+        """Remove an update from the workbook_updates table.
+           We do this if a workbook update entry listed a new workbook
+           but then was deleted before we ran 'tabcmd'.
+        """
+        session = meta.Session()
+        try:
+            session.query(WorkbookUpdateEntry).\
+                filter(WorkbookUpdateEntry.wuid == update.wuid).\
+                delete()
+        except NoResultFound:
+            self.log.error("_remove_wbu: workbook already deleted: %d",
+                           update.wuid)
+            return
 
     # A twbx file is just a zipped twb + associated tde files.
     # Extract the twb and return the path.
