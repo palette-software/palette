@@ -1686,6 +1686,8 @@ def main():
     if not args.nosched:
         server.sched = Sched(server)
         server.sched.populate()
+        # Make sure the populate finishes before the sched thread starts
+        server.sched.start()
 
     if not args.nostatus:
         log.debug("Starting status monitor.")
