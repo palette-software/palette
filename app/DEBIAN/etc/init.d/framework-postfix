@@ -26,7 +26,7 @@ ATTEMPTS=5  # Number of retries after failure
 DELAY=86400 # respawn delay after all $ATTEMPTS failures (1 day)
 
 start() {
-    log_daemon_msg "Starting Palette controller" "controller"
+    log_daemon_msg "Starting Palette $NAME"
     $DAEMON --name=$NAME --acceptable=$ACCEPTABLE --attempts=$ATTEMPTS --delay=$DELAY --respawn --pidfile $PIDFILE $EXEC
     RETVAL=$?
     log_end_msg $RETVAL
@@ -34,7 +34,7 @@ start() {
 }
 
 stop() {
-    log_daemon_msg "Stopping Palette controller" "controller"
+    log_daemon_msg "Stopping Palette $NAME"
     $DAEMON --name=$NAME --stop
     RETVAL=$?
     log_end_msg $RETVAL
@@ -42,7 +42,7 @@ stop() {
 }
 
 restart() {
-    log_daemon_msg "Restarting Palette controller" "controller"
+    log_daemon_msg "Restarting Palette $NAME"
     $DAEMON --name=$NAME --restart
     RETVAL=$?
     log_end_msg $RETVAL
