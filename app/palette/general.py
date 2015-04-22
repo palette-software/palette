@@ -557,6 +557,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         # pylint: disable=unused-argument
+        print 'request is:', req.POST
         req.system.save(SystemConfig.WATERMARK_LOW,
                                                 req.POST['disk-watermark-low'])
         req.system.save(SystemConfig.WATERMARK_HIGH,
@@ -568,9 +569,9 @@ class GeneralMonitorApplication(PaletteRESTApplication):
                                             req.POST['cpu-load-error'])
 
         req.system.save(SystemConfig.CPU_PERIOD_WARN,
-                                        int(req.POST['cpu-period-warn']) * 60)
+                                        int(req.POST['cpu-period-warn']))
         req.system.save(SystemConfig.CPU_PERIOD_ERROR,
-                                        int(req.POST['cpu-period-error']) * 60)
+                                        int(req.POST['cpu-period-error']))
 
         req.system.save(SystemConfig.HTTP_LOAD_WARN,
                                         req.POST['http-load-warn'])
