@@ -1110,6 +1110,11 @@ class AgentManager(threading.Thread):
         # pylint: disable=too-many-return-statements
         # pylint: disable=too-many-branches
         # pylint: disable=too-many-statements
+        try:
+            peername = conn.getpeername()[0]
+        except socket.error, ex:
+            peername = "Unknown peername: %s" % str(ex)
+
         if self.ssl:
             try:
                 conn.settimeout(self.ssl_handshake_timeout)
@@ -1117,16 +1122,12 @@ class AgentManager(threading.Thread):
                                            certfile=self.cert_file)
                 conn = ssl_sock
             except (ssl.SSLError, socket.error), ex:
-                self.log.info("Exception with ssl wrap: %s", str(ex))
+                self.log.info("Exception with ssl wrap from addr %s, " + \
+                              "peername %s: %s", addr, peername, str(ex))
                 # http://bugs.python.org/issue9211, though takes
                 # a while to garbage collect and close the fd.
                 self._shutdown(conn)
                 return
-
-        try:
-            peername = conn.getpeername()[0]
-        except socket.error, ex:
-            peername = "Unknown peername: %s" % str(ex)
 
         conn.settimeout(self.socket_timeout)
 
