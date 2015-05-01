@@ -147,11 +147,14 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
 
         if entry.cores:
             entry.license_type = LicenseEntry.LICENSE_TYPE_CORE
+            entry.interactors = 0
+            entry.viewers = 0
         else:
             # Default setting to let us know the license info have been
             # received. It could be 0 interactors and 0 viewers, which
             # means "no license".
             entry.license_type = LicenseEntry.LICENSE_TYPE_NAMED_USER
+            entry.cores = 0
 
         return entry
 
@@ -162,7 +165,7 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
     @classmethod
     def parse(cls, output):
         # pylint: disable=anomalous-backslash-in-string
-        if output.find("Cores licensed") != -1:
+        if output.find("Cores used") != -1:
             try:
                 cores = int(output.split()[-1])
             except (IndexError, ValueError):
@@ -205,9 +208,11 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
         return not self.valid()
 
     def capacity(self):
+        if self.cores:
+            return "%d Cores" % (self.cores)
         if self.interactors is None and self.viewers is None:
             return None
-        return "%d interactors, %d viewers" % (self.interactors, self.viewers)
+        return "%d Interactors, %d Viewers" % (self.interactors, self.viewers)
 
 
 class LicenseManager(Manager):
