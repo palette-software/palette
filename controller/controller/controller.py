@@ -1062,6 +1062,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.error("Invalid yml entry for 'gatway.ports': %s",
                                 gateway_ports)
 
+        ssl_enabled = self.yml.get('ssl.enabled', default=None)
+        if ssl_enabled != 'true':
+            return send_body
+
         ssl_port = self.yml.get('ssl.port', default=None)
         if ssl_port:
             try:
