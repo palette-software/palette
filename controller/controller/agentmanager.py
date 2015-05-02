@@ -1152,8 +1152,16 @@ class AgentManager(threading.Thread):
             # FIXME: why is this a POST?
             body_json = aconn.http_send('POST', '/auth')
             if body_json:
-                body = json.loads(body_json)
-                self.log.debug("body = " + str(body))
+                self.log.debug("/auth returned " + str(body_json))
+                try:
+                    body = json.loads(body_json)
+                except ValueError as ex:
+                    self.log.info("agentmanager with new connection "
+                         "from %s sent bad json data for /auth response: "
+                         "'%s'. Error: '%s'.  Will close the connection.",
+                         peername, body_json, str(ex))
+                    self._close(conn)
+                    return
             else:
                 body = {}
                 self.log.debug("done.")
