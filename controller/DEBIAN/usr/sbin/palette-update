@@ -10,6 +10,7 @@ export DEBIAN_FRONTEND="noninteractive"
 LOG_FILE=/var/log/palette/update.log
 INI_FILE=/etc/palette_update.ini
 PACKAGES="controller palette"
+PACKAGE_OPTIONAL="myip"
 
 delayer()
 {
@@ -54,6 +55,14 @@ apt-get update >> $LOG_FILE 2>&1
 #apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y $PACKAGES >> $LOG_FILE 2>&1
 # After 1.0.1 is installed and beyond, force using the new config file:
 apt-get install -y -o Dpkg::Options::=--force-confnew $PACKAGES >> $LOG_FILE 2>&1
+
+
+dpkg -s $PACKAGE_OPTIONAL > /dev/null 2>&1 && {
+    echo Will update $PACKAGE_OPTIONAL if a newer version is available. >> $LOG_FILE
+    apt-get install -y $MORE_PACKAGES >> $LOG_FILE 2>&1
+} || {
+    echo Will not check to update $PACKAGE_OPTIONAL as it is not installed. >> $LOG_FILE
+}
 
 # log that we finished with the update
 echo "Palette updates (if any) installed" >> $LOG_FILE
