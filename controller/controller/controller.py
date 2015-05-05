@@ -902,6 +902,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if error_msg:
             sync_dict['error'] = error_msg
 
+        if not 'status' in sync_dict:
+            if 'error' in sync_dict:
+                sync_dict['status'] = 'FAILED'
+            else:
+                sync_dict['status'] = 'OK'
+
         return sync_dict
 
     def maint(self, action, agent=None, send_alert=True):
