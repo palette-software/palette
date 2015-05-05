@@ -14,6 +14,7 @@ from controller.passwd import tableau_hash
 from controller.general import SystemConfig
 from controller.util import extend
 from controller.credential import CredentialEntry
+from controller.palapi import CommException
 
 from .page import Page, PalettePage
 from .option import DictOption
@@ -160,6 +161,19 @@ class SetupReadOnlyApplication(BaseSetupApplication, CredentialMixin):
         else:
             session.delete(cred)
         session.commit()
+        if passwd:
+            # Read-only password is now set.  Attempt to read in data
+            # from tableau, so we don't have to wait for the scheduled
+            # jobs for users (to allow Tableau user logins), sites, projects,
+            # exacts, etc.
+            try:
+                self.commapp.send_cmd("auth import")
+                # does: sites, projects, dataconnections, datasources
+                self.commapp.send_cmd("sync")
+                self.commapp.send_cmd("extract import")
+            except CommException as ex:
+                print "setup: non-fatal sync-related attempt after " + \
+                      "Tableau read-only password set:", str(ex)
         return {'readonly-password': passwd}
 
 
