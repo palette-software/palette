@@ -123,7 +123,9 @@ class TableauStatusMonitor(threading.Thread):
         session = meta.Session()
         entry = TableauProcess(agentid=agentid, name=name,
                                pid=pid, status=status)
-        session.add(entry)
+        # We merge instead of add since 'tabadmin status -v' sometimes
+        # returns duplicate lines.
+        session.merge(entry)
 
     def get_tableau_status(self):
         try:
@@ -441,7 +443,11 @@ class TableauStatusMonitor(threading.Thread):
                     host = parts[0].strip().replace(':', '')
                     agentid = Agent.get_agentid_from_host(self.envid, host)
                 else:
-                    # Example: "Connection error contacting worker 1"
+                    # Examples:
+                    #   "Connection error contacting worker 1"
+                    #   'Tableau Server Cluster Controller' is stopped.
+                    #   'Tableau Server Repository' status is not available.
+                    #   'Tableau Server File Store' status is not available.
                     if not agentid:
                         self.log.debug("status-check: Can't log due to " + \
                                        "unknown or disabled agent: %s, %d, %s",
