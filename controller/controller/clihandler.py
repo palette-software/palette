@@ -28,7 +28,8 @@ from tableau import TableauProcess
 
 import exc
 import clierror
-from util import success, failed, traceback_string, upgrade_rwlock
+from util import success, failed, traceback_string, upgrade_rwlock, safecmd
+from cli_cmd import CLI_DEFAULT_TIMEOUT
 
 # pylint: disable=too-many-public-methods
 
@@ -676,8 +677,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
 
-    @usage('[/noconfig] [/nobackup] [/nolicense] restore backup-name ' + \
-           '[tableau-run-as-user-password]')
+    @usage('[/noconfig] [/nobackup] [/nolicense] [/userid=<id>] ' + \
+           '[/username=<name>] [/password=<pw>] ' + \
+           'restore backup-name [tableau-run-as-user-password]')
     @upgrade_rwlock
     def do_restore(self, cmd):
         """Restore.
@@ -696,9 +698,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         backup_name = cmd.args[0]
 
         if len(cmd.args) == 2:
-            user_password = cmd.args[1]
+            run_as_password = cmd.args[1]
         else:
-            user_password = None
+            run_as_password = None
 
         agent = self.get_agent(cmd.dict)
         if not agent:
@@ -720,6 +722,23 @@ class CliHandler(socketserver.StreamRequestHandler):
             license_check = False
         else:
             license_check = True
+
+        username = None
+        if cmd.dict.has_key('username'):
+            username = cmd.dict['username']
+
+        password = None
+        if cmd.dict.has_key('password'):
+            password = cmd.dict['password']
+
+        if username and not password:
+            self.error(clierror.ERROR_BAD_CREDS,
+                    "restore: password is required when username is specified.")
+            return
+        if password and not username:
+            self.error(clierror.ERROR_BAD_CREDS,
+                    "restore: username is required when password is specified.")
+            return
 
         # lock to ensure against two simultaneous user actions
         if not aconn.user_action_lock(blocking=False):
@@ -844,7 +863,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         try:
             body = self.server.restore_cmd(agent, backup_name, main_state,
                                             no_config=no_config, userid=userid,
-                                            user_password=user_password)
+                                            run_as_password=run_as_password)
         except StandardError:
             self.server.log.exception("Restore Exception:")
             line = "Restore Error: Traceback: %s" % traceback_string()
@@ -937,7 +956,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
         f()
 
-    @usage('[/timeout=<seconds>] cli <command> [args...]')
+    @usage('[/timeout=<seconds>] [/username=<name>] [/password=<pw>] ' +
+           'cli <command> [args...]')
     def do_cli(self, cmd):
         if len(cmd.args) < 1:
             self.print_usage(self.do_cli.__usage__)
@@ -955,6 +975,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                 cli_command += ' "' + arg + '" '
             else:
                 cli_command += ' ' + arg
+
+        timeout = CLI_DEFAULT_TIMEOUT
         if cmd.dict.has_key('timeout'):
             try:
                 timeout = int(cmd.dict['timeout'])
@@ -962,9 +984,26 @@ class CliHandler(socketserver.StreamRequestHandler):
                 self.error(clierror.ERROR_INVALID_PORT,
                            "cli: Invalid timeout: " + str(ex))
                 return
-            body = self.server.cli_cmd(cli_command, agent, timeout=timeout)
-        else:
-            body = self.server.cli_cmd(cli_command, agent)
+
+        username = None
+        if cmd.dict.has_key('username'):
+            username = cmd.dict['username']
+
+        password = None
+        if cmd.dict.has_key('password'):
+            password = cmd.dict['password']
+
+        if username and not password:
+            self.error(clierror.ERROR_BAD_CREDS,
+                       "cli: password is required when username is specified.")
+            return
+        if password and not username:
+            self.error(clierror.ERROR_BAD_CREDS,
+                       "cli: username is required when password is specified.")
+            return
+
+        body = self.server.cli_cmd(cli_command, agent, timeout=timeout,
+                                   username=username, password=password)
         self.report_status(body)
 
     @usage('kill <xid>')
@@ -2409,7 +2448,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             if not data:
                 break
 
-            self.server.log.debug("telnet command: '%s'", data)
+            self.server.log.debug("telnet command: '%s'", safecmd(data))
             stateman = self.server.state_manager
             before_state = stateman.get_state()
 

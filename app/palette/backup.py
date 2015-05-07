@@ -32,17 +32,24 @@ class BackupApplication(PaletteRESTApplication):
 
         cmd = 'restore "%s"' % backup_entry.name
 
-        if 'password' in req.POST and len(req.POST['password']):
-            cmd += ' "%s"' % req.POST['password']
+        run_as_password = req.params_get('run-as-password')
+        if run_as_password:
+            cmd += ' "%s"' % run_as_password
 
-        if 'restore-type' in req.POST and \
-                                    req.POST['restore-type'] == 'data-only':
+        restore_type = req.params_get('restore-type')
+        if restore_type == 'data-only':
             cmd = '/noconfig ' + cmd
 
         if not req.params_getbool('backup'):
             cmd = '/nobackup ' + cmd
         if not req.params_getbool('license'):
             cmd = '/nolicense ' + cmd
+
+        username = req.params_get('username')
+        password = req.params_get('password')
+        if username and password:
+            prefix = '/username=%s /password=%s ' % username, password
+            cmd = prefix + cmd
 
         self.commapp.send_cmd(cmd, req=req, read_response=False)
         return {}
