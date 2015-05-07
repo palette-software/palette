@@ -148,7 +148,7 @@ class ExtractManager(TableauCacheManager):
 
             if entry.subtitle == 'Workbook':
                 self.workbook_update(agent, entry, userdata, cache=workbooks)
-            if entry.subtitle == 'Data Source':
+            if entry.subtitle in ('Data Source', 'RefreshExtractTask'):
                 self.datasource_update(agent, entry, userdata,
                                        cache=datasources)
             body = dict(agent.todict().items() + entry.todict().items())
@@ -207,6 +207,8 @@ class ExtractManager(TableauCacheManager):
         system_user_id = data['system_user_id']
         data['username'] = \
             self.get_username_from_system_user_id(envid, system_user_id)
+        if data['username'] == None:
+            data['username'] = "Unknown User"
 
         return self.server.event_control.gen(key, data,
                                              userid=data['system_user_id'],
