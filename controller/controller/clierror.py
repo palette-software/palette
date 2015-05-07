@@ -13,6 +13,7 @@ ERROR_WRONG_STATE = 21
 
 ERROR_INVALID_PORT = 30
 ERROR_NOT_FOUND = 31
+ERROR_BAD_CREDS = 32
 
 ERROR_SOCKET_DISCONNECTED = 40
 
@@ -33,5 +34,6 @@ ERROR_STRINGS = {
     ERROR_AGENT_NOT_SPECIFIED: "No agent specified",
     ERROR_WRONG_STATE: "wrong state for command",
     ERROR_INTERNAL: "Internal error",
-    ERROR_PERMISSION: "Permission denied"
+    ERROR_PERMISSION: "Permission denied",
+    ERROR_BAD_CREDS: "Invalid credentials"
 }

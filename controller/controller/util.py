@@ -107,6 +107,9 @@ def safecmd(cmd):
     tokens = []
     obscure = False
     for x in cmd.split():
+        if x.startswith('/password='):
+            tokens.append('/password=<>')
+            continue
         if x == '--password':
             obscure = True
             tokens.append(x)

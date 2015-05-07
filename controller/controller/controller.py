@@ -24,7 +24,7 @@ from agentmanager import AgentManager
 from agent import Agent, AgentVolumesEntry
 from alert_email import AlertEmail
 from auth import AuthManager
-from cli_cmd import CliCmd
+from cli_cmd import CliCmd, CLI_DEFAULT_TIMEOUT
 from cloud import CloudEntry
 from config import Config
 from passwd import aes_encrypt
@@ -566,7 +566,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return copy_body
 
     def restore_cmd(self, agent, backup_full_path, orig_state,
-                    no_config=False, userid=None, user_password=None):
+                    no_config=False, userid=None, run_as_password=None,
+                    username=None, password=None):
         # pylint: disable=too-many-arguments
         """Do a tabadmin restore for the backup_full_path.
            The backup_full_path may be in cloud storage, or a volume
@@ -636,14 +637,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.state_manager.update(StateManager.STATE_STARTING_RESTORE)
 
         cmd = 'tabadmin restore \\\"%s\\\"' % got.primary_full_path
-        if user_password:
-            cmd += ' --password \\\"%s\\\"' % user_password
+        if run_as_password:
+            cmd += ' --password \\\"%s\\\"' % run_as_password
         if no_config:
             cmd += ' --no-config'
 
         try:
             self.log.debug("restore sending command: %s", cmd)
-            restore_body = self.cli_cmd(cmd, agent, timeout=60*60*2)
+            restore_body = self.cli_cmd(cmd, agent,
+                                        username=username, password=password,
+                                        timeout=CLI_DEFAULT_TIMEOUT)
         except httplib.HTTPException, ex:
             restore_body = {"error": "HTTP Exception: " + str(ex)}
 
