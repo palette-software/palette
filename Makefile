@@ -71,6 +71,7 @@ clean:
 build-setup:
 	sudo apt-get install -y debhelper reprepro python-setuptools pylint python-passlib python-tz
 	sudo apt-get install -y python-dateutil python-crypto python-boto
+	sudo apt-get install netifaces
 	sudo apt-get install -y npm nodejs-legacy
 	sudo npm install -g less
 	sudo npm install -g grunt-cli
