@@ -9,8 +9,6 @@ import akiri.framework.sqlalchemy as meta
 from event_control import EventControl
 from util import safecmd
 
-CLI_DEFAULT_TIMEOUT = 60*60*2
-
 class XIDEntry(meta.Base):
     #pylint: disable=no-init
     __tablename__ = 'xid'
@@ -61,18 +59,12 @@ class Request(object):
             (self.action, self.send_body, self.xid)
 
 class CliStartRequest(Request):
-    def __init__(self, cli_command, env=None, immediate=False,
-                 username=None, password=None):
-        # pylint: disable=too-many-arguments
+    def __init__(self, cli_command, env=None, immediate=False):
         d = {"cli": cli_command}
         if env:
             d["env"] = env
         if immediate:
             d["immediate"] = immediate
-        if username:
-            d["username"] = username
-        if password:
-            d["password"] = password
         super(CliStartRequest, self).__init__("start", d)
 
 class CleanupRequest(Request):
@@ -80,13 +72,12 @@ class CleanupRequest(Request):
         super(CleanupRequest, self).__init__("cleanup", xid=xid)
 
 class CliCmd(object):
-
     def __init__(self, server):
         self.server = server
         self.log = server.log
 
     def cli_cmd(self, command, agent, env=None, immediate=False,
-                timeout=CLI_DEFAULT_TIMEOUT, username=None, password=None):
+                timeout=60*60*2):
         """ 1) Sends the command (a string)
             2) Waits for status/completion.  Saves the body from the status.
             3) Sends cleanup.
@@ -98,8 +89,7 @@ class CliCmd(object):
         # pylint: disable=too-many-return-statements
         # pylint: disable=too-many-arguments
 
-        body = self._send_cli(command, agent, env=env, immediate=immediate,
-                              username=username, password=password)
+        body = self._send_cli(command, agent, env=env, immediate=immediate)
 
         if body.has_key('error'):
             return body
@@ -135,13 +125,10 @@ class CliCmd(object):
 
         return cli_body
 
-    def _send_cli(self, cli_command, agent, env=None, immediate=False,
-                  username=None, password=None):
+    def _send_cli(self, cli_command, agent, env=None, immediate=False):
         """Send a "cli" command to an Agent.
             Returns a body with the results.
             Called without the connection lock."""
-        # pylint: disable=too-many-locals
-        # pylint: disable=too-many-arguments
         # pylint: disable=too-many-return-statements
 
         self.log.debug("_send_cli")
@@ -149,8 +136,7 @@ class CliCmd(object):
         aconn = agent.connection
         aconn.lock()
 
-        req = CliStartRequest(cli_command, env=env, immediate=immediate,
-                              username=username, password=password)
+        req = CliStartRequest(cli_command, env=env, immediate=immediate)
 
         headers = {"Content-Type": "application/json"}
         uri = self.server.CLI_URI
@@ -200,8 +186,6 @@ class CliCmd(object):
         if body == None:
             return self.server.error("POST /cli response had a null body")
         self.log.debug("_send_cli body:" + str(body))
-        if body.has_key('error'):
-            return body
         if not body.has_key('xid'):
             return self.server.error(
                                 "POST /cli response was missing the xid", body)
@@ -311,18 +295,19 @@ class CliCmd(object):
         while True:
             now = time.time()
             if now - start_time > timeout:
-                self.log.info("timeout for command '%s', xid %d, " + \
+                self.log.info("timeout for command '%s', xid %s, " + \
                               "conn_id %d, timeout %d, timeout %d," + \
                               "elapsed %d, start_time %d, now %d",
                               safecmd(orig_cli_command), xid, aconn.conn_id,
                               timeout, now - start_time, start_time, now)
                 kill_body = self.server.kill_cmd(xid, agent)
                 return self.server.error(
-                    ("Command timed out after %d seconds: " + \
-                     "'%s', agent '%s', xid %d, conn_id %d " + \
-                     "kill results: %s") \
-                    % (timeout, safecmd(orig_cli_command),
-                       agent.displayname, xid, aconn.conn_id, str(kill_body)))
+                                   ("Command timed out after %d seconds: " + \
+                                   "'%s', agent '%s', xid %d, conn_id %d " + \
+                                   "kill results: %s") \
+                                   % (timeout, safecmd(orig_cli_command),
+                                   agent.displayname, xid, aconn.conn_id,
+                                   str(kill_body)))
 
             self.log.debug("about to get status of cli command '%s', " + \
                            "xid %d, conn_id %d, timeout %d",

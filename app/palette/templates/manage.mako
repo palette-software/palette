@@ -251,17 +251,9 @@
           </li>
         </ul>
       </section>
-      <section class="col-xs-12">
-        <p>System Administrator Username</p>
-        <input type="text" name="username" id="username" />
-      </section>
-      <section class="col-xs-12">
-        <p>Administrator Password</p>
-        <input type="password" name="password" id="password" />
-      </section>
       <section class="col-xs-12 run-as-user">
         <p>Tableau 'Run-As-User' Password<br/>(If Any)</p>
-        <input type="password" name="run-as-password" id="run-as-password" />
+        <input type="password" name="password" id="password" />
       </section>
     </section>
     <section class="row">
