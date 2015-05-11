@@ -926,6 +926,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         except ValueError:
             self.log.error("maint: %s: No yml entry for 'gateway.hosts' yet.",
                             action)
+            return self.error(
+                    "maint %s: No yml entry for 'gateway.hosts' yet." % \
+                    action)
 
         # We're going to combine stdout/stderr/error for all gateway hosts.
         body_combined = {'stdout': "",
