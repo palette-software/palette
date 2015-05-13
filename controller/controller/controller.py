@@ -1393,7 +1393,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.firewall_manager.do_firewall_ports(agent)
 
         self.clean_xid_dirs(agent)
-        self.config_servers(agent)
 
         # This saves directory-related info from pinfo: it
         # does not save the volume info since we may not
@@ -1417,6 +1416,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.log.debug(
                     "init_new_agent: Couldn't do initial import of " + \
                     "auth, etc. probably due to tableau stopped.")
+
+        # Configuring the 'maint' web server requires the yml file,
+        # so this must be done after the "yml_sync()" above.
+        self.config_servers(agent)
 
         return pinfo
 
