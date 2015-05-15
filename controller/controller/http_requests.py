@@ -143,10 +143,11 @@ class HttpRequestManager(TableauCacheManager):
         return int(row[0])
 
     # translate workbook.repository_url -> system_user_id -> owner
-    def _translate_workbook(self, body):
+    def _translate_workbook(self, body, entry):
         envid = self.server.environment.envid
         url = body['repository_url']
-        workbook = WorkbookEntry.get_by_url(envid, url, default=None)
+        workbook = WorkbookEntry.get_by_url(envid, url, entry.site_id,
+                                            default=None)
         if not workbook:
             self.server.log.warning("repository_url '%s' Not Found.", url)
             return
@@ -175,7 +176,7 @@ class HttpRequestManager(TableauCacheManager):
                                                       system_user_id)
 
         if 'repository_url' in body:
-            self._translate_workbook(body)
+            self._translate_workbook(body, entry)
 
         if entry.site_id and 'site' not in body:
             site = Site.get(entry.envid, entry.site_id)
