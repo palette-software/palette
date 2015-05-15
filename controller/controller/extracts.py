@@ -148,7 +148,8 @@ class ExtractManager(TableauCacheManager):
 
             if entry.subtitle == 'Workbook':
                 self.workbook_update(agent, entry, userdata, cache=workbooks)
-            if entry.subtitle in ('Data Source', 'RefreshExtractTask'):
+            if entry.subtitle in ('Data Source', 'Datasource',
+                                  'RefreshExtractTask'):
                 self.datasource_update(agent, entry, userdata,
                                        cache=datasources)
             body = dict(agent.todict().items() + entry.todict().items())
