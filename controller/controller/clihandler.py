@@ -7,6 +7,7 @@ import socket
 import json
 import traceback
 import subprocess
+from urlparse import urlparse
 
 import sqlalchemy
 from sqlalchemy.orm.session import make_transient
@@ -2325,6 +2326,60 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status(body)
         # Events are generated in cleanup_cmd
+
+    @usage('get <URL> [output-file-path]')
+    def do_get(self, cmd):
+        """Do an HTTP GET from the agent to the specified URL"""
+        if len(cmd.args) == 2:
+            url = cmd.args[0]
+            path = cmd.args[1]
+        elif len(cmd.args) == 1:
+            url = cmd.args[0]
+            parsed_url = urlparse(url)
+            path = os.path.basename(parsed_url.path)
+            if not path:
+                path = 'index.html'
+        else:
+            self.print_usage(self.do_get.__usage__)
+            return
+
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            return
+
+        timeout = None
+        if 'timeout' in cmd.dict:
+            try:
+                timeout = int(cmd.dict['timeout'])
+            except StandardError:
+                # FIXME
+                pass
+
+        self.ack()
+
+        res = agent.connection.http_send_get(url, timeout=timeout)
+        content_type = res.getheader('Content-Type', '').lower()
+        headers = res.getheaders()
+
+        self.server.log.info("GET %s, Headers: '%s'",
+                             url, str(res.getheaders()))
+
+        if content_type == 'application/x-json':
+            # This extended type indicates the agent generated the JSON,
+            # i.e. there was an error.
+            data = json.loads(res.body) # FIXME: catch parse error?
+            self.report_status(data)
+            return
+
+        # FIXME: catch exceptions.
+        with open(path, 'w') as f:
+            f.write(res.body)
+
+        path = os.path.abspath(os.path.expanduser(path))
+        data = {'status': 'OK', 'URL': url, 'path': path}
+        for header, value in headers:
+            data[header] = value
+        self.report_status(data)
 
     @usage('nop')
     def do_nop(self, cmd):

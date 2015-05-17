@@ -104,6 +104,27 @@ class AgentConnection(object):
         body = json.dumps(data)
         return self.http_send('POST', uri, body=body, headers=headers)
 
+    # This function is slighly diffent, it proxies a GET through the agent.
+    # It return the HTTPResponse object but with a 'body' member which is
+    #  the result of the calling read().
+    def http_send_get(self, url, timeout=None):
+        headers = {'Content-Type': 'application/json'}
+        data = {'URL': url}
+        if not timeout is None:
+            data['timeout'] = timeout
+        body = json.dumps(data)
+
+        self.lock()
+        try:
+            self.httpconn.request('GET', '/proxy', body=body, headers=headers)
+            res = self.httpconn.getresponse()
+            if res.status < 200 or res.status >= 300:
+                self._httpexc(res, method='GET')
+            res.body = res.read()
+            return res
+        finally:
+            self.unlock()
+
     def lock(self):
         self.lockobj.acquire()
 
