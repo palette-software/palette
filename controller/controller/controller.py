@@ -837,6 +837,39 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return pinfo
 
+    def get_info(self, agent, update_agent=False):
+        # FIXME: catch errors.
+        body = agent.connection.http_send('GET', '/info')
+
+        try:
+            info = json.loads(body)
+        except ValueError, ex:
+            self.log.error("Bad json from info. Error: %s, json: %s", \
+                           str(ex), body)
+            raise IOError("Bad json from pinfo.  Error: %s, json: %s" % \
+                          (str(ex), body))
+        if info is None:
+            self.log.error("Bad info output: %s", body)
+            raise IOError("Bad info output: %s" % body)
+
+        # When we are called from init_new_agent(), we don't know
+        # the agent_type yet and update_agent_pinfo_vols() needs to
+        # know the agent type for the volume table values.
+        # When we are called by do_info() we will know the agent type.
+        if update_agent:
+            if agent.agent_type:
+                self.agentmanager.update_agent_pinfo_dirs(agent, info)
+                self.agentmanager.update_agent_pinfo_vols(agent, info)
+                self.agentmanager.update_agent_pinfo_other(agent, info)
+            else:
+                self.log.error(
+                    "get_info: Could not update agent: unknown " + \
+                                    "displayname.  uuid: %s", agent.uuid)
+                raise IOError("get_pinfo: Could not update agent: unknown " + \
+                        "displayname.  uuid: %s" % agent.uuid)
+
+        return info
+
     def yml_sync(self, agent, set_agent_types=True):
         """Note: Can raise an IOError (if the filemanager.get() fails)."""
         old_gateway_hosts = self.yml.get('gateway.hosts', default=None)
