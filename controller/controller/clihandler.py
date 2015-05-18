@@ -1092,6 +1092,62 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status({"info": pinfos})
 
+    @usage('info2 [all]')
+    @upgrade_rwlock
+    def do_info2(self, cmd):
+        # pylint: disable=too-many-return-statements
+        """Generate system info using the /info primitive."""
+        if len(cmd.args) == 1:
+            if cmd.args[0] != 'all':
+                self.print_usage(self.do_info2.__usage__)
+                return
+        elif len(cmd.args) > 2:
+            self.print_usage(self.do_info2.__usage__)
+            return
+
+        if not len(cmd.args):
+            agent = self.get_agent(cmd.dict)
+            if not agent:
+                return
+
+            self.ack()
+            try:
+                body = self.server.get_info(agent, update_agent=True)
+            except IOError as ex:
+                self.error(clierror.ERROR_COMMAND_FAILED, str(ex))
+                self.server.log.info("info failed: %s", str(ex))
+                return
+
+            self.report_status(body)
+            return
+
+        self.ack()
+
+        agents = self.server.agentmanager.all_agents()
+        if len(agents) == 0:
+            self.report_status({})
+            return
+
+        infos = []
+        for key in agents.keys():
+            try:
+                agent = agents[key]
+            except StandardError:
+                # This agent is now gone
+                continue
+
+            try:
+                body = self.server.get_info(agent, update_agent=True)
+            except IOError as ex:
+                self.error(clierror.ERROR_COMMAND_FAILED, str(ex))
+                self.server.log.info("info failed for agent '%s': %s",
+                                     agent.displayname, str(ex))
+                return
+
+            infos.append(body)
+
+        self.report_status({"info": infos})
+
     @usage('license [update | info | verify | repair]')
     @upgrade_rwlock
     def do_license(self, cmd):
