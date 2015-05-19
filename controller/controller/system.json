@@ -128,7 +128,7 @@
 {
 "envid":"1",
 "key":"metric-save-days",
-"value":"7"
+"value":"30"
 },
 {
 "envid":"1",
