@@ -520,7 +520,7 @@ class TableauStatusMonitor(threading.Thread):
             # This extended type indicates the agent generated the JSON,
             # i.e. there was an error.
             try:
-                data = json.loads(res.body) # FIXME: catch parse error?
+                data = json.loads(res.body)
             except ValueError as ex:
                 self.log.error("_systeminfo_get: Bad json returned for %s: %s",
                                url, res.body)
