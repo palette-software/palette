@@ -549,24 +549,35 @@ class TableauStatusMonitor(threading.Thread):
                 body={'stdout':
                         'systeminfo failed.  Assuming Tableau is stopped.'})
 
+    def _tableau_systeminfo_enabled(self):
+        """Returns:
+            True:   The Tableau configuration has systeminfo enabled.
+            False:  The Tableau configuration for systeminfo is disabled."""
+
+        yml_val = self.server.yml.get(
+                    'wgserver.systeminfo.allow_referrer_ips',
+                    default='')
+
+        if yml_val.find('127.0.0.1') != -1 or yml_val.find('localhost') != -1:
+            return True
+
+        return False
+
     def check_status_with_connection(self, agent):
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-branches
         # pylint: disable=too-many-return-statements
         # pylint: disable=too-many-statements
 
-        if self.st_config.status_systeminfo:
+        tableau_systeminfo_enabled = self._tableau_systeminfo_enabled()
+
+        if self.st_config.status_systeminfo and tableau_systeminfo_enabled:
             if self._systeminfo(agent):
                 return
 
             self.log.info("_system_info failed")
 
-            yml_val = self.server.yml.get(
-                        'wgserver.systeminfo.allow_referrer_ips',
-                        default='')
-
-            if yml_val.find('127.0.0.1') != -1 or \
-                                    yml_val.find('localhost') != -1:
+            if tableau_systeminfo_enabled:
                 self.log.error("status-check: systeminfo failed while enabled "
                                "in tableau: assuming tableu is stopped.")
                 self._set_status_stopped(agent)
