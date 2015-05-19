@@ -489,10 +489,9 @@ class GeneralMonitorApplication(PaletteRESTApplication):
             cpu_load_warn = {'name': SystemConfig.CPU_LOAD_WARN,
                              'value': 'Do not monitor',
                              'id': 101}
-
         else:
             cpu_load_warn = {'name': SystemConfig.CPU_LOAD_WARN,
-                             'value': str(scfg.cpu_load_warn),
+                             'value': '%s%%' % str(scfg.cpu_load_warn),
                              'id': scfg.cpu_load_warn}
         options = []
         for x in self.CPU_LOAD_WARN_RANGE:
@@ -509,7 +508,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
                               'id': 101}
         else:
             cpu_load_error = {'name': SystemConfig.CPU_LOAD_ERROR,
-                              'value': str(scfg.cpu_load_error),
+                              'value': '%s%%' % str(scfg.cpu_load_error),
                               'id': scfg.cpu_load_error}
         options = []
         for x in self.CPU_LOAD_ERROR_RANGE:
@@ -523,11 +522,11 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         if scfg.cpu_load_warn > 100:
             cpu_period_warn = {'name': SystemConfig.CPU_PERIOD_WARN,
                                'value': "Do not Monitor",
-                               'id': scfg.cpu_period_warn / 60}
+                               'id': scfg.cpu_period_warn}
         else:
             cpu_period_warn = {'name': SystemConfig.CPU_PERIOD_WARN,
                                'value': str(scfg.cpu_period_warn / 60),
-                               'id': scfg.cpu_period_warn / 60}
+                               'id': scfg.cpu_period_warn}
         options = []
         for x in self.CPU_PERIOD_WARN_RANGE:
             options.append({'id':x * 60, 'item': str(x)})
@@ -541,7 +540,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         else:
             cpu_period_error = {'name': SystemConfig.CPU_PERIOD_ERROR,
                                 'value': str(scfg.cpu_period_error / 60),
-                                'id': scfg.cpu_period_error / 60}
+                                'id': scfg.cpu_period_error}
         options = []
         for x in self.CPU_PERIOD_ERROR_RANGE:
             options.append({'id':x * 60, 'item': str(x)})
