@@ -59,7 +59,7 @@ class TableauStatusMonitor(threading.Thread):
     # before sending out the DEGRADED event.
     EVENT_DEGRADED_MIN_DEFAULT = 120    # in seconds
 
-    SYSTEMINFO_GET_TIMEOUT = 30    # timeout for http GET of systeminfo.xml
+    SYSTEMINFO_GET_TIMEOUT = 30000    # timeout for http GET of systeminfo.xml
 
     LOGGER_NAME = "status"
 
@@ -504,8 +504,8 @@ class TableauStatusMonitor(threading.Thread):
                                             (result.scheme, result.port)
 
         try:
-            res = agent.connection.http_send_get(url)
-#                                        timeout=self.SYSTEMINFO_GET_TIMEOUT)
+            res = agent.connection.http_send_get(url,
+                                        timeout=self.SYSTEMINFO_GET_TIMEOUT)
         except (exc.HTTPException, httplib.HTTPException) as ex:
             self.log.info("_systeminfo_get %s failed: %s",
                           url, str(ex))
@@ -565,7 +565,6 @@ class TableauStatusMonitor(threading.Thread):
                         'wgserver.systeminfo.allow_referrer_ips',
                         default='')
 
-            print yml_val
             if yml_val.find('127.0.0.1') != -1 or \
                                     yml_val.find('localhost') != -1:
                 self.log.error("status-check: systeminfo failed while enabled "
