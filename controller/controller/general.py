@@ -70,6 +70,8 @@ class SystemConfig(object):
 
     CONTROLLER_INITIAL_START = "controller-initial-start"
 
+    STATUS_SYSTEMINFO = 'status-systeminfo'
+
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
     def __init__(self, system):
@@ -242,6 +244,8 @@ class SystemConfig(object):
             return self._getstring(self.TIMEZONE, default="US/Pacific")
         if name == "controller_initial_start":
             return self._getstring(self.CONTROLLER_INITIAL_START, default="")
+        if name == 'status_systeminfo':
+            return self._getyesno(self.STATUS_SYSTEMINFO, default='yes')
         raise AttributeError(name)
 
     def todict(self):
