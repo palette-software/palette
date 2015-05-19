@@ -28,6 +28,7 @@ from state_control import StateControl
 from tableau import TableauProcess
 
 import exc
+import httplib
 import clierror
 from util import success, failed, traceback_string, upgrade_rwlock
 
@@ -2385,6 +2386,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     @usage('get <URL> [output-file-path]')
     def do_get(self, cmd):
+        # pylint: disable=too-many-locals
         """Do an HTTP GET from the agent to the specified URL"""
         if len(cmd.args) == 2:
             url = cmd.args[0]
@@ -2413,7 +2415,13 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
 
-        res = agent.connection.http_send_get(url, timeout=timeout)
+        try:
+            res = agent.connection.http_send_get(url, timeout=timeout)
+        except (exc.HTTPException, httplib.HTTPException) as ex:
+            body = {'error': str(ex)}
+            self.report_status(body)
+            return
+
         content_type = res.getheader('Content-Type', '').lower()
         headers = res.getheaders()
 

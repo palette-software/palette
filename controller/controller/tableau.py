@@ -4,9 +4,14 @@ import threading
 import time
 import os
 import re
+from urlparse import urlparse
+import json
+import httplib
+import exc
+import xml.etree.ElementTree as ET
 
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
-from sqlalchemy.schema import ForeignKey, UniqueConstraint
+from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm.exc import NoResultFound
 
 from util import traceback_string
@@ -31,7 +36,8 @@ class TableauProcess(meta.Base):
     STATUS_DEGRADED = "DEGRADED"
     STATUS_UNKNOWN = "UNKNOWN"    # We set this if we don't know yet.
 
-    name = Column(String, nullable=False, primary_key=True)
+    tid = Column(BigInteger, primary_key=True)
+    name = Column(String, nullable=False)
     agentid = Column(BigInteger,
                      ForeignKey("agent.agentid", ondelete='CASCADE'),
                      nullable=False, primary_key=True)
@@ -40,7 +46,6 @@ class TableauProcess(meta.Base):
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(),
                                server_onupdate=func.current_timestamp())
-    UniqueConstraint('agentid', 'name')
 
 class TableauStatusMonitor(threading.Thread):
     # pylint: disable=too-many-instance-attributes
@@ -53,6 +58,8 @@ class TableauStatusMonitor(threading.Thread):
     # Minimum amount of time that must elapse while DEGRADED
     # before sending out the DEGRADED event.
     EVENT_DEGRADED_MIN_DEFAULT = 120    # in seconds
+
+    SYSTEMINFO_GET_TIMEOUT = 30    # timeout for http GET of systeminfo.xml
 
     LOGGER_NAME = "status"
 
@@ -354,10 +361,221 @@ class TableauStatusMonitor(threading.Thread):
 
         self.check_status_with_connection(agent)
 
+    def _systeminfo(self, agent):
+        systeminfo_xml = self._systeminfo_get(agent)
+
+        if not systeminfo_xml:
+            return False
+
+        return self._systeminfo_parse(agent, systeminfo_xml)
+
+    def _systeminfo_parse(self, agent, systeminfo_xml):
+        # pylint: disable=too-many-return-statements
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-statements
+        """Returns:
+                False if something is wrong with getting status
+                via systeminfo.
+
+                True if getting status via systeminfo is fine.
+        """
+        self.log.debug("_systeminfo_parse: Received: %s", systeminfo_xml)
+        try:
+            root = ET.fromstring(systeminfo_xml)
+        except ET.ParseError as ex:
+            self.log.error(
+                    "_systeminfo_parse: xml parse error: '%s' from '%s':",
+                    str(ex), systeminfo_xml)
+            return False
+
+        if root.tag != 'systeminfo':
+            self.log.error("_systeminfo_parse: wrong root tag: %s", root.tag)
+            return False
+
+        session = meta.Session()
+        prev_tableau_status = self.get_tableau_status()
+
+        self.remove_all_status()
+
+        tableau_status = None
+
+        for child in root:
+            if child.tag == 'machines':
+                for machine in child:
+#                    print "machine:", machine.attrib
+                    if not 'name' in machine.attrib:
+                        self.log.error("_systeminfo_parse: missing " + \
+                                       "'name' in machine attribute:",
+                                       str(machine.attrib))
+                        return False
+
+                    host = machine.attrib['name']
+                    agentid = Agent.get_agentid_from_host(self.envid, host)
+
+                    for info in machine:
+                        #print "    ", info.tag, "attributes:", info.attrib
+                        service_name = info.tag
+                        if not 'status' in info.attrib:
+                            self.log.error("_systeminfo_parse: missing " + \
+                                           "'status' in machine %s attrib: %s",
+                                           host, str(info.attrib))
+                            return False
+
+                        if 'worker' in info.attrib:
+                            worker_info = info.attrib['worker']
+                            parts = worker_info.split(':')
+                            if len(parts) == 1 or not parts[1].isdigit():
+                                port = -2
+                                self.log.error("_systeminfo_parse: missing " + \
+                                               "':' or not an integer in "
+                                               "machine %s for " + \
+                                               "worker: %s", host,
+                                               str(worker_info))
+                            else:
+                                port = int(parts[1])
+
+                        service_status = info.attrib['status']
+#                        print "service_name:", service_name, "port", port
+                        self._add(agentid, service_name, port, service_status)
+                        self.log.debug("system_info_parse: logged: " + \
+                                       "%d, %s, %d, %s",
+                                       agentid, service_name, port,
+                                       service_status)
+            elif child.tag == 'service':
+#                print "service:",
+                info = child.attrib
+                if not 'status' in info:
+                    self.log.error("_systeminfo_parse: Missing 'status': %s",
+                                    str(info))
+                    return False
+
+                #print "    status:", info['status']
+                tableau_status = info['status']
+                if tableau_status in ('Down', 'DecommisionedReadOnly',
+                    'DecomisioningReadOnly', 'DecommissionFailedReadOnly'):
+                    tableau_status = TableauProcess.STATUS_DEGRADED
+                elif tableau_status in ('Active', 'Passive', 'Unlicensed',
+                                        'Busy', 'ReadOnly', 'ActiveSyncing'):
+                    tableau_status = TableauProcess.STATUS_RUNNING
+                elif tableau_status in ('StatusNotAvailable',
+                                        'StatusNotAvailableSyncing'):
+                    tableau_status = TableauProcess.STATUS_UNKNOWN
+                else:
+                    self.log.error("_systeminfo_parse: Unexpected status: '%s'",
+                                  tableau_status)
+                    tableau_status = TableauProcess.STATUS_UNKNOWN
+
+                # Note: The status can never be STOPPED since if Tableau
+                # is stopped, then it won't respond to the systeminfo
+                # GET URL.
+                self._add(agentid, "Status", 0, tableau_status)
+            else:
+                self.log.error("_systeminfo_parse: Unexpected child.tag: '%s'",
+                    child.tag)
+
+        if tableau_status is None:
+            self.log.error(
+                        "_systeminfo_parse: Tableau status not valid: %s",
+                       str(systeminfo_xml))
+            session.rollback()
+            return True
+
+        self._finish_status(agent, tableau_status, prev_tableau_status)
+        return True
+
+    def _systeminfo_get(self, agent):
+        """Returns:
+            False if couldn't get info via systeminfo.
+            Otherwise it succeeded.
+        """
+
+        public_url = self.server.public_url()
+        if not public_url:
+            self.log.error("_systeminfo_get: no url configured.")
+            return False
+
+        result = urlparse(public_url)
+
+        if not result.scheme:
+            self.log.error("_systeminfo_get: Bad url: %s", public_url)
+
+        url = "%s://127.0.0.1:%d/admin/systeminfo.xml" % \
+                                            (result.scheme, result.port)
+
+        try:
+            res = agent.connection.http_send_get(url)
+#                                        timeout=self.SYSTEMINFO_GET_TIMEOUT)
+        except (exc.HTTPException, httplib.HTTPException) as ex:
+            self.log.info("_systeminfo_get %s failed: %s",
+                          url, str(ex))
+            return False
+
+        content_type = res.getheader('Content-Type', '').lower()
+
+        self.server.log.info("GET %s, Headers: '%s'",
+                             url, str(res.getheaders()))
+
+        if content_type == 'application/x-json':
+            # This extended type indicates the agent generated the JSON,
+            # i.e. there was an error.
+            try:
+                data = json.loads(res.body) # FIXME: catch parse error?
+            except ValueError as ex:
+                self.log.error("_systeminfo_get: Bad json returned for %s: %s",
+                               url, res.body)
+                return False
+
+            self.log.error("_systeminfo_get: get %s failed: %s",
+                            url, data)
+            return False
+
+        return res.body
+
+    def _set_status_stopped(self, agent):
+        """systeminfo is enabled in tableau, so if it is failing now,
+           assume tableau is stopped."""
+
+        prev_tableau_status = self.get_tableau_status()
+        self.remove_all_status()
+        name = "Status"
+        pid = 0
+        tableau_status = TableauProcess.STATUS_STOPPED
+        self._add(agent.agentid, name, 0, tableau_status)
+        self.log.debug("_set_status_stopped: logged: %s, %d, %s",
+                       name, pid, tableau_status)
+
+        self._finish_status(agent, tableau_status, prev_tableau_status,
+                body={'stdout':
+                        'systeminfo failed.  Assuming Tableau is stopped.'})
+
     def check_status_with_connection(self, agent):
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-branches
+        # pylint: disable=too-many-return-statements
         # pylint: disable=too-many-statements
+
+        if self.st_config.status_systeminfo:
+            if self._systeminfo(agent):
+                return
+
+            self.log.info("_system_info failed")
+
+            yml_val = self.server.yml.get(
+                        'wgserver.systeminfo.allow_referrer_ips',
+                        default='')
+
+            print yml_val
+            if yml_val.find('127.0.0.1') != -1 or \
+                                    yml_val.find('localhost') != -1:
+                self.log.error("status-check: systeminfo failed while enabled "
+                               "in tableau: assuming tableu is stopped.")
+                self._set_status_stopped(agent)
+                return
+
+            # _systeminfo failed and wasn't enabled, so try to get
+            # tableau status the old-fashioned way.
+
         agentid = agent.agentid
 
         body = self.server.status_cmd(agent)
@@ -457,6 +675,21 @@ class TableauStatusMonitor(threading.Thread):
                         self.log.debug("status-check: logged: %s, %d, %s",
                                        line, -1, 'error')
 
+        if tableau_status is None:
+            self.log.error("status-check: Tableau status not valid: %s",
+                           str(lines))
+            session.rollback()
+            return
+
+        self._finish_status(agent, tableau_status, prev_tableau_status,
+                           body=body)
+
+    def _finish_status(self, agent, tableau_status, prev_tableau_status,
+                      body=None):
+
+        if body is None:
+            body = {}
+
         aconn = agent.connection
         acquired = aconn.user_action_lock(blocking=False)
         if not acquired:
@@ -468,19 +701,11 @@ class TableauStatusMonitor(threading.Thread):
                 "status-check: Primary agent locked for user action " + \
                 "after tabadmin status finished.  " + \
                 "Will not update state or tableau status.")
-            session.rollback()
+            meta.Session.rollback()
             return
 
-        if tableau_status is None:
-            self.log.error("status-check: Tableau status not valid: %s",
-                           str(lines))
-            aconn.user_action_unlock()
-            session.rollback()
-            return
-
-        self._set_main_state(prev_tableau_status, tableau_status, agent, body)
         self.log.debug("status-check: Logging main status: %s", tableau_status)
+        self._set_main_state(prev_tableau_status, tableau_status, agent, body)
 
-        session.commit()
-
+        meta.Session.commit()
         aconn.user_action_unlock()
