@@ -343,6 +343,10 @@ class Agent(TCPServer):
         self.config = config
         self.host = config.get('controller', 'host', default='localhost')
         self.port = config.getint('controller', 'port', default=8888)
+        self.proxy = config.getboolean('controller', 'proxy', default=False)
+        if self.proxy:
+            self.proxy_connect_port = config.getint('controller',
+                                            'proxy_connect_port')
         self.ssl = config.getboolean('controller', 'ssl', default=True)
         self.data_dir = config.get('controller', 'data-dir',
                                             default=self.DEFAULT_DATA_DIR)
@@ -388,6 +392,19 @@ class Agent(TCPServer):
         if self.ssl:
             self.socket = ssl.wrap_socket(self.socket)
 
+        if self.proxy:
+            cmd = "CONNECT localhost:%d HTTP/1.0\r\n\r\n" % \
+                                                   self.proxy_connect_port
+            log.info("Connect via proxy: %s", cmd)
+
+            self.socket.send(cmd)
+            response = self.socket.read()
+            parts = response.split()
+            if len(parts) < 2 or not parts[1].isdigit() or  \
+                                                    parts[1] != '200':
+                log.info("Proxy connect failed: %s", response)
+                raise IOError("Proxy connect failed: %s" + response)
+
     def get_request(self):
         return (self.socket, 'localhost')
 
@@ -423,7 +440,8 @@ if __name__ == '__main__':
           log.info("connected to %s:%d%s", agent.host, agent.port, \
                    agent.ssl and ' [SSL]' or '')
           agent.serve_forever()
-       except:
+       except EnvironmentError as  ex:
+          print 'error:', ex
           agent.close()
 
           reconnect_interval = config.get('controller', 'reconnect_interval', default=DEFAULT_RECONNECT_INTERVAL)
