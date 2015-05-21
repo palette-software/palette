@@ -4,6 +4,7 @@ from urllib import unquote
 from sqlalchemy import Column, String, DateTime, Integer, BigInteger
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.schema import ForeignKey
+from sqlalchemy.orm.exc import MultipleResultsFound
 
 import akiri.framework.sqlalchemy as meta
 
@@ -146,8 +147,17 @@ class HttpRequestManager(TableauCacheManager):
     def _translate_workbook(self, body, entry):
         envid = self.server.environment.envid
         url = body['repository_url']
-        workbook = WorkbookEntry.get_by_url(envid, url, entry.site_id,
+        try:
+            workbook = WorkbookEntry.get_by_url(envid, url, entry.site_id,
                                             default=None)
+        except MultipleResultsFound:
+            self.server.log.warning(
+                    "Multiple rows found for url '%s', site_id: '%s'",
+                    url, entry.site_id)
+            body['workbook'] = 'Unknown: Duplicate repository url'
+            body['owner'] = 'Unknown: Duplicate repository url'
+            return
+
         if not workbook:
             self.server.log.warning("repository_url '%s' Not Found.", url)
             return
