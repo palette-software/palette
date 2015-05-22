@@ -187,6 +187,11 @@ function ($, configure, common, Dropdown, OnOff)
         $('#license-key').val(data['license-key']);
         $('#readonly-password').val(data['readonly-password']);
 
+        $('#smtp-server').val(data['smtp-server']);
+        $('#smtp-port').val(data['smtp-port']);
+        $('#smtp-username').val(data['smtp-username']);
+        $('#smtp-password').val(data['smtp-password']);
+
         /* validation */
         Dropdown.setCallback(validate);
         Dropdown.setCallback(function () {
