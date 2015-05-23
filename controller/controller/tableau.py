@@ -500,8 +500,11 @@ class TableauStatusMonitor(threading.Thread):
         if not result.scheme:
             self.log.error("_systeminfo_get: Bad url: %s", public_url)
 
-        url = "%s://127.0.0.1:%d/admin/systeminfo.xml" % \
+        if result.port:
+            url = "%s://127.0.0.1:%d/admin/systeminfo.xml" % \
                                             (result.scheme, result.port)
+        else:
+            url = "%s://127.0.0.1/admin/systeminfo.xml" % (result.scheme)
 
         try:
             res = agent.connection.http_send_get(url,
