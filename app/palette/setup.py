@@ -189,8 +189,6 @@ class SetupMailApplication(JSONProxy, PaletteRESTApplication):
             return data
 
         self._save_config(req, data)
-        if 'smtp-password' in data:
-            del data['smtp-password']
         return data
 
     def _save_config(self, req, data):
@@ -240,13 +238,8 @@ class SetupMailApplication(JSONProxy, PaletteRESTApplication):
 
         data['smtp-server'] = scfg.mail_smtp_server
         data['smtp-port'] = scfg.mail_smtp_port
-        _ = req.system.getint(scfg.MAIL_SMTP_PORT, default=None)
-        if not _ is None:
-            data['smtp-port'] = _
         data['smtp-username'] = scfg.mail_username
-        _ = req.system.get(scfg.MAIL_USERNAME, default=None)
-        if not _ is None:
-            data['smtp-username'] = _
+        data['smtp-password'] = scfg.mail_password
 
         return data
 
