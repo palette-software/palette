@@ -63,7 +63,7 @@
     <section>
       <a id="237795" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Palette License Key *</h2>
-      <p>Please enter your License Key below</p>
+      <p>Your 32 digit Palette License Key is found in the confirmation email</p>
       <input type="text" id="license-key" />
     </section>
     <hr />
