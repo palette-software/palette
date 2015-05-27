@@ -7,6 +7,7 @@ import re
 from urlparse import urlparse
 import json
 import httplib
+import socket
 import exc
 import xml.etree.ElementTree as ET
 
@@ -509,7 +510,8 @@ class TableauStatusMonitor(threading.Thread):
         try:
             res = agent.connection.http_send_get(url,
                                         timeout=self.SYSTEMINFO_GET_TIMEOUT)
-        except (exc.HTTPException, httplib.HTTPException) as ex:
+        except (socket.error, IOError, exc.HTTPException,
+                                                httplib.HTTPException) as ex:
             self.log.info("_systeminfo_get %s failed: %s",
                           url, str(ex))
             return False
