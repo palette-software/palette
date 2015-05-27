@@ -37,20 +37,53 @@ if [ -f $INI_FILE ]; then
     fi
 fi
 
-if [ $# -eq 1 ]; then
-    if [ "$1" == "now" ]; then
-        echo Updating now
-        echo Updating now >> $LOG_FILE
-    else
-        echo "Usage: $0 [now]"
-        exit 1
-    fi
+usage() {
+    echo Usage: $0 '[--now] [--fast]'
+}
+
+if ! options=$(getopt -o fn --longoptions fast,now -- "$@")
+then
+    # getopt will report the error
+    usage
+    exit 1
+fi
+
+set -- $options
+
+while [ $# -gt 0 ]
+do
+    case $1 in
+    -n|--now)
+        now="yes" ;;
+    -f|--fast)
+        fast="yes" ;;
+    --)
+        shift; break;;
+    -*)
+        echo "$0: error - unrecognized option $1" 2>&1
+        usage; exit 1 ;;
+    *)
+        break ;;
+    esac
+    shift
+done
+
+if [ "$now" == "yes" ]; then
+    echo Updating now
+    echo Updating now >> $LOG_FILE
 else
     delayer
 fi
 
 # perform the update
-apt-get update >> $LOG_FILE 2>&1
+if [ "$fast" == "yes" ]; then
+    # Update only from the palette repo
+    apt-get update -o Dir::Etc::sourcelist="sources.list.d/palette.list" \
+        -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0" \
+        >> $LOG_FILE 2>&1
+else
+    apt-get update >> $LOG_FILE 2>&1
+fi
 # Keep OLD config files (change to use NEW config files after upgraded to 1.0.1)
 #apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y $PACKAGES >> $LOG_FILE 2>&1
 # After 1.0.1 is installed and beyond, force using the new config file:
