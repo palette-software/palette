@@ -2,7 +2,6 @@ from collections import OrderedDict
 
 from util import odbc2dt
 from mixin import CredentialMixin
-from yml import YmlEntry
 
 class ODBC(CredentialMixin):
 
@@ -30,16 +29,16 @@ class ODBC(CredentialMixin):
     def _set_driver(self):
         # pylint: disable=invalid-name
 
-        bitness = YmlEntry.get(self.agent.envid, 'version.bitness',
-                               default=None)
+        bitness = self.agent.bitness
         if not bitness:
             self.server.log.error("odbc.connection: " + \
-                            "Missing yml 'version.bitness'.  Will use 64-bit.")
-        if bitness == '32':
+                            "Missing yml 'agent.bitness'.  Will use 64-bit.")
+        if bitness == 32:
             self.DRIVER = '{PostgreSQL Unicode}'
         else:
             # Default
             self.DRIVER = '{PostgreSQL Unicode(x64)}'
+        self.DRIVER = '{PostgreSQL Unicode(x64)}'
 
     def connection(self):
         # worker id points to the 'hot' database IP.
