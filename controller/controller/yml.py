@@ -98,8 +98,10 @@ class YmlManager(Manager):
 
     # This method can throw IOError
     def sync(self, agent):
-        path = agent.path.join(agent.tableau_data_dir, "data", "tabsvc",
-                               "config", "workgroup.yml")
+        path = agent.tableau_data_dir
+        if agent.path.basename(path) != "data":
+            path = agent.path.join(path, "data")
+        path = agent.path.join(path, "tabsvc", "config", "workgroup.yml")
         if not agent.displayname:
             location = agent.hostname + ' - ' + path
         else:
