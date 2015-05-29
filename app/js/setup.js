@@ -631,6 +631,7 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#smtp-server').val(data['smtp-server']);
         $('#smtp-port').val(data['smtp-port']);
         $('#smtp-username').val(data['smtp-username']);
+        $('#smtp-password').val(data['smtp-password']);
         $('#save-mail').bind('click', saveMail);
         $('#cancel-mail').bind('click', cancelMail);
         $('#test-mail').bind('click', testMail);
