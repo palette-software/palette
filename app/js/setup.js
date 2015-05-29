@@ -329,7 +329,6 @@ function ($, _, configure, common, Dropdown, OnOff)
             success: function() {
                 delete data['action'];
                 mailData = data;
-                $('#smtp-password').val('');
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 alert(this.url + ": " +
@@ -351,7 +350,7 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#smtp-server').val(mailData['smtp-server']);
         $('#smtp-port').val(mailData['smtp-port']);
         $('#smtp-username').val(mailData['smtp-username']);
-        $('#smtp-password').val('');
+        $('#smtp-password').val(mailData['smtp-password']);
         $('#save-mail, #cancel-mail').addClass('disabled');
         $('#mail-test-message').addClass('hidden');
         $('#mail-test-message').removeClass('green red');
