@@ -71,6 +71,10 @@ class TableauStatusMonitor(threading.Thread):
     SYSTEMINFO_FAIL = 2
     SYSTEMINFO_UNKNOWN = 3
 
+    # Remember the url that worked with systeminfo to help determine
+    # if tableau is really stopped when systeminfo fails.
+    systeminfo_url_worked = None
+
     statemap = {
         TableauProcess.STATUS_RUNNING: StateManager.STATE_STARTED,
         TableauProcess.STATUS_STOPPED: StateManager.STATE_STOPPED,
@@ -371,7 +375,7 @@ class TableauStatusMonitor(threading.Thread):
 
     def _systeminfo(self, agent):
         """
-            Returns:
+            Returns one of:
                 SYSTEMINFO_SUCCESS
                 SYSTEMINFO_FAIL
                 SYSTEMINFO_UNKNOWN
@@ -604,6 +608,7 @@ class TableauStatusMonitor(threading.Thread):
             result = self._systeminfo(agent)
 
             if result == self.SYSTEMINFO_SUCCESS:
+                self.systeminfo_url_worked = self.server.public_url()
                 return
 
             self.log.info("_system_info failed or unknown: %d", result)
@@ -612,7 +617,13 @@ class TableauStatusMonitor(threading.Thread):
                 # systeminfo didn't work, but tableau may not be down.
                 return
 
-            if tableau_systeminfo_enabled:
+            # Be as confident as possible that tableau really is stopped
+            # and the user didn't configure the public url wrong.
+            # The public url has to work at least once with systeminfo
+            # before the failure to get systeminfo should mean that
+            # tableau is really stopped.
+            if tableau_systeminfo_enabled and \
+                    self.systeminfo_url_worked == self.server.public_url():
                 self.log.error("status-check: systeminfo failed while enabled "
                                "in tableau: assuming tableu is stopped.")
                 self._set_status_stopped(agent)
