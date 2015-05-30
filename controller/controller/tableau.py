@@ -419,6 +419,7 @@ class TableauStatusMonitor(threading.Thread):
 
         tableau_status = None
 
+        failed_proc_str = ""
         for child in root:
             if child.tag == 'machines':
                 for machine in child:
@@ -456,6 +457,12 @@ class TableauStatusMonitor(threading.Thread):
 
                         service_status = info.attrib['status']
 #                        print "service_name:", service_name, "port", port
+                        if service_status not in ('Active', 'Passive', 'Busy',
+                                                 'ReadOnly', 'ActiveSyncing'):
+                            # Keep track of failed tableau processes
+                            failed_proc_str += ("Process %s is %s\n") % \
+                                                 (service_name, service_status)
+
                         self._add(agentid, service_name, port, service_status)
                         self.log.debug("system_info_parse: logged: " + \
                                        "%d, %s, %d, %s",
@@ -474,7 +481,7 @@ class TableauStatusMonitor(threading.Thread):
                 if tableau_status in ('Down', 'DecommisionedReadOnly',
                     'DecomisioningReadOnly', 'DecommissionFailedReadOnly'):
                     tableau_status = TableauProcess.STATUS_DEGRADED
-                elif tableau_status in ('Active', 'Passive', 'Unlicensed',
+                elif tableau_status in ('Active', 'Passive',
                                         'Busy', 'ReadOnly', 'ActiveSyncing'):
                     tableau_status = TableauProcess.STATUS_RUNNING
                 elif tableau_status in ('StatusNotAvailable',
@@ -500,7 +507,13 @@ class TableauStatusMonitor(threading.Thread):
             session.rollback()
             return self.SYSTEMINFO_UNKNOWN
 
-        self._finish_status(agent, tableau_status, prev_tableau_status)
+        if failed_proc_str:
+            # Failed process(es) for the event
+            body = {'info': failed_proc_str}
+        else:
+            body = None
+
+        self._finish_status(agent, tableau_status, prev_tableau_status, body)
         return self.SYSTEMINFO_SUCCESS
 
     def _systeminfo_get(self, agent):
@@ -579,8 +592,7 @@ class TableauStatusMonitor(threading.Thread):
                        name, pid, tableau_status)
 
         self._finish_status(agent, tableau_status, prev_tableau_status,
-                body={'stdout':
-                        'systeminfo failed.  Assuming Tableau is stopped.'})
+                {'stdout': 'systeminfo failed.  Assuming Tableau is stopped.'})
 
     def _tableau_systeminfo_enabled(self):
         """Returns:
@@ -737,14 +749,9 @@ class TableauStatusMonitor(threading.Thread):
             session.rollback()
             return
 
-        self._finish_status(agent, tableau_status, prev_tableau_status,
-                           body=body)
+        self._finish_status(agent, tableau_status, prev_tableau_status, body)
 
-    def _finish_status(self, agent, tableau_status, prev_tableau_status,
-                      body=None):
-
-        if body is None:
-            body = {}
+    def _finish_status(self, agent, tableau_status, prev_tableau_status, body):
 
         aconn = agent.connection
         acquired = aconn.user_action_lock(blocking=False)
