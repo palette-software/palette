@@ -403,10 +403,15 @@ class MonitorApplication(PaletteRESTApplication):
                     proc['pid'] = tab_entry.pid
                     proc['name'] = tab_entry.name
                     proc['status'] = tab_entry.status
+                    # 'tabadminstatus -v' reports processes status with
+                    # ".... is running".
+                    # systeminfo reports Active, Passive, etc.
                     if tab_entry.status.find('running') != -1 or \
-                                    tab_entry.status.find('Active') != -1:
+                        tab_entry.status in ('Active', 'Passive', 'Busy',
+                                             'ReadOnly', 'ActiveSyncing'):
                         proc['color'] = 'green'
                     else:
+                        # Includes "Unlicensed" which should also be red.
                         proc['color'] = 'red'
                         # The agent needs to be red too.
                         agent_color_num = Colors.RED_NUM
