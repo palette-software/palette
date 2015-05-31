@@ -432,6 +432,11 @@ class TableauStatusMonitor(threading.Thread):
 
                     host = machine.attrib['name']
                     agentid = Agent.get_agentid_from_host(self.envid, host)
+                    machine_agent = Agent.get_by_id(agentid)
+                    if machine_agent:
+                        machine_displayname = machine_agent.displayname
+                    else:
+                        machine_displayname = "Unknown"
 
                     for info in machine:
                         #print "    ", info.tag, "attributes:", info.attrib
@@ -460,8 +465,10 @@ class TableauStatusMonitor(threading.Thread):
                         if service_status not in ('Active', 'Passive', 'Busy',
                                                  'ReadOnly', 'ActiveSyncing'):
                             # Keep track of failed tableau processes
-                            failed_proc_str += ("Process %s is %s\n") % \
-                                                 (service_name, service_status)
+                            failed_proc_str += ("Machine %s: Process %s is "
+                                                 "%s\n") % \
+                                                 (machine_displayname,
+                                                 service_name, service_status)
 
                         self._add(agentid, service_name, port, service_status)
                         self.log.debug("system_info_parse: logged: " + \
