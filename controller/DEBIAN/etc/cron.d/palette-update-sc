@@ -1,0 +1,107 @@
+#!/bin/bash -f
+
+# Checks to see if updates have been done for controller and agent
+# and if not, triggers it.
+
+VERBOSE=true
+
+UPDATE_INFO_DIR=/var/palette/updates
+
+CONTROLLER_INFO_FILE=$UPDATE_INFO_DIR/controller
+AGENT_INFO_FILE=$UPDATE_INFO_DIR/agent
+YEAR_DAY=`date +%j`
+
+mkdir -p /var/palette/updates
+
+update_check() {
+    # Checks the timestamp file to see if we need to run an update
+    # based on this file.
+    #
+    # Passed: File used to check to see if we should update.
+    #
+    # Returns:
+    #   true     Time to update
+    #   false    Not time to update
+
+    INFO_FILE=$1
+    if [ ! -f $INFO_FILE ]; then
+        result=true
+        return
+    fi
+
+    TIMESTAMP=`head -1 $INFO_FILE`
+
+    if [ "$YEAR_DAY" != "$TIMESTAMP" ]; then
+        result=true
+        return
+    fi
+#    echo $YEAR_DAY $TIMESTAMP
+
+    result=false
+    return
+}
+
+update_timestamp() {
+    # Passed: File to update
+    # Updates the timestamp file
+    INFO_FILE=$1
+    echo $YEAR_DAY > $INFO_FILE
+    echo `date` >> $INFO_FILE
+    if $VERBOSE; then
+        echo $0 Updated timestamp file: $INFO_FILE
+    fi
+}
+
+###################################################################
+# First check the controller
+update_check $CONTROLLER_INFO_FILE
+if $VERBOSE; then
+    echo $0 Time to update controller: $result
+fi
+
+if $result; then
+    echo $0 Updating controller...
+
+    palette-update --now --fast
+
+    update_timestamp $CONTROLLER_INFO_FILE
+fi
+###################################################################
+update_check $AGENT_INFO_FILE
+echo $0 Time to update the agents: $result
+
+if ! $result; then
+    exit 0
+fi
+
+echo $0 Attempting to update agents
+
+update_result=$(/var/palette/sched/agent_upgrader 2>&1)
+update_status=$?
+
+#if $VERBOSE; then
+#    echo update_result is $update_result
+#fi
+
+if [ $update_status != 0 ]; then
+    echo $0 agent update failed with exit status $update_status.
+    echo $0 error: $update_result
+    exit 1
+fi
+
+if [[ $update_result == *"No such file or directory"* ]]; then
+    echo $0 No agent updates exist.  Try again tomorrow.
+    update_timestamp $AGENT_INFO_FILE
+    exit 0
+fi
+
+if [[ $update_result == *"No agents connected now"* ]]; then
+    # We assume only the primary exists for this configutation.
+    echo $0 No agents connected now. Will try again later.
+    exit 0
+fi
+
+# Updated successfully. We won't try to update the agent
+# again until tomorrow.
+update_timestamp $AGENT_INFO_FILE
+exit 0
