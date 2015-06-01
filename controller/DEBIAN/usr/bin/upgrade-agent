@@ -243,7 +243,10 @@ class Upgrade(object):
         # Make sure the ".download" file from a previous failed attempt doesn't
         # exist.
         target_path_tmp = target_full_pathname + '.download'
-        self.comm.send_cmd("file delete '%s'" % target_path_tmp)
+        try:
+            self.comm.send_cmd("file delete '%s'" % target_path_tmp)
+        except CommException:
+            pass    # file might not exist
 
         # Make sure the target directory exists.
         target_parent_dir = agent['path'].dirname(target_full_pathname)
@@ -273,7 +276,10 @@ class Upgrade(object):
 
         # Delete the old one (though an old one may not exist) before
         # moving the temporary one to its new location.
-        self.comm.send_cmd("file delete '%s'" % target_full_pathname)
+        try:
+            self.comm.send_cmd("file delete '%s'" % target_full_pathname)
+        except CommException:
+            pass    # file might not exist
 
         # order: file move <src-full-pathname> <dest-full-pathname>
         # Will fail if it is a shared file that is busy and wasn't

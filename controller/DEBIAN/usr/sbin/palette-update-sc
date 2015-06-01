@@ -62,7 +62,7 @@ fi
 if $result; then
     echo $0 Updating controller...
 
-    palette-update --now --fast
+    /usr/sbin/palette-update --now --fast
 
     update_timestamp $CONTROLLER_INFO_FILE
 fi
