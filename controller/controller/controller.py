@@ -1621,7 +1621,6 @@ def main():
     config = Config(args.config)
     host = config.get('controller', 'host', default='localhost')
     port = config.getint('controller', 'port', default=9000)
-    agent_port = config.getint('controller', 'agent_port', default=22)
 
     # loglevel at the start, here, is controlled by the INI file,
     # though uses a default.  After the database is available,
@@ -1719,7 +1718,7 @@ def main():
     clicmdclass = CliCmd(server)
     server.cli_cmd = clicmdclass.cli_cmd
 
-    manager = AgentManager(server, port=agent_port)
+    manager = AgentManager(server)
     server.agentmanager = manager
 
     manager.update_last_disconnect_time()
