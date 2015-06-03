@@ -403,7 +403,7 @@ class Agent(TCPServer):
             if len(parts) < 2 or not parts[1].isdigit() or  \
                                                     parts[1] != '200':
                 log.info("Proxy connect failed: %s", response)
-                raise IOError("Proxy connect failed: %s" + response)
+                raise IOError("Proxy connect failed: " + response)
 
     def get_request(self):
         return (self.socket, 'localhost')
