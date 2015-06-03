@@ -432,6 +432,13 @@ class TableauStatusMonitor(threading.Thread):
 
                     host = machine.attrib['name']
                     agentid = Agent.get_agentid_from_host(self.envid, host)
+
+                    if not agentid:
+                        self.log.error("_systeminfo_parse: No such" + \
+                                       " agent host known (yet/any more?): %s",
+                                       host)
+                        continue
+
                     machine_agent = Agent.get_by_id(agentid)
                     if machine_agent:
                         machine_displayname = machine_agent.displayname
