@@ -1,6 +1,7 @@
 import os
 import socket
 import ssl
+import select
 import threading
 import time
 import json
@@ -167,7 +168,7 @@ class AgentManager(threading.Thread):
     def get_type_name(cls, key):
         return AgentManager.AGENT_TYPE_NAMES[key]
 
-    def __init__(self, server, host='0.0.0.0', port=0):
+    def __init__(self, server):
         super(AgentManager, self).__init__()
         self.server = server
         self.config = self.server.config
@@ -181,8 +182,10 @@ class AgentManager(threading.Thread):
         # This agent is now gone
         self.lockobj = threading.RLock()
         self.new_primary_event = threading.Event() # a primary connected
-        self.host = host
-        self.port = port and port or self.PORT
+        self.port_main = self.config.getint('controller', 'agent_port',
+                                            default=self.PORT)
+        self.port_clear = self.config.getint('controller', 'agent_port_clear',
+                                              default=None)
         self.socket = None
         # A dictionary with all AgentConnections with the key being
         # the unique 'conn_id'.
@@ -1059,19 +1062,34 @@ class AgentManager(threading.Thread):
         """Unlocks the agents list"""
         self.lockobj.release()
 
-    def run(self):
+    def _create_listen_socket(self, port, host):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
-            sock.bind((self.host, self.port))
+            sock.bind((host, port))
         except socket.error as ex:
             self.log.error("Fatal error: Could not bind to port %d: %s",
-                           self.port, str(ex))
+                                                               port, str(ex))
             # NOTE: this call to _exit is correct.
             # pylint: disable=protected-access
             os._exit(99)
 
         sock.listen(8)
+        self.log.debug("Listening on port %d on %s", port, host)
+        return sock
+
+    def run(self):
+        # For the main port, listen on all interfaces/public
+        sock_main = self._create_listen_socket(self.port_main, '0.0.0.0')
+
+        socks = [sock_main] # sockets we're listening on
+
+        if self.port_clear:
+            sock_clear = self._create_listen_socket(self.port_clear,
+                                                    '127.0.0.1')
+            socks.append(sock_clear)    # Also listen on this one
+        else:
+            sock_clear = None
 
         session = meta.Session()
         self.server.system.save(SystemConfig.UPGRADING, 'no')
@@ -1079,16 +1097,34 @@ class AgentManager(threading.Thread):
         session.commit()
 
         while True:
-            try:
-                conn, addr = sock.accept()
-            except socket.error:
-                self.log.debug("Accept failed.")
-                continue
+            self.log.debug("about to select on %s", str(socks))
+            readable, _, _ = select.select(socks, [], [])
+            self.log.debug("select returned: %s", readable)
+            for sock in readable:
+                try:
+                    conn, addr = sock.accept()
+                except socket.error:
+                    self.log.debug("Accept failed on socket %d.", sock.fileno())
+                    continue
 
-            tobj = threading.Thread(target=self.handle_agent_connection_pre,
-                                    args=(conn, addr))
-            # Spawn a thread to handle the new agent connection
-            tobj.start()
+                if sock.fileno() == sock_main.fileno():
+                    ssl_enable = self.ssl
+                elif sock_clear.fileno() and \
+                                    sock.fileno() == sock_clear.fileno():
+                    ssl_enable = False
+                else:
+                    self.log.debug("Bad code: sock fileno %d, main %d",
+                                    sock.fileno(), sock_main.fileno())
+                    if sock_clear:
+                        self.log.debug("sock_clear fileno %d",
+                                                    sock_clear.fileno())
+                    # pylint: disable=protected-access
+                    os._exit(101)
+
+                tobj = threading.Thread(target=self.handle_agent_connection_pre,
+                                        args=(conn, addr, ssl_enable))
+                # Spawn a thread to handle the new agent connection
+                tobj.start()
 
     def _shutdown(self, sock):
         try:
@@ -1109,11 +1145,11 @@ class AgentManager(threading.Thread):
 
         self.log.error("Couldn't find agent with fd: %d", filedes)
 
-    def handle_agent_connection_pre(self, conn, addr):
+    def handle_agent_connection_pre(self, conn, addr, ssl_enable):
         """Thread function: spawned on a new connection from an agent."""
 
         try:
-            self.handle_agent_connection(conn, addr)
+            self.handle_agent_connection(conn, addr, ssl_enable)
         except (SystemExit, KeyboardInterrupt, GeneratorExit):
             raise
         except BaseException:
@@ -1126,7 +1162,7 @@ class AgentManager(threading.Thread):
             # pylint: disable=protected-access
             os._exit(90)
 
-    def handle_agent_connection(self, conn, addr):
+    def handle_agent_connection(self, conn, addr, ssl_enable):
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-return-statements
         # pylint: disable=too-many-branches
@@ -1136,7 +1172,7 @@ class AgentManager(threading.Thread):
         except socket.error, ex:
             peername = "Unknown peername: %s" % str(ex)
 
-        if self.ssl:
+        if ssl_enable:
             try:
                 conn.settimeout(self.ssl_handshake_timeout)
                 ssl_sock = ssl.wrap_socket(conn, server_side=True,
