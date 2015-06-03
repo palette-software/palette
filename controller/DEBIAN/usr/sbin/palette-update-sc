@@ -3,7 +3,9 @@
 # Checks to see if updates have been done for controller and agent
 # and if not, triggers it.
 
-VERBOSE=true
+LOG_FILE=/var/log/palette/update-sc.log
+
+VERBOSE=false
 
 UPDATE_INFO_DIR=/var/palette/updates
 
@@ -37,6 +39,7 @@ update_check() {
     fi
 #    echo $YEAR_DAY $TIMESTAMP
 
+
     result=false
     return
 }
@@ -48,7 +51,7 @@ update_timestamp() {
     echo $YEAR_DAY > $INFO_FILE
     echo `date` >> $INFO_FILE
     if $VERBOSE; then
-        echo $0 Updated timestamp file: $INFO_FILE
+        echo $0 Updated timestamp file: $INFO_FILE >> $LOG_FILE
     fi
 }
 
@@ -56,11 +59,11 @@ update_timestamp() {
 # First check the controller
 update_check $CONTROLLER_INFO_FILE
 if $VERBOSE; then
-    echo $0 Time to update controller: $result
+    echo $0 Time to update controller: $result >> $LOG_FILE
 fi
 
 if $result; then
-    echo $0 Updating controller...
+    echo $0 Updating controller... >> $LOG_FILE
 
     /usr/sbin/palette-update --now --fast
 
@@ -68,36 +71,36 @@ if $result; then
 fi
 ###################################################################
 update_check $AGENT_INFO_FILE
-echo $0 Time to update the agents: $result
+echo $0 Time to update the agents: $result >> $LOG_FILE
 
 if ! $result; then
     exit 0
 fi
 
-echo $0 Attempting to update agents
+echo $0 Attempting to update agents >> $LOG_FILE
 
 update_result=$(/var/palette/sched/agent_upgrader 2>&1)
 update_status=$?
 
 #if $VERBOSE; then
-#    echo update_result is $update_result
+#    echo update_result is $update_result >> $LOG_FILE
 #fi
 
 if [ $update_status != 0 ]; then
-    echo $0 agent update failed with exit status $update_status.
-    echo $0 error: $update_result
+    echo $0 agent update failed with exit status $update_status. >> $LOG_FILE
+    echo $0 error: $update_result >> $LOG_FILE
     exit 1
 fi
 
 if [[ $update_result == *"No such file or directory"* ]]; then
-    echo $0 No agent updates exist.  Try again tomorrow.
+    echo $0 No agent updates exist.  Try again tomorrow. >> $LOG_FILE
     update_timestamp $AGENT_INFO_FILE
     exit 0
 fi
 
 if [[ $update_result == *"No agents connected now"* ]]; then
     # We assume only the primary exists for this configutation.
-    echo $0 No agents connected now. Will try again later.
+    echo $0 No agents connected now. Will try again later. >> $LOG_FILE
     exit 0
 fi
 
