@@ -78,7 +78,7 @@
 {
 "envid":"1",
 "key":"event-degraded-min",
-"value":"180"
+"value":"30"
 },
 {
 "envid":"1",
