@@ -63,7 +63,8 @@ if $VERBOSE; then
 fi
 
 if $result; then
-    echo $0 Updating controller... >> $LOG_FILE
+    /bin/date >> $LOG_FILE
+    echo $0 Updating controller if updates are available... >> $LOG_FILE
 
     /usr/sbin/palette-update --now --fast
 
@@ -79,6 +80,7 @@ if ! $result; then
     exit 0
 fi
 
+/bin/date >> $LOG_FILE
 echo $0 Attempting to update agents >> $LOG_FILE
 
 update_result=$(/var/palette/sched/agent_upgrader 2>&1)
