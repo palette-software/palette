@@ -509,7 +509,7 @@ class TableauStatusMonitor(threading.Thread):
                 # Note: The status can never be STOPPED since if Tableau
                 # is stopped, then it won't respond to the systeminfo
                 # GET URL.
-                self._add(agentid, "Status", 0, tableau_status)
+                self._add(agent.agentid, "Status", 0, tableau_status)
             else:
                 self.log.error("_systeminfo_parse: Unexpected child.tag: '%s'",
                     child.tag)
