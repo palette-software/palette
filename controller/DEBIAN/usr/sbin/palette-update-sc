@@ -71,7 +71,9 @@ if $result; then
 fi
 ###################################################################
 update_check $AGENT_INFO_FILE
-echo $0 Time to update the agents: $result >> $LOG_FILE
+if $VERBOSE; then
+    echo $0 Time to update the agents: $result >> $LOG_FILE
+fi
 
 if ! $result; then
     exit 0
