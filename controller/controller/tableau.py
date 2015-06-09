@@ -25,6 +25,23 @@ from agent import Agent
 from event_control import EventControl
 from state_transitions import TRANSITIONS
 from general import SystemConfig
+from util import  success
+
+class SysteminfoException(Exception):
+    def __init__(self, errnum, message):
+        super(SysteminfoException, self).__init__(message)
+        self.errnum = errnum
+        self.message = message
+
+class SysteminfoError(object):
+    CONNECT_FAILURE = 1
+    COMM_FAILURE = 2    # communication failure
+    NOT_FOUND = 3
+    UNEXPECTED_RESPONSE = 4
+    PARSE_FAILURE = 5
+    JSON_PARSE_FAILURE = 6
+    MISSING_TABLEAU_URL = 7
+    INVALID_TABLEAU_URL = 8
 
 class TableauProcess(meta.Base):
     # pylint: disable=no-init
@@ -60,7 +77,7 @@ class TableauStatusMonitor(threading.Thread):
     # before sending out the DEGRADED event.
     EVENT_DEGRADED_MIN_DEFAULT = 120    # in seconds
 
-    SYSTEMINFO_GET_TIMEOUT = 30000    # timeout for http GET of systeminfo.xml
+    SYSTEMINFO_GET_TIMEOUT = 10000  # ms timeout for http GET of systeminfo.xml
 
     LOGGER_NAME = "status"
 
@@ -69,7 +86,6 @@ class TableauStatusMonitor(threading.Thread):
     # can't accept a connection.  Otherwise, Tableau could be up.
     SYSTEMINFO_SUCCESS = 1
     SYSTEMINFO_FAIL = 2
-    SYSTEMINFO_UNKNOWN = 3
 
     # Remember the url that worked with systeminfo to help determine
     # if tableau is really stopped when systeminfo fails.
@@ -373,31 +389,15 @@ class TableauStatusMonitor(threading.Thread):
 
         self.check_status_with_connection(agent)
 
-    def _systeminfo(self, agent):
-        """
-            Returns one of:
-                SYSTEMINFO_SUCCESS
-                SYSTEMINFO_FAIL
-                SYSTEMINFO_UNKNOWN
-        """
-        # Returns SYSTEMINFO_FAIL/UNKNOWN or the xml on success
-        result = self._systeminfo_get(agent)
-
-        if result in (self.SYSTEMINFO_FAIL, self.SYSTEMINFO_UNKNOWN):
-            return result
-
-        return self._systeminfo_parse(agent, result)
-
     def _systeminfo_parse(self, agent, systeminfo_xml):
         # pylint: disable=too-many-return-statements
         # pylint: disable=too-many-branches
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-statements
         """Returns:
-                SYSTEMINFO_UNKNOWN if something is wrong with getting status
-                via systeminfo.
-
                 SYSTEMINFO_SUCCESS if getting status via systeminfo is fine.
+
+            Raises an exception if there is a problem with systeminfo.
         """
         self.log.debug("_systeminfo_parse: Received: %s", systeminfo_xml)
         try:
@@ -406,11 +406,13 @@ class TableauStatusMonitor(threading.Thread):
             self.log.error(
                     "_systeminfo_parse: xml parse error: '%s' from '%s':",
                     str(ex), systeminfo_xml)
-            return self.SYSTEMINFO_UNKNOWN
+            raise SysteminfoException(SysteminfoError.PARSE_FAILURE,
+                                       "xml parse error: '%s'" % (str(ex)))
 
         if root.tag != 'systeminfo':
             self.log.error("_systeminfo_parse: wrong root tag: %s", root.tag)
-            return self.SYSTEMINFO_UNKNOWN
+            raise SysteminfoException(SysteminfoError.PARSE_FAILURE,
+                                      "wrong root tag: %s" % root.tag)
 
         session = meta.Session()
         prev_tableau_status = self.get_tableau_status()
@@ -426,9 +428,12 @@ class TableauStatusMonitor(threading.Thread):
 #                    print "machine:", machine.attrib
                     if not 'name' in machine.attrib:
                         self.log.error("_systeminfo_parse: missing " + \
-                                       "'name' in machine attribute:",
+                                       "'name' in machine attribute: %s",
                                        str(machine.attrib))
-                        return self.SYSTEMINFO_UNKNOWN
+                        raise SysteminfoException(SysteminfoError.PARSE_FAILURE,
+                                       ("missing " + \
+                                       "'name' in machine attribute: %s") % \
+                                       str(machine.attrib))
 
                     host = machine.attrib['name']
                     agentid = Agent.get_agentid_from_host(self.envid, host)
@@ -452,18 +457,30 @@ class TableauStatusMonitor(threading.Thread):
                             self.log.error("_systeminfo_parse: missing " + \
                                            "'status' in machine %s attrib: %s",
                                            host, str(info.attrib))
-                            return self.SYSTEMINFO_UNKNOWN
+                            raise SysteminfoException(
+                                      SysteminfoError.PARSE_FAILURE,
+                                      ("missing " + \
+                                      "'status' in machine %s attrib: %s") % \
+                                      (host, str(info.attrib)))
 
                         if 'worker' in info.attrib:
                             worker_info = info.attrib['worker']
                             parts = worker_info.split(':')
                             if len(parts) == 1 or not parts[1].isdigit():
-                                port = -2
+                                # port = -2
                                 self.log.error("_systeminfo_parse: missing " + \
                                                "':' or not an integer in "
                                                "machine %s for " + \
                                                "worker: %s", host,
                                                str(worker_info))
+
+                                raise SysteminfoException(
+                                               SysteminfoError.PARSE_FAILURE,
+                                               ("Missing " + \
+                                               "':' or not an integer in "
+                                               "machine %s for " + \
+                                               "worker: %s") % \
+                                               (host, str(worker_info)))
                             else:
                                 port = int(parts[1])
 
@@ -488,7 +505,9 @@ class TableauStatusMonitor(threading.Thread):
                 if not 'status' in info:
                     self.log.error("_systeminfo_parse: Missing 'status': %s",
                                     str(info))
-                    return self.SYSTEMINFO_UNKNOWN
+                    raise SysteminfoException(SysteminfoError.PARSE_FAILURE,
+                                              "Missing 'status': %s" % \
+                                              str(info))
 
                 #print "    status:", info['status']
                 tableau_status = info['status']
@@ -519,7 +538,8 @@ class TableauStatusMonitor(threading.Thread):
                         "_systeminfo_parse: Tableau status not valid: %s",
                        str(systeminfo_xml))
             session.rollback()
-            return self.SYSTEMINFO_UNKNOWN
+            raise SysteminfoException(SysteminfoError.PARSE_FAILURE,
+                                      "Tableau status not valid")
 
         if failed_proc_str:
             # Failed process(es) for the event
@@ -533,21 +553,23 @@ class TableauStatusMonitor(threading.Thread):
     def _systeminfo_get(self, agent):
         # pylint: disable=too-many-return-statements
         """Returns:
-            SYSTEMINFO_FAIL
-            SYSTEM_INFO_UNKNOWN or
-            the xml on success
+            - The xml on success
+            Raises SysteminfoException on error.
         """
 
         public_url = self.server.public_url()
         if not public_url:
             self.log.error("_systeminfo_get: no url configured.")
-            return self.SYSTEMINFO_UNKNOWN
+            raise SysteminfoException(SysteminfoError.MISSING_TABLEAU_URL,
+                                      "No Tableau Server URL is configured.")
 
         result = urlparse(public_url)
 
         if not result.scheme:
             self.log.error("_systeminfo_get: Bad url: %s", public_url)
-            return self.SYSTEMINFO_UNKNOWN
+            raise SysteminfoException(SysteminfoError.INVALID_TABLEAU_URL,
+                                      "Invalid Tableau Server URL: %s" % \
+                                      public_url)
 
         if result.port:
             url = "%s://127.0.0.1:%d/admin/systeminfo.xml" % \
@@ -562,7 +584,9 @@ class TableauStatusMonitor(threading.Thread):
                                                 httplib.HTTPException) as ex:
             self.log.info("_systeminfo_get %s failed: %s",
                           url, str(ex))
-            return self.SYSTEMINFO_UNKNOWN
+            raise SysteminfoException(SysteminfoError.COMM_FAILURE,
+                                      "_systeminfo_get %s failed: %s" % \
+                                      (url, str(ex)))
 
         content_type = res.getheader('Content-Type', '').lower()
 
@@ -577,7 +601,9 @@ class TableauStatusMonitor(threading.Thread):
             except ValueError as ex:
                 self.log.error("_systeminfo_get: Bad json returned for %s: %s",
                                url, res.body)
-                return self.SYSTEMINFO_UNKNOWN
+                raise SysteminfoException(SysteminfoError.JSON_PARSE_FAILURE,
+                                          "Invalid json returned for %s: %s" % \
+                                          (url, res.body))
 
             self.log.info("_systeminfo_get: get %s reported failed: %s",
                            url, data)
@@ -585,10 +611,18 @@ class TableauStatusMonitor(threading.Thread):
                 if data['error'].find(
                               "Unable to connect to the remote server") != -1:
                     # We had the tableau URL and it wasn't answering.
-                    # Tableau is probably down, though could be a bad URL.
-                    return self.SYSTEMINFO_FAIL
+                    # Tableau is probably down, though could be the
+                    # wrong URL/port.
+                    raise SysteminfoException(SysteminfoError.CONNECT_FAILURE,
+                                        ("HTTP GET %s reported failed: %s") % \
+                                        (url, data['error']))
 
-            return self.SYSTEMINFO_UNKNOWN
+                if 'status-code' in data and data['status-code'] == 404:
+                    raise SysteminfoException(SysteminfoError.NOT_FOUND,
+                                        ("Page not found: %s") % (url))
+
+            raise SysteminfoException(SysteminfoError.UNEXPECTED_RESPONSE,
+                            "Unexpected response error: %s" % str(data))
 
         return res.body
 
@@ -623,40 +657,120 @@ class TableauStatusMonitor(threading.Thread):
         return False
 
     def check_status_with_connection(self, agent):
-        # pylint: disable=too-many-locals
-        # pylint: disable=too-many-branches
-        # pylint: disable=too-many-return-statements
-        # pylint: disable=too-many-statements
-
         tableau_systeminfo_enabled = self._tableau_systeminfo_enabled()
 
+        data = {}
+
+        public_url = self.server.public_url()
+
         if self.st_config.status_systeminfo and tableau_systeminfo_enabled:
-            result = self._systeminfo(agent)
+            try:
+                # Returns the xml on success
+                xml_result = self._systeminfo_get(agent)
 
-            if result == self.SYSTEMINFO_SUCCESS:
-                self.systeminfo_url_worked = self.server.public_url()
+                # remember this URL worked
+                self.systeminfo_url_worked = public_url
+
+                self._systeminfo_parse(agent, xml_result)    # parse the xml
+
+                # send an event if appropriate
+                self._eventit(agent, data, public_url)
+
                 return
 
-            self.log.info("_system_info failed or unknown: %d", result)
+            except SysteminfoException as ex:
+                if ex.errnum == SysteminfoError.CONNECT_FAILURE:
+                    self.log.info("_system_info: failed to connect")
 
-            if result == self.SYSTEMINFO_UNKNOWN:
-                # systeminfo didn't work, but tableau may not be down.
-                return
+                    # Be as confident as possible that tableau really is stopped
+                    # and the user didn't configure the public url wrong.
+                    # The public url has to work at least once with systeminfo
+                    # before the failure to get systeminfo should mean that
+                    # tableau is really stopped.
+                    if self.systeminfo_url_worked == self.server.public_url():
+                        self.log.error("status-check: systeminfo failed while "
+                                       "enabled in tableau: assuming tableu is "
+                                       "stopped.")
+                        self._set_status_stopped(agent)
+                        data['info'] = "Systeminfo failed to connect, but " + \
+                                       "connect previously worked.  " + \
+                                       "Assuming Tableau is stopped."
 
-            # Be as confident as possible that tableau really is stopped
-            # and the user didn't configure the public url wrong.
-            # The public url has to work at least once with systeminfo
-            # before the failure to get systeminfo should mean that
-            # tableau is really stopped.
-            if tableau_systeminfo_enabled and \
-                    self.systeminfo_url_worked == self.server.public_url():
-                self.log.error("status-check: systeminfo failed while enabled "
-                               "in tableau: assuming tableu is stopped.")
-                self._set_status_stopped(agent)
-                return
+                        self._eventit(agent, data, public_url)
+                        return
 
-            # _systeminfo failed and wasn't enabled, so try to get
-            # tableau status the old-fashioned way.
+                # systeminfo didn't work, but we don't know if tableau
+                # being down is the cause.  The exception could be due to
+                # a parse error, bad url, timeout, etc.
+                data['error'] = ex.message
+                if ex.errnum == SysteminfoError.PARSE_FAILURE:
+                    # Add the raw XML to the error.
+                    data['error'] += ' XML: ' + str(xml_result)
+                self._eventit(agent, data, public_url)
+
+                if self.st_config.status_systeminfo_only:
+                    self.log.info("systeminfo failed but not allowed to use "
+                                  "tabadmin status -v")
+                    self._set_status_unknown(agent,
+                                "systeminfo failed but configured to not "
+                                 "allow use of tabadmin status -v")
+                    return
+
+        # Get tableau status via 'tabadmin status -v' instead.
+        self._get_status_tabadmin(agent)
+        return
+
+    def _set_status_unknown(self, agent, body):
+        """Remove all status and set tableau status to UNKNOWN."""
+
+        prev_tableau_status = self.get_tableau_status()
+        self.remove_all_status()
+        tableau_status = TableauProcess.STATUS_UNKNOWN
+        self._add(agent.agentid, "Status", 0, tableau_status)
+        self._finish_status(agent, tableau_status, prev_tableau_status, body)
+
+    def _eventit(self, agent, data, public_url):
+        """Send if event failed/okay event as appropriate."""
+
+
+        notification = self.server.notifications.get("systeminfo")
+
+        if success(data):
+            if notification.color == 'red':
+                adata = agent.todict()
+                if 'info' in data:
+                    adata['info'] = data['info']
+                self.server.event_control.gen(
+                                EventControl.SYSTEMINFO_OKAY, adata)
+                notification.modification_time = func.now()
+                notification.color = 'green'
+                notification.description = public_url
+                meta.Session.commit()
+        else:
+            # Failed
+            if notification.color != 'red' or \
+                                notification.description != public_url:
+                # If the public url has changed, then tell them this
+                # one didn't work (either).  We can potentially send
+                # multiple of these events if they keep entering bad
+                # URLs.
+                adata = agent.todict()
+                adata['error'] = data['error']
+                self.server.event_control.gen(
+                            EventControl.SYSTEMINFO_FAILED, adata)
+                notification.modification_time = func.now()
+                notification.color = 'red'
+                notification.description = public_url
+                meta.Session.commit()
+
+    def _get_status_tabadmin(self, agent):
+        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-statements
+
+        """Try to get tableau status the old-fashioned way via
+            'tabadmin status -v'.
+        """
 
         agentid = agent.agentid
 
