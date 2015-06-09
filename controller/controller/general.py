@@ -71,6 +71,8 @@ class SystemConfig(object):
     CONTROLLER_INITIAL_START = "controller-initial-start"
 
     STATUS_SYSTEMINFO = 'status-systeminfo'
+    STATUS_SYSTEMINFO_ONLY = 'status-systeminfo-only'
+
 
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
@@ -246,6 +248,8 @@ class SystemConfig(object):
             return self._getstring(self.CONTROLLER_INITIAL_START, default="")
         if name == 'status_systeminfo':
             return self._getyesno(self.STATUS_SYSTEMINFO, default='yes')
+        if name == 'status_systeminfo_only':
+            return self._getyesno(self.STATUS_SYSTEMINFO_ONLY, default='no')
         raise AttributeError(name)
 
     def todict(self):
