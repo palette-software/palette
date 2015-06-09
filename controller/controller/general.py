@@ -72,7 +72,7 @@ class SystemConfig(object):
 
     STATUS_SYSTEMINFO = 'status-systeminfo'
     STATUS_SYSTEMINFO_ONLY = 'status-systeminfo-only'
-
+    STATUS_SYSTEMINFO_TIMEOUT_MS = 'status-systeminfo-timeout-ms'
 
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
@@ -250,6 +250,9 @@ class SystemConfig(object):
             return self._getyesno(self.STATUS_SYSTEMINFO, default='yes')
         if name == 'status_systeminfo_only':
             return self._getyesno(self.STATUS_SYSTEMINFO_ONLY, default='no')
+        if name == 'status_systeminfo_timeout_ms':
+            return self._getint(self.STATUS_SYSTEMINFO_TIMEOUT_MS,
+                                default=10000)
         raise AttributeError(name)
 
     def todict(self):

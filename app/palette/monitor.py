@@ -400,7 +400,11 @@ class MonitorApplication(PaletteRESTApplication):
                         agent_worker_problem = True
                         continue
 
-                    proc['pid'] = tab_entry.pid
+                    if tab_entry.pid > 0:
+                        proc['pid'] = tab_entry.pid
+                    else:
+                        proc['pid'] = tab_entry.status
+
                     proc['name'] = tab_entry.name
                     proc['status'] = tab_entry.status
                     # 'tabadminstatus -v' reports processes status with

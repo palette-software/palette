@@ -36,12 +36,13 @@ class SysteminfoException(Exception):
 class SysteminfoError(object):
     CONNECT_FAILURE = 1
     COMM_FAILURE = 2    # communication failure
-    NOT_FOUND = 3
-    UNEXPECTED_RESPONSE = 4
-    PARSE_FAILURE = 5
-    JSON_PARSE_FAILURE = 6
-    MISSING_TABLEAU_URL = 7
-    INVALID_TABLEAU_URL = 8
+    COMM_TIMEDOUT = 3    # communication failure
+    NOT_FOUND = 4
+    UNEXPECTED_RESPONSE = 5
+    PARSE_FAILURE = 6
+    JSON_PARSE_FAILURE = 7
+    MISSING_TABLEAU_URL = 8
+    INVALID_TABLEAU_URL = 9
 
 class TableauProcess(meta.Base):
     # pylint: disable=no-init
@@ -76,8 +77,6 @@ class TableauStatusMonitor(threading.Thread):
     # Minimum amount of time that must elapse while DEGRADED
     # before sending out the DEGRADED event.
     EVENT_DEGRADED_MIN_DEFAULT = 120    # in seconds
-
-    SYSTEMINFO_GET_TIMEOUT = 10000  # ms timeout for http GET of systeminfo.xml
 
     LOGGER_NAME = "status"
 
@@ -577,9 +576,11 @@ class TableauStatusMonitor(threading.Thread):
         else:
             url = "%s://127.0.0.1/admin/systeminfo.xml" % (result.scheme)
 
+        systeminfo_timeout_ms = self.st_config.status_systeminfo_timeout_ms
+
         try:
             res = agent.connection.http_send_get(url,
-                                        timeout=self.SYSTEMINFO_GET_TIMEOUT)
+                                                 timeout=systeminfo_timeout_ms)
         except (socket.error, IOError, exc.HTTPException,
                                                 httplib.HTTPException) as ex:
             self.log.info("_systeminfo_get %s failed: %s",
@@ -616,6 +617,11 @@ class TableauStatusMonitor(threading.Thread):
                     raise SysteminfoException(SysteminfoError.CONNECT_FAILURE,
                                         ("HTTP GET %s reported failed: %s") % \
                                         (url, data['error']))
+
+                if data['error'].find('The operation has timed out') != -1:
+                    raise SysteminfoException(SysteminfoError.COMM_TIMEDOUT,
+                            "HTTP GET Timed out after %.1f seconds on %s" % \
+                                    (systeminfo_timeout_ms/1000., url))
 
                 if 'status-code' in data and data['status-code'] == 404:
                     raise SysteminfoException(SysteminfoError.NOT_FOUND,
@@ -811,6 +817,12 @@ class TableauStatusMonitor(threading.Thread):
         # Otherwise, the table could be empty temporarily.
 
         tableau_status = None
+        failed_proc_str = ""
+        machine_agent = Agent.get_by_id(agentid)
+        if machine_agent:
+            machine_displayname = machine_agent.displayname
+        else:
+            machine_displayname = "Unknown"
         for line in lines:
             line = line.strip()
             parts = line.split(' ')
@@ -818,26 +830,47 @@ class TableauStatusMonitor(threading.Thread):
             # 'Tableau Server Repository Database' (1764) is running.
             if parts[0] == "'Tableau" and parts[1] == 'Server':
                 if agentid:
-                    pattern = r"'Tableau Server (.*)' \(([0-9]*)\) is (.*)\."
+                    pattern = r"'Tableau Server (?P<service>.*)'" + \
+                              r"\s(\((?P<pid>[0-9]*)\))?(status)?\s?" + \
+                              r"is\s(?P<status>.*)\."
                     match = re.search(pattern, line)
                     if not match:
                         self.log.debug("status-check: unmatched line: %s",
                                         line)
                         continue
 
-                    status = match.group(3)    # "running" or "running..."
-                    pid_str = match.group(2)   # "1764"
-                    try:
-                        pid = int(pid_str)
-                    except StandardError:
-                        self.log.error("status-check: Bad PID: " + pid_str)
+                    service = match.group('service')        # "Repository"
+                    if not 'service':
+                        self.log.debug("status-check: empty service in " + \
+                                       "line: %s", line)
                         continue
 
-                    name = match.group(1)     # "Repository'"
+                    pid_str = match.group('pid')   # "1764"
+                    if pid_str:
+                        try:
+                            pid = int(pid_str)
+                        except StandardError:
+                            self.log.error("status-check: Bad PID: " + pid_str)
+                            continue
+                    else:
+                        pid = -2
 
-                    self._add(agentid, name, pid, status)
-                    self.log.debug("status-check: logged: %s, %d, %s", name,
+                    status = match.group('status') # "running" or "running..."
+                    if not 'status':
+                        self.log.debug("status-check: empty 'status' " + \
+                                       "in line: %s", line)
+                        continue
+
+                    self._add(agentid, service, pid, status)
+                    self.log.debug("status-check: logged: %s, %d, %s", service,
                                    pid, status)
+
+                    if status.find('running') == -1:
+                        # Keep track of failed tableau processes
+                        failed_proc_str += ("Machine %s: Process %s is "
+                                            "%s\n") % \
+                                            (machine_displayname,
+                                            service, status)
                 else:
                     # FIXME: log error
                     pass
@@ -856,6 +889,11 @@ class TableauStatusMonitor(threading.Thread):
                     # A hostname or IP address is specified: new section
                     host = parts[0].strip().replace(':', '')
                     agentid = Agent.get_agentid_from_host(self.envid, host)
+                    machine_agent = Agent.get_by_id(agentid)
+                    if machine_agent:
+                        machine_displayname = machine_agent.displayname
+                    else:
+                        machine_displayname = "Unknown"
                 else:
                     # Examples:
                     #   "Connection error contacting worker 1"
@@ -876,6 +914,10 @@ class TableauStatusMonitor(threading.Thread):
                            str(lines))
             session.rollback()
             return
+
+        if failed_proc_str:
+            # Failed process(es) for the event
+            body['info'] = failed_proc_str
 
         self._finish_status(agent, tableau_status, prev_tableau_status, body)
 
