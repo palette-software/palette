@@ -7,7 +7,7 @@ import os
 from paste.auth.auth_tkt import AuthTKTMiddleware
 from paste.proxy import Proxy
 
-from akiri.framework import Application
+from akiri.framework import Application, env
 from akiri.framework.admin import LogoutApplication
 from akiri.framework.middleware.auth import AuthForbiddenMiddleware
 from akiri.framework.middleware.auth import AuthRedirectMiddleware
@@ -122,6 +122,7 @@ if __name__ == '__main__':
     router.prepend_route(r'/images/', DirectoryApp(imgdir), profile=False)
     dbgdir = os.path.join(docroot, 'd')
     router.prepend_route(r'/d/', DirectoryApp(dbgdir), profile=False)
+    router.prepend_route(r'/env\Z', env, profile=False)
 
     # reloader setup
     from akiri.framework import reloader
