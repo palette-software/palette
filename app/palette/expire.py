@@ -5,22 +5,34 @@ from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework import GenericWSGI
 import akiri.framework.sqlalchemy as meta
 
-from controller.licensing import LicenseEntry
+from controller.licensing import LicenseEntry, LicenseManager
 from controller.agent import Agent
 
 LICENSE_EXPIRED = 'https://licensing.palette-software.com/license-expired'
 TRIAL_EXPIRED = 'https://licensing.palette-software.com/trial-expired'
+PHONEHOME_FAILED = \
+                'https://licensing.palette-software.com/licensing-unavailable'
 
 class ExpireMiddleware(GenericWSGI):
-    """Check for expired trials/licenses and redirect if necessary."""
+    """Check for expired trials/licenses/phonehome-fialures and
+       redirect if necessary."""
     def service(self, req):
-        if req.palette_domain.expiration_time is None \
-                or datetime.utcnow() < req.palette_domain.expiration_time:
-            return None
-        if req.palette_domain.trial:
-            location = TRIAL_EXPIRED
+#        print "contact_time:", req.palette_domain.contact_time
+
+        silence_time = (datetime.utcnow() - \
+                        req.palette_domain.contact_time).total_seconds()
+
+        if req.palette_domain.expiration_time and \
+                datetime.utcnow() > req.palette_domain.expiration_time:
+            if req.palette_domain.trial:
+                location = TRIAL_EXPIRED
+            else:
+                location = LICENSE_EXPIRED
+        elif req.palette_domain.contact_time and \
+              silence_time > LicenseManager.MAX_SILENCE_TIME:
+            location = PHONEHOME_FAILED
         else:
-            location = LICENSE_EXPIRED
+            return None
 
         if req.palette_domain.license_key:
             location += '?key=' + req.palette_domain.license_key

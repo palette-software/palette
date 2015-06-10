@@ -15,6 +15,7 @@ from domain import Domain
 from general import SystemConfig
 from event_control import EventControl
 from profile import UserProfile
+from licensing import LicenseManager
 from util import UNDEFINED
 
 from mako.template import Template
@@ -142,6 +143,7 @@ class AlertEmail(object):
         # pylint: disable=too-many-branches
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-statements
+        # pylint: disable=too-many-return-statements
 
         subject = event_entry.email_subject
         if subject == None:
@@ -214,7 +216,7 @@ class AlertEmail(object):
         if not to_emails and not bcc:
             self.log.debug(
                 "No admin users exist with enabled email addresses.  " + \
-                "Not sending: Subject: %s, Message: %s" % (subject, message))
+                "Not sending: Subject: %s, Message: %s", subject, message)
             return
 
         # Send only PHONE-HOME related events if their palette license
@@ -224,10 +226,19 @@ class AlertEmail(object):
                                    EventControl.EMAIL_TEST]:
             entry = Domain.getone()
             if entry.expiration_time and \
-                                datetime.datetime.now() > entry.expiration_time:
+                            datetime.datetime.utcnow() > entry.expiration_time:
                 self.log.debug("License expired. " +
-                                    "Not sending: Subject: %s, Message: %s" % \
-                                    (subject, message))
+                                    "Not sending: Subject: %s, Message: %s",
+                                    subject, message)
+                return
+
+            silence_time = (datetime.datetime.utcnow() - \
+                                        entry.contact_time).total_seconds()
+            if silence_time > LicenseManager.MAX_SILENCE_TIME:
+                self.log.debug("Phonehome contact time is %d > %d. " +
+                                "Not sending: Subject: %s, Message: %s",
+                                silence_time, LicenseManager.MAX_SILENCE_TIME,
+                                subject, message)
                 return
 
         # Convert from Unicode to utf-8
