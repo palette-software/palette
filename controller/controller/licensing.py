@@ -326,7 +326,7 @@ class LicenseManager(Manager):
             body = licensing_send('/license', data)
         except IOError as ex:
             logging.debug("license send exception failed with status %s", ex)
-            self._callfailed(str(ex), str(ex))
+            self._callfailed(str(ex))
             return {"error": str(ex)}
         except LicenseException as ex:
             logging.debug(
@@ -397,23 +397,7 @@ class LicenseManager(Manager):
             session.commit()
             return
 
-        if entry.contact_time:
-#            print "contact_time:", entry.contact_time
-#            print "timestamp thing:", datetime.datetime.now()
-            silence_time = (datetime.datetime.now() - \
-                            entry.contact_time).total_seconds()
-            if silence_time <= self.MAX_SILENCE_TIME:
-                logging.debug("Silence time: %d <= max of: %d",
-                              silence_time, self.MAX_SILENCE_TIME)
-                # If they had no expiration time (like on initial install)
-                # then expire it now.
-                if not entry.expiration_time:
-                    entry.expiration_time = func.now()
-                session.commit()
-                return
-            data['failure_hours'] = int((datetime.datetime.now() - \
-                                    entry.contact_time).total_seconds() / 3600)
-        else:
+        if not entry.contact_time:
             # Never connected successfully to the license server.
             # Could happen on initial installation.
             # Give them 72 hours to get this sorted out by pretending
@@ -422,9 +406,26 @@ class LicenseManager(Manager):
             session.commit()
             return
 
-        session.commit()
+        silence_time = (datetime.datetime.utcnow() - \
+                            entry.contact_time).total_seconds()
+#        print "contact_time:", entry.contact_time
+#        print "timestamp thing:", datetime.datetime.utcnow()
+#        print "silence_time:", silence_time, "max:", self.MAX_SILENCE_TIME
+        if silence_time <= self.MAX_SILENCE_TIME:
+            # It failed to phone home, but we have more time to try.
+            logging.debug("silence_time: %d <= max: %d",
+                              silence_time, self.MAX_SILENCE_TIME)
+            # If they had no expiration time (like on initial install)
+            # then expire it now.
+            if not entry.expiration_time:
+                entry.expiration_time = func.now()
+            session.commit()
+            return
 
-        logging.debug("failure hours was longer than: %d : %d",
+        data['failure_hours'] = int((datetime.datetime.utcnow() - \
+                                    entry.contact_time).total_seconds() / 3600)
+
+        logging.debug("failure hours was longer than %d: %d",
                       self.MAX_SILENCE_TIME, data['failure_hours'])
 
         notification = self.server.notifications.get("phonehome")
