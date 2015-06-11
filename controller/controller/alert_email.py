@@ -232,14 +232,16 @@ class AlertEmail(object):
                                     subject, message)
                 return
 
-            silence_time = (datetime.datetime.utcnow() - \
+            if entry.contact_time:
+                silence_time = (datetime.datetime.utcnow() - \
                                         entry.contact_time).total_seconds()
-            if silence_time > LicenseManager.MAX_SILENCE_TIME:
-                self.log.debug("Phonehome contact time is %d > %d. " +
-                                "Not sending: Subject: %s, Message: %s",
-                                silence_time, LicenseManager.MAX_SILENCE_TIME,
-                                subject, message)
-                return
+                if silence_time > LicenseManager.MAX_SILENCE_TIME:
+                    self.log.debug("Phonehome contact time is %d > %d. " +
+                                    "Not sending: Subject: %s, Message: %s",
+                                    silence_time,
+                                    LicenseManager.MAX_SILENCE_TIME,
+                                    subject, message)
+                    return
 
         # Convert from Unicode to utf-8
         message = message.encode('utf-8')    # prevent unicode exception
