@@ -159,7 +159,7 @@ class MonitorApplication(PaletteRESTApplication):
     def license_info(self, agentid):
         entry = LicenseEntry.get_by_agentid(agentid)
         if entry is None:
-            return {'value':'unknown', 'color':'yellow'}
+            return {'value':'unknown', 'color':'green'}
         if entry.valid():
             return {'value':'valid', 'color':'green'}
         else:
