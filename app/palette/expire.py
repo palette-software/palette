@@ -26,11 +26,11 @@ class ExpireMiddleware(GenericWSGI):
                 location = TRIAL_EXPIRED
             else:
                 location = LICENSE_EXPIRED
-        elif req.palette_domain.contact_time:
-            silence_time = (datetime.utcnow() - \
-                        req.palette_domain.contact_time).total_seconds()
-            if silence_time > LicenseManager.MAX_SILENCE_TIME:
-                location = PHONEHOME_FAILED
+        elif req.palette_domain.contact_time and \
+                    (datetime.utcnow() - \
+                    req.palette_domain.contact_time).total_seconds() > \
+                                            LicenseManager.MAX_SILENCE_TIME:
+            location = PHONEHOME_FAILED
         else:
             return None
 
