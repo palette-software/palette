@@ -1,4 +1,4 @@
-PKG1 = akiri.framework_0.4.8_all.deb
+PKG1 = akiri.framework_0.5.0_all.deb
 POOL_DIR = dpkg/pool
 DOWNLOAD_DIR = https://www.akirisolutions.com/download/framework/
 PREBUILT_PACKAGES = $(POOL_DIR)/$(PKG1)
