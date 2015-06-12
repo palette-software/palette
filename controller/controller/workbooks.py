@@ -1,4 +1,5 @@
 import os
+import unicodedata
 
 from sqlalchemy import Column, BigInteger, Integer, Boolean, String, DateTime
 from sqlalchemy import UniqueConstraint
@@ -142,6 +143,8 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
         filename = filename.replace(' ', '_')
         filename = filename.replace('/', '_')
         filename = filename.replace('\\', '_')
+        filename = unicodedata.normalize('NFKD', filename).encode('ascii',
+                                                                  'ignore')
         return filename
 
     @classmethod
