@@ -4,6 +4,9 @@ from mako.lookup import TemplateLookup
 from webob import exc
 
 from akiri.framework import GenericWSGIApplication
+import akiri.framework.sqlalchemy as meta
+
+from controller.profile import UserProfile
 
 class Page(GenericWSGIApplication):
     """Generic Page base class - for both 'internal' and 'external' pages."""
@@ -19,6 +22,9 @@ class Page(GenericWSGIApplication):
         if obj is None:
             obj = self
         template = lookup.get_template(self.TEMPLATE)
+        if req.remote_user:
+            UserProfile.update_timestamp(req.remote_user)
+            meta.Session.commit()
         return template.render(obj=obj, req=req)
 
     def service_GET(self, req):

@@ -1,3 +1,5 @@
+import datetime
+
 from sqlalchemy import Column, String, Integer, BigInteger, DateTime, Boolean
 from sqlalchemy import func
 from sqlalchemy.schema import ForeignKey
@@ -95,6 +97,10 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
                  'email_level':1,
                  'email':None, 'salt':'', 'roleid':3, # SUPER_ADMIN
                  'system_user_id':0}]
+
+    @classmethod
+    def update_timestamp(cls, entry):
+        entry.timestamp = datetime.datetime.utcnow()
 
 class Role(meta.Base, BaseMixin):
     __tablename__ = 'roles'
