@@ -1085,8 +1085,7 @@ class AgentManager(threading.Thread):
         socks = [sock_main] # sockets we're listening on
 
         if self.port_clear:
-            sock_clear = self._create_listen_socket(self.port_clear,
-                                                    '127.0.0.1')
+            sock_clear = self._create_listen_socket(self.port_clear, '0.0.0.0')
             socks.append(sock_clear)    # Also listen on this one
         else:
             sock_clear = None
