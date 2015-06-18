@@ -1409,6 +1409,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             agent.agent_type = aconn.agent_type \
                 = AgentManager.AGENT_TYPE_PRIMARY
 
+            # fixme
+            if pinfo[tableau_install_dir] is None:
+                pinfo[tableau_install_dir] = \
+                        r'C:\Program Files (x86)\Tableau\Tableau Server\9.0'
             if pinfo[tableau_install_dir].find(':') == -1:
                 self.log.error("agent %s is missing ':': %s for %s",
                                aconn.displayname, tableau_install_dir,
@@ -1490,7 +1494,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """Configure the maintenance and archive servers."""
         if agent.agent_type in (AgentManager.AGENT_TYPE_PRIMARY,
                                 AgentManager.AGENT_TYPE_WORKER):
-            # Put into a known state if it could possibley be a
+            # Put into a known state if it could possibly be a
             # gateway server.
             body = self.maint("stop", agent=agent, send_alert=False)
             if body.has_key("error"):
