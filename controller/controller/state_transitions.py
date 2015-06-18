@@ -20,8 +20,7 @@ TRANSITIONS = {
 
         STATUS_STOPPED:
             {'state': StateManager.STATE_STOPPED,
-             'events': EventControl.INIT_STATE_STOPPED,
-             'maint-start': True},    # start the maint server
+             'events': EventControl.INIT_STATE_STOPPED},
 
         STATUS_DEGRADED:
             {'state': StateManager.STATE_DEGRADED,
