@@ -29,11 +29,19 @@ class AuthManager(Manager):
         for row in data['']:
             sysid = int(row[0])
             login_at = odbc2dt(row[1])
-            admin_level = (row[2] is None) and 0 or int(row[2])
+            if row[2] is None:
+                admin_level = 0
+            else:
+                admin_level = int(row[2])
             licensing_role_id = License.UNLICENSED
             if not row[3] is None:
                 licensing_role_id = int(row[3])
-            publisher = ((not row[4] is None) and (row[4] != Publisher.DENY))
+            if row[4] is None:
+                publisher = False
+            elif row[4] != Publisher.DENY:
+                publisher = True
+            else:
+                publisher = False
             if sysid in cache:
                 obj = cache[sysid]
                 obj.update_login_at(login_at)
