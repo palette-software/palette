@@ -39,6 +39,7 @@ function ($, template, common, paging, items, Dropdown, EditBox)
         Dropdown.setupAll(data);
 
         paging.config(data);
+        paging.bind(wbPageCallback);
         paging.show();
         common.setupEventDropdowns();
 
@@ -70,6 +71,14 @@ function ($, template, common, paging, items, Dropdown, EditBox)
             },
             error: common.ajaxError
         });
+    }
+
+    /*
+     * wbPageCallback(n)
+     * To be called by the paging module when the current page is changed.
+     */
+    function wbPageCallback(n) {
+        query();
     }
 
     query();
