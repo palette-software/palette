@@ -196,7 +196,8 @@ class TableauStatusMonitor(threading.Thread):
                        prev_state, str(new_state_info),
                        prev_tableau_status, tableau_status)
 
-        if 'state' in new_state_info:
+        if 'state' in new_state_info and \
+                                        new_state_info['state'] != prev_state:
             self.stateman.update(new_state_info['state'])
 
         if 'events' not in new_state_info:
@@ -334,12 +335,12 @@ class TableauStatusMonitor(threading.Thread):
                 status_request_interval = \
                                 self.STATUS_REQUEST_INTERVAL_DEFAULT
 
-            new_primary = self.manager.new_primary_event.wait(
+            new_primary = self.manager.check_status_event.wait(
                                         status_request_interval)
 
             self.log.debug("status-check: new_primary: %s", new_primary)
             if new_primary:
-                self.manager.new_primary_event.clear()
+                self.manager.clear_check_status_event()
 
             session = meta.Session()
             try:

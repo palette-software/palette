@@ -871,18 +871,19 @@ class CliHandler(socketserver.StreamRequestHandler):
             else:
                 body['stdout'] = rotate_info
 
-            # Restore finished successfully.  The main state has
-            # already been set.
+            # Restore finished successfully.
+            self.server.statusmon.check_status_with_connection(agent)
+
             self.server.event_control.gen(EventControl.RESTORE_FINISHED,
                                           dict(body.items() + data.items()),
                                           userid=userid)
         else:
+            self.server.statusmon.check_status_with_connection(agent)
+
             self.server.event_control.gen(EventControl.RESTORE_FAILED,
                                           dict(body.items() + data.items()),
                                           userid=userid)
 
-        # The state was updated in restore_cmd so we don't need
-        # to wait for 'tabadmin status -v' now.
         aconn.user_action_unlock()
 
         self.report_status(body)
@@ -1439,6 +1440,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             exit_status = 1 # if no 'exit-status' then consider it failed.
 
+        self.server.statusmon.check_status_with_connection(agent)
+
         data = agent.todict()
         if exit_status:
             # The "tableau start" failed.  Go back to "STOPPED" state.
@@ -1453,11 +1456,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.server.event_control.gen(EventControl.STATE_STARTED,
                                           data, userid=userid)
 
-        # Get the latest status from tabadmin
-        self.server.statusmon.check_status_with_connection(agent)
-
         aconn.user_action_unlock()
-        # STARTED is set by the status monitor since it really knows the status.
+
         self.report_status(body)
 
     def pre_stop(self, action, agent, userid, license_check, backup_first):
@@ -1619,24 +1619,22 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         data = agent.todict()
 
-        if failed(body):
-            # We set the state to stopped, even though the stop failed.
-            # This will be corrected by the 'tabadmin status -v' processing
-            # later.
-            stateman.update(StateManager.STATE_STOPPED)
-            self.server.event_control.gen(EventControl.RESTART_FAILED,
-                                          dict(body.items() + data.items()),
-                                          userid=userid)
-        else:
+        if success(body):
             stateman.update(StateManager.STATE_STARTED)
             self.server.event_control.gen(EventControl.RESTART_FINISHED,
                                           dict(body.items() + data.items()),
                                           userid=userid)
+            aconn.user_action_unlock()
+            # Trigger getting current status from Tableau
+            self.server.agentmanager.trigger_check_status_event()
+        else:
+            self.server.event_control.gen(EventControl.RESTART_FAILED,
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
+            # Get the latest status from tabadmin which sets the main state.
+            self.server.statusmon.check_status_with_connection(agent)
 
-        # Get the latest status from tabadmin which sets the main state.
-        self.server.statusmon.check_status_with_connection(agent)
-
-        aconn.user_action_unlock()
+            aconn.user_action_unlock()
 
         self.report_status(body)
 
@@ -1688,6 +1686,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                              license_check, backup_first):
             return
 
+
         stateman = self.server.state_manager
         # Note: Make sure to set the state in the database before
         # we report "OK" back to the client since "OK" to the UI client
@@ -1708,24 +1707,13 @@ class CliHandler(socketserver.StreamRequestHandler):
                 else:
                     body['info'] += "\n" + msg
 
-        # We set the state to stop, even though the stop failed.
-        # This will be corrected by the 'tabadmin status -v' processing
-        # later.
-        stateman.update(StateManager.STATE_STOPPED)
-        self.server.event_control.gen(EventControl.STATE_STOPPED,
+        self.server.statusmon.check_status_with_connection(agent)
+        if success(body):
+            self.server.event_control.gen(EventControl.STATE_STOPPED,
                                       agent.todict(), userid=userid)
 
-        # Get the latest status from tabadmin which sets the main state.
-        self.server.statusmon.check_status_with_connection(agent)
-
-        # If the 'stop' had failed, set the status to what we just
-        # got back from 'tabadmin status ...'
-        if failed(body):
-            reported_status = self.server.statusmon.get_tableau_status()
-            stateman.update(reported_status)
-
+        # fixme: Add STOP_FAILED event?
         aconn.user_action_unlock()
-
         self.report_status(body)
 
     @usage('maint start|stop')

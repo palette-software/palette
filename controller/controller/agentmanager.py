@@ -181,7 +181,11 @@ class AgentManager(threading.Thread):
         self.daemon = True
         # This agent is now gone
         self.lockobj = threading.RLock()
-        self.new_primary_event = threading.Event() # a primary connected
+
+        # Trigger retrieval of tableau status for cases such as
+        # primary connected, "start" finished, etc.
+        self.check_status_event = threading.Event()
+
         self.port_main = self.config.getint('controller', 'agent_port',
                                             default=self.PORT)
         self.port_clear = self.config.getint('controller', 'agent_port_clear',
@@ -1296,7 +1300,7 @@ class AgentManager(threading.Thread):
             # Tell the status thread to start getting status on
             # the new primary.
             if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-                self.new_primary_event.set()
+                self.trigger_check_status_event()
 
             make_transient(agent)
 
@@ -1333,6 +1337,12 @@ class AgentManager(threading.Thread):
                 pass
 
             meta.Session.remove()   # does a rollback()
+
+    def trigger_check_status_event(self):
+        self.check_status_event.set()
+
+    def clear_check_status_event(self):
+        self.check_status_event.clear()
 
     def setup_agent(self, agent):
         aconn = agent.connection
