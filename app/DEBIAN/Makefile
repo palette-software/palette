@@ -22,6 +22,7 @@ all:
 
 clean:
 	rm -rf $(PACKAGE)-* *.tar.gz *.dsc *.deb *.changes
+	rm -rf opt var
 .PHONY: clean
 
 version:
