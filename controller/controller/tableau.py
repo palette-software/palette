@@ -685,7 +685,18 @@ class TableauStatusMonitor(threading.Thread):
                 return
 
             except SysteminfoException as ex:
-                if ex.errnum == SysteminfoError.CONNECT_FAILURE:
+                if ex.errnum == SysteminfoError.NOT_FOUND and \
+                            self.systeminfo_url_worked == \
+                                            self.server.public_url() and \
+                            self.stateman.get_state() == \
+                                            StateManager.STATE_STOPPED:
+                    # Could be the maintenance web server responding with
+                    # "Not found" since and tableau is stopped.
+                    self.log.info("_system_info: Page not found and "
+                        "it previously worked, but the state is STOPPED so not "
+                        "sending systeminfo event.")
+                    return
+                elif ex.errnum == SysteminfoError.CONNECT_FAILURE:
                     self.log.info("_system_info: failed to connect")
 
                     # Be as confident as possible that tableau really is stopped
