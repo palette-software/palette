@@ -669,7 +669,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 info += '\n' + delete_body['error']
 
         if restore_success:
-            self.state_manager.update(StateManager.STATE_STARTED)
+#            self.state_manager.update(StateManager.STATE_STARTED)
             self.event_control.gen(EventControl.STATE_STARTED, data,
                                    userid=userid)
         else:
@@ -687,10 +687,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 info += "\n" + msg
 
                  # The "tableau start" failed.  Go back to the "STOPPED" state.
-                self.state_manager.update(StateManager.STATE_STOPPED)
+#                self.state_manager.update(StateManager.STATE_STOPPED)
             else:
                 # The "tableau start" succeeded
-                self.state_manager.update(StateManager.STATE_STARTED)
+#                self.state_manager.update(StateManager.STATE_STARTED)
                 self.event_control.gen(EventControl.STATE_STARTED, data,
                                        userid=userid)
 
