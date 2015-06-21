@@ -1172,7 +1172,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                        "FAIL: Main state is " + state)
                 return
 
-        if not self.server.odbc_ok() and action not in ['info', 'verify']:
+        if not self.server.odbc_ok() and action not in ['info', 'verify',
+                                                                    'repair']:
             self.error(clierror.ERROR_WRONG_STATE,
                        "FAIL: Main state is " + state)
             return
