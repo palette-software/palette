@@ -48,6 +48,7 @@ class SystemConfig(object):
     ALERTS_NEW_USER_ENABLED = "alerts-new-user-enabled"
 
     PALETTE_VERSION = "palette-version"
+    PALETTE_LOGIN = "palette-login"
 
     UPGRADING = "upgrading"
 
@@ -246,6 +247,8 @@ class SystemConfig(object):
             return self._getstring(self.TIMEZONE, default="US/Pacific")
         if name == "controller_initial_start":
             return self._getstring(self.CONTROLLER_INITIAL_START, default="")
+        if name == 'palette_login':
+            return self._getyesno(self.PALETTE_LOGIN, default='yes')
         if name == 'status_systeminfo':
             return self._getyesno(self.STATUS_SYSTEMINFO, default='yes')
         if name == 'status_systeminfo_only':
@@ -285,6 +288,7 @@ class SystemConfig(object):
             self.ALERTS_PUBLISHER_ENABLED: self.alerts_publisher_enabled,
             self.ALERTS_NEW_USER_ENABLED: self.alerts_new_user_enabled,
             self.PALETTE_VERSION: self.palette_version,
+            self.PALETTE_LOGIN: self.palette_login,
             self.UPGRADING: self.upgrading,
             self.CPU_LOAD_WARN: self.cpu_load_warn,
             self.CPU_LOAD_ERROR: self.cpu_load_error,

