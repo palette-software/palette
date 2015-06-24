@@ -72,7 +72,7 @@ class TableauStatusMonitor(threading.Thread):
     # Note: If there is a value in the system table, it is
     # used instead of these defaults.
     # Default interval for checking tableau status (in seconds)
-    STATUS_REQUEST_INTERVAL_DEFAULT = 10
+    STATUS_REQUEST_INTERVAL_DEFAULT = 30
 
     # Minimum amount of time that must elapse while DEGRADED
     # before sending out the DEGRADED event.

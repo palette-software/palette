@@ -83,7 +83,7 @@
 {
 "envid":"1",
 "key":"status-request-interval",
-"value":"10"
+"value":"30"
 },
 {
 "envid":"1",

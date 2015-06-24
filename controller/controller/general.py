@@ -255,7 +255,7 @@ class SystemConfig(object):
             return self._getyesno(self.STATUS_SYSTEMINFO_ONLY, default='no')
         if name == 'status_systeminfo_timeout_ms':
             return self._getint(self.STATUS_SYSTEMINFO_TIMEOUT_MS,
-                                default=10000)
+                                default=15000)
         raise AttributeError(name)
 
     def todict(self):
