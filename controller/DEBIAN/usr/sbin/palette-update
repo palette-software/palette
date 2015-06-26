@@ -7,7 +7,6 @@
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 export DEBIAN_FRONTEND="noninteractive"
 
-LOG_FILE=/var/log/palette/update.log
 INI_FILE=/etc/palette_update.ini
 PACKAGES="controller palette"
 PACKAGE_OPTIONAL="myip"
@@ -23,25 +22,11 @@ delayer()
     fi
 }
 
-echo "Palette Updater Running"
-echo "**************" >> $LOG_FILE
-date >> $LOG_FILE
-
-# Check to see if updating is disabled
-if [ -f $INI_FILE ]; then
-    # Do the update unless "auto-update" is disabled in the ini file.
-    grep --after-context=1 '\[update\]' $INI_FILE | grep -q "auto_update = false"
-    if [ $? -eq 0 ]; then
-        echo Auto update is disabled >> $LOG_FILE
-        exit 0
-    fi
-fi
-
 usage() {
-    echo Usage: $0 '[--now] [--fast]'
+    echo Usage: $0 '[--now]'
 }
 
-if ! options=$(getopt -o fn --longoptions fast,now -- "$@")
+if ! options=$(getopt -o fn --longoptions now -- "$@")
 then
     # getopt will report the error
     usage
@@ -55,8 +40,6 @@ do
     case $1 in
     -n|--now)
         now="yes" ;;
-    -f|--fast)
-        fast="yes" ;;
     --)
         shift; break;;
     -*)
@@ -68,31 +51,63 @@ do
     shift
 done
 
-if [ "$now" == "yes" ]; then
-    echo Updating now
+if [ $# -ne 0 ]; then
+    usage
+    exit 2
+fi
+
+echo "**************" >> $LOG_FILE
+date >> $LOG_FILE
+echo "Palette Updater Running"
+
+# If running from a terminal, output to the terminal.
+if [ -t 0 ]; then
+    LOG_FILE=/dev/tty
+    echo Sending output to the tty
+else
+    LOG_FILE=/var/log/palette/update.log
+fi
+
+if [ "$now" = "yes" ]; then
     echo Updating now >> $LOG_FILE
 else
     delayer
 fi
 
-# perform the update
-if [ "$fast" == "yes" ]; then
-    # Update only from the palette repo
-    apt-get update -o Dir::Etc::sourcelist="sources.list.d/palette.list" \
-        -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0" \
-        >> $LOG_FILE 2>&1
-else
-    apt-get update >> $LOG_FILE 2>&1
+# Check to see if updating is disabled
+if [ -f $INI_FILE ]; then
+    # Do the update unless "auto-update" is disabled in the ini file.
+    grep --after-context=1 '\[update\]' $INI_FILE | grep -q "auto_update = false"
+    if [ $? -eq 0 ]; then
+        echo Auto update is disabled >> $LOG_FILE
+        exit 0
+    fi
 fi
+
+echo Doing update... >> $LOG_FILE 2>&1
+
+# Update only from the palette repo
+apt-get update \
+    -o Dir::Etc::sourcelist="sources.list.d/palette.list" \
+    -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0" \
+    >> $LOG_FILE 2>&1
+
+echo Doing install ... >> $LOG_FILE 2>&1
+
 # Keep OLD config files (change to use NEW config files after upgraded to 1.0.1)
 #apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y $PACKAGES >> $LOG_FILE 2>&1
 # After 1.0.1 is installed and beyond, force using the new config file:
-apt-get install -y -o Dpkg::Options::=--force-confnew $PACKAGES >> $LOG_FILE 2>&1
-
+apt-get install -y \
+    -o Dir::Etc::sourcelist="sources.list.d/palette.list" \
+    -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0" \
+    -o Dpkg::Options::=--force-confnew $PACKAGES >> $LOG_FILE 2>&1
 
 dpkg -s $PACKAGE_OPTIONAL > /dev/null 2>&1 && {
     echo Will update $PACKAGE_OPTIONAL if a newer version is available. >> $LOG_FILE
-    apt-get install -y $MORE_PACKAGES >> $LOG_FILE 2>&1
+    apt-get install -y $MORE_PACKAGES \
+        -o Dir::Etc::sourcelist="sources.list.d/palette.list" \
+        -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0" \
+        >> $LOG_FILE 2>&1
 } || {
     echo Will not check to update $PACKAGE_OPTIONAL as it is not installed. >> $LOG_FILE
 }
