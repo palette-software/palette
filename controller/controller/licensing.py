@@ -306,20 +306,20 @@ class LicenseManager(Manager):
         entry = Domain.get_by_name(self.server.domainname)
         return licensing_info(entry, self.server.environment.envid)
 
-    def verify(self):
+    def send(self):
         # pylint: disable=too-many-return-statements
         entry = Domain.getone()
-        logging.debug('license verify, license_id: %s', entry.license_key)
+        logging.debug('license send, license_id: %s', entry.license_key)
         if not entry.license_key:
             # If there is no license key, don't bother checking the
             # validity of it or attempt to contact the palette
             # license server.
-            logging.debug("license verify: No license key.")
+            logging.debug("license send: No license key.")
             return {'status': "OK", "info": "No license key"}
 
         data = self.info()
         if not 'license-type' in data:
-            logging.debug("license verify: No tableau license info yet.")
+            logging.debug("license send: No tableau license info yet.")
             return {'status': "OK", "info": "No tableau license info yet."}
 
         try:
