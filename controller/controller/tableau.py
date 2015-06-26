@@ -681,7 +681,7 @@ class TableauStatusMonitor(threading.Thread):
                 self._systeminfo_parse(agent, xml_result)    # parse the xml
 
                 # send an event if appropriate
-                self._eventit(agent, data, public_url)
+                self._systeminfo_eventit(agent, data, public_url)
 
                 return
 
@@ -716,7 +716,7 @@ class TableauStatusMonitor(threading.Thread):
                                        "connect previously worked.  " + \
                                        "Assuming Tableau is stopped."
 
-                        self._eventit(agent, data, public_url)
+                        self._systeminfo_eventit(agent, data, public_url)
                         return
 
                 # systeminfo didn't work, but we don't know if tableau
@@ -726,7 +726,7 @@ class TableauStatusMonitor(threading.Thread):
                 if ex.errnum == SysteminfoError.PARSE_FAILURE:
                     # Add the raw XML to the error.
                     data['error'] += ' XML: ' + str(xml_result)
-                self._eventit(agent, data, public_url)
+                self._systeminfo_eventit(agent, data, public_url)
 
                 if self.st_config.status_systeminfo_only:
                     self.log.info("systeminfo failed but not allowed to use "
@@ -749,9 +749,8 @@ class TableauStatusMonitor(threading.Thread):
         self._add(agent.agentid, "Status", 0, tableau_status)
         self._finish_status(agent, tableau_status, prev_tableau_status, body)
 
-    def _eventit(self, agent, data, public_url):
+    def _systeminfo_eventit(self, agent, data, public_url):
         """Send if event failed/okay event as appropriate."""
-
 
         notification = self.server.notifications.get("systeminfo")
 
@@ -760,7 +759,8 @@ class TableauStatusMonitor(threading.Thread):
                 adata = agent.todict()
                 if 'info' in data:
                     adata['info'] = data['info']
-                self.server.event_control.gen(
+                if self.st_config.status_systeminfo_send_alerts:
+                    self.server.event_control.gen(
                                 EventControl.SYSTEMINFO_OKAY, adata)
                 notification.modification_time = func.now()
                 notification.color = 'green'
@@ -776,7 +776,8 @@ class TableauStatusMonitor(threading.Thread):
                 # URLs.
                 adata = agent.todict()
                 adata['error'] = data['error']
-                self.server.event_control.gen(
+                if self.st_config.status_systeminfo_send_alerts:
+                    self.server.event_control.gen(
                             EventControl.SYSTEMINFO_FAILED, adata)
                 notification.modification_time = func.now()
                 notification.color = 'red'
