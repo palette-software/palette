@@ -20,7 +20,8 @@
           <span>Sort by:</span>
           <div id="sort-dropdown" class="dropdown-toggle btn-group"></div>
           <span>Filter by:</span>
-          <div id="site-project-dropdown" class="dropdown-toggle btn-group"></div>
+          <div id="site-dropdown" class="dropdown-toggle btn-group"></div>
+	  <div id="project-dropdown" class="dropdown-toggle btn-group disabled"></div>
         </section>
       </section>
     </section>

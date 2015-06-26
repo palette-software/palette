@@ -6,6 +6,16 @@ function ($, template, common, paging, items, Dropdown, EditBox)
     template.parse(t);
 
     /*
+     * siteDropdownCallback()
+     * Clear the project selection when the site selection changes.
+     */
+    function siteDropdownCallback(id, value) {
+        paging.set(1);
+        Dropdown.setValueById('project-dropdown', 0);
+        query();
+    }
+
+    /*
      * queryString()
      * Build a query string based on the state of the selectors.
      *
@@ -41,19 +51,31 @@ function ($, template, common, paging, items, Dropdown, EditBox)
         paging.config(data);
         paging.bind(wbPageCallback);
         paging.show();
-        common.setupEventDropdowns();
 
         // selection change callback.
         $('.filter-dropdowns div.btn-group').each(function () {
-            $(this).data('callback', function(node, value) {
-                query();
-            });
+            if ($(this).attr('id') == 'site-dropdown') {
+                $(this).data('callback', siteDropdownCallback);
+            } else {
+                $(this).data('callback', function(id, value) {
+                    paging.set(1);
+                    query();
+                });
+            }
         });
 
         // prevent the link from opening/closing the event.
         $('.event > div.summary a').bind('click', function(event) {
             event.stopPropagation();
         });
+
+        var siteid = Dropdown.getValueById('site-dropdown');
+        if (siteid == "0") {
+            $('#project-dropdown > button').addClass('disabled');
+        } else {
+            $('#project-dropdown > button').removeClass('disabled');
+        }
+
     }
 
     /*
