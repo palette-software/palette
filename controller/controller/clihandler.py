@@ -1150,7 +1150,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status({"info": infos})
 
-    @usage('license [update | info | verify | repair]')
+    @usage('license [update | info | {verify|send} | repair]')
     @upgrade_rwlock
     def do_license(self, cmd):
         """Run license check."""
@@ -1160,12 +1160,12 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
         if len(cmd.args) == 1:
             action = cmd.args[0].lower()
-            if not action in ['repair', 'info', 'verify', 'update']:
+            if not action in ['repair', 'info', 'verify', 'send', 'update']:
                 self.print_usage(self.do_license.__usage__)
                 return
 
         state = self.server.state_manager.get_state()
-        if action not in ['info', 'verify']:
+        if action not in ['info', 'verify', 'send']:
             agent = self.get_agent(cmd.dict)
             if not agent:
                 self.error(clierror.ERROR_AGENT_NOT_CONNECTED,
@@ -1173,7 +1173,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                 return
 
         if not self.server.odbc_ok() and action not in ['info', 'verify',
-                                                                    'repair']:
+                                                            'send', 'repair']:
             self.error(clierror.ERROR_WRONG_STATE,
                        "FAIL: Main state is " + state)
             return
@@ -1187,8 +1187,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = self.server.license_manager.info()
             # convert expiration-time and contact-time to strings
             body = self._json_sanity(body)
-        elif action == 'verify':
-            body = self.server.license_manager.verify()
+        elif action in ('verify', 'send'):
+            body = self.server.license_manager.send()
         else:
             self.print_usage(self.do_license.__usage__)
         self.report_status(body)
