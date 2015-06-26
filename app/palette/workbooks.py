@@ -8,7 +8,7 @@ from akiri.framework import GenericWSGIApplication
 import akiri.framework.sqlalchemy as meta
 
 from controller.workbooks import WorkbookEntry, WorkbookUpdateEntry
-from controller.util import UNDEFINED, safe_int
+from controller.util import UNDEFINED
 from controller.profile import UserProfile, Role
 from controller.credential import CredentialEntry
 from controller.sites import Site
@@ -64,6 +64,8 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
     # pylint: disable=too-many-public-methods
 
     ALL_SITES_PROJECTS_OPTION = 'All Sites/Projects'
+    ALL_SITES_OPTION = "All Sites"
+    ALL_PROJECTS_OPTION = "All Projects"
 
     def getuser_fromdb(self, envid, system_user_id):
         if system_user_id < 0:
@@ -89,9 +91,6 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
             meta.Session.add(entry)
         return entry
 
-    def item_count(self, envid):
-        return WorkbookEntry.count(filters={'envid':envid})
-
     def show_options(self, req):
         valueid = req.params_getint('show', WorkbookShow.ALL)
         return WorkbookShow(valueid).default()
@@ -100,37 +99,32 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
         valueid = req.params_getint('sort', WorkbookSort.WORKBOOK)
         return WorkbookSort(valueid).default()
 
-    def site_project_options(self, sites, projects):
-        # estimate: < 50 projects
-        options = [{'item': self.ALL_SITES_PROJECTS_OPTION, 'id': 0}]
+    def site_options(self, sites):
+        options = [{"item": self.ALL_SITES_OPTION, "id": 0}]
         for site in sites.values():
-            for project in projects.values():
-                if project.site_id != site.id:
-                    continue
-                data = {'item': site.name + '/' + project.name,
-                        'id': str(site.id) + ':' + str(project.id)}
-                options.append(data)
+            options.append({"item": site.name, "id": site.id})
         return options
 
-    # returns id,value
-    def site_project_id_value(self, req, sites, projects):
-        if 'site-project' not in req.GET:
-            return 0, self.ALL_SITES_PROJECTS_OPTION
-        key = str(req.GET['site-project'])
-        if key == '0':
-            return 0, self.ALL_SITES_PROJECTS_OPTION
-        tokens = key.split(':')
-        if len(tokens) != 2:
-            return 0, self.ALL_SITES_PROJECTS_OPTION
-        try:
-            site_id = int(tokens[0])
-            project_id = int(tokens[1])
-        except StandardError:
-            return 0, self.ALL_SITES_PROJECTS_OPTION
-        if site_id not in sites or project_id not in projects:
-            return 0, self.ALL_SITES_PROJECTS_OPTION
-        value = sites[site_id].name + '/' + projects[project_id].name
-        return str(site_id) + ':' + str(project_id), value
+    def site_value(self, siteid, sites):
+        if siteid == 0:
+            return self.ALL_SITES_OPTION
+        if siteid in sites:
+            return sites[siteid].name
+        return None
+
+    def project_options(self, siteid, projects):
+        options = [{"item": self.ALL_PROJECTS_OPTION, "id": 0}]
+        for project in projects.values():
+            if siteid == 0 or project.site_id == siteid:
+                options.append({"item": project.name, "id": project.id})
+        return options
+
+    def project_value(self, projectid, projects):
+        if projectid == 0:
+            return self.ALL_PROJECTS_OPTION
+        if projectid in projects:
+            return projects[projectid].name
+        return None
 
     def build_config(self, req, sites, projects):
         # pylint: disable=no-member
@@ -139,11 +133,26 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
         config.append(self.show_options(req))
         config.append(self.sort_options(req))
 
-        site_project_options = self.site_project_options(sites, projects)
-        spid, value = self.site_project_id_value(req, sites, projects)
-        config.append({'name': 'site-project-dropdown',
-                       'options': site_project_options,
-                       'id': spid, 'value': value})
+        siteid = req.params_getint('site', 0)
+        sitename = self.site_value(siteid, sites)
+        if not sitename:
+            siteid = 0
+            sitename = self.ALL_SITES_OPTION
+        config.append({"name": "site-dropdown",
+                       "options": self.site_options(sites),
+                       "id": str(siteid),
+                       "value": sitename})
+
+        projectid = req.params_getint('project', 0)
+        projectname = self.project_value(projectid, projects)
+
+        if not projectname:
+            projectid = 0
+            projectname = self.ALL_PROJECTS_OPTION
+        config.append({"name": "project-dropdown",
+                       "options": self.project_options(siteid, projects),
+                       "id": str(projectid),
+                       "value": projectname})
         return config
 
 
@@ -203,21 +212,16 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
         if showid == WorkbookShow.MINE:
             filters['system_user_id'] = req.remote_user.system_user_id
 
-        site_project = req.params_get('site-project', default='0')
-        if site_project != '0':
-            tokens = site_project.split(':')
-            if len(tokens) == 2:
-                site_id = safe_int(tokens[0], default=0)
-                if site_id != 0:
-                    filters['site_id'] = site_id
-                project_id = safe_int(tokens[1], default=0)
-                if project_id != 0:
-                    filters['project_id'] = project_id
+        site_id = req.params_getint('site', default=0)
+        if site_id != 0:
+            filters['site_id'] = site_id
+        project_id = req.params_getint('project', default=0)
+        if project_id != 0:
+            filters['project_id'] = project_id
+
         return filters
 
-    def do_query(self, req):
-        filters = self.build_query_filters(req)
-
+    def do_query(self, req, filters):
         query = meta.Session.query(WorkbookEntry)
 
         # pylint: disable=no-member
@@ -260,7 +264,9 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
     # FIXME: move build options to a separate file.
     def handle_get(self, req):
 
-        entries = self.do_query(req)
+        filters = self.build_query_filters(req)
+        entries = self.do_query(req, filters)
+        count = WorkbookEntry.count(filters=filters)
 
         # lookup caches
         users = {}
@@ -301,7 +307,7 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
 
         return {'workbooks': workbooks,
                 'config': self.build_config(req, sites, projects),
-                'item-count': self.item_count(req.envid)
+                'item-count': count
         }
 
     # FIXME: route correctly.
