@@ -1,7 +1,9 @@
 PKG1 = akiri.framework_0.5.0_all.deb
+PKG2 = proxytunnel_1.9.0%2Bsvn250-5_amd64.deb
 POOL_DIR = dpkg/pool
-DOWNLOAD_DIR = https://www.akirisolutions.com/download/framework/
-PREBUILT_PACKAGES = $(POOL_DIR)/$(PKG1)
+DOWNLOAD_DIR1 = https://www.akirisolutions.com/download/framework
+DOWNLOAD_DIR2 = https://www.akirisolutions.com/download/palette
+PREBUILT_PACKAGES = $(POOL_DIR)/$(PKG1) $(POOL_DIR)/$(PKG2)
 
 all: palette controller palette-agent palette-support myip
 
@@ -41,7 +43,10 @@ publish-pro: $(PREBUILT_PACKAGES)
 	chmod 600 dpkg/client/id_rsa; cd dpkg/apt; scp -r -i ../client/id_rsa -r . ubuntu@apt.palette-software.com:/var/packages/pro
 
 $(POOL_DIR)/$(PKG1):
-	wget --directory-prefix=$(POOL_DIR) $(DOWNLOAD_DIR)/$(PKG1)
+	wget --directory-prefix=$(POOL_DIR) $(DOWNLOAD_DIR1)/$(PKG1)
+
+$(POOL_DIR)/$(PKG2):
+	wget --directory-prefix=$(POOL_DIR) $(DOWNLOAD_DIR2)/$(PKG2)
 
 palette: 
 	make -C app all
