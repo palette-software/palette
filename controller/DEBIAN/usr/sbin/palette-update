@@ -56,10 +56,6 @@ if [ $# -ne 0 ]; then
     exit 2
 fi
 
-echo "**************" >> $LOG_FILE
-date >> $LOG_FILE
-echo "Palette Updater Running"
-
 # If running from a terminal, output to the terminal.
 if [ -t 0 ]; then
     LOG_FILE=/dev/tty
@@ -67,6 +63,10 @@ if [ -t 0 ]; then
 else
     LOG_FILE=/var/log/palette/update.log
 fi
+
+echo "**************" >> $LOG_FILE
+date >> $LOG_FILE
+echo "Palette Updater Running"
 
 if [ "$now" = "yes" ]; then
     echo Updating now >> $LOG_FILE
