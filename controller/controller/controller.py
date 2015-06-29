@@ -1409,10 +1409,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             agent.agent_type = aconn.agent_type \
                 = AgentManager.AGENT_TYPE_PRIMARY
 
-            # fixme
-            if pinfo[tableau_install_dir] is None:
-                pinfo[tableau_install_dir] = \
-                        r'C:\Program Files (x86)\Tableau\Tableau Server\9.0'
             if pinfo[tableau_install_dir].find(':') == -1:
                 self.log.error("agent %s is missing ':': %s for %s",
                                aconn.displayname, tableau_install_dir,
