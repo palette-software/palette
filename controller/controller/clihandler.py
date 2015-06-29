@@ -1455,7 +1455,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             stateman.update(StateManager.STATE_STARTED)
             self.server.event_control.gen(EventControl.STATE_STARTED,
-                                          data, userid=userid)
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
 
         aconn.user_action_unlock()
 
