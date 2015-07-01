@@ -15,7 +15,7 @@ Depends:
  postgresql, telnet, daemon, postfix, ntp,
  akiri.framework (>= 0.5.0),
  palette-agent (>= 1.1.0),
- palette-support (>= 1.3.0)
+ palette-support (>= 1.3.1)
 Description: Palette Controller and Web App
  This package contains the Palette Controller and Web Application
  for controlling, monitoring and managing Tableau databases.
