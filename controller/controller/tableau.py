@@ -26,6 +26,7 @@ from event_control import EventControl
 from state_transitions import TRANSITIONS
 from general import SystemConfig
 from util import  success
+from yml import YmlEntry
 
 class SysteminfoException(Exception):
     def __init__(self, errnum, message):
@@ -670,7 +671,10 @@ class TableauStatusMonitor(threading.Thread):
 
         public_url = self.server.public_url()
 
-        if self.st_config.status_systeminfo and tableau_systeminfo_enabled:
+        tableau_version = YmlEntry.get(self.envid, 'version.external',
+                                                                default='8')
+        if tableau_version[0:1] == '9' and \
+                self.st_config.status_systeminfo and tableau_systeminfo_enabled:
             try:
                 # Returns the xml on success
                 xml_result = self._systeminfo_get(agent)
