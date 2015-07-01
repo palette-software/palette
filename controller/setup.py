@@ -1,7 +1,7 @@
 import os
 from setuptools import setup, find_packages
 
-VERSION='1.4.1'
+VERSION='1.4.2'
 
 setup(name='controller',
       version=VERSION,
