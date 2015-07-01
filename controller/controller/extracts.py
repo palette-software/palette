@@ -104,7 +104,15 @@ class ExtractManager(TableauCacheManager):
             return {"error": "Cannot run command while in state: %s" % \
                         self.server.state_manager.get_state()}
 
-        self._prune(agent, envid)
+        try:
+            self._prune(agent, envid)
+        except ValueError as ex:
+            self.log.debug(
+                "extract prune: Max background job retrieval failed: %s",
+                str(ex))
+            # The agent probably disconnected
+            return {"error": \
+                    'max background job retrieval failed: %s' % str(ex)}
 
         stmt = \
             "SELECT id, args, notes, finish_code, priority, updated_at, " +\
@@ -180,10 +188,11 @@ class ExtractManager(TableauCacheManager):
             return None
         return str(value)
 
-
     def _last_background_jobs_id(self, agent):
         stmt = "SELECT MAX(id) FROM background_jobs"
         data = agent.odbc.execute(stmt)
+        if 'error' in data:
+            raise ValueError(data['error'])
         if not data or not '' in data or data[''][0] is None:
             return 0
         row = data[''][0]
@@ -199,7 +208,7 @@ class ExtractManager(TableauCacheManager):
         maxid = self._last_background_jobs_id(agent)
         meta.Session.query(ExtractEntry).\
             filter(ExtractEntry.envid == envid).\
-            filter(ExtractEntry.extractid > maxid).\
+            filter(ExtractEntry.id > maxid).\
             delete(synchronize_session='fetch')
 
     # FIXME: add project_id? maybe job_name?
