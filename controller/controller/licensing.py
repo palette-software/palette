@@ -90,6 +90,7 @@ def licensing_info(domain, envid):
     data['processor-count'] = agent.processor_count
     data['processor-bitness'] = agent.bitness
     data['primary-uuid'] = agent.uuid
+    data['primary-os-version'] = agent.os_version
 
     return data
 
