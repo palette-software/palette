@@ -55,10 +55,16 @@ class UserApplication(PaletteRESTApplication):
     def tableau_info(self, d):
         if d['name'] == 'palette':
             return 'Palette System User'
-        system_admin_level = d['system-admin-level']
-        user_admin_level = d['user-admin-level']
+        if 'system-admin-level' in d:
+            system_admin_level = d['system-admin-level']
+        else:
+            system_admin_level = 0
+        if 'user-admin-level' in d:
+            user_admin_level = d['user-admin-level']
+        else:
+            user_admin_level = 0
         info = 'Tableau '
-        if d['publisher']:
+        if 'publisher' in d and d['publisher']:
             info += 'Publisher & '
         info += Admin.str(user_admin_level, system_admin_level)
         return info
