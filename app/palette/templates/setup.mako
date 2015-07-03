@@ -48,7 +48,7 @@
 
     <!-- top-zone? -->
     <section>
-      <h1>Welcome to Palette Software Server Setup</h1>
+      <h1>Welcome to Palette Server Setup</h1>
       <p>Please set up your Mail, Hostname and SSL Certificate Settings for your Palette Server</p>
     </section>
 
