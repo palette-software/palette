@@ -65,7 +65,6 @@ class OpenApplication(GenericWSGIApplication):
                 reason = ex.reason
             return {'status': 'FAILED', 'error': reason}
         self.setup.admin.service_POST(req)
-        self.setup.readonly.service_POST(req)
         self.setup.mail.service_POST(req)
         self.setup.ssl.service_POST(req)
         self.setup.url.service_POST(req)

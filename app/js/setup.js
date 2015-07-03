@@ -8,7 +8,6 @@ function ($, _, configure, common, Dropdown, OnOff)
     var sslData = null;
     var tzData = null;
     var authData = null;
-    var readOnlyData = null;
 
     /*
      * maySaveURL()
@@ -206,55 +205,6 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#password, #confirm-password').val('');
         $('#save-admin, #cancel-admin').addClass('disabled');
         validate();
-    }
-
-    /*
-     * saveReadOnly()
-     * Callback for the 'Save' button in the 'Tableau Readonly User' section.
-     */
-    function saveReadOnly() {
-        $('#save-readonly, #cancel-readonly').addClass('disabled');
-        data = configure.gatherReadOnlyData();
-        data['action'] = 'save';
-
-        var result = null;
-        $.ajax({
-            type: 'POST',
-            url: '/rest/setup/readonly',
-            data: data,
-            dataType: 'json',
-            async: false,
-
-            success: function() {
-                delete data['action'];
-                readOnlyData = data;
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                alert(this.url + ": " +
-                      jqXHR.status + " (" + errorThrown + ")");
-            }
-        });
-        validate();
-    }
-
-    /*
-     * cancelReadOnly()
-     * Callback for the 'Cancel' button in the 'Tableau Readonly User' section.
-     */
-    function cancelReadOnly()
-    {
-        $('#readonly-password').val(readOnlyData['readonly-password']);
-        $('#save-readonly, #cancel-readonly').addClass('disabled');
-        validate();
-    }
-
-    /*
-     * maySaveCancelReadOnly()
-     * Return true if 'Tableau Readonly User' section has changed.
-     */
-    function maySaveCancelReadOnly(data)
-    {
-        return !_.isEqual(data, readOnlyData);
     }
 
     /*
@@ -583,8 +533,6 @@ function ($, _, configure, common, Dropdown, OnOff)
                                   maySaveTableauURL, mayCancelTableauURL);
         configure.validateSection('admin', configure.gatherAdminData,
                                   configure.validAdminData, mayCancelAdmin);
-        configure.validateSection('readonly', configure.gatherReadOnlyData,
-                                  maySaveCancelReadOnly, maySaveCancelReadOnly);
         validateMail();
         configure.validateSection('ssl', configure.gatherSSLData,
                                   configure.validSSLData, mayCancelSSL);
@@ -617,12 +565,6 @@ function ($, _, configure, common, Dropdown, OnOff)
         /* Admin */
         $('#save-admin').bind('click', saveAdmin);
         $('#cancel-admin').bind('click', cancelAdmin);
-
-        /* Readonly User */
-        $('#readonly-password').val(data['readonly-password']);
-        $('#save-readonly').bind('click', saveReadOnly);
-        $('#cancel-readonly').bind('click', cancelReadOnly);
-        readOnlyData = configure.gatherReadOnlyData();
 
         /* Mail */
         $('#alert-email-name').val(data['alert-email-name']);

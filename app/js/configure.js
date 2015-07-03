@@ -100,16 +100,6 @@ function ($, common, Dropdown, OnOff)
     }
 
     /*
-     * gatherReadOnlyData()
-     */
-    function gatherReadOnlyData()
-    {
-        return {
-            'readonly-password': $('#readonly-password').val(),
-        }
-    }
-
-    /*
      * gatherMailData()
      */
     function gatherMailData()
@@ -269,7 +259,6 @@ function ($, common, Dropdown, OnOff)
         'gatherURLData': gatherURLData,
         'gatherTableauURLData': gatherTableauURLData,
         'gatherAdminData': gatherAdminData,
-        'gatherReadOnlyData': gatherReadOnlyData,
         'gatherMailData': gatherMailData,
         'gatherSSLData': gatherSSLData,
         'gatherTzData': gatherTzData,

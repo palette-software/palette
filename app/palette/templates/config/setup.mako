@@ -55,19 +55,6 @@
         </button>
       </div>
     </section>
-
-    <section id="readonly">
-      <%include file="readonly.mako" />
-      <div class="save-cancel">
-        <button type="button" id="save-readonly" class="btn btn-primary disabled">
-          Save
-        </button>
-        <button type="button" id="cancel-readonly" class="btn btn-primary disabled">
-          Cancel
-        </button>
-      </div>
-    </section>
-
     <a name="mail"></a>
     <hr />
     <section id="mail">
