@@ -47,7 +47,7 @@ class OpenApplication(GenericWSGIApplication):
 
         meta.Session.commit()
 
-    # FIXME (later): this should be one big database transaction.
+    # FIXME: this should be one big database transaction.
     # The new framework session middleware will do this implicitly.
     @required_parameters('license-key')
     def service_save(self, req):
@@ -66,7 +66,6 @@ class OpenApplication(GenericWSGIApplication):
             return {'status': 'FAILED', 'error': reason}
         self.setup.admin.service_POST(req)
         self.setup.mail.service_POST(req)
-        self.setup.ssl.service_POST(req)
         self.setup.url.service_POST(req)
         self.setup.tableau_url.service_POST(req)
         self.setup.timezone.service_POST(req)

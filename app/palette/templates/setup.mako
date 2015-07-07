@@ -41,13 +41,14 @@
   <nav class="navbar">
     <div class="navbar-header"></div>
   </nav>
-  <div class="center-container error-page hidden">
-    <p>HTTPS(443) on licensing.palette-software.com is not reachable.  This error must be fixed immediately.</p>
+  <div class="center-container licensing status hidden">
+    <h2>Trying to contact licensing.palette-software.com on HTTPS port 443 ...</h2>
   </div>
-  <div class="center-container configuration setup-page initial">
-
-    <!-- top-zone? -->
-    <section>
+  <div class="center-container licensing error initial hidden">
+    <h2 class="error">Failed to contact licensing.palette-software.com on HTTPS port 443.</h2>
+  </div>
+  <div class="center-container configuration setup-page initial hidden">
+    <section class="top-zone">
       <h1>Welcome to Palette Server Setup</h1>
       <p>Please set up your Mail, Hostname and SSL Certificate Settings for your Palette Server</p>
     </section>
@@ -75,16 +76,15 @@
       <%include file="config/mail.mako" />
     </section>
     <hr />
-    <section id="ssl">
-      <%include file="config/ssl.mako" />
-    </section>
-    <hr />
     <section id="tz">
       <%include file="config/tz.mako" />
     </section>
-    <button type="button" id="save" class="btn btn-primary disabled">
-      Save Setting
-    </button>
+    <hr />
+    <section class="bottom-zone">
+      <button type="button" id="save" class="btn btn-primary">
+        Save Setting
+      </button>
+    </section>
   </div>
 
   <%include file="dropdown.mako" />

@@ -1,15 +1,35 @@
 require(['jquery', 'configure', 'common', 'Dropdown', 'OnOff', 'bootstrap'],
 function ($, configure, common, Dropdown, OnOff)
 {
-    var LICENSE_TIMEOUT = 1000; // 1 sec;
+    var LICENSING_TIMEOUT = 3000; // 3 sec;
     var setupDone = false;
 
+    var LICENSING_UNKNOWN = -1;
+    var LICENSING_FAILED = 0;
+    var LICENSING_OK = 1;
+
+    var licensingState = LICENSING_UNKNOWN;
+
     /*
-     * inputValid()
-     * Return whether or not an input field has been filed in (at all) by id.
+     * setPageError()
+     * Set the main error reporting at the top and bottom of the page.
      */
-    function inputValid(id) {
-        return ($('#'+id).val().length > 0);
+    function setPageError(msg)
+    {
+        var html = '<h2 class="error">' + msg + '</h2>'
+        $("section.top-zone").append(html);
+        $("section.bottom-zone").prepend(html);
+    }
+
+    /*
+     * setError()
+     * Add an error message after the element specified by the selector.
+     * Usually the selected element will be an input field.
+     */
+    function setError(selector, msg)
+    {
+        var html = '<p class="error">' + msg + '</p>';
+        $(selector).after(html);
     }
 
     /*
@@ -22,7 +42,6 @@ function ($, configure, common, Dropdown, OnOff)
         $.extend(data, configure.gatherTableauURLData());
         $.extend(data, configure.gatherAdminData());
         $.extend(data, configure.gatherMailData());
-        $.extend(data, configure.gatherSSLData());
         $.extend(data, configure.gatherTzData());
         return data;
     }
@@ -39,9 +58,7 @@ function ($, configure, common, Dropdown, OnOff)
         }
 
         var error = data['error'] || 'Unknown server error';
-        var node = '<p class="error">' + error + '</p>';
-        $('div.setup-page').prepend(node);
-        $('#save').before(node);
+        setPageError(error);
     }
 
     /*
@@ -49,9 +66,16 @@ function ($, configure, common, Dropdown, OnOff)
      * Callback for the 'Save' button.
      */
     function save() {
-        $('p.error').remove();
+        $('.error').remove();
+
         var data = {'action': 'save'}
         $.extend(data, gatherData());
+
+        if (!validateForSave(data)) {
+            setPageError("The page contains invalid input, please correct.");
+            return;
+        }
+
         $.ajax({
             type: 'POST',
             url: '/open/setup',
@@ -60,8 +84,8 @@ function ($, configure, common, Dropdown, OnOff)
 
             success: save_callback,
             error: function (jqXHR, textStatus, errorThrown) {
-                alert(this.url + ": " +
-                      jqXHR.status + " (" + errorThrown + ")");
+                var msg = this.url + ": " + jqXHR.status + " (" + errorThrown + ")";
+                setPageError(msg);
             }
         });
     }
@@ -71,6 +95,7 @@ function ($, configure, common, Dropdown, OnOff)
      * Callback for the 'Test Email' button.
      */
     function testMail() {
+        $('.error').remove();
         $('#mail-test-message').html("");
         $('#mail-test-message').addClass('hidden');
         $('#mail-test-message').removeClass('green red');
@@ -78,6 +103,10 @@ function ($, configure, common, Dropdown, OnOff)
         var data = {'action': 'test'}
         $.extend(data, configure.gatherMailData());
         data['test-email-recipient'] = $('#test-email-recipient').val();
+
+        if (!validateForTest(data)) {
+            return;
+        }
 
         var result = {};
         $.ajax({
@@ -112,63 +141,125 @@ function ($, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * maySave()
-     * Test input and return true/false.
+     * validateAdminData(data)
+     * FIXME: merge with configure.
      */
-    function maySave(data) {
+    function validateAdminData(data)
+    {
+        var result = true;
+
+        var password = data['password'];
+        if (password.length == 0) {
+            setError("#password", "Password is required.");
+            result = false;
+        }
+        var confirm_password = data['confirm-password'];
+        if (confirm_password.length == 0) {
+            setError("#confirm-password", "Confirmation password is required.");
+            result = false;
+        }
+        if (result && (password != confirm_password)) {
+            setError("#password", "Passwords must match.");
+            result = false;
+        }
+        return result;
+    }
+
+    /*
+     * validateMailData(data)
+     */
+    function validateMailData(data)
+    {
+        var result = true;
+
+        var type = data['mail-server-type'];
+        if (type == configure.MAIL_NONE) {
+            /* Getting here implies mail server type changed. */
+            return true;
+        }
+
+        if (!common.validEmail(data['alert-email-address'])) {
+            setError("#alert-email-address", "The email address is invalid.");
+            result = false;
+        }
+
+        if (type == configure.MAIL_DIRECT) {
+            return result;
+        }
+
+        if (data['smtp-server'].length == 0) {
+            setError("#smtp-server", "The mail server is required.");
+            result = false;
+        }
+
+        var port = data['smtp-port'];
+        if (port == null || port == 0) {
+            setError("#smtp-port", "The port is required.");
+            result = false;
+        } else if (isNaN(port)) {
+            setError("#smtp-port", "The port is invalid.");
+            result = false;
+        }
+
+        /* SMTP username and password are optional */
+        if (data['smtp-username'].length > 0
+            && data['smtp-password'].length == 0) {
+            setError("#smtp-password",
+                     "The password is required when a username is specified.");
+            result = false;
+        } else if (data['smtp-username'].length == 0
+                   && data['smtp-password'].length > 0) {
+            setError("#smtp-username",
+                     "The username is required when a password is specified.");
+            result = false;
+        }
+
+        return result;
+    }
+
+    /*
+     * validateForSave()
+     * Test all input when the user presses the save button.
+     */
+    function validateForSave(data) {
+        var result = true;
+
         if (!setupDone) {
-            return false;
+            result = false;
         }
         if (!common.validURL(data['server-url'])) {
-            return false;
+            setError("#server-url", "Invalid URL");
+            result = false;
         }
         if (!common.validURL(data['tableau-server-url'])) {
-            return false;
+            setError("#tableau-server-url", "Invalid URL");
+            result = false;
         }
         if (data['license-key'].length < 2) { // FIXME //
-            return false;
+            setError("#license-key", "Invalid license key");
+            result = false;
         }
-        if (!configure.validAdminData(data)) {
-            return false;
+        if (!validateAdminData(data)) {
+            result = false;
         }
-        if (!configure.validMailData(data)) {
-            return false;
+        if (!validateMailData(data)) {
+            result = false;
         }
-        if (!configure.validSSLData(data)) {
-            return false;
-        }
-        return true;
+        return result;
     }
 
     /*
-     * mayTest()
-     * Test input and return true/false.
+     * validateForTest()
+     * Validate the email setting when the user presses the test button.
      */
-    function mayTest(data) {
-        var recipient = $('#test-email-recipient').val();
-        if (!common.validEmail(recipient)) {
-            return false;
+    function validateForTest(data) {
+        var result = validateMailData(data);
+        if (!common.validEmail(data['test-email-recipient'])) {
+            /* put the error after the button */
+            setError("#test-mail","Invalid email address");
+            result = false;
         }
-        return configure.validMailData(data);
-    }
-
-    /*
-     * validate()
-     * Enable/disable the 'Save' button based on the field values.
-     */
-    function validate() {
-        var data = gatherData();
-        if (maySave(data)) {
-            $('#save').removeClass('disabled');
-        } else {
-            $('#save').addClass('disabled');
-        }
-
-        if (mayTest(data)) {
-            $('#test-mail').removeClass('disabled');
-        } else {
-            $('#test-mail').addClass('disabled');
-        }
+        return result;
     }
 
     function setup(data)
@@ -178,6 +269,7 @@ function ($, configure, common, Dropdown, OnOff)
 
         $('#save').bind('click', save);
         $('#test-mail').bind('click', testMail);
+        $('#test-mail').removeClass('disabled'); /* FIXME */
 
         $('#server-url').val(data['server-url']);
         $('#tableau-server-url').val(data['tableau-server-url']);
@@ -190,20 +282,11 @@ function ($, configure, common, Dropdown, OnOff)
         $('#smtp-username').val(data['smtp-username']);
         $('#smtp-password').val(data['smtp-password']);
 
-        /* validation */
-        Dropdown.setCallback(validate);
+        /* layout changes based on selections */
         Dropdown.setCallback(function () {
             configure.changeMail();
-            validate();
         }, '#mail-server-type');
         configure.changeMail();
-        /* this assumes no other OnOff sliders on the initial setup page. */
-        OnOff.setCallback(function (checked) {
-            configure.changeSSL(checked);
-            validate();
-        }, '#enable-ssl');
-        configure.setInputCallback(validate);
-        /* no need to call validate(), the form can't be valid yet. */
 
         /* help */
         configure.lightbox(236535, 'Palette Server URL');
@@ -212,7 +295,6 @@ function ($, configure, common, Dropdown, OnOff)
         configure.lightbox(236536, 'Palette Admin Password');
         configure.lightbox(252063, 'Tableau Server Repository Database User Password');
         configure.lightbox(236542, 'Mail Server');
-        configure.lightbox(236543, 'Server SSL Certificate');
         configure.lightbox(236544, 'Authentication');
         configure.lightbox(237785, 'Timezone');
 
@@ -220,27 +302,39 @@ function ($, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * queryLicensing()
+     * licensingQuery()
      */
-    function queryLicensing()
+    function licensingQuery()
     {
         $.ajax({
             url: '/licensing',
             success: function(data) {
-                $('div.error-page').addClass('hidden');
-                $('div.setup-page').removeClass('hidden');
+                $().ready(function() {
+                    /* implicity cancels licensingTryMsgTimeout */
+                    $("div.licensing").remove();
+                    $("body > div").removeClass("hidden");
+                });
             },
             error: function (jqXHR, textStatus, errorThrown) {
-                $('div.setup-page').addClass('hidden');
-                $('div.error-page').removeClass('hidden');
-                setTimeout(queryLicensing, LICENSE_TIMEOUT);
+                $().ready(function() {
+                    $("div.licensing.status").remove();
+                    $("div.licensing.error").removeClass("hidden");
+                    setTimeout(licensingQuery, LICENSING_TIMEOUT);
+                });
             }
         });
     }
 
-    /* start */
-    queryLicensing();
+    /* Ensure that the server can talk to licensing. */
+    licensingQuery();
+    /* Display a status message after half a second if not already compete. */
+    $().ready(function() {
+        setTimeout(function () {
+            $("div.licensing.status").removeClass("hidden");
+        }, 500); /* half second? */
+    });
 
+    /* fill in initial values */
     $.ajax({
         url: '/open/setup',
         success: function(data) {
@@ -249,7 +343,7 @@ function ($, configure, common, Dropdown, OnOff)
             });
         },
         error: function (jqXHR, textStatus, errorThrown) {
-            /* FIXME: do something... */
+            setPageError("Your browser is disconnected.");
         }
     });
 });
