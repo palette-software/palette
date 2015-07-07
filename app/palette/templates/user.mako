@@ -7,16 +7,18 @@
 
 <div class="dynamic-content configuration">
   <div class="scrollable">
-    <h1 class="page-title">Users</h1>
-    <div class="refresh">
-      <p>
-        <span class="message"></span>
-        Updated <span id="last-update"></span>
-        %if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
-        <i class="fa fa-fw fa-refresh inactive"></i>
-        %endif
-      </p>
-    </div>
+    <section class="top-zone">
+      <h1 class="page-title">Users</h1>
+      <div class="refresh">
+	<p>
+          <span class="message"></span>
+          Updated <span id="last-update"></span>
+          %if req.remote_user.roleid >= req.remote_user.role.MANAGER_ADMIN:
+          <i class="fa fa-fw fa-refresh inactive"></i>
+          %endif
+	</p>
+      </div>
+    </section>
     <div class="letters"></div>
     <div id="user-list"></div>
   </div>

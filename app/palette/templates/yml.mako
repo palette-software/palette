@@ -7,13 +7,13 @@
 
 <div class="dynamic-content configuration">
   <div class="scrollable">
-    <h1 class="page-title">Tableau Settings</h1>
-    <div class="refresh">
-      <p>
-        Updated <span id="last-update"></span>
-      </p>
-      <p id="location"></p>
-    </div>
+    <section class="top-zone">
+      <h1 class="page-title">Tableau Settings</h1>
+      <div class="refresh">
+	<p>Updated <span id="last-update"></span></p>
+	<p id="location"></p>
+      </div>
+    </section>
     <div id="yml-list"></div>
   </div>
 </div>

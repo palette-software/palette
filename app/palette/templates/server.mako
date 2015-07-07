@@ -7,7 +7,9 @@
 
 <div class="dynamic-content configuration">
   <div class="scrollable">
-    <h1 class="page-title">Machines</h1>
+    <section class="top-zone">
+      <h1 class="page-title">Machines</h1>
+    </section>
     <div id="server-detail"></div>
   </div>
 </div>
