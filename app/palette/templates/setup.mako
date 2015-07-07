@@ -49,7 +49,7 @@
   </div>
   <div class="center-container configuration setup-page initial hidden">
     <section class="top-zone">
-      <h1>Welcome to Palette Server Setup</h1>
+      <h1 class="page-title">Welcome to Palette Server Setup</h1>
       <p>Please set up your Mail, Hostname and SSL Certificate Settings for your Palette Server</p>
     </section>
 
