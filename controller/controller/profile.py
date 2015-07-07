@@ -16,7 +16,7 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     Profile information is added to the 'users' table.
     """
     PALETTE_DEFAULT_NAME = 'palette'
-    PALETTE_DEFAULT_FRIENDLY_NAME = 'Palette Install User'
+    PALETTE_DEFAULT_FRIENDLY_NAME = 'Palette Server Admin'
     PALETTE_DEFAULT_PASSWORD = 'Tableau2014!'
 
     __tablename__ = 'users'
