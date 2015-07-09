@@ -1,4 +1,5 @@
 import time
+from collections import OrderedDict
 
 from webob import exc
 
@@ -15,12 +16,24 @@ from controller.passwd import aes_encrypt, aes_decrypt
 from controller.palapi import CommException
 from controller.credential import CredentialEntry
 
-from .option import ListOption
+from .option import ListOption, DictOption
 from .page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
 from .s3 import S3Application
 from .gcs import GCSApplication
 from .mixin import CredentialMixin
+
+class WorkbookRetention(DictOption):
+    """Representation of the 'Workbook Retention' dropdown."""
+    NAME = 'workbook-retain-count'
+    ALL = 0
+
+    def __init__(self, valueid):
+        options = OrderedDict({})
+        options[self.ALL] = 'All'
+        for count in [5, 10, 25]:
+            options[count] = str(count)
+        super(WorkbookRetention, self).__init__(self.NAME, valueid, options)
 
 class GeneralS3Application(PaletteRESTApplication, S3Application):
     """Handler for the 'STORAGE LOCATION' S3 section."""
@@ -359,6 +372,10 @@ class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
             data['archive-password'] = secondary.getpasswd()
         else:
             data['archive-username'] = data['archive-password'] = ''
+
+        valueid = WorkbookRetention.ALL
+        retain_opts = WorkbookRetention(valueid)
+        data['config'] = [retain_opts.default()]
 
         return data
 
