@@ -45,7 +45,16 @@
     <a name="admin"></a>
     <hr />
     <section id="admin">
-      <%include file="admin.mako" />
+      <a id="236536" href="#"><i class="fa fa-question-circle help"></i></a>
+      <h2>Palette Server Admin Credenitals</h2>
+      <p>Create a password for the built-in "Palette" username</p>
+      <p>Any combination of 8+ case-sensitive, alphanumeric characters (i.e. A-Z, a-z, 0-9, and !,@,#,$,%)</p>
+      <label>Username</label>
+      <p class="fake-text-input">Palette</p>
+      <label for="password">New Password *</label>
+      <input type="password" id="password" />
+      <label for="confirm-password">Confirm New Password *</label>
+      <input type="password" id="confirm-password" />
       <div class="save-cancel">
         <button type="button" id="save-admin" class="btn btn-primary disabled">
           Save
