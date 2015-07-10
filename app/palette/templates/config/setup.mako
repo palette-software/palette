@@ -46,8 +46,8 @@
     <hr />
     <section id="admin">
       <a id="236536" href="#"><i class="fa fa-question-circle help"></i></a>
-      <h2>Palette Server Admin Credenitals</h2>
-      <p>Create a password for the built-in "Palette" username</p>
+      <h2>Palette Server Admin Credentials</h2>
+      <p>Create a new password for the built-in "Palette" username</p>
       <p>Any combination of 8+ case-sensitive, alphanumeric characters (i.e. A-Z, a-z, 0-9, and !,@,#,$,%)</p>
       <label>Username</label>
       <p class="fake-text-input">Palette</p>
