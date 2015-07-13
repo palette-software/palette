@@ -1,4 +1,12 @@
+from webob import exc
+
+from controller.profile import Role
+
 from page import PalettePage
+from .rest import required_parameters, required_role, PaletteRESTApplication
+
+SYSTEM_KEY = 'support-enabled'
+JSON_KEY = 'enable-support'
 
 try:
     # pylint: disable=no-name-in-module,import-error
@@ -9,6 +17,11 @@ except ImportError:
     VERSION = version()
     DATE = builddate()
 
+def display_version():
+    if DATE:
+        return VERSION + ' - ' + DATE
+    return VERSION
+
 class AboutPage(PalettePage):
     TEMPLATE = 'about.mako'
     active = 'about'
@@ -16,10 +29,7 @@ class AboutPage(PalettePage):
 
     def __init__(self):
         super(AboutPage, self).__init__()
-        if DATE:
-            self.version = VERSION + ' - ' + DATE
-        else:
-            self.version = VERSION
+        self.version = display_version()
         self.license_key = None
 
     def render(self, req, obj=None):
@@ -27,3 +37,27 @@ class AboutPage(PalettePage):
         self.license_key = req.palette_domain.license_key
         return super(AboutPage, self).render(req, obj=obj)
 
+
+class AboutApplication(PaletteRESTApplication):
+
+    def service_GET(self, req):
+        enabled = req.system.getbool(SYSTEM_KEY, default=True, cleanup=True)
+        if req.path_info.endswith('/support'):
+            return {JSON_KEY: enabled}
+
+        return {'licence-key': req.palette_domain.license_key,
+                'version': display_version(),
+                JSON_KEY: enabled}
+
+    @required_role(Role.MANAGER_ADMIN)
+    @required_parameters('value')
+    def service_POST(self, req):
+        if not req.path_info.endswith('/support'):
+            raise exc.HTTPMethodNotAllowed()
+        value = req.POST['value'].lower()
+        if value == 'false':
+            req.system.save(SYSTEM_KEY, 'no')
+        else:
+            req.system.save(SYSTEM_KEY, 'yes')
+            value = 'true'
+        return {'value': value}

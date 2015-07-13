@@ -36,4 +36,3 @@ class PaletteRESTApplication(GenericWSGIApplication):
     def __init__(self):
         super(PaletteRESTApplication, self).__init__()
         self.commapp = CommHandlerApp(self)
-

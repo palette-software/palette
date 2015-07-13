@@ -1,5 +1,5 @@
-require(['jquery', 'topic', 'common'],
-function ($, topic, common)
+require(['jquery', 'topic', 'common', 'OnOff'],
+function ($, topic, common, OnOff)
 {
     /*
      * restartWebserver()
@@ -57,5 +57,6 @@ function ($, topic, common)
     $().ready(function() {
         $('#restart-webserver').data('callback', restartWebserver);
         $('#restart-controller').data('callback', restartController);
+        OnOff.setup();
     });
 });
