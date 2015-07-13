@@ -19,7 +19,7 @@
     </div>
 
     <h2>Palette Software</h2>
-    <div>
+    <div class="address">
       <p>156 2nd Street</p>
       <p>San Francisco, California 94105</p>
     </div>
@@ -42,6 +42,17 @@
               data-text="Are you sure you want to restart the controller?">
         Restart Controller
       </button>
+    </div>
+    
+    <div>
+      <h2>Palette Support</h2>
+      <p>Enable or Disable Palette's Built-in support communication</p>
+      <p class="slider-group">
+        <span>Enable Support
+          <span id="enable-support" class="onoffswitch yesno"
+                data-href="/rest/about/support"></span>
+        </span>
+      </p>
     </div>
     %endif
   </div>
