@@ -24,7 +24,7 @@ require(['jquery', 'topic', 'template', 'common', 'items',
         $('.display-role', $section).html(value);
     }
 
-    function setup_letters() {
+    function setup_letters(total) {
         
         var html = '';
         if (total <= 100) {
@@ -49,13 +49,20 @@ require(['jquery', 'topic', 'template', 'common', 'items',
 
     function update(data) {
         $().ready(function() {
+
+            counts = data['counts']
+            var total = counts['__total__']
+            if (total == 0) {
+                $('#user-list div').removeClass("hidden");
+                return;
+            }
+
             var t = $('#user-list-template').html();
             var rendered = template.render(t, data);
+                
             $('#user-list').html(rendered);
-            
-            counts = data['counts']
-            total = counts['__total__']
-            setup_letters();
+            setup_letters(total);
+
             items.bind();
             Dropdown.bind('.admin-type', data['admin-levels'], ddCallback);
             $('.admin-type').each(function() {
@@ -63,6 +70,7 @@ require(['jquery', 'topic', 'template', 'common', 'items',
                 dd.set(parseInt(dd.original_html));
             });
             OnOff.setup();
+
             var last_update = data['last-update']
             if (last_update != null) {
                 $('#last-update').html(last_update);
