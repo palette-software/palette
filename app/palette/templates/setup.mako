@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <title>Palette | Setup</title>
   <%include file="favicon.mako" />
