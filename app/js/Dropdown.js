@@ -123,7 +123,7 @@ function($, template) {
     Dropdown.setupAll = function(data, callback)
     {
         for (var i in data['config']) {
-            Dropdown.setup(data['config'][i]);
+            Dropdown.setup(data['config'][i], callback);
         }
     }
 

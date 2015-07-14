@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
 
-<%block name="title">
-<title>Palette</title>
+    <%block name="title">
+    <title>Palette</title>
 </%block>
 
 <%block name="favicon">
@@ -12,12 +12,12 @@
 
 <%block name="fullstyle">
 <meta charset="utf-8">
-<meta name="viewport" content="width=1000,minimal-ui">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css">
-<link rel="stylesheet" type="text/css" href="/css/font-awesome.min.css">
-<link rel="stylesheet" type="text/css" href="/fonts/fonts.css">
-<link rel="stylesheet" type="text/css" href="/css/style.css" media="screen">
+  <meta name="viewport" content="width=1000,minimal-ui">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+      <link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="/css/font-awesome.min.css">
+          <link rel="stylesheet" type="text/css" href="/fonts/fonts.css">
+            <link rel="stylesheet" type="text/css" href="/css/style.css" media="screen">
 </%block>
 
 <script>
@@ -30,15 +30,18 @@
       'domReady': '/js/vendor/domReady',
 
       'bootstrap': '/js/vendor/bootstrap',
-      'lightbox': '//www.helpdocsonline.com/v2/lightbox'
+      'lightbox': '//www.helpdocsonline.com/v2/lightbox',
+      'tableau': '//demo-tableau.palette-software.com/javascripts/api/tableau-2.0.0.min'
+   
     },
     shim: {
       'bootstrap': {
-         deps: ['jquery']
+        deps: ['jquery']
       },
       'lightbox': {
-         deps: ['jquery']
-      }
+        deps: ['jquery']
+      },
+      'tableau': {}
     }
   };
 </script>
@@ -51,11 +54,11 @@
     <li>
       <a>
         <i class="fa fa-fw fa-laptop {{color}}"></i>
-            <div>
+        <div>
           <h5>{{displayname}}</h5>
           <span class="hostname">{{hostname}}</span>
           <span class="address">{{ip_address}}</span>
-            </div>
+        </div>
         <i class="fa fa-fw fa-angle-down down-arrow"></i>
       </a>
       <ul class="processes {{visible}}">
@@ -79,14 +82,14 @@
         {{/license}}
         {{#in_ports}}
         <li>
-           <i class="fa fa-fw fa-circle {{color}}"></i>
-           NETin: {{name}} ({{num}})
+          <i class="fa fa-fw fa-circle {{color}}"></i>
+          NETin: {{name}} ({{num}})
         </li>
         {{/in_ports}}
         {{#out_ports}}
         <li>
-           <i class="fa fa-fw fa-circle {{color}}"></i>
-           NETout: {{name}} ({{num}})
+          <i class="fa fa-fw fa-circle {{color}}"></i>
+          NETout: {{name}} ({{num}})
         </li>
         {{/out_ports}}
         {{#details}}
@@ -122,42 +125,42 @@
 
 <body>
 
-<%include file="mainnav.mako" />
+  <%include file="mainnav.mako" />
 
-<div class="wrapper">
-<div class="container">
+  <div class="wrapper">
+    <div class="container">
 
-<%include file="side-bar.mako" />
+      <%include file="side-bar.mako" />
 
-<section class="secondary-side-bar servers">
-  <div id="server-list"></div>
-</section>
+      <section class="secondary-side-bar servers">
+        <div id="server-list"></div>
+      </section>
 
-${next.body()}
-</div>
-</div>
+      ${next.body()}
+    </div>
+  </div>
 
-<article class="popup" id="okcancel">
-  <section class="popup-body">
-    <section class="row">
-      <section class="col-xs-12">
-        <p>&nbsp;</p>
+  <article class="popup" id="okcancel">
+    <section class="popup-body">
+      <section class="row">
+        <section class="col-xs-12">
+          <p>&nbsp;</p>
+        </section>
+      </section>
+      <section class="row">
+        <section class="col-xs-6">
+          <button class="p-btn popup-ok">OK</button>
+        </section>
+        <section class="col-xs-6">
+          <button class="p-btn popup-close">Cancel</button>
+        </section>
       </section>
     </section>
-    <section class="row">
-      <section class="col-xs-6">
-        <button class="p-btn popup-ok">OK</button>
-      </section>
-      <section class="col-xs-6">
-        <button class="p-btn popup-close">Cancel</button>
-      </section>
-    </section>
-  </section>
-  <div class="shade">&nbsp;</div>
-</article>
+    <div class="shade">&nbsp;</div>
+  </article>
 
-<%include file="dropdown.mako" />
-<%include file="onoff.mako" />
+  <%include file="dropdown.mako" />
+  <%include file="onoff.mako" />
 
 </body>
 </html>

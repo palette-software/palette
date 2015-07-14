@@ -13,8 +13,8 @@ from page import PalettePage
 # Keep: this exposes to application.wsgi without a controller import
 from controller.passwd import set_aes_key_file
 
-class HomePage(PalettePage):
-    TEMPLATE = 'dashboard.mako'
-    active = 'home'
+class EventsPage(PalettePage):
+    TEMPLATE = 'events-page.mako'
+    active = 'events'
 
 
