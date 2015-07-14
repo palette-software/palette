@@ -15,9 +15,10 @@ from akiri.framework.route import Router
 from akiri.framework.sqlalchemy import create_engine
 from akiri.framework.middleware.sqlalchemy import SessionMiddleware
 
-from palette import HomePage, set_aes_key_file
+from palette import EventsPage, set_aes_key_file
 from palette.admin import LoginApplication, LoginPage
 from palette.about import AboutPage
+from palette.dashboard import DashboardPage
 from palette.expire import ExpireMiddleware
 from palette.initial import OpenApplication, InitialMiddleware
 from palette.manage import ManagePage
@@ -68,7 +69,8 @@ pages.add_route(r'/profile\Z', ProfilePage())
 pages.add_route(r'/configure/', ConfigureRouter())
 pages.add_route(r'/data/workbook-archive/(?P<name>[^\s]+)\Z',
                 WorkbookData(WORKBOOK_DATA_PATH))
-pages.add_route(r'/', HomePage())
+pages.add_route(r'/events', EventsPage())
+pages.add_route(r'/\Z|/dashboard\Z', DashboardPage())
 pages = RemoteUserMiddleware(pages)
 pages = AuthRedirectMiddleware(pages, redirect=LOGIN_URL)
 pages = ExpireMiddleware(pages)

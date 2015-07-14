@@ -13,6 +13,11 @@
   <ul class="actions">
     <li ${obj.active=='home' and 'class="active"' or ''}>
       <a href="/">
+        <i class="fa fa-fw fa-home"></i><span>Dashboard</span>
+      </a>
+    </li>
+    <li ${obj.active=='events' and 'class="active"' or ''}>
+      <a href="/events">
         <i class="fa fa-fw fa-copy"></i><span>Events</span>
       </a>
     </li>

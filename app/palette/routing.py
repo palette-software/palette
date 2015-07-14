@@ -1,6 +1,7 @@
 from akiri.framework.route import Router
 
 from .backup import BackupApplication
+from .dashboard import DashboardApplication
 from .environment import EnvironmentApplication
 from .gcs import GCSApplication
 from .general import GeneralApplication
@@ -19,6 +20,7 @@ class RestRouter(Router):
     def __init__(self):
         super(RestRouter, self).__init__()
         self.add_route(r'/backup\Z', BackupApplication())
+        self.add_route(r'/dashboard\Z', DashboardApplication())
         self.add_route(r'/environment\Z', EnvironmentApplication())
         self.add_route(r'/gcs\Z', GCSApplication())
         self.add_route(r'/general\Z|/general/', GeneralApplication())
