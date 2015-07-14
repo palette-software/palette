@@ -21,6 +21,12 @@ function ($, template, common, items, EditBox, OnOff)
 
     function update(data) {
         $().ready(function() {
+            var count = data["servers"].length;
+            if (count == 0) {
+                $('#server-detail div').removeClass("hidden");
+                return;
+            }
+
             var t = $('#server-detail-template').html();
             var rendered = template.render(t, data);
             $('#server-detail').html(rendered);
