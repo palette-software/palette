@@ -55,9 +55,5 @@ function ($, common, Dropdown)
         },
         error: common.ajaxError
     });
-
-    $().ready(function() {
-        $('body').css('background-color', 'white');
-    });
 });
 
