@@ -10,9 +10,10 @@ class DashboardType(DictOption):
 
     def __init__(self):
         options = OrderedDict({})
-        valueid = 'CPUMonitoring'
-        options[valueid] = 'CPU Monitoring (Default)'
-        options['DataSources'] = 'Data Sources'
+        valueid = 'Dashboard1'
+        options[valueid] = 'Dashboard 1 (Default)'
+        for i in range(2, 10):
+            options['Dashboard'+str(i)] = 'Dashboard '+str(i)
         super(DashboardType, self).__init__(self.NAME, valueid, options)
 
 class DashboardPage(PalettePage):
