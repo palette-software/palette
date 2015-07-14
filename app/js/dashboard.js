@@ -3,6 +3,14 @@ function ($, common, Dropdown)
 {
     var viz = null;
 
+    function height() {
+        var h = $(window).height() - 63 - 45 - 20;
+        if (h < 400) {
+            return 400;
+        }
+        return h;
+    }
+
     /*
      * callback()
      */
@@ -13,7 +21,7 @@ function ($, common, Dropdown)
         var url = 'https://demo-tableau.palette-software.com/views/PaletteDashboards/' + id;
         var options = {
             width: placeholderDiv.offsetWidth - 250,
-            height: 900,
+            height: height(),
             hideTabs: true,
             hideToolbar: true,
             onFirstInteractive: function () {
@@ -46,6 +54,10 @@ function ($, common, Dropdown)
             });
         },
         error: common.ajaxError
+    });
+
+    $().ready(function() {
+        $('body').css('background-color', 'white');
     });
 });
 
