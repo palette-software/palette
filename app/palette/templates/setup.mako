@@ -92,6 +92,7 @@
         Save Setting
       </button>
     </section>
+    <div class="version"></div>
   </div>
 
   <%include file="dropdown.mako" />
