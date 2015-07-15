@@ -8,6 +8,7 @@ from controller.profile import UserProfile
 from controller.licensing import licensing_send, licensing_info
 from controller.licensing import LicenseException
 
+from .about import display_version
 from .setup import _SetupApplication
 from .rest import required_parameters
 
@@ -27,6 +28,7 @@ class OpenApplication(GenericWSGIApplication):
             raise exc.HTTPServiceUnavailable()
         data = self.setup.service_GET(req)
         data['license-key'] = req.palette_domain.license_key
+        data['version'] = display_version()
         return data
 
     def _set_license_key(self, req):

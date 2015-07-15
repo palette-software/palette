@@ -298,6 +298,8 @@ function ($, configure, common, Dropdown, OnOff)
         configure.lightbox(236544, 'Authentication');
         configure.lightbox(237785, 'Timezone');
 
+        $(".version").html(data['version']);
+
         setupDone = true;
     }
 
