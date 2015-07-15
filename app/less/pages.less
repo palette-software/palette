@@ -1,8 +1,29 @@
 /* Individual page definitions not worthy of a separate LESS file. */
 
-.initial h2.error {
-    color: @red;
-    margin: 10px 0;
+@heading-color: #474d54;
+
+.initial h1 {
+    margin: 90px 0 12px 0;
+    font-size: 60px;
+    line-height: 50px;
+    color: @heading-color;
+}
+
+.initial.error h2 {
+    margin: 90px 0 12px 0;
+    font-size: 24px;
+    line-height: 28px;
+    color: @heading-color;
+}
+
+.initial.error h2 span.fa-stack {
+    height: 1em;
+    width: 1em;
+    line-height: 1em;
+}
+
+.initial.error p, .initial.status p {
+    line-height: 28px;
 }
 
 /* FIXME: same as password, combine rule? */
@@ -10,6 +31,33 @@
     margin-top: 0;
     margin-bottom: 5px;
 }
+
+/* http://codepen.io/vcmg/pen/JdKeVG */
+.dot {
+  height: 10px;
+  width: 10px;
+  border-radius: 50%;
+  background-color: @light-blue;
+  display: inline-block;
+  margin: 0 auto;
+  -webkit-animation: jump 1.5s linear infinite;
+}
+
+@-webkit-keyframes jump {
+  0%, 100% {transform: translateY(0px);}
+  20% {transform: translateY(-10px);}
+  40% {transform: translateY(0px);}
+}
+
+.dot:nth-of-type(2) {
+  -webkit-animation-delay: 0.2s;
+}
+
+.dot:nth-of-type(3) {
+  -webkit-animation-delay: 0.4s;
+}
+
+/* end dots */
 
 .center-container {
     width: 860px;
