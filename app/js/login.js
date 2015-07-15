@@ -1,15 +1,13 @@
 require.config({
     paths: {
-        'jquery': '/js/vendor/jquery',
-        'domReady': '/js/vendor/domReady',
+        'jquery': '/js/vendor/jquery'
     }
 });
 
-require(['jquery', 'domReady!'],
+require(['jquery'],
 function ($)
 {
     var fields = [ "username", "password" ];
-    var errmode = false;
 
     function validate() {
         var data = {}
@@ -23,13 +21,6 @@ function ($)
         return data;
     }
 
-    function change(node) {
-        if (node.val().length == 0) {
-            node.addClass('error');
-        } else {
-            node.removeClass('error');
-        }
-    }
 
     function getParam(name)
     {
@@ -70,24 +61,17 @@ function ($)
     }
 
     function setErrorMode() {
-        if (errmode) {
-            return;
-        }
-        for (var i = 0; i < fields.length; i++) {
-            var node = $('#'+fields[i]); // must re-grab the node
-            node.keyup(function(event) {
-                change(node);
-            });
-            change(node);
-        }
-        errmode = true;
-
+        var input = $('#password');
+        input[0].selectionStart = 0;
+        input[0].selectionEnd = input.val().length;
         $('#error').removeClass('hidden');
     }
 
-    var url = $('form').attr('action');
-    $('#login').bind('click', function(event) {
-        event.preventDefault();
-        submit(url);
+    $().ready(function () {
+        var url = $('form').attr('action');
+        $('#login').bind('click', function(event) {
+            event.preventDefault();
+            submit(url);
+        });
     });
 });
