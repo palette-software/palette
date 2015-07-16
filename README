@@ -10,8 +10,8 @@ Packaging:
             this could be done via:
 
                 cd /tmp
-                wget https://www.akirisolutions.com/download/framework/akiri.framework_0.5.0_all.deb 
-                dpkg --install akiri.framework_0.5.0_all.deb 
+                wget https://www.akirisolutions.com/download/framework/akiri.framework_0.5.0_all.deb
+                dpkg --install akiri.framework_0.5.0_all.deb
 
         Build the Debian packages:
             make palette && make controller
