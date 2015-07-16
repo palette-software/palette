@@ -3,9 +3,18 @@ Packaging:
 
         INSTALL THE DEPENDENCY:
             sudo apt-get install debhelper
+            sudo apt-get install pylint python-tz python-passlib
+
+        Install the Akiri framework:
+            Download and install the latest Akiri framework. On 2015/07/15
+            this could be done via:
+
+                cd /tmp
+                wget https://www.akirisolutions.com/download/framework/akiri.framework_0.5.0_all.deb
+                dpkg --install akiri.framework_0.5.0_all.deb
 
         Build the Debian packages:
-            make
+            make palette && make controller
 
         This will create the packages:
             controller_0.1_all.deb
