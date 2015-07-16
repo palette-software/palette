@@ -17,6 +17,6 @@ pylint:
 
 clean:
 	rm -rf *.egg-info dist build
-	find . -name \*.pyc -exec rm '{}' ';'
+	find . -name \*.pyc -exec rm -f '{}' ';'
 	make -C DEBIAN clean
 .PHONY: pylint
