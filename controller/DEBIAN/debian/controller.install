@@ -3,6 +3,7 @@ etc/ssl/certs/palette_cert.pem	/etc/ssl/certs
 etc/init.d/controller	/etc/init.d
 usr/bin/controller			/usr/bin
 usr/bin/upgrade-agent        /usr/bin
+usr/bin/palette-version	     /usr/bin
 usr/sbin/palette-update     /usr/sbin
 usr/sbin/palette-update-sc  /usr/sbin
 etc/cron.d/palette-update   /etc/cron.d
