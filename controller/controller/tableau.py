@@ -559,7 +559,9 @@ class TableauStatusMonitor(threading.Thread):
            Returns None if no valid url is available.
         """
 
-        systeminfo_url = self.st_config.tableau_server_url
+        systeminfo_url = self.st_config.tableau_internal_server_url
+        if not systeminfo_url:
+            systeminfo_url = self.st_config.tableau_server_url
         if not systeminfo_url:
             self.log.error("_systeminfo_get: no url configured.")
             return None

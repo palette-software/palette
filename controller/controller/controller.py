@@ -386,7 +386,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             errmsg = 'Invalid credentials.'
             self.log.error('tabcmd: ' + errmsg)
             return {'error': errmsg}
-        url = self.system.get(SystemConfig.TABLEAU_SERVER_URL, default=None)
+        url = self.system.get(SystemConfig.TABLEAU_INTERNAL_SERVER_URL,
+                                                                default=None)
+        if not url:
+            url = self.system.get(SystemConfig.TABLEAU_SERVER_URL, default=None)
         if not url:
             errmsg = 'No local URL available.'
             return {'error': errmsg}
