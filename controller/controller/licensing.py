@@ -166,18 +166,26 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
     @classmethod
     def parse(cls, output):
         # pylint: disable=anomalous-backslash-in-string
-        if output.find("Cores used") != -1:
-            try:
-                cores = int(output.split()[-1])
-            except (IndexError, ValueError):
-                print "Invalid format for license report:", output
-                return {}
-            return {'cores': cores}
         pattern = '(?P<interactors>\d+) interactors, (?P<viewers>\d+) viewers'
         match = re.search(pattern, output)
-        if not match:
+        if match:
+            return match.groupdict()
+
+        if output.find("Cores used") == -1:
+            print "Unknown format for license report:", output
             return {}
-        return match.groupdict()
+
+        for line in output.splitlines():
+            if line.find("Cores used") == -1:
+                continue
+            try:
+                cores = int(line.split()[-1])
+            except (IndexError, ValueError):
+                print "Invalid format for cores license report:", line
+                return {}
+            return {'cores': cores}
+        print "Unexpected failure for license check."
+        return {}
 
     def gettype(self):
         return str(self.license_type)
