@@ -296,7 +296,7 @@ class CliCmd(object):
             now = time.time()
             if now - start_time > timeout:
                 self.log.info("timeout for command '%s', xid %s, " + \
-                              "conn_id %d, timeout %d, timeout %d," + \
+                              "conn_id %d, timeout %d, " + \
                               "elapsed %d, start_time %d, now %d",
                               safecmd(orig_cli_command), xid, aconn.conn_id,
                               timeout, now - start_time, start_time, now)
