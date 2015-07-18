@@ -15,7 +15,7 @@ class ManageApplication(PaletteRESTApplication):
         self.commapp.send_cmd('start', req=req, read_response=False)
         return {}
 
-    @required_parameters('backup', 'license', 'maint')
+    @required_parameters('backup', 'license')
     @required_role(Role.MANAGER_ADMIN)
     def handle_stop(self, req):
         cmd = 'stop'
@@ -23,8 +23,7 @@ class ManageApplication(PaletteRESTApplication):
             cmd = '/nobackup ' + cmd
         if not req.params_getbool('license'):
             cmd = '/nolicense ' + cmd
-        if not req.params_getbool('maint'):
-            cmd = '/nomaint ' + cmd
+        cmd = '/nomaint ' + cmd  # Never enable the maintenance web server
         self.commapp.send_cmd(cmd, req=req, read_response=False)
         return {}
 

@@ -98,12 +98,6 @@
               Also perform safety backup
             </label>
           </li>
-          <li>
-            <input name="maint" type="checkbox" checked/>
-            <label class="checkbox">
-              Also start maintenance webserver
-            </label>
-          </li>
         </ul>
       </section>
     </section>
