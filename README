@@ -3,7 +3,8 @@ Packaging:
 
         INSTALL THE DEPENDENCY:
             sudo apt-get install debhelper
-            sudo apt-get install pylint python-tz python-passlib
+            sudo apt-get install pylint python-tz python-passlib python-dateutil python-boto python-crypto
+            sudo apt-get install python-mako python-webob python-pastescript python-sqlalchemy python-paste python-pastedeploy
 
         Install the Akiri framework:
             Download and install the latest Akiri framework. On 2015/07/15
@@ -11,9 +12,10 @@ Packaging:
 
                 cd /tmp
                 wget https://www.akirisolutions.com/download/framework/akiri.framework_0.5.0_all.deb
-                dpkg --install akiri.framework_0.5.0_all.deb
+                sudo dpkg --install akiri.framework_0.5.0_all.deb
 
         Build the Debian packages:
+            # follow the setup instructions in controller/README and app/README
             make palette && make controller
 
         This will create the packages:
@@ -66,7 +68,7 @@ To see if the controller or palette webapp is running:
 
 To run the controller without installing the "controller" package:
 ==================================================================
-    
+
     sudo mkdir /var/log/palette
     sudo chown-to-whoever-will-berunning-controller /var/log/palette
     cd palette/controller/controller
