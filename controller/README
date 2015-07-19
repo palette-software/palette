@@ -11,7 +11,9 @@ Linux:
     as you configure the Postfix mail server as super-user via:
 
         Copy the main.cf file to /etc/postfix and then restart postfix:
-            service postfix restart
+            sudo mv /etc/postfix/main.cf /etc/postfix/main.cf.dist
+            sudo cp ./DEBIAN/etc/postfix/main.cf /etc/postfix/
+            sudo service postfix restart
 
     Configure email alert enabled/to/from/etc. in inits.py
     BY DEFAULT, ALERTS ARE OFF.
@@ -29,17 +31,75 @@ Linux:
             Enter it again:
             postgres=# \quit
 
+        See if postgres authentication is working. Try:
+
+            psql -U palette paldb
+
+        If that command fails with a complaint about "peer" then you need
+        to set up peer authentication or you need to change "peer" to "trust"
+        in /etc/postgresql/<version>/main/pg_hba.conf:
+
+            -local all  postgres peer
+            +#local all  postgres peer
+            +local  all  postgres trust
+            ...
+            -local all  all      peer
+            +#local all  all      peer
+            +local  all  all      trust
+
+        Then restart postgres:
+
+            sudo service postgresql restart
+
     Windows:
         See DevBox wiki page.
 
 To test:
 ========
 
-    - Get a usable INI file
-        cp DEBIAN/etc/controller.ini .
+    - Create a palette directory, preferably outside the source tree. For the controller
+      this could be anywhere, but the palette app, which does not have a config file or
+      command line overrides, app hard codes /var/palette, so use that directory:
+
+        sudo mkdir /var/palette
+        sudo chown ${USER}.${USER} /var/palette
+        mkdir -p /var/palette/certs /var/palette/sched /var/palette/data/workbook-archive
+
+    - Populate the sched directory:
+
+        cp ./DEBIAN/var/palette/sched/* /var/palette/sched/
+
+    - Copy the .pem file:
+
+        cp ./DEBIAN/etc/ssl/certs/palette_cert.pem /var/palette/certs/
+
+    - Generate an AES key:
+
+        dd if=/dev/urandom of=/var/palette/.aes bs=32 count=1
+        chmod 0400 /var/palette/.aes
+ 
+    - Get a usable INI file:
+        cp DEBIAN/etc/controller.ini /var/palette/
+
+    - Edit /var/palette/controller.ini:
+
+        +#default agent_port is 22, which conflicts with ssh
+        +agent_port=8888
+
+        ...
+
+        -ssl_cert_file = /etc/ssl/certs/palette_cert.pem
+        +#ssl_cert_file = /etc/ssl/certs/palette_cert.pem
+        +ssl_cert_file = /var/palette/certs/palette_cert.pem
+
+        ...
+
+        -filename = /var/log/palette/controller.log
+        +# comment out filename if you want console output in the terminal window
+        +#filename = /var/log/palette/controller.log
 
     - Start the controller:
-        python controller/controller.py controller.ini
+        sudo env PYTHONPATH=. python controller/controller.py /var/palette/controller.ini
 
     - Then start the Palette Agent:
         python agent.py
