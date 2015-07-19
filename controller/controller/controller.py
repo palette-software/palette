@@ -373,21 +373,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return None
 
-    def local_url(self):
-        """ Generate a url for Tableau that the agent can use internally"""
-
-        url = self.public_url()
-        if url:
-            return url
-
-        key = 'datacollector.apache.url'
-        url = self.yml.get(key, default=None)
-        if url:
-            tokens = url.split('/', 3)
-            if len(tokens) >= 3:
-                return tokens[0] + '//' + tokens[2]
-        return None
-
     def tabcmd(self, args, agent):
         cred = self.cred.get('primary', default=None)
         if cred is None:
@@ -401,7 +386,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             errmsg = 'Invalid credentials.'
             self.log.error('tabcmd: ' + errmsg)
             return {'error': errmsg}
-        url = self.local_url()
+        url = self.system.get(SystemConfig.TABLEAU_SERVER_URL, default=None)
         if not url:
             errmsg = 'No local URL available.'
             return {'error': errmsg}
