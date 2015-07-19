@@ -11,6 +11,8 @@ sudo npm install -g less
 sudo npm install -g grunt-cli
 ../scripts/setup.sh
 
+# start the app
+./runserver
 
 ---
 
