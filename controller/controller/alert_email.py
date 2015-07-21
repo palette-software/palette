@@ -145,6 +145,12 @@ class AlertEmail(object):
         # pylint: disable=too-many-statements
         # pylint: disable=too-many-return-statements
 
+        try:
+            self.admin_enabled = self.st_config.alerts_admin_enabled
+        except ValueError:
+            # If not there, then set to enabled
+            self.admin_enabled = True
+
         subject = event_entry.email_subject
         if subject == None:
             subject = event_entry.subject
@@ -199,12 +205,6 @@ class AlertEmail(object):
 
         # Remove any duplicates
         to_emails = list(set(to_emails))
-
-        try:
-            self.admin_enabled = self.st_config.alerts_admin_enabled
-        except ValueError:
-            # If not there, then set to enabled
-            self.admin_enabled = True
 
         bcc = None
         if not self.standalone and self.admin_enabled and not recipient:
