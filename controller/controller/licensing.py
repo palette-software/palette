@@ -76,7 +76,8 @@ def licensing_info(domain, envid):
     if entry.license_type == LicenseEntry.LICENSE_TYPE_NAMED_USER:
         data['license-quantity'] = entry.interactors
     elif entry.license_type == LicenseEntry.LICENSE_TYPE_CORE:
-        data['license-quantity'] = entry.cores
+        data['license-quantity'] = entry.cores  # used
+        data['license-core-licenses'] = entry.core_licenses  # available/bought
     else:
         data['license-quantity'] = None
 
@@ -93,7 +94,6 @@ def licensing_info(domain, envid):
     data['primary-os-version'] = agent.os_version
 
     return data
-
 
 class LicenseException(StandardError):
     def __init__(self, status, reason):
@@ -115,6 +115,7 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
     interactors = Column(Integer)
     viewers = Column(Integer)
     cores = Column(Integer)
+    core_licenses = Column(Integer)
     license_type = Column(String)
     notified = Column(Boolean, nullable=False, default=False) # deprecated
     creation_time = Column(DateTime, server_default=func.now())
@@ -132,30 +133,35 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
         return entry
 
     @classmethod
-    def get(cls, agentid, interactors=None, viewers=None, cores=None):
+    def get(cls, agentid, **kwargs):
         session = meta.Session()
         entry = cls.get_by_agentid(agentid)
         if not entry:
             entry = LicenseEntry(agentid=agentid)
             session.add(entry)
 
-        if interactors and interactors.isdigit():
-            entry.interactors = int(interactors)
-        if viewers and viewers.isdigit():
-            entry.viewers = int(viewers)
-        if cores:
-            entry.cores = cores
-
-        if entry.cores:
+        if 'interactors' in kwargs and kwargs['interactors'].isdigit():
+            entry.license_type = LicenseEntry.LICENSE_TYPE_NAMED_USER
+            entry.interactors = int(kwargs['interactors'])
+            if 'viewers' in kwargs and kwargs['viewers'].isdigit():
+                entry.viewers = int(kwargs['viewers'])
+            entry.cores = 0
+            entry.core_licenses = 0
+            return entry
+        elif 'cores' in kwargs:
             entry.license_type = LicenseEntry.LICENSE_TYPE_CORE
+            entry.cores = kwargs['cores']
+            entry.core_licenses = kwargs['core-licenses']
             entry.interactors = 0
             entry.viewers = 0
-        else:
-            # Default setting to let us know the license info have been
-            # received. It could be 0 interactors and 0 viewers, which
-            # means "no license".
-            entry.license_type = LicenseEntry.LICENSE_TYPE_NAMED_USER
-            entry.cores = 0
+            return entry
+
+        # Default setting to let us know the license info has been
+        # received. It could be 0 interactors and 0 viewers, which
+        # means "no license".
+        entry.license_type = LicenseEntry.LICENSE_TYPE_NAMED_USER
+        entry.cores = 0
+        entry.core_licenses = 0
 
         return entry
 
@@ -179,11 +185,12 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
             if line.find("Cores used") == -1:
                 continue
             try:
-                cores = int(line.split()[-1])
+                cores = int(line.split()[-3])
+                core_licenses = int(line.split()[-1])
             except (IndexError, ValueError):
                 print "Invalid format for cores license report:", line
                 return {}
-            return {'cores': cores}
+            return {'cores': cores, 'core-licenses': core_licenses}
         print "Unexpected failure for license check."
         return {}
 
@@ -248,11 +255,12 @@ class LicenseManager(Manager):
             msg += "interactors: %s, viewers: %s" % \
                         (str(entry.interactors), str(entry.viewers))
         elif entry.license_type == LicenseEntry.LICENSE_TYPE_CORE:
-            msg += "cores: %s" % str(entry.cores)
+            msg += "cores used: %s of %s" % \
+                    (str(entry.cores), str(entry.core_licenses))
         else:
-            msg += "interactors: %s, viewers: %s, cores: %s" \
+            msg += "interactors: %s, viewers: %s, cores used: %s of %s" \
                         % (str(entry.interactors), str(entry.viewers),
-                           str(entry.cores))
+                           str(entry.cores), str(entry.core_licenses))
 
         notification = self.server.notifications.get("tlicense")
 
