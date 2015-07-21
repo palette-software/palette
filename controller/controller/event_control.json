@@ -1619,6 +1619,24 @@
 "event_label_desc":null,
 "admin_visibility":false,
 "publisher_visibility":false
+},
+{
+"eventid":92,
+"key":"FIREWALL-OPEN-OKAY",
+"level":"I",
+"send_email":"t",
+"subject":"INFO Firewall Port Open Now OK (%(eventid)s)",
+"event_description":"SUMMARY\nYour Palette Server was able to open the necessary firewall port after a previous failure.  \n\nDETAILS\nEvent Type: ${event_type_label}\nEnvironment: ${environment}\nMachine Name: ${displayname}\nMachine IP: ${ip_address}\nMachine Hostname: ${fqdn}\n% if info is not UNDEFINED or error is not UNDEFINED or stderr is not UNDEFINED or stdout is not UNDEFINED:\nSystem Message:\n% endif\n% if info is not UNDEFINED:\n${info}\n% endif\n% if error is not UNDEFINED:\n${error}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif\n\nWHY THIS EVENT OCCURRED\nThe Agent installed on your Tableau Server machines had network connectivity issues or had failed but is now working.",
+"email_subject":"INFO Firewall Port Open NOW OK (%(eventid)s)",
+"email_message":"SUMMARY\nYour Palette Server was able to open the necessary firewall port after a previous failure. \n\nDETAILS\nTime: ${timestamp}\nEvent Type: ${event_type_label}\nEnvironment: ${environment}\nMachine Name: ${displayname}\nMachine IP: ${ip_address}\nMachine Hostname: ${fqdn}\n% if info is not UNDEFINED or error is not UNDEFINED or stderr is not UNDEFINED or stdout is not UNDEFINED:\nSystem Message:\n% endif\n% if info is not UNDEFINED:\n${info}\n% endif\n% if error is not UNDEFINED:\n${error}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif\n\nWHY THIS EVENT OCCURRED \nThe Agent installed on your Tableau Server machines had network connectivity issues or had failed but is now working.",
+"icon":"",
+"color":"green",
+"event_type":"network",
+"event_type_label":"Network Test",
+"event_label":"",
+"event_label_desc":null,
+"admin_visibility":false,
+"publisher_visibility":false
 }
 ]
 }
