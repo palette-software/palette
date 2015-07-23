@@ -109,8 +109,8 @@ elif [ "$oldversion" = "1.2.4" ]; then
     alter table tableau_processes add column tid bigserial;
     alter table tableau_processes add constraint tableau_processes_pkey primary key (tid);
 XYZZY
-elif [ "$oldversion" = "1.4.2" ]; then
-    echo Upgrading from 1.4.2 ...
+elif [ "$oldversion" = "1.4.3" ]; then
+    echo Upgrading from 1.4.3 ...
     psql paldb << XYZZY
     drop table event_control;
 
