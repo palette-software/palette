@@ -11,6 +11,8 @@ from cache import TableauCacheManager
 from manager import synchronized
 from odbc import ODBC
 from util import timedelta_total_seconds, utc2local
+from datasources import DataSource
+from workbooks import WorkbookEntry
 
 def to_hhmmss(seconds):
     hours = seconds // (60*60)
@@ -53,46 +55,50 @@ class ExtractEntry(meta.Base, BaseMixin, BaseDictMixin):
 
 class ExtractManager(TableauCacheManager):
 
-    def workbook_update(self, agent, entry, users, cache=None):
-        if cache is None:
-            cache = {}
-        title = entry.title.replace("'", "''")
-        stmt = \
-            "SELECT owner_id, site_id, project_id " +\
-            "FROM workbooks WHERE name = '%s'"
-        stmt = stmt % (title,)
+    def workbook_update(self, entry):
+        args = entry.args.split()
+        if len(args) < 11 or not args[4].isdigit():
+            self.log.error("extract workbook_update: args bad for "
+                           "workbook name %s: %s",
+                            entry.name, entry.args)
+            return
 
-        if entry.title in cache:
-            row = cache[entry.title]
-        else:
-            data = agent.odbc.execute(stmt)
-            if 'error' in data or '' not in data or not data['']:
-                return  # FIXME: log
-            row = cache[entry.title] = data[''][0]
+        workbookid = int(args[4])
+        envid = self.server.environment.envid
 
-        entry.system_user_id = users.get(row[1], row[0])
-        entry.project_id = int(row[2])
+        try:
+            wb_entry = WorkbookEntry.get_by_id(envid, workbookid)
+        except ValueError:
+            self.log.error("extract workbook_update: No such workbook "
+                           "named %s with id %d\n",
+                           entry.name, workbookid)
+            return
+
+        entry.system_user_id = wb_entry.system_user_id
+        entry.project_id = wb_entry.project_id
 
     # FIXME: merge the update functions
-    def datasource_update(self, agent, entry, users, cache=None):
-        if cache is None:
-            cache = {}
-        title = entry.title.replace("'", "''")
-        stmt = \
-            "SELECT owner_id, site_id, project_id " +\
-            "FROM datasources WHERE name = '%s'"
-        stmt = stmt % (title,)
+    def datasource_update(self, entry, users):
+        args = entry.args.split()
+        if len(args) < 11 or not args[4].isdigit():
+            self.log.error("extract datasource: args bad for "
+                           "datasource workbook name %s: %s",
+                           entry.name, entry.args)
+            return
 
-        if entry.title in cache:
-            row = cache[entry.title]
-        else:
-            data = agent.odbc.execute(stmt)
-            if 'error' in data or '' not in data or not data['']:
-                return # FIXME: log
-            row = cache[entry.title] = data[''][0]
+        datasourceid = int(args[4])
+        envid = self.server.environment.envid
 
-        entry.system_user_id = users.get(row[1], row[0])
-        entry.project_id = int(row[2])
+        try:
+            ds_entry = DataSource.get(envid, datasourceid)
+        except ValueError:
+            self.log.error("extract datasource__update: No such datasource "
+                           "named %s with id %d\n",
+                           entry.name, datasourceid)
+            return
+
+        entry.system_user_id = users.get(ds_entry.site_id, ds_entry.owner_id)
+        entry.project_id = ds_entry.project_id
 
     @synchronized('extracts')
     def load(self, agent, check_odbc_state=True):
@@ -141,8 +147,6 @@ class ExtractManager(TableauCacheManager):
         if 'error' in datadict or '' not in datadict:
             return datadict
 
-        datasources = {}
-        workbooks = {}
         userdata = self.load_users(agent)
 
         session = meta.Session()
@@ -155,11 +159,10 @@ class ExtractManager(TableauCacheManager):
             entry.system_user_id = -1
 
             if entry.subtitle == 'Workbook':
-                self.workbook_update(agent, entry, userdata, cache=workbooks)
+                self.workbook_update(entry)
             if entry.subtitle in ('Data Source', 'Datasource',
                                   'RefreshExtractTask'):
-                self.datasource_update(agent, entry, userdata,
-                                       cache=datasources)
+                self.datasource_update(entry, userdata)
             body = dict(agent.todict().items() + entry.todict().items())
 
             if entry.completed_at is not None and entry.started_at is not None:
