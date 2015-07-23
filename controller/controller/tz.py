@@ -2,6 +2,7 @@ import time
 import datetime
 from dateutil import tz as dtz
 
+# pylint: disable=invalid-name
 class tzlocal(dtz.tzlocal):
     def utcoffset(self, dt):
         self._std_offset = datetime.timedelta(seconds=-time.timezone)
