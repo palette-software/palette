@@ -115,6 +115,12 @@ elif [ "$oldversion" = "1.4.3" ]; then
     drop table event_control;
 
     alter table license add column core_licenses integer;
+
+    alter table datasources add column first_published_at timestamp;
+    alter table datasources add column connectable boolean;
+    alter table datasources add column is_hierarchical boolean;
+    alter table datasources add column extracts_incremented_at timestamp;
+
 XYZZY
 elif [ "$oldversion" != "" ]; then
     echo Upgrading $oldversion

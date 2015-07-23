@@ -35,6 +35,13 @@ class DataSource(meta.Base, BaseMixin):
     refreshable_extracts = Column(Boolean)
     data_engine_extracts = Column(Boolean)
     extracts_refreshed_at = Column(DateTime)
+
+    # Added in 1.5:
+    first_published_at = Column(DateTime)
+    connectable = Column(Boolean)
+    is_hierarchical = Column(Boolean)
+    extracts_incremented_at = Column(DateTime)
+
     luid = Column(String)
     asset_key_id = Column(Integer)
     document_version = Column(String)
