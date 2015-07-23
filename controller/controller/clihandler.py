@@ -343,7 +343,9 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
         time.tzset()
-        self.report_status({})
+        cmd = ['/sbin/restart', 'cron']
+        body = self._runcmd(cmd)
+        self.report_status(body)
 
     @usage('upgrade [on | off]')
     def do_upgrade(self, cmd):
@@ -1758,22 +1760,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # pylint: disable=protected-access
         os._exit(0)
 
-    @usage('apache [start|stop|restart|reload|force-reload')
-    def do_apache(self, cmd):
-        """Control the apache2 service. (must be run as root)"""
-        if len(cmd.args) != 1:
-            self.print_usage(self.do_apache.__usage__)
-            return
-        action = cmd.args[0].lower()
-        if action not in ['start', 'stop', 'restart', 'reload', 'force-reload']:
-            self.print_usage(self.do_apache.__usage__)
-            return
-        if os.geteuid() != 0:
-            self.error(clierror.ERROR_PERMISSION)
-            return
-        self.ack()
-
-        cmd = ['/usr/sbin/service', 'apache2', action]
+    def _runcmd(self, cmd):
         process = subprocess.Popen(cmd,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE,
@@ -1793,6 +1780,25 @@ class CliHandler(socketserver.StreamRequestHandler):
         if stderr:
             body['stderr'] = stderr
 
+        return body
+
+    @usage('apache [start|stop|restart|reload|force-reload')
+    def do_apache(self, cmd):
+        """Control the apache2 service. (must be run as root)"""
+        if len(cmd.args) != 1:
+            self.print_usage(self.do_apache.__usage__)
+            return
+        action = cmd.args[0].lower()
+        if action not in ['start', 'stop', 'restart', 'reload', 'force-reload']:
+            self.print_usage(self.do_apache.__usage__)
+            return
+        if os.geteuid() != 0:
+            self.error(clierror.ERROR_PERMISSION)
+            return
+        self.ack()
+
+        cmd = ['/usr/sbin/service', 'apache2', action]
+        body = self._runcmd(cmd)
         self.report_status(body)
 
     @usage('archive [start|stop] [port]')
