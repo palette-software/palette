@@ -5,6 +5,7 @@ import shlex
 import SocketServer as socketserver
 import socket
 import json
+import time
 import traceback
 import subprocess
 from urlparse import urlparse
@@ -331,6 +332,17 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.error(clierror.ERROR_COMMAND_FAILED, traceback_string())
             return
 
+        self.report_status({})
+
+    @usage('timezone [update]')
+    def do_timezone(self, cmd):
+        """Reset/reread the current python timezone setting."""
+        if len(cmd.args) and cmd.args[0] != 'update':
+            self.print_usage(self.do_test.__usage__)
+            return
+
+        self.ack()
+        time.tzset()
         self.report_status({})
 
     @usage('upgrade [on | off]')

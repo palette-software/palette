@@ -1,6 +1,7 @@
 import sys
 from webob import exc
 from pytz import common_timezones as timezones
+import time
 from urlparse import urlparse
 
 from akiri.framework.proxy import JSONProxy
@@ -280,7 +281,7 @@ class SetupSSLApplication(JSONProxy):
         return super(SetupSSLApplication, self).service(req)
 
 
-class SetupTimezoneApplication(JSONProxy):
+class SetupTimezoneApplication(JSONProxy, PaletteRESTApplication):
     """Handler for the timezone configuration section."""
 
     def __init__(self):
@@ -299,6 +300,8 @@ class SetupTimezoneApplication(JSONProxy):
             return {'error': 'post process missing timezone'}
 
         req.system.save(SystemConfig.TIMEZONE, data['timezone'])
+        time.tzset()    # Reset/reread current python timezone setting
+        self.commapp.send_cmd('timezone update')
         return data
 
     def service_GET(self, req):

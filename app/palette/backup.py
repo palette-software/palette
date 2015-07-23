@@ -1,12 +1,12 @@
 import time
 import datetime
-from dateutil.tz import tzlocal
 
 from webob import exc
 
 from controller.files import FileManager
 from controller.util import DATEFMT
 from controller.profile import Role
+from controller.tz import tzlocal
 
 from .rest import required_parameters, required_role, PaletteRESTApplication
 

@@ -1,6 +1,5 @@
 import sys, traceback
 import datetime
-from dateutil import tz
 from mako.template import Template
 from mako import exceptions
 from mako.exceptions import MakoException
@@ -17,6 +16,7 @@ from profile import UserProfile
 from util import DATEFMT, UNDEFINED, utc2local
 from mixin import BaseMixin, BaseDictMixin
 from manager import Manager
+import tz
 
 from sites import Site
 from projects import Project

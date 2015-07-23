@@ -3,7 +3,7 @@ import socket
 import sys
 import traceback
 from datetime import datetime
-from dateutil import tz
+import tz
 import dateutil.parser
 
 UTCFMT = "%Y-%m-%d %H:%M:%SZ"
