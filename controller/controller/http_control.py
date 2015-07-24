@@ -19,6 +19,7 @@ def match_re(patterns, arg):
     for pattern in patterns:
         if pattern.match(arg):
             return True
+
     return False
 
 class HttpControl(meta.Base, BaseMixin):
@@ -34,7 +35,10 @@ class HttpControl(meta.Base, BaseMixin):
     modification_time = Column(DateTime, server_default=func.now(),
                                onupdate=func.current_timestamp())
 
-    defaults = [{'status':404, 'excludes':r'.+\.xml(\Z|\?)'}]
+    exclude_str = r'.+(\.(png|pdf|csv|bmp|emf|mdb|xml)(\Z|\?)|' + \
+                                 r'format=(png|pdf|csv|bmp|emf|mdb|xml))'
+    defaults = [{'status':404, 'excludes': exclude_str},
+                {'status':500, 'excludes': exclude_str}]
 
     @classmethod
     def all(cls):

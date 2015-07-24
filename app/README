@@ -11,9 +11,11 @@ sudo npm install -g less
 sudo npm install -g grunt-cli
 ../scripts/setup.sh
 
-# start the app
-./runserver
+# start the app to listen on the local interface:
+    ./runserver
 
+# start the app to listen on all (including external) interfaces:
+    ./runserver --host=0.0.0.0
 ---
 
 If you have not installed the "palette" Debian package, and you want

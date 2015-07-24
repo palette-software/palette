@@ -65,6 +65,7 @@ class SystemConfig(object):
 
     SERVER_URL = "server-url"
     TABLEAU_SERVER_URL = 'tableau-server-url'
+    TABLEAU_INTERNAL_SERVER_URL = 'tableau-internal-server-url'
     AUTHENTICATION_TYPE = "authentication-type"
 
     TIMEZONE = "timezone"
@@ -242,6 +243,8 @@ class SystemConfig(object):
             return self._getstring(self.SERVER_URL, default='https://localhost')
         if name == 'tableau_server_url':
             return self._getstring(self.TABLEAU_SERVER_URL, default='')
+        if name == 'tableau_internal_server_url':
+            return self._getstring(self.TABLEAU_INTERNAL_SERVER_URL, default='')
         if name == "authentication_type":
             return self._getint(self.AUTHENTICATION_TYPE, default=1)
         if name == "timezone":
@@ -309,6 +312,7 @@ class SystemConfig(object):
             self.MAIL_PASSWORD: self.mail_password,
             self.SERVER_URL: self.server_url,
             self.TABLEAU_SERVER_URL: self.tableau_server_url,
+            self.TABLEAU_INTERNAL_SERVER_URL: self.tableau_interanal_server_url,
             self.AUTHENTICATION_TYPE: self.authentication_type,
             self.TIMEZONE: self.timezone,
             self.CONTROLLER_INITIAL_START: self.controller_initial_start

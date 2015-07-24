@@ -440,9 +440,6 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         combined_status = {}
         combined_status['archive-start'] = self.server.archive('start')
-        if main_state == StateManager.STATE_STOPPED:
-            combined_status['maint-start'] = \
-                                    self.server.maint('start', send_alert=False)
         self.ack()
         self.report_status(combined_status)
 
