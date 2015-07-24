@@ -27,11 +27,11 @@ class FirewallManager(object):
     DEFAULT_PRIMARY_PORTS = [
             {"name": "HTTP",
                 "port": 80,
-                "color": 'red'
+                "color": 'green'
             },
             {"name": "HTTPS",
                 "port": 443,
-                "color": 'red'
+                "color": 'green'
             },
     ]
 
@@ -58,7 +58,7 @@ class FirewallManager(object):
 
         # First the listen_port
         entry = FirewallEntry(agentid=agent.agentid,
-                name="Palette Agent", port=agent.listen_port, color="red")
+                name="Palette Agent", port=agent.listen_port, color="green")
         session.add(entry)
 
         # Add the others
@@ -79,29 +79,39 @@ class FirewallManager(object):
             filter(FirewallEntry.agentid == agent.agentid).\
             all()
 
-        ports = [entry.port for entry in rows]
-        body = agent.firewall.enable(ports)
         success = True
-        if 'error' in body:
-            self.log.error(\
-                ("open_firewall_ports failed to open ports '%s' on " +\
-                     "host %s, failed with: %s") % \
-                    (str(ports), agent.displayname, body['error']))
-            data = agent.todict()
-            data['error'] = body['error']
-            data['info'] = "Ports: " + str(ports)
-            self.server.event_control.gen(
-                EventControl.FIREWALL_OPEN_FAILED, data)
-            success = False
-            color = 'red'
-        else:
-            color = 'green'
+        for entry in rows:
+            port = entry.port
+            body = agent.firewall.enable([port])
+            if 'error' in body:
+                success = False
+                color = 'red'
+                self.log.error(\
+                    ("open_firewall_ports failed to open port '%s' on " +\
+                         "host %s, failed with: %s") % \
+                        (str(port), agent.displayname, body['error']))
 
-        session.query(FirewallEntry).\
-            filter(FirewallEntry.agentid == agent.agentid).\
-            update({'color': color}, synchronize_session=False)
+                if entry.color != 'red':
+                    data = agent.todict()
+                    data['error'] = body['error']
+                    data['info'] = "Port: " + str(port)
+                    self.server.event_control.gen(
+                        EventControl.FIREWALL_OPEN_FAILED, data)
+            else:
+                color = 'green'
+                if entry.color == 'red':
+                    data = agent.todict()
+                    data['info'] = "Port: " + str(port)
+                    self.server.event_control.gen(
+                        EventControl.FIREWALL_OPEN_OKAY, data)
 
-        session.commit()
+            session.query(FirewallEntry).\
+                filter(FirewallEntry.agentid == agent.agentid).\
+                filter(FirewallEntry.port == port).\
+                update({'color': color}, synchronize_session=False)
+
+            session.commit()
+
         if not success:
             raise IOError("Could not open all firewall ports")
 
