@@ -12,6 +12,10 @@ class ODBC(CredentialMixin):
     PORT = 8060
     DATABASE = 'workgroup'
 
+    # Note: This text is compared in AuthManager
+    READONLY_ERROR_TEXT = "The Tableau database readonly user access " + \
+                          "is disabled."
+
     def __init__(self, agent):
         self.agent = agent
         self.server = agent.server
@@ -40,7 +44,7 @@ class ODBC(CredentialMixin):
             self.DRIVER = '{PostgreSQL Unicode(x64)}'
         self.DRIVER = '{PostgreSQL Unicode(x64)}'
 
-    def connection(self):
+    def _connection(self):
         # worker id points to the 'hot' database IP.
         worker_id = self.server.yml.get('pgsql.worker_id', default=None)
         if not worker_id is None:
@@ -55,13 +59,13 @@ class ODBC(CredentialMixin):
         if not self.DRIVER:
             self._set_driver()
 
-        cred = self.get_cred(self.agent.envid, self.READONLY_KEY)
-        if cred:
-            uid = cred.user # Should be 'readonly'
-            passwd = cred.getpasswd()
-        else:
-            uid = 'tblwgadmin'
-            passwd = ''
+        enabled = self.server.yml.get('pgsql.readonly.enabled', default=None)
+        if enabled != 'true':
+            # Note: This text is compared in AuthManager
+            raise RuntimeError(self.READONLY_ERROR_TEXT)
+
+        uid = self.server.yml.get('pgsql.readonly_username', default='')
+        passwd = self.server.yml.get('pgsql.readonly_password', default='')
 
         s = 'DRIVER=' + self.DRIVER +'; '
         s += 'Server=' + host + '; '
@@ -72,8 +76,12 @@ class ODBC(CredentialMixin):
         return s
 
     def execute(self, stmt):
-        data = {'connection': self.connection(),
-                'select-statement': stmt}
+        try:
+            data = {'connection': self._connection(),
+                    'select-statement': stmt}
+        except RuntimeError as ex:
+            return {'error': str(ex)}
+
         return self.server.send_immediate(self.agent, 'POST', self.URI, data)
 
     @classmethod
