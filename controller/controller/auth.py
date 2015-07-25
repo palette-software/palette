@@ -88,6 +88,8 @@ class AuthManager(Manager):
             if notification.color != 'red':
                 if data['error'].find(
                     "A password is required for this connection.") != -1 or \
+                    data['error'].find(agent.odbc.READONLY_ERROR_TEXT) \
+                                                                    != -1 or \
                     data['error'].find("password authentication failed") != -1:
 
                     adata = agent.todict()
