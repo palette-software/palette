@@ -59,8 +59,8 @@ class ExtractManager(TableauCacheManager):
         args = entry.args.split()
         if len(args) < 11 or not args[4].isdigit():
             self.log.error("extract workbook_update: args bad for "
-                           "workbook name %s: %s",
-                            entry.name, entry.args)
+                           "workbook title %s: %s",
+                            entry.title, entry.args)
             return
 
         workbookid = int(args[4])
@@ -70,8 +70,8 @@ class ExtractManager(TableauCacheManager):
             wb_entry = WorkbookEntry.get_by_id(envid, workbookid)
         except ValueError:
             self.log.error("extract workbook_update: No such workbook "
-                           "named %s with id %d\n",
-                           entry.name, workbookid)
+                           "with title %s, id %d\n",
+                           entry.title, workbookid)
             return
 
         entry.system_user_id = wb_entry.system_user_id
@@ -81,9 +81,9 @@ class ExtractManager(TableauCacheManager):
     def datasource_update(self, entry, users):
         args = entry.args.split()
         if len(args) < 11 or not args[4].isdigit():
-            self.log.error("extract datasource: args bad for "
-                           "datasource workbook name %s: %s",
-                           entry.name, entry.args)
+            self.log.error("extract datasource_update: args bad for "
+                           "datasource title %s: %s",
+                           entry.title, entry.args)
             return
 
         datasourceid = int(args[4])
@@ -93,8 +93,8 @@ class ExtractManager(TableauCacheManager):
             ds_entry = DataSource.get(envid, datasourceid)
         except ValueError:
             self.log.error("extract datasource__update: No such datasource "
-                           "named %s with id %d\n",
-                           entry.name, datasourceid)
+                           "title %s, id %d\n",
+                           entry.title, datasourceid)
             return
 
         entry.system_user_id = users.get(ds_entry.site_id, ds_entry.owner_id)
