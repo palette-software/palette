@@ -22,16 +22,21 @@ from util import version
 from agent import Agent
 from agentmanager import AgentManager
 from domain import Domain
-# from general import SystemConfig
+from general import SystemConfig
 from yml import YmlEntry
 
 
 LICENSING_URL = "https://licensing.palette-software.com"
 
-def licensing_send(uri, data):
+def licensing_send(uri, data, system):
+    proxy_https = system.get(SystemConfig.PROXY_HTTPS, default=None)
+    if proxy_https:
+        proxies = {'https': proxy_https}
+    else:
+        proxies = None
     params = urllib.urlencode(data)
 
-    conn = urllib.urlopen(LICENSING_URL + uri, params)
+    conn = urllib.urlopen(LICENSING_URL + uri, params, proxies=proxies)
     reply_json = conn.read()
     conn.close()
 
@@ -324,7 +329,7 @@ class LicenseManager(Manager):
             return {'status': "OK", "info": "No tableau license info yet."}
 
         try:
-            body = licensing_send('/license', data)
+            body = licensing_send('/license', data, self.server.system)
         except IOError as ex:
             logging.debug("license send exception failed with status %s", ex)
             self._callfailed(str(ex))
@@ -356,27 +361,6 @@ class LicenseManager(Manager):
         self._callok()
 
         return body
-
-    def _send(self, data):
-        params = urllib.urlencode(data)
-
-        conn = urllib.urlopen(
-                        "https://licensing.palette-software.com/license",
-                        params)
-
-        reply_json = conn.read()
-        conn.close()
-
-        if conn.getcode() != httplib.OK:
-            logging.debug("phone home failed with status %d: %s",
-                                        conn.getcode(), reply_json)
-            raise LicenseException(conn.getcode(),
-                "Failed with status %d. Reply: %s " % \
-                                            (conn.getcode(), reply_json))
-
-        reply = json.loads(reply_json)
-
-        return reply
 
     def _callfailed(self, reason, status=None):
         """If answered=True, it answered, but returned an invalid response."""
