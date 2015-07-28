@@ -37,7 +37,7 @@ class OpenApplication(GenericWSGIApplication):
         info = licensing_info(req.palette_domain, req.envid)
         info['license-key'] = license_key
 
-        data = licensing_send('/api/trial-start', info)
+        data = licensing_send('/api/trial-start', info, req.system)
 
         req.palette_domain.license_key = license_key
         if 'trial' in data:
