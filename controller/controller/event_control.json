@@ -1637,6 +1637,24 @@
 "event_label_desc":null,
 "admin_visibility":false,
 "publisher_visibility":false
+},
+{
+"eventid":93,
+"key":"EMAIL-SPIKE",
+"level":"E",
+"send_email":"t",
+"subject":"ERROR Unusual Spike in Email Alerts (%(eventid)s)",
+"event_description":"SUMMARY\nAn unusual spike in email alerts was detected:  ${email_max_count} email alerts have been sent within the past ${email_lookback_minutes} minutes.\nConsequently, email alerts have been disabled.\n\nYou can navigate to the Palette interface to view the events at <a href=\"${server_url}\" target=\"_blank\">${server_url}</a>.\n\nTo re-enable email alerts, you can navigate to your Palette Configuration Page at <a href=\"${server_url}/configure/general#email-alerts\" target=\"_blank\">${server_url}/configure/general#email-alerts</a>.",
+"email_subject":"ERROR Unusual Spike in Email Alerts: Email Alerts Disabled (%(eventid)s)",
+"email_message":"SUMMARY\nAn unusual spike in email alerts was detected:  ${email_max_count} email alerts have been sent within the past ${email_lookback_minutes} minutes.\nConsequently, email alerts have been disabled.\n\nYou can navigate to the Palette interface to view the events at ${server_url}.\n\nTo re-enable email alerts, you can navigate to your Palette Configuration Page at ${server_url}/configure/general#email-alerts",
+"icon":"",
+"color":"red",
+"event_type":"server",
+"event_type_label":"Palette Server",
+"event_label":"",
+"event_label_desc":null,
+"admin_visibility":false,
+"publisher_visibility":false
 }
 ]
 }
