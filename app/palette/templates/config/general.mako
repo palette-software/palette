@@ -145,7 +145,7 @@
               <span class="timezone"></span></span>
           </p>
           -->
-      <h3>Retained User Requested Backups</h3>
+      <h3>User Requested Backups</h3>
       <p>The number of user requested Backups you want Palette to keep in storage</p>
       <p>
         <span id="backup-user-retain-count" class="btn-group count"></span> Backups
