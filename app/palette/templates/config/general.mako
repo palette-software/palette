@@ -133,7 +133,7 @@
             </span>
           </p>
           -->
-      <h3>Retained Scheduled Backups</h3>
+      <h3>Scheduled Backups</h3>
       <p>The number of scheduled Backups you want Palette to keep in storage</p>
       <p><span id="backup-auto-retain-count" class="btn-group count"></span> Backups</p>
       <!--
@@ -172,12 +172,12 @@
             </span>
           </p>
           -->
-      <h3>Retained Scheduled Ziplogs</h3>
+      <h3>Scheduled Ziplogs</h3>
       <p>The number of scheduled Ziplogs you want Palette to keep in storage</p>
       <p>
         <span id="ziplog-auto-retain-count" class="btn-group count"></span> Ziplogs
       </p>
-      <h3>Retained User Requested Ziplogs</h3>
+      <h3>User Requested Ziplogs</h3>
       <p>The number of user requested Ziplogs you want Palette to keep in storage</p>
       <p>
         <span id="ziplog-user-retain-count" class="btn-group count"></span> Ziplogs
