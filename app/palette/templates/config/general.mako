@@ -204,10 +204,12 @@
         </span>
       </p>
       <div>
+        <!--
         <p>The number of user Worbook Versions you want Palette to retain</p>
         <p>
           <span id="workbook-retain-count" class="btn-group count"></span> Workbook Versions
         </p>
+        -->
         <label for="archive-username">Tableau Server Admin Username *</label>
         <input type="text" id="archive-username" />
         <label for="archive-password">Tableau Server Admin Password *</label>
