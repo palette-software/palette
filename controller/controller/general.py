@@ -47,6 +47,9 @@ class SystemConfig(object):
     ALERTS_PUBLISHER_ENABLED = 'alerts-publisher-enabled'
     ALERTS_NEW_USER_ENABLED = "alerts-new-user-enabled"
 
+    EMAIL_LOOKBACK_MINUTES = "email-lookback-minutes"
+    EMAIL_MAX_COUNT = "email-max-count"
+
     PALETTE_VERSION = "palette-version"
     PALETTE_LOGIN = "palette-login"
 
@@ -206,6 +209,10 @@ class SystemConfig(object):
             return self._getyesno(self.ALERTS_PUBLISHER_ENABLED, default='no')
         if name == 'alerts_new_user_enabled':
             return self._getyesno(self.ALERTS_NEW_USER_ENABLED, default='no')
+        if name == "email_lookback_minutes":
+            return self._getint(self.EMAIL_LOOKBACK_MINUTES, default=60)
+        if name == "email_max_count":
+            return self._getint(self.EMAIL_MAX_COUNT, default=10)
         if name == 'upgrading':
             return self._getyesno(self.UPGRADING)
         if name == 'cpu_load_warn':
@@ -298,6 +305,8 @@ class SystemConfig(object):
             self.ALERTS_ADMIN_ENABLED: self.alerts_admin_enabled,
             self.ALERTS_PUBLISHER_ENABLED: self.alerts_publisher_enabled,
             self.ALERTS_NEW_USER_ENABLED: self.alerts_new_user_enabled,
+            self.EMAIL_LOOKBACK_MINUTES: self.email_lookback_minutes,
+            self.EMAIL_MAX_COUNT: self.email_max_count,
             self.PALETTE_VERSION: self.palette_version,
             self.PALETTE_LOGIN: self.palette_login,
             self.UPGRADING: self.upgrading,

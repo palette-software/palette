@@ -15,6 +15,7 @@ from controller.cloud import CloudEntry
 from controller.passwd import aes_encrypt, aes_decrypt
 from controller.palapi import CommException
 from controller.credential import CredentialEntry
+from controller.email_limit import EmailLimitEntry
 
 from .option import ListOption, DictOption
 from .page import PalettePage
@@ -310,6 +311,10 @@ class EmailAlertApplication(PaletteRESTApplication):
             req.system.save(SystemConfig.ALERTS_ADMIN_ENABLED, 'no')
         else:
             req.system.save(SystemConfig.ALERTS_ADMIN_ENABLED, 'yes')
+
+        if req.POST['alert-publishers'] == 'true' or \
+                                    req.POST['alert-admins'] == 'true':
+            EmailLimitEntry.remove_all(req.envid)
 
         return {}
 

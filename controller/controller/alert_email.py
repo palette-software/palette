@@ -14,6 +14,7 @@ import akiri.framework.sqlalchemy as meta
 from domain import Domain
 from general import SystemConfig
 from event_control import EventControl
+from email_limit import EmailLimitManager
 from profile import UserProfile
 from licensing import LicenseManager
 from util import UNDEFINED
@@ -53,6 +54,7 @@ class AlertEmail(object):
         self.log = server.log
         self.server = server
         self.admin_enabled = True
+        self.email_limit_manager = EmailLimitManager(server)
 
         # Check to see if alert enabled/disabled is configured in the
         # system table.  If not, 1) Use the *ini file or if not there,
@@ -134,7 +136,7 @@ class AlertEmail(object):
 
         return [entry.email]
 
-    def send(self, event_entry, data, recipient=None):
+    def send(self, event_entry, data, recipient=None, eventid=None):
         """Send an alert.
             Arguments:
                 key:    The key to look up.
@@ -242,6 +244,9 @@ class AlertEmail(object):
                                     LicenseManager.MAX_SILENCE_TIME,
                                     subject, message)
                     return
+
+        if self.email_limit_manager.email_limit_reached(event_entry, eventid):
+            return
 
         # Convert from Unicode to utf-8
         message = message.encode('utf-8')    # prevent unicode exception
