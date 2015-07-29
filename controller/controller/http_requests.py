@@ -95,12 +95,14 @@ class HttpRequestManager(TableauCacheManager):
         return {u'status': 'OK', u'count': len(datadict[''])}
 
     def _parseuri(self, uri, body):
+        # Keep body['uri''] to be the whole uri, even if it includes a
+        # query string, so query strings can be included in the
+        # exclusion matching.
+        body['uri'] = uri
+
         tokens = uri.split('?', 1)
         if len(tokens) == 2:
-            body['uri'] = uri = tokens[0]
             body['query_string'] = tokens[1]
-        else:
-            body['uri'] = uri
         tokens = uri[1:].split('/')
         # /views/<workbook.repository_url>/<viewname>
         if len(tokens) == 3 and tokens[0].lower() == 'views':
