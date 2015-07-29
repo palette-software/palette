@@ -27,7 +27,7 @@
     <h2>Contact</h2>
     <div>
       <p><a href='mailto:hello@palette-software.com'>hello@palette-software.com</a></p>
-      <p><a href='http://www.palette-software.com'>www.palette-software.com</a></p>
+      <p><a target='_blank' href='http://www.palette-software.com'>www.palette-software.com</a></p>
     </div>
 
     %if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:
@@ -43,8 +43,7 @@
         Restart Controller
       </button>
     </div>
-
-    <!--
+    
     <div>
       <h2>Palette Support</h2>
       <p>Enable or Disable Palette's Built-in support communication</p>
@@ -55,7 +54,6 @@
         </span>
       </p>
     </div>
-    -->
     %endif
   </div>
 </section>
