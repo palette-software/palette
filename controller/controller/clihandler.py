@@ -159,6 +159,9 @@ class CliHandler(socketserver.StreamRequestHandler):
     STATUS_OK = "OK"
     STATUS_ERROR = "error"
 
+    SUPPORT_CRON_FILENAME = "support-control"
+    CRON_DIR = "/etc/cron.d"
+
     def finish(self):
         """Overrides the StreamRequestHandler's finish().
            Handles exceptions more gracefully and
@@ -289,6 +292,57 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
         body = self.server.cli_cmd("tabadmin status -v", agent, timeout=60*30)
         self.report_status(body)
+
+    @usage('support [ on | off ]')
+    def do_support(self, cmd):
+
+        body = {}
+        support_enabled = self.server.st_config.support_enabled
+        if not len(cmd.args):
+            self.ack()
+            body['enabled'] = support_enabled
+            body['status'] = 'OK'
+            self.report_status(body)
+            return
+
+        action = cmd.args[0].lower()
+        if len(cmd.args) > 1 or action not in ('on', 'off'):
+            self.print_usage(self.do_support.__usage__)
+            return
+
+        self.ack()
+
+        if action == 'on':
+            self._create_cron(self.SUPPORT_CRON_FILENAME,
+                        "# Every 5 minutes.\n"
+                        "*/5 * * * *   root    "
+                        "test -x /usr/bin/support-control && "
+                        "/usr/bin/support-control > /dev/null 2>&1\n")
+            support_state = 'yes'
+        else:
+            self._remove_cron(self.SUPPORT_CRON_FILENAME)
+            support_state = 'no'
+
+        self.server.system.save(SystemConfig.SUPPORT_ENABLED,
+                                support_state)
+        body['enabled'] = support_state
+
+        self.report_status(body)
+
+    def _cronpath(self, cron_filename):
+        return os.path.join(self.CRON_DIR, cron_filename)
+
+    def _create_cron(self, cron_filename, contents):
+        path = self._cronpath(cron_filename)
+        cronfd = open(path, "w", 0600)
+        cronfd.write(contents)
+        cronfd.close()
+
+    def _remove_cron(self, cron_filename):
+        path = self._cronpath(cron_filename)
+        if not os.path.exists(path):
+            return
+        os.unlink(path)
 
     @usage('test email [recipient-email-address]')
     def do_test(self, cmd):

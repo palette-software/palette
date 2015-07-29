@@ -5,7 +5,7 @@ from controller.profile import Role
 from page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
 
-SYSTEM_KEY = 'support-enabled'
+from controller.general import SystemConfig
 JSON_KEY = 'enable-support'
 
 try:
@@ -41,7 +41,8 @@ class AboutPage(PalettePage):
 class AboutApplication(PaletteRESTApplication):
 
     def service_GET(self, req):
-        enabled = req.system.getbool(SYSTEM_KEY, default=True, cleanup=True)
+        enabled = req.system.getbool(SystemConfig.SUPPORT_ENABLED, default=True,
+                                    cleanup=True)
         if req.path_info.endswith('/support'):
             return {JSON_KEY: enabled}
 
@@ -56,8 +57,8 @@ class AboutApplication(PaletteRESTApplication):
             raise exc.HTTPMethodNotAllowed()
         value = req.POST['value'].lower()
         if value == 'false':
-            req.system.save(SYSTEM_KEY, 'no')
+            req.system.save(SystemConfig.SUPPORT_ENABLED, 'no')
         else:
-            req.system.save(SYSTEM_KEY, 'yes')
+            req.system.save(SystemConfig.SUPPORT_ENABLED, 'yes')
             value = 'true'
         return {'value': value}
