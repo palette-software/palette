@@ -184,6 +184,8 @@ class EventControl(meta.Base, BaseMixin, BaseDictMixin):
 
     EMAIL_TEST = "EMAIL-TEST"
 
+    EMAIL_SPIKE = "EMAIL-SPIKE"
+
     WORKBOOK_ARCHIVE_FAILED = "WORKBOOK-ARCHIVE-FAILED"
 
     SYSTEM_EXCEPTION = "SYSTEM-EXCEPTION"
@@ -441,18 +443,20 @@ class EventControlManager(Manager):
         session.merge(entry)
         session.commit()
 
-        if event_entry.send_email:
-            try:
-                self.alert_email.send(event_entry, data)
-            except StandardError:
-                exc_traceback = sys.exc_info()[2]
-                tback = ''.join(traceback.format_tb(exc_traceback))
-                report = "Error: %s.  Traceback: %s" % (sys.exc_info()[1],
-                                                        tback)
+        if not event_entry.send_email:
+            return
 
-                self.log.error(("alert_email: Failed for event '%s', ' + \
-                                 data '%s'.  Will not send email. %s"),
-                                     event_entry.key, str(data), report)
+        try:
+            self.alert_email.send(event_entry, data, eventid=entry.eventid)
+        except StandardError:
+            exc_traceback = sys.exc_info()[2]
+            tback = ''.join(traceback.format_tb(exc_traceback))
+            report = "Error: %s.  Traceback: %s" % (sys.exc_info()[1],
+                                                    tback)
+
+            self.log.error(("alert_email: Failed for event '%s', ' + \
+                             data '%s'.  Will not send email. %s"),
+                                 event_entry.key, str(data), report)
 
     def make_default_description(self, data):
         """Create a default event message given the incoming dictionary."""
