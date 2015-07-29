@@ -395,7 +395,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return {'error': errmsg}
         # tabcmd options must come last.
         cmd = ('tabcmd %s -u %s --password %s ' + \
-               '--no-cookie --server %s --no-certcheck ') %\
+               '--no-cookie --server %s --no-certcheck --timeout 600') %\
               (args, cred.user, pw, url)
         return self.cli_cmd(cmd, agent, timeout=30*60)
 
