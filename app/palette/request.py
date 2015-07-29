@@ -131,18 +131,14 @@ class System(object):
         entry.value = str(value)
         session.commit()
 
-ENVIRON_ENVIRONMENT_NAME = 'palette.environment'
-ENVIRON_DOMAIN_NAME = 'palette.domain'
 
 def req_getattr(req, name):
     if name == 'envid':
         return req.palette_environment.envid
-    if name == 'palette_environment': # to be consistent with palette_domain
-        req.environ[ENVIRON_ENVIRONMENT_NAME] = Environment.get()
-        return req.environ[ENVIRON_ENVIRONMENT_NAME]
     if name == 'palette_domain': # webob already has a 'domain' property.
-        req.environ[ENVIRON_DOMAIN_NAME] = Domain.getone()
-        return req.environ[ENVIRON_DOMAIN_NAME]
+        return Domain.getone()
+    if name == 'palette_environment': # to be consistent with palette_domain
+        return Environment.get()
     if name == 'system':
         return System(req.envid)
 
