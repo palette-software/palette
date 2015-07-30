@@ -6,6 +6,8 @@ from controller.palapi import CommException
 from .page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
 
+from .about import AboutApplication
+
 class ManageApplication(PaletteRESTApplication):
 
     NAME = 'manage'
@@ -59,6 +61,13 @@ class ManageApplication(PaletteRESTApplication):
         self.commapp.send_cmd('apache restart', req=req, read_response=False)
         return {}
 
+    @required_role(Role.MANAGER_ADMIN)
+    def handle_manual_update(self, req):
+        import sys
+        print >> sys.stderr, " *** MANUAL UPDATE *** "
+        app = AboutApplication()
+        return app.service_GET(req)
+
     @required_parameters('action')
     def service(self, req):
         # pylint: disable=too-many-return-statements
@@ -80,6 +89,8 @@ class ManageApplication(PaletteRESTApplication):
                 return self.handle_restart_webserver(req)
             elif action == 'restart-controller':
                 return self.handle_restart_controller(req)
+            elif action == 'manual-update':
+                return self.handle_manual_update(req)
         except CommException:
             raise exc.HTTPMethodNotAllowed()
         raise exc.HTTPBadRequest()
