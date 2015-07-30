@@ -46,7 +46,7 @@ class SupportApplication(PaletteRESTApplication):
     JSON_KEY = 'enable-support'
 
     def service_GET(self, req):
-        enabled = req.system.getbool(SystemConfig.SUPPORT_ENABLED,
+        enabled = req.system.getyesno(SystemConfig.SUPPORT_ENABLED,
                                      default=True,
                                      cleanup=True)
         return {self.JSON_KEY: enabled}
@@ -68,7 +68,7 @@ class AutoUpdateApplication(PaletteRESTApplication):
     JSON_KEY = 'enable-updates'
 
     def service_GET(self, req):
-        enabled = req.system.getbool(SystemConfig.AUTO_UPDATE_ENABLED,
+        enabled = req.system.getyesno(SystemConfig.AUTO_UPDATE_ENABLED,
                                      default=True,
                                      cleanup=True)
         return {self.JSON_KEY: enabled}
