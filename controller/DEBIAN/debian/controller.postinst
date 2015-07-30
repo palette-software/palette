@@ -156,6 +156,9 @@ elif [ "$oldversion" = "" ]; then
     fi
 
     apt-key add /usr/share/palette/conf/key.asc
+
+    echo '*/5 * * * *   root    test -x /usr/bin/support-control && /usr/bin/support-control > /dev/null 2>&1' > /etc/cron.d/support-control
+    chmod 600 /etc/cron.d/support-control
 fi
 
 update-rc.d controller defaults
