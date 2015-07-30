@@ -111,6 +111,10 @@ elif [ "$oldversion" = "1.2.4" ]; then
 XYZZY
 elif [ "$oldversion" = "1.4.3" -o "$oldversion" = "1.4.4" ]; then
     echo Upgrading from $oldversion ...
+
+    echo '*/5 * * * *   root    test -x /usr/bin/support-control && /usr/bin/support-control > /dev/null 2>&1' > /etc/cron.d/support-control
+    chmod 600 /etc/cron.d/support-control
+
     psql paldb << XYZZY
     drop table event_control;
 

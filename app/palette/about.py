@@ -57,8 +57,8 @@ class AboutApplication(PaletteRESTApplication):
             raise exc.HTTPMethodNotAllowed()
         value = req.POST['value'].lower()
         if value == 'false':
-            req.system.save(SystemConfig.SUPPORT_ENABLED, 'no')
+            self.commapp.send_cmd("support off", req=req, read_response=False)
         else:
-            req.system.save(SystemConfig.SUPPORT_ENABLED, 'yes')
+            self.commapp.send_cmd("support on", req=req, read_response=False)
             value = 'true'
         return {'value': value}
