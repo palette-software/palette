@@ -45,7 +45,7 @@
       <button type="button" id="manual-update"
               class="btn btn-primary okcancel disabled"
               data-text="Are you sure you want to update the Palette Software?">
-        Check for Updates
+        Update Now
       </button>
     </div>
 

@@ -214,6 +214,8 @@ class SystemConfig(object):
             return self._getyesno(self.ALERTS_NEW_USER_ENABLED, default='no')
         if name == 'support_enabled':
             return self._getyesno(self.SUPPORT_ENABLED, default='yes')
+        if name == 'auto_update_enabled':
+            return self._getyesno(self.AUTO_UPDATE_ENABLED, default='yes')
         if name == "email_lookback_minutes":
             return self._getint(self.EMAIL_LOOKBACK_MINUTES, default=60)
         if name == "email_max_count":
@@ -311,6 +313,7 @@ class SystemConfig(object):
             self.ALERTS_PUBLISHER_ENABLED: self.alerts_publisher_enabled,
             self.ALERTS_NEW_USER_ENABLED: self.alerts_new_user_enabled,
             self.SUPPORT_ENABLED: self.support_enabled,
+            self.AUTO_UPDATE_ENABLED: self.auto_update_enabled,
             self.EMAIL_LOOKBACK_MINUTES: self.email_lookback_minutes,
             self.EMAIL_MAX_COUNT: self.email_max_count,
             self.PALETTE_VERSION: self.palette_version,
