@@ -44,6 +44,7 @@ from http_requests import HttpRequestEntry, HttpRequestManager
 from licensing import LicenseManager, LicenseEntry
 from metrics import MetricManager
 from notifications import NotificationManager
+from package import Package
 from ports import PortManager
 from profile import UserProfile, Role
 from sched import Sched, Crontab
@@ -1694,7 +1695,7 @@ def main():
     server.firewall_manager = FirewallManager(server)
     server.license_manager = LicenseManager(server)
     server.state_manager = StateManager(server)
-
+    server.package = Package()
     server.notifications = NotificationManager(server)
     server.metrics = MetricManager(server)
 

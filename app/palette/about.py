@@ -78,8 +78,10 @@ class AutoUpdateApplication(PaletteRESTApplication):
     def service_POST(self, req):
         value = req.POST['value'].lower()
         if value == 'false':
-            req.system.save(SystemConfig.AUTO_UPDATE_ENABLED, 'no')
+            self.commapp.send_cmd("upgrade auto-off", req=req, 
+                                  read_response=False)
         else:
-            req.system.save(SystemConfig.AUTO_UPDATE_ENABLED, 'yes')
+            self.commapp.send_cmd("upgrade auto-on", req=req, 
+                                   read_response=False)
             value = 'true'
         return {'value': value}
