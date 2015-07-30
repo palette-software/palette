@@ -1,12 +1,11 @@
 from webob import exc
 
 from controller.profile import Role
+from controller.general import SystemConfig
+from controller.util import extend
 
 from page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
-
-from controller.general import SystemConfig
-JSON_KEY = 'enable-support'
 
 try:
     # pylint: disable=no-name-in-module,import-error
@@ -25,40 +24,62 @@ def display_version():
 class AboutPage(PalettePage):
     TEMPLATE = 'about.mako'
     active = 'about'
-    expanded = True
-
-    def __init__(self):
-        super(AboutPage, self).__init__()
-        self.version = display_version()
-        self.license_key = None
-
-    def render(self, req, obj=None):
-        # FIXME: make obj separate or go to REST implementation.
-        self.license_key = req.palette_domain.license_key
-        return super(AboutPage, self).render(req, obj=obj)
 
 
 class AboutApplication(PaletteRESTApplication):
+    """REST Application for the 'about' page."""
+    def __init__(self):
+        super(AboutApplication, self).__init__()
+        self.support = SupportApplication()
+        self.auto_update = AutoUpdateApplication()
 
     def service_GET(self, req):
-        enabled = req.system.getbool(SystemConfig.SUPPORT_ENABLED, default=True,
-                                    cleanup=True)
-        if req.path_info.endswith('/support'):
-            return {JSON_KEY: enabled}
+        data = {'license-key': req.palette_domain.license_key,
+                'version': display_version()}
+        extend(data, self.support.service_GET(req))
+        extend(data, self.auto_update.service_GET(req))
+        return data
 
-        return {'licence-key': req.palette_domain.license_key,
-                'version': display_version(),
-                JSON_KEY: enabled}
+
+class SupportApplication(PaletteRESTApplication):
+    """Handle enable/disable of the Support Tunnel"""
+    JSON_KEY = 'enable-support'
+
+    def service_GET(self, req):
+        enabled = req.system.getbool(SystemConfig.SUPPORT_ENABLED,
+                                     default=True,
+                                     cleanup=True)
+        return {self.JSON_KEY: enabled}
 
     @required_role(Role.MANAGER_ADMIN)
     @required_parameters('value')
     def service_POST(self, req):
-        if not req.path_info.endswith('/support'):
-            raise exc.HTTPMethodNotAllowed()
         value = req.POST['value'].lower()
         if value == 'false':
             req.system.save(SystemConfig.SUPPORT_ENABLED, 'no')
         else:
             req.system.save(SystemConfig.SUPPORT_ENABLED, 'yes')
+            value = 'true'
+        return {'value': value}
+
+
+class AutoUpdateApplication(PaletteRESTApplication):
+    """Configure automatic updates."""
+    JSON_KEY = 'enable-updates'
+
+    def service_GET(self, req):
+        enabled = req.system.getbool(SystemConfig.AUTO_UPDATE_ENABLED,
+                                     default=True,
+                                     cleanup=True)
+        return {self.JSON_KEY: enabled}
+
+    @required_role(Role.MANAGER_ADMIN)
+    @required_parameters('value')
+    def service_POST(self, req):
+        value = req.POST['value'].lower()
+        if value == 'false':
+            req.system.save(SystemConfig.AUTO_UPDATE_ENABLED, 'no')
+        else:
+            req.system.save(SystemConfig.AUTO_UPDATE_ENABLED, 'yes')
             value = 'true'
         return {'value': value}

@@ -44,10 +44,58 @@ function ($, topic, common, OnOff)
         });
     }
 
+    /*
+     * manualUpdate()
+     */
+    function manualUpdate() {
+        $('#manual-update').addClass('disabled');
+        $.ajax({
+            type: 'POST',
+            url: '/rest/manage',
+            data: {'action': 'manual-update'},
+            dataType: 'json',
+            async: false,
+            
+            success: function(data) {
+                update(data);
+                $('#manual-update').removeClass('disabled');
+            },
+            error: common.ajaxError,
+        });
+    }
+
+    /*
+     * update()
+     */
+    function update(data) {
+        $('#version').html(data['version']);
+        $('#license-key').html(data['license-key']);
+        OnOff.setValueById('enable-support', data['enable-support']);
+        OnOff.setValueById('enable-updates', data['enable-updates']);
+    }
+
+    $.ajax({
+        url: '/rest/about',
+        dataType: 'json',
+        
+        success: function(data) {
+            $().ready(function() {
+                update(data);
+                $('#manual-update').removeClass('disabled');
+            });
+        },
+        error: common.ajaxError,
+    });
+
     topic.subscribe('state', function(message, data) {
         if (data['connected']) {
             $('#restart-webserver').removeClass('disabled');
             $('#restart-controller').removeClass('disabled');
+            $('#manual-update').removeClass('disabled');
+        } else {
+            $('#restart-webserver').addClass('disabled');
+            $('#restart-controller').addClass('disabled');
+            $('#manual-update').addClass('disabled');
         }
     });
 
@@ -57,6 +105,7 @@ function ($, topic, common, OnOff)
     $().ready(function() {
         $('#restart-webserver').data('callback', restartWebserver);
         $('#restart-controller').data('callback', restartController);
+        $('#manual-update').data('callback', manualUpdate);
         OnOff.setup();
     });
 });

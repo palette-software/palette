@@ -9,13 +9,11 @@
   <div class="scrollable">
     <h1 class="page-title">About Palette</h1>
 
-    <h2>Version ${obj.version}</h2>
+    <h2>Version <span id="version"></span></h2>
     <div>
       <p>&copy; 2015 Palette Software</p>
-      %if obj.license_key:
-      <p>License Key: ${obj.license_key}</p>
-      %endif
-      <p>The use of this product is subject to the terms of the <a href="http://kb.palette-software.com/palette-end-user-license-agreement">Palette End User Agreement</a>, unless otherwise specified therein.</p>
+      <p>License Key: <span id="license-key"></span></p>
+       <p>The use of this product is subject to the terms of the <a href="http://kb.palette-software.com/palette-end-user-license-agreement">Palette End User Agreement</a>, unless otherwise specified therein.</p>
     </div>
 
     <h2>Palette Software</h2>
@@ -31,14 +29,34 @@
     </div>
 
     %if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:
+
+    <div>
+      <h2>Palette Updates</h2>
+      <p>Control Updates to the Palette Software</p>
+      <p class="slider-group">
+        <span>Enable Automatic Updates
+          <span id="enable-updates" class="onoffswitch yesno"
+                data-href="/rest/update"></span>
+        </span>
+      </p>
+    </div>
+
+    <div>
+      <button type="button" id="manual-update"
+              class="btn btn-primary okcancel disabled"
+              data-text="Are you sure you want to update the Palette Software?">
+        Check for Updates
+      </button>
+    </div>
+
     <div>
       <button type="button" id="restart-webserver"
-              class="btn btn-primary okcancel"
+              class="btn btn-primary okcancel disabled"
               data-text="Are you sure you want to restart the webserver?">
         Restart Webserver
       </button>
       <button type="button" id="restart-controller"
-              class="btn btn-primary okcancel"
+              class="btn btn-primary okcancel disabled"
               data-text="Are you sure you want to restart the controller?">
         Restart Controller
       </button>
@@ -50,7 +68,7 @@
       <p class="slider-group">
         <span>Enable Support
           <span id="enable-support" class="onoffswitch yesno"
-                data-href="/rest/about/support"></span>
+                data-href="/rest/support"></span>
         </span>
       </p>
     </div>
