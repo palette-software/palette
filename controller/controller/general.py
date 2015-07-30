@@ -83,6 +83,7 @@ class SystemConfig(object):
     PROXY_HTTPS = "proxy-https"
 
     SUPPORT_ENABLED = "support-enabled"
+    AUTO_UPDATE_ENABLED = "auto-update-enabled"
 
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
