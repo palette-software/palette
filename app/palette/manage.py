@@ -65,8 +65,9 @@ class ManageApplication(PaletteRESTApplication):
     def handle_manual_update(self, req):
         import sys
         print >> sys.stderr, " *** MANUAL UPDATE *** "
-        app = AboutApplication()
-        return app.service_GET(req)
+        self.commapp.send_cmd("upgrade controller", req=req,
+                                                      read_response=False)
+        return {}
 
     @required_parameters('action')
     def service(self, req):

@@ -437,7 +437,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         if cmd.args[0] in ("list", "apt-get-update", "controller"):
             self.ack()
-            self._auto_update_controller(cmd.args[0])
+            self._upgrade_controller(cmd.args[0])
             return
 
         if cmd.args[0] in ('auto-on', 'auto-off'):
@@ -525,7 +525,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self._remove_cron(self.AUTO_UPDATE_CRON_FILENAME)
             auto_update_state = 'no'
 
-        self.server.system.save(SystemConfig.SUPPORT_ENABLED,
+        self.server.system.save(SystemConfig.AUTO_UPDATE_ENABLED,
                                 auto_update_state)
         body['auto-update-enabled'] = auto_update_state
 
@@ -537,8 +537,6 @@ class CliHandler(socketserver.StreamRequestHandler):
         """Handle the "upgrade list", "apt-get-update" and "upgrade controller"
            commands that deal with the controller (not the agent).
         """
-
-        self.ack()
 
         if cmd != 'list':
             if os.geteuid():
@@ -572,7 +570,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                 self.server.log.debug(
                     "upgrade install: Acquired the upgrade WRITE lock.")
 
-                self.server.log.error("Upgrading the controller.")
+                self.server.log.info("Upgrading the controller.")
                 cmd = "nohup /usr/sbin/palette-update --now &"
                 process = subprocess.Popen(cmd,
                                stdout=subprocess.PIPE,
@@ -596,6 +594,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                     body['stderr'] = stderr
 
                 self.report_status(body)
+                self.server.log.debug("upgrade_controller result: %s",
+                                       str(body))
                 return
             finally:
                 self.server.upgrade_rwlock.write_release()
