@@ -14,7 +14,9 @@
 	<p id="location"></p>
       </div>
     </section>
-    <div id="yml-list"></div>
+    <div id="yml-list">
+      <%include file="empty.mako" />
+    </div>
   </div>
 </div>
 
