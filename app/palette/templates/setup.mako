@@ -106,7 +106,7 @@
     <hr />
     <section class="bottom-zone">
       <button type="button" id="save" class="btn btn-primary">
-        Save Setting
+        Save Settings
       </button>
     </section>
     <div class="version"></div>
