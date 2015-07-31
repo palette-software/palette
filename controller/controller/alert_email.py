@@ -89,14 +89,17 @@ class AlertEmail(object):
                            self.alert_level, self.DEFAULT_ALERT_LEVEL)
             self.alert_level = self.DEFAULT_ALERT_LEVEL
 
-    def admin_emails(self):
+    def admin_emails(self, event_entry):
         """Return a list of admins that have an email address, enabled
            and aren't the palette user."""
 
         if self.standalone:
             return [self.to_email]
 
-        if not self.admin_enabled:
+        if not self.admin_enabled and \
+                event_entry.key != EventControl.EMAIL_DISABLED_REMINDER:
+            # If admin emails are disabled and it isn't the
+            # EMAIL_DISALBED_REMINDER, then don't send email to any admins.
             return []
 
         session = meta.Session()
@@ -201,9 +204,10 @@ class AlertEmail(object):
 
             if event_entry.key in (EventControl.EXTRACT_OK,
                                    EventControl.EXTRACT_FAILED):
-                to_emails = self.admin_emails() + self.publisher_email(data)
+                to_emails = self.admin_emails(event_entry) + \
+                                                self.publisher_email(data)
             else:
-                to_emails = self.admin_emails()
+                to_emails = self.admin_emails(event_entry)
 
         # Remove any duplicates
         to_emails = list(set(to_emails))

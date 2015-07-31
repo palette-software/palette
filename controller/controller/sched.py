@@ -118,19 +118,20 @@ class Sched(threading.Thread):
         # Backup every night at 12:00.
         self.add_cron_job(name='backup', hour=0, minute=0)
 
+        self.add_cron_job(name='daily', minute=0, hour=9)
+        self.add_cron_job(name='agent_upgrader', minute=45, hour=6)
+        self.add_cron_job(name='metrics_prune', minute=15, hour=3)
+        self.add_cron_job(name='license_check', minute="8")
+        self.add_cron_job(name='license_verify', minute=6)
         self.add_cron_job(name='yml', minute="*")
         self.add_cron_job(name='cpu_load', minute="*")
-        self.add_cron_job(name='metrics_prune', minute=15, hour=3)
         self.add_cron_job(name='info_all', minute="0/5")
         self.add_cron_job(name='auth_import', minute="*")
         self.add_cron_job(name='sync', minute="*")
         self.add_cron_job(name='http_request', minute='*')
         self.add_cron_job(name='extract', minute="*")
         self.add_cron_job(name='workbook', minute='*')
-        self.add_cron_job(name='license_check', minute="8")
-        self.add_cron_job(name='license_verify', minute=6)
         self.add_cron_job(name='checkports', minute="*")
-        self.add_cron_job(name='agent_upgrader', minute=45, hour=6)
 
 
 class Crontab(meta.Base, BaseDictMixin):
