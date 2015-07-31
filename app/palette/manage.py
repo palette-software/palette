@@ -6,8 +6,6 @@ from controller.palapi import CommException
 from .page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
 
-from .about import AboutApplication
-
 class ManageApplication(PaletteRESTApplication):
 
     NAME = 'manage'
