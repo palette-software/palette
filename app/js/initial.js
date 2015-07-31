@@ -10,6 +10,9 @@ function ($, configure, common, Dropdown, OnOff)
 
     var licensingState = LICENSING_UNKNOWN;
 
+    var PASSWORD_MIN_CHARS = 8;
+    var PASSWORD_MATCH = /^[A-Za-z0-9!@#$%]+$/;
+
     /*
      * setPageError()
      * Set the main error reporting at the top and bottom of the page.
@@ -141,6 +144,14 @@ function ($, configure, common, Dropdown, OnOff)
     }
 
     /*
+     * validatePasswordChars()
+     * Ensure that the password contains on valid characters
+     */
+    function validatePasswordChars(pw) {
+        return pw.match(PASSWORD_MATCH);
+    }
+
+    /*
      * validateAdminData(data)
      * FIXME: merge with configure.
      */
@@ -152,7 +163,15 @@ function ($, configure, common, Dropdown, OnOff)
         if (password.length == 0) {
             setError("#password", "Password is required.");
             result = false;
+        } else if (password.length < PASSWORD_MIN_CHARS) {
+            var msg = "The password must contain at least " + PASSWORD_MIN_CHARS + " characters.";
+            setError("#password", msg);
+            result = false;
+        } else if (!validatePasswordChars(password)) {
+            setError("#password", "The password contains invalid characters.");
+            result = false;
         }
+            
         var confirm_password = data['confirm-password'];
         if (confirm_password.length == 0) {
             setError("#confirm-password", "Confirmation password is required.");
