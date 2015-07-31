@@ -6,6 +6,7 @@ import SocketServer as socketserver
 import socket
 import json
 import time
+from datetime import datetime
 import traceback
 import subprocess
 from urlparse import urlparse
@@ -1332,6 +1333,42 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.report_status(body)
 
+    @usage('daily')
+    def do_daily(self, cmd):
+        """Do daily emails, etc."""
+
+        if len(cmd.args):
+            self.print_usage(self.do_daily.__usage__)
+            return
+
+        self.ack()
+
+        data = {'emailed-reminder': False}
+
+        entry = self.server.system.entry(
+                        SystemConfig.EMAIL_SPIKE_DISABLED_ALERTS,
+                        default=None)
+
+        if not entry or entry.value != 'yes':
+            self.report_status(data)
+            return
+
+        timedelta = datetime.utcnow() - entry.modification_time
+
+        data['days_elapsed'] = timedelta.days
+        # Don't remind them  until at least one day has elapsed since
+        # they received the EMAIL SPIKE event.
+        if timedelta.days >= 1:
+            data['emailed-reminder'] = True
+            if timedelta.days > 1:
+                data['days_plural'] = 's'
+            else:
+                data['days_plural'] = ''
+            self.server.event_control.gen(EventControl.EMAIL_DISABLED_REMINDER,
+                                          data)
+
+        # fixme: convert _ to -
+        self.report_status(data)
 
     @usage('firewall { status | { enable | disable } port [port] }')
     def do_firewall(self, cmd):

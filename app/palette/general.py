@@ -315,7 +315,8 @@ class EmailAlertApplication(PaletteRESTApplication):
         if req.POST['alert-publishers'] == 'true' or \
                                     req.POST['alert-admins'] == 'true':
             EmailLimitEntry.remove_all(req.envid)
-
+            req.system.save(SystemConfig.EMAIL_SPIKE_DISABLED_ALERTS,
+                             'no')
         return {}
 
 
