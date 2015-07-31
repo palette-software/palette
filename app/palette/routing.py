@@ -1,6 +1,6 @@
 from akiri.framework.route import Router
 
-from .about import AboutApplication
+from .about import AboutApplication, SupportApplication, AutoUpdateApplication
 from .backup import BackupApplication
 from .environment import EnvironmentApplication
 from .gcs import GCSApplication
@@ -19,9 +19,7 @@ class RestRouter(Router):
 
     def __init__(self):
         super(RestRouter, self).__init__()
-        self.add_route(r'/about\Z|/about/support\Z',
-                       AboutApplication(),
-                       preserve_path_info=True)
+        self.add_route(r'/about\Z', AboutApplication())
         self.add_route(r'/backup\Z', BackupApplication())
         self.add_route(r'/environment\Z', EnvironmentApplication())
         self.add_route(r'/gcs\Z', GCSApplication())
@@ -33,6 +31,8 @@ class RestRouter(Router):
         self.add_route(r'/setup\Z|/setup/', SetupApplication())
         self.add_route(r'/servers?(/(?P<action>[^\s]+))?\Z',
                        ServerApplication())
+        self.add_route(r'/support\Z', SupportApplication())
+        self.add_route(r'/update\Z', AutoUpdateApplication())
         self.add_route(r'/users?(/(?P<action>[^\s]+))?\Z',
                        UserApplication())
         self.add_route(r'/yml\Z', YmlApplication())

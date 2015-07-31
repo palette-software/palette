@@ -2,10 +2,12 @@
 
 import logging
 import urllib
+from urlparse import urlparse
 import httplib
 import json
 import re
 import datetime
+import subprocess
 
 from sqlalchemy import Column, Integer, BigInteger, DateTime, Boolean, String
 from sqlalchemy import func
@@ -63,6 +65,8 @@ def licensing_info(domain, envid):
     # FIXME: use the version() function when sorted out.
     data['palette-version'] = version()
 
+    data['repo'] = _repo()
+
     try:
         agent = meta.Session.query(Agent).\
                 filter(Agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY).\
@@ -98,7 +102,37 @@ def licensing_info(domain, envid):
     data['primary-uuid'] = agent.uuid
     data['primary-os-version'] = agent.os_version
 
+    agents = meta.Session.query(Agent).\
+                all()
+
+    agent_info = []
+    for agent in agents:
+        agent_info.append({'displayname': agent.displayname,
+                           'hostname': agent.hostname,
+                           'type': agent.agent_type,
+                           'version': agent.version})
+
+    data['agent-info'] = agent_info
     return data
+
+REPO = None
+
+def _repo():
+    # pylint: disable=global-statement
+    global REPO
+
+    if REPO:
+        # Used the cached version
+        return REPO
+
+    cmd = "apt-cache madison controller | awk '{ print $5 }' 2>/dev/null"
+    try:
+        REPO = subprocess.check_output(cmd, shell=True).strip()
+    except subprocess.CalledProcessError:
+        return 'UNKNOWN'
+
+    REPO = urlparse(REPO).path.strip('/')
+    return REPO
 
 class LicenseException(StandardError):
     def __init__(self, status, reason):

@@ -24,6 +24,7 @@ from files import FileManager
 from general import SystemConfig
 from get_file import GetFile
 from cloud import CloudManager, S3_ID, GCS_ID, CloudEntry
+from package import PackageException
 from system import SystemEntry
 from state import StateManager
 from state_control import StateControl
@@ -160,6 +161,11 @@ class CliHandler(socketserver.StreamRequestHandler):
     STATUS_OK = "OK"
     STATUS_ERROR = "error"
 
+    SUPPORT_CRON_FILENAME = "support-control"
+    CRON_DIR = "/etc/cron.d"
+
+    AUTO_UPDATE_CRON_FILENAME = "palette-update"
+
     def finish(self):
         """Overrides the StreamRequestHandler's finish().
            Handles exceptions more gracefully and
@@ -291,6 +297,57 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = self.server.cli_cmd("tabadmin status -v", agent, timeout=60*30)
         self.report_status(body)
 
+    @usage('support [ on | off ]')
+    def do_support(self, cmd):
+
+        body = {}
+        support_enabled = self.server.st_config.support_enabled
+        if not len(cmd.args):
+            self.ack()
+            body['enabled'] = support_enabled
+            body['status'] = 'OK'
+            self.report_status(body)
+            return
+
+        action = cmd.args[0].lower()
+        if len(cmd.args) > 1 or action not in ('on', 'off'):
+            self.print_usage(self.do_support.__usage__)
+            return
+
+        self.ack()
+
+        if action == 'on':
+            self._create_cron(self.SUPPORT_CRON_FILENAME,
+                        "# Every 5 minutes.\n"
+                        "*/5 * * * *   root    "
+                        "test -x /usr/bin/support-control && "
+                        "/usr/bin/support-control > /dev/null 2>&1\n")
+            support_state = 'yes'
+        else:
+            self._remove_cron(self.SUPPORT_CRON_FILENAME)
+            support_state = 'no'
+
+        self.server.system.save(SystemConfig.SUPPORT_ENABLED,
+                                support_state)
+        body['enabled'] = support_state
+
+        self.report_status(body)
+
+    def _cronpath(self, cron_filename):
+        return os.path.join(self.CRON_DIR, cron_filename)
+
+    def _create_cron(self, cron_filename, contents):
+        path = self._cronpath(cron_filename)
+        cronfd = open(path, "w", 0600)
+        cronfd.write(contents)
+        cronfd.close()
+
+    def _remove_cron(self, cron_filename):
+        path = self._cronpath(cron_filename)
+        if not os.path.exists(path):
+            return
+        os.unlink(path)
+
     @usage('test email [recipient-email-address]')
     def do_test(self, cmd):
         if len(cmd.args) < 1:
@@ -348,7 +405,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         body = self._runcmd(cmd)
         self.report_status(body)
 
-    @usage('upgrade [on | off]')
+    @usage('upgrade [on | off | list | apt-get-update | controller | '
+           'auto-on | auto-off]')
     def do_upgrade(self, cmd):
         # pylint: disable=too-many-return-statements
         # pylint: disable=too-many-branches
@@ -372,12 +430,23 @@ class CliHandler(socketserver.StreamRequestHandler):
         if len(cmd.args) != 1:
             self.print_usage(self.do_upgrade.__usage__)
             return
-        if cmd.args[0] not in ('on', 'off'):
+
+        if cmd.args[0] not in ('on', 'off', 'list', 'apt-get-update',
+                               'controller', 'auto-on', 'auto-off'):
             self.print_usage(self.do_upgrade.__usage__)
             return
 
-        # Note: an agent doesn't have to be connected to change upgrade mode.
+        if cmd.args[0] in ("list", "apt-get-update", "controller"):
+            self.ack()
+            self._upgrade_controller(cmd.args[0])
+            return
 
+        if cmd.args[0] in ('auto-on', 'auto-off'):
+            self.ack()
+            self._auto_update_controller(cmd.args[0])
+            return
+
+        # Note: an agent doesn't have to be connected to change upgrade mode.
         if cmd.args[0] == 'on':
             self.server.log.debug(
                             "Attempting to acquire the upgrade WRITE lock.")
@@ -443,6 +512,120 @@ class CliHandler(socketserver.StreamRequestHandler):
         combined_status['archive-start'] = self.server.archive('start')
         self.ack()
         self.report_status(combined_status)
+
+    def _auto_update_controller(self, action):
+        body = {}
+        if action == 'auto-on':
+            self._create_cron(self.AUTO_UPDATE_CRON_FILENAME,
+                        "# Every morning at 6:15 AM.\n"
+                        "15 6 * * *   root    test -x "
+                        "/usr/sbin/palette-update && "
+                        "/usr/sbin/palette-update > /dev/null 2>&1")
+            auto_update_state = 'yes'
+        else:
+            self._remove_cron(self.AUTO_UPDATE_CRON_FILENAME)
+            auto_update_state = 'no'
+
+        self.server.system.save(SystemConfig.AUTO_UPDATE_ENABLED,
+                                auto_update_state)
+        body['auto-update-enabled'] = auto_update_state
+
+        self.report_status(body)
+
+    def _upgrade_controller(self, cmd):
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-statements
+        """Handle the "upgrade list", "apt-get-update" and "upgrade controller"
+           commands that deal with the controller (not the agent).
+        """
+
+        if cmd != 'list':
+            if os.geteuid():
+                self.error(clierror.ERROR_PERMISSION,
+                           "You must be super-user to run 'apt-get update'.")
+                return
+
+        if cmd == 'list':
+            try:
+                packages = self.server.package.list_packages()
+            except PackageException as ex:
+                self.error(clierror.ERROR_COMMAND_FAILED, str(ex))
+                return
+
+            self.report_status(self._package_info(packages))
+            return
+        elif cmd == 'apt-get-update':
+            try:
+                packages = self.server.package.apt_get_update()
+            except PackageException as ex:
+                self.error(clierror.ERROR_COMMAND_FAILED, str(ex))
+                return
+
+            self.report_status(self._package_info(packages))
+            return
+        elif cmd == 'controller':
+            self.server.log.debug("upgrade controller: Attempting to " + \
+                                  "acquire the upgrade WRITE lock.")
+            try:
+                self.server.upgrade_rwlock.write_acquire()
+                self.server.log.debug(
+                    "upgrade install: Acquired the upgrade WRITE lock.")
+
+                self.server.log.info("Upgrading the controller.")
+                cmd = "nohup /usr/sbin/palette-update --now &"
+                process = subprocess.Popen(cmd,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               preexec_fn=os.setpgrp,
+                               shell=True,
+                               close_fds=True)
+                stdout, stderr = process.communicate()
+                body = {'command': cmd}
+                if process.returncode == 0:
+                    body['status'] = 'OK'
+                    body['exit-status'] = 0
+                else:
+                    body['status'] = 'FAILED'
+                    body['error'] = "command failed"
+                    body['exit-status'] = process.returncode
+
+                if stdout:
+                    body['stdout'] = stdout
+                if stderr:
+                    body['stderr'] = stderr
+
+                self.report_status(body)
+                self.server.log.debug("upgrade_controller result: %s",
+                                       str(body))
+                return
+            finally:
+                self.server.upgrade_rwlock.write_release()
+
+        self.error(clierror.ERROR_INTERNAL, "command: " + cmd)
+
+    def _package_info(self, packages):
+        """Take a dictionary of packages and return a dictionary with
+           the controller and palette versions.
+       """
+
+        data = {}
+        if packages['controller'].installed:
+            data['controller-version-installed'] = \
+                            packages['controller'].installed.version
+
+        if packages['controller'].candidate:
+            data['controller-version-candidate'] = \
+                            packages['controller'].candidate.version
+
+        if packages['palette'].installed:
+            data['palette-version-installed'] = \
+                            packages['palette'].installed.version
+
+        if packages['palette'].candidate:
+            data['palette-version-candidate'] = \
+                            packages['palette'].candidate.version
+
+        return data
 
     @usage('backup')
     @upgrade_rwlock
