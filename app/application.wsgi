@@ -111,6 +111,8 @@ if __name__ == '__main__':
     router.prepend_route(r'/api/map', MapApplication())
 
     try:
+        # pylint: disable=no-name-in-module
+        # pylint: disable=import-error
         from akiri.framework.sqlalchemy.application import ConnectionApplication
         router.prepend_route(r'/api/sqlalchemy/connections',
                              ConnectionApplication())
