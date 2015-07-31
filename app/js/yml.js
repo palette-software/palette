@@ -6,6 +6,12 @@ function (jquery, template, common)
 
     function update(data) {
         $().ready(function() {
+            var count = data["items"].length;
+            if (count == 0) {
+                $('#yml-list div').removeClass("hidden");
+                return;
+            }
+
             var rendered = template.render(t, data);
             $('#yml-list').html(rendered);
 
