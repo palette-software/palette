@@ -6,7 +6,6 @@ usr/bin/upgrade-agent        /usr/bin
 usr/bin/palette-version	     /usr/bin
 usr/sbin/palette-update     /usr/sbin
 usr/sbin/palette-update-sc  /usr/sbin
-etc/cron.d/palette-update   /etc/cron.d
 usr/share/palette/conf/key.asc      /usr/share/palette/conf
 var/palette/sched/auth_import    /var/palette/sched
 var/palette/sched/backup    /var/palette/sched
