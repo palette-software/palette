@@ -1,5 +1,0 @@
-#
-# Regular cron job for the palette packages
-#
-# Every night at 6:15 AM.
-15 6 * * *   root    test -x /usr/sbin/palette-update && /usr/sbin/palette-update > /dev/null 2>&1

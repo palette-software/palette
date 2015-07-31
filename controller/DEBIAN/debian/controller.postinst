@@ -115,6 +115,9 @@ elif [ "$oldversion" = "1.4.3" -o "$oldversion" = "1.4.4" ]; then
     echo '*/5 * * * *   root    test -x /usr/bin/support-control && /usr/bin/support-control > /dev/null 2>&1' > /etc/cron.d/support-control
     chmod 600 /etc/cron.d/support-control
 
+    echo '15 6 * * *   root    test -x /usr/sbin/palette-update && /usr/sbin/palette-update > /dev/null 2>&1' > /etc/cron.d/palette-update
+    chmod 600 /etc/cron.d/palette-update
+
     psql paldb << XYZZY
     drop table event_control;
 
@@ -128,7 +131,6 @@ elif [ "$oldversion" = "1.4.3" -o "$oldversion" = "1.4.4" ]; then
     drop table http_control;
 
     update system set value='735' where key='metric-save-days';
-
 XYZZY
 elif [ "$oldversion" != "" ]; then
     echo Upgrading $oldversion
@@ -159,6 +161,9 @@ elif [ "$oldversion" = "" ]; then
 
     echo '*/5 * * * *   root    test -x /usr/bin/support-control && /usr/bin/support-control > /dev/null 2>&1' > /etc/cron.d/support-control
     chmod 600 /etc/cron.d/support-control
+
+    echo '15 6 * * *   root    test -x /usr/sbin/palette-update && /usr/sbin/palette-update > /dev/null 2>&1' > /etc/cron.d/palette-update
+    chmod 600 /etc/cron.d/palette-update
 fi
 
 update-rc.d controller defaults

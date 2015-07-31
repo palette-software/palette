@@ -1,5 +1,3 @@
-from webob import exc
-
 from controller.profile import Role
 from controller.general import SystemConfig
 from controller.util import extend
