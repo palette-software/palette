@@ -74,7 +74,9 @@ class EmailLimitManager(object):
         self.log.debug("email_limit_reached checking: event %s, eventid %d\n",
                        event_entry.key, eventid)
 
-        if event_entry.key in [EventControl.EMAIL_TEST,
+        # We limit only ERROR events.
+        if event_entry.level != 'E' or \
+            event_entry.key in [EventControl.EMAIL_TEST,
                                                     EventControl.EMAIL_SPIKE]:
             # These events can always be emailed and don't count against
             # the maximum.
@@ -84,9 +86,10 @@ class EmailLimitManager(object):
         self._prune()   # Keep only the last email-looback-minutes rows
 
         emails_sent_recently = self._recent_count()
-        self.log.debug("email_limit: sent %d emails in the last %d minutes.",
-                        emails_sent_recently,
-                        self.st_config.email_lookback_minutes)
+        self.log.debug("email_limit: sent %d error emails in the last "
+                       "%d minutes.",
+                       emails_sent_recently,
+                       self.st_config.email_lookback_minutes)
 
         if emails_sent_recently > self.st_config.email_max_count:
             # Don't sent this email alert
@@ -96,6 +99,9 @@ class EmailLimitManager(object):
             self.system.save(SystemConfig.ALERTS_ADMIN_ENABLED, 'no')
 
             self.system.save(SystemConfig.ALERTS_PUBLISHER_ENABLED, 'no')
+
+            self.system.save(SystemConfig.EMAIL_SPIKE_DISABLED_ALERTS,
+                             'yes')
             return emails_sent_recently
 
         # Send this email alert

@@ -129,6 +129,7 @@ elif [ "$oldversion" = "1.4.3" -o "$oldversion" = "1.4.4" ]; then
     alter table datasources add column extracts_incremented_at timestamp;
 
     drop table http_control;
+    drop table cron;
 
     update system set value='735' where key='metric-save-days';
 XYZZY
