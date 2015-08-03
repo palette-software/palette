@@ -79,14 +79,15 @@
         <div class="col2">
 %if req.remote_user.roleid == req.remote_user.role.SUPER_ADMIN:
           {{^current}}
-          <article>
+          <article class="perms">
             <span class="label">Palette Admin Permissions</span>
-	        <!---<a id="252067" href=""><i class="fa fa-question-circle help"></i></a>-->
+            <div>
+              <span class="btn-group admin-type"
+                    data-userid="{{userid}}" data-href="/rest/users/admin">
+                {{roleid}}
+              </span><a id="252067" href=""><i class="fa fa-question-circle help"></i></a>
+            </div>
           </article>
-          <span class="btn-group admin-type"
-                data-userid="{{userid}}" data-href="/rest/users/admin">
-            {{roleid}}
-          </span>
           {{/current}}
 %endif
         </div>

@@ -6,21 +6,6 @@ function ($, common, Dropdown, OnOff)
     var MAIL_NONE = 3;
 
     /*
-     * lightbox()
-     * Create lightboxes that bind to the help icons.
-     */
-    function lightbox(id, title) {
-        var lb = new TopicLightBox({
-            baseUrl: 'http://kb.palette-software.com',
-            id: id,
-            title: title,
-            background: true,
-            width: 700,
-            height: 500
-        });
-    }
-
-    /*
      * changeMail()
      * Callback for the 'Mail Server Type' dropdown.
      */
@@ -266,6 +251,5 @@ function ($, common, Dropdown, OnOff)
         'validMailData': validMailData,
         'validSSLData': validSSLData,
         'setInputCallback': setInputCallback,
-        'lightbox': lightbox,
     }
 });

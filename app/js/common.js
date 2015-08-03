@@ -682,6 +682,22 @@ function ($, topic, template, items, paging, Dropdown)
         location.reload();
     }
 
+    /*
+     * lightbox()
+     * Create lightboxes that bind to the help icons.
+     * Requires 'lightbox'
+     */
+    function lightbox(id, title) {
+        var lb = new TopicLightBox({
+            baseUrl: 'http://kb.palette-software.com',
+            id: id,
+            title: title,
+            background: true,
+            width: 700,
+            height: 500
+        });
+    }
+
     /* Code run automatically when 'common' is included */
     $().ready(function() {
         setupHeaderMenus();
@@ -690,6 +706,7 @@ function ($, topic, template, items, paging, Dropdown)
 
     return {'startMonitor': startMonitor,
             'ajaxError': ajaxError,
+            'lightbox': lightbox,
             'setupDialogs': setupDialogs,
             'setupEventDropdowns' : setupEventDropdowns,
             'setupOkCancel' : setupOkCancel,
