@@ -5,6 +5,7 @@
   <ol>
     <li>The <a href="http://www.palette-software.com/agent">Palette Agent</a> was successfully installed on your Tableau Server Machine(s)</li>
     <li>Your firewall settings meet Palette's <a href="http://kb.palette-software.com/network-configuration">Network Configuration</a> requirements</li>
+    <li>Your Tableau Server is running</li>
   </ol>
   <p>If you are still unable to connect, please contact Palette Support at <a href="mailto:support@palette-software.com">support@palette-software.com</a>.</p>
 </div>
