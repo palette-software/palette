@@ -1,5 +1,5 @@
 require(['jquery', 'topic', 'template', 'common', 'items',
-         'Dropdown', 'OnOff', 'bootstrap'],
+         'Dropdown', 'OnOff', 'bootstrap', 'lightbox'],
         function ($, topic, template, common, items, Dropdown, OnOff)
 {
     var LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -76,6 +76,8 @@ require(['jquery', 'topic', 'template', 'common', 'items',
                 $('#last-update').html(last_update);
                 $('.refresh').show();
             }
+            /* help */
+            common.lightbox(252067, 'Palette Admin Role');
         });
     }
 

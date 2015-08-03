@@ -892,12 +892,12 @@ function ($, _, configure, common, Dropdown, OnOff)
         changeWorkbooks(workbookData['enable-archive']);
 
         /* help */
-        configure.lightbox(229204, 'Storage Location');
-        configure.lightbox(229207, 'Email Alerts');
-        configure.lightbox(229213, 'Backups');
-        configure.lightbox(229214, 'Ziplogs');
-        configure.lightbox(229215, 'Workbook Archive');
-        configure.lightbox(229216, 'Monitoring');
+        common.lightbox(229204, 'Storage Location');
+        common.lightbox(229207, 'Email Alerts');
+        common.lightbox(229213, 'Backups');
+        common.lightbox(229214, 'Ziplogs');
+        common.lightbox(229215, 'Workbook Archive');
+        common.lightbox(229216, 'Monitoring');
     }
 
     common.startMonitor(false);
