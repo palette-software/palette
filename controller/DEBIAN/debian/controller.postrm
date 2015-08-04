@@ -8,4 +8,6 @@ fi
 
 update-rc.d -f controller remove
 
+rm -f /etc/cron.d/support-control /etc/cron.d/palette-update
+
 exit 0
