@@ -264,7 +264,7 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
 
     def capacity(self):
         if self.cores:
-            return "%d Cores" % (self.cores)
+            return "Cores used: %d of %d" % (self.cores, self.core_licenses)
         if self.interactors is None and self.viewers is None:
             return None
         return "%d Interactors, %d Viewers" % (self.interactors, self.viewers)
