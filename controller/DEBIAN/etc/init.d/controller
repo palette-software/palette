@@ -44,7 +44,8 @@ stop() {
 
 restart() {
     log_daemon_msg "Restarting Palette controller"
-    $DAEMON --name=$NAME --restart
+    stop
+    start
     RETVAL=$?
     log_end_msg $RETVAL
     return $RETVAL
