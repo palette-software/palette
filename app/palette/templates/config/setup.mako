@@ -47,8 +47,8 @@
     <section id="admin">
       <a id="236536" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Palette Server Admin Credentials</h2>
-      <p>Change the password for the built-in "Palette" username</p>
-      <p>Any combination of 8+ case-sensitive, alphanumeric characters (i.e. A-Z, a-z, 0-9, and !,@,#,$,%)</p>
+      <p>Change the password for the built-in "Palette" username.</p>
+      <p>Any combination of 8+ case-sensitive, alphanumeric characters (i.e. A-Z, a-z, 0-9, and !,@,#,$,%).</p>
       <label>Username</label>
       <p class="fake-text-input">Palette</p>
       <label for="password">New Password *</label>
@@ -111,7 +111,7 @@
     <section id="auth">
       <a id="236544" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Authentication</h2>
-      <p>This setting overrides Palette's default Authentication Method</p>
+      <p>This setting overrides Palette's default Authentication Method.</p>
       <span id="authentication-type" class="btn-group"></span>
       <div class="save-cancel">
         <button type="button" id="save-auth" class="btn btn-primary">
