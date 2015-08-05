@@ -308,14 +308,14 @@ function ($, configure, common, Dropdown, OnOff)
         configure.changeMail();
 
         /* help */
-        configure.lightbox(236535, 'Palette Server URL');
-        configure.lightbox(237794, 'Tableau Server URL');
-        configure.lightbox(237795, 'License Key');
-        configure.lightbox(236536, 'Palette Admin Password');
-        configure.lightbox(252063, 'Tableau Server Repository Database User Password');
-        configure.lightbox(236542, 'Mail Server');
-        configure.lightbox(236544, 'Authentication');
-        configure.lightbox(237785, 'Timezone');
+        common.lightbox(236535, 'Palette Server URL');
+        common.lightbox(237794, 'Tableau Server URL');
+        common.lightbox(237795, 'License Key');
+        common.lightbox(236536, 'Palette Admin Password');
+        common.lightbox(252063, 'Tableau Server Repository Database User Password');
+        common.lightbox(236542, 'Mail Server');
+        common.lightbox(236544, 'Authentication');
+        common.lightbox(237785, 'Timezone');
 
         $(".version").html(data['version']);
 
