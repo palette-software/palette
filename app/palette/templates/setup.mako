@@ -67,7 +67,7 @@
   <div class="center-container configuration setup-page initial hidden">
     <section class="top-zone">
       <h1 class="page-title">Welcome to Palette Server Setup</h1>
-      <p>Please set up your Mail, Hostname and SSL Certificate Settings for your Palette Server</p>
+      <p>Please set up your Mail, Hostname and SSL Certificate Settings for your Palette Server.</p>
     </section>
 
     <section>
@@ -81,15 +81,15 @@
     <section>
       <a id="237795" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Palette License Key *</h2>
-      <p>Your 32 digit Palette License Key is found in the confirmation email</p>
+      <p>Your 32 digit Palette License Key is found in the confirmation email.</p>
       <input type="text" id="license-key" />
     </section>
     <hr />
     <section id="admin">
       <a id="236536" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Palette Server Admin Credentials</h2>
-      <p>Create a password for the built-in "Palette" username</p>
-      <p>Any combination of 8+ case-sensitive, alphanumeric characters (i.e. A-Z, a-z, 0-9, and !,@,#,$,%)</p>
+      <p>Create a password for the built-in "Palette" username.</p>
+      <p>Any combination of 8+ case-sensitive, alphanumeric characters (i.e. A-Z, a-z, 0-9, and !,@,#,$,%).</p>
       <label for="password">Password *</label>
       <input type="password" id="password" />
       <label for="confirm-password">Confirm Password *</label>

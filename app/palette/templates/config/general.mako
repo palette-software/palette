@@ -20,7 +20,7 @@
     <section id="storage">
       <a id="229204" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Storage Location</h2>
-      <p>Your Backups, Ziplogs, and Workbooks will be saved in this location</p>
+      <p>Your Backups, Ziplogs, and Workbooks will be saved in this location.</p>
       <input type="radio" id="storage-local" name="storage-type" value="local" />
       <label for="storage-local">My Machine(s)</label>
       <input type="radio" id="storage-s3" name="storage-type" value="s3" />
@@ -102,7 +102,7 @@
     <section id="email-alerts">
       <a id="229207" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Email Alerts</h2>
-      <p>Designate which groups of Palette Users receive Email Alerts</p>
+      <p>Designate which groups of Palette Users receive Email Alerts.</p>
       <p class="slider-group">
         <span>Allow Alerts to Palette Admins
           <span id="alert-admins" class="onoffswitch yesno"></span>
@@ -134,7 +134,7 @@
           </p>
           -->
       <h3>Scheduled Backups</h3>
-      <p>The number of scheduled Backups you want Palette to keep in storage</p>
+      <p>The number of scheduled Backups you want Palette to keep in storage.</p>
       <p><span id="backup-auto-retain-count" class="btn-group count"></span> Backups</p>
       <!--
           <h3>Frequency and Time of Scheduled Backups</h3>
@@ -146,7 +146,7 @@
           </p>
           -->
       <h3>User Requested Backups</h3>
-      <p>The number of user requested Backups you want Palette to keep in storage</p>
+      <p>The number of user requested Backups you want Palette to keep in storage.</p>
       <p>
         <span id="backup-user-retain-count" class="btn-group count"></span> Backups
       </p>
@@ -173,12 +173,12 @@
           </p>
           -->
       <h3>Scheduled Ziplogs</h3>
-      <p>The number of scheduled Ziplogs you want Palette to keep in storage</p>
+      <p>The number of scheduled Ziplogs you want Palette to keep in storage.</p>
       <p>
         <span id="ziplog-auto-retain-count" class="btn-group count"></span> Ziplogs
       </p>
       <h3>User Requested Ziplogs</h3>
-      <p>The number of user requested Ziplogs you want Palette to keep in storage</p>
+      <p>The number of user requested Ziplogs you want Palette to keep in storage.</p>
       <p>
         <span id="ziplog-user-retain-count" class="btn-group count"></span> Ziplogs
       </p>
@@ -197,7 +197,7 @@
     <section id="workbooks">
       <a id="229215" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Workbook Archive</h2>
-      <p>If enabled, Palette will archive all published Tableau Workbooks</p>
+      <p>If enabled, Palette will archive all published Tableau Workbooks.</p>
       <p class="slider-group">
         <span>Enable Archive
           <span id="enable-archive" class="onoffswitch yesno"></span>
@@ -232,7 +232,7 @@
       <h2>Monitoring</h2>
 
       <h3>Storage</h3>
-      <p>Alert when my Machine attached volumes exceed these thresholds</p>
+      <p>Alert when my Machine attached volumes exceed these thresholds.</p>
       <p>
         <span>Warning Alert at <span id="disk-watermark-low" class="btn-group percentage"></span></span>&nbsp;<span>Error Alert at <span id="disk-watermark-high" class="btn-group percentage"></span></span>
       </p>
@@ -248,7 +248,7 @@
       </section>
       <section>
         <h2>Workbook</h2>
-        <p>Alert when workbook web view Page Load Times exceed these thresholds</p>
+        <p>Alert when workbook web view Page Load Times exceed these thresholds.</p>
         <p>
           Warning Alert at <span id="http-load-warn" class="btn-group percentage up"></span>&nbsp;Error Alert at <span id="http-load-error" class="btn-group percentage up"></span>
         </p>
