@@ -143,6 +143,7 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
         filename = filename.replace(' ', '_')
         filename = filename.replace('/', '_')
         filename = filename.replace('\\', '_')
+        filename = filename.replace(':', '_')
         filename = unicodedata.normalize('NFKD', filename).encode('ascii',
                                                                   'ignore')
         return filename
