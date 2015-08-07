@@ -77,6 +77,8 @@ class SystemConfig(object):
     STATUS_SYSTEMINFO_SEND_ALERTS = 'status-systeminfo-send-alerts'
     STATUS_SYSTEMINFO_TIMEOUT_MS = 'status-systeminfo-timeout-ms'
 
+    PROXY_HTTPS = "proxy-https"
+
     # Don't take 'server' here so that this class may be instantiated
     # from the webapp too.
     def __init__(self, system):
@@ -263,6 +265,8 @@ class SystemConfig(object):
         if name == 'status_systeminfo_timeout_ms':
             return self._getint(self.STATUS_SYSTEMINFO_TIMEOUT_MS,
                                 default=15000)
+        if name == "proxy_https":
+            return self._getstring(self.PROXY_HTTPS, default=None)
         raise AttributeError(name)
 
     def todict(self):
@@ -315,7 +319,8 @@ class SystemConfig(object):
             self.TABLEAU_INTERNAL_SERVER_URL: self.tableau_interanal_server_url,
             self.AUTHENTICATION_TYPE: self.authentication_type,
             self.TIMEZONE: self.timezone,
-            self.CONTROLLER_INITIAL_START: self.controller_initial_start
+            self.CONTROLLER_INITIAL_START: self.controller_initial_start,
+            self.PROXY_HTTPS: self.proxy_https
             }
 
     def text(self, value):
