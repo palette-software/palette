@@ -45,7 +45,7 @@ class SupportApplication(PaletteRESTApplication):
 
     def service_GET(self, req):
         enabled = req.system.getyesno(SystemConfig.SUPPORT_ENABLED,
-                                     default=True,
+                                     default=False,
                                      cleanup=True)
         return {self.JSON_KEY: enabled}
 
