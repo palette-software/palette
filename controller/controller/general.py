@@ -214,7 +214,7 @@ class SystemConfig(object):
         if name == 'alerts_new_user_enabled':
             return self._getyesno(self.ALERTS_NEW_USER_ENABLED, default='no')
         if name == 'support_enabled':
-            return self._getyesno(self.SUPPORT_ENABLED, default='yes')
+            return self._getyesno(self.SUPPORT_ENABLED, default='no')
         if name == 'auto_update_enabled':
             return self._getyesno(self.AUTO_UPDATE_ENABLED, default='yes')
         if name == "email_lookback_minutes":
