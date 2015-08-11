@@ -86,6 +86,13 @@ fi
 
 echo Doing update... >> $LOG_FILE 2>&1
 
+PROXY_CONFIG_FILE=/var/palette/.proxy
+
+if [ -r $PROXY_CONFIG_FILE ]; then
+    echo Found proxy file >> $LOG_FILE
+    source /var/palette/.proxy
+fi
+
 # Update only from the palette repo
 apt-get update \
     -o Dir::Etc::sourcelist="sources.list.d/palette.list" \
