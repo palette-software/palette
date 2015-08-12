@@ -222,8 +222,6 @@ class LicenseEntry(meta.Base, BaseMixin, BaseDictMixin):
 
 
 class LicenseManager(Manager):
-    MAX_SILENCE_TIME = 72 * 60 * 60     # 72 hours
-
     def check(self, agent):
         server = self.server
 
@@ -391,15 +389,18 @@ class LicenseManager(Manager):
             session.commit()
             return
 
+        st_config = SystemConfig(self.server.system)
+        max_silence_time = st_config.max_silence_time
         silence_time = (datetime.datetime.utcnow() - \
                             entry.contact_time).total_seconds()
 #        print "contact_time:", entry.contact_time
 #        print "timestamp thing:", datetime.datetime.utcnow()
-#        print "silence_time:", silence_time, "max:", self.MAX_SILENCE_TIME
-        if silence_time <= self.MAX_SILENCE_TIME:
-            # It failed to phone home, but we have more time to try.
+#        print "silence_time:", silence_time, "max:", max_silence_time
+
+        if silence_time <= max_silence_time and max_silence_time != -1:
+            # It failed to phone home, but we have more time to try,
             logging.debug("silence_time: %d <= max: %d",
-                              silence_time, self.MAX_SILENCE_TIME)
+                              silence_time, max_silence_time)
             # If they had no expiration time (like on initial install)
             # then expire it now.
             if not entry.expiration_time:
@@ -411,7 +412,7 @@ class LicenseManager(Manager):
                                     entry.contact_time).total_seconds() / 3600)
 
         logging.debug("failure hours was longer than %d: %d",
-                      self.MAX_SILENCE_TIME, data['failure_hours'])
+                      max_silence_time, data['failure_hours'])
 
         notification = self.server.notifications.get("phonehome")
         notification.description = reason
@@ -420,7 +421,10 @@ class LicenseManager(Manager):
 
         data['contact_failures'] = entry.contact_failures
         data['last_contact_time'] = entry.contact_time
-        data['max_silence_time'] = self.MAX_SILENCE_TIME/(60*60)
+        if max_silence_time != -1:
+            data['max_silence_hours'] = max_silence_time/(60*60)
+        else:
+            data['max_silence_hours'] = 96  # just to be different
 
         if notification.color != 'red':
             self.server.event_control.gen(EventControl.PHONE_HOME_FAILED, data)
