@@ -15,7 +15,6 @@ from domain import Domain
 from general import SystemConfig
 from event_control import EventControl
 from profile import UserProfile
-from licensing import LicenseManager
 from util import UNDEFINED
 
 from mako.template import Template
@@ -235,11 +234,12 @@ class AlertEmail(object):
             if entry.contact_time:
                 silence_time = (datetime.datetime.utcnow() - \
                                         entry.contact_time).total_seconds()
-                if silence_time > LicenseManager.MAX_SILENCE_TIME:
+                if silence_time > self.st_config.max_silence_time and \
+                                    self.st_config.max_silence_time != -1:
                     self.log.debug("Phonehome contact time is %d > %d. " +
                                     "Not sending: Subject: %s, Message: %s",
                                     silence_time,
-                                    LicenseManager.MAX_SILENCE_TIME,
+                                    self.st_config.max_silence_time,
                                     subject, message)
                     return
 
