@@ -97,6 +97,9 @@ class ExtractManager(TableauCacheManager):
                            entry.title, datasourceid)
             return
 
+        # Our 'datasource' table doesn't have system_user_id, so we
+        # need to look it up.  (Note our 'workbook' table does have
+        # 'system_user_id')
         entry.system_user_id = users.get(ds_entry.site_id, ds_entry.owner_id)
         entry.project_id = ds_entry.project_id
 

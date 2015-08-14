@@ -100,9 +100,6 @@ class HttpRequestManager(TableauCacheManager):
 
         session.commit()
 
-        if maxid is None: # the first import...
-            return
-
         for entry in rows:
 #            print "entry: id", entry.id, "action", entry.action,
 #            print "vizal_session", entry.vizql_session
