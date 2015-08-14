@@ -82,6 +82,7 @@ class SystemConfig(object):
     STATUS_SYSTEMINFO_TIMEOUT_MS = 'status-systeminfo-timeout-ms'
 
     PROXY_HTTPS = "proxy-https"
+    MAX_SILENCE_TIME = "max-silence-time"
 
     SUPPORT_ENABLED = "support-enabled"
     AUTO_UPDATE_ENABLED = "auto-update-enabled"
@@ -285,6 +286,8 @@ class SystemConfig(object):
                                 default=15000)
         if name == "proxy_https":
             return self._getstring(self.PROXY_HTTPS, default=None)
+        if name == "max_silence_time":
+            return self._getint(self.MAX_SILENCE_TIME, default=72*60*60)
         raise AttributeError(name)
 
     def todict(self):
@@ -344,7 +347,8 @@ class SystemConfig(object):
             self.AUTHENTICATION_TYPE: self.authentication_type,
             self.TIMEZONE: self.timezone,
             self.CONTROLLER_INITIAL_START: self.controller_initial_start,
-            self.PROXY_HTTPS: self.proxy_https
+            self.PROXY_HTTPS: self.proxy_https,
+            self.MAX_SILENCE_TIME: self.max_silence_time
             }
 
     def text(self, value):

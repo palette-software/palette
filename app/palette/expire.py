@@ -5,8 +5,9 @@ from sqlalchemy.orm.exc import NoResultFound
 from akiri.framework import GenericWSGI
 import akiri.framework.sqlalchemy as meta
 
-from controller.licensing import LicenseEntry, LicenseManager
+from controller.licensing import LicenseEntry
 from controller.agent import Agent
+from controller.general import SystemConfig
 
 LICENSE_EXPIRED = 'https://licensing.palette-software.com/license-expired'
 TRIAL_EXPIRED = 'https://licensing.palette-software.com/trial-expired'
@@ -20,16 +21,19 @@ class ExpireMiddleware(GenericWSGI):
         # pylint: disable=too-many-branches
 #        print "contact_time:", req.palette_domain.contact_time
 
+        scfg = SystemConfig(req.system)
+        max_silence_time = scfg.max_silence_time
         if req.palette_domain.expiration_time and \
                 datetime.utcnow() > req.palette_domain.expiration_time:
             if req.palette_domain.trial:
                 location = TRIAL_EXPIRED
             else:
                 location = LICENSE_EXPIRED
-        elif req.palette_domain.contact_time and \
+        elif max_silence_time != -1 and \
+            req.palette_domain.contact_time and \
                     (datetime.utcnow() - \
                     req.palette_domain.contact_time).total_seconds() > \
-                                            LicenseManager.MAX_SILENCE_TIME:
+                                            max_silence_time:
             location = PHONEHOME_FAILED
         else:
             return None
