@@ -158,7 +158,8 @@ class HttpRequestManager(TableauCacheManager):
                                agent, entry, body=body)
             return
 
-        if entry.action == 'show' and (entry.vizql_session == '' or
+        if not entry.http_request_uri.startswith('/admin/status') and \
+               entry.action == 'show' and (entry.vizql_session == '' or
                                             entry.vizql_session == None):
             self._eventgen(EventControl.HTTP_INITIAL_LOAD_FAILED,
                                agent, entry, body=body)
