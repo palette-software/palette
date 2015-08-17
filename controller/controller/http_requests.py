@@ -152,8 +152,9 @@ class HttpRequestManager(TableauCacheManager):
             # alerts for this aren't enabled
             return
 
-        if entry.action == 'bootstrapSession' and (entry.vizql_session == '' or
-                                            entry.vizql_session == None):
+        if entry.action == 'bootstrapSession' and \
+            ((entry.vizql_session == '' or entry.vizql_session == None) or
+             ('view' not in body or ('view' in body and body['view'] == ''))):
             self._eventgen(EventControl.HTTP_INITIAL_COMPUTE_FAILED,
                                agent, entry, body=body)
             return
