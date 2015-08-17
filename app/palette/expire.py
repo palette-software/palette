@@ -11,8 +11,7 @@ from controller.general import SystemConfig
 
 LICENSE_EXPIRED = 'https://licensing.palette-software.com/license-expired'
 TRIAL_EXPIRED = 'https://licensing.palette-software.com/trial-expired'
-PHONEHOME_FAILED = \
-                'https://licensing.palette-software.com/licensing-unavailable'
+PHONEHOME_FAILED = 'https://licensing.palette-software.com/unreachable'
 
 class ExpireMiddleware(GenericWSGI):
     """Check for expired trials/licenses/phonehome-fialures and
