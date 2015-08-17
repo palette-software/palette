@@ -2,6 +2,7 @@
 
 import logging
 import urllib
+import urllib2
 from urlparse import urlparse
 import httplib
 import json
@@ -33,12 +34,14 @@ LICENSING_URL = "https://licensing.palette-software.com"
 def licensing_send(uri, data, system):
     proxy_https = system.get(SystemConfig.PROXY_HTTPS, default=None)
     if proxy_https:
-        proxies = {'https': proxy_https}
-    else:
-        proxies = None
+        result = urlparse(proxy_https)
+        proxy = urllib2.ProxyHandler({'https': result.netloc})
+        opener = urllib2.build_opener(proxy)
+        urllib2.install_opener(opener)
+
     params = urllib.urlencode(data)
 
-    conn = urllib.urlopen(LICENSING_URL + uri, params, proxies=proxies)
+    conn = urllib2.urlopen(LICENSING_URL + uri, params)
     reply_json = conn.read()
     conn.close()
 
