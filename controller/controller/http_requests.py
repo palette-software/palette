@@ -49,10 +49,24 @@ class HttpRequestEntry(meta.Base, BaseMixin, BaseDictMixin):
     __table_args__ = (UniqueConstraint('envid', 'id'),)
 
     @classmethod
-    def get_by_vizql_action(cls, envid, vizql_session, action, **kwargs):
-        keys = {'envid':envid, 'vizql_session': vizql_session,
-                'action':action}
-        return cls.get_unique_by_keys(keys, **kwargs)
+    def get_by_vizql_action(cls, envid, vizql_session, action):
+        session = meta.Session()
+
+        row = session.query(HttpRequestEntry).\
+            filter(HttpRequestEntry.envid == envid).\
+            filter(HttpRequestEntry.vizql_session == vizql_session).\
+            filter(HttpRequestEntry.action == action).\
+            order_by(HttpRequestEntry.created_at.desc()).\
+            first()
+
+#        if row == None:
+#            print "None found"
+#        else:
+#            print 'reqid', row.reqid, 'action', row.action,
+#            print "http_request_uri = ", row.http_request_uri
+#            print "created_at = ", row.created_at
+#
+        return row
 
     @classmethod
     def maxid(cls, envid):
@@ -108,7 +122,7 @@ class HttpRequestManager(TableauCacheManager):
         return {u'status': 'OK', u'count': len(datadict[''])}
 
     def _parseuri(self, uri, body):
-        # Keep body['uri''] to be the whole uri, even if it includes a
+        # Keep body['uri'] to be the whole uri, even if it includes a
         # query string, so query strings can be included in the
         # exclusion matching.
         body['uri'] = uri
@@ -143,60 +157,96 @@ class HttpRequestManager(TableauCacheManager):
             self._test_for_load_alerts(rows, entry, agent, body)
 
     def _test_for_load_alerts(self, rows, entry, agent, body):
+    # pylint: disable=too-many-return-statements
+    # pylint: disable=too-many-branches
 #        print "action = ", entry.action, "body = ", body
 
         errorlevel = self.server.system.getint('http-load-error')
         warnlevel = self.server.system.getint('http-load-warn')
 
         if not errorlevel and not warnlevel:
-            # alerts for this aren't enabled
+            # alerts for http-requests aren't enabled
             return
 
-        if entry.action == 'bootstrapSession' and \
-            ((entry.vizql_session == '' or entry.vizql_session == None) or
-             ('view' not in body or ('view' in body and body['view'] == ''))):
-            self._eventgen(EventControl.HTTP_INITIAL_COMPUTE_FAILED,
-                               agent, entry, body=body)
+        if entry.http_request_uri.startswith('/admin'):
             return
 
-        if not entry.http_request_uri.startswith('/admin/status') and \
-               entry.action == 'show' and (entry.vizql_session == '' or
-                                            entry.vizql_session == None):
+        if entry.action == 'show' and not entry.vizql_session and \
+                                                    not entry.currentsheet:
+            # Type 5
             self._eventgen(EventControl.HTTP_INITIAL_LOAD_FAILED,
                                agent, entry, body=body)
             return
 
         if entry.action in ('performPostLoadOperations', 'sessions',
                                                 'get_customized_views'):
+            # Type 2
             seconds = int(timedelta_total_seconds(entry.completed_at,
                                                   entry.created_at))
             body['post_initial_compute'] = seconds
             body['duration'] = seconds  # fixme: remove when event doesn't use
 
         elif entry.action == 'bootstrapSession':
-            seconds_load = int(timedelta_total_seconds(entry.completed_at,
+            if entry.currentsheet:
+                # Type 1
+                seconds_load = int(timedelta_total_seconds(entry.completed_at,
                                                   entry.created_at))
-            body['view_load_duration'] = seconds_load
+                body['view_load_duration'] = seconds_load
 
-            show_entry = self._find_bootstrap_entry(rows, entry, 'show')
+                show_entry = self._find_bootstrap_entry(rows, entry, 'show')
 
-            if not show_entry:
-                self.server.log.error("http load test: http_requests "
-                    "For id %d, action %s, vizql_session %d, did not "
-                    "find 'show'",
-                    entry.id, entry.action, entry.vizql_session)
-                return
+                if not show_entry:
+                    self.server.log.error("http load test Type 1: "
+                        "http_requests "
+                        "For id %d, action %s, vizql_session %d, did not "
+                        "find 'show'",
+                        entry.id, entry.action, entry.vizql_session)
+                    return
 
-            seconds_compute = int(timedelta_total_seconds(
+                seconds_compute = int(timedelta_total_seconds(
                                    show_entry.completed_at,
                                    show_entry.created_at))
-            body['view_compute_duration'] = seconds_compute
+                body['view_compute_duration'] = seconds_compute
 
-            seconds = body['view_load_duration'] + body['view_compute_duration']
+                seconds = body['view_load_duration'] + \
+                                                body['view_compute_duration']
 
-            body['total_view_generation_time'] = seconds
-            body['duration'] = seconds  # fixme: remove when event doesn't use
-            body['vizql_session'] = entry.vizql_session
+                body['total_view_generation_time'] = seconds
+                body['duration'] = seconds # fixme: remove when event
+                                           # doesn't use
+                body['vizql_session'] = entry.vizql_session
+            elif not entry.currentsheet and entry.vizql_session:
+                # Type 3: currentsheet is blank or null and vizql_session
+                # is not empty.
+                show_entry = self._find_bootstrap_entry(rows, entry, 'show')
+
+                if not show_entry:
+                    self.server.log.error("http load test Type 3: "
+                        "http_requests "
+                        "For id %d, action %s, vizql_session %d, did not "
+                        "find 'show'",
+                        entry.id, entry.action, entry.vizql_session)
+                    return
+
+                # Use the information from the 'show' row instead of
+                # the 'bootstrapSession' since the 'show' row has more info.
+                body = {}
+                self._parseuri(entry.http_request_uri, body)
+                self._eventgen(EventControl.HTTP_INITIAL_COMPUTE_FAILED,
+                                   agent, entry, body=body)
+                return
+            elif not entry.currentsheet and not entry.vizql_session:
+                # Type 4: currentsheet is blank or empty and vizql_session
+                # is blank or empty
+                self._eventgen(EventControl.HTTP_INITIAL_COMPUTE_FAILED,
+                                   agent, entry, body=body)
+                return
+            else:
+                self.server.log.error("http load test: "
+                            "http_requests "
+                            "For id %d, action %s, unhandled case",
+                            entry.id, entry.action)
+                return
 
 #            print 'found it id:', entry.id, 'action:', entry.action,
 #            print ', body:', body, ', seconds:', seconds
@@ -216,22 +266,28 @@ class HttpRequestManager(TableauCacheManager):
                            agent, entry, body=body)
 
     def _find_bootstrap_entry(self, rows, entry, action):
-        rows = []
+#        rows = []  # for debugging to remove the cache and force db search
         for row in rows:
             if row.vizql_session == entry.vizql_session and \
                                         row.action == action:
+#                print "found it in the cache:", row.reqid
                 return row
+#            print "not this one. looking for", entry.vizql_session,
+#            print "instead it is:", row.reqid, row.vizql_session
 
         # fixme: search through db
-        return None
+#        return None
 #   pylint: disable=unreachable
         # We didn't find it in our latest odbc request so we'll dig through
         # all of the http rows.
         envid = self.server.environment.envid
-        row = HttpRequestEntry.get_by_vizql_action(envid, entry.vizql_session,
-                                                action, default=None)
-        #print "Didn't find it in the cache.  db find was:", row
-        return row
+        db_row = HttpRequestEntry.get_by_vizql_action(envid,
+                                                entry.vizql_session, action)
+#        if db_row == None:
+#            print "Didn't find it in the cache OR db", entry.reqid
+#        else:
+#            print "Didn't find it in the cache.  db find was:", db_row.reqid
+        return db_row
 
     def _get_last_http_requests_id(self, agent):
         stmt = "SELECT MAX(id) FROM http_requests"
