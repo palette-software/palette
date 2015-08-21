@@ -145,6 +145,9 @@ class HttpRequestManager(TableauCacheManager):
             body['view'] = tokens[4]
 
     def _test_for_alerts(self, rows, entry, agent, controldata):
+        if entry.http_request_uri.startswith('/admin'):
+            return
+
         body = {}
         self._parseuri(entry.http_request_uri, body)
 
@@ -171,8 +174,6 @@ class HttpRequestManager(TableauCacheManager):
             # alerts for http-requests aren't enabled
             return
 
-        if entry.http_request_uri.startswith('/admin'):
-            return
 
 #        if entry.action == 'show' and not entry.vizql_session and \
 #                                                    not entry.currentsheet:
