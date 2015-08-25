@@ -23,6 +23,12 @@ then
     service apache2 stop
 fi
 
+POSTGRES_CONFIG_FILE=/etc/postgresql/9.3/main/postgresql.conf
+if  ! grep -q '^max_connections' $POSTGRES_CONFIG_FILE
+then
+    echo max_connections = 300 >> $POSTGRES_CONFIG_FILE
+fi
+
 service postgresql restart
 
 if [ "$oldversion" = "1.0.0" ]; then
