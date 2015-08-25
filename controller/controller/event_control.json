@@ -1676,7 +1676,7 @@
 },
 {
 "eventid":95,
-"key":"HTTP-INITIAL-COMPUTE-FAILED",
+"key":"HTTP-LOAD-TYPE-3",
 "level":"E",
 "send_email":"t",
 "subject":"ERROR Workbook Initial View Failed to Compute Error (ID: %(eventid)s)",
@@ -1694,7 +1694,7 @@
 },
 {
 "eventid":96,
-"key":"HTTP-INITIAL-LOAD-FAILED",
+"key":"HTTP-LOAD-TYPE-4",
 "level":"E",
 "send_email":"t",
 "subject":"ERROR Workbook Initial View Failed to Load Error (ID: %(eventid)s)",
