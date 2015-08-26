@@ -67,7 +67,7 @@ class ExtractManager(TableauCacheManager):
         envid = self.server.environment.envid
 
         try:
-            wb_entry = WorkbookEntry.get_by_id(envid, workbookid)
+            wb_entry = WorkbookEntry.get_first_by_id(envid, workbookid)
         except ValueError:
             self.log.error("extract workbook_update: No such workbook "
                            "with title %s, id %d\n",

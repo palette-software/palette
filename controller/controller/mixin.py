@@ -98,6 +98,29 @@ class BaseMixin(object):
         return entry
 
     @classmethod
+    def get_first_by_keys(cls, keys, **kwargs):
+        if 'default' in kwargs:
+            default = kwargs['default']
+            have_default = True
+            del kwargs['default']
+        else:
+            have_default = False
+
+        if kwargs:
+            raise ValueError("Invalid kwargs: " + str(kwargs))
+
+        query = meta.Session.query(cls)
+        query = cls.apply_filters(query, keys)
+
+        entry = query.first()
+        if not entry:
+            if have_default:
+                return default
+            raise ValueError("No such value: " + str(keys))
+        # Returns None if not found and no default
+        return entry
+
+    @classmethod
     def get_all_by_keys(cls, keys, order_by=None, limit=None):
         if order_by is None:
             order_by = []
