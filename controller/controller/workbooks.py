@@ -96,10 +96,6 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
         return cls.get_unique_by_keys({'envid': envid, 'id': workbook_id})
 
     @classmethod
-    def get_first_by_id(cls, envid, workbook_id):
-        return cls.get_first_by_keys({'envid': envid, 'id': workbook_id})
-
-    @classmethod
     def get_by_url(cls, envid, url, site_id, **kwargs):
         # technically the Tableau database does not guarantee uniqueness.
         keys = {'envid':envid, 'repository_url': url, 'site_id': site_id}
