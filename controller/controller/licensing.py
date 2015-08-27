@@ -41,16 +41,23 @@ def licensing_send(uri, data, system):
 
     params = urllib.urlencode(data)
 
-    conn = urllib2.urlopen(LICENSING_URL + uri, params)
-    reply_json = conn.read()
-    conn.close()
 
-    if conn.getcode() != httplib.OK:
-        logging.warn("phone home failed with status %d: %s",
-                     conn.getcode(), reply_json)
-        raise LicenseException(conn.getcode(),
-                               "Failed with status %d. Reply: %s " % \
-                               (conn.getcode(), reply_json))
+    try:
+        conn = urllib2.urlopen(LICENSING_URL + uri, params)
+    except urllib2.HTTPError, err:
+        status_code = err.code
+        reply_json = ""
+    else:
+        status_code = conn.getcode()
+        reply_json = conn.read()
+        conn.close()
+
+    if status_code != httplib.OK:
+        logging.warn("phone home failed with status %d: '%s'",
+                     status_code, reply_json)
+        raise LicenseException(status_code,
+                               "Failed with status %d. Reply: '%s' " % \
+                               (status_code, reply_json))
 
     return json.loads(reply_json)
 
