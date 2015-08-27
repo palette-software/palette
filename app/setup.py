@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '1.5.2'
+version = '1.6.0'
 
 setup(name='palette',
     version=version,
