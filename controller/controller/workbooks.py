@@ -96,8 +96,13 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
         return cls.get_unique_by_keys({'envid': envid, 'id': workbook_id})
 
     @classmethod
-    def get_first_by_id(cls, envid, workbook_id):
-        return cls.get_first_by_keys({'envid': envid, 'id': workbook_id})
+    def get_newest_by_id(cls, envid, workbook_id):
+        rows = cls.get_all_by_keys({'envid': envid, 'id': workbook_id},
+                                order_by=[WorkbookEntry.updated_at.desc()],
+                                limit=1)
+        if not rows:
+            return None
+        return rows[0]
 
     @classmethod
     def get_by_url(cls, envid, url, site_id, **kwargs):
