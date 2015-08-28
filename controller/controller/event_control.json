@@ -15,7 +15,7 @@
 "event_type_label":"Communication",
 "event_label":"Server Reconnected",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -33,7 +33,7 @@
 "event_type_label":"Communication",
 "event_label":"Server Disconnected",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -51,7 +51,7 @@
 "event_type_label":"Palette Agent",
 "event_label":"Unexpected Agent Failed",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -69,7 +69,7 @@
 "event_type_label":"Palette Agent",
 "event_label":"Server Invalid Status",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -87,7 +87,7 @@
 "event_type_label":"Palette Agent",
 "event_label":"Start Backup Failed",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -105,7 +105,7 @@
 "event_type_label":"Storage",
 "event_label":"Stop Backup Failed",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -123,7 +123,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -141,7 +141,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -159,7 +159,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -177,7 +177,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -195,7 +195,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -213,7 +213,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -231,7 +231,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -249,7 +249,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -267,7 +267,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -285,7 +285,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -303,7 +303,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -321,7 +321,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -339,7 +339,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -357,7 +357,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -375,7 +375,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -393,7 +393,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -411,7 +411,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -429,7 +429,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -447,7 +447,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -465,7 +465,7 @@
 "event_type_label":"Tableau Backup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -483,7 +483,7 @@
 "event_type_label":"Tableau Log Cleanup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -501,7 +501,7 @@
 "event_type_label":"Tableau Log Cleanup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -519,7 +519,7 @@
 "event_type_label":"Tableau Log Cleanup",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -537,7 +537,7 @@
 "event_type_label":"Palette Server",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -555,7 +555,7 @@
 "event_type_label":"Storage",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -573,7 +573,7 @@
 "event_type_label":"Storage",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -591,7 +591,7 @@
 "event_type_label":"Storage",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -609,7 +609,7 @@
 "event_type_label":"Test",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -627,7 +627,7 @@
 "event_type_label":"Extracts",
 "event_label":"Failed Extract ",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":true
 },
 {
@@ -645,7 +645,7 @@
 "event_type_label":"Extracts",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":true
 },
 {
@@ -663,7 +663,7 @@
 "event_type_label":"Network Test",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -681,7 +681,7 @@
 "event_type_label":"HTTP Status",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -699,7 +699,7 @@
 "event_type_label":"Tableau Page Load",
 "event_label":"Workbook Long Load Time ",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":true
 },
 {
@@ -717,7 +717,7 @@
 "event_type_label":"Tableau Page Load",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":true
 },
 {
@@ -735,7 +735,7 @@
 "event_type_label":"Tableau App",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -753,7 +753,7 @@
 "event_type_label":"Tableau App",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -771,7 +771,7 @@
 "event_type_label":"Tableau App",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -789,7 +789,7 @@
 "event_type_label":"Licensing",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -807,7 +807,7 @@
 "event_type_label":"Licensing",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -825,7 +825,7 @@
 "event_type_label":"Licensing",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -843,7 +843,7 @@
 "event_type_label":"Licensing",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -861,7 +861,7 @@
 "event_type_label":"Licensing",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -879,7 +879,7 @@
 "event_type_label":"Maintenance Page",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -897,7 +897,7 @@
 "event_type_label":"Maintenance Page",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -915,7 +915,7 @@
 "event_type_label":"Maintenance Page",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -933,7 +933,7 @@
 "event_type_label":"Maintenance Page",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -951,7 +951,7 @@
 "event_type_label":"Maintenance Page",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -969,7 +969,7 @@
 "event_type_label":"Palette Server",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -987,7 +987,7 @@
 "event_type_label":"Palette Server",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1005,7 +1005,7 @@
 "event_type_label":"Network Test",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1023,7 +1023,7 @@
 "event_type_label":"Network Test",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1041,7 +1041,7 @@
 "event_type_label":"Tableau App",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1059,7 +1059,7 @@
 "event_type_label":"Tableau App",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1077,7 +1077,7 @@
 "event_type_label":"Tableau Restore",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1095,7 +1095,7 @@
 "event_type_label":"Tableau Restore",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1113,7 +1113,7 @@
 "event_type_label":"Tableau Restore",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1131,7 +1131,7 @@
 "event_type_label":"Palette Server",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1149,7 +1149,7 @@
 "event_type_label":"Palette Server",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1167,7 +1167,7 @@
 "event_type_label":"Tableau App",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1185,7 +1185,7 @@
 "event_type_label":"Tableau App",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1203,7 +1203,7 @@
 "event_type_label":"Tableau App",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1221,7 +1221,7 @@
 "event_type_label":"Tableau App",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1239,7 +1239,7 @@
 "event_type_label":"Tableau App",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1257,7 +1257,7 @@
 "event_type_label":"Tableau App",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1275,7 +1275,7 @@
 "event_type_label":"Tableau App",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1293,7 +1293,7 @@
 "event_type_label":"Palette Server",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1311,7 +1311,7 @@
 "event_type_label":"Tableau App",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1329,7 +1329,7 @@
 "event_type_label":"Tableau App",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1347,7 +1347,7 @@
 "event_type_label":"Palette Server",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1365,7 +1365,7 @@
 "event_type_label":"Workbooks",
 "event_label":"Workbook Archive Failed",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":true
 },
 {
@@ -1383,7 +1383,7 @@
 "event_type_label":"Tableau Ziplog",
 "event_label":"Ziplogs Failure",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1401,7 +1401,7 @@
 "event_type_label":"Tableau Ziplog",
 "event_label":"Ziplogs Completed",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1419,7 +1419,7 @@
 "event_type_label":"Tableau Ziplog",
 "event_label":"Ziplogs Initiated",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1437,7 +1437,7 @@
 "event_type_label":"CPU",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1455,7 +1455,7 @@
 "event_type_label":"CPU",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1473,7 +1473,7 @@
 "event_type_label":"CPU",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1491,7 +1491,7 @@
 "event_type_label":"Licensing",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1509,7 +1509,7 @@
 "event_type_label":"Licensing",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1527,7 +1527,7 @@
 "event_type_label":"Licensing",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1545,7 +1545,7 @@
 "event_type_label":"Palette Server",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1563,7 +1563,7 @@
 "event_type_label":"Palette Agent",
 "event_label":"Read-only DB Access Failed",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1581,7 +1581,7 @@
 "event_type_label":"Palette Agent",
 "event_label":"Read-only DB Access Now OKAY",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1599,7 +1599,7 @@
 "event_type_label":"Tableau Status",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1617,7 +1617,7 @@
 "event_type_label":"Tableau Status",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1635,7 +1635,7 @@
 "event_type_label":"Network Test",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1653,7 +1653,7 @@
 "event_type_label":"Palette Server",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1671,7 +1671,7 @@
 "event_type_label":"Palette Server",
 "event_label":"",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":false
 },
 {
@@ -1689,7 +1689,7 @@
 "event_type_label":"Tableau Page Load",
 "event_label":"Workbook View Failed",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":true
 },
 {
@@ -1707,7 +1707,7 @@
 "event_type_label":"Tableau Page Load",
 "event_label":"Workbook View Failed",
 "event_label_desc":null,
-"admin_visibility":false,
+"admin_visibility":true,
 "publisher_visibility":true
 }
 ]
