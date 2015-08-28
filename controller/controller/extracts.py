@@ -219,14 +219,15 @@ class ExtractManager(TableauCacheManager):
     # FIXME: add project_id? maybe job_name?
     def _eventgen(self, key, data, timestamp=None):
         envid = self.server.environment.envid
-        system_user_id = data['system_user_id']
-        data['username'] = \
-            self.get_username_from_system_user_id(envid, system_user_id)
-        if data['username'] == None:
+        profile = UserProfile.get_by_system_user_id(envid,
+                                                    data['system_user_id'])
+        if profile:
+            data['username'] = profile.display_name()
+        else:
             data['username'] = "Unknown User"
 
         return self.server.event_control.gen(key, data,
-                                             userid=data['system_user_id'],
+                                             userid=profile.userid,
                                              site_id=data['site_id'],
                                              timestamp=timestamp)
 

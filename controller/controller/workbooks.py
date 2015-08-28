@@ -15,6 +15,7 @@ from manager import synchronized
 from util import failed, success
 from odbc import ODBC
 from general import SystemConfig
+from profile import UserProfile
 
 from diskcheck import DiskCheck, DiskException
 from event_control import EventControl
@@ -598,11 +599,18 @@ class WorkbookManager(TableauCacheManager):
             self.log.error(error)
             data['error'] = error
 
-        username = self.get_username_from_system_user_id(
+        profile = UserProfile.get_by_system_user_id(
                                                 self.server.environment.envid,
                                                 update.system_user_id)
+
+        if profile:
+            username = profile.display_name()
+            userid = profile.userid
+        else:
+            username = None
+            userid = None
 
         if username and not 'owner' in data:
             data['owner'] = username
 
-        return self.server.event_control.gen(key, data)
+        return self.server.event_control.gen(key, data, userid=userid)

@@ -353,12 +353,18 @@ class HttpRequestManager(TableauCacheManager):
 
         body['http_status'] = responses[entry.status]
 
+        userid = None
+
         system_user_id = entry.system_user_id
         if system_user_id != -1:
             body['system_user_id'] = system_user_id
-            body['username'] = \
-                self.get_username_from_system_user_id(entry.envid,
-                                                      system_user_id)
+
+            profile = UserProfile.get_by_system_user_id(entry.envid,
+                                                        entry.system_user_id)
+            if profile:
+                body['username'] = profile.display_name()
+
+                userid = profile.userid
 
         if 'repository_url' in body:
             self._translate_workbook(body, entry)
@@ -376,7 +382,7 @@ class HttpRequestManager(TableauCacheManager):
 
         completed_at = utc2local(entry.completed_at)
         self.server.event_control.gen(key, body,
-                                      userid=system_user_id,
+                                      userid=userid,
                                       timestamp=completed_at)
 
     def _prune(self, agent, envid):
