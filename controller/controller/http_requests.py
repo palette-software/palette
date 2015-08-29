@@ -357,8 +357,6 @@ class HttpRequestManager(TableauCacheManager):
 
         system_user_id = entry.system_user_id
         if system_user_id != -1:
-            body['system_user_id'] = system_user_id
-
             profile = UserProfile.get_by_system_user_id(entry.envid,
                                                         entry.system_user_id)
             if profile:
