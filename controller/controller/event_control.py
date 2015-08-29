@@ -332,8 +332,14 @@ class EventControlManager(Manager):
 
         if not profile is None:
             data['username'] = profile.display_name()
+            data['userid'] = profile.user_id
             if profile.email:
                 data['email'] = profile.email
+
+        if userid:
+            # userid passed to us has higher precedence than any
+            # lookup we did, above.
+            data['userid'] = userid
 
         if not 'username' in data:
             data['username'] = mako.runtime.UNDEFINED

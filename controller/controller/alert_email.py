@@ -98,7 +98,7 @@ class AlertEmail(object):
         if not self.admin_enabled and \
                 event_entry.key != EventControl.EMAIL_DISABLED_REMINDER:
             # If admin emails are disabled and it isn't the
-            # EMAIL_DISALBED_REMINDER, then don't send email to any admins.
+            # EMAIL_DISABLED_REMINDER, then don't send email to any admins.
             return []
 
         session = meta.Session()
@@ -115,7 +115,7 @@ class AlertEmail(object):
         """Return a list with the publisher_email for the user
            if it exists and has an email address."""
 
-        if not 'system_user_id' in data:
+        if not 'userid' in data:
             return []
 
         try:
@@ -129,7 +129,7 @@ class AlertEmail(object):
         session = meta.Session()
         try:
             entry = session.query(UserProfile).\
-                filter(UserProfile.system_user_id == data['system_user_id']).\
+                filter(UserProfile.userid == data['userid']).\
                 filter(UserProfile.email != None).\
                 filter(UserProfile.email_level > 0).\
                 one()
@@ -201,12 +201,12 @@ class AlertEmail(object):
                     subject, message)
                 return
 
-            if event_entry.key in (EventControl.EXTRACT_OK,
-                                   EventControl.EXTRACT_FAILED):
-                to_emails = self.admin_emails(event_entry) + \
-                                                self.publisher_email(data)
-            else:
-                to_emails = self.admin_emails(event_entry)
+            to_emails = []
+
+            if event_entry.publisher_visibility:
+                to_emails = self.publisher_email(data)
+            if event_entry.admin_visibility:
+                to_emails += self.admin_emails(event_entry)
 
         # Remove any duplicates
         to_emails = list(set(to_emails))
@@ -296,8 +296,8 @@ class AlertEmail(object):
                 message, ex, self.smtp_server, self.smtp_port)
             return
 
-        self.log.info("Emailed alert: Subject: '%s', message: '%s'",
-                                                    subject, message)
+        self.log.info("Emailed alert: To: '%s' Subject: '%s', message: '%s'",
+                                                str(all_to), subject, message)
 
         return
 
