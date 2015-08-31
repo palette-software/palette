@@ -123,7 +123,7 @@ class EventHandler(object):
 
         publisher = None
         if req.remote_user.roleid == Role.NO_ADMIN:
-            publisher = req.remote_user.system_user_id
+            publisher = req.remote_user.userid
 
         page = req.params_getint('page')
         if page is None:
