@@ -65,7 +65,7 @@ class EventType(DictOption):
 
     def __init__(self, valueid):
         type_list = sorted(EventControl.all_types.items(),
-                           key=lambda item: item[0])
+                           key=lambda item: item[1])
         options = OrderedDict([(self.ALL, 'All Types')] + type_list)
         super(EventType, self).__init__(self.NAME, valueid, options)
 
