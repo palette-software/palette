@@ -24,9 +24,9 @@ then
 fi
 
 POSTGRES_CONFIG_FILE=/etc/postgresql/9.3/main/postgresql.conf
-if  ! grep -q '^max_connections' $POSTGRES_CONFIG_FILE
+if grep -q '^max_connections = 100' $POSTGRES_CONFIG_FILE
 then
-    echo max_connections = 300 >> $POSTGRES_CONFIG_FILE
+    sed --in-place 's/^max_connections = 100/max_connections = 300/' $POSTGRES_CONFIG_FILE
 fi
 
 service postgresql restart
