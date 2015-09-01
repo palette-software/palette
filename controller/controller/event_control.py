@@ -332,7 +332,7 @@ class EventControlManager(Manager):
 
         if not profile is None:
             data['username'] = profile.display_name()
-            data['userid'] = profile.user_id
+            data['userid'] = profile.userid
             if profile.email:
                 data['email'] = profile.email
 
