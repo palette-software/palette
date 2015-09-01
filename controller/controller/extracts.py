@@ -223,11 +223,13 @@ class ExtractManager(TableauCacheManager):
                                                     data['system_user_id'])
         if profile:
             data['username'] = profile.display_name()
+            userid = profile.userid
         else:
             data['username'] = "Unknown User"
+            userid = None
 
         return self.server.event_control.gen(key, data,
-                                             userid=profile.userid,
+                                             userid=userid,
                                              site_id=data['site_id'],
                                              timestamp=timestamp)
 
