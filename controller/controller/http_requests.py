@@ -321,6 +321,10 @@ class HttpRequestManager(TableauCacheManager):
     # translate workbook.repository_url -> system_user_id -> owner
     def _translate_workbook(self, body, entry):
         envid = self.server.environment.envid
+        # The event in the event_control table expects these to exist:
+        body['owner'] = None
+        body['workbook'] = None
+
         url = body['repository_url']
         try:
             workbook = WorkbookEntry.get_by_url(envid, url, entry.site_id,
