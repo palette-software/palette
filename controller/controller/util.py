@@ -50,6 +50,7 @@ def odbc2dt(s):
     if s is None:
         return None
     dt = _parseutc(s)
+    # pylint: disable=maybe-no-member
     return dt.replace(tzinfo=None)
 
 # FIXME: the import can never work...
