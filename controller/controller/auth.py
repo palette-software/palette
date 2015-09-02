@@ -6,7 +6,7 @@ import akiri.framework.sqlalchemy as meta
 from general import SystemConfig
 from manager import Manager, synchronized
 from event_control import EventControl
-from profile import UserProfile, Publisher, License
+from profile import UserProfile, Publisher, License, Role
 from util import odbc2dt, DATEFMT, success, failed
 
 AUTH_TIMESTAMP_SYSTEM_KEY = 'auth-timestamp'
@@ -140,6 +140,12 @@ class AuthManager(Manager):
         else:
             default_email_level = 0
 
+        user_count = UserProfile.user_count(envid)
+        if user_count <= 1:
+            first_load = True
+        else:
+            first_load = False
+
         for row in data['']:
             name = row[0]
             if name.lower() in excludes:
@@ -168,6 +174,11 @@ class AuthManager(Manager):
                 entry.user_admin_level = obj.admin_level
                 entry.licensing_role_id = obj.licensing_role_id
                 entry.publisher = obj.publisher
+
+            # On first user table import, Tableau Server Administrators
+            # are set to Palette Super Admins.
+            if first_load and entry.system_admin_level == 10:
+                entry.roleid = Role.SUPER_ADMIN
 
         session.commit()
 
