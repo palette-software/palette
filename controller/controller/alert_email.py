@@ -164,7 +164,8 @@ class AlertEmail(object):
             try:
                 subject = subject % data
             except (ValueError, KeyError) as ex:
-                subject = "Template subject conversion failure: " + str(ex) + \
+                subject = "Email Template subject conversion failure: " + \
+                    str(ex) + \
                     "subject: " + subject + \
                     ", data: " + str(data)
 
@@ -174,7 +175,7 @@ class AlertEmail(object):
                 mako_template = Template(message)
                 message = mako_template.render(**data)
             except StandardError:
-                message = "Mako template message conversion failure: " + \
+                message = "Email mako template message conversion failure: " + \
                     exceptions.text_error_template().render() + \
                     "\ntemplate: " + message + \
                         "\ndata: " + str(data)
