@@ -636,11 +636,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         except httplib.HTTPException, ex:
             restore_body = {"error": "HTTP Exception: " + str(ex)}
 
-        if restore_body.has_key('error'):
-            restore_success = False
-        else:
-            restore_success = True
-
         if maint_msg != "":
             info = maint_msg
         else:
@@ -656,32 +651,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                                  got.primary_full_path)
             if 'error' in delete_body:
                 info += '\n' + delete_body['error']
-
-        if restore_success:
-#            self.state_manager.update(StateManager.STATE_STARTED)
-            self.event_control.gen(EventControl.STATE_STARTED, data,
-                                   userid=userid)
-        else:
-            # On a successful restore, tableau starts itself.
-            # fixme: eventually control when tableau is started and
-            # stopped, rather than have tableau automatically start
-            # during the restore.  (Tableau does not support this currently.)
-            self.log.info("Restore: starting tableau after failed restore.")
-            start_body = self.cli_cmd("tabadmin start", agent, timeout=60*60*2)
-            if 'error' in start_body:
-                self.log.info(
-                    "Restore: 'tabadmin start' failed after failed restore.")
-                msg = "Restore: 'tabadmin start' failed after failed restore."
-                msg += " Error was: %s" % start_body['error']
-                info += "\n" + msg
-
-                 # The "tableau start" failed.  Go back to the "STOPPED" state.
-#                self.state_manager.update(StateManager.STATE_STOPPED)
-            else:
-                # The "tableau start" succeeded
-#                self.state_manager.update(StateManager.STATE_STARTED)
-                self.event_control.gen(EventControl.STATE_STARTED, data,
-                                       userid=userid)
 
         if info:
             restore_body['info'] = info.strip()
