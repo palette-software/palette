@@ -99,8 +99,15 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
                  'system_user_id':0}]
 
     @classmethod
+    def user_count(cls, envid):
+        return meta.Session.query(UserProfile).\
+               filter(UserProfile.envid == envid).\
+               count()
+
+    @classmethod
     def update_timestamp(cls, entry):
         entry.timestamp = datetime.datetime.utcnow()
+
 
 class Role(meta.Base, BaseMixin):
     __tablename__ = 'roles'
