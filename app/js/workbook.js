@@ -41,10 +41,10 @@ function ($, template, common, paging, items, Dropdown, EditBox)
      * Handle a successful response from an AJAX request.
      */
     function update(data) {
-        var item_count = data['item-count'];
         var publisher_only = data['publisher-only'];
 
-        if (item_count > 0) {
+        var count = data['workbooks'].length;
+        if (count > 0) {
             var rendered = template.render(t, data);
             $('#workbook-list').html(rendered);
             items.bind();
