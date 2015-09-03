@@ -2178,6 +2178,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status({})
 
     def _do_cloud_test(self, cloud_type, cmd):
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-locals
         """Test cloud credentials/commands by putting and then
            deleting a file on cloud storage of "cloud_type"."""
         if cloud_type == CloudManager.CLOUD_TYPE_S3:
@@ -2228,7 +2230,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # This file must exist on the agent.
         keypath = "palette_logo.png"
         dirpath = agent.path.join(agent.install_dir, "maint", "www", "image")
-        body = cloud_instance.put(agent, entry, keypath, dirpath)
+        body = cloud_instance.put(agent, entry, keypath, pwd=dirpath)
         if failed(body):
             self.server.log.info("Put to keypath '%s', dirpath '%s', " + \
                                  "cloud type '%s' failed.",
@@ -2236,7 +2238,11 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.report_status(body)
             return
 
-        delete_body = cloud_instance.delete_file(entry, keypath)
+        try:
+            delete_body = cloud_instance.delete_file(entry, keypath)
+        except IOError as ex:
+            delete_body = {'error': str(ex)}
+
         if failed(delete_body):
             self.server.log.info("Delete path '%s', " + \
                                  "cloud type '%s' failed.",
@@ -2249,6 +2255,7 @@ class CliHandler(socketserver.StreamRequestHandler):
     def _do_cloud(self, cloud_type, usage_msg, cmd):
         # pylint: disable=too-many-branches
         # pylint: disable=too-many-return-statements
+        # pylint: disable=too-many-locals
 
         if cloud_type == CloudManager.CLOUD_TYPE_S3:
             cloud_type_id = S3_ID
@@ -2268,6 +2275,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             self.print_usage(usage_msg)
             return
+
+        if 'bucket-subdir' in cmd.dict:
+            bucket_subdir = cmd.dict['bucket-subdir']
+        else:
+            bucket_subdir = None
 
         action = cmd.args[0].upper()
         if action not in ('GET', 'PUT', 'DELETE'):
@@ -2306,26 +2318,37 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
 
         if action == 'GET':
-            body = cloud_instance.get(agent, entry, keypath, pwd=dirpath)
+            body = cloud_instance.get(agent, entry, keypath,
+                                      bucket_subdir=bucket_subdir, pwd=dirpath)
         elif action == 'PUT':
-            body = cloud_instance.put(agent, entry, keypath, pwd=dirpath)
+            body = cloud_instance.put(agent, entry, keypath,
+                                      bucket_subdir=bucket_subdir, pwd=dirpath)
         elif action == 'DELETE':
-            body = cloud_instance.delete_file(entry, keypath)
+            try:
+                body = cloud_instance.delete_file(entry, keypath)
+            except IOError as ex:
+                body['error'] = str(ex)
 
         self.report_status(body)
 
-    # 's3-name' is now a slash ('/') parameter
-    @usage('s3 { [get|put|delete] <key-or-path> [dirpath] | ' + \
-           '[/access-key=X /secret-key=Y /bucket=Z] s3 test }')
+    @usage('s3 { [/name=cloud-name /bucket-subdir=SD] get filepath-key '
+                '[dirpath] | '
+                '[/name=cloud-name /bucket-subdir=SD] put filepath-key '
+                '[dirpath] | '
+                'delete bucketname filepath | '
+                '[/access-key=X /secret-key=Y /bucket=Z] test }')
     def do_s3(self, cmd):
         """Send a file to or receive a file from an S3 bucket"""
         return self._do_cloud(CloudManager.CLOUD_TYPE_S3,
                               self.do_s3.__usage__,
                               cmd)
 
-    # 'gcs-name' is now a slash ('/') parameter
-    @usage('gcs { [GET|PUT|DELETE] <key-or-path> [dirpath] | ' + \
-           '[/access-key=X /secret-key=Y /bucket=Z] gcs test }')
+    @usage('gcs { [/name=cloud-name /bucket-subdir=SD] get filepath-key '
+                '[dirpath] | '
+                '[/name=cloud-name /bucket-subdir=SD] put filepath-key '
+                '[dirpath] | '
+                'delete bucketname filepath | '
+                '[/access-key=X /secret-key=Y /bucket=Z] test }')
     def do_gcs(self, cmd):
         """Send a file to or receive a file from a GCP bucket"""
         return self._do_cloud(CloudManager.CLOUD_TYPE_GCS,
