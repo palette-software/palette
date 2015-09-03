@@ -27,7 +27,16 @@
     </section>
     <section class="row bottom-zone">
       <section class="col-lg-12">
-        <div id="workbook-list"></div>
+        <div id="workbook-list">
+	  <div class="hidden admin-only">
+	    <p>The Palette Workbook Archive can only be imported if the Palette Agent has been properly installed on your Tableau Machine(s) <em>and</em> if you have input your Tableau Server administrator credentials into the Configuration -> General page.</p>
+	    <p>If you have not yet installed the Palette Agent, please visit <a href="http://www.palette-software.com/agent">palette-software.com/agent</a> from your Tableau Server machines to get connected!</p>
+	  </div>
+	  <div class="hidden publisher-only">
+	    <p>Your personal Palette Workbook Archive will begin to import when a Tableau Server administrator inputs their credentials.  Please contact your Tableau Server admin to tell them you'd like to access this feature.
+	    </p>
+	  </div>
+	</div>
       </section>
     </section>
   </div>
