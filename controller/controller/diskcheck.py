@@ -121,6 +121,7 @@ class DiskCheck(object):
 
         self.target_entry = entry
         self.target_type = FileManager.STORAGE_TYPE_CLOUD
+        self.target_dir = self.parent_dir
         self.primary_final_dest = False
         # Get the location to backup/ziplogs or stage to
         (self.primary_dir, self.primary_entry) = \
