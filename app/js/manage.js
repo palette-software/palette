@@ -36,7 +36,6 @@ function ($, topic, template, common)
             url: '/rest/manage',
             data: {'action': 'start'},
             dataType: 'json',
-            async: false,
             
             success: function(data) {},
             error: common.ajaxError,
@@ -55,9 +54,11 @@ function ($, topic, template, common)
             url: '/rest/manage',
             data: data,
             dataType: 'json',
-            async: false,
 
-            success: function(data) {},
+            success: function(data) {
+                /* reset the defaults in the popup dialog */
+                $('#popupStop input[type=checkbox]').prop('checked', true);
+            },
             error: common.ajaxError,
         });
     }
@@ -74,9 +75,11 @@ function ($, topic, template, common)
             url: '/rest/manage',
             data: data,
             dataType: 'json',
-            async: false,
 
-            success: function(data) {},
+            success: function(data) {
+                /* reset the default values in the dialog. */
+                $('#popupRestart input[type=checkbox]').prop('checked', true);
+            },
             error: common.ajaxError,
         });
     }
@@ -87,11 +90,8 @@ function ($, topic, template, common)
             url: '/rest/manage',
             data: {'action': 'ziplogs'},
             dataType: 'json',
-            async: false,
 
-            success: function(data) {
-                //updateActions();
-            },
+            success: function(data) {},
             error: common.ajaxError,
         });
     }
@@ -102,7 +102,6 @@ function ($, topic, template, common)
             url: '/rest/backup',
             data: {'action': 'backup'},
             dataType: 'json',
-            async: false,
             
             success: function(data) {},
             error: common.ajaxError,
@@ -115,7 +114,6 @@ function ($, topic, template, common)
             url: '/rest/manage',
             data: {'action': 'repair-license'},
             dataType: 'json',
-            async: false,
             
             success: function(data) {
                 updateActions();
@@ -146,9 +144,10 @@ function ($, topic, template, common)
             url: '/rest/backup',
             data: data,
             dataType: 'json',
-            async: false,
             
-            success: function(data) {},
+            success: function(data) {
+                $('#restore-dialog input[type=checkbox]').prop('checked', true);
+            },
             error: common.ajaxError,
         });
     }
