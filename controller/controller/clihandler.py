@@ -979,12 +979,6 @@ class CliHandler(socketserver.StreamRequestHandler):
             aconn.user_action_unlock()
             return
 
-        # Do a backup before we try to do a restore.
-        #FIXME: refactor do_backup() into do_backup() and backup()
-        self.server.log.debug("----------Starting Backup for Restore----------")
-        self.server.event_control.gen(
-            EventControl.BACKUP_BEFORE_RESTORE_STARTED, data, userid=userid)
-
         self.ack()
 
         if license_check:
@@ -999,6 +993,12 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         if backup_first:
             # No alerts or state updates are done in backup_cmd().
+            #FIXME: refactor do_backup() into do_backup() and backup()
+            self.server.log.debug(
+                        "----------Starting Backup for Restore----------")
+            self.server.event_control.gen(
+                EventControl.BACKUP_BEFORE_RESTORE_STARTED, data, userid=userid)
+
             try:
                 body = self.server.backup_cmd(agent, userid)
             except StandardError:

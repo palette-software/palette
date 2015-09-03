@@ -23,7 +23,7 @@ from state import StateManager
 from agentmanager import AgentManager
 from agent import Agent
 from event_control import EventControl
-from state_transitions import TRANSITIONS
+from state_transitions import TRANSITIONS, START_DICT
 from general import SystemConfig
 from util import  success
 from yml import YmlEntry
@@ -188,7 +188,17 @@ class TableauStatusMonitor(threading.Thread):
 
         # Get our new state and events to send based on the previous
         # state and new tableau status.
-        new_state_info = TRANSITIONS[prev_state][tableau_status]
+
+        # Special case (fixme)
+        if prev_state == StateManager.STATE_STARTING_RESTORE and \
+                                YmlEntry.get(self.envid, 'version.external',
+                                                    default='8')[0:1] == '8':
+
+            # If v8, 'tabadmin restore' success results in RUNNING/STARTED
+            # If v9, 'tabadmin restore' success results in STOPPED
+            new_state_info = START_DICT
+        else:
+            new_state_info = TRANSITIONS[prev_state][tableau_status]
 
         self.log.debug("status-check: prev_state: %s, new state info: %s, " + \
                        "prev_tableau_status %s, tableau_status: %s",
