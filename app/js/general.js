@@ -590,7 +590,7 @@ function ($, _, configure, common, Dropdown, OnOff)
             'enable-archive': OnOff.getValueById('enable-archive'),
             'archive-username': $('#archive-username').val(),
             'archive-password': $('#archive-password').val(),
-            /*'workbook-retain-count': Dropdown.getValueById('workbook-retain-count'),*/
+            'workbook-retain-count': Dropdown.getValueById('workbook-retain-count'),
         };
     }
 
@@ -602,10 +602,8 @@ function ($, _, configure, common, Dropdown, OnOff)
         OnOff.setValueById('enable-archive', data['enable-archive']);
         $('#archive-username').val(data['archive-username']);
         $('#archive-password').val(data['archive-password']);
-        /*
         Dropdown.setValueById('workbook-retain-count',
                               data['workbook-retain-count']);
-        */
     }
 
     /*
