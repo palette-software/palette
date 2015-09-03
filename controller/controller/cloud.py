@@ -158,7 +158,8 @@ class CloudInstance(object):
         self.envid = self.server.environment.envid
 
     @abstractmethod
-    def send_cmd(self, agent, action, cloud_entry, path, pwd=None):
+    def send_cmd(self, agent, action, cloud_entry, path, bucket_subdir=None,
+                                                                    pwd=None):
         # pylint: disable=too-many-arguments
         pass
 
@@ -166,16 +167,21 @@ class CloudInstance(object):
     def delete_file(self, entry, path):
         pass
 
-    def get(self, agent, cloud_entry, path, pwd=None):
-        return self.send_cmd(agent, 'GET', cloud_entry, path, pwd=pwd)
+    # pylint: disable=too-many-arguments
+    def get(self, agent, cloud_entry, path, bucket_subdir=None, pwd=None):
+        return self.send_cmd(agent, 'GET', cloud_entry, path,
+                                        bucket_subdir=bucket_subdir, pwd=pwd)
 
-    def put(self, agent, cloud_entry, path, pwd=None):
-        return self.send_cmd(agent, 'PUT', cloud_entry, path, pwd=pwd)
+    # pylint: disable=too-many-arguments
+    def put(self, agent, cloud_entry, path, bucket_subdir=None, pwd=None):
+        return self.send_cmd(agent, 'PUT', cloud_entry, path,
+                                        bucket_subdir=bucket_subdir, pwd=pwd)
 
 # Handle S3 specifics
 class S3(CloudInstance):
 
-    def send_cmd(self, agent, action, cloud_entry, path, pwd=None):
+    def send_cmd(self, agent, action, cloud_entry, path, bucket_subdir=None,
+                                                                    pwd=None):
         # pylint: disable=too-many-arguments
         # fixme: sanity check on data-dir on the primary?
         # fixme: create the path first
@@ -206,7 +212,24 @@ class S3(CloudInstance):
         elif agent.data_dir:
             env['PWD'] = agent.data_dir
 
-        s3_command = 'ps3 %s %s "%s"' % (action, cloud_entry.bucket, path)
+        if action == 'GET':
+            arg1 = cloud_entry.bucket
+
+            if bucket_subdir:
+                arg2 = os.path.join(bucket_subdir, path)
+            else:
+                arg2 = path
+
+        elif action == 'PUT':
+            if bucket_subdir:
+                arg1 = os.path.join(cloud_entry.bucket, bucket_subdir)
+            else:
+                arg1 = cloud_entry.bucket
+            arg2 = path
+        else:
+            raise IOError("S3 send_cmd bad action: " + action)
+
+        s3_command = 'ps3 %s %s "%s"' % (action, arg1, arg2)
 
         self.server.log.debug("s3_command: '%s', pwd: '%s', path: '%s'",
                               s3_command, pwd, path)
@@ -238,7 +261,8 @@ class S3(CloudInstance):
 
 class GCS(CloudInstance):
 
-    def send_cmd(self, agent, action, cloud_entry, path, pwd=None):
+    def send_cmd(self, agent, action, cloud_entry, path, bucket_subdir=None,
+                                                                    pwd=None):
         # pylint: disable=too-many-arguments
         # pylint: disable=too-many-arguments
 
@@ -258,17 +282,42 @@ class GCS(CloudInstance):
         elif agent.data_dir:
             env['PWD'] = agent.data_dir
 
-        gcs_command = 'pgcs %s %s "%s"' % (action, cloud_entry.bucket, path)
+        if action == 'GET':
+            arg1 = cloud_entry.bucket
+
+            if bucket_subdir:
+                arg2 = os.path.join(bucket_subdir, path)
+            else:
+                arg2 = path
+        elif action == 'PUT':
+            if bucket_subdir:
+                arg1 = os.path.join(cloud_entry.bucket, bucket_subdir)
+            else:
+                arg1 = cloud_entry.bucket
+            arg2 = path
+        else:
+            raise IOError("GCS send_cmd bad action: " + action)
+
+        gcs_command = 'pgcs %s %s "%s"' % (action, arg1, arg2)
 
         # Send the gcs command to the agent
-        return self.server.cli_cmd(gcs_command, agent, env=env, timeout=60*60*2)
+        body = self.server.cli_cmd(gcs_command, agent, env=env, timeout=60*60*2)
+        return body
 
     def delete_file(self, entry, path):
         # Move any bucket subdirectories to the filename
         bucket_name, filename = move_bucket_subdirs_to_path(entry.bucket, path)
 
-        conn = boto.connect_gs(entry.access_key, entry.secret)
-        bucket = conn.get_bucket(bucket_name)
+        secret = aes_decrypt(entry.secret)
+        conn = boto.connect_gs(entry.access_key, secret)
+        try:
+            bucket = conn.get_bucket(bucket_name)
+        except boto.exception.GSResponseError as ex:
+            # Can happen when the secret is very bad.
+            raise IOError(
+                    ("Failed to delete '%s' on Google Cloud Storage " + \
+                    "bucket '%s': %s") % \
+                    (filename, bucket_name, str(ex)))
 
         # boto uses s3 keys for GCS ??
         s3key = boto.s3.key.Key(bucket)
