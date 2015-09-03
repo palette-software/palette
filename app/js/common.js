@@ -688,10 +688,12 @@ function ($, topic, template, items, paging, Dropdown)
      * Requires 'lightbox'
      */
     function lightbox(id, title) {
+        /* The title is now ignored but keeping it improves code readablity
+           where this function is called (gives a keyword to the id number.) */
         var lb = new TopicLightBox({
             baseUrl: 'http://kb.palette-software.com',
             id: id,
-            title: title,
+            title: ' ',
             background: true,
             width: 700,
             height: 500
