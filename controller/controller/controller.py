@@ -198,7 +198,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # cloud type (s3 or gcs, etc.)
             body['destination_name'] = dcheck.target_entry.cloud_type
             # bucket
-            body['destination_location'] = dcheck.target_entry.bucket
+            body['destination_location'] = '%s - %s' % \
+                            (dcheck.target_entry.bucket,
+                            os.path.join(dcheck.parent_dir, place.name_only))
         else:
             if not place.copy_failed:
                 # displayname
