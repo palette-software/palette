@@ -160,10 +160,20 @@ class GetFile(object):
             cloud_instance = self.server.cloud.s3
 
         # Directory where to store the cloud file
-        dirpath = self.agent.path.dirname(self.primary_full_path)
-        # Note full_path for a cloud file will not have a directory.
+        dest_dirpath = self.agent.path.dirname(self.primary_full_path)
+
+        name_only = os.path.basename(self.file_entry.name)
+
+        # Bucket sub-directory
+        bucket_subdir = os.path.dirname(self.file_entry.name)
+        if not bucket_subdir:   # ''
+            bucket_subdir = None
+
+
         body = cloud_instance.get(self.agent, self.source_entry,
-                                  self.file_entry.name, pwd=dirpath)
+                                  name_only,
+                                  bucket_subdir=bucket_subdir,
+                                  pwd=dest_dirpath)
 
         if 'error' in body:
             fmt = "_get_cloud_file: %s named '%s' GET file '%s' " + \

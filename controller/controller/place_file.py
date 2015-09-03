@@ -82,7 +82,9 @@ class PlaceFile(object):
             cloud_instance = self.server.cloud.gcs
 
         storage_body = cloud_instance.put(self.agent, self.dcheck.target_entry,
-                                          self.full_path)
+                                          self.full_path,
+                                          bucket_subdir=self.dcheck.parent_dir)
+
 
         if 'error' in storage_body:
             self.info = ("Copy to %s bucket '%s' filename '%s' failed: %s." + \
@@ -103,15 +105,18 @@ class PlaceFile(object):
                             auto=self.auto)
         else:
             self.copy_elapsed_time = time.time() - self.copy_start_time
+            filename = os.path.join(self.dcheck.parent_dir, self.name_only)
+
             self.info = \
                 ("File was copied to %s cloud bucket '%s' " + \
                  "filename '%s'.") % \
                 (self.dcheck.target_entry.cloud_type,
                  self.dcheck.target_entry.bucket,
-                 self.name_only)
+                 filename)
             self.log.debug(self.info)
+            name = os.path.join(self.dcheck.parent_dir, self.name_only)
             # Backup was copied to gcs or s3
-            self.placed_file_entry = self.server.files.add(self.name_only,
+            self.placed_file_entry = self.server.files.add(name,
                             self.dcheck.file_type,
                             FileManager.STORAGE_TYPE_CLOUD,
                             self.dcheck.target_entry.cloudid,

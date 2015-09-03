@@ -109,7 +109,10 @@ class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
                 (req.POST['access-key'], aes_encrypt(req.POST['secret-key']),
                  self.url_to_bucket(req.POST['url'])), req=req)
         except CommException as ex:
-            return {'status': 'FAIL', 'error': str(ex)}
+            err = str(ex)
+            if err.find("(403) Forbidden") != -1:
+                err = "Credentials invalid."
+            return {'status': 'FAIL', 'error': ex}
         return {'status': 'OK'}
 
     @required_role(Role.MANAGER_ADMIN)
