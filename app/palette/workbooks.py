@@ -261,9 +261,22 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
 
         return query.all()
 
+    def _build_updates_for_workbook(self, entry, users):
+        """ Build a list of updates for the specified workbook entry."""
+        updates = []
+        for update in entry.updates:
+            data = update.todict(pretty=True)
+            data['username'] = self.getuser(entry.envid,
+                                            update.system_user_id,
+                                            users)
+            if 'url' in data and data['url']:
+                # FIXME: make this configurable
+                data['url'] = '/data/workbook-archive/' + data['url']
+            updates.append(data)
+        return updates
+
     # FIXME: move build options to a separate file.
     def handle_get(self, req):
-
         filters = self.build_query_filters(req)
         entries = self.do_query(req, filters)
         count = WorkbookEntry.count(filters=filters)
@@ -277,16 +290,7 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
         for entry in entries:
             data = entry.todict(pretty=True)
 
-            updates = []
-            for update in entry.updates:
-                d = update.todict(pretty=True)
-                d['username'] = self.getuser(req.envid,
-                                             update.system_user_id,
-                                             users)
-                if 'url' in d and d['url']:
-                    # FIXME: make this configurable
-                    d['url'] = '/data/workbook-archive/' + d['url']
-                updates.append(d)
+            updates = self._build_updates_for_workbook(entry, users)
             data['updates'] = updates
 
             if updates:
@@ -305,9 +309,15 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
 
             workbooks.append(data)
 
+        if req.remote_user.roleid == Role.NO_ADMIN:
+            publisher_only = True
+        else:
+            publisher_only = False
+
         return {'workbooks': workbooks,
                 'config': self.build_config(req, sites, projects),
-                'item-count': count
+                'item-count': count,
+                'publisher-only': publisher_only
         }
 
     # FIXME: route correctly.

@@ -41,10 +41,23 @@ function ($, template, common, paging, items, Dropdown, EditBox)
      * Handle a successful response from an AJAX request.
      */
     function update(data) {
-        var rendered = template.render(t, data);
-        $('#workbook-list').html(rendered);
+        var item_count = data['item-count'];
+        var publisher_only = data['publisher-only'];
 
-        items.bind();
+        if (item_count > 0) {
+            var rendered = template.render(t, data);
+            $('#workbook-list').html(rendered);
+            items.bind();
+        } else {
+            if (publisher_only) {
+                $('.admin-only').remove();
+                $('.publisher-only').removeClass('hidden');
+            } else {
+                $('.publish-only').remove();
+                $('.admin-only').removeClass('hidden');
+            }
+        }
+
         EditBox.setup();
         Dropdown.setupAll(data);
 
