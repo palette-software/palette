@@ -365,13 +365,14 @@ class HttpRequestManager(TableauCacheManager):
 
                 userid = profile.userid
 
+        # An event in the event_control table expects these to exist,
+        # but if workbook archiving is off, or the workbook isn't
+        # found they will not be set.
+        body['owner'] = None
+        body['workbook'] = None
+
         if 'repository_url' in body:
             self._translate_workbook(body, entry)
-        else:
-            # An event in the event_control table expects these to exist,
-            # but if workbook archiving is off, they will not be set.
-            body['owner'] = None
-            body['workbook'] = None
 
         if entry.site_id and 'site' not in body:
             site = Site.get(entry.envid, entry.site_id)
