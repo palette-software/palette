@@ -9,20 +9,20 @@
   <div class="scrollable">
     <h1 class="page-title">About Palette</h1>
 
-    <h2>Version <span id="version"></span></h2>
+    <h3>Version <span id="version"></span></h3>
     <div>
       <p>&copy; 2015 Palette Software</p>
       <p>License Key: <span id="license-key"></span></p>
        <p>The use of this product is subject to the terms of the <a href="http://kb.palette-software.com/palette-end-user-license-agreement">Palette End User Agreement</a>, unless otherwise specified therein.</p>
     </div>
 
-    <h2>Palette Software</h2>
+    <h3>Palette Software</h3>
     <div class="address">
       <p>156 2nd Street</p>
       <p>San Francisco, California 94105</p>
     </div>
 
-    <h2>Contact</h2>
+    <h3>Contact</h3>
     <div>
       <p><a href='mailto:hello@palette-software.com'>hello@palette-software.com</a></p>
       <p><a target='_blank' href='http://www.palette-software.com'>www.palette-software.com</a></p>
@@ -31,47 +31,54 @@
     %if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:
 
     <div>
+      <hr />
       <h2>Palette Updates</h2>
-      <p>Control Updates to the Palette Software</p>
+      <p>Your Palette Server can update automatically outside of normal business hours or on-demand.  Updates usually take 5-10 minutes and do not affect historical continuity.  Palette Events will let you know that the update is complete.</p>
+      <p>Note: Automatic Updates are recommended for the most reliable service.</p>
       <p class="slider-group">
         <span>Enable Automatic Updates
           <span id="enable-updates" class="onoffswitch yesno"
                 data-href="/rest/update"></span>
         </span>
       </p>
-    </div>
+      <p>Turn on Automatic Palette Updates to stay up-to-date with the latest features (recommended).</p>
 
-    <div>
-      <button type="button" id="manual-update"
-              class="btn btn-primary okcancel disabled"
+      <h3>Manual Updates</h3>
+      <p>Update your Palette Server to the latest version, on-demand and on your schedule.</p>
+      <button type="button" id="manual-update" class="okcancel disabled"
               data-text="Are you sure you want to update the Palette Software?">
         Update Now
       </button>
     </div>
 
     <div>
-      <button type="button" id="restart-webserver"
-              class="btn btn-primary okcancel disabled"
-              data-text="Are you sure you want to restart the webserver?">
-        Restart Webserver
-      </button>
-      <button type="button" id="restart-controller"
-              class="btn btn-primary okcancel disabled"
-              data-text="Are you sure you want to restart the controller?">
-        Restart Controller
-      </button>
-    </div>
-    
-    <div>
+      <hr/>
       <h2>Palette Support</h2>
-      <p>Enable or Disable Palette's Built-in support communication</p>
+      <p>These features are available to minimize troubleshooting and should only be used by Palette Admins when engaging the Palette Support team.  For assistance, contact <a href='mailto:support@palette-software.com'>support@palette-software.com</a>.
+      </p>
       <p class="slider-group">
         <span>Enable Support
           <span id="enable-support" class="onoffswitch yesno"
                 data-href="/rest/support"></span>
         </span>
       </p>
+      <p>Turn on your Palette Server's remote communication for enhanced support from the Palette team.</p>
+
+      <h3>Palette Webserver</h3>
+      <p>Restart your Palette Webserver to reset the Web UI during support engagements.</p>
+      <button type="button" id="restart-webserver" class="okcancel disabled"
+              data-text="Are you sure you want to restart the webserver?">
+        Restart Webserver
+      </button>
+
+      <h3>Palette Controller</h3>
+      <p>Restart your Palette Controller to reset the Server during support engagements.</p>
+      <button type="button" id="restart-controller" class="okcancel disabled"
+              data-text="Are you sure you want to restart the controller?">
+        Restart Controller
+      </button>
     </div>
+    
     %endif
   </div>
 </section>
