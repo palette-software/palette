@@ -3,6 +3,7 @@ import unicodedata
 
 from sqlalchemy import Column, BigInteger, Integer, Boolean, String, DateTime
 from sqlalchemy import UniqueConstraint
+from sqlalchemy import func
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm.exc import NoResultFound
@@ -184,6 +185,7 @@ class WorkbookManager(TableauCacheManager):
         path = server.config.get('palette', 'workbook_archive_dir')
         self.path = os.path.abspath(path)
         self.tableau_version = '8'  # default assumption
+        self.st_config = SystemConfig(server.system)
 
     # really sync *and* load
     @synchronized('workbooks')
@@ -194,8 +196,7 @@ class WorkbookManager(TableauCacheManager):
         self.tableau_version = YmlEntry.get(envid,
                                             'version.external', default='8')
 
-        if self.server.system.get(
-                        SystemConfig.ARCHIVE_ENABLED, default='no') == 'no':
+        if self.st_config.archive_enabled == 'no':
             return {u'disabled':
                 'Workbook Archives are not enabled. Will not load.'}
         if not self._cred_check():
@@ -274,8 +275,7 @@ class WorkbookManager(TableauCacheManager):
 
         # Second pass - build the archive files.
         for update in updates:
-            if self.server.system.get(
-                        SystemConfig.ARCHIVE_ENABLED, default='no') == 'no':
+            if self.st_config.archive_enabled == 'no':
                 self.log.info("Workbook Archive disabled while processing." + \
                               "  Exiting for now.")
                 break
@@ -288,15 +288,72 @@ class WorkbookManager(TableauCacheManager):
             session.refresh(update)
             self._archive_twb(agent, update)
 
+        # Retain only configured number of versions
+        self._retain_some()
+
         return {u'status': 'OK',
                 u'schema': self.schema(data),
                 u'updates': len(updates)}
 
+    def _retain_some(self):
+        """Retain only the configured number of workbook versions."""
+
+        retain_count = self.st_config.workbook_retain_count
+
+        if not retain_count:
+            return
+
+        session = meta.Session()
+        # List of workbooks that have excess archived versions:
+        #   [(workbookid, total-count), ...]
+        results = session.query(WorkbookUpdateEntry.workbookid, func.count()).\
+                  group_by(WorkbookUpdateEntry.workbookid).\
+                  having(func.count() > retain_count).\
+                  all()
+
+#        self.log.debug("workbooks _retain_some len: %d, results: %s",
+#                                                len(results), str(results))
+
+        for result in results:
+            # Get list of old workbook archive entries to delete
+            rows = session.query(WorkbookUpdateEntry).\
+                    filter(WorkbookUpdateEntry.workbookid == result[0]).\
+                    order_by(WorkbookUpdateEntry.timestamp.asc()).\
+                    limit(result[1] - retain_count).\
+                    all()
+
+            for row in rows:
+                # We have to remove the WorkbookUpdateEntry first
+                # due to the foreign key constraint in files pointing to it.
+                session.query(WorkbookUpdateEntry).\
+                            filter(WorkbookUpdateEntry.wuid == row.wuid).\
+                            delete()
+                session.commit()
+
+                file_entry = self.server.files.find_by_id(row.fileid)
+                if not file_entry:
+                    self.log.info(
+                        "workbooks _retain_some fileid %d disappeared, ",
+                        "wuid %d, workbookid %d",
+                        row.fileid, row.wuid, row.workbookid)
+                    continue
+
+                body = self.server.delfile_cmd(file_entry)
+                if failed(body):
+                    self.log.info(
+                        "workbooks _retain_some failed to delete fileid %d, "
+                        "wuid %d, workbookid %d",
+                        row.fileid, row.wuid, row.workbookid)
+                else:
+                    self.log.debug(
+                        "workbooks _retain_some deleted fileid %d, "
+                        "wuid %d, workbookid %d",
+                        row.fileid, row.wuid, row.workbookid)
+
 
     @synchronized('workbook.fixup')
     def fixup(self, agent):
-        if self.server.system.get(
-                            SystemConfig.ARCHIVE_ENABLED, default='no') == 'no':
+        if self.st_config.archive_enabled == 'no':
             return {u'disabled':
                 'Workbook Archives are not enabled.  Fixup not done.'}
 
@@ -321,7 +378,7 @@ class WorkbookManager(TableauCacheManager):
                       filter(WorkbookUpdateEntry.wuid.in_(ids)).all()
 
             for update in updates:
-                if self.server.system.get(SystemConfig.ARCHIVE_ENABLED) == 'no':
+                if self.st_config.archive_enabled == 'no':
                     self.log.info(
                               "Workbook Archive disabled during fixup." + \
                               "  Exiting for now.")
@@ -570,9 +627,7 @@ class WorkbookManager(TableauCacheManager):
         cmd = 'ptwbx ' + '"' + dst + '"'
         body = self.server.cli_cmd(cmd, agent, timeout=60*30)
 
-        save_twbx = self.server.system.get(
-                                SystemConfig.ARCHIVE_SAVE_TWBX, default='no')
-        if save_twbx != 'yes':
+        if self.st_config.archive_save_twbx != 'yes':
             # Delete the 'twbx' since we don't archive it.
             try:
                 agent.filemanager.delete(dst)

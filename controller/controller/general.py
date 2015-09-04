@@ -29,6 +29,7 @@ class SystemConfig(object):
     WORKBOOK_LOAD_ERROR = "workbook-load-error"
     LOG_ARCHIVE_RETAIN_COUNT = "log-archive-retain-count"
     WORKBOOKS_AS_TWB = "workbooks-as-twb"
+    WORKBOOK_RETAIN_COUNT = "workbook-retain-count"
 
     WATERMARK_LOW = "disk-watermark-low"
     WATERMARK_HIGH = "disk-watermark-high"
@@ -201,7 +202,8 @@ class SystemConfig(object):
             return self._getint(self.WORKBOOK_LOAD_WARN, default=0)
         if name == "workbook_load_error":
             return self._getint(self.WORKBOOK_LOAD_ERROR, default=0)
-
+        if name == 'workbook_retain_count':
+            return self._getint(self.WORKBOOK_RETAIN_COUNT, default=0)
         if name == 'http_load_warn':
             return self._http_load_warn(self.HTTP_LOAD_WARN)
         if name == 'http_load_error':
