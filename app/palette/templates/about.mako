@@ -28,6 +28,7 @@
       <p><a target='_blank' href='http://www.palette-software.com'>www.palette-software.com</a></p>
     </div>
 
+    %if req.platform.product != req.platform.PRODUCT_PRO:
     %if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:
 
     <div>
@@ -79,6 +80,7 @@
       </button>
     </div>
     
+    %endif
     %endif
   </div>
 </section>

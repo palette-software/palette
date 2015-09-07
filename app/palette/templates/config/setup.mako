@@ -16,6 +16,8 @@
         </section>
       </section>
     </section>
+
+%if req.platform.product != req.platform.PRODUCT_PRO:
     <section>
       <%include file="server-url.mako" />
       <div class="save-cancel">
@@ -27,9 +29,12 @@
         </button>
       </div>
     </section>
+%endif
 
     <a name="tableau-server-url"></a>
+%if req.platform.product != req.platform.PRODUCT_PRO:
     <hr />
+%endif
     <section>
       <%include file="tableau-server-url.mako" />
       <div class="save-cancel">
@@ -64,6 +69,8 @@
         </button>
       </div>
     </section>
+
+%if req.platform.product != req.platform.PRODUCT_PRO:
     <a name="mail"></a>
     <hr />
     <section id="mail">
@@ -91,6 +98,7 @@
         </button>
       </div>
     </section>
+%endif
 
     <a name="tz"></a>
     <hr />

@@ -1,8 +1,15 @@
 require(['jquery', 'configure', 'common', 'Dropdown', 'OnOff', 'bootstrap'],
 function ($, configure, common, Dropdown, OnOff)
 {
-    var LICENSING_TIMEOUT = 3000; // 3 sec;
     var setupDone = false;
+
+    /* Determines whether or not the mail configuration settings are present
+       on the initial setup page e.g. hidden for Pro */
+    var hasSettings = {'mail': true,
+                       'server-url': true,
+                       'license-key': true}
+
+    var LICENSING_TIMEOUT = 3000; // 3 sec;
 
     var LICENSING_UNKNOWN = -1;
     var LICENSING_FAILED = 0;
@@ -246,23 +253,30 @@ function ($, configure, common, Dropdown, OnOff)
         if (!setupDone) {
             result = false;
         }
-        if (!common.validURL(data['server-url'])) {
-            setError("#server-url", "Invalid URL");
-            result = false;
+
+        if (hasSettings['server-url']) {
+            if (!common.validURL(data['server-url'])) {
+                setError("#server-url", "Invalid URL");
+                result = false;
+            }
         }
         if (!common.validURL(data['tableau-server-url'])) {
             setError("#tableau-server-url", "Invalid URL");
             result = false;
         }
-        if (data['license-key'].length < 2) { // FIXME //
-            setError("#license-key", "Invalid license key");
-            result = false;
+        if (hasSettings['license-key']) {
+            if (data['license-key'].length < 2) { // FIXME //
+                setError("#license-key", "Invalid license key");
+                result = false;
+            }
         }
         if (!validateAdminData(data)) {
             result = false;
         }
-        if (!validateMailData(data)) {
-            result = false;
+        if (hasSettings['mail']) {
+            if (!validateMailData(data)) {
+                result = false;
+            }
         }
         return result;
     }
@@ -283,29 +297,49 @@ function ($, configure, common, Dropdown, OnOff)
 
     function setup(data)
     {
+        if ($('#server-url').length == 0) {
+            hasSettings['server-url'] = false;
+        }
+        if ($('#license-key').length == 0) {
+            hasSettings['license-key'] = false;
+        }
+        if ($('#mail-server-type').length == 0) {
+            hasSettings['mail'] = false;
+        }
+
         Dropdown.setupAll(data);
         OnOff.setup();
 
         $('#save').bind('click', save);
-        $('#test-mail').bind('click', testMail);
-        $('#test-mail').removeClass('disabled'); /* FIXME */
 
-        $('#server-url').val(data['server-url']);
+        if (hasSettings['mail']) {
+            $('#test-mail').bind('click', testMail);
+            $('#test-mail').removeClass('disabled'); /* FIXME */
+        }
+
+        if (hasSettings['server-url']) {
+            $('#server-url').val(data['server-url']);
+        }
         $('#tableau-server-url').val(data['tableau-server-url']);
-        $('#alert-email-name').val(data['alert-email-name']);
-        $('#alert-email-address').val(data['alert-email-address']);
-        $('#license-key').val(data['license-key']);
+        if (hasSettings['license-key']) {
+            $('#license-key').val(data['license-key']);
+        }
 
-        $('#smtp-server').val(data['smtp-server']);
-        $('#smtp-port').val(data['smtp-port']);
-        $('#smtp-username').val(data['smtp-username']);
-        $('#smtp-password').val(data['smtp-password']);
+        if (hasSettings['mail']) {
+            $('#alert-email-name').val(data['alert-email-name']);
+            $('#alert-email-address').val(data['alert-email-address']);
 
-        /* layout changes based on selections */
-        Dropdown.setCallback(function () {
+            $('#smtp-server').val(data['smtp-server']);
+            $('#smtp-port').val(data['smtp-port']);
+            $('#smtp-username').val(data['smtp-username']);
+            $('#smtp-password').val(data['smtp-password']);
+
+            /* layout changes based on selections */
+            Dropdown.setCallback(function () {
+                configure.changeMail();
+            }, '#mail-server-type');
             configure.changeMail();
-        }, '#mail-server-type');
-        configure.changeMail();
+        }
 
         /* help */
         common.lightbox(236535, 'Palette Server URL');
@@ -348,8 +382,9 @@ function ($, configure, common, Dropdown, OnOff)
 
     /* Ensure that the server can talk to licensing. */
     licensingQuery();
-    /* Display a status message after half a second if not already compete. */
     $().ready(function() {
+        /* Display a status message after half a second if the
+           licensing query is not already complete. */
         setTimeout(function () {
             $("div.licensing.status").removeClass("hidden");
         }, 500); /* half second? */
