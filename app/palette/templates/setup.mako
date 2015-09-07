@@ -67,17 +67,20 @@
   <div class="center-container configuration setup-page initial hidden">
     <section class="top-zone">
       <h1 class="page-title">Welcome to Palette Server Setup</h1>
-      <p>Please Configure your Palette Server.</p>
+      <p>Please configure your Palette Server.</p>
     </section>
 
+%if req.platform.product != req.platform.PRODUCT_PRO:
     <section>
       <%include file="config/server-url.mako" />
     </section>
     <hr />
+%endif
     <section>
       <%include file="config/tableau-server-url.mako" />
     </section>
     <hr />
+%if req.platform.product != req.platform.PRODUCT_PRO:
     <section>
       <a id="237795" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Palette License Key *</h2>
@@ -85,6 +88,7 @@
       <input type="text" id="license-key" />
     </section>
     <hr />
+%endif
     <section id="admin">
       <a id="236536" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Palette Server Admin Credentials</h2>
@@ -95,10 +99,12 @@
       <label for="confirm-password">Confirm Password *</label>
       <input type="password" id="confirm-password" />
     </section>
+%if req.platform.product != req.platform.PRODUCT_PRO:
     <hr />
     <section id="mail">
       <%include file="config/mail.mako" />
     </section>
+%endif
     <hr />
     <section id="tz">
       <%include file="config/tz.mako" />

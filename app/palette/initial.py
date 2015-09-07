@@ -51,24 +51,25 @@ class OpenApplication(GenericWSGIApplication):
 
     # FIXME: this should be one big database transaction.
     # The new framework session middleware will do this implicitly.
-    @required_parameters('license-key')
     def service_save(self, req):
         entry = UserProfile.get(req.envid, 0) # user '0', likely 'palette'
         if entry.hashed_password:
             # Configuration was already done
             raise exc.HTTPServiceUnavailable()
 
-        try:
-            self._set_license_key(req)
-        except LicenseException, ex:
-            if ex.status == 404:
-                reason = 'Invalid license key'
-            else:
-                reason = ex.reason
-            return {'status': 'FAILED', 'error': reason}
+        if req.platform.product != req.platform.PRODUCT_PRO:
+            try:
+                self._set_license_key(req)
+            except LicenseException, ex:
+                if ex.status == 404:
+                    reason = 'Invalid license key'
+                else:
+                    reason = ex.reason
+                return {'status': 'FAILED', 'error': reason}
+            self.setup.url.service_POST(req)
+            self.setup.mail.service_POST(req)
+
         self.setup.admin.service_POST(req)
-        self.setup.mail.service_POST(req)
-        self.setup.url.service_POST(req)
         self.setup.tableau_url.service_POST(req)
         self.setup.timezone.service_POST(req)
 

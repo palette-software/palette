@@ -90,6 +90,10 @@ class SetupURLApplication(BaseSetupApplication):
     # FIXME: move to initial
     @required_parameters('server-url')
     def service_POST(self, req):
+        if req.platform.product == req.platform.PRODUCT_PRO:
+            msg = 'Pro instances may not change the server URL.'
+            raise exc.HTTPForbidden(msg)
+
         url = req.params_get('server-url')
         result = urlparse(url)
         url = 'https://%s' % result.netloc
@@ -200,6 +204,10 @@ class SetupMailApplication(JSONProxy, PaletteRESTApplication):
 
     @required_parameters('action', 'mail-server-type')
     def service_POST(self, req, initial_page=False):
+        if req.platform.product == req.platform.PRODUCT_PRO:
+            msg = 'Pro instances may not change the mail settings.'
+            raise exc.HTTPForbidden(msg)
+
         # Validation of POST data is done by the service.
         action = req.params_get('action')
         if action == 'test':
@@ -240,6 +248,10 @@ class SetupMailTestApplication(BaseSetupApplication):
 
     @required_parameters('action', 'mail-server-type')
     def service_POST(self, req):
+        if req.platform.product == req.platform.PRODUCT_PRO:
+            msg = 'Pro instances may not change the mail settings.'
+            raise exc.HTTPForbidden(msg)
+
         test_email_recipient = req.params_get('test-email-recipient').strip()
         # Sanity check
         if test_email_recipient.count(' ') or \
@@ -273,7 +285,10 @@ class SetupSSLApplication(JSONProxy):
         return {}
 
     def service_POST(self, req):
-#        dump(req)
+        if req.platform.product == req.platform.PRODUCT_PRO:
+            msg = 'Pro instances may not change the SSL settings.'
+            raise exc.HTTPForbidden(msg)
+
         if req.POST['enable-ssl'] == 'false':
             return {'status': 'OK'}
 

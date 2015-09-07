@@ -2,6 +2,8 @@ require(['jquery', 'underscore', 'configure', 'common',
          'Dropdown', 'OnOff', 'bootstrap'],
 function ($, _, configure, common, Dropdown, OnOff)
 {
+    var hasSettings = {'server-url': true, 'mail': true, 'ssl': true}
+
     var urlData = null;
     var tableauURLData = null;
     var mailData = null;
@@ -527,15 +529,21 @@ function ($, _, configure, common, Dropdown, OnOff)
      * Enable/disable the buttons based on the field values.
      */
     function validate() {
-        configure.validateSection('url', configure.gatherURLData,
-                                  maySaveURL, mayCancelURL);
+        if (hasSettings['server-url']) {
+            configure.validateSection('url', configure.gatherURLData,
+                                      maySaveURL, mayCancelURL);
+        }
         configure.validateSection('tableau-url', configure.gatherTableauURLData,
                                   maySaveTableauURL, mayCancelTableauURL);
         configure.validateSection('admin', configure.gatherAdminData,
                                   configure.validAdminData, mayCancelAdmin);
-        validateMail();
-        configure.validateSection('ssl', configure.gatherSSLData,
-                                  configure.validSSLData, mayCancelSSL);
+        if (hasSettings['mail']) {
+            validateMail();
+        }
+        if (hasSettings['ssl']) {
+            configure.validateSection('ssl', configure.gatherSSLData,
+                                      configure.validSSLData, mayCancelSSL);
+        }
         configure.validateSection('auth', gatherAuthData,
                                   maySaveCancelAuth, maySaveCancelAuth);
         configure.validateSection('tz', configure.gatherTzData,
@@ -551,10 +559,14 @@ function ($, _, configure, common, Dropdown, OnOff)
         OnOff.setup();
 
         /* URL */
-        $('#server-url').val(data['server-url']);
-        $('#save-url').bind('click', saveURL);
-        $('#cancel-url').bind('click', cancelURL);
-        urlData = configure.gatherURLData();
+        if ($('#server-url').length == 0) {
+            hasSettings['server-url'] = false;
+        } else {
+            $('#server-url').val(data['server-url']);
+            $('#save-url').bind('click', saveURL);
+            $('#cancel-url').bind('click', cancelURL);
+            urlData = configure.gatherURLData();
+        }
 
         /* Tableau URL */
         $('#tableau-server-url').val(data['tableau-server-url']);
@@ -567,24 +579,32 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#cancel-admin').bind('click', cancelAdmin);
 
         /* Mail */
-        $('#alert-email-name').val(data['alert-email-name']);
-        $('#alert-email-address').val(data['alert-email-address']);
-        $('#smtp-server').val(data['smtp-server']);
-        $('#smtp-port').val(data['smtp-port']);
-        $('#smtp-username').val(data['smtp-username']);
-        $('#smtp-password').val(data['smtp-password']);
-        $('#save-mail').bind('click', saveMail);
-        $('#cancel-mail').bind('click', cancelMail);
-        $('#test-mail').bind('click', testMail);
-        mailData = configure.gatherMailData();
-        configure.changeMail();
+        if ($('#mail-server-type').length == 0) {
+            hasSettings['mail'] = false;
+        } else {
+            $('#alert-email-name').val(data['alert-email-name']);
+            $('#alert-email-address').val(data['alert-email-address']);
+            $('#smtp-server').val(data['smtp-server']);
+            $('#smtp-port').val(data['smtp-port']);
+            $('#smtp-username').val(data['smtp-username']);
+            $('#smtp-password').val(data['smtp-password']);
+            $('#save-mail').bind('click', saveMail);
+            $('#cancel-mail').bind('click', cancelMail);
+            $('#test-mail').bind('click', testMail);
+            mailData = configure.gatherMailData();
+            configure.changeMail();
+        }
 
         /* SSL */
-        $('#enable-ssl').val(data['enable-ssl']);
-        $('#save-ssl').bind('click', saveSSL);
-        $('#cancel-ssl').bind('click', cancelSSL);
-        sslData = configure.gatherSSLData();
-        configure.changeSSL();
+        if ($('#enable-ssl').length == 0) {
+            hasSettings['ssl'] = false;
+        } else {
+            $('#enable-ssl').val(data['enable-ssl']);
+            $('#save-ssl').bind('click', saveSSL);
+            $('#cancel-ssl').bind('click', cancelSSL);
+            sslData = configure.gatherSSLData();
+            configure.changeSSL();
+        }
 
         /* Timezone */
         $('#save-tz').off('click');
@@ -600,15 +620,19 @@ function ($, _, configure, common, Dropdown, OnOff)
 
         /* validation */
         Dropdown.setCallback(validate);
-        Dropdown.setCallback(function () {
-            configure.changeMail();
-            validate();
-        }, '#mail-server-type');
+        if (hasSettings['mail']) {
+            Dropdown.setCallback(function () {
+                configure.changeMail();
+                validate();
+            }, '#mail-server-type');
+        }
         OnOff.setCallback(validate);
-        OnOff.setCallback(function (checked) {
-            configure.changeSSL(checked);
-            validate();
-        }, '#enable-ssl');
+        if (hasSettings['ssl']) {
+            OnOff.setCallback(function (checked) {
+                configure.changeSSL(checked);
+                validate();
+            }, '#enable-ssl');
+        }
         configure.setInputCallback(validate);
         validate();
 
