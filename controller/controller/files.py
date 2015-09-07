@@ -66,6 +66,16 @@ class FileManager(Manager):
         except NoResultFound:
             return None
 
+    def find_by_id(self, fileid):
+        try:
+            return meta.Session.query(FileEntry).\
+                filter(FileEntry.envid == self.envid).\
+                filter(FileEntry.fileid == fileid).\
+                one()
+
+        except NoResultFound:
+            return None
+
     @classmethod
     def find_by_name_envid(cls, envid, name):
         try:

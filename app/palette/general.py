@@ -32,8 +32,9 @@ class WorkbookRetention(DictOption):
     def __init__(self, valueid):
         options = OrderedDict({})
         options[self.ALL] = 'All'
-        for count in [5, 10, 25]:
-            options[count] = str(count)
+        for count in [1, 2, 3, 4, 5, 10, 25]:
+            count_str = str(count)
+            options[count_str] = count_str
         super(WorkbookRetention, self).__init__(self.NAME, valueid, options)
 
 class GeneralS3Application(PaletteRESTApplication, S3Application):
@@ -382,7 +383,8 @@ class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
         else:
             data['archive-username'] = data['archive-password'] = ''
 
-        valueid = WorkbookRetention.ALL
+
+        valueid = req.system.get(SystemConfig.WORKBOOK_RETAIN_COUNT)
         retain_opts = WorkbookRetention(valueid)
         data['config'] = [retain_opts.default()]
 
@@ -404,6 +406,8 @@ class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
 
         cred.user = req.POST['archive-username']
         cred.setpasswd(req.POST['archive-password'])
+        req.system.save(SystemConfig.WORKBOOK_RETAIN_COUNT,
+                                            req.POST['workbook-retain-count'])
         meta.Session.commit()
         return {}
 
