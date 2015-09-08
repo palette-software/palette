@@ -32,7 +32,7 @@ class WorkbookRetention(DictOption):
     def __init__(self, valueid):
         options = OrderedDict({})
         options[self.ALL] = 'All'
-        for count in [1, 2, 3, 4, 5, 10, 25]:
+        for count in [2, 3, 4, 5, 10, 25]:
             count_str = str(count)
             options[count_str] = count_str
         super(WorkbookRetention, self).__init__(self.NAME, valueid, options)
