@@ -83,7 +83,7 @@ class StateManager(Manager):
         return value
 
     def upgrading(self):
-        return StateManager.upgrading_from_system(self.envid)
+        return StateManager.upgrading_from_system(self.system)
 
     # FIXME: remove
     @classmethod
