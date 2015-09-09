@@ -197,13 +197,6 @@ class WorkbookManager(TableauCacheManager):
         self.tableau_version = YmlEntry.get(envid,
                                             'version.external', default='8')
 
-        archive_enabled = self.system[SystemKeys.ARCHIVE_ENABLED]
-        if not archive_enabled:
-            return {u'disabled':
-                    'Workbook Archives are not enabled. Will not load.'}
-        if not self._cred_check():
-            return {u'error': 'Can not load workbooks: missing credentials.'}
-
         users = self.load_users(agent)
 
         stmt = \
@@ -277,8 +270,15 @@ class WorkbookManager(TableauCacheManager):
 
         prune_count = self._prune_missed_revisions()
 
-        # Second pass - build the archive files.
-        result = self._archive_updates(agent, updates)
+        archive_enabled = self.system[SystemKeys.ARCHIVE_ENABLED]
+        if not archive_enabled:
+            result = {u'disabled':
+                      'Workbook Archives are not enabled. Will not archive.'}
+        elif not self._cred_check():
+            result = {u'error': 'Can not load workbooks: missing credentials.'}
+        else:
+            # Second pass - build the archive files.
+            result = self._archive_updates(agent, updates)
 
         result[u'schema'] = self.schema(data)
         result[u'updates-new'] = len(updates)
