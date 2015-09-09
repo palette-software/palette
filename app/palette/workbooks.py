@@ -358,19 +358,16 @@ class WorkbookData(GenericWSGIApplication):
             return True
 
     def service_GET(self, req):
-        path_info = req.environ['PATH_INFO']
-        if path_info.startswith('/'):
-            path_info = path_info[1:]
 
-        path_info = req.environ['name']
-        update = WorkbookUpdateEntry.get_by_url(path_info, default=None)
+        workbook_name = req.environ['name']
+        update = WorkbookUpdateEntry.get_by_url(workbook_name, default=None)
         if update is None:
             return exc.HTTPNotFound()
 
         if not self.check_permission(req, update):
             return exc.HTTPForbidden()
 
-        path = os.path.join(self.path, path_info)
+        path = os.path.join(self.path, workbook_name)
         if not os.path.isfile(path):
             return exc.HTTPGone()
         return FileApp(path)
