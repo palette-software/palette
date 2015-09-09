@@ -131,6 +131,7 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     workbookid = Column(BigInteger, ForeignKey("workbooks.workbookid"))
     revision = Column(String, nullable=False)
     fileid = Column(Integer, ForeignKey("files.fileid"))
+    fileid_twbx = Column(Integer, ForeignKey("files.fileid"))
     timestamp = Column(DateTime, nullable=False)
     system_user_id = Column(Integer)
     url = Column(String)  # FIXME: make this unique.
@@ -184,7 +185,7 @@ class WorkbookManager(TableauCacheManager):
     def __init__(self, server):
         super(WorkbookManager, self).__init__(server)
         path = server.config.get('palette', 'workbook_archive_dir')
-        self.path = os.path.abspath(path)
+        self.controller_path = os.path.abspath(path)
         self.tableau_version = '8'  # default assumption
 
     # really sync *and* load
@@ -324,7 +325,11 @@ class WorkbookManager(TableauCacheManager):
         session = meta.Session()
         # List of workbooks that have excess archived versions:
         #   [(workbookid, total-count), ...]
+        # Note we select only successfully archived workbook versions
+        # (url != '').  We don't want want to count unsuccessfully
+        # archived versions in the count of how many we have.
         results = session.query(WorkbookUpdateEntry.workbookid, func.count()).\
+                  filter(WorkbookUpdateEntry.url != '').\
                   group_by(WorkbookUpdateEntry.workbookid).\
                   having(func.count() > retain_count).\
                   all()
@@ -336,6 +341,7 @@ class WorkbookManager(TableauCacheManager):
             # Get list of old workbook archive entries to delete
             rows = session.query(WorkbookUpdateEntry).\
                     filter(WorkbookUpdateEntry.workbookid == result[0]).\
+                    filter(WorkbookUpdateEntry.url != '').\
                     order_by(WorkbookUpdateEntry.timestamp.asc()).\
                     limit(result[1] - retain_count).\
                     all()
@@ -348,29 +354,41 @@ class WorkbookManager(TableauCacheManager):
                             delete()
                 session.commit()
 
-                file_entry = self.server.files.find_by_id(row.fileid)
-                if not file_entry:
-                    self.log.info(
-                        "workbooks _retain_some fileid %d disappeared, ",
-                        "or was never added, wuid %d, workbookid %d",
-                        row.fileid, row.wuid, row.workbookid)
-                    continue
+                self._remove_file(row, row.fileid)
+                if row.fileid_twbx:
+                    self._remove_file(row, row.fileid_twbx)
 
+                controller_path = os.path.join(self.controller_path,
+                                               row.url)
+                os.unlink(controller_path)
+
+                # Fixme: We could increment only if it successfully deleted.
                 removed_count += 1
 
-                body = self.server.delfile_cmd(file_entry)
-                if failed(body):
-                    self.log.info(
-                        "workbooks _retain_some failed to delete fileid %d, "
-                        "wuid %d, workbookid %d",
-                        row.fileid, row.wuid, row.workbookid)
-                else:
-                    self.log.debug(
-                        "workbooks _retain_some deleted fileid %d, "
-                        "wuid %d, workbookid %d",
-                        row.fileid, row.wuid, row.workbookid)
-
         return removed_count
+
+    def _remove_file(self, row, fileid):
+        """Remove an archived workbook file from storage."""
+
+        file_entry = self.server.files.find_by_id(fileid)
+        if not file_entry:
+            self.log.info(
+                    "workbooks _retain_some fileid %d disappeared, ",
+                    "or was never added, wuid %d, workbookid %d",
+                    fileid, row.wuid, row.workbookid)
+            return
+
+        body = self.server.delfile_cmd(file_entry)
+        if failed(body):
+            self.log.info(
+                "workbooks _retain_some failed to delete fileid %d, "
+                "wuid %d, workbookid %d",
+                fileid, row.wuid, row.workbookid)
+        else:
+            self.log.debug(
+                "workbooks _retain_some deleted fileid %d, "
+                "wuid %d, workbookid %d",
+                fileid, row.wuid, row.workbookid)
 
     @synchronized('workbook.fixup')
     def fixup(self, agent):
@@ -476,42 +494,48 @@ class WorkbookManager(TableauCacheManager):
         file_type = self._get_wb_type(agent, update, dst)
 
         if not file_type:
-            # _get_wb_type sends  an event on failure
+            # _get_wb_type sends an event on failure
             return None
 
         if file_type == 'zip':
-            dst = self._extract_twb_from_twbx(agent, update, dst)
-            if not dst:
+            dst_twb = self._extract_twb_from_twbx(agent, update, dst)
+            if not dst_twb:
                 # _extract_twb_from_twbx generates an event on failure.
                 return None
+            dst_twbx = dst
         else:
             # It is type 'xml'.
             # Rename .twbx to the .twb (xml) it really is.
-            old_dst = dst
-            dst = dst[0:-1] # drop the trailing 'x' from the file extension.
-            agent.filemanager.move(old_dst, dst)
-            self.log.debug("workbook: renamed %s to %s", old_dst, dst)
+            dst_twb = dst[0:-1] # drop the trailing 'x'
+            agent.filemanager.move(dst, dst_twb)
+            dst_twbx = None
+            self.log.debug("workbook: renamed %s to %s", dst, dst_twb)
 
-        # Get ready to move twbx/twb to resting location(s).
-        file_size = 0
-        try:
-            file_size_body = agent.filemanager.filesize(dst)
-        except IOError as ex:
-            self.log.error("build_workbook: filemanager.filesize('%s')" +
-                           "failed: %s", dst, str(ex))
-        else:
-            if not success(file_size_body):
-                self.log.error("build_workbook: Failed to get size of " + \
-                               "workbook file %s: %s", dst,
-                               file_size_body['error'])
-            else:
-                file_size = file_size_body['size']
+        # Pull the twb file over to the controller before sending the
+        # file away # (and deleting it on the primary if it will reside
+        # elsewhere).
+        result = self._copy_twb_to_controller(agent, update, dst_twb)
+        if not result:
+            return None
 
-        # Pull file over to the controller before sending the file away
-        # (and deleting it on the primary if it will reside elsewhere).
+        place = self._archive_file(agent, dcheck, dst_twb)
+        update.fileid = place.placed_file_entry.fileid
+
+        if dst_twbx and self.system[SystemKeys.ARCHIVE_SAVE_TWBX]:
+            place_twbx = self._archive_file(agent, dcheck, dst_twbx)
+            update.fileid_twbx = place_twbx.placed_file_entry.fileid
+
+        return result
+
+    def _copy_twb_to_controller(self, agent, update, dst):
+        """Copy the twb file from the Tableau server to the controller.
+           Returns:
+                Failure: None
+                Success: The passed filename
+        """
         self.log.debug('Retrieving workbook: %s', dst)
         try:
-            body = agent.filemanager.save(dst, target=self.path)
+            body = agent.filemanager.save(dst, target=self.controller_path)
         except IOError as ex:
             self.log.debug("Error saving workbook '%s': %s", dst, str(ex))
             return None
@@ -522,7 +546,32 @@ class WorkbookManager(TableauCacheManager):
         else:
             self.log.debug('Retrieved workbook: %s', dst)
 
-        # Save the workbook .twb file on cloud storage, other agent,
+        return dst
+
+    def _archive_file(self, agent, dcheck, dst):
+        """Copy the given workbook filename from the Tableau server to
+           its configured storage location.
+
+           Returns:
+                The PlaceFile instance.
+        """
+
+        # Get ready to move twbx /twb to resting location(s).
+        file_size = 0
+        try:
+            file_size_body = agent.filemanager.filesize(dst)
+        except IOError as ex:
+            self.log.error("_archive_file: filemanager.filesize('%s')" +
+                           "failed: %s", dst, str(ex))
+        else:
+            if not success(file_size_body):
+                self.log.error("archive_file: Failed to get size of " + \
+                               "workbook file %s: %s", dst,
+                               file_size_body['error'])
+            else:
+                file_size = file_size_body['size']
+
+        # Save the workbook file on cloud storage, other agent,
         # or leave on the primary.
         auto = True
         # Note: If the file is copied off the primary, then it is deleted
@@ -530,10 +579,8 @@ class WorkbookManager(TableauCacheManager):
         place = PlaceFile(self.server, agent, dcheck, dst, file_size, auto,
                           enable_delete=True)
         self.log.debug("build_workbook: %s", place.info)
-        # Remember the fileid
-        update.fileid = place.placed_file_entry.fileid
 
-        return dst
+        return place
 
     # returns the filename or None on error.
     def _retrieve_twb(self, agent, update):

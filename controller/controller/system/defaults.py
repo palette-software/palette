@@ -50,7 +50,7 @@ DEFAULTS = {
     SystemKeys.LOG_ARCHIVE_RETAIN_COUNT: 1, #FIXME: needed?
 
     SystemKeys.ARCHIVE_ENABLED: False,
-    SystemKeys.ARCHIVE_SAVE_TWBX: False,
+    SystemKeys.ARCHIVE_SAVE_TWBX: True,
 
     SystemKeys.HTTP_LOAD_WARN: 0,
     SystemKeys.HTTP_LOAD_ERROR: 0,
