@@ -278,7 +278,7 @@ class WorkbookManager(TableauCacheManager):
 
         # Second pass - build the archive files.
         result = self._archive_updates(agent, updates)
-        
+
         result[u'schema'] = self.schema(data)
         result[u'updates-new'] = len(updates)
         result[u'updates-missed'] = prune_count
