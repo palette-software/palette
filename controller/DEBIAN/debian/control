@@ -13,7 +13,7 @@ Depends:
  python-docutils, python-sphinx, python-crypto,
  python-sqlalchemy, python-psycopg2, python-boto, python-dateutil,
  postgresql, telnet, daemon, postfix, ntp,
- akiri.framework (>= 0.5.1),
+ akiri.framework (>= 0.5.2),
  palette-agent (>= 1.1.0),
  palette-support (>= 1.4.0)
 Description: Palette Controller and Web App
