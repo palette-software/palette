@@ -11,7 +11,7 @@ from sqlalchemy.orm.exc import NoResultFound
 import akiri.framework.sqlalchemy as meta
 
 from event import EventEntry
-from general import SystemConfig
+from system import SystemKeys
 from profile import UserProfile
 from util import DATEFMT, UNDEFINED, utc2local
 from mixin import BaseMixin, BaseDictMixin
@@ -311,7 +311,7 @@ class EventControlManager(Manager):
             return
 
         # add all system table entries to the data dictionary.
-        data = dict(data.items() + self.server.system.todict().items())
+        data = dict(data.items() + self.system.todict().items())
 
         self.log.debug(key + " DATA: " + str(data))
 
@@ -352,22 +352,11 @@ class EventControlManager(Manager):
         data['publisher_visiblity'] = event_entry.publisher_visibility
 
         # set server-url(s)
-        data['server_url'] = self.server.system.get(SystemConfig.SERVER_URL,
-                                                    default='localhost')
+        data['server_url'] = self.system[SystemKeys.SERVER_URL]
 
         url = self.server.public_url()
         if url:
             data['tableau_server_url'] = url
-
-        data['disk_watermark_low'] \
-            = self.server.system.get('disk-watermark-low', default='')
-        data['disk_watermark_high'] \
-            = self.server.system.get('disk-watermark-high', default='')
-
-        data['cpu_load_warn'] \
-            = self.server.system.get('cpu-load-warn', default='')
-        data['cpu_load_error'] \
-            = self.server.system.get('cpu-load-error', default='')
 
         if not 'environment' in data:
             data['environment'] = self.server.environment.name

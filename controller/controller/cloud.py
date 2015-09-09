@@ -92,7 +92,7 @@ class CloudManager(Manager):
     def get_cloud_entry(self, cloud_type_id):
         """Return the current entry of cloud_type_id (S3_ID or GCS_ID),
            or None if there isn't one."""
-        cloudid = self.server.system.getint(cloud_type_id, default=0)
+        cloudid = self.system[cloud_type_id]
         if not cloudid:
             return None
 

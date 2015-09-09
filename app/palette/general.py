@@ -7,8 +7,7 @@ from akiri.framework.route import Router
 import akiri.framework.sqlalchemy as meta
 
 from controller.profile import Role
-from controller.util import sizestr, extend
-from controller.general import SystemConfig
+from controller.util import sizestr, extend, str2bool
 from controller.files import FileManager
 from controller.agent import AgentVolumesEntry
 from controller.cloud import CloudEntry
@@ -16,6 +15,7 @@ from controller.passwd import aes_encrypt, aes_decrypt
 from controller.palapi import CommException
 from controller.credential import CredentialEntry
 from controller.email_limit import EmailLimitEntry
+from controller.system import SystemKeys
 
 from .option import ListOption, DictOption
 from .page import PalettePage
@@ -143,25 +143,25 @@ class GeneralLocalApplication(PaletteRESTApplication):
         return fmt % (volume.agent.displayname, name,
                       sizestr(volume.available_space), sizestr(volume.size))
 
-    def destid(self, scfg):
-        """Return the id of the current selection (built from SystemConfig)."""
-        dest_id = scfg.backup_dest_id
-        if dest_id == None:
+    def destid(self, req):
+        """Return the id of the current selection."""
+        dest_id = req.system[SystemKeys.BACKUP_DEST_ID]
+        if dest_id is None:
             dest_id = 0
 
-        return "%s:%d" % (scfg.backup_dest_type, dest_id)
+        return "%s:%d" % (req.system[SystemKeys.BACKUP_DEST_TYPE], dest_id)
 
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
-        scfg = SystemConfig(req.system)
-        data = {SystemConfig.STORAGE_ENCRYPT: scfg.storage_encrypt,
-                SystemConfig.WORKBOOKS_AS_TWB: scfg.workbooks_as_twb}
+        data = {}
+        for key in (SystemKeys.STORAGE_ENCRYPT, SystemKeys.WORKBOOKS_AS_TWB):
+            data[key] = req.system[key]
 
         # populate the storage destination type
         options = []
 
         value = None
-        destid = self.destid(scfg)
+        destid = self.destid(req)
         for volume in AgentVolumesEntry.get_archives_by_envid(req.envid):
             item = self.build_item_for_volume(volume)
             ourid = '%s:%d' % (FileManager.STORAGE_TYPE_VOL, volume.volid)
@@ -198,8 +198,8 @@ class GeneralLocalApplication(PaletteRESTApplication):
             raise exc.HTTPBadRequest()
 
         (desttype, destid) = parts
-        req.system.save(SystemConfig.BACKUP_DEST_ID, destid)
-        req.system.save(SystemConfig.BACKUP_DEST_TYPE, desttype)
+        req.system[SystemKeys.BACKUP_DEST_ID] = destid
+        req.system[SystemKeys.BACKUP_DEST_TYPE] = desttype
         return {'storage-destination':value}
 
 
@@ -214,13 +214,12 @@ class _GeneralStorageApplication(PaletteRESTApplication):
 
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
-        scfg = SystemConfig(req.system)
         data = {}
-        dest_type = scfg.backup_dest_type
+        dest_type = req.system[SystemKeys.BACKUP_DEST_TYPE]
         if dest_type == FileManager.STORAGE_TYPE_VOL:
             data['storage-type'] = 'local'
         elif dest_type == FileManager.STORAGE_TYPE_CLOUD:
-            dest_id = scfg.backup_dest_id
+            dest_id = req.system[SystemKeys.BACKUP_DEST_ID]
             entry = CloudEntry.get_by_envid_cloudid(req.envid, dest_id)
             data['storage-type'] = entry.cloud_type
 
@@ -250,46 +249,45 @@ class GeneralBackupApplication(PaletteRESTApplication):
 
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
-        scfg = SystemConfig(req.system)
-
-        config = [ListOption(SystemConfig.BACKUP_SCHEDULED_PERIOD,
-                             scfg.backup_scheduled_period,
+        config = [ListOption(SystemKeys.BACKUP_SCHEDULED_PERIOD,
+                             req.system[SystemKeys.BACKUP_SCHEDULED_PERIOD],
                              self.BACKUP_SCHEDULED_PERIOD_RANGE),
-                  ListOption(SystemConfig.BACKUP_AUTO_RETAIN_COUNT,
-                             scfg.backup_auto_retain_count,
+                  ListOption(SystemKeys.BACKUP_AUTO_RETAIN_COUNT,
+                             req.system[SystemKeys.BACKUP_AUTO_RETAIN_COUNT],
                              self.BACKUP_SCHEDULED_RETAIN_RANGE),
-                  ListOption(SystemConfig.BACKUP_USER_RETAIN_COUNT,
-                             scfg.backup_user_retain_count,
+                  ListOption(SystemKeys.BACKUP_USER_RETAIN_COUNT,
+                             req.system[SystemKeys.BACKUP_USER_RETAIN_COUNT],
                              self.USER_BACKUP_RETAIN_RANGE),
-                  ListOption(SystemConfig.BACKUP_SCHEDULED_HOUR,
-                             scfg.backup_scheduled_hour,
+                  ListOption(SystemKeys.BACKUP_SCHEDULED_HOUR,
+                             req.system[SystemKeys.BACKUP_SCHEDULED_HOUR],
                              self.BACKUP_SCHEDULED_HOUR_RANGE),
-                  ListOption(SystemConfig.BACKUP_SCHEDULED_MINUTE,
-                             scfg.backup_scheduled_minute,
+                  ListOption(SystemKeys.BACKUP_SCHEDULED_MINUTE,
+                             req.system[SystemKeys.BACKUP_SCHEDULED_MINUTE],
                              self.BACKUP_SCHEDULED_MINUTE_RANGE),
-                  ListOption(SystemConfig.BACKUP_SCHEDULED_AMPM,
-                             scfg.backup_scheduled_ampm,
-                             ['AM', 'PM'])]
+                  ListOption(SystemKeys.BACKUP_SCHEDULED_AMPM,
+                             req.system[SystemKeys.BACKUP_SCHEDULED_AMPM],
+                             ['AM', 'PM'])
+              ]
+
+        scheduled_enabled = req.system[SystemKeys.BACKUP_SCHEDULED_ENABLED]
 
         data = {}
         data['config'] = [option.default() for option in config]
-        data['scheduled-backups'] = scfg.backup_scheduled_enabled
+        data['scheduled-backups'] = scheduled_enabled
         data['timezone'] = time.strftime("%Z")
         return data
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         if 'scheduled-backups' in req.POST:
-            if req.POST['scheduled-backups'] == 'false':
-                req.system.save(SystemConfig.BACKUP_SCHEDULED_ENABLED, 'no')
-            else:
-                req.system.save(SystemConfig.BACKUP_SCHEDULED_ENABLED, 'yes')
+            req.system[SystemKeys.BACKUP_SCHEDULED_ENABLED] = \
+                                        str2bool(req.POST['scheduled-backups'])
 
-        req.system.save(SystemConfig.BACKUP_AUTO_RETAIN_COUNT,
-                             req.POST['backup-auto-retain-count'])
-        req.system.save(SystemConfig.BACKUP_USER_RETAIN_COUNT,
-                             req.POST['backup-user-retain-count'])
-
+        req.system[SystemKeys.BACKUP_AUTO_RETAIN_COUNT] = \
+                                        req.POST['backup-auto-retain-count']
+        req.system[SystemKeys.BACKUP_USER_RETAIN_COUNT] = \
+                                        req.POST['backup-user-retain-count']
+        meta.commit()
         return {}
 
 
@@ -297,30 +295,26 @@ class EmailAlertApplication(PaletteRESTApplication):
     """Handler for the 'EMAIL ALERTS' section."""
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
-        scfg = SystemConfig(req.system)
         data = {}
-        data['alert-admins'] = scfg.alerts_admin_enabled
-        data['alert-publishers'] = scfg.alerts_publisher_enabled
+        data['alert-admins'] = req.system[SystemKeys.ALERTS_ADMIN_ENABLED]
+        data['alert-publishers'] = \
+                            req.system[SystemKeys.ALERTS_PUBLISHER_ENABLED]
         return data
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
 
-        if req.POST['alert-publishers'] == 'false':
-            req.system.save(SystemConfig.ALERTS_PUBLISHER_ENABLED, 'no')
-        else:
-            req.system.save(SystemConfig.ALERTS_PUBLISHER_ENABLED, 'yes')
+        req.system[SystemKeys.ALERTS_PUBLISHER_ENABLED] = \
+                            req.POST['alert-publishers']
+        req.system[SystemKeys.ALERTS_ADMIN_ENABLED] = req.POST['alert-admins']
 
-        if req.POST['alert-admins'] == 'false':
-            req.system.save(SystemConfig.ALERTS_ADMIN_ENABLED, 'no')
-        else:
-            req.system.save(SystemConfig.ALERTS_ADMIN_ENABLED, 'yes')
-
-        if req.POST['alert-publishers'] == 'true' or \
-                                    req.POST['alert-admins'] == 'true':
+        if str2bool(req.POST['alert-publishers']) or \
+                  str2bool(req.POST['alert-admins']):
+            req.system[SystemKeys.EMAIL_SPIKE_DISABLED_ALERTS] = 'no'
+            # does a session.commit()
             EmailLimitEntry.remove_all(req.envid)
-            req.system.save(SystemConfig.EMAIL_SPIKE_DISABLED_ALERTS,
-                             'no')
+        else:
+            meta.commit()
         return {}
 
 
@@ -332,33 +326,32 @@ class GeneralZiplogApplication(PaletteRESTApplication):
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
-
-        scfg = SystemConfig(req.system)
-
-        config = [ListOption(SystemConfig.ZIPLOG_AUTO_RETAIN_COUNT,
-                             scfg.ziplog_auto_retain_count,
+        config = [ListOption(SystemKeys.ZIPLOG_AUTO_RETAIN_COUNT,
+                             req.system[SystemKeys.ZIPLOG_AUTO_RETAIN_COUNT],
                              self.SCHEDULED_RETAIN_RANGE),
-                  ListOption(SystemConfig.ZIPLOG_USER_RETAIN_COUNT,
-                             scfg.ziplog_user_retain_count,
-                             self.USER_RETAIN_RANGE)]
+                  ListOption(SystemKeys.ZIPLOG_USER_RETAIN_COUNT,
+                             req.system[SystemKeys.ZIPLOG_USER_RETAIN_COUNT],
+                             self.USER_RETAIN_RANGE)
+              ]
+
+        enabled_scheduled = req.system[SystemKeys.ZIPLOG_SCHEDULED_ENABLED]
+
         data = {}
         data['config'] = [option.default() for option in config]
-        data['schedule-ziplogs'] = scfg.ziplog_scheduled_enabled
+        data['schedule-ziplogs'] = enabled_scheduled
         return data
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         if 'scheduled-ziplogs' in req.POST:
-            if req.POST['scheduled-ziplogs'] == 'false':
-                req.system.save(SystemConfig.ZIPLOG_SCHEDULED_ENABLED, 'no')
-            else:
-                req.system.save(SystemConfig.ZIPLOG_SCHEDULED_ENABLED, 'yes')
+            req.system[SystemKeys.ZIPLOG_SCHEDULED_ENABLED] = \
+                            req.POST['scheduled-ziplogs']
 
-        req.system.save(SystemConfig.ZIPLOG_AUTO_RETAIN_COUNT,
-                             req.POST['ziplog-auto-retain-count'])
-        req.system.save(SystemConfig.ZIPLOG_USER_RETAIN_COUNT,
-                             req.POST['ziplog-user-retain-count'])
-
+        req.system[SystemKeys.ZIPLOG_AUTO_RETAIN_COUNT] = \
+                            req.POST['ziplog-auto-retain-count']
+        req.system[SystemKeys.ZIPLOG_USER_RETAIN_COUNT] = \
+                            req.POST['ziplog-user-retain-count']
+        meta.commit()
         return {}
 
 class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
@@ -367,10 +360,9 @@ class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
-        scfg = SystemConfig(req.system)
-
         data = {}
-        data['enable-archive'] = scfg.archive_enabled
+        if SystemKeys.ARCHIVE_ENABLED in req.system:
+            data['enable-archive'] = req.system[SystemKeys.ARCHIVE_ENABLED]
 
         primary = self.get_cred(req.envid, self.PRIMARY_KEY)
         secondary = self.get_cred(req.envid, self.SECONDARY_KEY)
@@ -384,7 +376,7 @@ class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
             data['archive-username'] = data['archive-password'] = ''
 
 
-        valueid = req.system.get(SystemConfig.WORKBOOK_RETAIN_COUNT)
+        valueid = req.system[SystemKeys.WORKBOOK_RETAIN_COUNT]
         retain_opts = WorkbookRetention(valueid)
         data['config'] = [retain_opts.default()]
 
@@ -392,12 +384,7 @@ class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
-        if req.POST['enable-archive'] == 'false':
-            req.system.save(SystemConfig.ARCHIVE_ENABLED, 'no')
-        elif req.POST['enable-archive'] == 'true':
-            req.system.save(SystemConfig.ARCHIVE_ENABLED, 'yes')
-        else:
-            print "bad value for enable-archive:", req.POST['enable-archive']
+        req.system[SystemKeys.ARCHIVE_ENABLED] = req.POST['enable-archive']
 
         cred = self.get_cred(req.envid, self.PRIMARY_KEY)
         if not cred:
@@ -406,9 +393,11 @@ class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
 
         cred.user = req.POST['archive-username']
         cred.setpasswd(req.POST['archive-password'])
-        req.system.save(SystemConfig.WORKBOOK_RETAIN_COUNT,
-                                            req.POST['workbook-retain-count'])
-        meta.Session.commit()
+
+        system_key = SystemKeys.WORKBOOK_RETAIN_COUNT
+        req.system[system_key] = req.POST['workbook-retain-count']
+
+        meta.commit()
         return {}
 
 
@@ -427,153 +416,155 @@ class GeneralMonitorApplication(PaletteRESTApplication):
     WORKBOOK_LOAD_ERROR_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30,
                                  35, 40, 45]
 
-    def build_item_for_web_request(self, x):
-        if x == 0:
+    def build_item_for_web_request(self, seconds):
+        if seconds == 0:
             return 'Do not monitor'
-        if x == 1:
+        if seconds == 1:
             return '1 second'
-        return '%d seconds' % x
+        return '%d seconds' % seconds
 
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
-        # pylint: disable=unused-argument
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-statements
         # pylint: disable=too-many-branches
-        scfg = SystemConfig(req.system)
 
-        # FIXME: make each of these an option in config, not just values.
-        # FIXME: also allow them not to be set in the system table.
+        # FIXME: make every commented paragraph below a private method
         data = {}
-        #data['storage-warning'] = scfg.watermark_low
-        #data['storage-error'] = scfg.watermark_high
 
-        #data['cpu-warning'] = scfg.cpu_load_warn
-        #data['cpu-error'] = scfg.cpu_load_error
-        #data['cpu-period-warn'] = scfg.cpu_period_warn
-        #data['cpu-period-error'] = scfg.cpu_period_error
-
-        #data['workbook-warn'] = scfg.workbook_load_warn
-        #data['workbook-error'] = scfg.workbook_load_error
 
         # watermark low
-        if scfg.watermark_low > 100:
-            low = {'name': SystemConfig.WATERMARK_LOW,
+        watermark_low = req.system[SystemKeys.WATERMARK_LOW]
+        if watermark_low > 100:
+            low = {'name': SystemKeys.WATERMARK_LOW,
                    'value': "Do not monitor",
-                   'id': scfg.watermark_low}
+                   'id': watermark_low}
         else:
-            low = {'name': SystemConfig.WATERMARK_LOW,
-                   'value': "%d%%" % scfg.watermark_low,
-                   'id': scfg.watermark_low}
+            low = {'name': SystemKeys.WATERMARK_LOW,
+                   'value': "%d%%" % watermark_low,
+                   'id': watermark_low}
         options = []
-        for x in self.LOW_WATERMARK_RANGE:
-            if x > 100:
-                options.append({'id':x, 'item': "Do not monitor"})
+        for value in self.LOW_WATERMARK_RANGE:
+            if value > 100:
+                options.append({'id':value, 'item': "Do not monitor"})
             else:
-                options.append({'id':x, 'item': "%s%%" % str(x)})
+                options.append({'id':value, 'item': "%s%%" % str(value)})
         low['options'] = options
 
         # watermark high
-        if scfg.watermark_high > 100:
-            high = {'name': SystemConfig.WATERMARK_HIGH,
+        watermark_high = req.system[SystemKeys.WATERMARK_HIGH]
+        if watermark_high > 100:
+            high = {'name': SystemKeys.WATERMARK_HIGH,
                    'value': "Do not monitor",
-                   'id': scfg.watermark_high}
+                   'id': watermark_high}
         else:
-            high = {'name': SystemConfig.WATERMARK_HIGH,
-                   'value': '%d%%' % scfg.watermark_high,
-                   'id': scfg.watermark_high}
+            high = {'name': SystemKeys.WATERMARK_HIGH,
+                   'value': '%d%%' % watermark_high,
+                   'id': watermark_high}
         options = []
-        for x in self.HIGH_WATERMARK_RANGE:
-            if x > 100:
-                options.append({'id':x, 'item': 'Do not monitor'})
+        for value in self.HIGH_WATERMARK_RANGE:
+            if value > 100:
+                options.append({'id':value, 'item': 'Do not monitor'})
             else:
-                options.append({'id':x, 'item': '%s%%' % str(x)})
+                options.append({'id':value, 'item': '%s%%' % str(value)})
         high['options'] = options
 
         # workbook warn (formerly http load warn)
-        value = self.build_item_for_web_request(scfg.http_load_warn)
-        workbook_load_warn = {'name': SystemConfig.HTTP_LOAD_WARN,
+        seconds = req.system[SystemKeys.HTTP_LOAD_WARN]
+        value = self.build_item_for_web_request(seconds)
+        workbook_load_warn = {'name': SystemKeys.HTTP_LOAD_WARN,
                               'value': value,
-                              'id': scfg.http_load_warn}
+                              'id': seconds}
 
         options = []
-        for x in self.WORKBOOK_LOAD_WARN_RANGE:
-            item = self.build_item_for_web_request(x)
-            options.append({'id':x, 'item': item})
+        for value in self.WORKBOOK_LOAD_WARN_RANGE:
+            item = self.build_item_for_web_request(value)
+            options.append({'id':value, 'item': item})
         workbook_load_warn['options'] = options
 
         # workbook error (formerly http load error)
-        value = self.build_item_for_web_request(scfg.http_load_error)
-        workbook_load_error = {'name': SystemConfig.HTTP_LOAD_ERROR,
+        seconds = req.system[SystemKeys.HTTP_LOAD_ERROR]
+        value = self.build_item_for_web_request(seconds)
+        workbook_load_error = {'name': SystemKeys.HTTP_LOAD_ERROR,
                                'value': value,
-                               'id': scfg.http_load_error}
+                               'id': seconds}
 
         options = []
-        for x in self.WORKBOOK_LOAD_ERROR_RANGE:
-            item = self.build_item_for_web_request(x)
-            options.append({'id':x, 'item': item})
+        for value in self.WORKBOOK_LOAD_ERROR_RANGE:
+            item = self.build_item_for_web_request(value)
+            options.append({'id':value, 'item': item})
         workbook_load_error['options'] = options
 
         # cpu load warn
-        if scfg.cpu_load_warn > 100:
-            cpu_load_warn = {'name': SystemConfig.CPU_LOAD_WARN,
+        seconds = req.system[SystemKeys.CPU_LOAD_WARN]
+        if seconds > 100:
+            cpu_load_warn = {'name': SystemKeys.CPU_LOAD_WARN,
                              'value': 'Do not monitor',
                              'id': 101}
         else:
-            cpu_load_warn = {'name': SystemConfig.CPU_LOAD_WARN,
-                             'value': '%s%%' % str(scfg.cpu_load_warn),
-                             'id': scfg.cpu_load_warn}
+            cpu_load_warn = {'name': SystemKeys.CPU_LOAD_WARN,
+                             'value': '%s%%' % str(seconds),
+                             'id': seconds}
         options = []
-        for x in self.CPU_LOAD_WARN_RANGE:
-            if x > 100:
-                options.append({'id':x, 'item': "Do not monitor"})
+        for value in self.CPU_LOAD_WARN_RANGE:
+            if value > 100:
+                options.append({'id':value, 'item': "Do not monitor"})
             else:
-                options.append({'id':x, 'item': '%s%%' % str(x)})
+                options.append({'id':value, 'item': '%s%%' % str(value)})
         cpu_load_warn['options'] = options
 
         # cpu load error
-        if scfg.cpu_load_error > 100:
-            cpu_load_error = {'name': SystemConfig.CPU_LOAD_ERROR,
+        seconds = req.system[SystemKeys.CPU_LOAD_ERROR]
+        if seconds > 100:
+            cpu_load_error = {'name': SystemKeys.CPU_LOAD_ERROR,
                               'value': 'Do not monitor',
                               'id': 101}
         else:
-            cpu_load_error = {'name': SystemConfig.CPU_LOAD_ERROR,
-                              'value': '%s%%' % str(scfg.cpu_load_error),
-                              'id': scfg.cpu_load_error}
+            cpu_load_error = {'name': SystemKeys.CPU_LOAD_ERROR,
+                              'value': '%s%%' % str(seconds),
+                              'id': seconds}
         options = []
-        for x in self.CPU_LOAD_ERROR_RANGE:
-            if x > 100:
-                options.append({'id':x, 'item': 'Do not monitor'})
+        for value in self.CPU_LOAD_ERROR_RANGE:
+            if value > 100:
+                options.append({'id':value, 'item': 'Do not monitor'})
             else:
-                options.append({'id':x, 'item': '%s%%' % str(x)})
+                options.append({'id':value, 'item': '%s%%' % str(value)})
         cpu_load_error['options'] = options
 
         # cpu period warn
-        if scfg.cpu_load_warn > 100:
-            cpu_period_warn = {'name': SystemConfig.CPU_PERIOD_WARN,
+        period_seconds = req.system[SystemKeys.CPU_PERIOD_WARN]
+
+        value = req.system[SystemKeys.CPU_LOAD_WARN]
+        if value > 100:
+            # not monitoring
+            cpu_period_warn = {'name': SystemKeys.CPU_PERIOD_WARN,
                                'value': "Do not Monitor",
-                               'id': scfg.cpu_period_warn}
+                               'id': period_seconds}
         else:
-            cpu_period_warn = {'name': SystemConfig.CPU_PERIOD_WARN,
-                               'value': str(scfg.cpu_period_warn / 60),
-                               'id': scfg.cpu_period_warn}
+            cpu_period_warn = {'name': SystemKeys.CPU_PERIOD_WARN,
+                               'value': (period_seconds / 60),
+                               'id': period_seconds}
         options = []
-        for x in self.CPU_PERIOD_WARN_RANGE:
-            options.append({'id':x * 60, 'item': str(x)})
+        for value in self.CPU_PERIOD_WARN_RANGE:
+            options.append({'id':value * 60, 'item': str(value)})
         cpu_period_warn['options'] = options
 
         # cpu period error
-        if scfg.cpu_load_error > 100:
-            cpu_period_error = {'name': SystemConfig.CPU_PERIOD_ERROR,
+        period_seconds = req.system[SystemKeys.CPU_PERIOD_ERROR
+]
+        value = req.system[SystemKeys.CPU_LOAD_ERROR]
+        if value > 100:
+            # not monitoring
+            cpu_period_error = {'name': SystemKeys.CPU_PERIOD_ERROR,
                                 'value': "Do not monitor",
-                                'id': scfg.cpu_period_error / 60}
+                                'id': period_seconds}
         else:
-            cpu_period_error = {'name': SystemConfig.CPU_PERIOD_ERROR,
-                                'value': str(scfg.cpu_period_error / 60),
-                                'id': scfg.cpu_period_error}
+            cpu_period_error = {'name': SystemKeys.CPU_PERIOD_ERROR,
+                                'value': str(value / 60),
+                                'id': period_seconds}
         options = []
-        for x in self.CPU_PERIOD_ERROR_RANGE:
-            options.append({'id':x * 60, 'item': str(x)})
+        for value in self.CPU_PERIOD_ERROR_RANGE:
+            options.append({'id':value * 60, 'item': str(value)})
         cpu_period_error['options'] = options
 
         data['config'] = [low, high,
@@ -586,26 +577,19 @@ class GeneralMonitorApplication(PaletteRESTApplication):
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         # pylint: disable=unused-argument
-        req.system.save(SystemConfig.WATERMARK_LOW,
-                                                req.POST['disk-watermark-low'])
-        req.system.save(SystemConfig.WATERMARK_HIGH,
-                                                req.POST['disk-watermark-high'])
+        req.system[SystemKeys.WATERMARK_LOW] = req.POST['disk-watermark-low']
+        req.system[SystemKeys.WATERMARK_HIGH] = req.POST['disk-watermark-high']
 
-        req.system.save(SystemConfig.CPU_LOAD_WARN,
-                                            req.POST['cpu-load-warn'])
-        req.system.save(SystemConfig.CPU_LOAD_ERROR,
-                                            req.POST['cpu-load-error'])
+        req.system[SystemKeys.CPU_LOAD_WARN] = req.POST['cpu-load-warn']
+        req.system[SystemKeys.CPU_LOAD_ERROR] = req.POST['cpu-load-error']
 
-        req.system.save(SystemConfig.CPU_PERIOD_WARN,
-                                        int(req.POST['cpu-period-warn']))
-        req.system.save(SystemConfig.CPU_PERIOD_ERROR,
-                                        int(req.POST['cpu-period-error']))
+        req.system[SystemKeys.CPU_PERIOD_WARN] = req.POST['cpu-period-warn']
+        req.system[SystemKeys.CPU_PERIOD_ERROR] = req.POST['cpu-period-error']
 
-        req.system.save(SystemConfig.HTTP_LOAD_WARN,
-                                        req.POST['http-load-warn'])
-        req.system.save(SystemConfig.HTTP_LOAD_ERROR,
-                                        req.POST['http-load-error'])
+        req.system[SystemKeys.HTTP_LOAD_WARN] = req.POST['http-load-warn']
+        req.system[SystemKeys.HTTP_LOAD_ERROR] = req.POST['http-load-error']
 
+        meta.commit()
         return {}
 
 class _GeneralApplication(PaletteRESTApplication):

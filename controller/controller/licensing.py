@@ -20,19 +20,19 @@ import akiri.framework.sqlalchemy as meta
 from event_control import EventControl
 from manager import Manager
 from mixin import BaseMixin, BaseDictMixin
-from util import version
+from util import version, seconds_since
 
 from agent import Agent
 from agentmanager import AgentManager
 from domain import Domain
-from general import SystemConfig
+from system import SystemKeys
 from yml import YmlEntry
 
 
 LICENSING_URL = "https://licensing.palette-software.com"
 
 def licensing_send(uri, data, system):
-    proxy_https = system.get(SystemConfig.PROXY_HTTPS, default=None)
+    proxy_https = system[SystemKeys.PROXY_HTTPS]
     if proxy_https:
         result = urlparse(proxy_https)
         proxy = urllib2.ProxyHandler({'https': result.netloc})
@@ -449,10 +449,8 @@ class LicenseManager(Manager):
             session.commit()
             return
 
-        st_config = SystemConfig(self.server.system)
-        max_silence_time = st_config.max_silence_time
-        silence_time = (datetime.datetime.utcnow() - \
-                            entry.contact_time).total_seconds()
+        max_silence_time = self.server.system[SystemKeys.MAX_SILENCE_TIME]
+        silence_time = seconds_since(entry.contact_time)
 #        print "contact_time:", entry.contact_time
 #        print "timestamp thing:", datetime.datetime.utcnow()
 #        print "silence_time:", silence_time, "max:", max_silence_time

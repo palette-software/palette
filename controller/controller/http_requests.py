@@ -18,6 +18,7 @@ from sites import Site
 from workbooks import WorkbookEntry
 from profile import UserProfile
 from odbc import ODBC
+from system import SystemKeys
 
 class HttpRequestEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'http_requests'
@@ -167,8 +168,8 @@ class HttpRequestManager(TableauCacheManager):
     # pylint: disable=too-many-branches
 #        print "action = ", entry.action, "body = ", body
 
-        errorlevel = self.server.system.getint('http-load-error')
-        warnlevel = self.server.system.getint('http-load-warn')
+        errorlevel = self.server[SystemKeys.HTTP_LOAD_ERROR]
+        warnlevel = self.server[SystemKeys.HTTP_LOAD_WARN]
 
         if not errorlevel and not warnlevel:
             # alerts for http-requests aren't enabled

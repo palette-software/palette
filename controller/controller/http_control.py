@@ -6,6 +6,7 @@ from sqlalchemy import func
 import akiri.framework.sqlalchemy as meta
 
 from mixin import BaseMixin
+from system import SystemKeys
 
 def list_re(arg):
     _ = []
@@ -48,8 +49,6 @@ class HttpControl(meta.Base, BaseMixin):
 
 class HttpControlData(object):
 
-    SYSTEM_KEY = 'http-load-re'
-
     def __init__(self, server):
         self.server = server
 
@@ -61,7 +60,7 @@ class HttpControlData(object):
                     self.status_excludes[entry.status] = excludes
 
         self.load_excludes = []
-        arg = server.system.get(self.SYSTEM_KEY, default=None)
+        arg = server.system[SystemKeys.HTTP_LOAD_RE]
         if arg:
             self.load_excludes = list_re(arg)
 

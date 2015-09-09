@@ -1,4 +1,2 @@
-from controller import main
+""" The main controller package """
 
-if __name__ == "__main__":
-    main()

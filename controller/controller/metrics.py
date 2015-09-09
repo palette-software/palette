@@ -7,7 +7,8 @@ from sqlalchemy.schema import ForeignKey
 import akiri.framework.sqlalchemy as meta
 
 from event_control import EventControl
-from general import SystemConfig
+from manager import Manager
+from system import SystemKeys
 
 #from event_control import EventControl
 
@@ -25,13 +26,8 @@ class MetricEntry(meta.Base):
     cpu = Column(Float)
     creation_time = Column(DateTime, server_default=func.now())
 
-class MetricManager(object):
+class MetricManager(Manager):
 
-    def __init__(self, server):
-        self.server = server
-        self.log = server.log
-        self.notifications = self.server.notifications
-        self.st_config = SystemConfig(server.system)
 
     def add(self, agent, cpu):
         session = meta.Session()
@@ -43,16 +39,12 @@ class MetricManager(object):
     def prune(self):
         """Prune/remove old rows from the metrics table."""
 
-        try:
-            metric_save_days = self.st_config.metric_save_days
-        except ValueError as ex:
-            return {'error': str(ex)}
-
+        metric_save_days = self.system[SystemKeys.METRIC_SAVE_DAYS]
         self.log.debug("metrics: prune save %d days", metric_save_days)
 
         stmt = ("DELETE FROM metrics " + \
                 "WHERE creation_time < NOW() - INTERVAL '%d DAYS'") % \
-                (metric_save_days)
+                (metric_save_days,)
 
         connection = meta.get_connection()
         result = connection.execute(stmt)
@@ -66,13 +58,10 @@ class MetricManager(object):
         if metric != 'cpu':
             return {'error': 'Unknown metric: %s' % metric}
 
-        try:
-            cpu_load_warn = self.st_config.cpu_load_warn
-            cpu_load_error = self.st_config.cpu_load_error
-            cpu_period_warn = self.st_config.cpu_period_warn
-            cpu_period_error = self.st_config.cpu_period_error
-        except ValueError as ex:
-            return {'error': str(ex)}
+        cpu_load_warn = self.system[SystemKeys.CPU_LOAD_WARN]
+        cpu_load_error = self.system[SystemKeys.CPU_LOAD_ERROR]
+        cpu_period_warn = self.system[SystemKeys.CPU_PERIOD_WARN]
+        cpu_period_error = self.system[SystemKeys.CPU_PERIOD_ERROR]
 
         connection = meta.get_connection()
 
@@ -143,7 +132,7 @@ class MetricManager(object):
 
             Returns a dictionary for the report.
         """
-        notification = self.notifications.get(name, agent.agentid)
+        notification = self.server.notifications.get(name, agent.agentid)
         self.log.debug(
             ("metric: %s.  agent '%s', color '%s', " + \
             "notified_color '%s', report_value %d") % \

@@ -1,8 +1,8 @@
-from general import SystemConfig
 from files import FileManager
 
 from agent import AgentVolumesEntry
 from agent import Agent
+from system import SystemKeys
 from util import sizestr
 
 class DiskException(Exception):
@@ -25,6 +25,7 @@ class DiskCheck(object):
 
         # inputs
         self.server = server
+        self.system = server.system
         self.log = server.log
 
         self.agent = agent
@@ -49,11 +50,6 @@ class DiskCheck(object):
         # Whether or not the primary agent is the final destination.
         self.primary_final_dest = True
 
-        try:
-            self.storage_config = SystemConfig(self.server.system)
-        except ValueError, ex:
-            raise DiskException(ex)
-
         # Determine the target info.
         self._set_target_from_config()
 
@@ -65,21 +61,21 @@ class DiskCheck(object):
         """
 
     def _set_target_from_config(self):
-        """Use the user configuration settings from SystemConfig
+        """Use the user configuration settings from the system table
            to set and check a target type and entry, etc.
          """
 
         self.primary_final_dest = False
 
-        if self.storage_config.backup_dest_type == FileManager.STORAGE_TYPE_VOL:
+        backup_dest_type = self.system[SystemKeys.BACKUP_DEST_TYPE]
+        if backup_dest_type == FileManager.STORAGE_TYPE_VOL:
             self._config_vol_target()
             return
-        elif self.storage_config.backup_dest_type == \
-                                                FileManager.STORAGE_TYPE_CLOUD:
+        elif backup_dest_type == FileManager.STORAGE_TYPE_CLOUD:
             self._config_cloud_target()
         else:
             raise DiskException("diskcheck: Invalid backup dest_type: %s" % \
-                                self.storage_config.backup_dest_type)
+                                backup_dest_type)
 
     def _mkdirs(self):
         """Make sure the primary agent directories exists."""
@@ -112,12 +108,11 @@ class DiskCheck(object):
 
     def _config_cloud_target(self):
         """File is configured to go to the cloud."""
-        entry = self.server.cloud.get_by_cloudid(
-                                            self.storage_config.backup_dest_id)
+        backup_dest_id = self.system[SystemKeys.BACKUP_DEST_ID]
+        entry = self.server.cloud.get_by_cloudid(backup_dest_id)
 
         if not entry:
-            raise DiskException("cloudid not found: %d" % \
-                                 self.storage_config.backup_dest_id)
+            raise DiskException("cloudid not found: %d" % backup_dest_id)
 
         self.target_entry = entry
         self.target_type = FileManager.STORAGE_TYPE_CLOUD
@@ -133,12 +128,10 @@ class DiskCheck(object):
 
     def _config_vol_target(self):
         # File is configured to go to an agent.
-        entry = AgentVolumesEntry.get_vol_entry_by_volid(
-                                    self.storage_config.backup_dest_id)
-
+        backup_dest_id = self.system[SystemKeys.BACKUP_DEST_ID]
+        entry = AgentVolumesEntry.get_vol_entry_by_volid(backup_dest_id)
         if not entry:
-            raise DiskException(
-                    "volid not found: %d" % self.storage_config.backup_dest_id)
+            raise DiskException("volid not found: %d" % backup_dest_id)
 
         self.target_entry = entry
         self.target_type = FileManager.STORAGE_TYPE_VOL
@@ -147,8 +140,8 @@ class DiskCheck(object):
         if not target_agent:
             raise DiskException(
                 "No such agentid %d referenced by volid %d in backupid %d" % \
-                (entry.agentid, entry.volid,
-                                        self.storage_config.backup_dest_id))
+                (entry.agentid, entry.volid, backup_dest_id)
+            )
 
         if not target_agent.enabled:
             raise DiskException(("Cannot save to Storage Location on " + \

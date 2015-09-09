@@ -4,10 +4,9 @@ from webob import exc
 import akiri.framework.sqlalchemy as meta
 
 from controller.cloud import CloudEntry
-from controller.general import SystemConfig
 from controller.files import FileManager
 from controller.passwd import aes_encrypt
-
+from controller.system import SystemKeys
 
 class CloudApplication(object):
 
@@ -37,7 +36,7 @@ class CloudApplication(object):
         pass
 
     def _get_cloudid(self, req):
-        cloudid = req.system.getint(self.KEY, cleanup=True, default=None)
+        cloudid = req.system[self.KEY]
         if cloudid is None:
             return None
         return cloudid
@@ -47,7 +46,6 @@ class CloudApplication(object):
         if cloudid is None:
             return {}
         entry = CloudEntry.get_by_envid_cloudid(req.envid, cloudid)
-#        print "entry:", self._todict(entry)
         return self._todict(entry)
 
     # Not used yet.  Will be used when multiple cloud names for
@@ -82,28 +80,24 @@ class CloudApplication(object):
         if not bucket:
             raise exc.HTTPBadRequest()
 
-        session = meta.Session()
-
         entry = self._get_by_type(req.envid)
         # The name and the bucket are currently the same.
         entry.name = bucket
         entry.bucket = bucket
         entry.access_key = req.POST['access-key']
         entry.secret = aes_encrypt(req.POST['secret-key'])
-        session.commit()
 
-        req.system.save(self.KEY, entry.cloudid)
-        session.commit()
+        req.system[self.KEY] = entry.cloudid
 
-        req.system.save(SystemConfig.BACKUP_DEST_ID, entry.cloudid)
-        req.system.save(SystemConfig.BACKUP_DEST_TYPE,
-                                            FileManager.STORAGE_TYPE_CLOUD)
+        backup_dest_type = FileManager.STORAGE_TYPE_CLOUD
+        req.system[SystemKeys.BACKUP_DEST_TYPE] = backup_dest_type
+        req.system[SystemKeys.BACKUP_DEST_ID] = entry.cloudid
 
+        meta.commit()
         return self._todict(entry)
 
     def cloud_remove(self, req):
-        # pylint: disable=invalid-name
         # 'action' is just sanity check, its not used.
-        req.system.delete(self.KEY)
-        meta.Session.commit()
+        del req.system[self.KEY]
+        meta.commit()
         return {}

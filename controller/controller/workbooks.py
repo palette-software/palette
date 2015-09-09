@@ -15,8 +15,8 @@ from cache import TableauCacheManager #FIXME
 from manager import synchronized
 from util import failed, success
 from odbc import ODBC
-from general import SystemConfig
 from profile import UserProfile
+from .system import SystemKeys
 
 from diskcheck import DiskCheck, DiskException
 from event_control import EventControl
@@ -185,7 +185,6 @@ class WorkbookManager(TableauCacheManager):
         path = server.config.get('palette', 'workbook_archive_dir')
         self.path = os.path.abspath(path)
         self.tableau_version = '8'  # default assumption
-        self.st_config = SystemConfig(server.system)
 
     # really sync *and* load
     @synchronized('workbooks')
@@ -196,9 +195,10 @@ class WorkbookManager(TableauCacheManager):
         self.tableau_version = YmlEntry.get(envid,
                                             'version.external', default='8')
 
-        if self.st_config.archive_enabled == 'no':
+        archive_enabled = self.system[SystemKeys.ARCHIVE_ENABLED]
+        if not archive_enabled:
             return {u'disabled':
-                'Workbook Archives are not enabled. Will not load.'}
+                    'Workbook Archives are not enabled. Will not load.'}
         if not self._cred_check():
             return {u'error': 'Can not load workbooks: missing credentials.'}
 
@@ -277,7 +277,9 @@ class WorkbookManager(TableauCacheManager):
 
         # Second pass - build the archive files.
         for update in updates:
-            if self.st_config.archive_enabled == 'no':
+            # pulling the archives is slow so query the database each pass
+            archive_enabled = self.system[SystemKeys.ARCHIVE_ENABLED]
+            if not archive_enabled:
                 self.log.info("Workbook Archive disabled while processing." + \
                               "  Exiting for now.")
                 break
@@ -322,8 +324,7 @@ class WorkbookManager(TableauCacheManager):
     def _retain_some(self):
         """Retain only the configured number of workbook versions."""
 
-        retain_count = self.st_config.workbook_retain_count
-
+        retain_count = self.system[SystemKeys.WORKBOOK_RETAIN_COUNT]
         if not retain_count:
             return
 
@@ -377,9 +378,10 @@ class WorkbookManager(TableauCacheManager):
 
     @synchronized('workbook.fixup')
     def fixup(self, agent):
-        if self.st_config.archive_enabled == 'no':
+        archive_enabled = self.system[SystemKeys.ARCHIVE_ENABLED]
+        if archive_enabled == 'no':
             return {u'disabled':
-                'Workbook Archives are not enabled.  Fixup not done.'}
+                    'Workbook Archives are not enabled.  Fixup not done.'}
 
         connection = meta.get_connection()
 
@@ -402,7 +404,9 @@ class WorkbookManager(TableauCacheManager):
                       filter(WorkbookUpdateEntry.wuid.in_(ids)).all()
 
             for update in updates:
-                if self.st_config.archive_enabled == 'no':
+                # pulling the archives is slow so query the database each pass
+                archive_enabled = self.system[SystemKeys.ARCHIVE_ENABLED]
+                if not archive_enabled:
                     self.log.info(
                               "Workbook Archive disabled during fixup." + \
                               "  Exiting for now.")
@@ -651,7 +655,8 @@ class WorkbookManager(TableauCacheManager):
         cmd = 'ptwbx ' + '"' + dst + '"'
         body = self.server.cli_cmd(cmd, agent, timeout=60*30)
 
-        if self.st_config.archive_save_twbx != 'yes':
+        archive_save_twbx = self.system[SystemKeys.ARCHIVE_SAVE_TWBX]
+        if not archive_save_twbx:
             # Delete the 'twbx' since we don't archive it.
             try:
                 agent.filemanager.delete(dst)

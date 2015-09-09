@@ -6,7 +6,8 @@ from sqlalchemy.schema import ForeignKey
 import akiri.framework.sqlalchemy as meta
 
 from event_control import EventControl
-from general import SystemConfig
+from manager import Manager
+from system import SystemKeys
 
 class EmailLimitEntry(meta.Base):
     # pylint: disable=no-init
@@ -28,13 +29,8 @@ class EmailLimitEntry(meta.Base):
             delete()
         session.commit()
 
-class EmailLimitManager(object):
-    def __init__(self, server):
-        self.server = server
-        self.envid = server.environment.envid
-        self.log = server.log
-        self.st_config = SystemConfig(server.system)
-        self.system = server.system
+class EmailLimitManager(Manager):
+    """ Ensures that email is not sent too frequently. """
 
     def _log_email(self, eventid):
         session = meta.Session()
@@ -46,9 +42,10 @@ class EmailLimitManager(object):
         """Keep only the the ones in the last email-lookback-minutes
            period."""
 
+        email_lookback_minutes = self.system[SystemKeys.EMAIL_LOOKBACK_MINUTES]
         stmt = ("DELETE from email_sent "
                 "where creation_time < NOW() - INTERVAL '%d MINUTES'") % \
-                (self.st_config.email_lookback_minutes)
+                (email_lookback_minutes,)
 
         connection = meta.get_connection()
         result = connection.execute(stmt)
@@ -86,22 +83,21 @@ class EmailLimitManager(object):
         self._prune()   # Keep only the last email-looback-minutes rows
 
         emails_sent_recently = self._recent_count()
+        email_lookback_minutes = self.system[SystemKeys.EMAIL_LOOKBACK_MINUTES]
         self.log.debug("email_limit: sent %d error emails in the last "
                        "%d minutes.",
-                       emails_sent_recently,
-                       self.st_config.email_lookback_minutes)
+                       emails_sent_recently, email_lookback_minutes)
 
-        if emails_sent_recently > self.st_config.email_max_count:
+        email_max_count = self.server[SystemKeys.EMAIL_MAX_COUNT]
+        if emails_sent_recently > email_max_count:
             # Don't sent this email alert
             # send an alert that we're disabling email alerts
             self._eventit()
             # Disable email alerts
-            self.system.save(SystemConfig.ALERTS_ADMIN_ENABLED, 'no')
-
-            self.system.save(SystemConfig.ALERTS_PUBLISHER_ENABLED, 'no')
-
-            self.system.save(SystemConfig.EMAIL_SPIKE_DISABLED_ALERTS,
-                             'yes')
+            self.system[SystemKeys.ALERTS_ADMIN_ENABLED] = False
+            self.system[SystemKeys.ALERTS_PUBLISHER_ENABLED] = False
+            self.system[SystemKeys.EMAIL_SPIKE_DISABLED_ALERTS] = True
+            meta.commit()
             return emails_sent_recently
 
         # Send this email alert
@@ -110,8 +106,9 @@ class EmailLimitManager(object):
     def _eventit(self):
         """Send the EMAIL-SPIKE event."""
 
-        data = {'email_lookback_minutes':
-                                    self.st_config.email_lookback_minutes,
-                'email_max_count': self.st_config.email_max_count}
+        email_lookback_minutes = self.system[SystemKeys.EMAIL_LOOKBACK_MINUTES]
+        email_max_count = self.system[SystemKeys.EMAIL_MAX_COUNT]
+        data = {'email_lookback_minutes': email_lookback_minutes,
+                'email_max_count': email_max_count}
 
         self.server.event_control.gen(EventControl.EMAIL_SPIKE, data)

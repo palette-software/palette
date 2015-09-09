@@ -12,10 +12,10 @@ from sqlalchemy.orm.exc import NoResultFound
 import akiri.framework.sqlalchemy as meta
 
 from domain import Domain
-from general import SystemConfig
 from event_control import EventControl
 from email_limit import EmailLimitManager
 from profile import UserProfile
+from system import SystemKeys
 from util import UNDEFINED
 
 from mako.template import Template
@@ -49,7 +49,6 @@ class AlertEmail(object):
         self.standalone = False
         self.config = server.config
         self.system = server.system
-        self.st_config = SystemConfig(server.system)
         self.log = server.log
         self.server = server
         self.admin_enabled = True
@@ -59,18 +58,14 @@ class AlertEmail(object):
         # system table.  If not, 1) Use the *ini file or if not there,
         # 2) default value and set that value in the system table.
         try:
-            self.enabled = self.st_config.alerts_enabled
+            self.enabled = self.system[SystemKeys.ALERTS_ENABLED]
         except ValueError:
             # Alerts aren't in the system table, so check the *ini file.
             self.enabled = self.config.getboolean('alert', 'enabled',
                                        default=self.DEFAULT_ALERTS_ENABLED)
 
             # Set this value in the system table.
-            if self.enabled:
-                value = 'yes'
-            else:
-                value = 'no'
-            self.system.save(SystemConfig.ALERTS_ENABLED, value)
+            self.system.save(SystemKeys.ALERTS_ENABLED, self.enabled)
 
 
         self.smtp_server = self.config.get('alert', 'smtp_server',
@@ -119,7 +114,7 @@ class AlertEmail(object):
             return []
 
         try:
-            publisher_enabled = self.st_config.alerts_publisher_enabled
+            publisher_enabled = self.system[SystemKeys.ALERTS_PUBLISHER_ENABLED]
         except ValueError:
             # If not there, then set to enabled
             publisher_enabled = True
@@ -150,7 +145,7 @@ class AlertEmail(object):
         # pylint: disable=too-many-return-statements
 
         try:
-            self.admin_enabled = self.st_config.alerts_admin_enabled
+            self.admin_enabled = self.system[SystemKeys.ALERTS_ADMIN_ENABLED]
         except ValueError:
             # If not there, then set to enabled
             self.admin_enabled = True
@@ -192,7 +187,7 @@ class AlertEmail(object):
             to_emails = [recipient]
         else:
             try:
-                self.enabled = self.st_config.alerts_enabled
+                self.enabled = self.system[SystemKeys.ALERTS_ENABLED]
             except ValueError:
                 self.enabled = self.DEFAULT_ALERTS_ENABLED
 
@@ -241,12 +236,11 @@ class AlertEmail(object):
             if entry.contact_time:
                 silence_time = (datetime.datetime.utcnow() - \
                                         entry.contact_time).total_seconds()
-                if silence_time > self.st_config.max_silence_time and \
-                                    self.st_config.max_silence_time != -1:
+                max_silence_time = self.system[SystemKeys.MAX_SILENCE_TIME]
+                if silence_time > max_silence_time and max_silence_time != -1:
                     self.log.debug("Phonehome contact time is %d > %d. " +
                                     "Not sending: Subject: %s, Message: %s",
-                                    silence_time,
-                                    self.st_config.max_silence_time,
+                                    silence_time, max_silence_time,
                                     subject, message)
                     return
 
@@ -273,7 +267,7 @@ class AlertEmail(object):
 
         subject = Header(unicode(subject), 'utf-8')
         msg['Subject'] = subject
-        from_email = self.st_config.from_email
+        from_email = self.system[SystemKeys.FROM_EMAIL]
         msg['From'] = from_email
 
         all_to = []
