@@ -273,6 +273,8 @@ class WorkbookManager(TableauCacheManager):
 
         session.commit()
 
+        self._prune_missed_revisions()
+
         # Second pass - build the archive files.
         for update in updates:
             if self.st_config.archive_enabled == 'no':
@@ -294,6 +296,28 @@ class WorkbookManager(TableauCacheManager):
         return {u'status': 'OK',
                 u'schema': self.schema(data),
                 u'updates': len(updates)}
+
+    def _prune_missed_revisions(self):
+        """Remove rows from workbook_updates that we didn't manage to
+           archive.  It may be due to bad credentials, failed tabcmd, etc.
+        """
+
+        stmt = "delete from workbook_updates where " + \
+                "(workbookid, timestamp) not in "+ \
+                    "(select workbookid, max(timestamp) "+ \
+                    "from workbook_updates where url='' " + \
+                    "group by workbookid) " + \
+                    "and url='';"
+
+
+        connection = meta.get_connection()
+        result = connection.execute(stmt)
+        connection.close()
+
+        if result.rowcount:
+            self.log.debug("workbooks _prune_missed_revisions pruned %d",
+                           result.rowcount)
+        return
 
     def _retain_some(self):
         """Retain only the configured number of workbook versions."""
@@ -334,7 +358,7 @@ class WorkbookManager(TableauCacheManager):
                 if not file_entry:
                     self.log.info(
                         "workbooks _retain_some fileid %d disappeared, ",
-                        "wuid %d, workbookid %d",
+                        "or was never added, wuid %d, workbookid %d",
                         row.fileid, row.wuid, row.workbookid)
                     continue
 
@@ -467,7 +491,7 @@ class WorkbookManager(TableauCacheManager):
             agent.filemanager.move(old_dst, dst)
             self.log.debug("workbook: renamed %s to %s", old_dst, dst)
 
-        # move twbx/twb to resting location.
+        # Get ready to move twbx/twb to resting location(s).
         file_size = 0
         try:
             file_size_body = agent.filemanager.filesize(dst)
