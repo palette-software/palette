@@ -13,6 +13,7 @@ from controller.profile import UserProfile, Role
 from controller.credential import CredentialEntry
 from controller.sites import Site
 from controller.projects import Project
+from controller.system import SystemKeys
 
 from .option import DictOption
 from .page import PalettePage
@@ -277,6 +278,10 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
 
     # FIXME: move build options to a separate file.
     def handle_get(self, req):
+        if not req.system[SystemKeys.ARCHIVE_ENABLED]:
+            return {'workbooks': [],
+                    'item-count': 0}
+
         filters = self.build_query_filters(req)
         entries = self.do_query(req, filters)
         count = WorkbookEntry.count(filters=filters)
