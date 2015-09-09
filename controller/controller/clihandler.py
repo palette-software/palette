@@ -21,11 +21,10 @@ from agentmanager import AgentManager
 from domain import Domain
 from event_control import EventControl
 from files import FileManager
-from general import SystemConfig
 from get_file import GetFile
 from cloud import CloudManager, S3_ID, GCS_ID, CloudEntry
 from package import PackageException
-from system import SystemEntry
+from system import SystemKeys
 from state import StateManager
 from state_control import StateControl
 from tableau import TableauProcess
@@ -57,6 +56,7 @@ class Command(object):
     def __init__(self, server, line):
         # FIXME: temporary hack to get domainid and envid
         self.server = server
+        self.system = server.system
         self.dict = {}
         self.name = None
         self.args = []
@@ -301,7 +301,7 @@ class CliHandler(socketserver.StreamRequestHandler):
     def do_support(self, cmd):
 
         body = {}
-        support_enabled = self.server.st_config.support_enabled
+        support_enabled = self.server.system[SystemKeys.SUPPORT_ENABLED]
         if not len(cmd.args):
             self.ack()
             body['enabled'] = support_enabled
@@ -327,8 +327,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self._remove_cron(self.SUPPORT_CRON_FILENAME)
             support_state = 'no'
 
-        self.server.system.save(SystemConfig.SUPPORT_ENABLED,
-                                support_state)
+        self.server.system.save(SystemKeys.SUPPORT_ENABLED, support_state)
         body['enabled'] = support_state
 
         self.report_status(body)
@@ -412,7 +411,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # pylint: disable=too-many-branches
 
         # Potentially update log level
-        self.server.log.setLevel(self.server.st_config.debug_level)
+        self.server.log.setLevel(self.server.system[SystemKeys.DEBUG_LEVEL])
 
         stateman = self.server.state_manager
 
@@ -477,14 +476,14 @@ class CliHandler(socketserver.StreamRequestHandler):
                                 self.server.maint('stop', send_alert=False)
             combined_status['archive-stop'] = self.server.archive('stop')
 
-            self.server.system.save(SystemConfig.UPGRADING, 'yes')
+            self.server.system.save(SystemKeys.UPGRADING, True)
 
             self.ack()
             self.report_status(combined_status)
             return
 
         # Disable upgrade
-        self.server.system.save(SystemConfig.UPGRADING, 'no')
+        self.server.system.save(SystemKeys.UPGRADING, False)
         main_state = stateman.get_state()
 
         try:
@@ -521,14 +520,13 @@ class CliHandler(socketserver.StreamRequestHandler):
                         "15 6 * * *   root    test -x "
                         "/usr/sbin/palette-update && "
                         "/usr/sbin/palette-update > /dev/null 2>&1")
-            auto_update_state = 'yes'
+            auto_update = True
         else:
             self._remove_cron(self.AUTO_UPDATE_CRON_FILENAME)
-            auto_update_state = 'no'
+            auto_update = False
 
-        self.server.system.save(SystemConfig.AUTO_UPDATE_ENABLED,
-                                auto_update_state)
-        body['auto-update-enabled'] = auto_update_state
+        self.server.system.save(SystemKeys.AUTO_UPDATE_ENABLED, auto_update)
+        body['auto-update-enabled'] = auto_update
 
         self.report_status(body)
 
@@ -1528,11 +1526,8 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         data = {'emailed-reminder': False}
 
-        entry = self.server.system.entry(
-                        SystemConfig.EMAIL_SPIKE_DISABLED_ALERTS,
-                        default=None)
-
-        if not entry or entry.value != 'yes':
+        entry = self.server.system.entry(SystemKeys.EMAIL_SPIKE_DISABLED_ALERTS)
+        if not entry or not entry.typed():
             self.report_status(data)
             return
 
@@ -2304,7 +2299,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                 return
         else:
             # FIXME: duplicate code with webapp.
-            cloudid = self.server.system.getint(cloud_type_id, default=0)
+            cloudid = self.server.system[cloud_type_id]
             if cloudid == 0:
                 self.error(clierror.ERROR_NOT_FOUND,
                            'No default cloud instance specified.')
@@ -2522,9 +2517,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             if entry:
                 entry.value = value
             else:
-                entry = SystemEntry(envid=self.server.environment.envid,
-                                    key=key, value=value)
-                session.add(entry)
+                self.server.system[key] = value
             body['status'] = 'OK'
         elif action == 'GET':
             if not entry:

@@ -12,7 +12,7 @@ from collections import OrderedDict
 
 from controller.profile import UserProfile, Role
 from controller.passwd import tableau_hash
-from controller.general import SystemConfig
+from controller.system import SystemKeys
 from controller.util import extend
 
 from .page import Page, PalettePage
@@ -75,15 +75,11 @@ class SetupURLApplication(BaseSetupApplication):
     """Handler for the 'SERVER URL' section."""
 
     def service_GET(self, req):
-        # pylint: disable=unused-argument
-        scfg = SystemConfig(req.system)
-
-        url = scfg.server_url
-
+        url = req.system[SystemKeys.SERVER_URL]
         # FIXME (later): allow non-443 ports?
         if url == 'https://localhost':
             url = 'https://' + req.environ['HTTP_HOST']
-            req.system.save(SystemConfig.SERVER_URL, url)
+            # don't save into the system table on GETs
 
         return {'server-url': url}
 
@@ -97,7 +93,7 @@ class SetupURLApplication(BaseSetupApplication):
         url = req.params_get('server-url')
         result = urlparse(url)
         url = 'https://%s' % result.netloc
-        req.system.save(SystemConfig.SERVER_URL, url)
+        req.system.save(SystemKeys.SERVER_URL, url)
         return {'server-url': url}
 
 class SetupTableauURLApplication(BaseSetupApplication):
@@ -105,14 +101,13 @@ class SetupTableauURLApplication(BaseSetupApplication):
 
     def service_GET(self, req):
         # pylint: disable=unused-argument
-        scfg = SystemConfig(req.system)
-        return {'tableau-server-url': scfg.tableau_server_url}
+        return {'tableau-server-url': req.system[SystemKeys.TABLEAU_SERVER_URL]}
 
     # FIXME: move to initial
     @required_parameters('tableau-server-url')
     def service_POST(self, req):
         url = req.params_get('tableau-server-url')
-        req.system.save(SystemConfig.TABLEAU_SERVER_URL, url)
+        req.system.save(SystemKeys.TABLEAU_SERVER_URL, url)
         return {'tableau-server-url': url}
 
 class SetupAdminApplication(BaseSetupApplication):
@@ -152,53 +147,50 @@ class SetupMailApplication(JSONProxy, PaletteRESTApplication):
 
     def _save_config(self, req, data):
         """Save the configuration to the system table."""
-        req.system.save(SystemConfig.MAIL_SERVER_TYPE,
-                                            str(data['mail-server-type']))
+        req.system[SystemKeys.MAIL_SERVER_TYPE] = data['mail-server-type']
 
         if data['mail-server-type'] != MailServerType.NONE:
-            req.system.save(SystemConfig.FROM_EMAIL, data['from-email'])
-            req.system.save(SystemConfig.MAIL_DOMAIN, data['mail-domain'])
+            req.system[SystemKeys.FROM_EMAIL] = data['from-email']
+            req.system[SystemKeys.MAIL_DOMAIN] = data['mail-domain']
 
         if data['mail-server-type'] == MailServerType.RELAY:
-            req.system.save(SystemConfig.MAIL_SMTP_SERVER, data['smtp-server'])
-            req.system.save(SystemConfig.MAIL_SMTP_PORT, str(data['smtp-port']))
-            req.system.save(SystemConfig.MAIL_USERNAME, data['smtp-username'])
-            req.system.save(SystemConfig.MAIL_PASSWORD, data['smtp-password'])
+            req.system[SystemKeys.MAIL_SMTP_SERVER] = data['smtp-server']
+            req.system[SystemKeys.MAIL_SMTP_PORT] = data['smtp-port']
+            req.system[SystemKeys.MAIL_USERNAME] = data['smtp-username']
+            req.system[SystemKeys.MAIL_PASSWORD] = data['smtp-password']
         else:
-            req.system.delete(SystemConfig.MAIL_SMTP_SERVER)
-            req.system.delete(SystemConfig.MAIL_SMTP_PORT)
-            req.system.delete(SystemConfig.MAIL_USERNAME)
-            req.system.delete(SystemConfig.MAIL_PASSWORD)
+            del req.system[SystemKeys.MAIL_SMTP_SERVER]
+            del req.system[SystemKeys.MAIL_SMTP_PORT]
+            del req.system[SystemKeys.MAIL_USERNAME]
+            del req.system[SystemKeys.MAIL_PASSWORD]
+        meta.commit()
 
     def service_GET(self, req):
         # pylint: disable=bad-builtin
-        scfg = SystemConfig(req.system)
-
-        mail_server_type = scfg.mail_server_type
-
-        if mail_server_type == str(MailServerType.DIRECT):
+        mail_server_type = req.system[SystemKeys.MAIL_SERVER_TYPE]
+        if mail_server_type == MailServerType.DIRECT:
             mst = MailServerType(MailServerType.DIRECT)
-        elif mail_server_type == str(MailServerType.RELAY):
+        elif mail_server_type == MailServerType.RELAY:
             mst = MailServerType(MailServerType.RELAY)
         else:
-            mail_server_type = str(MailServerType.NONE)
+            mail_server_type = MailServerType.NONE
             mst = MailServerType(MailServerType.NONE)
         data = {'config': [mst.default()]}
 
-        parts = scfg.from_email.rsplit(" ", 1)
+        from_email = req.system[SystemKeys.FROM_EMAIL]
+        parts = from_email.rsplit(" ", 1)
         if len(parts) == 2:
             data['alert-email-name'] = parts[0]
             del parts[0]
         else:
             data['alert-email-name'] = ""
 
-        table = dict.fromkeys(map(ord, '<>'), None)
-        data['alert-email-address'] = parts[0].translate(table)
+        data['alert-email-address'] = parts[0].translate(None, '<>')
 
-        data['smtp-server'] = scfg.mail_smtp_server
-        data['smtp-port'] = scfg.mail_smtp_port
-        data['smtp-username'] = scfg.mail_username
-        data['smtp-password'] = scfg.mail_password
+        data['smtp-server'] = req.system[SystemKeys.MAIL_SMTP_SERVER]
+        data['smtp-port'] = req.system[SystemKeys.MAIL_SMTP_PORT],
+        data['smtp-username'] = req.system[SystemKeys.MAIL_USERNAME]
+        data['smtp-password'] = req.system[SystemKeys.MAIL_PASSWORD]
 
         return data
 
@@ -210,6 +202,7 @@ class SetupMailApplication(JSONProxy, PaletteRESTApplication):
 
         # Validation of POST data is done by the service.
         action = req.params_get('action')
+
         if action == 'test':
             # Sanity check
             test_email_recipient = req.params_get('test-email-recipient').\
@@ -314,7 +307,7 @@ class SetupTimezoneApplication(JSONProxy, PaletteRESTApplication):
         if not 'timezone' in data or not data['timezone']:
             return {'error': 'post process missing timezone'}
 
-        req.system.save(SystemConfig.TIMEZONE, data['timezone'])
+        req.system.save(SystemKeys.TIMEZONE, data['timezone'])
         time.tzset()    # Reset/reread current python timezone setting
         self.commapp.send_cmd('timezone update')
         return data
@@ -325,8 +318,8 @@ class SetupTimezoneApplication(JSONProxy, PaletteRESTApplication):
         for timezone in timezones:
             options[timezone] = timezone
 
-        scfg = SystemConfig(req.system)
-        tzconfig = DictOption('timezone', scfg.timezone, options)
+        default_timezone = req.system[SystemKeys.TIMEZONE]
+        tzconfig = DictOption('timezone', default_timezone, options)
         data = {'config': [tzconfig.default()]}
         return data
 
@@ -339,9 +332,7 @@ class SetupAuthApplication(BaseSetupApplication):
     """Handler for the 'AUTHENTICATION' section."""
 
     def service_GET(self, req):
-        # pylint: disable=unused-argument
-        scfg = SystemConfig(req.system)
-        auth_type = scfg.authentication_type
+        auth_type = req.system[SystemKeys.AUTHENTICATION_TYPE]
         if auth_type == 1:
             atype = AuthType(AuthType.TABLEAU)
         elif auth_type == 2:
@@ -356,7 +347,7 @@ class SetupAuthApplication(BaseSetupApplication):
         authtype = req.params_getint('authentication-type')
         if authtype == None:
             raise exc.HTTPBadRequest()
-        req.system.save(SystemConfig.AUTHENTICATION_TYPE, authtype)
+        req.system.save(SystemKeys.AUTHENTICATION_TYPE, authtype)
         return {'authentication-type': authtype}
 
 class _SetupApplication(BaseSetupApplication):

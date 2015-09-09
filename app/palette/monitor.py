@@ -88,10 +88,11 @@ class MonitorApplication(PaletteRESTApplication):
             valueid = EventType.ALL
         return EventType(valueid).default()
 
+    # FIXME - remove and/or use SystemKeys
     def disk_watermark(self, req, name):
         """ Threshold for the disk indicator. (low|high) """
         try:
-            value = req.system.get('disk-watermark-'+name)
+            value = req.system['disk-watermark-'+name]
         except ValueError:
             return float(100)
         return float(value)
@@ -202,7 +203,7 @@ class MonitorApplication(PaletteRESTApplication):
                 main_state = StateManager.STATE_PRIMARY_NOT_ENABLED
 
         if not main_state:
-            main_state = StateManager.get_state_by_envid(req.envid)
+            main_state = StateManager.get_state_from_system(req.system)
 
         state_control_entry = StateControl.get_state_control_entry(main_state)
         if not state_control_entry:
@@ -470,7 +471,7 @@ class MonitorApplication(PaletteRESTApplication):
 
         # Special case: If Upgrading, set the main state to
         # "upgrading", etc.
-        if StateManager.upgrading_by_envid(req.envid):
+        if StateManager.upgrading_from_system(req.system):
             main_state = StateManager.STATE_UPGRADING
 
             state_control_entry = \

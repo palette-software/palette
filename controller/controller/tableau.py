@@ -24,8 +24,8 @@ from agentmanager import AgentManager
 from agent import Agent
 from event_control import EventControl
 from state_transitions import TRANSITIONS, START_DICT
-from general import SystemConfig
-from util import  success
+from system import SystemKeys
+from util import success
 from yml import YmlEntry
 
 class SysteminfoException(Exception):
@@ -99,11 +99,12 @@ class TableauStatusMonitor(threading.Thread):
     def __init__(self, server, manager):
         super(TableauStatusMonitor, self).__init__()
         self.server = server
+        self.system = server.system
+        self.event = self.server.event_control
         self.rwlock = self.server.upgrade_rwlock
         self.manager = manager # AgentManager instance
-        self.st_config = SystemConfig(server.system)
         self.log = logger.get(self.LOGGER_NAME)
-        self.log.setLevel(self.st_config.debug_level)
+        self.log.setLevel(self.system[SystemKeys.DEBUG_LEVEL])
         self.envid = self.server.environment.envid
 
         self.first_degraded_time = None
@@ -276,7 +277,7 @@ class TableauStatusMonitor(threading.Thread):
                 continue
 
             if event != EventControl.STATE_DEGRADED:
-                self.server.event_control.gen(event, data)
+                self.event.gen(event, data)
 
                 if event == EventControl.INIT_STATE_DEGRADED:
                     # If this is an "INIT_STATE_*" event, we send it,
@@ -298,8 +299,7 @@ class TableauStatusMonitor(threading.Thread):
                 continue
 
             try:
-                event_degraded_min = \
-                    int(self.server.system.get('event-degraded-min'))
+                event_degraded_min = self.system[SystemKeys.EVENT_DEGRADED_MIN]
             except ValueError:
                 event_degraded_min = self.EVENT_DEGRADED_MIN_DEFAULT
 
@@ -310,8 +310,7 @@ class TableauStatusMonitor(threading.Thread):
                            now - self.first_degraded_time)
             if now - self.first_degraded_time >= event_degraded_min:
                 self.log.debug("status-check: Sending degraded")
-                self.server.event_control.gen(event,
-                                      dict(body.items() + data.items()))
+                self.event.gen(event, dict(body.items() + data.items()))
                 self.sent_degraded_event = True
 
         if not new_degraded_event:
@@ -325,9 +324,9 @@ class TableauStatusMonitor(threading.Thread):
             raise
         except BaseException:
             line = traceback_string(all_on_one_line=False)
-            self.server.event_control.gen(EventControl.SYSTEM_EXCEPTION,
-                                      {'error': line,
-                                       'version': self.server.version})
+            edata = {'error': line, 'version': self.server.version}
+
+            self.event.gen(EventControl.SYSTEM_EXCEPTION, edata)
             self.log.error("status-check: Fatal: " + \
                            "Exiting tableau_status_loop on exception.")
             # pylint: disable=protected-access
@@ -338,14 +337,12 @@ class TableauStatusMonitor(threading.Thread):
             self.log.debug("status-check: About to timeout or " + \
                            "wait for a new primary to connect")
             try:
-                status_request_interval = \
-                    int(self.server.system.get('status-request-interval'))
+                system_key = SystemKeys.STATUS_REQUEST_INTERVAL
+                request_interval = self.system[system_key]
             except ValueError:
-                status_request_interval = \
-                                self.STATUS_REQUEST_INTERVAL_DEFAULT
+                request_interval = self.STATUS_REQUEST_INTERVAL_DEFAULT
 
-            new_primary = self.manager.check_status_event.wait(
-                                        status_request_interval)
+            new_primary = self.manager.check_status_event.wait(request_interval)
 
             self.log.debug("status-check: new_primary: %s", new_primary)
             if new_primary:
@@ -366,8 +363,7 @@ class TableauStatusMonitor(threading.Thread):
                 meta.Session.remove()
 
     def check_status(self):
-
-        self.log.setLevel(self.st_config.debug_level)
+        self.log.setLevel(self.system[SystemKeys.DEBUG_LEVEL])
         # FIXME: Tie agent to domain.
         agent = self.manager.agent_by_type(AgentManager.AGENT_TYPE_PRIMARY)
         if not agent:
@@ -569,9 +565,9 @@ class TableauStatusMonitor(threading.Thread):
            Returns None if no valid url is available.
         """
 
-        systeminfo_url = self.st_config.tableau_internal_server_url
+        systeminfo_url = self.system[SystemKeys.TABLEAU_INTERNAL_SERVER_URL]
         if not systeminfo_url:
-            systeminfo_url = self.st_config.tableau_server_url
+            systeminfo_url = self.system[SystemKeys.TABLEAU_SERVER_URL]
         if not systeminfo_url:
             self.log.error("_systeminfo_get: no url configured.")
             return None
@@ -598,12 +594,10 @@ class TableauStatusMonitor(threading.Thread):
         """
 
         url = self._systeminfo_url()
-
-        systeminfo_timeout_ms = self.st_config.status_systeminfo_timeout_ms
+        timeout_ms = self.system[SystemKeys.STATUS_SYSTEMINFO_TIMEOUT_MS]
 
         try:
-            res = agent.connection.http_send_get(url,
-                                                 timeout=systeminfo_timeout_ms)
+            res = agent.connection.http_send_get(url, timeout=timeout_ms)
         except (socket.error, IOError, exc.HTTPException,
                                                 httplib.HTTPException) as ex:
             self.log.info("_systeminfo_get %s failed: %s",
@@ -642,16 +636,16 @@ class TableauStatusMonitor(threading.Thread):
                                         (url, data['error']))
 
                 if data['error'].find('The operation has timed out') != -1:
+                    msgfmt = "HTTP GET Timed out after %.1f seconds on %s"
                     raise SysteminfoException(SysteminfoError.COMM_TIMEDOUT,
-                            "HTTP GET Timed out after %.1f seconds on %s" % \
-                                    (systeminfo_timeout_ms/1000., url))
+                                              msgfmt % (timeout_ms/1000., url))
 
                 if 'status-code' in data and data['status-code'] == 404:
                     raise SysteminfoException(SysteminfoError.NOT_FOUND,
-                                        ("Page not found: %s") % (url))
+                                              "Page not found: %s" % (url))
 
-            raise SysteminfoException(SysteminfoError.UNEXPECTED_RESPONSE,
-                            "Unexpected response error: %s" % str(data))
+            msg = "Unexpected response error: %s" % str(data)
+            raise SysteminfoException(SysteminfoError.UNEXPECTED_RESPONSE, msg)
 
         return res.body
 
@@ -692,10 +686,12 @@ class TableauStatusMonitor(threading.Thread):
 
         systeminfo_url = self._systeminfo_url()
 
-        tableau_version = YmlEntry.get(self.envid, 'version.external',
-                                                                default='8')
+        tableau_version = YmlEntry.get(self.envid,
+                                       'version.external',
+                                       default='8')
         if systeminfo_url and tableau_version[0:1] == '9' and \
-                self.st_config.status_systeminfo and tableau_systeminfo_enabled:
+                self.system[SystemKeys.STATUS_SYSTEMINFO] and \
+                tableau_systeminfo_enabled:
             try:
                 # Returns the xml on success
                 xml_result = self._systeminfo_get(agent)
@@ -752,7 +748,7 @@ class TableauStatusMonitor(threading.Thread):
                     data['error'] += ' XML: ' + str(xml_result)
                 self._systeminfo_eventit(agent, data, systeminfo_url)
 
-                if self.st_config.status_systeminfo_only:
+                if self.system[SystemKeys.STATUS_SYSTEMINFO_ONLY]:
                     self.log.info("systeminfo failed but not allowed to use "
                                   "tabadmin status -v")
                     self._set_status_unknown(agent,
@@ -783,9 +779,8 @@ class TableauStatusMonitor(threading.Thread):
                 adata = agent.todict()
                 if 'info' in data:
                     adata['info'] = data['info']
-                if self.st_config.status_systeminfo_send_alerts:
-                    self.server.event_control.gen(
-                                EventControl.SYSTEMINFO_OKAY, adata)
+                if self.system[SystemKeys.STATUS_SYSTEMINFO_SEND_ALERTS]:
+                    self.event.gen(EventControl.SYSTEMINFO_OKAY, adata)
                 notification.modification_time = func.now()
                 notification.color = 'green'
                 notification.description = systeminfo_url
@@ -800,9 +795,8 @@ class TableauStatusMonitor(threading.Thread):
                 # URLs.
                 adata = agent.todict()
                 adata['error'] = data['error']
-                if self.st_config.status_systeminfo_send_alerts:
-                    self.server.event_control.gen(
-                            EventControl.SYSTEMINFO_FAILED, adata)
+                if self.system[SystemKeys.STATUS_SYSTEMINFO_SEND_ALERTS]:
+                    self.event.gen(EventControl.SYSTEMINFO_FAILED, adata)
                 notification.modification_time = func.now()
                 notification.color = 'red'
                 notification.description = systeminfo_url

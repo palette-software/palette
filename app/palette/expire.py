@@ -7,7 +7,7 @@ import akiri.framework.sqlalchemy as meta
 
 from controller.licensing import LicenseEntry
 from controller.agent import Agent
-from controller.general import SystemConfig
+from controller.system import SystemKeys
 
 LICENSE_EXPIRED = 'https://licensing.palette-software.com/license-expired'
 TRIAL_EXPIRED = 'https://licensing.palette-software.com/trial-expired'
@@ -20,8 +20,7 @@ class ExpireMiddleware(GenericWSGI):
         # pylint: disable=too-many-branches
 #        print "contact_time:", req.palette_domain.contact_time
 
-        scfg = SystemConfig(req.system)
-        max_silence_time = scfg.max_silence_time
+        max_silence_time = req.system[SystemKeys.MAX_SILENCE_TIME]
         if req.palette_domain.expiration_time and \
                 datetime.utcnow() > req.palette_domain.expiration_time:
             if req.palette_domain.trial:

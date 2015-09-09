@@ -3,13 +3,11 @@ from sqlalchemy import not_, func
 
 import akiri.framework.sqlalchemy as meta
 
-from general import SystemConfig
 from manager import Manager, synchronized
 from event_control import EventControl
 from profile import UserProfile, Publisher, License, Role
+from system import SystemKeys
 from util import odbc2dt, DATEFMT, success, failed
-
-AUTH_TIMESTAMP_SYSTEM_KEY = 'auth-timestamp'
 
 # FIXME: use the ODBC class here instead.
 class AuthManager(Manager):
@@ -133,8 +131,8 @@ class AuthManager(Manager):
         names = ['palette']
         cache = self.load_users(agent)
 
-        alerts_new_user_enabled = self.server.system.get(
-                        SystemConfig.ALERTS_NEW_USER_ENABLED, default='no')
+        system_key = SystemKeys.ALERTS_NEW_USER_ENABLED
+        alerts_new_user_enabled = self.system[system_key]
         if alerts_new_user_enabled == 'yes':
             default_email_level = 1
         else:
@@ -188,7 +186,7 @@ class AuthManager(Manager):
             update({'active': False}, synchronize_session='fetch')
 
         timestamp = datetime.now().strftime(DATEFMT)
-        self.server.system.save(AUTH_TIMESTAMP_SYSTEM_KEY, timestamp)
+        self.system.save(SystemKeys.AUTH_TIMESTAMP, timestamp)
 
         d = {u'status': 'OK', u'count': len(data[''])}
         self.server.log.debug("auth load returning: %s", str(d))

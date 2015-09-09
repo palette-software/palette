@@ -20,6 +20,9 @@ class Manager(object):
 
     def __init__(self, server):
         self.server = server
+        if hasattr(server, 'system'):
+            # SystemManager is a Manager which doesn't need self.system
+            self.system = server.system
         self.envid = self.server.environment.envid
         self.log = self.server.log
         self._lock = threading.RLock()

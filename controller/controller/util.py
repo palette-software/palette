@@ -88,9 +88,16 @@ def str2bool(s):
     if not s:
         return False
     s = str(s).lower()
-    if s == 'true' or s == '1' or s == "yes":
+    if s == 'true' or s == '1' or s == 'yes':
         return True
     return False
+
+def yesno(value):
+    if isinstance(value, basestring):
+        value = str2bool(value)
+    if value:
+        return 'yes'
+    return 'no'
 
 # analoguous to the 2.7 functionality
 # https://docs.python.org/2/library/datetime.html#datetime.timedelta.total_seconds
@@ -184,3 +191,24 @@ def extend(dict1, dict2):
         else:
             dict1[key] = value2
     return dict1
+
+def seconds_since(utc_time):
+    """ Return the number of total seconds since the specified time """
+    return (datetime.utcnow() - utc_time).total_seconds()
+
+def prettyify(name):
+    """ Convert the name to a 'pretty' value with underscores (_) replaced
+    with dashes (-). """
+    return name.replace('_', '-')
+
+def uglyify(name):
+    """ Convert name to an un-'pretty' value with dashes (-) replaced with
+    underscores (_). """
+    return name.replace('-', '_')
+
+def translate_key(key, pretty=False):
+    """ prettyify of uglyify based on the 'pretty' keyword. """
+    if pretty:
+        return prettyify(key)
+    else:
+        return uglyify(key)

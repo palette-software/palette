@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-
+""" The main server instance of the controller. """
 import sys
 import os
 import SocketServer as socketserver
@@ -38,7 +37,6 @@ from event_control import EventControl, EventControlManager
 from extracts import ExtractManager
 from files import FileManager
 from firewall_manager import FirewallManager
-from general import SystemConfig
 from http_control import HttpControl
 from http_requests import HttpRequestEntry, HttpRequestManager
 from licensing import LicenseManager, LicenseEntry
@@ -50,7 +48,7 @@ from profile import UserProfile, Role
 from sched import Sched, Crontab
 from state import StateManager
 from state_control import StateControl
-from system import SystemManager
+from system import SystemManager, SystemKeys
 from tableau import TableauStatusMonitor, TableauProcess
 from workbooks import WorkbookEntry, WorkbookUpdateEntry, WorkbookManager
 from yml import YmlEntry, YmlManager
@@ -219,36 +217,34 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """Rotate/delete old auto-generated and then user-generated
            backup files."""
         file_type = FileManager.FILE_TYPE_BACKUP
-        st_config = SystemConfig(self.system)
         find_method = self.files.find_by_auto_envid
         find_name = "scheduled"
 
-        info = self.file_rotate(st_config.backup_auto_retain_count,
-                                find_method, find_name, file_type)
+        auto_retain = self.system[SystemKeys.BACKUP_AUTO_RETAIN_COUNT]
+        info = self.file_rotate(auto_retain, find_method, find_name, file_type)
 
         find_method = self.files.find_by_non_auto_envid
         find_name = "user generated"
 
-        info += self.file_rotate(st_config.backup_user_retain_count,
-                                 find_method, find_name, file_type)
+        user_retain = self.system[SystemKeys.BACKUP_USER_RETAIN_COUNT]
+        info += self.file_rotate(user_retain, find_method, find_name, file_type)
 
         return info
 
     def rotate_ziplogs(self):
         """Rotate/delete old ziplog files."""
         file_type = FileManager.FILE_TYPE_ZIPLOG
-        st_config = SystemConfig(self.system)
         find_method = self.files.find_by_auto_envid
         find_name = "scheduled"
 
-        info = self.file_rotate(st_config.ziplog_auto_retain_count,
-                                find_method, find_name, file_type)
+        auto_retain = self.system[SystemKeys.ZIPLOG_AUTO_RETAIN_COUNT]
+        info = self.file_rotate(auto_retain, find_method, find_name, file_type)
 
         find_method = self.files.find_by_non_auto_envid
         find_name = "user generated"
 
-        info += self.file_rotate(st_config.ziplog_user_retain_count,
-                                 find_method, find_name, file_type)
+        user_retain = self.system[SystemKeys.ZIPLOG_USER_RETAIN_COUNT]
+        info += self.file_rotate(user_retain, find_method, find_name, file_type)
 
         return info
 
@@ -365,7 +361,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def public_url(self):
         """ Generate a url for Tableau that is reportable to a user."""
-        url = self.system.get(SystemConfig.TABLEAU_SERVER_URL, default=None)
+        url = self.system[SystemKeys.TABLEAU_SERVER_URL]
         if url:
             return url
 
@@ -389,10 +385,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             errmsg = 'Invalid credentials.'
             self.log.error('tabcmd: ' + errmsg)
             return {'error': errmsg}
-        url = self.system.get(SystemConfig.TABLEAU_INTERNAL_SERVER_URL,
-                                                                default=None)
+        url = self.system[SystemKeys.TABLEAU_INTERNAL_SERVER_URL]
         if not url:
-            url = self.system.get(SystemConfig.TABLEAU_SERVER_URL, default=None)
+            url = self.system[SystemKeys.TABLEAU_SERVER_URL]
         if not url:
             errmsg = 'No local URL available.'
             return {'error': errmsg}
@@ -1299,19 +1294,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def controller_init_events(self):
         """Generate an event if we are running a new version."""
-        last_version = self.system.get(SystemConfig.PALETTE_VERSION,
-                                       default=None)
+        last_version = self.system[SystemKeys.PALETTE_VERSION]
 
         body = {'version_previous': last_version,
                 'version_current': self.version}
 
-        controller_initial_start = self.system.get(
-                                        SystemConfig.CONTROLLER_INITIAL_START,
-                                        default=None)
+        system_key = SystemKeys.CONTROLLER_INITIAL_START
+        controller_initial_start = self.system[system_key]
 
         if not controller_initial_start:
-            self.system.save(SystemConfig.CONTROLLER_INITIAL_START,
-                                                                self.version)
+            self.system.save(SystemKeys.CONTROLLER_INITIAL_START, True)
             self.event_control.gen(EventControl.CONTROLLER_STARTED, body)
 
         else:
@@ -1320,8 +1312,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if self.version == last_version:
             return last_version, self.version
 
-        self.system.save(SystemConfig.PALETTE_VERSION, self.version)
-
+        self.system.save(SystemKeys.PALETTE_VERSION, self.version)
         self.event_control.gen(EventControl.PALETTE_UPDATED, body)
 
         return last_version, self.version
@@ -1494,24 +1485,21 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         entry = Domain.getone()
         if not entry.systemid:
             entry.systemid = str(uuidbuild.uuid1())
-            meta.Session.commit()
+            meta.commit()
 
         # Set default mail server type to direct.
         # We do this to match the UI configuration with the configuration
         # of current installations.
-        self.system.save(SystemConfig.MAIL_SERVER_TYPE, '1')
+        self.system[SystemKeys.MAIL_SERVER_TYPE] = 1
 
         # Migrate/copy system table entry from "log-archive-retain-count"
         # to both:
         #   ZIPLOG_AUTO_RETAIN_COUNT
         #   ZIPLOG_USER_RETAIN_COUNT
-        ziplog_retain_count = self.system.get(
-                                        SystemConfig.LOG_ARCHIVE_RETAIN_COUNT)
-        self.system.save(SystemConfig.ZIPLOG_AUTO_RETAIN_COUNT,
-                         ziplog_retain_count)
-
-        self.system.save(SystemConfig.ZIPLOG_USER_RETAIN_COUNT,
-                         ziplog_retain_count)
+        ziplog_retain_count = self.system[SystemKeys.LOG_ARCHIVE_RETAIN_COUNT]
+        self.system[SystemKeys.ZIPLOG_AUTO_RETAIN_COUNT] = ziplog_retain_count
+        self.system[SystemKeys.ZIPLOG_USER_RETAIN_COUNT] = ziplog_retain_count
+        meta.commit()
 
         # The rest is for the s3 cloud entry.
         entry = CloudEntry.get_by_envid_type(self.environment.envid, "s3")
@@ -1623,12 +1611,12 @@ def main():
     Environment.populate()
     server.environment = Environment.get()
 
+    # Must be the first 'manager'
     server.system = SystemManager(server)
     SystemManager.populate()
 
     # Set the log level from the system table
-    server.st_config = SystemConfig(server.system)
-    log.setLevel(server.st_config.debug_level)
+    log.setLevel(server.system[SystemKeys.DEBUG_LEVEL])
 
     HttpControl.populate()
     StateControl.populate()
@@ -1702,11 +1690,3 @@ def main():
         statusmon.start()
 
     server.serve_forever()
-
-if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        print "\nInterrupted.  Exiting."
-        # pylint: disable=protected-access
-        os._exit(1)

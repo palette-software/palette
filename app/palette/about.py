@@ -1,5 +1,5 @@
 from controller.profile import Role
-from controller.general import SystemConfig
+from controller.system import SystemKeys
 from controller.util import extend
 
 from page import PalettePage
@@ -44,9 +44,7 @@ class SupportApplication(PaletteRESTApplication):
     JSON_KEY = 'enable-support'
 
     def service_GET(self, req):
-        enabled = req.system.getyesno(SystemConfig.SUPPORT_ENABLED,
-                                     default=False,
-                                     cleanup=True)
+        enabled = req.system[SystemKeys.SUPPORT_ENABLED]
         return {self.JSON_KEY: enabled}
 
     @required_role(Role.MANAGER_ADMIN)
@@ -66,9 +64,7 @@ class AutoUpdateApplication(PaletteRESTApplication):
     JSON_KEY = 'enable-updates'
 
     def service_GET(self, req):
-        enabled = req.system.getyesno(SystemConfig.AUTO_UPDATE_ENABLED,
-                                     default=True,
-                                     cleanup=True)
+        enabled = req.system[SystemKeys.AUTO_UPDATE_ENABLED]
         return {self.JSON_KEY: enabled}
 
     @required_role(Role.MANAGER_ADMIN)

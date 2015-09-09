@@ -1,6 +1,5 @@
 from manager import Manager
-from system import SystemEntry, SystemManager
-from general import SystemConfig
+from system import SystemKeys
 
 class StateManager(Manager):
     # possible states
@@ -69,35 +68,25 @@ class StateManager(Manager):
 
         self.log.info("-------state changing to %s----------", state)
 
-        self.system.save(SystemManager.SYSTEM_KEY_STATE, state)
+        self.system.save(SystemKeys.STATE, state)
 
     def get_state(self):
-        return StateManager.get_state_by_envid(self.envid)
+        return StateManager.get_state_from_system(self.system)
 
+    # FIXME: remove.
     @classmethod
-    def get_state_by_envid(cls, envid):
-        try:
-            entry = SystemEntry.get_by_key(envid,
-                                           SystemManager.SYSTEM_KEY_STATE)
-            return entry.value
-        except ValueError:
+    def get_state_from_system(cls, system):
+        """ Return the main state using the given system object. """
+        value = system[SystemKeys.STATE]
+        if value is None:
             return StateManager.STATE_DISCONNECTED
+        return value
 
     def upgrading(self):
-        return StateManager.upgrading_by_envid(self.envid)
+        return StateManager.upgrading_from_system(self.envid)
 
+    # FIXME: remove
     @classmethod
-    def upgrading_by_envid(cls, envid):
-        try:
-            entry = SystemEntry.get_by_key(envid, SystemConfig.UPGRADING)
-            value = entry.value
-        except ValueError:
-            return False
-
-        if value == 'no':
-            return False
-        elif value == 'yes':
-            return True
-        else:
-            raise ValueError("Upgrading: Bad value for '%s': '%s'" % \
-                             (SystemConfig.UPGRADING, value))
+    def upgrading_from_system(cls, system):
+        """ Return the upgrading state using the give system object. """
+        return system[SystemKeys.UPGRADING]

@@ -1,8 +1,8 @@
 from webob import exc
 
 from controller.profile import Role
+from controller.system import SystemKeys
 from controller.yml import YmlEntry
-from controller.yml import YML_LOCATION_SYSTEM_KEY, YML_TIMESTAMP_SYSTEM_KEY
 
 from .page import PalettePage
 from .rest import PaletteRESTApplication
@@ -16,11 +16,11 @@ class YmlApplication(PaletteRESTApplication):
 
         data = {'items': [x.todict() for x in entries]}
 
-        last_update = req.system.get(YML_TIMESTAMP_SYSTEM_KEY, default=None)
+        last_update = req.system[SystemKeys.YML_TIMESTAMP]
         if not last_update is None:
             data['last-update'] = last_update
 
-        location = req.system.get(YML_LOCATION_SYSTEM_KEY, default=None)
+        location = req.system[SystemKeys.YML_LOCATION]
         if not location is None:
             data['location'] = location
 

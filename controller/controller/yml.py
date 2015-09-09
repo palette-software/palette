@@ -8,9 +8,7 @@ import akiri.framework.sqlalchemy as meta
 from mixin import BaseMixin, BaseDictMixin
 from manager import Manager
 from util import DATEFMT
-
-YML_LOCATION_SYSTEM_KEY = 'yml-location'
-YML_TIMESTAMP_SYSTEM_KEY = 'yml-timestamp'
+from .system import SystemKeys
 
 class YmlEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = "yml"
@@ -109,6 +107,6 @@ class YmlManager(Manager):
         timestamp = datetime.now().strftime(DATEFMT)
         contents = agent.filemanager.get(path)
         body = YmlEntry.sync(self.envid, contents)
-        self.server.system.save(YML_LOCATION_SYSTEM_KEY, location)
-        self.server.system.save(YML_TIMESTAMP_SYSTEM_KEY, timestamp)
+        self.system.save(SystemKeys.YML_LOCATION, location)
+        self.system.save(SystemKeys.YML_TIMESTAMP, timestamp)
         return body

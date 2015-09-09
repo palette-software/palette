@@ -24,7 +24,7 @@ from event_control import EventControl
 from firewall import Firewall
 from odbc import ODBC
 from filemanager import FileManager
-from general import SystemConfig
+from system import SystemKeys
 from util import sizestr, is_ip, traceback_string, failed
 
 def protected(f):
@@ -141,6 +141,7 @@ class AgentConnection(object):
 # FIXME: prefix private method names with an '_'.
 # pylint: disable=too-many-public-methods
 
+# FIXME: subclass Manager
 class AgentManager(threading.Thread):
     # pylint: disable=too-many-instance-attributes
     PORT = 22
@@ -153,8 +154,8 @@ class AgentManager(threading.Thread):
     AGENT_TYPE_ARCHIVE = "archive"
 
     AGENT_TYPE_NAMES = {AGENT_TYPE_PRIMARY:'Tableau Primary Server',
-                       AGENT_TYPE_WORKER: 'Tableau Worker Server',
-                       AGENT_TYPE_ARCHIVE:'Non Tableau Server'}
+                        AGENT_TYPE_WORKER: 'Tableau Worker Server',
+                        AGENT_TYPE_ARCHIVE:'Non Tableau Server'}
 
     # Displayname templates
     PRIMARY_TEMPLATE = "Tableau Primary" # not a template since only 1
@@ -171,6 +172,7 @@ class AgentManager(threading.Thread):
     def __init__(self, server):
         super(AgentManager, self).__init__()
         self.server = server
+        self.system = server.system
         self.config = self.server.config
         self.log = self.server.log
         self.domainid = self.server.domain.domainid
@@ -195,26 +197,13 @@ class AgentManager(threading.Thread):
         # the unique 'conn_id'.
         self.agents = {}
 
-        try:
-            self.socket_timeout = \
-                                int(self.server.system.get('socket-timeout'))
-        except ValueError:
-            self.socket_timeout = 60    # default
-
-        try:
-            self.ping_interval = \
-                        int(self.server.system.get('ping-request-interval'))
-        except ValueError:
-            self.ping_interval = 30 # default
+        self.socket_timeout = self.system[SystemKeys.SOCKET_TIMEOUT]
+        self.ping_interval = self.system[SystemKeys.PING_REQUEST_INTERVAL]
 
         self.ssl = self.config.getboolean('controller', 'ssl', default=True)
         if self.ssl:
-            try:
-                self.ssl_handshake_timeout = \
-                        int(self.server.system.get('ssl-handshake-timeout'))
-            except ValueError:
-                self.ssl_handshake_timeout = \
-                                    AgentManager.SSL_HANDSHAKE_TIMEOUT_DEFAULT
+            system_key = SystemKeys.SSL_HANDSHAKE_TIMEOUT
+            self.ssl_handshake_timeout = self.system[system_key]
 
             if not self.config.has_option('controller', 'ssl_cert_file'):
                 msg = "Missing 'ssl_cert_file' certificate file specification"
@@ -733,8 +722,9 @@ class AgentManager(threading.Thread):
 
     def disk_watermark(self, name):
         """ Threshold for the disk indicator. (low|high) """
+        # FIXME: remove this and use SystemKeys
         try:
-            value = self.server.system.get('disk-watermark-'+name)
+            value = self.system['disk-watermark-'+name]
         except ValueError:
             return float(100)
         return float(value)
@@ -1095,7 +1085,7 @@ class AgentManager(threading.Thread):
             sock_clear = None
 
         session = meta.Session()
-        self.server.system.save(SystemConfig.UPGRADING, 'no')
+        self.server.system.save(SystemKeys.UPGRADING, 'no')
         self.server.state_manager.update(StateManager.STATE_DISCONNECTED)
         session.commit()
 
@@ -1424,7 +1414,7 @@ class AgentManager(threading.Thread):
         # If there is no backup configuration BACKUP_DEST_ID yet,
         # create one now.
         try:
-            self.server.system.get(SystemConfig.BACKUP_DEST_ID)
+            self.server.system[SystemKeys.BACKUP_DEST_ID]
         except ValueError:
             pass
         else:
@@ -1445,8 +1435,7 @@ class AgentManager(threading.Thread):
             "volid: %d name %s, path %s") % \
             (primary_entry.volid, primary_entry.name, primary_entry.path))
 
-        self.server.system.save(SystemConfig.BACKUP_DEST_ID,
-                                                        primary_entry.volid)
+        self.server.system.save(SystemKeys.BACKUP_DEST_ID, primary_entry.volid)
 
     def save_routes(self, agent):
         lines = ""
@@ -1501,7 +1490,7 @@ class AgentManager(threading.Thread):
         conn_id = aconn.conn_id
         while not self.server.noping:
             # Update log level in case it changed
-            self.log.setLevel(self.server.st_config.debug_level)
+            self.log.setLevel(self.system[SystemKeys.DEBUG_LEVEL])
 
             if agent.enabled:
                 if conn_id not in self.all_agents(enabled_only=False):

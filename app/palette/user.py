@@ -2,9 +2,9 @@ from webob import exc
 from sqlalchemy import func
 import akiri.framework.sqlalchemy as meta
 
-from controller.auth import AUTH_TIMESTAMP_SYSTEM_KEY
 from controller.profile import UserProfile, Role, Admin, License
 from controller.util import str2bool, LETTERS
+from controller.system import SystemKeys
 
 from .page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
@@ -125,7 +125,7 @@ class UserApplication(PaletteRESTApplication):
                 'counts': counts
         }
 
-        last_update = req.system.get(AUTH_TIMESTAMP_SYSTEM_KEY, default=None)
+        last_update = req.system[SystemKeys.AUTH_TIMESTAMP]
         if not last_update is None:
             data['last-update'] = last_update
 
