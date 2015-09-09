@@ -168,8 +168,8 @@ class HttpRequestManager(TableauCacheManager):
     # pylint: disable=too-many-branches
 #        print "action = ", entry.action, "body = ", body
 
-        errorlevel = self.server[SystemKeys.HTTP_LOAD_ERROR]
-        warnlevel = self.server[SystemKeys.HTTP_LOAD_WARN]
+        errorlevel = self.system[SystemKeys.HTTP_LOAD_ERROR]
+        warnlevel = self.system[SystemKeys.HTTP_LOAD_WARN]
 
         if not errorlevel and not warnlevel:
             # alerts for http-requests aren't enabled

@@ -4,6 +4,7 @@ import unicodedata
 from sqlalchemy import Column, BigInteger, Integer, Boolean, String, DateTime
 from sqlalchemy import UniqueConstraint
 from sqlalchemy import func
+from sqlalchemy import or_
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm.exc import NoResultFound
@@ -273,35 +274,22 @@ class WorkbookManager(TableauCacheManager):
 
         session.commit()
 
-        self._prune_missed_revisions()
+        prune_count = self._prune_missed_revisions()
 
         # Second pass - build the archive files.
-        for update in updates:
-            # pulling the archives is slow so query the database each pass
-            archive_enabled = self.system[SystemKeys.ARCHIVE_ENABLED]
-            if not archive_enabled:
-                self.log.info("Workbook Archive disabled while processing." + \
-                              "  Exiting for now.")
-                break
+        result = self._archive_updates(agent, updates)
+        
+        result[u'schema'] = self.schema(data)
+        result[u'updates-new'] = len(updates)
+        result[u'updates-missed'] = prune_count
 
-            if not self.server.odbc_ok():
-                self.log.info("Workbook Archive Load : Archive build " + \
-                              "stopping due to current state")
-                break
-
-            session.refresh(update)
-            self._archive_twb(agent, update)
-
-        # Retain only configured number of versions
-        self._retain_some()
-
-        return {u'status': 'OK',
-                u'schema': self.schema(data),
-                u'updates': len(updates)}
+        return result
 
     def _prune_missed_revisions(self):
         """Remove rows from workbook_updates that we didn't manage to
            archive.  It may be due to bad credentials, failed tabcmd, etc.
+           Returns:
+                count of updates pruned.
         """
 
         stmt = "delete from workbook_updates where " + \
@@ -311,7 +299,6 @@ class WorkbookManager(TableauCacheManager):
                     "group by workbookid) " + \
                     "and url='';"
 
-
         connection = meta.get_connection()
         result = connection.execute(stmt)
         connection.close()
@@ -319,14 +306,20 @@ class WorkbookManager(TableauCacheManager):
         if result.rowcount:
             self.log.debug("workbooks _prune_missed_revisions pruned %d",
                            result.rowcount)
-        return
+
+        return result.rowcount
 
     def _retain_some(self):
-        """Retain only the configured number of workbook versions."""
+        """Retain only the configured number of workbook versions.
+            Returns:
+                    The number of archive versions removed.
+        """
 
         retain_count = self.system[SystemKeys.WORKBOOK_RETAIN_COUNT]
         if not retain_count:
-            return
+            return 0
+
+        removed_count = 0
 
         session = meta.Session()
         # List of workbooks that have excess archived versions:
@@ -363,6 +356,8 @@ class WorkbookManager(TableauCacheManager):
                         row.fileid, row.wuid, row.workbookid)
                     continue
 
+                removed_count += 1
+
                 body = self.server.delfile_cmd(file_entry)
                 if failed(body):
                     self.log.info(
@@ -375,53 +370,55 @@ class WorkbookManager(TableauCacheManager):
                         "wuid %d, workbookid %d",
                         row.fileid, row.wuid, row.workbookid)
 
+        return removed_count
 
     @synchronized('workbook.fixup')
     def fixup(self, agent):
-        archive_enabled = self.system[SystemKeys.ARCHIVE_ENABLED]
-        if archive_enabled == 'no':
+        if not self.system[SystemKeys.ARCHIVE_ENABLED]:
             return {u'disabled':
                     'Workbook Archives are not enabled.  Fixup not done.'}
 
-        connection = meta.get_connection()
+        session = meta.Session()
 
-        stmt = \
-            "SELECT wuid FROM workbook_updates " +\
-            "WHERE ((workbookid, revision) IN " +\
-            "  (SELECT workbookid, revision FROM workbooks)) AND " +\
-            "    ((url = '') OR (url IS NULL))"
+        # potentially serveral thousand?
+        updates = session.query(WorkbookUpdateEntry).\
+                  filter(or_(WorkbookUpdateEntry.url == "",
+                         WorkbookUpdateEntry.url == None)).\
+                         all()
 
-        ids = [x['wuid'] for x in connection.execute(stmt)]
-        self.log.debug('workbook fixup : ' + str(ids))
-        connection.close()
+        return self._archive_updates(agent, updates)
+
+    def _archive_updates(self, agent, updates):
+        """Attempt to archive workbooks from WorkbookUpdate rows."""
 
         session = meta.Session()
 
         count = 0
-        if ids:
-            # potentially serveral thousand?
-            updates = session.query(WorkbookUpdateEntry).\
-                      filter(WorkbookUpdateEntry.wuid.in_(ids)).all()
+        for update in updates:
+            if not self.system[SystemKeys.ARCHIVE_ENABLED]:
+                self.log.info(
+                          "Workbook Archive disabled during fixup." + \
+                          "  Exiting for now.")
+                break
 
-            for update in updates:
-                # pulling the archives is slow so query the database each pass
-                archive_enabled = self.system[SystemKeys.ARCHIVE_ENABLED]
-                if not archive_enabled:
-                    self.log.info(
-                              "Workbook Archive disabled during fixup." + \
-                              "  Exiting for now.")
-                    break
+            if not self.server.odbc_ok():
+                self.log.info("Workbook Archive Fixup: Archive build " + \
+                          "stopping due to current state")
+                break
 
-                if not self.server.odbc_ok():
-                    self.log.info("Workbook Archive Fixup: Archive build " + \
-                              "stopping due to current state")
-                    break
+            session.refresh(update)
+            self._archive_twb(agent, update)
+            count += 1
 
-                self._archive_twb(agent, update)
-                count += 1
+        # Retain only configured number of versions
+        if count:
+            retain_removed_count = self._retain_some()
+        else:
+            retain_removed_count = 0
 
         return {u'status': 'OK',
-                u'updates': count}
+                u'updates-archived': count,
+                u'retain-removed-count': retain_removed_count}
 
     def _get_wb_type(self, agent, update, dst):
         """Inspects the 'dst' file, checks to make sure it's valid,

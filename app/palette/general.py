@@ -33,8 +33,7 @@ class WorkbookRetention(DictOption):
         options = OrderedDict({})
         options[self.ALL] = 'All'
         for count in [2, 3, 4, 5, 10, 25]:
-            count_str = str(count)
-            options[count_str] = count_str
+            options[count] = str(count)
         super(WorkbookRetention, self).__init__(self.NAME, valueid, options)
 
 class GeneralS3Application(PaletteRESTApplication, S3Application):
@@ -374,7 +373,6 @@ class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
             data['archive-password'] = secondary.getpasswd()
         else:
             data['archive-username'] = data['archive-password'] = ''
-
 
         valueid = req.system[SystemKeys.WORKBOOK_RETAIN_COUNT]
         retain_opts = WorkbookRetention(valueid)
