@@ -53,7 +53,7 @@ class WorkbookSort(DictOption):
             cls.WORKBOOK: 'Workbook',
             cls.SITE: 'Site',
             cls.PROJECT: 'Project',
-            cls.PUBLISHER: 'Publisher',
+#            cls.PUBLISHER: 'Publisher',
             cls.REVISION_DATE: 'Revision Date'})
 
     def __init__(self, valueid):
