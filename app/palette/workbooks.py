@@ -4,7 +4,7 @@ from collections import OrderedDict
 from webob import exc
 from paste.fileapp import FileApp
 
-from akiri.framework import GenericWSGIApplication
+from akiri.framework import GenericWSGIApplication, ENVIRON_PREFIX
 import akiri.framework.sqlalchemy as meta
 
 from controller.workbooks import WorkbookEntry, WorkbookUpdateEntry
@@ -366,10 +366,10 @@ class WorkbookData(GenericWSGIApplication):
             return True
         if req.remote_user.system_user_id == update.workbook.system_user_id:
             return True
+        return False
 
     def service_GET(self, req):
-
-        workbook_name = req.environ['name']
+        workbook_name = req.environ[ENVIRON_PREFIX+'name']
         update = WorkbookUpdateEntry.get_by_url(workbook_name, default=None)
         if update is None:
             return exc.HTTPNotFound()
