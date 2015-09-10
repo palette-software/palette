@@ -9,7 +9,7 @@ from controller.domain import Domain
 from controller.environment import Environment
 from controller.profile import UserProfile
 from controller.system import SystemEntry, SystemKeys, SystemMixin
-from controller.system import DEFAULTS, cast, default
+from controller.system import DEFAULTS, cast
 from controller.util import translate_key
 
 class System(dict, SystemMixin):
@@ -18,11 +18,8 @@ class System(dict, SystemMixin):
     # pylint: disable=too-many-public-methods
 
     def __init__(self, req):
-        # pylint: disable=no-member
-        super(System, self).__init__()
         # Start with the default values from the JSON file.
-        for key in DEFAULTS:
-            dict.__setitem__(self, key, default(key))
+        super(System, self).__init__(DEFAULTS.todict(pretty=True))
         # Technically, req doesn't need to be saved, only envid is used,
         # but this reiterates that the system lifecycle is the same as
         # that of the request.

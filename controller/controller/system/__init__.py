@@ -11,48 +11,17 @@ import akiri.framework.sqlalchemy as meta
 
 from ..mixin import BaseMixin, BaseDictMixin
 from ..manager import Manager
-from ..util import str2bool
+from ..util import str2bool, translate_key
 
 from .keys import SystemKeys
 from .defaults import DEFAULTS
-
-def base_data_type(value):
-    """ Return the simple data type (without translation) """
-    if value is None or isinstance(value, basestring):
-        return str
-    # Must test for bool before int since bool is also an int.
-    if isinstance(value, bool):
-        return bool
-    if isinstance(value, int):
-        return int
-    return dict
-
-def data_type(key):
-    """ Return the data type for the specified key using the DEFAULTS dict. """
-    value = DEFAULTS[key]
-    result = base_data_type(value)
-    if result != dict:
-        return result
-    if 'data-type' in value:
-        return value['data-type']
-    return base_data_type(value['value'])
-
-def default(key):
-    """ Return the default value for key - including translating dicts """
-    value = DEFAULTS[key]
-    if base_data_type(value) == dict:
-        if 'value' in value:
-            return value['value']
-        else:
-            return None
-    return value
 
 def cast(key, value):
     """ Find the native type of key in DEFAULTS and return 'value'
     converted to that type."""
     if value is None:
         return None
-    datatype = data_type(key)
+    datatype = DEFAULTS.data_type(key)
     if datatype == bool:
         return str2bool(value)
     return datatype(value)
@@ -140,12 +109,15 @@ class SystemManager(Manager, DictMixin, SystemMixin):
         """ Delete a row from the system table. """
         SystemEntry.delete(filters={'envid':self.envid, 'key':key})
 
-    def todict(self):
+    def todict(self, pretty=False, include_defaults=False):
         """ Import the system table as a dict (used by event_control) """
-        data = {}
+        if include_defaults:
+            data = DEFAULTS.todict(pretty=pretty)
+        else:
+            data = {}
         for entry in SystemEntry.get_all(self.envid):
             try:
-                data[entry.key] = entry.typed()
+                data[translate_key(entry.key, pretty=pretty)] = entry.typed()
             except ValueError:
                 raise
         return data
