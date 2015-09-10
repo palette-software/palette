@@ -234,7 +234,7 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
         # pylint: disable=maybe-no-member
         sort = req.params_getint('sort')
         if sort is None or sort not in WorkbookSort.items(req):
-            sort = WorkbookSort.NAME
+            sort = WorkbookSort.WORKBOOK
 
         if sort == WorkbookSort.SITE:
             query = query.join(Site,
@@ -248,7 +248,7 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
 
         query = WorkbookEntry.apply_filters(query, filters)
 
-        if sort == WorkbookSort.NAME:
+        if sort == WorkbookSort.WORKBOOK:
             query = query.order_by(WorkbookEntry.name)
         elif sort == WorkbookSort.SITE:
             query = query.order_by(Site.name, WorkbookEntry.name)
@@ -258,6 +258,9 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
             query = query.order_by(WorkbookEntry.created_at.desc())
         elif sort == WorkbookSort.PUBLISHER:
             query = query.order_by(UserProfile.friendly_name)
+        else:
+            # Show that something is wrong.
+            raise exc.HTTPNotFound()
 
         limit = req.params_getint('limit', default=25)
         page = req.params_getint('page', default=1)
