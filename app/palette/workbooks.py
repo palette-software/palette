@@ -48,17 +48,22 @@ class WorkbookSort(DictOption):
     REVISION_DATE = 4
 
     @classmethod
-    def items(cls):
-        return OrderedDict({
+    def items(cls, req):
+        info = OrderedDict({
             cls.WORKBOOK: 'Workbook',
             cls.SITE: 'Site',
             cls.PROJECT: 'Project',
-#            cls.PUBLISHER: 'Publisher',
+            cls.PUBLISHER: 'Publisher',
             cls.REVISION_DATE: 'Revision Date'})
 
-    def __init__(self, valueid):
+        if req.remote_user.roleid == Role.NO_ADMIN:
+            del info[cls.PUBLISHER]
+
+        return info
+
+    def __init__(self, valueid, req):
         super(WorkbookSort, self).__init__(self.NAME, valueid,
-                                           self.__class__.items())
+                                           self.__class__.items(req))
 
 
 class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
@@ -98,7 +103,7 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
 
     def sort_options(self, req):
         valueid = req.params_getint('sort', WorkbookSort.WORKBOOK)
-        return WorkbookSort(valueid).default()
+        return WorkbookSort(valueid, req).default()
 
     def site_options(self, sites):
         options = [{"item": self.ALL_SITES_OPTION, "id": 0}]
@@ -228,7 +233,7 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
         # pylint: disable=no-member
         # pylint: disable=maybe-no-member
         sort = req.params_getint('sort')
-        if sort is None or sort not in WorkbookSort.items():
+        if sort is None or sort not in WorkbookSort.items(req):
             sort = WorkbookSort.NAME
 
         if sort == WorkbookSort.SITE:
