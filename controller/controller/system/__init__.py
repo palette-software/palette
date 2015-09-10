@@ -133,7 +133,7 @@ class SystemManager(Manager, DictMixin, SystemMixin):
             # FIXME: eventually remove constant
             value = DEFAULTS[key]
             if isinstance(value, dict):
-                if 'populate' in dict and not dict['populate']:
+                if 'populate' in value and not value['populate']:
                     continue
                 value = value['value']
             if value is None:
