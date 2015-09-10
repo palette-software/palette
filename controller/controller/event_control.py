@@ -311,7 +311,8 @@ class EventControlManager(Manager):
             return
 
         # add all system table entries to the data dictionary.
-        data = dict(data.items() + self.system.todict().items())
+        data = dict(data.items() + \
+                    self.system.todict(include_defaults=True).items())
 
         self.log.debug(key + " DATA: " + str(data))
 

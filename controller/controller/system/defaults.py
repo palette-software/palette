@@ -12,6 +12,7 @@ If the default value is a dict, then it may contains the following:
 
 """
 # pylint: enable=missing-docstring, relative-import
+from ..util import translate_key
 from .keys import SystemKeys
 
 UNDEFINED_INTEGER = {"value": None, "data-type": int}
@@ -21,7 +22,51 @@ UNPOPULATED_FALSE = {"value": False, "populate": False}
 
 HTTP_LOAD_RE = ".+(\\.(xml|png|pdf)(\\Z|\\?)|format=(xml|png|pdf))"
 
-DEFAULTS = {
+def base_data_type(value):
+    """ Return the simple data type (without translation) """
+    if value is None or isinstance(value, basestring):
+        return str
+    # Must test for bool before int since bool is also an int.
+    if isinstance(value, bool):
+        return bool
+    if isinstance(value, int):
+        return int
+    return dict
+
+class SystemDefaults(dict):
+    """Container class to hold all default values from the system table.
+    This class is just a dict with additional methods (e.g. todict())
+    """
+
+    def data_type(self, key):
+        """ Return the data type for the specified key. """
+        value = self[key]
+        result = base_data_type(value)
+        if result != dict:
+            return result
+        if 'data-type' in value:
+            return value['data-type']
+        return base_data_type(value['value'])
+
+    def default(self, key):
+        """ Return the default value for key - including translating dicts """
+        value = self[key]
+        if base_data_type(value) == dict:
+            if 'value' in value:
+                return value['value']
+            else:
+                return None
+        return value
+
+    def todict(self, pretty=False):
+        """Create a copy of the default values without nested dicts"""
+        data = {}
+        for key in self:
+            data[translate_key(key, pretty=pretty)] = self.default(key)
+        return data
+
+
+DEFAULTS = SystemDefaults({
     SystemKeys.WATERMARK_LOW: 101,
     SystemKeys.WATERMARK_HIGH: 101,
 
@@ -125,7 +170,7 @@ DEFAULTS = {
 
     SystemKeys.YML_LOCATION: None,
     SystemKeys.YML_TIMESTAMP: None
-}
+})
 
 def validate(verbose=False):
     """ Ensure that all SystemKeys constants have corresponding defaults
