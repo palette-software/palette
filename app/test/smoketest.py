@@ -4,8 +4,9 @@ import argparse
 from time import sleep
 
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait 
-from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support import expected_conditions as EC
 
 DEFAULT_WAIT = 3.0
 DEFAULT_USERNAME = 'palette'
@@ -54,6 +55,23 @@ sleep(WAIT)
 # event page (home page)
 browser.get(EVENT)
 assert 'Home' in browser.title
+#assert 'Home' in  browser.find_element_by_tag_name('title').text
+#assert 'Status' in browser.body
+#assert 'Events' in browser.body
+#login_form = driver.find_element_by_xpath("/html/body/form[1]")
+#//*[@class='atag']
+assert 'STATUS' in  browser.find_element_by_xpath('//*[@class="status"]/h1').text
+assert 'STATUS' in  browser.find_element_by_class_name('status').text
+assert 'Tableau' in browser.find_element_by_id('status-text').text
+sleep(WAIT)
+
+#assert 'MY MACHINES' in browser.find_element_by_id('server-list').text
+browser.find_element_by_id('expand-right').click()
+sleep(WAIT)
+WebDriverWait(browser, 3).until(
+    EC.text_to_be_present_in_element((By.XPATH, '//*[@id="server-list"]/h1'), 'MY MACHINES')
+)
+assert 'MY MACHINES' in browser.find_element_by_xpath('//*[@id="server-list"]/h1').text
 sleep(WAIT)
 
 # workbook archive page
