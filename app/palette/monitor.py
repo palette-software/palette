@@ -16,6 +16,7 @@ from controller.util import sizestr, DATEFMT, utc2local
 from controller.licensing import LicenseEntry
 from controller.event_control import EventControl
 from controller.notifications import NotificationManager
+from controller.system import SystemKeys
 
 from .option import DictOption
 from .event import EventHandler
@@ -69,9 +70,36 @@ class EventType(DictOption):
         options = OrderedDict([(self.ALL, 'All Types')] + type_list)
         super(EventType, self).__init__(self.NAME, valueid, options)
 
+def known_agents(envid):
+    """Return all the known agents for the specified environment."""
+    query = meta.query(Agent).filter(Agent.envid == envid).\
+            order_by(Agent.display_order).order_by(Agent.displayname)
+    return query.all()
+
+# agents is the sqlalchemy objects
+def calculate_main_state(req, agents):
+    """Determine the main state of the environment from the agents connected.
+    This is the overall state as shown to administrators (not publishers)
+    """
+    if req.system[SystemKeys.UPGRADING]:
+        return StateManager.STATE_UPGRADING
+
+    for entry in agents:
+        if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
+            if not entry.enabled:
+                return StateManager.STATE_PRIMARY_NOT_ENABLED
+            else:
+                # one primary per environment so no need to continue
+                break
+
+    main_state = req.system[SystemKeys.STATE]
+    if main_state is None:
+        return StateManager.STATE_DISCONNECTED
+    return main_state
+
 
 class MonitorApplication(PaletteRESTApplication):
-
+    """The main monitor callback to handle status and event updates."""
     def __init__(self):
         super(MonitorApplication, self).__init__()
         self.event = EventHandler()
@@ -188,22 +216,12 @@ class MonitorApplication(PaletteRESTApplication):
         return lowest_color_num
 
     def handle_monitor(self, req):
-        # Get the state
+        """Collect all state for this environment needed by the UI."""
 
-        agent_entries = meta.Session.query(Agent).\
-            filter(Agent.envid == req.envid).\
-            order_by(Agent.display_order).\
-            order_by(Agent.displayname).\
-            all()
+        # FIXME: just generate a list of dicts here using agent.todict()
+        agent_entries = known_agents(req.envid)
 
-        main_state = None
-        for entry in agent_entries:
-            if entry.agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
-                                                            not entry.enabled:
-                main_state = StateManager.STATE_PRIMARY_NOT_ENABLED
-
-        if not main_state:
-            main_state = StateManager.get_state_from_system(req.system)
+        main_state = calculate_main_state(req, agent_entries)
 
         state_control_entry = StateControl.get_state_control_entry(main_state)
         if not state_control_entry:
@@ -219,9 +237,7 @@ class MonitorApplication(PaletteRESTApplication):
                                               state_control_entry,
                                               agent_entries)
 
-        config = [self.status_options(req),
-                  self.type_options(req)]
-
+        config = [self.status_options(req), self.type_options(req)]
         monitor_ret['config'] = config
 
         seq = req.params_getint('seq')
@@ -471,9 +487,7 @@ class MonitorApplication(PaletteRESTApplication):
 
         # Special case: If Upgrading, set the main state to
         # "upgrading", etc.
-        if StateManager.upgrading_from_system(req.system):
-            main_state = StateManager.STATE_UPGRADING
-
+        if main_state == StateManager.STATE_UPGRADING:
             state_control_entry = \
                             StateControl.get_state_control_entry(main_state)
             if not state_control_entry:

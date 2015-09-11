@@ -71,22 +71,12 @@ class StateManager(Manager):
         self.system.save(SystemKeys.STATE, state)
 
     def get_state(self):
-        return StateManager.get_state_from_system(self.system)
-
-    # FIXME: remove.
-    @classmethod
-    def get_state_from_system(cls, system):
-        """ Return the main state using the given system object. """
-        value = system[SystemKeys.STATE]
+        """Return the main state from the system table."""
+        value = self.system[SystemKeys.STATE]
         if value is None:
             return StateManager.STATE_DISCONNECTED
         return value
 
     def upgrading(self):
-        return StateManager.upgrading_from_system(self.system)
-
-    # FIXME: remove
-    @classmethod
-    def upgrading_from_system(cls, system):
-        """ Return the upgrading state using the give system object. """
-        return system[SystemKeys.UPGRADING]
+        """Return whether the system is currently upgrading."""
+        return self.system[SystemKeys.UPGRADING]

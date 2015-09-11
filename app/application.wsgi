@@ -25,6 +25,7 @@ from palette.profile import ProfilePage
 from palette.request import BaseMiddleware, RemoteUserMiddleware
 from palette.routing import RestRouter, ConfigureRouter
 from palette.setup import SetupPage
+from palette.state import StateApp
 from palette.workbooks import WorkbookArchive, WorkbookData
 
 # settings
@@ -59,6 +60,10 @@ rest = RemoteUserMiddleware(rest)
 rest = AuthForbiddenMiddleware(rest)
 rest = AuthTKTMiddleware(rest, secret=SHARED)
 
+# the API - this is a subset of the the /rest interface
+api = Router()
+api.add_route(r'/state\Z', StateApp())
+
 # auth_tkt -> initial -> expire -> auth -> page
 pages = Router()
 pages.add_route(r'/about\Z|/support/about\Z', AboutPage())
@@ -81,6 +86,7 @@ router.add_route(r'/licensing\Z', licensing_proxy)
 router.add_route(r'/open/setup\Z', OpenApplication(secret=SHARED))
 router.add_route(r'/setup\Z', SetupPage())
 router.add_route(r'/rest/', rest)
+router.add_route(r'/api/', api)
 router.add_route(LOGIN_URL + r'\Z', loginpage)
 router.add_route(LOGIN_URL + r'/authenticate\Z', loginapp)
 router.add_route(r'/logout', LogoutApplication(redirect=LOGIN_URL))
