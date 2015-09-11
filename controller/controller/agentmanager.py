@@ -1413,19 +1413,13 @@ class AgentManager(threading.Thread):
 
         # If there is no backup configuration BACKUP_DEST_ID yet,
         # create one now.
-        try:
-            self.server.system[SystemKeys.BACKUP_DEST_ID]
-        except ValueError:
-            pass
-        else:
+        backup_dest_id = self.server.system[SystemKeys.BACKUP_DEST_ID]
+        if not backup_dest_id is None:
             # It was found, so don't need to add it.
             return
 
         try:
-            # FIXME: create another method in DiskCheck to avoid this warning.
-            # pylint: disable=unused-variable
-            (primary_dir, primary_entry) = \
-                    DiskCheck.get_primary_loc(agent, "")
+            (_, primary_entry) = DiskCheck.get_primary_loc(agent, "")
         except DiskException, ex:
             self.log.error("set_default_backup_destid: %s", str(ex))
             return
