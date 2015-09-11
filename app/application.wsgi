@@ -20,7 +20,7 @@ from palette.admin import LoginApplication, LoginPage
 from palette.about import AboutPage
 from palette.expire import ExpireMiddleware
 from palette.initial import OpenApplication, InitialMiddleware
-from palette.manage import ManagePage
+from palette.manage import ManagePage, ManageApplication
 from palette.profile import ProfilePage
 from palette.request import BaseMiddleware, RemoteUserMiddleware
 from palette.routing import RestRouter, ConfigureRouter
@@ -63,6 +63,10 @@ rest = AuthTKTMiddleware(rest, secret=SHARED)
 # the API - this is a subset of the the /rest interface
 api = Router()
 api.add_route(r'/state\Z', StateApp())
+api.add_route(r'/manage\Z', ManageApplication())
+api = RemoteUserMiddleware(api)
+api = AuthForbiddenMiddleware(api)
+api = AuthTKTMiddleware(api, secret=SHARED)
 
 # auth_tkt -> initial -> expire -> auth -> page
 pages = Router()
@@ -86,7 +90,7 @@ router.add_route(r'/licensing\Z', licensing_proxy)
 router.add_route(r'/open/setup\Z', OpenApplication(secret=SHARED))
 router.add_route(r'/setup\Z', SetupPage())
 router.add_route(r'/rest/', rest)
-router.add_route(r'/api/', api)
+router.add_route(r'/api/v1/', api)
 router.add_route(LOGIN_URL + r'\Z', loginpage)
 router.add_route(LOGIN_URL + r'/authenticate\Z', loginapp)
 router.add_route(r'/logout', LogoutApplication(redirect=LOGIN_URL))
