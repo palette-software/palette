@@ -40,6 +40,13 @@ class ManageApplication(PaletteRESTApplication):
         return {'status': 'OK'}
 
     @required_role(Role.MANAGER_ADMIN)
+    def handle_backup(self, req):
+        """ Do a backup (duplicated in backup.py) """
+        sync = req.params_getbool('sync', default=False)
+        self.commapp.send_cmd('backup', req=req, read_response=sync)
+        return {'status': 'OK'}
+
+    @required_role(Role.MANAGER_ADMIN)
     def handle_repair_license(self, req):
         sync = req.params_getbool('sync', default=False)
         self.commapp.send_cmd('license repair', req=req, read_response=sync)
@@ -83,6 +90,8 @@ class ManageApplication(PaletteRESTApplication):
                 return self.handle_stop(req)
             elif action == 'restart':
                 return self.handle_restart(req)
+            elif action == 'backup':
+                return self.handle_backup(req)
             elif action == 'repair-license':
                 return self.handle_repair_license(req)
             elif action == 'ziplogs':

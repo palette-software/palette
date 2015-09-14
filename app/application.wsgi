@@ -18,6 +18,7 @@ from akiri.framework.middleware.sqlalchemy import SessionMiddleware
 from palette import HomePage, set_aes_key_file
 from palette.admin import LoginApplication, LoginPage
 from palette.about import AboutPage
+from palette.backup import BackupApplication
 from palette.expire import ExpireMiddleware
 from palette.initial import OpenApplication, InitialMiddleware
 from palette.manage import ManagePage, ManageApplication
@@ -64,6 +65,7 @@ rest = AuthTKTMiddleware(rest, secret=SHARED)
 api = Router()
 api.add_route(r'/state\Z', StateApp())
 api.add_route(r'/manage\Z', ManageApplication())
+api.add_route(r'/backups(/(?P<id>[\d]+))?\Z', BackupApplication())
 api = RemoteUserMiddleware(api)
 api = AuthForbiddenMiddleware(api)
 api = AuthTKTMiddleware(api, secret=SHARED)
