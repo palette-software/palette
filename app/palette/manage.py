@@ -12,52 +12,62 @@ class ManageApplication(PaletteRESTApplication):
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_start(self, req):
-        self.commapp.send_cmd('start', req=req, read_response=False)
-        return {}
+        sync = req.params_getbool('sync', default=False)
+        self.commapp.send_cmd('start', req=req, read_response=sync)
+        return {'status': 'OK'}
 
-    @required_parameters('backup', 'license')
     @required_role(Role.MANAGER_ADMIN)
     def handle_stop(self, req):
+        sync = req.params_getbool('sync', default=False)
         cmd = 'stop'
-        if not req.params_getbool('backup'):
+        if not req.params_getbool('backup', default=False):
             cmd = '/nobackup ' + cmd
-        if not req.params_getbool('license'):
+        if not req.params_getbool('license', default=False):
             cmd = '/nolicense ' + cmd
         cmd = '/nomaint ' + cmd  # Never enable the maintenance web server
-        self.commapp.send_cmd(cmd, req=req, read_response=False)
-        return {}
+        self.commapp.send_cmd(cmd, req=req, read_response=sync)
+        return {'status': 'OK'}
 
-    @required_parameters('backup', 'license')
     @required_role(Role.MANAGER_ADMIN)
     def handle_restart(self, req):
+        sync = req.params_getbool('sync', default=False)
         cmd = 'restart'
-        if not req.params_getbool('backup'):
+        if not req.params_getbool('backup', default=False):
             cmd = '/nobackup ' + cmd
-        if not req.params_getbool('license'):
+        if not req.params_getbool('license', default=False):
             cmd = '/nolicense ' + cmd
-        self.commapp.send_cmd(cmd, req=req, read_response=False)
-        return {}
+        self.commapp.send_cmd(cmd, req=req, read_response=sync)
+        return {'status': 'OK'}
+
+    @required_role(Role.MANAGER_ADMIN)
+    def handle_backup(self, req):
+        """ Do a backup (duplicated in backup.py) """
+        sync = req.params_getbool('sync', default=False)
+        self.commapp.send_cmd('backup', req=req, read_response=sync)
+        return {'status': 'OK'}
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_repair_license(self, req):
-        self.commapp.send_cmd('license repair', req=req, read_response=False)
-        return {}
+        sync = req.params_getbool('sync', default=False)
+        self.commapp.send_cmd('license repair', req=req, read_response=sync)
+        return {'status': 'OK'}
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_ziplogs(self, req):
+        sync = req.params_getbool('sync', default=False)
         cmd = 'ziplogs'
-        self.commapp.send_cmd(cmd, req=req, read_response=False)
-        return {}
+        self.commapp.send_cmd(cmd, req=req, read_response=sync)
+        return {'status': 'OK'}
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_restart_controller(self, req):
         self.commapp.send_cmd('exit', req=req, read_response=False)
-        return {}
+        return {'status': 'OK'}
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_restart_webserver(self, req):
         self.commapp.send_cmd('apache restart', req=req, read_response=False)
-        return {}
+        return {'status': 'OK'}
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_manual_update(self, req):
@@ -65,7 +75,7 @@ class ManageApplication(PaletteRESTApplication):
         print >> sys.stderr, " *** MANUAL UPDATE *** "
         self.commapp.send_cmd("upgrade controller", req=req,
                                                       read_response=False)
-        return {}
+        return {'status': 'OK'}
 
     @required_parameters('action')
     def service(self, req):
@@ -80,6 +90,8 @@ class ManageApplication(PaletteRESTApplication):
                 return self.handle_stop(req)
             elif action == 'restart':
                 return self.handle_restart(req)
+            elif action == 'backup':
+                return self.handle_backup(req)
             elif action == 'repair-license':
                 return self.handle_repair_license(req)
             elif action == 'ziplogs':
