@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+import sys
+import time
+
+from controller.palapi import CommHandlerCmd
+
+if __name__ == "__main__":
+    comm = CommHandlerCmd()
+    # If "read_response=True", then it would block sched from
+    # running other cron jobs. This can take a long time (too long)
+    # which could block backups, etc.
+    comm.send_cmd("datasource import", skip_on_wrong_state=True,
+                   read_response=False)
+    time.sleep(1)
+    comm.send_cmd("datasource fixup", skip_on_wrong_state=True,
+                   read_response=False)
+    sys.exit(0)

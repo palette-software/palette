@@ -34,6 +34,7 @@ class FileManager(Manager):
     FILE_TYPE_BACKUP = "backup"
     FILE_TYPE_ZIPLOG = "ziplog"
     FILE_TYPE_WORKBOOK = "workbook"
+    FILE_TYPE_DATASOURCE = "datasource"
 
     # FIXME: replace this with kwargs variant.
     def add(self, name, file_type, storage_type, storageid,
