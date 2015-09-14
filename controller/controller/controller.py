@@ -29,7 +29,7 @@ from config import Config
 from passwd import aes_encrypt
 from credential import CredentialEntry, CredentialManager
 from diskcheck import DiskCheck, DiskException
-from datasources import DataSource
+from datasources import DataSourceManager
 from data_source_types import DataSourceTypes
 from domain import Domain
 from environment import Environment
@@ -80,6 +80,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     BACKUP_DIR = "tableau-backups"
     LOG_DIR = "tableau-logs"
     WORKBOOKS_DIR = "tableau-workbooks"
+    DATASOURCES_DIR = "tableau-datasources"
     PALETTE_DIR = "palette-system"
 
     STAGING_DIR = "staging"
@@ -879,14 +880,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         else:
             sync_dict['data-connections'] = body['count']
 
-        body = DataSource.sync(agent)
-        if 'error' in body:
-            if error_msg:
-                error_msg += ", "
-            error_msg += "DataSouce sync failure: " + body['error']
-        else:
-            sync_dict['data-sources'] = body['count']
-
         if error_msg:
             sync_dict['error'] = error_msg
 
@@ -1649,6 +1642,7 @@ def main():
     server.upgrade_rwlock = RWLock()
 
     server.workbooks = WorkbookManager(server)
+    server.datasources = DataSourceManager(server)
     server.files = FileManager(server)
     server.cloud = CloudManager(server)
     server.firewall_manager = FirewallManager(server)

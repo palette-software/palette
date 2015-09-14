@@ -30,6 +30,10 @@ class SystemKeys(object):
     WORKBOOK_LOAD_WARN = 'workbook-load-warn'
     WORKBOOK_LOAD_ERROR = 'workbook-load-error'
 
+    DATASOURCE_ARCHIVE_ENABLED = 'datasource-archive-enabled'
+    DATASOURCE_RETAIN_COUNT = 'datasource-retain-count'
+    DATASOURCE_SAVE_TDSX = 'datasource-save-tdsx'
+
     LOG_ARCHIVE_RETAIN_COUNT = 'log-archive-retain-count'
 
     WATERMARK_LOW = 'disk-watermark-low'
