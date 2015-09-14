@@ -3,6 +3,8 @@ import datetime
 
 from webob import exc
 
+from akiri.framework import ENVIRON_PREFIX
+
 from controller.files import FileManager
 from controller.util import DATEFMT
 from controller.profile import Role
@@ -10,9 +12,64 @@ from controller.tz import tzlocal
 
 from .rest import required_parameters, required_role, PaletteRESTApplication
 
-__all__ = ["BackupApplication"]
-
 class BackupApplication(PaletteRESTApplication):
+    """Base backup application used by the API"""
+    MAX_LIMIT = 100
+
+    def _backup_entries(self, envid, limit=None, desc=True):
+        """Return a list of backup entries sorted by filename
+           - sorting by filename is the same as sorting by date.
+        """
+        file_type = FileManager.FILE_TYPE_BACKUP
+        return FileManager.all_by_type(envid, file_type,
+                                       asc=(not desc), limit=limit)
+
+    def _backup_asdict(self, entry):
+        """ Convert to API naming
+        FIXME: this can be removed when the UI uses this interface.
+        """
+        data = {}
+        data['id'] = entry.fileid
+        data['uri'] = entry.name
+        data['size'] = entry.size
+        if isinstance(entry.creation_time, basestring):
+            data['creation-time'] = entry.creation_time
+        else:
+            data['creation-time'] = entry.creation_time.isoformat('T') + 'Z'
+        return data
+
+    def service_one_backup(self, req, fileid):
+        """Return information about a particular backup."""
+        # pylint: disable=unused-argument
+        entry = FileManager.find_by_fileid(fileid)
+        if entry is None:
+            raise exc.HTTPNotFound()
+        data = self._backup_asdict(entry)
+        data['status'] = 'OK'
+        return data
+
+    @required_role(Role.READONLY_ADMIN)
+    def service_GET(self, req):
+        key = ENVIRON_PREFIX + 'id'
+        if key in req.environ:
+            return self.service_one_backup(req, req.environ[key])
+
+        desc = req.params_getbool('desc', default=True)
+        limit = req.params_getint('limit', default=self.MAX_LIMIT)
+        backups = []
+        for entry in self._backup_entries(req.envid, limit=limit, desc=desc):
+            backups.append(self._backup_asdict(entry))
+        return {'status': 'OK', 'backups': backups}
+
+
+class BackupRestoreApplication(BackupApplication):
+    """Extended backup application used by the UI"""
+
+    def _backup_asdict(self, entry):
+        """ Convert to API naming
+        FIXME: this can be removed when the UI uses the API interface.
+        """
+        return entry.todict(pretty=True)
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_backup(self, req):
@@ -66,10 +123,9 @@ class BackupApplication(PaletteRESTApplication):
 
     @required_role(Role.READONLY_ADMIN)
     def handle_GET(self, req):
-        items = [x.todict(pretty=True) for x \
-                 in FileManager.all_by_type(req.envid,
-                                            FileManager.FILE_TYPE_BACKUP,
-                                            asc=False)]
+        data = super(BackupRestoreApplication, self).service_GET(req)
+        items = data['backups']
+
         # FIXME: convert TIMEZONE
         tomorrow = datetime.date.today() + datetime.timedelta(days=1)
         midnight = datetime.datetime(tomorrow.year,
@@ -78,15 +134,17 @@ class BackupApplication(PaletteRESTApplication):
                                      0, 0, 0, 0, tzlocal())
         scheduled = midnight.strftime(DATEFMT)
 
+        # FIXME: confirm usage
         options = [{'item': 'Palette Cloud Storage'},
                    {'item': 'On-Premise Storage'}]
-        return {
-            'config': [{'name': 'archive-backup',
-                        'options': options,
-                        'value': options[1]['item']}],
-            'backups': {'type': 'Restore From', 'items': items},
-            'next': scheduled
-            }
+        archive_backup_config = {'name': 'archive-backup',
+                                 'options': options,
+                                 'value': options[1]['item']}
+
+        # FIXME: simplify 'backups'
+        return {'config': [archive_backup_config],
+                'backups': {'type': 'Restore From', 'items': items},
+                'next': scheduled}
 
     def service(self, req):
         if 'action' in req.environ:

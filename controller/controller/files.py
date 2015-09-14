@@ -50,6 +50,7 @@ class FileManager(Manager):
         return entry
 
     def remove(self, fileid):
+        # envid is technically not required
         session = meta.Session()
         session.query(FileEntry).\
             filter(FileEntry.envid == self.envid).\
@@ -68,9 +69,24 @@ class FileManager(Manager):
             return None
 
     def find_by_id(self, fileid):
+        """ Return a file by id """
+        # NOTE: the envid is used as a sanity check; fileid is globally unique.
         try:
             return meta.Session.query(FileEntry).\
                 filter(FileEntry.envid == self.envid).\
+                filter(FileEntry.fileid == fileid).\
+                one()
+
+        except NoResultFound:
+            return None
+
+    @classmethod
+    def find_by_fileid(cls, fileid):
+        """ Find a FileEntry by unique id.
+        NOTE: 'fileid' is unique across environments.
+        """
+        try:
+            return meta.Session.query(FileEntry).\
                 filter(FileEntry.fileid == fileid).\
                 one()
 
@@ -99,7 +115,7 @@ class FileManager(Manager):
         return query.all()
 
     @classmethod
-    def all_by_type(cls, envid, file_type, asc=True):
+    def all_by_type(cls, envid, file_type, asc=True, limit=None):
         query = meta.Session.query(FileEntry).\
             filter(FileEntry.envid == envid).\
             filter(FileEntry.file_type == file_type)
@@ -107,6 +123,8 @@ class FileManager(Manager):
             query = query.order_by(FileEntry.creation_time.asc())
         else:
             query = query.order_by(FileEntry.creation_time.desc())
+        if not limit is None:
+            query = query.limit(limit)
         return query.all()
 
     @classmethod
