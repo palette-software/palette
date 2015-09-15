@@ -5,8 +5,9 @@ from controller.palapi import CommException
 
 from .page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
+from .backup import RestoreMixin
 
-class ManageApplication(PaletteRESTApplication):
+class ManageApplication(PaletteRESTApplication, RestoreMixin):
 
     NAME = 'manage'
 
@@ -92,6 +93,8 @@ class ManageApplication(PaletteRESTApplication):
                 return self.handle_restart(req)
             elif action == 'backup':
                 return self.handle_backup(req)
+            elif action == 'restore':
+                return self.handle_restore(req)
             elif action == 'repair-license':
                 return self.handle_repair_license(req)
             elif action == 'ziplogs':
