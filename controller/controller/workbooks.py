@@ -1,32 +1,29 @@
-import os
 import unicodedata
 
 from sqlalchemy import Column, BigInteger, Integer, Boolean, String, DateTime
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import UniqueConstraint, Text
 from sqlalchemy import func
 from sqlalchemy import or_
 from sqlalchemy.schema import ForeignKey
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship, backref, deferred
 from sqlalchemy.orm.exc import NoResultFound
 
 import akiri.framework.sqlalchemy as meta
 
+from archive_mixin import ArchiveUpdateMixin
 from mixin import BaseMixin, BaseDictMixin
 from cache import TableauCacheManager #FIXME
 from manager import synchronized
 from util import failed, success
 from odbc import ODBC
-from profile import UserProfile
 from .system import SystemKeys
 
 from diskcheck import DiskCheck, DiskException
 from event_control import EventControl
-from place_file import PlaceFile
 from files import FileManager
 
 from sites import Site
 from projects import Project
-from yml import YmlEntry
 
 
 # NOTE: system_user_id is maintained in two places.  This is not ideal from
@@ -82,11 +79,6 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
             return Project.get_name_by_id(self.envid, self.project_id)
         raise AttributeError(name)
 
-    def fileext(self):
-        if self.data_engine_extracts:
-            return 'twbx'
-        return 'twb'
-
     @classmethod
     def get(cls, envid, site_id, project_id, luid, **kwargs):
         keys = {'envid':envid, 'site_id':site_id,
@@ -122,6 +114,15 @@ class WorkbookEntry(meta.Base, BaseMixin, BaseDictMixin):
         filters = {'envid':envid, 'system_user_id':system_user_id}
         return cls.get_all_by_keys(filters, order_by='name')
 
+    @classmethod
+    def get_last_updated_at(cls, envid):
+        """Returns the most recent 'updated_at' value for the table,
+           if it exists, or None if the table is empty.
+         """
+        value = cls.max('updated_at', filters={'envid':envid})
+        if value is None:
+            return None
+        return str(value)
 
 class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = "workbook_updates"
@@ -136,6 +137,7 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     system_user_id = Column(Integer)
     url = Column(String)  # FIXME: make this unique.
     note = Column(String)
+    twb = deferred(Column(Text))    # the contents of the .twb file
 
     # NOTE: system_user_id is not a foreign key to avoid load dependencies.
 
@@ -180,13 +182,11 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
         return cls.get_unique_by_keys({'url': url}, **kwargs)
 
 
-class WorkbookManager(TableauCacheManager):
+class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
+    NAME = 'workbook'
 
     def __init__(self, server):
         super(WorkbookManager, self).__init__(server)
-        path = server.config.get('palette', 'workbook_archive_dir')
-        self.controller_path = os.path.abspath(path)
-        self.tableau_version = '8'  # default assumption
 
     # really sync *and* load
     @synchronized('workbooks')
@@ -194,8 +194,6 @@ class WorkbookManager(TableauCacheManager):
         # pylint: disable=too-many-locals
 
         envid = self.server.environment.envid
-        self.tableau_version = YmlEntry.get(envid,
-                                            'version.external', default='8')
 
         users = self.load_users(agent)
 
@@ -214,7 +212,7 @@ class WorkbookManager(TableauCacheManager):
 
         session = meta.Session()
 
-        last_updated_at = self._last_updated_at(envid)
+        last_updated_at = WorkbookEntry.get_last_updated_at(envid)
         if last_updated_at:
             stmt += " WHERE updated_at > '" + last_updated_at + "'"
 
@@ -270,11 +268,10 @@ class WorkbookManager(TableauCacheManager):
 
         prune_count = self._prune_missed_revisions()
 
-        archive_enabled = self.system[SystemKeys.ARCHIVE_ENABLED]
-        if not archive_enabled:
+        if not self.system[SystemKeys.ARCHIVE_ENABLED]:
             result = {u'disabled':
                       'Workbook Archives are not enabled. Will not archive.'}
-        elif not self._cred_check():
+        elif not self.cred_check():
             result = {u'error': 'Can not load workbooks: missing credentials.'}
         else:
             # Second pass - build the archive files.
@@ -354,41 +351,14 @@ class WorkbookManager(TableauCacheManager):
                             delete()
                 session.commit()
 
-                self._remove_file(row, row.fileid)
+                self.server.files.remove_file_by_id(row.fileid)
                 if row.fileid_twbx:
-                    self._remove_file(row, row.fileid_twbx)
-
-                controller_path = os.path.join(self.controller_path,
-                                               row.url)
-                os.unlink(controller_path)
+                    self.server.files.remove_file_by_id(row.fileid_twbx)
 
                 # Fixme: We could increment only if it successfully deleted.
                 removed_count += 1
 
         return removed_count
-
-    def _remove_file(self, row, fileid):
-        """Remove an archived workbook file from storage."""
-
-        file_entry = self.server.files.find_by_id(fileid)
-        if not file_entry:
-            self.log.info(
-                    "workbooks _retain_some fileid %d disappeared, ",
-                    "or was never added, wuid %d, workbookid %d",
-                    fileid, row.wuid, row.workbookid)
-            return
-
-        body = self.server.delfile_cmd(file_entry)
-        if failed(body):
-            self.log.info(
-                "workbooks _retain_some failed to delete fileid %d, "
-                "wuid %d, workbookid %d",
-                fileid, row.wuid, row.workbookid)
-        else:
-            self.log.debug(
-                "workbooks _retain_some deleted fileid %d, "
-                "wuid %d, workbookid %d",
-                fileid, row.wuid, row.workbookid)
 
     @synchronized('workbook.fixup')
     def fixup(self, agent):
@@ -425,7 +395,7 @@ class WorkbookManager(TableauCacheManager):
                 break
 
             session.refresh(update)
-            self._archive_twb(agent, update)
+            self._archive_wb(agent, update)
             count += 1
 
         # Retain only configured number of versions
@@ -437,6 +407,75 @@ class WorkbookManager(TableauCacheManager):
         return {u'status': 'OK',
                 u'updates-archived': count,
                 u'retain-removed-count': retain_removed_count}
+
+    def _archive_wb(self, agent, update):
+        """
+            Retrieve the twb/twbx file of an update and set the url.
+        """
+        filename = self._build_twb(agent, update)
+        if not filename:
+            self.log.error('Failed to retrieve twb: %s %s',
+                           update.workbook.repository_url, update.revision)
+            return
+        update.url = agent.path.basename(filename)
+        self.log.debug("workbooks load: update.url: %s", filename)
+
+        # retrieval is a long process, so commit after each.
+        meta.Session.commit()
+
+    def _build_twb(self, agent, update):
+        # pylint: disable=too-many-return-statements
+        # pylint: disable=too-many-branches
+        """Returns the filename *on the agent* or None on error."""
+
+        try:
+            # fixme: Specify a minimum disk space required other than 0?
+            dcheck = DiskCheck(self.server, agent, self.server.WORKBOOKS_DIR,
+                               FileManager.FILE_TYPE_WORKBOOK, 0)
+        except DiskException, ex:
+            self._eventgen(update, "build_workbook disk check : " + str(ex))
+            return None
+
+        tmpdir = dcheck.primary_dir
+        dst = self._tabcmd_get(agent, update, tmpdir)
+        if dst is None:
+            # _tabcmd_get generates an event on failure.
+            return None
+
+        file_type = self._get_wb_type(agent, update, dst)
+
+        if not file_type:
+            # _get_wb_type sends an event on failure
+            return None
+
+        if file_type == 'zip':
+            dst_twb = self._extract_twb_from_twbx(agent, update, dst)
+            if not dst_twb:
+                # _extract_twb_from_twbx generates an event on failure.
+                return None
+            dst_twbx = dst
+        else:
+            # It is type 'xml'.
+            # Rename .twbx to the .twb (xml) it really is.
+            dst_twb = dst[0:-1] # drop the trailing 'x'
+            agent.filemanager.move(dst, dst_twb)
+            dst_twbx = None
+            self.log.debug("workbook: renamed %s to %s", dst, dst_twb)
+
+        # Pull the twb file contents over to the controller before sending the
+        # file away (and deleting it on the primary if it will reside
+        # elsewhere).
+        if not self._copy_twb_to_controller(agent, update, dst_twb):
+            return None
+
+        place = self.archive_file(agent, dcheck, dst_twb)
+        update.fileid = place.placed_file_entry.fileid
+
+        if dst_twbx and self.system[SystemKeys.ARCHIVE_SAVE_TWBX]:
+            place_twbx = self.archive_file(agent, dcheck, dst_twbx)
+            update.fileid_twbx = place_twbx.placed_file_entry.fileid
+
+        return dst_twb
 
     def _get_wb_type(self, agent, update, dst):
         """Inspects the 'dst' file, checks to make sure it's valid,
@@ -473,162 +512,27 @@ class WorkbookManager(TableauCacheManager):
         self.log.debug("get_wb_type: File '%s' is type: %s", dst, file_type)
         return file_type
 
-    # returns the filename *on the agent* or None on error.
-    def _build_twb(self, agent, update):
-        # pylint: disable=too-many-return-statements
-        # pylint: disable=too-many-branches
-        try:
-            # fixme: Specify a minimum disk space required other than 0?
-            dcheck = DiskCheck(self.server, agent, self.server.WORKBOOKS_DIR,
-                               FileManager.FILE_TYPE_WORKBOOK, 0)
-        except DiskException, ex:
-            self._eventgen(update, "build_workbook disk check : " + str(ex))
-            return None
-
-        tmpdir = dcheck.primary_dir
-        dst = self._tabcmd_get(agent, update, tmpdir)
-        if dst is None:
-            # _tabcmd_get generates an event on failure.
-            return None
-
-        file_type = self._get_wb_type(agent, update, dst)
-
-        if not file_type:
-            # _get_wb_type sends an event on failure
-            return None
-
-        if file_type == 'zip':
-            dst_twb = self._extract_twb_from_twbx(agent, update, dst)
-            if not dst_twb:
-                # _extract_twb_from_twbx generates an event on failure.
-                return None
-            dst_twbx = dst
-        else:
-            # It is type 'xml'.
-            # Rename .twbx to the .twb (xml) it really is.
-            dst_twb = dst[0:-1] # drop the trailing 'x'
-            agent.filemanager.move(dst, dst_twb)
-            dst_twbx = None
-            self.log.debug("workbook: renamed %s to %s", dst, dst_twb)
-
-        # Pull the twb file over to the controller before sending the
-        # file away # (and deleting it on the primary if it will reside
-        # elsewhere).
-        result = self._copy_twb_to_controller(agent, update, dst_twb)
-        if not result:
-            return None
-
-        place = self._archive_file(agent, dcheck, dst_twb)
-        update.fileid = place.placed_file_entry.fileid
-
-        if dst_twbx and self.system[SystemKeys.ARCHIVE_SAVE_TWBX]:
-            place_twbx = self._archive_file(agent, dcheck, dst_twbx)
-            update.fileid_twbx = place_twbx.placed_file_entry.fileid
-
-        return result
-
-    def _copy_twb_to_controller(self, agent, update, dst):
+    def _copy_twb_to_controller(self, agent, update, dst_twb):
         """Copy the twb file from the Tableau server to the controller.
            Returns:
                 Failure: None
                 Success: The passed filename
         """
-        self.log.debug('Retrieving workbook: %s', dst)
+        self.log.debug('Retrieving workbook: %s', dst_twb)
         try:
-            body = agent.filemanager.save(dst, target=self.controller_path)
+            contents = agent.filemanager.get(dst_twb)
         except IOError as ex:
-            self.log.debug("Error saving workbook '%s': %s", dst, str(ex))
+            self.log.debug("Error getting workbook '%s': %s", dst_twb, str(ex))
             return None
 
-        if failed(body):
-            self._eventgen(self, update, data=body)
-            return None
-        else:
-            self.log.debug('Retrieved workbook: %s', dst)
+        update.twb = contents
+        return True
 
-        return dst
-
-    def _archive_file(self, agent, dcheck, dst):
-        """Copy the given workbook filename from the Tableau server to
-           its configured storage location.
-
-           Returns:
-                The PlaceFile instance.
-        """
-
-        # Get ready to move twbx /twb to resting location(s).
-        file_size = 0
-        try:
-            file_size_body = agent.filemanager.filesize(dst)
-        except IOError as ex:
-            self.log.error("_archive_file: filemanager.filesize('%s')" +
-                           "failed: %s", dst, str(ex))
-        else:
-            if not success(file_size_body):
-                self.log.error("archive_file: Failed to get size of " + \
-                               "workbook file %s: %s", dst,
-                               file_size_body['error'])
-            else:
-                file_size = file_size_body['size']
-
-        # Save the workbook file on cloud storage, other agent,
-        # or leave on the primary.
-        auto = True
-        # Note: If the file is copied off the primary, then it is deleted
-        # from the primary afterwards, due to "enable_delete=True":
-        place = PlaceFile(self.server, agent, dcheck, dst, file_size, auto,
-                          enable_delete=True)
-        self.log.debug("build_workbook: %s", place.info)
-
-        return place
-
-    # returns the filename or None on error.
-    def _retrieve_twb(self, agent, update):
-        path = self._build_twb(agent, update)
-        if not path:
-            # build_workbook prints errors and calls _eventgen().
-            return None
-
-        return agent.path.basename(path)
-
-    # Retrieve the twb file of an update and set the url.
-    def _archive_twb(self, agent, update):
-        filename = self._retrieve_twb(agent, update)
-        if not filename:
-            self.log.error('Failed to retrieve twb: %s %s',
-                           update.workbook.repository_url, update.revision)
-            return
-        update.url = filename
-        self.log.debug("workbooks load: update.url: %s", filename)
-
-        # retrieval is a long process, so commit after each.
-        meta.Session.commit()
-
-    # This is the time the last revision was updated.
-    def _last_updated_at(self, envid):
-        value = WorkbookEntry.max('updated_at', filters={'envid':envid})
-        if value is None:
-            return None
-        return str(value)
-
-    # See if credentials exist.
-    def _cred_check(self):
-        """Returns None if there are credentials and Non-None/False
-           if there are credentials."""
-
-        cred = self.server.cred.get('primary', default=None)
-        if not cred:
-            cred = self.server.cred.get('secondary', default=None)
-
-        if cred:
-            if not cred.user:
-                cred = None
-
-        return cred
-
-    # Run 'tabcmd get' on the agent to retrieve the twb/twbx file
-    # then return its path or None in the case of an error.
     def _tabcmd_get(self, agent, update, tmpdir):
+        """
+            Run 'tabcmd get' on the agent to retrieve the twb/twbx file
+            then return its path or None in the case of an error.
+        """
         try:
             wb_entry = meta.Session.query(WorkbookEntry).\
                 filter(WorkbookEntry.workbookid == update.workbookid).\
@@ -637,46 +541,19 @@ class WorkbookManager(TableauCacheManager):
             self.log.error("Missing workbook id: %d", update.workbookdid)
             return None
 
-        site_entry = Site.get(self.server.environment.envid, wb_entry.site_id,
-                              default=None)
-
-        if not site_entry:
-            self.log.error("Missing site id: %d", wb_entry.site_id)
-            return None
-
         url = '/workbooks/%s.twbx' % update.workbook.repository_url
 
-        if site_entry.url_namespace:
-            site = '--site %s' % site_entry.url_namespace
-        else:
-            site = ''
+        dst = agent.path.join(tmpdir,
+                             self.clean_filename(wb_entry, update.revision) + \
+                             '.twbx')
 
-        dst = agent.path.join(tmpdir, update.basename() + '.twbx')
-        cmd = 'get %s %s -f "%s"' % (url, site, dst)
+        body = self.tabcmd_run(agent, update, url, dst, wb_entry.site_id,
+                                   self._remove_wbu)
 
-        self.log.debug('building workbook archive: ' + dst)
-
-        for _ in range(3):
-            body = self.server.tabcmd(cmd, agent)
-            if failed(body):
-                if 'stderr' in body:
-                    if 'Service Unavailable' in body['stderr']:
-                        # 503 error, retry
-                        self.log.debug(cmd + \
-                                        ' : 503 Service Unavailable, retrying')
-                        continue
-                    elif "404" in body['stderr'] and \
-                                                "Not Found" in body['stderr']:
-                        # The workbook update was deleted before we
-                        # got to it.  Subsequent attempts will also fail,
-                        # so delete the workbook update row to stop
-                        # attempting to retrieve it again.
-                        self._remove_wbu(update)
-                break
-            else:
-                return dst
-        self._eventgen(update, data=body)
-        return None
+        if not success(body):
+            self._eventgen(update, data=body)
+            return None
+        return dst
 
     def _remove_wbu(self, update):
         """Remove an update from the workbook_updates table.
@@ -693,14 +570,17 @@ class WorkbookManager(TableauCacheManager):
                            update.wuid)
             return
 
-    # A twbx file is just a zipped twb + associated tde files.
-    # Extract the twb and return the path.
     def _extract_twb_from_twbx(self, agent, update, dst):
+        """A twbx file is just a zipped twb + associated tde files.
+           Extract the twb and return the path.
+           Returns:
+                Success:    The twb filename on the agent.
+                Fail:       None
+        """
         cmd = 'ptwbx ' + '"' + dst + '"'
         body = self.server.cli_cmd(cmd, agent, timeout=60*30)
 
-        archive_save_twbx = self.system[SystemKeys.ARCHIVE_SAVE_TWBX]
-        if not archive_save_twbx:
+        if not self.system[SystemKeys.ARCHIVE_SAVE_TWBX]:
             # Delete the 'twbx' since we don't archive it.
             try:
                 agent.filemanager.delete(dst)
@@ -715,30 +595,14 @@ class WorkbookManager(TableauCacheManager):
 
     # Generate an event in case of a failure.
     def _eventgen(self, update, error=None, data=None):
-        key = EventControl.WORKBOOK_ARCHIVE_FAILED
         if data is None:
             data = {}
+
         data = dict(update.workbook.todict().items() + \
                     update.todict().items() + \
                     data.items())
         if 'embedded' in data:
             del data['embedded']
-        if error:
-            self.log.error(error)
-            data['error'] = error
 
-        profile = UserProfile.get_by_system_user_id(
-                                                self.server.environment.envid,
-                                                update.system_user_id)
-
-        if profile:
-            username = profile.display_name()
-            userid = profile.userid
-        else:
-            username = None
-            userid = None
-
-        if username and not 'owner' in data:
-            data['owner'] = username
-
-        return self.server.event_control.gen(key, data, userid=userid)
+        self.sendevent(EventControl.WORKBOOK_ARCHIVE_FAILED, update, error,
+                        data)
