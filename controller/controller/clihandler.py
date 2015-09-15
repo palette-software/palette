@@ -10,6 +10,7 @@ from datetime import datetime
 import traceback
 import subprocess
 from urlparse import urlparse
+import unicodedata
 
 import sqlalchemy
 from sqlalchemy.orm.session import make_transient
@@ -238,6 +239,11 @@ class CliHandler(socketserver.StreamRequestHandler):
                                                     replace('\n', ''))
 #        if not line.endswith('\n'):
 #            line += '\n'
+
+        # sockets don't do well with unicode.
+        if isinstance(line, unicode):
+            line = unicodedata.normalize('NFKD', line).encode('ascii', 'ignore')
+
         try:
             print  >> self.wfile, line
         except EnvironmentError:
@@ -843,6 +849,37 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = self.server.workbooks.load(agent)
         elif action == 'fixup':
             body = self.server.workbooks.fixup(agent)
+        self.report_status(body)
+
+    @usage('datasource [IMPORT|FIXUP]')
+    @upgrade_rwlock
+    def do_datasource(self, cmd):
+        """Import datasources table from Tableau or fixup a previous import"""
+
+        if len(cmd.args) != 1:
+            self.print_usage(self.do_datasource.__usage__)
+            return
+
+        action = cmd.args[0].lower()
+        if action != 'import' and action != 'fixup':
+            self.print_usage(self.do_datasource.__usage__)
+            return
+
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            return
+
+        if not self.server.odbc_ok():
+            state = self.server.state_manager.get_state()
+            self.error(clierror.ERROR_WRONG_STATE,
+                       "FAIL: Main state is " + state)
+            return
+
+        self.ack()
+        if action == 'import':
+            body = self.server.datasources.load(agent)
+        elif action == 'fixup':
+            body = self.server.datasources.fixup(agent)
         self.report_status(body)
 
 

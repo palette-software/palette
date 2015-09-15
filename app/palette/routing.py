@@ -14,6 +14,7 @@ from .s3 import S3Application
 from .user import UserApplication
 from .yml import YmlApplication
 from .workbooks import WorkbookApplication
+from .datasources import DatasourceApplication
 
 class RestRouter(Router):
 
@@ -38,6 +39,8 @@ class RestRouter(Router):
         self.add_route(r'/yml\Z', YmlApplication())
         self.add_route(r'/workbooks?(/(?P<action>[^\s]+))?\Z',
                        WorkbookApplication())
+        self.add_route(r'/datasources?(/(?P<action>[^\s]+))?\Z',
+                       DatasourceApplication())
 
 
 from .setup import SetupConfigPage

@@ -131,6 +131,7 @@ class Sched(threading.Thread):
         self.add_cron_job(name='http_request', minute='*')
         self.add_cron_job(name='extract', minute="*")
         self.add_cron_job(name='workbook', minute='*')
+        self.add_cron_job(name='datasource', minute='*')
         self.add_cron_job(name='checkports', minute="*")
 
 

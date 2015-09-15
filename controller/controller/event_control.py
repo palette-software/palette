@@ -191,6 +191,8 @@ class EventControl(meta.Base, BaseMixin, BaseDictMixin):
 
     WORKBOOK_ARCHIVE_FAILED = "WORKBOOK-ARCHIVE-FAILED"
 
+    DATASOURCE_ARCHIVE_FAILED = "DATASOURCE-ARCHIVE-FAILED"
+
     SYSTEM_EXCEPTION = "SYSTEM-EXCEPTION"
     PALETTE_UPDATED = "PALETTE-UPDATED"
     CONTROLLER_STARTED = "CONTROLLER-STARTED"
@@ -219,6 +221,7 @@ class EventControl(meta.Base, BaseMixin, BaseDictMixin):
         'backup': 'Tableau Backup',
         'cleanup' : 'Tableau Log Cleanup',
         'communication' : 'Communication',
+        'datasource' : 'Datasources',
         'extract' : 'Extracts',
         'network': 'Network Test',
         'http' : 'HTTP Status',

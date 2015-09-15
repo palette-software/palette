@@ -14,7 +14,7 @@ Depends:
  python-sqlalchemy, python-psycopg2, python-boto, python-dateutil,
  postgresql, telnet, daemon, postfix, ntp,
  akiri.framework (>= 0.5.3),
- palette-agent (>= 1.1.0),
+ palette-agent (>= 1.6.0),
  palette-support (>= 1.4.0)
 Description: Palette Controller and Web App
  This package contains the Palette Controller and Web Application
