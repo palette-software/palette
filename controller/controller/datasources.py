@@ -316,9 +316,9 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
                             delete()
                 session.commit()
 
-                self.remove_file(row.fileid_tds, row.dsuid, row.dsid)
+                self.server.files.remove_file_by_id(row.fileid_tds)
                 if row.fileid_tdsx:
-                    self.remove_file(row.fileid_tdsx, row.dsuid, row.dsid)
+                    self.server.files.remove_file_by_id(row.fileid_tdsx)
 
                 # Fixme: We could increment only if it successfully deleted.
                 removed_count += 1
