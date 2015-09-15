@@ -1,6 +1,7 @@
 import time
 import datetime
 
+from collections import OrderedDict
 from webob import exc
 
 from akiri.framework import ENVIRON_PREFIX
@@ -28,7 +29,7 @@ class BackupApplication(PaletteRESTApplication):
         """ Convert to API naming
         FIXME: this can be removed when the UI uses this interface.
         """
-        data = {}
+        data = OrderedDict()
         data['id'] = entry.fileid
         data['uri'] = entry.name
         data['size'] = entry.size
@@ -61,8 +62,40 @@ class BackupApplication(PaletteRESTApplication):
             backups.append(self._backup_asdict(entry))
         return {'status': 'OK', 'backups': backups}
 
+class RestoreMixin(object):
+    """Mixin to add the 'restore' manage action."""
 
-class BackupRestoreApplication(BackupApplication):
+    @required_parameters('filename')
+    @required_role(Role.MANAGER_ADMIN)
+    def handle_restore(self, req):
+        """Do a Tableau restore using a given filename."""
+        sync = req.params_getbool('sync', default=False)
+        filename = req.POST['filename']
+
+        backup_entry = FileManager.find_by_name_envid(req.envid, filename)
+        if not backup_entry:
+            return {'error': 'Backup not found: ' + filename}
+
+        cmd = 'restore "%s"' % backup_entry.name
+
+        password = req.params_get('password', default=None)
+        if password:
+            cmd += ' "%s"' % password
+
+        restore_type = req.params_get('restore-type', default=None)
+        if restore_type and restore_type.lower() == 'data-only':
+            cmd = '/noconfig ' + cmd
+
+        if not req.params_getbool('backup', default=False):
+            cmd = '/nobackup ' + cmd
+        if not req.params_getbool('license', default=False):
+            cmd = '/nolicense ' + cmd
+
+        self.commapp.send_cmd(cmd, req=req, read_response=sync)
+        return {'status': 'OK'}
+
+
+class BackupRestoreApplication(BackupApplication, RestoreMixin):
     """Extended backup application used by the UI"""
 
     def _backup_asdict(self, entry):
@@ -76,33 +109,6 @@ class BackupRestoreApplication(BackupApplication):
         self.commapp.send_cmd("backup", req=req, read_response=False)
         now = time.strftime('%A, %B %d at %I:%M %p')
         return {'last': now}
-
-    @required_parameters('filename', 'backup', 'license')
-    @required_role(Role.MANAGER_ADMIN)
-    def handle_restore(self, req):
-
-        filename = req.POST['filename']
-
-        backup_entry = FileManager.find_by_name_envid(req.envid, filename)
-        if not backup_entry:
-            return {'error': 'Backup not found: ' + filename}
-
-        cmd = 'restore "%s"' % backup_entry.name
-
-        if 'password' in req.POST and len(req.POST['password']):
-            cmd += ' "%s"' % req.POST['password']
-
-        if 'restore-type' in req.POST and \
-                                    req.POST['restore-type'] == 'data-only':
-            cmd = '/noconfig ' + cmd
-
-        if not req.params_getbool('backup'):
-            cmd = '/nobackup ' + cmd
-        if not req.params_getbool('license'):
-            cmd = '/nolicense ' + cmd
-
-        self.commapp.send_cmd(cmd, req=req, read_response=False)
-        return {}
 
     @required_parameters('action')
     def handle_POST(self, req):
