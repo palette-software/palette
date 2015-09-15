@@ -11,7 +11,6 @@ import exc
 
 import httplib
 import ntpath
-import uuid as uuidbuild
 
 import sqlalchemy
 import akiri.framework.sqlalchemy as meta
@@ -1359,40 +1358,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if last_version == new_version:
             return
 
-        if last_version != '1.0.1':
+        if last_version[:4] != '1.5.':
             return
 
-        entry = Domain.getone()
-        if not entry.systemid:
-            entry.systemid = str(uuidbuild.uuid1())
-            meta.commit()
-
-        # Set default mail server type to direct.
-        # We do this to match the UI configuration with the configuration
-        # of current installations.
-        self.system[SystemKeys.MAIL_SERVER_TYPE] = 1
-
-        # Migrate/copy system table entry from "log-archive-retain-count"
-        # to both:
-        #   ZIPLOG_AUTO_RETAIN_COUNT
-        #   ZIPLOG_USER_RETAIN_COUNT
-        ziplog_retain_count = self.system[SystemKeys.LOG_ARCHIVE_RETAIN_COUNT]
-        self.system[SystemKeys.ZIPLOG_AUTO_RETAIN_COUNT] = ziplog_retain_count
-        self.system[SystemKeys.ZIPLOG_USER_RETAIN_COUNT] = ziplog_retain_count
-        meta.commit()
-
-        # The rest is for the s3 cloud entry.
-        entry = CloudEntry.get_by_envid_type(self.environment.envid, "s3")
-        if not entry:
-            return
-
-        try:
-            _ = int(entry.secret, 16)
-        except ValueError:
-            # The secret wasn't a hex digest, so we need to convert it to one.
-            entry.secret = aes_encrypt(entry.secret)
-            meta.Session.commit()
-
+        self.workbooks.move_twb_to_db()
 
 import logging
 
