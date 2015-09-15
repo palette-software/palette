@@ -1,3 +1,4 @@
+import os
 import unicodedata
 
 from sqlalchemy import Column, BigInteger, Integer, Boolean, String, DateTime
@@ -187,6 +188,36 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
 
     def __init__(self, server):
         super(WorkbookManager, self).__init__(server)
+
+    def move_twb_to_db(self):
+        """Copy the twb file contents on the controller to the database
+           and remove the twb files.
+        """
+
+        path = self.server.config.get('palette', 'workbook_archive_dir')
+        controller_path = os.path.abspath(path)
+
+        session = meta.Session()
+        rows = session.query(WorkbookUpdateEntry).\
+                            filter(WorkbookUpdateEntry.url != '').\
+                            filter(WorkbookUpdateEntry.url != None).\
+                            filter(WorkbookUpdateEntry.twb == None).\
+                            all()
+
+        for row in rows:
+            twb_path = os.path.join(controller_path, row.url)
+            try:
+                with open(twb_path, "r") as fd_twb:
+                    contents = fd_twb.read()
+            except IOError as err:
+                self.log.error("move_twb_to_db open failed: %s", str(err))
+                continue
+
+            row.twb = contents
+            session.commit()
+
+            twb_path = os.path.join(controller_path, row.url)
+            os.unlink(twb_path)
 
     # really sync *and* load
     @synchronized('workbooks')
