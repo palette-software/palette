@@ -65,7 +65,7 @@ class PlaceFile(object):
             return
 
         if self.enable_delete and self.delete_local_backup:
-            remove_body = self.server.delete_vol_file(self.agent,
+            remove_body = self.server.files.delete_vol_file(self.agent,
                                                         self.full_path)
             # Check if the DEL worked.
             if remove_body.has_key('error'):

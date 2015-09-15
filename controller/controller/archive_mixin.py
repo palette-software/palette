@@ -3,7 +3,7 @@ import unicodedata
 from place_file import PlaceFile
 from sites import Site
 from profile import UserProfile
-from util import failed, success
+from util import success
 
 class ArchiveUpdateMixin(object):
     NAME = "unknown"
@@ -77,29 +77,6 @@ class ArchiveUpdateMixin(object):
         self.log.debug("%s build filename %s: %s", self.NAME, dst, place.info)
 
         return place
-
-    def remove_file(self, fileid, row_update_id, row_id):
-        """Remove an archived file from storage."""
-
-        file_entry = self.server.files.find_by_id(fileid)
-        if not file_entry:
-            self.log.info(
-                    "%s remove_file fileid %d disappeared, ",
-                    "or was never added, update id %d, id %d",
-                    self.NAME, fileid, row_update_id, row_id)
-            return
-
-        body = self.server.delfile_cmd(file_entry)
-        if failed(body):
-            self.log.info(
-                "%s remove_file failed to delete fileid %d, "
-                "update id %d, id %d",
-                self.NAME, fileid, row_update_id, row_id)
-        else:
-            self.log.debug(
-                "%s remove_file deleted fileid %d, "
-                "update id %d, id %d",
-                self.NAME, fileid, row_update_id, row_id)
 
     def sendevent(self, key, update, error, data):
         """Send the event."""

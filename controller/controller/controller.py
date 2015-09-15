@@ -271,7 +271,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     "file_rotate: deleting %s file type " +
                     "%s name %s fileid %d", find_name, file_type, entry.name,
                     entry.fileid)
-            body = self.delfile_cmd(entry)
+            body = self.files.delfile_by_entry(entry)
             if 'error' in body:
                 info += '\n' + body['error']
             elif 'stderr' in body and len(body['stderr']):
@@ -292,70 +292,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def seconds_to_str(self, seconds):
         return str(datetime.timedelta(seconds=int(seconds)))
-
-    def delfile_cmd(self, entry):
-        """Delete a file, wherever it is
-            Argument:
-                    entry   The file entry.
-        """
-        # pylint: disable=too-many-return-statements
-
-        # Delete a file from the cloud
-        if entry.storage_type == FileManager.STORAGE_TYPE_CLOUD:
-            try:
-                self.delete_cloud_file(entry)
-            except IOError as ex:
-                return {'error': str(ex)}
-            try:
-                self.files.remove(entry.fileid)
-            except sqlalchemy.orm.exc.NoResultFound:
-                return {'error': ("fileid %d not found: name=%s cloudid=%d" % \
-                        (entry.fileid, entry.name,
-                        entry.storageid))}
-            return {}
-
-        # Delete a file from an agent.
-        vol_entry = AgentVolumesEntry.get_vol_entry_by_volid(entry.storageid)
-        if not vol_entry:
-            return {"error": "volid not found: %d" % entry.storageid}
-
-        target_agent = None
-        agents = self.agentmanager.all_agents()
-        for key in agents.keys():
-            self.agentmanager.lock()
-            if not agents.has_key(key):
-                self.log.info(
-                    "copy_cmd: agent with conn_id %d is now " + \
-                    "gone and won't be checked.", key)
-                self.agentmanager.unlock()
-                continue
-            agent = agents[key]
-            self.agentmanager.unlock()
-
-            if agent.agentid == vol_entry.agentid:
-                target_agent = agent
-                break
-
-        if not target_agent:
-            return {'error': "Agentid %d not connected." % vol_entry.agentid}
-
-        file_full_path = entry.name
-        self.log.debug("delfile_cmd: Deleting path '%s' on agent '%s'",
-                       file_full_path, target_agent.displayname)
-
-        body = self.delete_vol_file(target_agent, file_full_path)
-
-        # We remove the entry from the files table regardless of
-        # whether or not the file was successfully removed:
-        # If it failed to remove, it was probably because it was already
-        # gone.
-        try:
-            self.files.remove(entry.fileid)
-        except sqlalchemy.orm.exc.NoResultFound:
-            return {'error': ("fileid %d not found: name=%s agent=%s" % \
-                    (entry.fileid, file_full_path,
-                        target_agent.displayname))}
-        return body
 
     def status_cmd(self, agent):
         return self.cli_cmd('tabadmin status -v', agent, timeout=60*5)
@@ -598,7 +534,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 if got.copied:
                     # If the file was copied to the Primary, delete
                     # the temporary backup file we copied to the Primary.
-                    self.delete_vol_file(agent, got.primary_full_path)
+                    self.files.delete_vol_file(agent, got.primary_full_path)
                 self.state_manager.update(orig_state)
                 return stop_body
 
@@ -645,7 +581,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if got.copied:
             # If the file was copied to the Primary, delete
             # the temporary backup file we copied to the Primary.
-            delete_body = self.delete_vol_file(agent,
+            delete_body = self.files.delete_vol_file(agent,
                                                  got.primary_full_path)
             if 'error' in delete_body:
                 info += '\n' + delete_body['error']
@@ -654,55 +590,6 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             restore_body['info'] = info.strip()
 
         return restore_body
-
-    # FIXME: use filemanager.delete() instead?
-    def delete_vol_file(self, agent, source_fullpathname):
-        """Delete a file, check the error, and return the body result.
-           Note: Does not remove the entry from the files table.
-           If that is needed, that must be done by the caller."""
-        self.log.debug("Removing file '%s'", source_fullpathname)
-
-        # Verify file exists.
-        try:
-            exists_body = agent.filemanager.filesize(source_fullpathname)
-        except IOError as ex:
-            self.log.info("filemanager.filesize('%s') failed: %s",
-                            source_fullpathname, str(ex))
-            return {'error': str(ex)}
-
-        if failed(exists_body):
-            self.log.info("filemanager.filesize('%s') error: %s",
-                            source_fullpathname, str(exists_body))
-            return exists_body
-
-        # Remove file.
-        try:
-            remove_body = agent.filemanager.delete(source_fullpathname)
-        except IOError as ex:
-            self.log.info("filemanager.delete('%s') failed: %s",
-                            source_fullpathname, str(ex))
-            return {'error': str(ex)}
-
-        return remove_body
-
-    # FIXME: move to CloudManager
-    def delete_cloud_file(self, file_entry):
-        """Note: Does not remove the entry from the files table.
-           If that is needed, that must be done by the caller."""
-        cloud_entry = self.cloud.get_by_cloudid(file_entry.storageid)
-        if not cloud_entry:
-            raise IOError("No such cloudid: %d for file %s" % \
-                          (file_entry.cloudid, file_entry.name))
-
-        if cloud_entry.cloud_type == CloudManager.CLOUD_TYPE_S3:
-            self.cloud.s3.delete_file(cloud_entry, file_entry.name)
-        elif cloud_entry.cloud_type == CloudManager.CLOUD_TYPE_GCS:
-            self.cloud.gcs.delete_file(cloud_entry, file_entry.name)
-        else:
-            msg = "delete_cloud_file: Unknown cloud_type %s for file: %s" % \
-                  (cloud_entry.cloud_type, file_entry.name)
-            self.log.error(msg)
-            raise IOError(msg)
 
     def move_bucket_subdirs_to_path(self, in_bucket, in_path):
         """ Given:

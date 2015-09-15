@@ -98,6 +98,24 @@ class CloudManager(Manager):
 
         return self.get_by_cloudid(cloudid)
 
+    def delete_cloud_file_by_file_entry(self, file_entry):
+        """Note: Does not remove the entry from the files table.
+           If that is needed, that must be done by the caller."""
+        cloud_entry = self.get_by_cloudid(file_entry.storageid)
+        if not cloud_entry:
+            raise IOError("No such cloudid: %d for file %s" % \
+                          (file_entry.cloudid, file_entry.name))
+
+        if cloud_entry.cloud_type == CloudManager.CLOUD_TYPE_S3:
+            self.s3.delete_file(cloud_entry, file_entry.name)
+        elif cloud_entry.cloud_type == CloudManager.CLOUD_TYPE_GCS:
+            self.gcs.delete_file(cloud_entry, file_entry.name)
+        else:
+            msg = "delete_cloud_file: Unknown cloud_type %s for file: %s" % \
+                  (cloud_entry.cloud_type, file_entry.name)
+            self.log.error(msg)
+            raise IOError(msg)
+
     # FIXME: use get_unique_by_keys()
     def get_by_cloudid(self, cloudid):
         try:

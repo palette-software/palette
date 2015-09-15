@@ -788,7 +788,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         self.ack()
-        body = self.server.delfile_cmd(entry)
+        body = self.server.files.delfile_cmd(entry)
 
         stateman.update(main_state)
 
