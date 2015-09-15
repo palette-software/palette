@@ -101,6 +101,10 @@ DEFAULTS = SystemDefaults({
     SystemKeys.HTTP_LOAD_ERROR: 0,
     SystemKeys.HTTP_LOAD_RE: HTTP_LOAD_RE,
 
+    SystemKeys.DATASOURCE_ARCHIVE_ENABLED: False,
+    SystemKeys.DATASOURCE_RETAIN_COUNT: 0,
+    SystemKeys.DATASOURCE_SAVE_TDSX: True,
+
     SystemKeys.PING_REQUEST_INTERVAL: 10,
     SystemKeys.SOCKET_TIMEOUT: 60,
     SystemKeys.SSL_HANDSHAKE_TIMEOUT: 5,

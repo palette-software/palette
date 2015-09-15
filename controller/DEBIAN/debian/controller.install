@@ -20,5 +20,6 @@ var/palette/sched/license_verify    /var/palette/sched
 var/palette/sched/metrics_prune    /var/palette/sched
 var/palette/sched/sync    /var/palette/sched
 var/palette/sched/workbook    /var/palette/sched
+var/palette/sched/datasource    /var/palette/sched
 var/palette/sched/yml    /var/palette/sched
 var/palette/sched/agent_upgrader    /var/palette/sched

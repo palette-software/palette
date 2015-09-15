@@ -138,13 +138,14 @@ elif [ "$oldversion" = "1.4.3" -o "$oldversion" = "1.4.4" -o "$oldversion" = "1.
 
     update system set value='735' where key='metric-save-days';
 
-    alter table workbook_updates add fileid_twbx character varying;
 XYZZY
 elif [ "$oldversion" = "1.5.3" ]; then
     psql paldb << XYZZY
     drop table event_control;
 
     alter table workbook_updates add fileid_twbx character varying;
+    drop table datasources;
+    drop table cron;
 XYZZY
 elif [ "$oldversion" != "" ]; then
     echo Upgrading $oldversion
@@ -152,6 +153,10 @@ elif [ "$oldversion" != "" ]; then
     # drop the event_control table as it almost always changes.
     psql paldb << XYZZY
     drop table event_control;
+
+    alter table workbook_updates add fileid_twbx character varying;
+    drop table datasources;
+    drop table cron;
 XYZZY
 elif [ "$oldversion" = "" ]; then
     echo First install

@@ -11,7 +11,7 @@ from cache import TableauCacheManager
 from manager import synchronized
 from odbc import ODBC
 from util import timedelta_total_seconds, utc2local
-from datasources import DataSource
+from datasources import DataSourceEntry
 from workbooks import WorkbookEntry
 
 def to_hhmmss(seconds):
@@ -77,7 +77,7 @@ class ExtractManager(TableauCacheManager):
         entry.project_id = wb_entry.project_id
 
     # FIXME: merge the update functions
-    def datasource_update(self, entry, users):
+    def datasource_update(self, entry):
         args = entry.args.split()
         if len(args) < 11 or not args[4].isdigit():
             self.log.error("extract datasource_update: args bad for "
@@ -88,18 +88,14 @@ class ExtractManager(TableauCacheManager):
         datasourceid = int(args[4])
         envid = self.server.environment.envid
 
-        try:
-            ds_entry = DataSource.get(envid, datasourceid)
-        except ValueError:
-            self.log.error("extract datasource__update: No such datasource "
+        ds_entry = DataSourceEntry.get_newest_by_id(envid, datasourceid)
+        if not ds_entry:
+            self.log.error("extract datasource_update: No such datasource "
                            "title %s, id %d\n",
                            entry.title, datasourceid)
             return
 
-        # Our 'datasource' table doesn't have system_user_id, so we
-        # need to look it up.  (Note our 'workbook' table does have
-        # 'system_user_id')
-        entry.system_user_id = users.get(ds_entry.site_id, ds_entry.owner_id)
+        entry.system_user_id = ds_entry.system_user_id
         entry.project_id = ds_entry.project_id
 
     @synchronized('extracts')
@@ -149,8 +145,6 @@ class ExtractManager(TableauCacheManager):
         if 'error' in datadict or '' not in datadict:
             return datadict
 
-        userdata = self.load_users(agent)
-
         session = meta.Session()
         for odbcdata in ODBC.load(datadict):
             entry = ExtractEntry()
@@ -164,7 +158,7 @@ class ExtractManager(TableauCacheManager):
                 self.workbook_update(entry)
             if entry.subtitle in ('Data Source', 'Datasource',
                                   'RefreshExtractTask'):
-                self.datasource_update(entry, userdata)
+                self.datasource_update(entry)
             body = dict(agent.todict().items() + entry.todict().items())
 
             if entry.completed_at is not None and entry.started_at is not None:

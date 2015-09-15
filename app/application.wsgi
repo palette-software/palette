@@ -28,6 +28,7 @@ from palette.routing import RestRouter, ConfigureRouter
 from palette.setup import SetupPage
 from palette.state import StateApp
 from palette.workbooks import WorkbookArchive, WorkbookData
+from palette.datasources import DatasourceArchive, DatasourceData
 
 # settings
 if __name__ == '__main__':
@@ -40,6 +41,7 @@ LOGIN_URL = '/login'
 LOGIN_MAX_AGE = 2592000
 LICENSING_URL = 'https://licensing.palette-software.com/hello'
 WORKBOOK_DATA_PATH = os.path.join(BASEDIR, 'data', 'workbook-archive')
+DATASOURCE_DATA_PATH = os.path.join(BASEDIR, 'data', 'datasource-archive')
 DATABASE = 'postgresql://palette:palpass@localhost/paldb'
 
 # general configuration
@@ -74,11 +76,14 @@ api = AuthTKTMiddleware(api, secret=SHARED)
 pages = Router()
 pages.add_route(r'/about\Z|/support/about\Z', AboutPage())
 pages.add_route(r'/workbook/archive\Z', WorkbookArchive())
+pages.add_route(r'/datasource/archive\Z', DatasourceArchive())
 pages.add_route(r'/manage\Z', ManagePage())
 pages.add_route(r'/profile\Z', ProfilePage())
 pages.add_route(r'/configure/', ConfigureRouter())
 pages.add_route(r'/data/workbook-archive/(?P<name>[^\s]+)\Z',
                 WorkbookData(WORKBOOK_DATA_PATH))
+pages.add_route(r'/data/datasource-archive/(?P<name>[^\s]+)\Z',
+                DatasourceData(DATASOURCE_DATA_PATH))
 pages.add_route(r'/', HomePage())
 pages = RemoteUserMiddleware(pages)
 pages = AuthRedirectMiddleware(pages, redirect=LOGIN_URL)
