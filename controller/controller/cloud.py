@@ -158,8 +158,8 @@ class CloudInstance(object):
         self.envid = self.server.environment.envid
 
     @abstractmethod
-    def send_cmd(self, agent, action, cloud_entry, path, bucket_subdir=None,
-                                                                    pwd=None):
+    def send_cmd(self, agent, action, cloud_entry, path,
+                 bucket_subdir=None, pwd=None):
         # pylint: disable=too-many-arguments
         pass
 
@@ -170,18 +170,18 @@ class CloudInstance(object):
     # pylint: disable=too-many-arguments
     def get(self, agent, cloud_entry, path, bucket_subdir=None, pwd=None):
         return self.send_cmd(agent, 'GET', cloud_entry, path,
-                                        bucket_subdir=bucket_subdir, pwd=pwd)
+                             bucket_subdir=bucket_subdir, pwd=pwd)
 
     # pylint: disable=too-many-arguments
     def put(self, agent, cloud_entry, path, bucket_subdir=None, pwd=None):
         return self.send_cmd(agent, 'PUT', cloud_entry, path,
-                                        bucket_subdir=bucket_subdir, pwd=pwd)
+                             bucket_subdir=bucket_subdir, pwd=pwd)
 
 # Handle S3 specifics
 class S3(CloudInstance):
 
-    def send_cmd(self, agent, action, cloud_entry, path, bucket_subdir=None,
-                                                                    pwd=None):
+    def send_cmd(self, agent, action, cloud_entry, path,
+                 bucket_subdir=None, pwd=None):
         # pylint: disable=too-many-arguments
         # fixme: sanity check on data-dir on the primary?
         # fixme: create the path first
