@@ -22,7 +22,6 @@ from files import FileManager
 
 from sites import Site
 from projects import Project
-from yml import YmlEntry
 
 # NOTE: system_user_id is maintained in two places.  This is not ideal from
 # a db design perspective but makes the find-by-current-owner code clearer.
@@ -147,7 +146,6 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
 
     def __init__(self, server):
         super(DataSourceManager, self).__init__(server)
-        self.tableau_version = '8'  # default assumption
 
     # really sync *and* load
     @synchronized('datasource')
@@ -155,8 +153,6 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         # pylint: disable=too-many-locals
 
         envid = self.server.environment.envid
-        self.tableau_version = YmlEntry.get(envid,
-                                            'version.external', default='8')
 
         users = self.load_users(agent)
 
@@ -231,8 +227,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
 
         prune_count = self._prune_missed_revisions()
 
-        ds_archive_enabled = self.system[SystemKeys.DATASOURCE_ARCHIVE_ENABLED]
-        if not ds_archive_enabled:
+        if not self.system[SystemKeys.DATASOURCE_ARCHIVE_ENABLED]:
             result = {u'disabled':
                       'Datasource Archives are not enabled. Will not archive.'}
         elif not self.cred_check():
@@ -427,11 +422,10 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
             # _extract_tds_from_tdsx generates an event on failure.
             return None
 
-        # Pull the tds file over to the controller before sending the
+        # Pull the tds file contents over to the controller before sending the
         # file away (and deleting it on the primary if it will reside
         # elsewhere).
-        result = self._copy_tds_to_controller(agent, update, dst_tds)
-        if not result:
+        if not self._copy_tds_to_controller(agent, update, dst_tds):
             return None
 
         place = self.archive_file(agent, dcheck, dst_tds)
@@ -443,9 +437,10 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
 
         return dst_tds
 
-    # Run 'tabcmd get' on the agent to retrieve the tdsx file
-    # then return its path or None in the case of an error.
     def _tabcmd_get(self, agent, update, tmpdir):
+        """Run 'tabcmd get' on the agent to retrieve the tdsx file
+           then return its path or None in the case of an error.
+        """
         try:
             ds_entry = meta.Session.query(DataSourceEntry).\
                 filter(DataSourceEntry.dsid == update.dsid).\
@@ -464,6 +459,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
 
         if not success(body):
             self._eventgen(update, data=body)
+            return None
         return dst
 
     def _remove_dsu(self, update):
@@ -481,9 +477,11 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
                            update.dsuid)
             return
 
-    # A tdsx file is just a zipped tds + maybe tde files.
-    # Extract the tds and return the path.
     def _extract_tds_from_tdsx(self, agent, update, dst_tdsx):
+        """
+            A tdsx file is just a zipped tds + maybe tde files.
+            Extract the tds and return the path.
+        """
         # Make sure the *.tds file doesn't exist (it shouldn't but
         # we want to be sure).
         dst_tds = dst_tdsx[0:-1] # drop the trailing 'x' from the file ext
@@ -524,16 +522,8 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
                                                                 str(ex))
             return None
 
-        #if failed(body):
-#            self._eventgen(self, update, data=body)
-#            return None
-#        else:
-#            self.log.debug('Retrieved workbook: %s', dst)
-
-        # fixme: save the contents to the db
         update.tds = contents
         return True
-
 
     # Generate an event in case of a failure.
     def _eventgen(self, update, error=None, data=None):
