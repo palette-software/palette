@@ -140,7 +140,7 @@ DEFAULTS = SystemDefaults({
     SystemKeys.PALETTE_LOGIN: True,
 
     SystemKeys.SUPPORT_ENABLED: False,
-    SystemKeys.AUTO_UPDATE_ENABLED: False,
+    SystemKeys.AUTO_UPDATE_ENABLED: True,
 
     SystemKeys.FROM_EMAIL: "",
     SystemKeys.EMAIL_MAX_COUNT: 10,
