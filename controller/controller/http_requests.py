@@ -1,5 +1,6 @@
 from httplib import responses
 from urllib import unquote
+from urlparse import urlparse
 
 from sqlalchemy import Column, String, DateTime, Integer, BigInteger
 from sqlalchemy import UniqueConstraint
@@ -251,6 +252,12 @@ class HttpRequestManager(TableauCacheManager):
                 body = {}
                 entry = show_entry
                 self._parseuri(entry.http_request_uri, body)
+                if 'http_request_uri' in body:
+                    # Remove query string for type 3 http_request_uri.
+                    urip = urlparse(body['http_request_uri'])
+                    http_request_uri = urip.scheme + "://" + urip.netloc + \
+                                       urip.path
+                    body['http_request_uri'] = http_request_uri
                 self._eventgen(EventControl.HTTP_LOAD_TYPE_3,
                                agent, entry, body=body)
                 return
