@@ -403,13 +403,9 @@ class LicenseManager(Manager):
 
         if not 'trial' in body:
             logging.debug('no trial value in reply: %s', str(body))
-            self._callfailed("Invalid reply from license server")
-            return {"error": "Invalid reply from license server"}
 
         if not 'expiration-time' in body:
             logging.debug("No expiration value in reply: %s", str(body))
-            self._callfailed("License reply invalid")
-            return {"error": "License reply invalid: " + str(body)}
 
         if 'id' in body:
             entry.domainid = int(body['id'])
