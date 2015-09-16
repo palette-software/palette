@@ -382,16 +382,11 @@ class LicenseManager(Manager):
         entry = Domain.getone()
         logging.debug('license send, license_id: %s', entry.license_key)
         if not entry.license_key:
-            # If there is no license key, don't bother checking the
-            # validity of it or attempt to contact the palette
-            # license server.
             logging.debug("license send: No license key.")
-            return {'status': "OK", "info": "No license key"}
 
         data = self.info()
         if not 'license-type' in data:
             logging.debug("license send: No tableau license info yet.")
-            return {'status': "OK", "info": "No tableau license info yet."}
 
         try:
             body = licensing_send('/license', data, self.server.system)
