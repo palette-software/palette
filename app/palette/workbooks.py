@@ -2,7 +2,7 @@ import os
 
 from collections import OrderedDict
 from webob import exc
-from paste.fileapp import FileApp
+from paste.fileapp import DataApp
 
 from akiri.framework import GenericWSGIApplication, ENVIRON_PREFIX
 import akiri.framework.sqlalchemy as meta
@@ -380,11 +380,7 @@ class WorkbookData(GenericWSGIApplication):
         if not self.check_permission(req, update):
             return exc.HTTPForbidden()
 
-        path = os.path.join(self.path, workbook_name)
-        if not os.path.isfile(path):
-            return exc.HTTPGone()
-        return FileApp(path)
-
+        return DataApp(update.twb)
 
 class WorkbookArchive(PalettePage):
     TEMPLATE = 'workbook.mako'
