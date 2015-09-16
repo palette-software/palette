@@ -41,7 +41,6 @@ def licensing_send(uri, data, system):
 
     params = urllib.urlencode(data)
 
-
     try:
         conn = urllib2.urlopen(LICENSING_URL + uri, params)
     except urllib2.HTTPError, err:
@@ -61,7 +60,7 @@ def licensing_send(uri, data, system):
 
     return json.loads(reply_json)
 
-def licensing_info(domain, envid):
+def licensing_info(domain, envid, system):
     """Don't do anything very active since this can run when
     in UPGRADE state, etc."""
 
@@ -71,6 +70,13 @@ def licensing_info(domain, envid):
     data['expiration-time'] = domain.expiration_time
     data['contact-time'] = domain.contact_time
     data['trial'] = domain.trial
+
+    data['platform-product'] = system[SystemKeys.PLATFORM_PRODUCT]
+    data['platform-image'] = system[SystemKeys.PLATFORM_IMAGE]
+    data['platform-location'] = system[SystemKeys.PLATFORM_LOCATION]
+
+    data['auto-update-enabled'] = system[SystemKeys.AUTO_UPDATE_ENABLED]
+    data['support-enabled'] = system[SystemKeys.SUPPORT_ENABLED]
 
     # FIXME: use the version() function when sorted out.
     data['palette-version'] = version()
@@ -368,7 +374,8 @@ class LicenseManager(Manager):
         """Don't do anything very active since this can run when
            in UPGRADE state, etc."""
         entry = Domain.get_by_name(self.server.domainname)
-        return licensing_info(entry, self.server.environment.envid)
+        return licensing_info(entry, self.server.environment.envid,
+                              self.server.system)
 
     def send(self):
         # pylint: disable=too-many-return-statements

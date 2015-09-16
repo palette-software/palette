@@ -1355,7 +1355,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         self.log.debug("Upgrade from %s to %s", last_version, new_version)
 
-        if last_version == new_version:
+        if last_version == new_version or not last_version:
             return
 
         if last_version[:4] != '1.5.':

@@ -34,7 +34,7 @@ class OpenApplication(GenericWSGIApplication):
     def _set_license_key(self, req):
         license_key = req.params_get('license-key').strip()
 
-        info = licensing_info(req.palette_domain, req.envid)
+        info = licensing_info(req.palette_domain, req.envid, req.system)
         info['license-key'] = license_key
 
         data = licensing_send('/api/trial-start', info, req.system)
