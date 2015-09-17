@@ -48,7 +48,7 @@
       <h3>Manual Updates</h3>
       <p>Update your Palette Server to the latest version, on-demand and on your schedule.</p>
       <button type="button" id="manual-update" class="okcancel disabled"
-              data-text="Are you sure you want to update the Palette Software?">
+              data-text="Update Palette Server to the latest available version now?">
         Update Now
       </button>
     </div>
