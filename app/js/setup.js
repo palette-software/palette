@@ -355,6 +355,37 @@ function ($, _, configure, common, Dropdown, OnOff)
     }
 
     /*
+     * gatherSSLData()
+     */
+    function gatherSSLData()
+    {
+        var enable_ssl = OnOff.getValueById('enable-ssl');
+        if (!enable_ssl) {
+            return {'enable-ssl': enable_ssl};
+        }
+        return {
+            'enable-ssl': enable_ssl,
+            'ssl-certificate-file': $('#ssl-certificate-file').val(),
+            'ssl-certificate-key-file': $('#ssl-certificate-key-file').val(),
+            'ssl-certificate-chain-file': $('#ssl-certificate-chain-file').val()
+        };
+    }
+
+    /*
+     * changeSSL()
+     * Callback for the 'SSL' On/Off slider.
+     */
+    function changeSSL(checked)
+    {
+        if (checked) {
+            $('#ssl .settings').removeClass('hidden');
+        } else {
+            $('#ssl .settings').addClass('hidden');
+        }
+    }
+
+
+    /*
      * mayCancelSSL()
      * Return true if 'Server SSL' section has changed.
      */
@@ -380,7 +411,7 @@ function ($, _, configure, common, Dropdown, OnOff)
      * Callback for the 'Save' button in the SSL Certificate section.
      */
     function saveSSL() {
-        var data = configure.gatherSSLData();
+        var data = gatherSSLData();
         data['action'] = 'save';
 
         var result = null;
@@ -413,8 +444,25 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#ssl-certificate-key-file').val('');
         $('#ssl-certificate-chain-file').val('');
         $('#save-ssl, #cancel-ssl').addClass('disabled');
-        configure.changeSSL();
+        changeSSL();
         validate();
+    }
+
+    /*
+     * validSSLData()
+     */
+    function validSSLData(data)
+    {
+        if (!data['enable-ssl']) {
+            return false;
+        }
+        if (data['ssl-certificate-file'].length == 0) {
+            return false;
+        }
+        if (data['ssl-certificate-key-file'].length == 0) {
+            return false;
+        }
+        return true;
     }
 
     /*
@@ -541,8 +589,8 @@ function ($, _, configure, common, Dropdown, OnOff)
             validateMail();
         }
         if (hasSettings['ssl']) {
-            configure.validateSection('ssl', configure.gatherSSLData,
-                                      configure.validSSLData, mayCancelSSL);
+            configure.validateSection('ssl', gatherSSLData,
+                                      validSSLData, mayCancelSSL);
         }
         configure.validateSection('auth', gatherAuthData,
                                   maySaveCancelAuth, maySaveCancelAuth);
@@ -602,8 +650,8 @@ function ($, _, configure, common, Dropdown, OnOff)
             $('#enable-ssl').val(data['enable-ssl']);
             $('#save-ssl').bind('click', saveSSL);
             $('#cancel-ssl').bind('click', cancelSSL);
-            sslData = configure.gatherSSLData();
-            configure.changeSSL();
+            sslData = gatherSSLData();
+            changeSSL();
         }
 
         /* Timezone */
@@ -629,7 +677,7 @@ function ($, _, configure, common, Dropdown, OnOff)
         OnOff.setCallback(validate);
         if (hasSettings['ssl']) {
             OnOff.setCallback(function (checked) {
-                configure.changeSSL(checked);
+                changeSSL(checked);
                 validate();
             }, '#enable-ssl');
         }

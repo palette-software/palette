@@ -26,19 +26,6 @@ function ($, common, Dropdown, OnOff)
     }
 
     /*
-     * changeSSL()
-     * Callback for the 'SSL' On/Off slider.
-     */
-    function changeSSL(checked)
-    {
-        if (checked) {
-            $('#ssl div').removeClass('hidden');
-        } else {
-            $('#ssl div').addClass('hidden');
-        }
-    }
-
-    /*
      * validateSection()
      * Enable/Disable the Save and Cancel buttons on particular section.
      */
@@ -108,23 +95,6 @@ function ($, common, Dropdown, OnOff)
             'smtp-port': Number($('#smtp-port').val()),
             'smtp-username': $('#smtp-username').val(),
             'smtp-password': $('#smtp-password').val()
-        };
-    }
-
-    /*
-     * gatherSSLData()
-     */
-    function gatherSSLData()
-    {
-        var enable_ssl = OnOff.getValueById('enable-ssl');
-        if (!enable_ssl) {
-            return {'enable-ssl': enable_ssl};
-        }
-        return {
-            'enable-ssl': enable_ssl,
-            'ssl-certificate-file': $('#ssl-certificate-file').val(),
-            'ssl-certificate-key-file': $('#ssl-certificate-key-file').val(),
-            'ssl-certificate-chain-file': $('#ssl-certificate-chain-file').val()
         };
     }
 
@@ -200,23 +170,6 @@ function ($, common, Dropdown, OnOff)
     }
 
     /*
-     * validSSLData()
-     */
-    function validSSLData(data)
-    {
-        if (!data['enable-ssl']) {
-            return true;
-        }
-        if (data['ssl-certificate-file'].length == 0) {
-            return false;
-        }
-        if (data['ssl-certificate-key-file'].length == 0) {
-            return false;
-        }
-        return true;
-    }
-
-    /*
      * setInputCallback()
      * Set a callback for whenever input is entered - likely for validation.
      */
@@ -239,17 +192,14 @@ function ($, common, Dropdown, OnOff)
         'MAIL_DIRECT': MAIL_DIRECT,
         'MAIL_RELAY': MAIL_RELAY,
         'changeMail': changeMail,
-        'changeSSL': changeSSL,
         'validateSection': validateSection,
         'gatherURLData': gatherURLData,
         'gatherTableauURLData': gatherTableauURLData,
         'gatherAdminData': gatherAdminData,
         'gatherMailData': gatherMailData,
-        'gatherSSLData': gatherSSLData,
         'gatherTzData': gatherTzData,
         'validAdminData': validAdminData,
         'validMailData': validMailData,
-        'validSSLData': validSSLData,
         'setInputCallback': setInputCallback,
     }
 });

@@ -1,6 +1,8 @@
 from webob import exc
 from sqlalchemy import func
+
 import akiri.framework.sqlalchemy as meta
+from akiri.framework import ENVIRON_PREFIX
 
 from controller.profile import UserProfile, Role, Admin, License
 from controller.util import str2bool, LETTERS
@@ -75,8 +77,9 @@ class UserApplication(PaletteRESTApplication):
         return License.str(d['licensing-role-id'])
 
     def service(self, req):
-        if 'action' in req.environ:
-            action = req.environ['action']
+        environ_key = ENVIRON_PREFIX + 'action'
+        if environ_key in req.environ:
+            action = req.environ[environ_key]
             if action == 'admin':
                 return self.handle_admin(req)
             elif action == 'email-level':

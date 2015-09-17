@@ -103,14 +103,17 @@
       <a id="229207" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Email Alerts</h2>
       <p>Designate which groups of Palette Users receive Email Alerts.</p>
-      <p class="slider-group">
-        <span>Allow Alerts to Palette Admins
+      <div class="slider-group">
+        <div>
+          <div>Alerts to Palette Admins</div>
           <span id="alert-admins" class="onoffswitch yesno"></span>
-        </span>&nbsp;
-        <span>Allow Alerts to Publishers
+        </div>
+        <div>
+          <div>Alerts to Publishers</div>
           <span id="alert-publishers" class="onoffswitch yesno"></span>
-        </span>
-      </p>
+        </div>
+      </div>
+
       <div class="save-cancel">
         <button type="button" id="save-email-alerts" class="btn btn-primary disabled">
           Save
@@ -198,12 +201,13 @@
       <a id="229215" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Workbook Archive</h2>
       <p>If enabled, Palette will archive all published Tableau Workbooks.</p>
-      <p class="slider-group">
-        <span>Enable Archive
-          <span id="enable-archive" class="onoffswitch yesno"></span>
-        </span>
-      </p>
-      <div>
+      <div class="slider-group">
+        <div>
+          <div>Archive</div>
+          <span id="enable-archive" class="onoffswitch"></span>
+        </div>
+      </div>
+      <div class="settings hidden">
         <p>The number of user Worbook Versions you want Palette to retain</p>
         <p>
           <span id="workbook-retain-count" class="btn-group count"></span> Workbook Versions

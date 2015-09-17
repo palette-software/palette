@@ -90,10 +90,10 @@
     <section id="ssl">
       <%include file="ssl.mako" />
       <div class="save-cancel">
-        <button type="button" id="save-ssl" class="btn btn-primary">
+        <button type="button" id="save-ssl" class="btn btn-primary disabled">
           Save
         </button>
-        <button type="button" id="cancel-ssl" class="btn btn-primary">
+        <button type="button" id="cancel-ssl" class="btn btn-primary disabled">
           Cancel
         </button>
       </div>

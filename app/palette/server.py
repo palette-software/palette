@@ -1,5 +1,6 @@
 from webob import exc
 import akiri.framework.sqlalchemy as meta
+from akiri.framework import ENVIRON_PREFIX
 
 from .page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
@@ -14,8 +15,9 @@ from controller.yml import YmlEntry
 class ServerApplication(PaletteRESTApplication):
     # FIXME: allow GETs on all sub-URLs
     def service(self, req):
-        if 'action' in req.environ:
-            action = req.environ['action']
+        environ_key = ENVIRON_PREFIX + 'action'
+        if environ_key in req.environ:
+            action = req.environ[environ_key]
             if action == 'displayname':
                 return self.handle_displayname(req)
             elif action == 'archive':

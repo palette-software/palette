@@ -36,12 +36,13 @@
       <h2>Palette Updates</h2>
       <p>Your Palette Server can update automatically outside of normal business hours or on-demand.  Updates usually take 5-10 minutes and do not affect historical continuity.  Palette Events will let you know that the update is complete.</p>
       <p>Note: Automatic Updates are recommended for the most reliable service.</p>
-      <p class="slider-group">
-        <span>Enable Automatic Updates
-          <span id="enable-updates" class="onoffswitch yesno"
+      <section class="slider-group">
+        <div>
+          <div>Automatic Updates</div>
+          <span id="enable-updates" class="onoffswitch"
                 data-href="/rest/update"></span>
-        </span>
-      </p>
+        </div>
+      </section>
       <p>Turn on Automatic Palette Updates to stay up-to-date with the latest features (recommended).</p>
 
       <h3>Manual Updates</h3>
@@ -57,12 +58,13 @@
       <h2>Palette Support</h2>
       <p>These features are available to minimize troubleshooting and should only be used by Palette Admins when engaging the Palette Support team.  For assistance, contact <a href='mailto:support@palette-software.com'>support@palette-software.com</a>.
       </p>
-      <p class="slider-group">
-        <span>Enable Support
-          <span id="enable-support" class="onoffswitch yesno"
+      <section class="slider-group">
+        <div>
+          <div>Palette Remote Support</div>
+          <span id="enable-support" class="onoffswitch"
                 data-href="/rest/support"></span>
-        </span>
-      </p>
+        </div>
+      </section>
       <p>Turn on your Palette Server's remote communication for enhanced support from the Palette team.</p>
 
       <h3>Palette Webserver</h3>
