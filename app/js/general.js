@@ -681,9 +681,9 @@ function ($, _, configure, common, Dropdown, OnOff)
     function changeWorkbooks(checked)
     {
         if (checked) {
-            $('#workbooks div:first').removeClass('hidden');
+            $('#workbooks .settings').removeClass('hidden');
         } else {
-            $('#workbooks div:first').addClass('hidden');
+            $('#workbooks .settings').addClass('hidden');
         }
         validate();
     }

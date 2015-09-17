@@ -1,12 +1,13 @@
 <a id="236543" href="#"><i class="fa fa-question-circle help"></i></a>
 <h2>Server SSL Certificate</h2>
-<p class="slider-group">
-  <span>Custom SSL
+<section class="slider-group">
+  <div>
+    <div>Custom SSL</div>
     <span id="enable-ssl" class="onoffswitch"></span>
-  </span>
-</p>
-    <p>If your Palette Server is self-hosted we recommend that you enable Custom SSL.</p>
-<div class="hidden">
+  </div>
+</section>
+<p>If your Palette Server is self-hosted we recommend that you enable Custom SSL.</p>
+<div class="settings hidden">
   <h3>SSL Certificate File *</h3>
   <p>Must be a valid PEM-encoded x509 certificate with the extension .crt.</p>
   <textarea id="ssl-certificate-file"></textarea>
