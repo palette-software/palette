@@ -15,16 +15,12 @@ from controller.passwd import tableau_hash
 from controller.system import SystemKeys
 from controller.util import extend
 
-from .page import Page, PalettePage
+from .page import PalettePage
 from .option import DictOption
 from .rest import PaletteRESTApplication, required_parameters, required_role
 
 def dump(req):
     print >> sys.stderr, str(req)
-
-class SetupPage(Page):
-    TEMPLATE = "setup.mako"
-
 
 class SetupConfigPage(PalettePage):
     TEMPLATE = "config/setup.mako"

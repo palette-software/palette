@@ -5,7 +5,6 @@ from __future__ import absolute_import
 import os
 
 from paste.auth.auth_tkt import AuthTKTMiddleware
-from paste.proxy import Proxy
 
 from akiri.framework import Application, env
 from akiri.framework.admin import LogoutApplication
@@ -20,12 +19,13 @@ from palette.admin import LoginApplication, LoginPage
 from palette.about import AboutPage
 from palette.backup import BackupApplication
 from palette.expire import ExpireMiddleware
-from palette.initial import OpenApplication, InitialMiddleware
+from palette.initial import InitialSetupPage, InitialSetupApplication
+from palette.initial import InitialMiddleware
 from palette.manage import ManagePage, ManageApplication
 from palette.profile import ProfilePage
+from palette.proxy import LicensingProxy
 from palette.request import BaseMiddleware, RemoteUserMiddleware
 from palette.routing import RestRouter, ConfigureRouter
-from palette.setup import SetupPage
 from palette.state import StateApp
 from palette.workbooks import WorkbookArchive, WorkbookData
 from palette.datasources import DatasourceArchive, DatasourceData
@@ -39,7 +39,6 @@ AES_KEY_FILE = '/var/palette/.aes'
 SHARED = 'tableau2014'
 LOGIN_URL = '/login'
 LOGIN_MAX_AGE = 2592000
-LICENSING_URL = 'https://licensing.palette-software.com/hello'
 WORKBOOK_DATA_PATH = os.path.join(BASEDIR, 'data', 'workbook-archive')
 DATASOURCE_DATA_PATH = os.path.join(BASEDIR, 'data', 'datasource-archive')
 DATABASE = 'postgresql://palette:palpass@localhost/paldb'
@@ -48,7 +47,6 @@ DATABASE = 'postgresql://palette:palpass@localhost/paldb'
 set_aes_key_file(AES_KEY_FILE)
 
 # individual apps
-licensing_proxy = Proxy(LICENSING_URL, allowed_request_methods=['GET'])
 loginapp = LoginApplication(secret=SHARED,
                             max_age=LOGIN_MAX_AGE,
                             httponly=True)
@@ -93,9 +91,9 @@ pages = AuthTKTMiddleware(pages, secret=SHARED)
 
 # top-level, first called router
 router = Router()
-router.add_route(r'/licensing\Z', licensing_proxy)
-router.add_route(r'/open/setup\Z', OpenApplication(secret=SHARED))
-router.add_route(r'/setup\Z', SetupPage())
+router.add_route(r'/licensing\Z', LicensingProxy())
+router.add_route(r'/open/setup\Z', InitialSetupApplication(secret=SHARED))
+router.add_route(r'/setup\Z', InitialSetupPage())
 router.add_route(r'/rest/', rest)
 router.add_route(r'/api/v1/', api)
 router.add_route(LOGIN_URL + r'\Z', loginpage)
