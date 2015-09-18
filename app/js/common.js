@@ -695,7 +695,7 @@ function ($, topic, template, items, paging, Dropdown)
             id: id,
             title: ' ',
             background: true,
-            width: 700,
+            width: 800,
             height: 500
         });
     }
