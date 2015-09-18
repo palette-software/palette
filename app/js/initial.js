@@ -16,6 +16,7 @@ function ($, configure, common, Dropdown, OnOff)
     var LICENSING_OK = 1;
 
     var licensingState = LICENSING_UNKNOWN;
+    var licensingTimeout = null;
 
     var PASSWORD_MIN_CHARS = 8;
     var PASSWORD_MATCH = /^[A-Za-z0-9!@#$%]+$/;
@@ -40,6 +41,15 @@ function ($, configure, common, Dropdown, OnOff)
     {
         var html = '<p class="error">' + msg + '</p>';
         $(selector).after(html);
+    }
+
+    /*
+     * clearPageErrors()
+     * Remove all generated error message for re-validation.
+     */
+    function clearPageErrors()
+    {
+        $('.error').remove();
     }
 
     /*
@@ -72,11 +82,56 @@ function ($, configure, common, Dropdown, OnOff)
     }
 
     /*
+     * connect()
+     * Callback for the 'connect' button during 'Failed to Contact Licensing'.
+     */
+    function connect() {
+        clearPageErrors();
+
+        var data = {'action': 'proxy'}
+
+        var proxy_https = $('#proxy-https').val();
+        if (proxy_https.length == 0) {
+            /* Include 'value' but set it to null to indicate the key
+             * proxy-https should be deleted from the system table (hack).
+             * FIXME: use 'DELETE' instead.
+             */
+            data['value'] = null;
+        } else {
+            if (!common.validURL(proxy_https)) {
+                // put the error at the end of the proxy div
+                setError('#connect', 'The URL is invalid.');
+                return;
+            }
+            data['value'] = proxy_https;
+        }
+
+        clearTimeout(licensingTimeout);
+        $('#connect').addClass('disabled');
+
+        $.ajax({
+            type: 'POST',
+            url: '/open/setup', /* should be /open/setup/proxy */
+            data: data,
+            dataType: 'json',
+
+            success: function(data) {
+                licensingQuery();
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(this.url + ": " +
+                      jqXHR.status + " (" + errorThrown + ")");
+                licensingQuery(); /* just in case... */
+            }
+        });
+    }
+
+    /*
      * save()
      * Callback for the 'Save' button.
      */
     function save() {
-        $('.error').remove();
+        clearPageErrors();
 
         var data = {'action': 'save'}
         $.extend(data, gatherData());
@@ -105,7 +160,7 @@ function ($, configure, common, Dropdown, OnOff)
      * Callback for the 'Test Email' button.
      */
     function testMail() {
-        $('.error').remove();
+        clearPageErrors();
         $('#mail-test-message').html("");
         $('#mail-test-message').addClass('hidden');
         $('#mail-test-message').removeClass('green red');
@@ -310,6 +365,8 @@ function ($, configure, common, Dropdown, OnOff)
         Dropdown.setupAll(data);
         OnOff.setup();
 
+        $('#proxy-https').val(data['proxy-https']);
+
         $('#save').bind('click', save);
 
         if (hasSettings['mail']) {
@@ -366,15 +423,17 @@ function ($, configure, common, Dropdown, OnOff)
             success: function(data) {
                 $().ready(function() {
                     /* implicity cancels licensingTryMsgTimeout */
-                    $("div.licensing").remove();
+                    $("#licensing-status, #licensing-error").remove();
                     $("body > div").removeClass("hidden");
                 });
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 $().ready(function() {
-                    $("div.licensing.status").remove();
-                    $("div.licensing.error").removeClass("hidden");
-                    setTimeout(licensingQuery, LICENSING_TIMEOUT);
+                    $("#licensing-status").remove();
+                    $("#licensing-error").removeClass("hidden");
+                    $('#connect').removeClass('disabled');
+                    licensingTimeout = setTimeout(licensingQuery,
+                                                  LICENSING_TIMEOUT);
                 });
             }
         });
@@ -386,8 +445,10 @@ function ($, configure, common, Dropdown, OnOff)
         /* Display a status message after half a second if the
            licensing query is not already complete. */
         setTimeout(function () {
-            $("div.licensing.status").removeClass("hidden");
+            $("#licensing-status").removeClass("hidden");
         }, 500); /* half second? */
+
+        $('#connect').bind('click', connect);
     });
 
     /* fill in initial values */

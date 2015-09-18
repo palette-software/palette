@@ -41,7 +41,7 @@
   <nav class="navbar">
     <div class="navbar-header"></div>
   </nav>
-  <div class="center-container licensing status initial hidden">
+  <div class="center-container initial hidden" id="licensing-status">
     <h1>Prepare<br/>for<br/>Awesomeness!
     <span id="wrap">
       <div class="dot"></div>
@@ -51,17 +51,26 @@
     </h1>
     <p>We are trying to Contact Palette License Server licensing.palette-software.com on HTTPS port 443.</p>
   </div>
-  <div class="center-container licensing error initial hidden">
-    <h2 class="error">
+  <div class="center-container initial hidden" id="licensing-error">
+    <h2>
       <span class="fa-stack">
         <i class="fa fa-fw fa-stack-1x fa-times-circle red"></i>
       </span>
       Failed to Contact Palette License Server</h2>
-    <p>This Palette Server failed to contact Palette Licensing at licensing.palette-software.com on HTTPS port 443.</p>
-    <p>Palette Server must be able to communicate with Palette Licensing in order to verify the validity of your Palette License.</p>
-    <p>The cause of this error is likely to be your <i>firewall settings</i>. Please be sure your settings meet our <a href="http://kb.palette-software.com/network-configuration">Network Configuration Requirements</a>.</p>
-    <p>This Palette Server will continue to attempt to connect to Palette Licensing every few seconds. Once the firewall settings are correct you will no longer see this message.</p>
-    <p>If this message persists, please contact Palette Support at <a href="mailto:support@palette-software.com">support@palette-software.com</a>.
+    <p>This Palette Server failed to contact Palette Licensing at licensing.palette-software.com on HTTPS port 443.  This is how Palette verifies the validity of your license.  Palette is inaccessible until this communication is possible.</p>
+    <p>To help you troubleshoot, start with the most common blockers: HTTPS Proxy Server and Firewall Settings.</p>
+
+    <h3>HTTP Proxy Server URL</h3>
+    <p>If you use a HTTPS proxy server, input the URL here.  The URL must contain the protocol (e.g. http, https, etc.) For example: https://yourproxyserverurl.com</p>
+
+    <div class="proxy">
+      <input type="text" id="proxy-https" />
+      <button id="connect">Connect</button>
+    </div>
+
+    <h3>Filewall Settings</h3>
+    <p>Next, check that your firewall settings meet the <a href="http://kb.palette-software.com/network-configuration">Network Configuration Requirements</a>.</p>
+    <p>If your settings are correct and this message persists, please contact Palette Support at <a href="mailto:support@palette-software.com">support@palette-software.com</a>.
     </p>
   </div>
   <div class="center-container configuration setup-page initial hidden">
