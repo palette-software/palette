@@ -31,22 +31,39 @@ from yml import YmlEntry
 
 LICENSING_URL = "https://licensing.palette-software.com"
 
-def licensing_send(uri, data, system):
+def licensing_urlopen(path_info, system, data=None):
+    """ Call urllib2.urlopen but with proxy settings (if applicable)
+    GET request if data=None, POST otherwise.  data is a dict().
+    Raises: urllib2.HTTPError
+    """
     proxy_https = system[SystemKeys.PROXY_HTTPS]
     if proxy_https:
         result = urlparse(proxy_https)
         proxy = urllib2.ProxyHandler({'https': result.netloc})
         opener = urllib2.build_opener(proxy)
-        urllib2.install_opener(opener)
+        urlopen = opener.open
+    else:
+        urlopen = urllib2.urlopen
 
-    params = urllib.urlencode(data)
+    # NOTE: don't install the opener, just use it directly otherwise removing
+    # the proxy-https doesn't work.
 
+    if data is None:
+        params = None
+    else:
+        params = urllib.urlencode(data)
+
+    return urlopen(LICENSING_URL + path_info, params)
+
+def licensing_send(path_info, data, system):
+    """ Send a POST request to licensing """
     try:
-        conn = urllib2.urlopen(LICENSING_URL + uri, params)
+        conn = licensing_urlopen(path_info, system, data=data)
     except urllib2.HTTPError, err:
         status_code = err.code
         reply_json = ""
     else:
+
         status_code = conn.getcode()
         reply_json = conn.read()
         conn.close()
@@ -59,6 +76,24 @@ def licensing_send(uri, data, system):
                                (status_code, reply_json))
 
     return json.loads(reply_json)
+
+def licensing_hello(system):
+    """Call /hello on licensing.
+    This call is used to check connectivity e.g. from the initial setup page.
+
+    Returns: the status code (200 == success)
+    """
+    try:
+        conn = licensing_urlopen('/hello', system)
+        status_code = conn.getcode()
+        conn.close()
+    except urllib2.HTTPError, err:
+        status_code = err.code
+    except (httplib.HTTPException, urllib2.URLError):
+        # both httplib.BadStatusLine and urllib2.URLError are possible
+        status_code = None
+
+    return status_code
 
 def licensing_info(domain, envid, system):
     """Don't do anything very active since this can run when
