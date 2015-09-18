@@ -45,10 +45,12 @@ function ($, template, common, paging, items, Dropdown, EditBox)
 
         var count = data['workbooks'].length;
         if (count > 0) {
+            $(".filter-dropdowns").removeClass('hidden');
             var rendered = template.render(t, data);
             $('#workbook-list').html(rendered);
             items.bind();
         } else {
+            $(".filter-dropdowns").addClass('hidden');
             if (publisher_only) {
                 $('.admin-only').remove();
                 $('.publisher-only').removeClass('hidden');
