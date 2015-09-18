@@ -7,7 +7,7 @@
 
 <div class="dynamic-content about-page">
   <div class="scrollable">
-    <h1 class="page-title">About Palette</h1>
+    <h1>About Palette</h1>
 
     <h3>Version <span id="version"></span></h3>
     <div>

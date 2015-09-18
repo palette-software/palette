@@ -7,7 +7,7 @@
 
 <div class="dynamic-content profile-page">
   <div class="scrollable">
-    <h1 class="page-title">Profile</h1>
+    <h1>Profile</h1>
 
     <h2>Tableau Server Display Name</h2>
     <p>${req.remote_user.friendly_name}</p>

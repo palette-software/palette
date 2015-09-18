@@ -28,6 +28,9 @@ body.scrollable {
 }
 h1 {
     font-family: @font-family-light;
+    font-size: @font-size-h1;
+    margin: 32px 0 0px 0;
+    color: @text-title-color;
 }
 p {
     font-family: @font-family-light;
@@ -178,15 +181,6 @@ article.popup p {
     border-top: 5px solid #818284;
     border-right: 5px solid transparent;
     border-left: 5px solid transparent;
-}
-h1.page-title {
-    font-size: 33px;
-    display: inline-block;
-    line-height: 33px;
-    margin: 32px 0 0px 0;
-    color: @text-title-color;
-    vertical-align: bottom;
-    text-transform: none;
 }
 /* standard bootstrap class */
 nav.navbar {
@@ -547,7 +541,7 @@ article.item article {
 /* divs containing a message saying that there are no items to display.
  * e.g. workbooks, datasources, users, machines, etc. */
 .empty-message {
-    margin-top: 27px;
+    margin-top: 23px;
 
     h2 {
         margin-top: 0;

@@ -12,7 +12,7 @@
     <section class="top-zone">
       <section class="row">
         <section class="col-xs-12">
-          <h1 class="page-title">Setup Configuration</h1>
+          <h1>Setup Configuration</h1>
         </section>
       </section>
     </section>
