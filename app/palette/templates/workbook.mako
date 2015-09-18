@@ -11,7 +11,7 @@
       <section class="row">
         <section class="col-xs-12">
           <%include file="paging.mako" args="name='Workbooks'" />
-          <h1 class="page-title">Workbook Archive</h1>
+          <h1>Workbook Archive</h1>
         </section>
       </section>
       <section class="row">

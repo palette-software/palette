@@ -8,7 +8,7 @@
 <div class="dynamic-content configuration">
   <div class="scrollable">
     <section class="top-zone">
-      <h1 class="page-title">Machines</h1>
+      <h1>Machines</h1>
     </section>
     <div id="server-detail">
       <%include file="empty.mako" />	

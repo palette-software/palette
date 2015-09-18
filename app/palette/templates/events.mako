@@ -3,7 +3,7 @@
     <section class="row">
       <section class="col-xs-12">
         <%include file="paging.mako" args="name='Events'" />
-        <h1 class="page-title">Events</h1>
+        <h1>Events</h1>
       </section>
     </section>
     <section class="row">
