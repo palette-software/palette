@@ -11,7 +11,8 @@ Architecture: all
 Depends:
  python (>= 2.7), ${misc:Depends},
  python-docutils, python-sphinx, python-crypto,
- python-sqlalchemy, python-psycopg2, python-boto, python-dateutil,
+ python-sqlalchemy, python-psycopg2, python-boto,
+ python-dateutil, python-mako,
  postgresql, telnet, daemon, postfix, ntp,
  akiri.framework (>= 0.5.3),
  palette-agent (>= 1.6.0),
