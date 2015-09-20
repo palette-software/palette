@@ -33,10 +33,10 @@ class Page(GenericWSGIApplication):
 class PalettePage(Page):
     # The active page on the mainNav
     active = ''
-    # Whether or not to show the expanded configure items.
+    # Archive expanded?
+    archive = False
+    # Configuration expanded?
     expanded = False
-    # Whether or not to show the expanded integration items.
-    integration = False
     # minimum capability required
     required_role = None
 
