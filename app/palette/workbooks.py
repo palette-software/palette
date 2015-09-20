@@ -385,3 +385,4 @@ class WorkbookData(GenericWSGIApplication):
 class WorkbookArchive(PalettePage):
     TEMPLATE = 'workbook.mako'
     active = 'workbook-archive'
+    archive = True

@@ -18,6 +18,8 @@
     padding-bottom: 64px;
     overflow: -moz-scrollbars-none;
 }
+
+/* status box */
 .main-side-bar::-webkit-scrollbar {
     width: 0 !important;
     position: fixed;
@@ -49,13 +51,6 @@
     right: 20px;
     color: white;
     left: 135px;
-/*
-    -webkit-transition: all 0.2s ease-in;
-    -moz-transition: all 0.2s ease-in;
-    -ms-transition: all 0.2s ease-in;
-    -o-transition: all 0.2s ease-in;
-    transition: all 0.2s ease-in;
-*/
 }
 .main-side-bar .status h1 {
     position: absolute;
@@ -68,7 +63,7 @@
     color: #697078;
 }
 .main-side-bar .status h3 {
-    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: @font-family-base;
     position: absolute;
     top: 94px;
     left: 16px;
@@ -82,6 +77,8 @@
     margin: 0;
     text-align: left;
 }
+
+/* navigation items */
 .main-side-bar ul.actions li.active a, .main-side-bar ul.actions li a:hover {
     background-color: #5e646b;
     box-shadow:0 -1px rgba(0,0,0,0.1);
@@ -133,13 +130,13 @@
 }
 .main-side-bar > ul.actions li i {
     color: white;
-    font-size: 27px;
+    font-size: 24px;
     line-height: 55px;
     margin: 0 7px 0 15px;
     vertical-align: middle;
 }
 .main-side-bar > ul.actions li a {
-    font-family: "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: @font-family-bold;
     text-transform: uppercase;
     line-height: 55px;
     width: 100%;
@@ -159,7 +156,11 @@
     text-overflow:ellipsis;
     white-space: nowrap;
 }
-.main-side-bar > ul.actions li a:hover {
+.main-side-bar > ul.actions li a:hover,
+.main-side-bar > ul.actions li a:focus,
+.main-side-bar > ul.actions li a:active,
+.main-side-bar > ul.actions li a:visited
+{
     text-decoration: none;
 }
 /* For IE11 */

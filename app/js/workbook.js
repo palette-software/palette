@@ -43,6 +43,13 @@ function ($, template, common, paging, items, Dropdown, EditBox)
     function update(data) {
         var publisher_only = data['publisher-only'];
 
+        /* all vs. my workbooks don't make sense for publishers */
+        if (publisher_only) {
+            $("#show-dropdown").addClass('hidden');
+        } else {
+            $("#show-dropdown").removeClass('hidden');
+        }
+
         var count = data['workbooks'].length;
         if (count > 0) {
             $(".filter-dropdowns").removeClass('hidden');

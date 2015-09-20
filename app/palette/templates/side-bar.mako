@@ -13,13 +13,21 @@
   <ul class="actions">
     <li ${obj.active=='home' and 'class="active"' or ''}>
       <a href="/">
-        <i class="fa fa-fw fa-copy"></i><span>Events</span>
+        <i class="fa fa-fw fa-clock-o"></i><span>Events</span>
       </a>
     </li>
-    <li class="${obj.active=='workbook-archive' and 'active' or ''}">
+    <li class="category">
       <a href="/workbook/archive">
-        <i class="fa fa-fw fa-book"></i><span>Workbook Archive</span>
+        <i class="fa fa-fw fa-copy"></i><span>Archive</span>
+        <i class="fa fa-fw fa-angle-${obj.archive and 'up' or 'down'} expand"></i>
       </a>
+      <ul ${obj.archive and 'class="visible"' or ''}>
+        <li ${obj.active=='workbook-archive' and 'class="active"' or ''}>
+          <a href="/workbook/archive">
+            <i class="fa fa-fw"></i><span>Workbooks</span>
+          </a>
+        </li>
+      </ul>
     </li>
 %if req.remote_user.roleid > req.remote_user.role.NO_ADMIN:
     <li class="has-side-bar ${obj.active=='manage' and 'active' or ''}">
@@ -36,30 +44,30 @@
 %if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:
         <li ${obj.active=='setup' and 'class="active"' or ''}>
           <a href="/configure/setup">
-            <i class="fa fa-fw fa-gears"></i><span>Setup</span>
+            <i class="fa fa-fw"></i><span>Setup</span>
           </a>
         </li>
 %endif
 %if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:
         <li ${obj.active=='general' and 'class="active"' or ''}>
           <a href="/configure/general">
-            <i class="fa fa-fw fa-edit"></i><span>General</span>
+            <i class="fa fa-fw"></i><span>General</span>
           </a>
         </li>
 %endif
         <li ${obj.active=='users' and 'class="active"' or ''}>
           <a href="/configure/users">
-            <i class="fa fa-fw fa-group"></i><span>Users</span>
+            <i class="fa fa-fw"></i><span>Users</span>
           </a>
         </li>
         <li ${obj.active=='servers' and 'class="active"' or ''}>
           <a href="/configure/servers">
-            <i class="fa fa-fw fa-laptop"></i><span>Machines</span>
+            <i class="fa fa-fw"></i><span>Machines</span>
           </a>
         </li>
         <li  ${obj.active=='yml' and 'class="active"' or ''}>
           <a href="/configure/yml">
-            <i class="fa fa-fw tableau"></i><span>Tableau Settings</span>
+            <i class="fa fa-fw"></i><span>Tableau Settings</span>
           </a>
         </li>
       </ul>
