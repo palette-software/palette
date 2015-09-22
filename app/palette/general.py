@@ -26,7 +26,7 @@ from .mixin import CredentialMixin
 
 class WorkbookRetention(DictOption):
     """Representation of the 'Workbook Retention' dropdown."""
-    NAME = 'workbook-retain-count'
+    NAME = SystemKeys.WORKBOOK_RETAIN_COUNT
     ALL = 0
 
     def __init__(self, valueid):
@@ -35,6 +35,20 @@ class WorkbookRetention(DictOption):
         for count in [2, 3, 4, 5, 10, 25]:
             options[count] = str(count)
         super(WorkbookRetention, self).__init__(self.NAME, valueid, options)
+
+
+class DatasourceRetention(DictOption):
+    """Representation of the 'Datasource Retention' dropdown."""
+    NAME = SystemKeys.DATASOURCE_RETAIN_COUNT
+    ALL = 0
+
+    def __init__(self, valueid):
+        options = OrderedDict({})
+        options[self.ALL] = 'All'
+        for count in [2, 3, 4, 5, 10, 25]:
+            options[count] = str(count)
+        super(DatasourceRetention, self).__init__(self.NAME, valueid, options)
+
 
 class GeneralS3Application(PaletteRESTApplication, S3Application):
     """Handler for the 'STORAGE LOCATION' S3 section."""
@@ -354,14 +368,16 @@ class GeneralZiplogApplication(PaletteRESTApplication):
         return {}
 
 class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
-    """Handler for 'WORKBOOK ARCHIVE' section."""
+    """Handler for 'ARCHIVE' section - both workbook and datasource settings."""
 
     @required_role(Role.MANAGER_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
         data = {}
-        if SystemKeys.ARCHIVE_ENABLED in req.system:
-            data['enable-archive'] = req.system[SystemKeys.ARCHIVE_ENABLED]
+
+        for key in (SystemKeys.WORKBOOK_ARCHIVE_ENABLED,
+                    SystemKeys.DATASOURCE_ARCHIVE_ENABLED):
+            data[key] = req.system[key]
 
         primary = self.get_cred(req.envid, self.PRIMARY_KEY)
         secondary = self.get_cred(req.envid, self.SECONDARY_KEY)
@@ -375,14 +391,22 @@ class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
             data['archive-username'] = data['archive-password'] = ''
 
         valueid = req.system[SystemKeys.WORKBOOK_RETAIN_COUNT]
-        retain_opts = WorkbookRetention(valueid)
-        data['config'] = [retain_opts.default()]
+        workbook_retain_opts = WorkbookRetention(valueid)
 
+        valueid = req.system[SystemKeys.DATASOURCE_RETAIN_COUNT]
+        datasource_retain_opts = DatasourceRetention(valueid)
+
+        data['config'] = [workbook_retain_opts.default(),
+                          datasource_retain_opts.default()]
         return data
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
-        req.system[SystemKeys.ARCHIVE_ENABLED] = req.POST['enable-archive']
+        for key in (SystemKeys.WORKBOOK_ARCHIVE_ENABLED,
+                    SystemKeys.DATASOURCE_ARCHIVE_ENABLED,
+                    SystemKeys.WORKBOOK_RETAIN_COUNT,
+                    SystemKeys.DATASOURCE_RETAIN_COUNT):
+            req.system[key] = req.POST[key]
 
         cred = self.get_cred(req.envid, self.PRIMARY_KEY)
         if not cred:
@@ -391,9 +415,6 @@ class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
 
         cred.user = req.POST['archive-username']
         cred.setpasswd(req.POST['archive-password'])
-
-        system_key = SystemKeys.WORKBOOK_RETAIN_COUNT
-        req.system[system_key] = req.POST['workbook-retain-count']
 
         meta.commit()
         return {}
@@ -623,8 +644,7 @@ class GeneralApplication(Router):
         self.add_route(r'/backup\Z', GeneralBackupApplication())
         self.add_route(r'/ziplog\Z', GeneralZiplogApplication())
         self.add_route(r'/monitor\Z', GeneralMonitorApplication())
-        self.add_route(r'/archive\Z|/workbook-archive\Z|/workbook\Z',
-                       GeneralArchiveApplication())
+        self.add_route(r'/archive\Z', GeneralArchiveApplication())
 
 
 class GeneralPage(PalettePage):

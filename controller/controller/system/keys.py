@@ -22,10 +22,10 @@ class SystemKeys(object):
     ZIPLOG_ENABLED = 'ziplog-enabled'
     ZIPLOG_SCHEDULED_ENABLED = 'ziplog-scheduled-enabled'
 
-    ARCHIVE_ENABLED = 'archive-enabled'
     ARCHIVE_SAVE_TWBX = 'archive-save-twbx'
-
     WORKBOOKS_AS_TWB = 'workbooks-as-twb'
+
+    WORKBOOK_ARCHIVE_ENABLED = 'workbook-archive-enabled'
     WORKBOOK_RETAIN_COUNT = 'workbook-retain-count'
     WORKBOOK_LOAD_WARN = 'workbook-load-warn'
     WORKBOOK_LOAD_ERROR = 'workbook-load-error'

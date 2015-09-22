@@ -14,7 +14,7 @@ function ($, _, configure, common, Dropdown, OnOff)
     var emailAlertData = null;
     var backupData = null;
     var ziplogData = null;
-    var workbookData = null;
+    var archiveData = null;
     var monitorData = null;
 
     /*
@@ -582,37 +582,79 @@ function ($, _, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * getWorkbookData()
+     * getArchiveData()
      */
-    function getWorkbookData()
+    function getArchiveData()
     {
-        return {
-            'enable-archive': OnOff.getValueById('enable-archive'),
-            'archive-username': $('#archive-username').val(),
-            'archive-password': $('#archive-password').val(),
-            'workbook-retain-count': Dropdown.getValueById('workbook-retain-count'),
-        };
+        var section_name = 'archives';
+        var data = {};
+        
+        /* sliders */
+        $('#' + section_name + ' .onoffswitch').each(function(index){
+            var id = $(this).attr('id');
+            data[id] = OnOff.getValueById(id);
+        });
+
+        /* text inputs */
+        $('#' + section_name + ' input[type=text]').each(function(index){
+            var id = $(this).attr('id');
+            data[id] = $('#' + id).val();
+        });
+
+        /* password inputs */
+        $('#' + section_name + ' input[type=password]').each(function(index){
+            var id = $(this).attr('id');
+            data[id] = $('#' + id).val();
+        });
+
+        /* dropdowns */
+        $('#' + section_name + ' .btn-group').each(function(index){
+            var id =  $(this).attr('id');
+            data[id] = Dropdown.getValueById(id);
+        });
+
+        return data;
     }
 
     /*
-     * setWorkbookData()
+     * setArchiveData()
      */
-    function setWorkbookData(data)
+    function setArchiveData(data)
     {
-        OnOff.setValueById('enable-archive', data['enable-archive']);
-        $('#archive-username').val(data['archive-username']);
-        $('#archive-password').val(data['archive-password']);
-        Dropdown.setValueById('workbook-retain-count',
-                              data['workbook-retain-count']);
+        var section_name = 'archives';
+
+        /* sliders */
+        $('#' + section_name + ' .onoffswitch').each(function(index){
+            var id = $(this).attr('id');
+            OnOff.setValueById(id, data[id]);
+        });
+
+        /* text inputs */
+        $('#' + section_name + ' input[type=text]').each(function(index){
+            var id = $(this).attr('id');
+            $(this).val(data[id]);
+        });
+
+        /* password inputs */
+        $('#' + section_name + ' input[type=password]').each(function(index){
+            var id = $(this).attr('id');
+            $(this).val(data[id]);
+        });
+
+        /* dropdowns */
+        $('#' + section_name + ' .btn-group').each(function(index){
+            var id =  $(this).attr('id');
+            Dropdown.setValueById(id, data[id]);
+        });
     }
 
     /*
-     * maySaveCancelWorkbook()
-     * Return true if the 'Workbooks' section has changed and is valid.
+     * maySaveArchive()
+     * Return true if the 'Archives' section has changed and is valid.
      */
-    function maySaveWorkbook(data)
+    function maySaveArchive(data)
     {
-        if (_.isEqual(data, workbookData)) {
+        if (_.isEqual(data, archiveData)) {
             return false;
         }
         if ($('#archive-username').val().length == 0) {
@@ -625,65 +667,77 @@ function ($, _, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * mayCancelWorkbook()
-     * Return true if the 'Workbooks' section has changed.
+     * mayCancelArchive()
+     * Return true if the 'Archives' section has changed.
      */
-    function mayCancelWorkbook(data)
+    function mayCancelArchive(data)
     {
         /* FIXME: test for archive-username, archive-password */
-        return !_.isEqual(data, workbookData);
+        return !_.isEqual(data, archiveData);
     }
 
     /*
-     * saveWorkbooks()
-     * Callback for the 'Save' button in the 'Workbooks' section.
+     * saveArchive()
+     * Callback for the 'Save' button in the 'Archives' section.
      */
-    function saveWorkbooks() {
-        $('#save-workbooks, #cancel-workbooks').addClass('disabled');
-        var data = getWorkbookData();
+    function saveArchive() {
+        $('#save-archives, #cancel-archives').addClass('disabled');
+        var data = getArchiveData();
         data['action'] = 'save';
 
         $.ajax({
             type: 'POST',
-            url: '/rest/general/workbook',
+            url: '/rest/general/archive',
             data: data,
             dataType: 'json',
-            async: false,
 
             success: function() {
                 delete data['action'];
-                workbookData = data;
+                archiveData = data;
+                validate();
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 alert(this.url + ": " +
                       jqXHR.status + " (" + errorThrown + ")");
+                validate();
             }
         });
-
-        validate();
     }
 
     /*
-     * cancelWorkbooks()
-     * Callback for the 'Cancel' button in the 'Workbooks' section.
+     * cancelArchive()
+     * Callback for the 'Cancel' button in the 'Archives' section.
      */
-    function cancelWorkbooks()
+    function cancelArchive()
     {
-        setWorkbookData(workbookData);
-        $('#save-workbooks, #cancel-workbooks').addClass('disabled');
-        changeWorkbooks(workbookData['enable-archive']);
+        setArchiveData(archiveData);
+        $('#save-archives, #cancel-archives').addClass('disabled');
+        changeArchive();
     }
 
     /*
-     * changeWorkbooks()
-     * Callback for the 'Archive' On/Off slider.
+     * changeArchive()
+     * Callback for the 'Archive' On/Off sliders.
      */
-    function changeWorkbooks(checked)
+    function changeArchive(checked)
     {
-        if (checked) {
-            $('#workbooks .settings').removeClass('hidden');
+        var workbooks = OnOff.getValueById('workbook-archive-enabled');
+        var datasources = OnOff.getValueById('datasource-archive-enabled');
+        
+        if (workbooks || datasources) {
+            $('#archives .settings').removeClass('hidden');
+            if (workbooks) {
+                $('#archives .settings div.workbooks').removeClass('hidden');
+            } else {
+                $('#archives .settings div.workbooks').addClass('hidden');
+            }
+            if (datasources) {
+                $('#archives .settings div.datasources').removeClass('hidden');
+            } else {
+                $('#archives .settings div.datasources').addClass('hidden');
+            }
         } else {
-            $('#workbooks .settings').addClass('hidden');
+            $('#archives .settings').addClass('hidden');
         }
         validate();
     }
@@ -808,8 +862,8 @@ function ($, _, configure, common, Dropdown, OnOff)
                                   maySaveCancelBackup, maySaveCancelBackup);
         configure.validateSection('ziplogs', getZiplogData,
                                   maySaveCancelZiplog, maySaveCancelZiplog);
-        configure.validateSection('workbooks', getWorkbookData,
-                                  maySaveWorkbook, mayCancelWorkbook);
+        configure.validateSection('archives', getArchiveData,
+                                  maySaveArchive, mayCancelArchive);
         configure.validateSection('monitors', getMonitorData,
                                   maySaveCancelMonitor, maySaveCancelMonitor);
     }
@@ -867,11 +921,11 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#cancel-ziplogs').bind('click', cancelZiplogs);
         ziplogData = getZiplogData();
 
-        /* Workbooks */
-        setWorkbookData(data);
-        $('#save-workbooks').bind('click', saveWorkbooks);
-        $('#cancel-workbooks').bind('click', cancelWorkbooks);
-        workbookData = getWorkbookData();
+        /* Archives */
+        setArchiveData(data);
+        $('#save-archives').bind('click', saveArchive);
+        $('#cancel-archives').bind('click', cancelArchive);
+        archiveData = getArchiveData();
 
         /* Monitoring */
         setMonitorData(data);
@@ -882,19 +936,19 @@ function ($, _, configure, common, Dropdown, OnOff)
         /* validation */
         Dropdown.setCallback(validate);
         OnOff.setCallback(validate);
-        OnOff.setCallback(changeWorkbooks, '#enable-archive');
+        OnOff.setCallback(changeArchive, '#archives .onoffswitch');
 
         configure.setInputCallback(validate);
         /* implicitly calls validate() */
         changeStorageLocation(data['storage-type']);
-        changeWorkbooks(workbookData['enable-archive']);
+        changeArchive();
 
         /* help */
         common.lightbox(229204, 'Storage Location');
         common.lightbox(229207, 'Email Alerts');
         common.lightbox(229213, 'Backups');
         common.lightbox(229214, 'Ziplogs');
-        common.lightbox(229215, 'Workbook Archive');
+        common.lightbox(229215, 'Archives');
         common.lightbox(229216, 'Monitoring');
     }
 

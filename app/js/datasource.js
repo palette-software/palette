@@ -2,7 +2,7 @@ require(['jquery', 'template', 'common', 'paging', 'items',
          'Dropdown', 'EditBox', 'bootstrap'],
 function ($, template, common, paging, items, Dropdown, EditBox)
 {
-    var t = $('#workbook-list-template').html();
+    var t = $('#datasource-list-template').html();
     template.parse(t);
 
     /*
@@ -43,18 +43,18 @@ function ($, template, common, paging, items, Dropdown, EditBox)
     function update(data) {
         var publisher_only = data['publisher-only'];
 
-        /* all vs. my workbooks doesn't make sense for publishers */
+        /* all vs. my datasources doesn't make sense for publishers */
         if (publisher_only) {
             $("#show-dropdown").addClass('hidden');
         } else {
             $("#show-dropdown").removeClass('hidden');
         }
 
-        var count = data['workbooks'].length;
+        var count = data['datasources'].length;
         if (count > 0) {
             $(".filter-dropdowns").removeClass('hidden');
             var rendered = template.render(t, data);
-            $('#workbook-list').html(rendered);
+            $('#datasource-list').html(rendered);
             items.bind();
         } else {
             $(".filter-dropdowns").addClass('hidden');
@@ -105,7 +105,7 @@ function ($, template, common, paging, items, Dropdown, EditBox)
      * Send an AJAX request to the rest handler.
      */
     function query() {
-        var url = '/rest/workbooks' + queryString();
+        var url = '/rest/datasources' + queryString();
         $.ajax({
             url: url,
             success: function(data) {

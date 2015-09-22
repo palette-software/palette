@@ -27,6 +27,11 @@
             <i class="fa fa-fw"></i><span>Workbooks</span>
           </a>
         </li>
+	<li ${obj.active=='datasource-archive' and 'class="active"' or ''}>
+	  <a href="/datasource/archive">
+            <i class="fa fa-fw"></i><span>Datasource</span>
+	  </a>
+	</li>
       </ul>
     </li>
 %if req.remote_user.roleid > req.remote_user.role.NO_ADMIN:

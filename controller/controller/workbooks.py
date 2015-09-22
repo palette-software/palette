@@ -299,7 +299,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
 
         prune_count = self._prune_missed_revisions()
 
-        if not self.system[SystemKeys.ARCHIVE_ENABLED]:
+        if not self.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]:
             result = {u'disabled':
                       'Workbook Archives are not enabled. Will not archive.'}
         elif not self.cred_check():
@@ -393,7 +393,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
 
     @synchronized('workbook.fixup')
     def fixup(self, agent):
-        if not self.system[SystemKeys.ARCHIVE_ENABLED]:
+        if not self.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]:
             return {u'disabled':
                     'Workbook Archives are not enabled.  Fixup not done.'}
 
@@ -414,7 +414,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
 
         count = 0
         for update in updates:
-            if not self.system[SystemKeys.ARCHIVE_ENABLED]:
+            if not self.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]:
                 self.log.info(
                           "Workbook Archive disabled during fixup." + \
                           "  Exiting for now.")

@@ -72,7 +72,7 @@ function($, template) {
                     url: this.href,
                     data: data,
                     dataType: 'json',
-                    async: false,
+                    async: false, /* FIXME */
             
                     success: function(data) {
                         success = true;
