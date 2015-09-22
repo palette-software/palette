@@ -30,10 +30,10 @@
       <section id="local" class="hidden">
         <span class="btn-group" id="storage-destination"></span>
         <div class="save-cancel">
-          <button type="button" id="save-local" class="btn btn-primary">
+          <button type="button" id="save-local" class="btn btn-primary disabled">
             Save
           </button>
-          <button type="button" id="cancel-local" class="btn btn-primary">
+          <button type="button" id="cancel-local" class="btn btn-primary disabled">
             Cancel
           </button>
         </div>
@@ -59,10 +59,10 @@
         </div>
         <p id="s3-test-message" class="hidden"></p>
         <div class="save-cancel">
-          <button type="button" id="save-s3" class="btn btn-primary">
+          <button type="button" id="save-s3" class="btn btn-primary disabled">
             Save
           </button>
-          <button type="button" id="cancel-s3" class="btn btn-primary">
+          <button type="button" id="cancel-s3" class="btn btn-primary disabled">
             Cancel
           </button>
         </div>
@@ -87,10 +87,10 @@
           </button>
         </div>
         <div class="save-cancel">
-          <button type="button" id="save-gcs" class="btn btn-primary">
+          <button type="button" id="save-gcs" class="btn btn-primary disabled">
             Save
           </button>
-          <button type="button" id="cancel-gcs" class="btn btn-primary">
+          <button type="button" id="cancel-gcs" class="btn btn-primary disabled">
             Cancel
           </button>
         </div>
@@ -195,33 +195,45 @@
       </div>
     </section>
 
-    <a name="workbooks"></a>
+    <a name="archives"></a>
     <hr />
-    <section id="workbooks">
+    <section id="archives">
       <a id="229215" href="#"><i class="fa fa-question-circle help"></i></a>
-      <h2>Workbook Archive</h2>
-      <p>If enabled, Palette will archive all published Tableau Workbooks.</p>
+      <h2>Archiving</h2>
+      <p>Designate what Palette Server should archive.</p>
       <div class="slider-group">
         <div>
-          <div>Archive</div>
-          <span id="enable-archive" class="onoffswitch"></span>
+          <div>Archive Workbooks</div>
+          <span id="workbook-archive-enabled" class="onoffswitch"></span>
+        </div>
+        <div>
+          <div>Archive Datasources</div>
+          <span id="datasource-archive-enabled" class="onoffswitch"></span>
         </div>
       </div>
       <div class="settings hidden">
-        <p>The number of user Worbook Versions you want Palette to retain</p>
-        <p>
-          <span id="workbook-retain-count" class="btn-group count"></span> Workbook Versions
-        </p>
+        <div class="workbooks">
+          <p>The number of user Worbook Versions you want Palette to retain</p>
+          <p>
+            <span id="workbook-retain-count" class="btn-group count"></span> Workbook Versions
+          </p>
+        </div>
+        <div class="datasources">
+          <p>The number of user Datasource Versions you want Palette to retain</p>
+          <p>
+            <span id="datasource-retain-count" class="btn-group count"></span> Datasource Versions
+          </p>
+        </div>
         <label for="archive-username">Tableau Server Admin Username *</label>
         <input type="text" id="archive-username" />
         <label for="archive-password">Tableau Server Admin Password *</label>
         <input type="password" id="archive-password" />
       </div>
       <div class="save-cancel">
-        <button type="button" id="save-workbooks" class="btn btn-primary disabled">
+        <button type="button" id="save-archives" class="btn btn-primary disabled">
           Save
         </button>
-        <button type="button" id="cancel-workbooks" class="btn btn-primary disabled">
+        <button type="button" id="cancel-archives" class="btn btn-primary disabled">
           Cancel
         </button>
       </div>
@@ -239,7 +251,7 @@
         <span>Warning Alert at <span id="disk-watermark-low" class="btn-group percentage"></span></span>&nbsp;<span>Error Alert at <span id="disk-watermark-high" class="btn-group percentage"></span></span>
       </p>
 
-      <section>
+      <div>
         <h3>CPU</h3>
         <p>
           <span>Warning Alert at <span id="cpu-load-warn" class="btn-group percentage"></span></span>&nbsp;<span>for <span id="cpu-period-warn" class="btn-group percentage"></span> minutes</span>
@@ -247,14 +259,14 @@
         <p>
           <span>Error Alert at <span id="cpu-load-error" class="btn-group percentage"></span></span>&nbsp;<span>for <span id="cpu-period-error" class="btn-group percentage"></span> minutes</span>
         </p>
-      </section>
-      <section>
+      </div>
+      <div>
         <h2>Workbook</h2>
         <p>Alert when workbook web view Page Load Times exceed these thresholds.</p>
         <p>
           Warning Alert at <span id="http-load-warn" class="btn-group percentage up"></span>&nbsp;Error Alert at <span id="http-load-error" class="btn-group percentage up"></span>
         </p>
-      </section>
+      </div>
       <div class="save-cancel">
         <button type="button" id="save-monitors" class="btn btn-primary disabled">
           Save

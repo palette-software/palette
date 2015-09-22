@@ -2,6 +2,7 @@ from akiri.framework.route import Router
 
 from .about import AboutApplication, SupportApplication, AutoUpdateApplication
 from .backup import BackupRestoreApplication
+from .datasource import DatasourceApplication
 from .environment import EnvironmentApplication
 from .gcs import GCSApplication
 from .general import GeneralApplication
@@ -13,8 +14,7 @@ from .server import ServerApplication
 from .s3 import S3Application
 from .user import UserApplication
 from .yml import YmlApplication
-from .workbooks import WorkbookApplication
-from .datasources import DatasourceApplication
+from .workbook import WorkbookApplication
 
 class RestRouter(Router):
 

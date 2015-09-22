@@ -27,8 +27,8 @@ from palette.proxy import LicensingProxy
 from palette.request import BaseMiddleware, RemoteUserMiddleware
 from palette.routing import RestRouter, ConfigureRouter
 from palette.state import StateApp
-from palette.workbooks import WorkbookArchive, WorkbookData
-from palette.datasources import DatasourceArchive, DatasourceData
+from palette.workbook import WorkbookArchive, WorkbookData
+from palette.datasource import DatasourceArchive, DatasourceData
 
 # settings
 if __name__ == '__main__':

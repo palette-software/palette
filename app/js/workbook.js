@@ -43,7 +43,7 @@ function ($, template, common, paging, items, Dropdown, EditBox)
     function update(data) {
         var publisher_only = data['publisher-only'];
 
-        /* all vs. my workbooks don't make sense for publishers */
+        /* all vs. my workbooks doesn't make sense for publishers */
         if (publisher_only) {
             $("#show-dropdown").addClass('hidden');
         } else {

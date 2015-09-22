@@ -8,19 +8,15 @@ from akiri.framework import GenericWSGIApplication, ENVIRON_PREFIX
 import akiri.framework.sqlalchemy as meta
 
 from controller.workbooks import WorkbookEntry, WorkbookUpdateEntry
-from controller.util import UNDEFINED
 from controller.profile import UserProfile, Role
-from controller.credential import CredentialEntry
 from controller.sites import Site
 from controller.projects import Project
 from controller.system import SystemKeys
 
+from .archive import ArchiveApplication, ArchiveUserCache
 from .option import DictOption
 from .page import PalettePage
-from .rest import required_parameters, required_role, PaletteRESTApplication
-from .mixin import CredentialMixin
-
-__all__ = ["WorkbookApplication"]
+from .rest import required_parameters, required_role
 
 class WorkbookShow(DictOption):
     """Options to show all workbooks or only for the current user."""
@@ -66,36 +62,8 @@ class WorkbookSort(DictOption):
                                            self.__class__.items(req))
 
 
-class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
-    # pylint: disable=too-many-public-methods
-
-    ALL_SITES_PROJECTS_OPTION = 'All Sites/Projects'
-    ALL_SITES_OPTION = "All Sites"
-    ALL_PROJECTS_OPTION = "All Projects"
-
-    def getuser_fromdb(self, envid, system_user_id):
-        if system_user_id < 0:
-            return UNDEFINED
-        user = UserProfile.get_by_system_user_id(envid, system_user_id)
-        if not user:
-            return UNDEFINED
-        return user.display_name()
-
-    def getuser(self, envid, system_user_id, cache=None):
-        if cache is None:
-            cache = {}
-        if system_user_id in cache:
-            return cache[system_user_id]
-        user = self.getuser_fromdb(envid, system_user_id)
-        cache[system_user_id] = user
-        return user
-
-    def get_cred(self, envid, name):
-        entry = super(WorkbookApplication, self).get_cred(envid, name)
-        if not entry:
-            entry = CredentialEntry(envid=envid, key=name)
-            meta.Session.add(entry)
-        return entry
+class WorkbookApplication(ArchiveApplication):
+    """ The REST application for the workbook archive page. """
 
     def show_options(self, req):
         valueid = req.params_getint('show', WorkbookShow.ALL)
@@ -104,94 +72,6 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
     def sort_options(self, req):
         valueid = req.params_getint('sort', WorkbookSort.WORKBOOK)
         return WorkbookSort(valueid, req).default()
-
-    def site_options(self, sites):
-        options = [{"item": self.ALL_SITES_OPTION, "id": 0}]
-        for site in sites.values():
-            options.append({"item": site.name, "id": site.id})
-        return options
-
-    def site_value(self, siteid, sites):
-        if siteid == 0:
-            return self.ALL_SITES_OPTION
-        if siteid in sites:
-            return sites[siteid].name
-        return None
-
-    def project_options(self, siteid, projects):
-        options = [{"item": self.ALL_PROJECTS_OPTION, "id": 0}]
-        for project in projects.values():
-            if siteid == 0 or project.site_id == siteid:
-                options.append({"item": project.name, "id": project.id})
-        return options
-
-    def project_value(self, projectid, projects):
-        if projectid == 0:
-            return self.ALL_PROJECTS_OPTION
-        if projectid in projects:
-            return projects[projectid].name
-        return None
-
-    def build_config(self, req, sites, projects):
-        # pylint: disable=no-member
-        # OPTIONS is created by __setattr__ of the metaclass so pylint warning.
-        config = []
-        config.append(self.show_options(req))
-        config.append(self.sort_options(req))
-
-        siteid = req.params_getint('site', 0)
-        sitename = self.site_value(siteid, sites)
-        if not sitename:
-            siteid = 0
-            sitename = self.ALL_SITES_OPTION
-        config.append({"name": "site-dropdown",
-                       "options": self.site_options(sites),
-                       "id": str(siteid),
-                       "value": sitename})
-
-        projectid = req.params_getint('project', 0)
-        projectname = self.project_value(projectid, projects)
-
-        if not projectname:
-            projectid = 0
-            projectname = self.ALL_PROJECTS_OPTION
-        config.append({"name": "project-dropdown",
-                       "options": self.project_options(siteid, projects),
-                       "id": str(projectid),
-                       "value": projectname})
-        return config
-
-
-    @required_parameters('value')
-    # pylint: disable=invalid-name
-    def handle_user_POST(self, req, cred):
-        value = req.POST['value']
-        cred.user = value
-        meta.Session.commit()
-        return {'value':value}
-
-    @required_parameters('value')
-    # pylint: disable=invalid-name
-    def handle_passwd_POST(self, req, cred):
-        value = req.POST['value']
-        cred.setpasswd(value)
-        meta.Session.commit()
-        return {'value':value}
-
-    @required_role(Role.MANAGER_ADMIN)
-    def handle_user(self, req, key):
-        cred = self.get_cred(req.envid, key)
-        if req.method == 'POST':
-            return self.handle_user_POST(req, cred)
-        value = cred and cred.user or ''
-        return {'value': value}
-
-    @required_role(Role.MANAGER_ADMIN)
-    def handle_passwd(self, req, key):
-        cred = self.get_cred(req.envid, key)
-        if req.method == 'POST':
-            return self.handle_passwd_POST(req, cred)
-        return {'value': cred}
 
     # FIXME: covert to /workbook/<id>/note or /workbook/note/<id>
     # GET doesn't have a ready meaning.
@@ -275,9 +155,7 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
         updates = []
         for update in entry.updates:
             data = update.todict(pretty=True)
-            data['username'] = self.getuser(entry.envid,
-                                            update.system_user_id,
-                                            users)
+            data['username'] = users[update.system_user_id]
             if 'url' in data and data['url']:
                 # FIXME: make this configurable
                 data['url'] = '/data/workbook-archive/' + data['url']
@@ -286,7 +164,7 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
 
     # FIXME: move build options to a separate file.
     def handle_get(self, req):
-        if not req.system[SystemKeys.ARCHIVE_ENABLED]:
+        if not req.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]:
             return {'workbooks': [],
                     'item-count': 0}
 
@@ -295,7 +173,7 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
         count = WorkbookEntry.count(filters=filters)
 
         # lookup caches
-        users = {}
+        users = ArchiveUserCache(req.envid)
         sites = Site.cache(req.envid)
         projects = Project.cache(req.envid)
 
@@ -334,19 +212,11 @@ class WorkbookApplication(PaletteRESTApplication, CredentialMixin):
         }
 
     # FIXME: route correctly.
-    # FIXME: primary/secondary now (likely) unused, remove.
     def service(self, req):
-        if 'action' in req.environ:
-            action = req.environ['action']
-            if action == 'primary/user':
-                return self.handle_user(req, key=self.PRIMARY_KEY)
-            elif action == 'primary/password':
-                return self.handle_passwd(req, key=self.PRIMARY_KEY)
-            elif action == 'secondary/user':
-                return self.handle_user(req, key=self.SECONDARY_KEY)
-            elif action == 'secondary/password':
-                return self.handle_passwd(req, key=self.SECONDARY_KEY)
-            elif action == 'updates/note':
+        environ_key = ENVIRON_PREFIX + 'action'
+        if environ_key in req.environ:
+            action = req.environ[environ_key]
+            if action == 'updates/note':
                 return self.handle_update_note(req)
             raise exc.HTTPNotFound()
 
@@ -381,6 +251,7 @@ class WorkbookData(GenericWSGIApplication):
             return exc.HTTPForbidden()
 
         return DataApp(update.twb)
+
 
 class WorkbookArchive(PalettePage):
     TEMPLATE = 'workbook.mako'
