@@ -1,4 +1,4 @@
-import os
+""" The datasource archive. """
 
 from collections import OrderedDict
 from webob import exc
@@ -227,12 +227,7 @@ class DatasourceApplication(ArchiveApplication):
 
 
 class DatasourceData(GenericWSGIApplication):
-
-    def __init__(self, path):
-        super(DatasourceData, self).__init__()
-        self.path = os.path.abspath(path)
-        if not os.path.isdir(self.path):
-            os.makedirs(self.path)
+    """ GET handler for downloading the tds files. """
 
     def check_permission(self, req, update):
         if req.remote_user.roleid > Role.NO_ADMIN:

@@ -1,4 +1,4 @@
-import os
+""" The workbook archive. """
 
 from collections import OrderedDict
 from webob import exc
@@ -227,12 +227,7 @@ class WorkbookApplication(ArchiveApplication):
 
 
 class WorkbookData(GenericWSGIApplication):
-
-    def __init__(self, path):
-        super(WorkbookData, self).__init__()
-        self.path = os.path.abspath(path)
-        if not os.path.isdir(self.path):
-            os.makedirs(self.path)
+    """ GET handler for downloading the twb files. """
 
     def check_permission(self, req, update):
         if req.remote_user.roleid > Role.NO_ADMIN:
