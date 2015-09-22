@@ -1,4 +1,5 @@
-from controller.cloud import CloudManager, S3_ID
+from controller.cloud import CloudManager
+from controller.system import SystemKeys
 
 from .cloud import CloudApplication
 
@@ -12,7 +13,7 @@ class S3Application(CloudApplication):
 
     @property
     def KEY(self):
-        return S3_ID
+        return SystemKeys.S3_ID
 
     @property
     def TYPE(self):

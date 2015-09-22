@@ -23,7 +23,7 @@ from domain import Domain
 from event_control import EventControl
 from files import FileManager
 from get_file import GetFile
-from cloud import CloudManager, S3_ID, GCS_ID, CloudEntry
+from cloud import CloudManager, CloudEntry
 from package import PackageException
 from system import SystemKeys
 from state import StateManager
@@ -2215,10 +2215,10 @@ class CliHandler(socketserver.StreamRequestHandler):
         """Test cloud credentials/commands by putting and then
            deleting a file on cloud storage of "cloud_type"."""
         if cloud_type == CloudManager.CLOUD_TYPE_S3:
-            cloud_type_id = S3_ID
+            cloud_type_id = SystemKeys.S3_ID
             cloud_instance = self.server.cloud.s3
         elif cloud_type == CloudManager.CLOUD_TYPE_GCS:
-            cloud_type_id = GCS_ID
+            cloud_type_id = SystemKeys.GCS_ID
             cloud_instance = self.server.cloud.gcs
         else:
             raise ValueError('cloud_type')
@@ -2290,10 +2290,10 @@ class CliHandler(socketserver.StreamRequestHandler):
         # pylint: disable=too-many-locals
 
         if cloud_type == CloudManager.CLOUD_TYPE_S3:
-            cloud_type_id = S3_ID
+            cloud_type_id = SystemKeys.S3_ID
             cloud_instance = self.server.cloud.s3
         elif cloud_type == CloudManager.CLOUD_TYPE_GCS:
-            cloud_type_id = GCS_ID
+            cloud_type_id = SystemKeys.GCS_ID
             cloud_instance = self.server.cloud.gcs
         else:
             raise ValueError('cloud_type')

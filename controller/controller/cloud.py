@@ -18,8 +18,6 @@ from passwd import aes_decrypt
 
 # FIXME: This policy is *way* too permissive.
 S3_POLICY = '{"Statement":[{"Effect":"Allow","Action": "s3:*","Resource":"*"}]}'
-S3_ID = 's3-id'
-GCS_ID = 'gcs-id'
 
 class CloudEntry(meta.Base, BaseMixin, BaseDictMixin, OnlineMixin):
     __tablename__ = 'cloud'

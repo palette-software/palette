@@ -1,4 +1,5 @@
-from controller.cloud import CloudManager, GCS_ID
+from controller.cloud import CloudManager
+from controller.system import SystemKeys
 
 from .cloud import CloudApplication
 
@@ -12,7 +13,7 @@ class GCSApplication(CloudApplication):
 
     @property
     def KEY(self):
-        return GCS_ID
+        return SystemKeys.GCS_ID
 
     @property
     def TYPE(self):
