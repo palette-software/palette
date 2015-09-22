@@ -11,8 +11,8 @@ require(['jquery', 'topic', 'template', 'common', 'items',
     var counts = null;
 
     function ddCallback(id, value) {
-        var $section = $(this.node).closest('article');
-        var $display_role = $('.display-role', $section);
+        var $item = $(this.node).closest('.item');
+        var $display_role = $('.display-role', $item);
         var old = $display_role.html();
         if (/Publisher/i.test(old)) {
             if (value.toLowerCase() == 'none') {
@@ -21,7 +21,7 @@ require(['jquery', 'topic', 'template', 'common', 'items',
                 value = 'Publisher & ' + value;
             }
         }
-        $('.display-role', $section).html(value);
+        $('.display-role', $item).html(value);
     }
 
     function setup_letters(total) {
