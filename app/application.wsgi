@@ -31,16 +31,10 @@ from palette.workbook import WorkbookArchive, WorkbookData
 from palette.datasource import DatasourceArchive, DatasourceData
 
 # settings
-if __name__ == '__main__':
-    BASEDIR = os.path.dirname(os.path.abspath(__file__))
-else:
-    BASEDIR = '/var/palette'
 AES_KEY_FILE = '/var/palette/.aes'
 SHARED = 'tableau2014'
 LOGIN_URL = '/login'
 LOGIN_MAX_AGE = 2592000
-WORKBOOK_DATA_PATH = os.path.join(BASEDIR, 'data', 'workbook-archive')
-DATASOURCE_DATA_PATH = os.path.join(BASEDIR, 'data', 'datasource-archive')
 DATABASE = 'postgresql://palette:palpass@localhost/paldb'
 
 # general configuration
@@ -78,10 +72,9 @@ pages.add_route(r'/datasource/archive\Z', DatasourceArchive())
 pages.add_route(r'/manage\Z', ManagePage())
 pages.add_route(r'/profile\Z', ProfilePage())
 pages.add_route(r'/configure/', ConfigureRouter())
-pages.add_route(r'/data/workbook-archive/(?P<name>[^\s]+)\Z',
-                WorkbookData(WORKBOOK_DATA_PATH))
+pages.add_route(r'/data/workbook-archive/(?P<name>[^\s]+)\Z', WorkbookData())
 pages.add_route(r'/data/datasource-archive/(?P<name>[^\s]+)\Z',
-                DatasourceData(DATASOURCE_DATA_PATH))
+                DatasourceData())
 pages.add_route(r'/', HomePage())
 pages = RemoteUserMiddleware(pages)
 pages = AuthRedirectMiddleware(pages, redirect=LOGIN_URL)
