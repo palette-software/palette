@@ -34,6 +34,7 @@ import exc
 import httplib
 import clierror
 from util import success, failed, traceback_string, upgrade_rwlock
+from util import is_cloud_url
 
 # pylint: disable=too-many-public-methods
 
@@ -2209,6 +2210,42 @@ class CliHandler(socketserver.StreamRequestHandler):
         agent.connection.http_send_json("/hup", {})
         self.report_status({})
 
+    @usage('cloud GET <s3://url>|<gs://url> ')
+    def do_cloud(self, cmd):
+        """This is a newer interface that GETs a file from cloud storage -
+        s3 or gcs - and downloads it to the agent.
+        The file is specified by a url."""
+        pwd = None
+        if len(cmd.args) < 2:
+            self.print_usage(self.do_cloud.__usage__)
+            return
+        if len(cmd.args) == 3:
+            pwd = cmd.args[2]
+        elif len(cmd.args) > 3:
+            self.print_usage(self.do_cloud.__usage__)
+            return
+
+        action = cmd.args[0].upper()
+        if action != 'GET':
+            self.print_usage(self.do_cloud.__usage__)
+            return
+        url = cmd.args[1]
+        if not is_cloud_url(url):
+            self.print_usage(self.do_cloud.__usage__)
+            return
+
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            return
+
+        self.ack()
+        try:
+            body = self.server.cloud.download(agent, url, pwd=pwd)
+        except ValueError, ex:
+            self.error(clierror.ERROR_BAD_VALUE, ex.message)
+            return
+        self.report_status(body)
+
     def _do_cloud_test(self, cloud_type, cmd):
         # pylint: disable=too-many-branches
         # pylint: disable=too-many-locals
@@ -2254,7 +2291,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                                             AgentManager.AGENT_TYPE_PRIMARY)
         if not agent:
             self.error(clierror.ERROR_AGENT_NOT_CONNECTED,
-                   "Primary agent must be connected for 'test' command.")
+                       "Primary agent must be connected for 'test' command.")
             return
 
         self.ack()
@@ -2337,7 +2374,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             # FIXME: duplicate code with webapp.
             cloudid = self.server.system[cloud_type_id]
-            if cloudid == 0:
+            if cloudid is None:
                 self.error(clierror.ERROR_NOT_FOUND,
                            'No default cloud instance specified.')
                 return
@@ -2351,7 +2388,8 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         if action == 'GET':
             body = cloud_instance.get(agent, entry, keypath,
-                                      bucket_subdir=bucket_subdir, pwd=dirpath)
+                                      bucket_subdir=bucket_subdir,
+                                      pwd=dirpath)
         elif action == 'PUT':
             body = cloud_instance.put(agent, entry, keypath,
                                       bucket_subdir=bucket_subdir, pwd=dirpath)
@@ -2664,8 +2702,10 @@ class CliHandler(socketserver.StreamRequestHandler):
 
     @usage('get <URL> [output-file-path]')
     def do_get(self, cmd):
+        """Do an HTTP GET from the agent to the specified URL.
+        The resulting files is stored on the controller.
+        """
         # pylint: disable=too-many-locals
-        """Do an HTTP GET from the agent to the specified URL"""
         if len(cmd.args) == 2:
             url = cmd.args[0]
             path = cmd.args[1]

@@ -212,3 +212,19 @@ def translate_key(key, pretty=False):
         return prettyify(key)
     else:
         return uglyify(key)
+
+def isurl(value):
+    """ Test whether value *looks* like a URL - i.e. starts with a scheme. """
+    value = str(value).lower()
+    for prefix in ('http:/', 'https:/', 'file:/', 's3:/', 'gs:/'):
+        if value.startswith(prefix):
+            return True
+    return False
+
+def is_cloud_url(value):
+    """ Test whether value starts with 's3:/' or 'gs:/'"""
+    value = str(value).lower()
+    for prefix in ('s3:/', 'gs:/'):
+        if value.startswith(prefix):
+            return True
+    return False
