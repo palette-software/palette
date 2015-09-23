@@ -108,11 +108,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', default=None)
     parser.add_argument('--port', type=int, default=8080)
+    parser.add_argument('--quiet', action='store_true', default=False)
     args = parser.parse_args()
 
     # logging that would normally be handled by the webserver
-    from paste.translogger import TransLogger
-    application = TransLogger(application)
+    if not args.quiet:
+        from paste.translogger import TransLogger
+        application = TransLogger(application)
 
     # debugging API
     from akiri.framework.servers import MapApplication
