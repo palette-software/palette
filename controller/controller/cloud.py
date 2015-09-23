@@ -1,6 +1,8 @@
 import os
 import ntpath
 
+from urlparse import urlsplit
+
 import boto
 from boto.s3 import connection
 
@@ -15,6 +17,11 @@ import akiri.framework.sqlalchemy as meta
 from mixin import BaseMixin, BaseDictMixin, OnlineMixin
 from manager import Manager
 from passwd import aes_decrypt
+from .system import SystemKeys
+from .util import failed
+
+CLOUD_TYPE_S3 = 's3'
+CLOUD_TYPE_GCS = 'gcs'
 
 # FIXME: This policy is *way* too permissive.
 S3_POLICY = '{"Statement":[{"Effect":"Allow","Action": "s3:*","Resource":"*"}]}'
@@ -36,6 +43,10 @@ class CloudEntry(meta.Base, BaseMixin, BaseDictMixin, OnlineMixin):
                                server_onupdate=func.current_timestamp())
 
     __table_args__ = (UniqueConstraint('envid', 'name'),)
+
+    @property
+    def secret_key(self):
+        return aes_decrypt(self.secret)
 
     @classmethod
     def get_by_envid_cloudid(cls, envid, cloudid):
@@ -69,10 +80,64 @@ class CloudEntry(meta.Base, BaseMixin, BaseDictMixin, OnlineMixin):
         filters = {'envid':envid}
         return cls.get_all_by_keys(filters, order_by='name')
 
+
+class CloudInfo(object):
+    """ Non-sqlalchemy class representing a file in the cloud.
+    This class should have all information necessary to download the file.
+    """
+
+    def __init__(self, cloud_type, path):
+        if cloud_type not in (CLOUD_TYPE_S3, CLOUD_TYPE_GCS):
+            raise ValueError("Invalid cloud type: " + cloud_type)
+        self.cloud_type = cloud_type
+        self.path = path
+        self.bucket = None
+        self.access_key = None
+        self.secret_key = None
+
+    @classmethod
+    def from_url(cls, urlstring):
+        """ Create an instance using a url string. """
+        url = urlsplit(urlstring)
+        if not url.path:
+            raise ValueError("No path specified in URL.")
+
+        # urlsplit lower-cases the scheme.
+        if url.scheme == 's3':
+            cloud_info = CloudInfo(CLOUD_TYPE_S3, url.path)
+        elif url.scheme == 'gs':
+            cloud_info = CloudInfo(CLOUD_TYPE_GCS, url.path)
+        else:
+            raise ValueError("Invalid URL '" + url.scheme + "', " +
+                             "the scheme must be 's3' or 'gcs'")
+        if url.hostname:
+            cloud_info.bucket = url.hostname
+        if url.username:
+            if not url.password:
+                raise ValueError("The secret_key is required " +
+                                 "when the access_key is specified")
+            cloud_info.access_key = url.username
+        if url.password:
+            if not url.username:
+                raise ValueError("The access_key is required " +
+                                 "when the secret_key is specified")
+            cloud_info.secret_key = url.password
+        return cloud_info
+
+    @classmethod
+    def from_cloud_entry(cls, entry, path):
+        """ Build a instance from a path and a CloudEntry instance. """
+        cloud_info = CloudInfo(entry.cloud_type, path)
+        cloud_info.bucket = entry.bucket
+        cloud_info.access_key = entry.access_key
+        cloud_info.secret_key = entry.secret_key
+        return cloud_info
+
+
 class CloudManager(Manager):
 
-    CLOUD_TYPE_S3 = 's3'
-    CLOUD_TYPE_GCS = 'gcs'
+    CLOUD_TYPE_S3 = CLOUD_TYPE_S3
+    CLOUD_TYPE_GCS = CLOUD_TYPE_GCS
 
     def __init__(self, server):
         super(CloudManager, self).__init__(server)
@@ -113,6 +178,45 @@ class CloudManager(Manager):
                   (cloud_entry.cloud_type, file_entry.name)
             self.log.error(msg)
             raise IOError(msg)
+
+    def download(self, agent, urlstring, pwd=None):
+        """
+        Download the file pointed to by 'urlstring' into the agent data-dir and
+        return the body of the cli_cmd
+
+        raises: ValueError, IOError (?)
+        """
+        cloud_info = CloudInfo.from_url(urlstring)
+
+        if cloud_info.cloud_type == CLOUD_TYPE_S3:
+            send_get = self.s3.send_get
+            cloud_type_id = SystemKeys.S3_ID
+        elif cloud_info.cloud_type == CLOUD_TYPE_GCS:
+            send_get = self.gcs.send_get
+            cloud_type_id = SystemKeys.GCS_ID
+        else:
+            assert False
+
+        # Now try to fill in the cloud_info with any credentials.
+
+        # The url 'hostname' is the bucket which is also the entry 'name'.
+        if cloud_info.bucket:
+            cloud_entry = self.get_by_name(cloud_info.bucket,
+                                           cloud_info.cloud_type)
+        else:
+            cloud_entry = self.get_cloud_entry(cloud_type_id)
+
+        if cloud_entry:
+            if not cloud_info.bucket:
+                cloud_info.bucket = cloud_entry.bucket
+            if not cloud_info.access_key:
+                cloud_info.access_key = cloud_entry.access_key
+                cloud_info.secret_key = cloud_entry.secret_key
+
+        if not cloud_info.bucket:
+            raise ValueError("The bucket name is required.")
+
+        return send_get(agent, cloud_info, pwd=pwd)
 
     # FIXME: use get_unique_by_keys()
     def get_by_cloudid(self, cloudid):
@@ -165,45 +269,113 @@ def move_bucket_subdirs_to_path(in_bucket, in_path):
         path = in_path
     return (bucket, path)
 
+
+def _cloud_command_environment(agent, cloud_info, pwd=None):
+    """ Build the environment dict sent to send to ps3/pgcs
+          keys: ACCESS_KEY, SECRET_KEY and PWD
+    """
+    env = {}
+    if cloud_info.access_key:
+        env['ACCESS_KEY'] = cloud_info.access_key
+    if cloud_info.secret_key:
+        env['SECRET_KEY'] = cloud_info.secret_key
+
+    if not pwd:
+        if agent.data_dir:
+            pwd = agent.data_dir
+        elif agent.install_dir:
+            pwd = agent.install_dir
+    if pwd:
+        env[u'PWD'] = pwd
+    if not env:
+        return None
+    return env
+
+
 # Abstract base class for S3 and GCS.
 class CloudInstance(object):
     __metaclass__ = ABCMeta
+
+    EXE = None
 
     def __init__(self, server):
         self.server = server
         self.envid = self.server.environment.envid
 
     @abstractmethod
-    def send_cmd(self, agent, action, cloud_entry, path,
-                 bucket_subdir=None, pwd=None):
-        # pylint: disable=too-many-arguments
-        pass
-
-    @abstractmethod
     def delete_file(self, entry, path):
         pass
 
-    # pylint: disable=too-many-arguments
-    def get(self, agent, cloud_entry, path, bucket_subdir=None, pwd=None):
-        return self.send_cmd(agent, 'GET', cloud_entry, path,
-                             bucket_subdir=bucket_subdir, pwd=pwd)
+    # NOTE: no bucket_subdir, include it as part of the path.
+    def get(self, agent, cloud_entry, path, pwd=None):
+        cloud_info = CloudInfo.from_cloud_entry(cloud_entry, path)
+        return self.send_get(agent, cloud_info, pwd=pwd)
 
-    # pylint: disable=too-many-arguments
-    def put(self, agent, cloud_entry, path, bucket_subdir=None, pwd=None):
-        return self.send_cmd(agent, 'PUT', cloud_entry, path,
-                             bucket_subdir=bucket_subdir, pwd=pwd)
-
-# Handle S3 specifics
-class S3(CloudInstance):
-
-    def send_cmd(self, agent, action, cloud_entry, path,
-                 bucket_subdir=None, pwd=None):
+    def put(self, agent, cloud_entry, filepath, bucket_subdir=None, pwd=None):
         # pylint: disable=too-many-arguments
+        cloud_path = agent.path.basename(filepath)
+        if bucket_subdir:
+            cloud_path = os.path.join(bucket_subdir, cloud_path)
+        cloud_info = CloudInfo.from_cloud_entry(cloud_entry, cloud_path)
+        return self.send_put(agent, cloud_info, filepath, pwd=pwd)
+
+    def send_put(self, agent, cloud_info, filepath, pwd=None):
+        """ Perform a PUT of the file specified by cloud_info """
         # fixme: sanity check on data-dir on the primary?
         # fixme: create the path first
 
-        # pylint: disable=pointless-string-statement
-        """
+        env = _cloud_command_environment(agent, cloud_info, pwd)
+
+        bucket_subdir = os.path.dirname(cloud_info.path)
+        arg1 = os.path.join(cloud_info.bucket, bucket_subdir)
+        arg2 = filepath
+
+        assert not self.EXE is None
+        cmd = '%s PUT %s "%s"' % (self.EXE, arg1, arg2)
+
+        self.server.log.debug("cmd: '%s', pwd: '%s', path: '%s'",
+                              cmd, str(pwd), filepath)
+
+        # Send the command to the agent
+        return self.server.cli_cmd(cmd, agent, env=env, timeout=60*60*2)
+
+    def send_get(self, agent, cloud_info, pwd=None):
+        """ Perform a GET on the file specified by cloud_info """
+        # fixme: sanity check on data-dir on the primary?
+        # fixme: create the path first
+
+        env = _cloud_command_environment(agent, cloud_info, pwd)
+        arg1 = cloud_info.bucket
+        arg2 = cloud_info.path
+
+        if arg2.startswith('/'):
+            arg2 = arg2[1:]
+
+        assert not self.EXE is None
+        cmd = '%s GET %s "%s"' % (self.EXE, arg1, arg2)
+
+        self.server.log.debug("cmd: '%s', pwd: '%s'", cmd, str(pwd))
+
+        # Send the command to the agent
+        body = self.server.cli_cmd(cmd, agent, env=env, timeout=60*60*2)
+        if failed(body):
+            return body
+
+        if not 'path' in body:
+            path = os.path.basename(cloud_info.path)
+            if env and 'PWD' in env:
+                body['path'] = agent.path.join(env['PWD'], path)
+            else:
+                body['path'] = path
+        return body
+
+
+# Handle S3 specifics
+class S3(CloudInstance):
+    """
+    For now S3 send_cmd is generic, but eventually it will evolve to use
+    temporary tokens:
+
         # fixme: Not all users have authorization to do this.
         resource = os.path.basename(filename)
         try:
@@ -217,41 +389,9 @@ class S3(CloudInstance):
                u'SESSION': token.credentials.session_token,
                u'REGION_ENDPOINT': cloud_entry.region,
                u'PWD': pwd}
-        """
+    """
 
-        secret = aes_decrypt(cloud_entry.secret)
-        env = {u'ACCESS_KEY': cloud_entry.access_key,
-               u'SECRET_KEY': secret}
-
-        if pwd:
-            env['PWD'] = pwd
-        elif agent.data_dir:
-            env['PWD'] = agent.data_dir
-
-        if action == 'GET':
-            arg1 = cloud_entry.bucket
-
-            if bucket_subdir:
-                arg2 = os.path.join(bucket_subdir, path)
-            else:
-                arg2 = path
-
-        elif action == 'PUT':
-            if bucket_subdir:
-                arg1 = os.path.join(cloud_entry.bucket, bucket_subdir)
-            else:
-                arg1 = cloud_entry.bucket
-            arg2 = path
-        else:
-            raise IOError("S3 send_cmd bad action: " + action)
-
-        s3_command = 'ps3 %s %s "%s"' % (action, arg1, arg2)
-
-        self.server.log.debug("s3_command: '%s', pwd: '%s', path: '%s'",
-                              s3_command, pwd, path)
-
-        # Send the s3 command to the agent
-        return self.server.cli_cmd(s3_command, agent, env=env, timeout=60*60*2)
+    EXE = 'ps3'
 
     def delete_file(self, entry, path):
         # Move any bucket subdirectories to the filename
@@ -277,48 +417,7 @@ class S3(CloudInstance):
 
 class GCS(CloudInstance):
 
-    def send_cmd(self, agent, action, cloud_entry, path, bucket_subdir=None,
-                                                                    pwd=None):
-        # pylint: disable=too-many-arguments
-        # pylint: disable=too-many-arguments
-
-        # fixme: sanity check on data-dir on the primary?
-
-        # FIXME: We don't really want to send our real keys and
-        #        secrets to the agents, but while boto.connect_gs
-        #        can replace boto.connect_s3, there is no GCS
-        #        equivalent for boto.connect_sts, so we may need
-        #        to move away from boto to get GCS temporary tokens.
-        secret = aes_decrypt(cloud_entry.secret)
-        env = {u'ACCESS_KEY': cloud_entry.access_key,
-               u'SECRET_KEY': secret}
-
-        if pwd:
-            env['PWD'] = pwd
-        elif agent.data_dir:
-            env['PWD'] = agent.data_dir
-
-        if action == 'GET':
-            arg1 = cloud_entry.bucket
-
-            if bucket_subdir:
-                arg2 = os.path.join(bucket_subdir, path)
-            else:
-                arg2 = path
-        elif action == 'PUT':
-            if bucket_subdir:
-                arg1 = os.path.join(cloud_entry.bucket, bucket_subdir)
-            else:
-                arg1 = cloud_entry.bucket
-            arg2 = path
-        else:
-            raise IOError("GCS send_cmd bad action: " + action)
-
-        gcs_command = 'pgcs %s %s "%s"' % (action, arg1, arg2)
-
-        # Send the gcs command to the agent
-        body = self.server.cli_cmd(gcs_command, agent, env=env, timeout=60*60*2)
-        return body
+    EXE = 'pgcs'
 
     def delete_file(self, entry, path):
         # Move any bucket subdirectories to the filename
