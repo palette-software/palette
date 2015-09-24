@@ -55,16 +55,22 @@ class Agent(meta.Base, BaseDictMixin):
         super(Agent, self).__init__(*args, **kwargs)
         self.reconstruct()
         self.path = None
-        self.connection = None # fixes an erroneous pylint error.
-
-    @reconstructor
-    def reconstruct(self):
-        # pylint: disable=attribute-defined-outside-init
         self.server = None
         self.connection = None
         self.odbc = None
         self.firewall = None
         self.filemanager = None
+        self.static_hostname = False
+
+    @reconstructor
+    def reconstruct(self):
+        """ Basically __init__ for sqlalchemy """
+        self.server = None
+        self.connection = None
+        self.odbc = None
+        self.firewall = None
+        self.filemanager = None
+        self.static_hostname = False
 
     def __getattr__(self, name):
         if name == 'iswin':
@@ -214,6 +220,11 @@ class Agent(meta.Base, BaseDictMixin):
         entry.ip_address = body['ip-address']
         entry.peername = aconn.peername
         entry.listen_port = body['listen-port']
+
+        if 'static-hostname' in body:
+            entry.static_hostname = bool(body['static-hostname'])
+        else:
+            entry.static_hostname = False
 
         # Note: Do not set agent_type here since 1) We need to know
         # what the agent_type was in the case where the row existed, and

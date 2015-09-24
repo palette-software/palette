@@ -505,6 +505,8 @@ class AgentManager(threading.Thread):
         """Update other information from pinfo, such as the IP address,
            if it has changed."""
 
+        # If 'hostname' is ever updated from pinfo, mind 'static-hostname'
+
         if 'ip-address' in pinfo and pinfo['ip-address'] != agent.ip_address:
             self.log.debug(
                 "update_agent_info_other: Updating ip address from %s to %s",
