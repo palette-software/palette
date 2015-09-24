@@ -48,9 +48,24 @@ class CloudEntry(meta.Base, BaseMixin, BaseDictMixin, OnlineMixin):
     def secret_key(self):
         return aes_decrypt(self.secret)
 
+    @property
+    def scheme(self):
+        if self.cloud_type == CLOUD_TYPE_S3:
+            return 's3'
+        elif self.cloud_type == CLOUD_TYPE_GCS:
+            return 'gs'
+        # FIXME: assert and/or enum
+        return None
+
     @classmethod
     def get_by_envid_cloudid(cls, envid, cloudid):
+        """ envid is a sanity check (not technically needed) """
         filters = {'envid':envid, 'cloudid':cloudid}
+        return cls.get_unique_by_keys(filters, default=None)
+
+    @classmethod
+    def get_by_id(cls, cloudid):
+        filters = {'cloudid':cloudid}
         return cls.get_unique_by_keys(filters, default=None)
 
     @classmethod
