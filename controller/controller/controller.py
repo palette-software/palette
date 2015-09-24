@@ -11,6 +11,8 @@ import exc
 
 import httplib
 import ntpath
+import urllib
+from urlparse import urlsplit
 
 import sqlalchemy
 import akiri.framework.sqlalchemy as meta
@@ -485,7 +487,62 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                                                             entry.password)
         # Send command to target agent
         copy_body = self.cli_cmd(command, dst, env=env)
+        if success(copy_body):
+            filename = src.path.basename(source_path)
+            copy_body['path'] = dst.path.join(target_dir, filename)
         return copy_body
+
+    def restore_local(self, agent, path, userid=None,
+                      data_only=False, run_as_password=None):
+        """
+        Do a restore from a file located on the primary.
+          agent: primary agent
+          path: path to the tsbak
+        NOTE: the caller is responsible for restoring the original state.
+        """
+        # pylint: disable=too-many-arguments
+        data = agent.todict()
+        if data_only:
+            data['restore_type'] = 'Data only'
+        else:
+            data['restore_type'] = 'Data and Configuration'
+
+        # The restore file is now on the Primary Agent.
+        self.event_control.gen(EventControl.RESTORE_STARTED,
+                               data, userid=userid)
+
+        reported_status = self.statusmon.get_tableau_status()
+
+        if reported_status == TableauProcess.STATUS_RUNNING:
+            # Restore can run only when tableau is stopped.
+            self.state_manager.update(StateManager.STATE_STOPPING_RESTORE)
+            self.log.debug("----------Stopping Tableau for restore-----------")
+            stop_body = self.cli_cmd("tabadmin stop", agent, timeout=60*60)
+            if stop_body.has_key('error'):
+                self.log.info("Restore: tabadmin stop failed")
+                return stop_body
+
+            self.event_control.gen(EventControl.STATE_STOPPED, data,
+                                   userid=userid)
+
+        # NOTE: no handling of the maint webserver.
+        self.state_manager.update(StateManager.STATE_STARTING_RESTORE)
+
+        cmd = 'tabadmin restore \\\"%s\\\"' % path
+        if run_as_password:
+            cmd += ' --password \\\"%s\\\"' % run_as_password
+        if data_only:
+            cmd += ' --no-config'
+
+        env = {u'PWD': agent.data_dir}
+
+        try:
+            self.log.debug("restore sending command: %s", cmd)
+            restore_body = self.cli_cmd(cmd, agent, env=env, timeout=60*60*2)
+        except httplib.HTTPException, ex:
+            restore_body = {"error": "HTTP Exception: " + str(ex)}
+        return restore_body
+
 
     def restore_cmd(self, agent, backup_full_path, orig_state,
                     no_config=False, userid=None, user_password=None):
@@ -518,65 +575,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error("restore_cmd failure: %s" % str(ex))
 
         # The restore file is now on the Primary Agent.
-        self.event_control.gen(EventControl.RESTORE_STARTED,
-                               data, userid=userid)
+        restore_body = self.restore_local(agent, got.primary_full_path,
+                                          userid=userid, data_only=no_config,
+                                          run_as_password=user_password)
 
-        reported_status = self.statusmon.get_tableau_status()
-
-        if reported_status == TableauProcess.STATUS_RUNNING:
-            # Restore can run only when tableau is stopped.
-            self.state_manager.update(StateManager.STATE_STOPPING_RESTORE)
-            self.log.debug("----------Stopping Tableau for restore-----------")
-            stop_body = self.cli_cmd("tabadmin stop", agent, timeout=60*60)
-            if stop_body.has_key('error'):
-                self.log.info("Restore: tabadmin stop failed")
-                if got.copied:
-                    # If the file was copied to the Primary, delete
-                    # the temporary backup file we copied to the Primary.
-                    self.files.delete_vol_file(agent, got.primary_full_path)
-                self.state_manager.update(orig_state)
-                return stop_body
-
-            self.event_control.gen(EventControl.STATE_STOPPED, data,
-                                   userid=userid)
-
-        # 'tabadmin restore ...' starts tableau as part of the
-        # restore procedure.
-        # fixme: Maybe the maintenance web server wasn't running?
-        # We currently don't keep track, but assume the maintenance
-        # web server may be running if Tableau is stopped.
-        maint_msg = ""
-        if orig_state == StateManager.STATE_STOPPED:
-            maint_body = self.maint("stop")
-            if maint_body.has_key("error"):
-                self.log.info(
-                        "Restore: maint stop failed: " + maint_body['error'])
-                # continue on, not a fatal error...
-                maint_msg = "Restore: maint stop failed.  Error was: %s" \
-                                                    % maint_body['error']
-
-        self.state_manager.update(StateManager.STATE_STARTING_RESTORE)
-
-        cmd = 'tabadmin restore \\\"%s\\\"' % got.primary_full_path
-        if user_password:
-            cmd += ' --password \\\"%s\\\"' % user_password
-        if no_config:
-            cmd += ' --no-config'
-
-        try:
-            self.log.debug("restore sending command: %s", cmd)
-            restore_body = self.cli_cmd(cmd, agent, timeout=60*60*2)
-        except httplib.HTTPException, ex:
-            restore_body = {"error": "HTTP Exception: " + str(ex)}
-
-        if maint_msg != "":
-            info = maint_msg
-        else:
-            info = ""
+        if failed(restore_body):
+            self.state_manager.update(orig_state)
 
         # fixme: Do we need to add restore information to the database?
         # fixme: check status before cleanup? Or cleanup anyway?
 
+        info = ''
         if got.copied:
             # If the file was copied to the Primary, delete
             # the temporary backup file we copied to the Primary.
@@ -588,6 +597,55 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if info:
             restore_body['info'] = info.strip()
 
+        return restore_body
+
+    def restore_url(self, agent, url, userid=None,
+                    data_only=False, run_as_password=None):
+        """ Restore from an arbitrary file specified by urlstring.
+        The 'agent' parameter is the primary agent for the environment (hack)
+        """
+        # pylint: disable=too-many-arguments
+        envid = self.environment.envid
+        cleanup_file = False # should the file on the primary be deleted.
+
+        if isinstance(url, basestring):
+            url = urlsplit(url)
+
+        path = urllib.unquote(url.path)
+        if url.scheme == 'file':
+            if path.startswith('/.') or agent.iswin:
+                # '/.' allows files to be specified relative to the data-dir
+                # and all windows paths start after the initial '/'
+                path = path[1:]
+
+            # an unspecified url.hostname means on the primary
+            if url.hostname:
+                agentid = Agent.get_agentid_from_host(envid, url.hostname)
+                if agent.agentid != agentid:
+                    # The PaletteArchiveServer doesn't support generic files
+                    # yet so this can't be relied upon.
+                    #
+                    # body = self.copy_cmd(agentid, path,
+                    #                      agent.agentid, agent.data_dir)
+                    body = {'status': 'FAILED',
+                            'error': 'Cannot yet restore by URL from a worker.'}
+                    if failed(body):
+                        return body
+                    cleanup_file = True
+                    path = body['path']
+        elif url.scheme in ('s3', 'gcs'):
+            body = self.cloud.download(agent, url)
+            if failed(body):
+                return body
+            cleanup_file = True
+            path = body['path']
+
+        restore_body = self.restore_local(agent, path, userid=userid,
+                                          data_only=data_only,
+                                          run_as_password=run_as_password)
+        if cleanup_file:
+            # best effort here
+            agent.filemanager.delete(path)
         return restore_body
 
     def move_bucket_subdirs_to_path(self, in_bucket, in_path):

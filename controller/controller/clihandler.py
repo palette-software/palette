@@ -9,7 +9,7 @@ import time
 from datetime import datetime
 import traceback
 import subprocess
-from urlparse import urlparse
+from urlparse import urlparse, urlsplit
 import unicodedata
 
 import sqlalchemy
@@ -1116,7 +1116,75 @@ class CliHandler(socketserver.StreamRequestHandler):
                                           userid=userid)
 
         aconn.user_action_unlock()
+        self.report_status(body)
 
+    @usage('[/noconfig] restore-url <url> [tableau-run-as-user-password]')
+    @upgrade_rwlock
+    def do_restore_url(self, cmd):
+        if not len(cmd.args) or len(cmd.args) > 2:
+            self.print_usage(self.do_restore_url.__usage__)
+            return
+
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            return
+
+        url = urlsplit(cmd.args[0])
+        if not url.scheme in ('file', 's3', 'gs'):
+            self.error(clierror.ERROR_BAD_VALUE,
+                       "Invalid URL scheme : '%s'" % (url.scheme,))
+            return
+
+        # Take the user action lock before checking state
+        agent.connection.user_action_lock()
+
+        # Check to see if we're in a state to restore
+        main_state = self.server.state_manager.get_state()
+        if main_state not in (StateManager.STATE_STARTED,
+                              StateManager.STATE_DEGRADED,
+                              StateManager.STATE_STOPPED,
+                              StateManager.STATE_STOPPED_UNEXPECTED):
+            self.error(clierror.ERROR_WRONG_STATE,
+                       "Invalid restore state: " + main_state)
+            agent.connection.user_action_unlock()
+            return
+
+        self.ack()
+
+        kwargs = {}
+        if len(cmd.args) == 2:
+            kwargs['run_as_password'] = cmd.args[1]
+
+        if cmd.dict.has_key('userid'):
+            userid = int(cmd.dict['userid'])
+            kwargs['userid'] = userid
+        else:
+            userid = None
+
+        if cmd.dict.has_key('noconfig'):
+            kwargs['data_only'] = True
+
+        self.server.log.debug("-----------Starting Restore (URL)-------------")
+        try:
+            body = self.server.restore_url(agent, url, **kwargs)
+        except StandardError:
+            self.server.log.exception("Restore Exception:")
+            line = "Restore Error: Traceback: %s" % traceback_string()
+            body = {'error': line}
+
+        self.server.statusmon.check_status_with_connection(agent)
+
+        data = agent.todict()
+        if success(body):
+            # Restore finished successfully.
+            self.server.event_control.gen(EventControl.RESTORE_FINISHED,
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
+        else:
+            self.server.event_control.gen(EventControl.RESTORE_FAILED,
+                                          dict(body.items() + data.items()),
+                                          userid=userid)
+        agent.connection.user_action_unlock()
         self.report_status(body)
 
     @usage('copy source-agent-name:filename dest-agent-name dest-dir')
@@ -2210,11 +2278,12 @@ class CliHandler(socketserver.StreamRequestHandler):
         agent.connection.http_send_json("/hup", {})
         self.report_status({})
 
-    @usage('cloud GET <s3://url>|<gs://url> ')
+    @usage('cloud GET <s3://url>|<gs://url> [agent-download-dir]')
     def do_cloud(self, cmd):
         """This is a newer interface that GETs a file from cloud storage -
         s3 or gcs - and downloads it to the agent.
-        The file is specified by a url."""
+        The file is specified by a (cloud) url.
+        """
         pwd = None
         if len(cmd.args) < 2:
             self.print_usage(self.do_cloud.__usage__)
