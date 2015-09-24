@@ -145,6 +145,19 @@ class HttpRequestManager(TableauCacheManager):
             body['site'] = tokens[1]
             body['repository_url'] = tokens[3]
             body['view'] = tokens[4]
+        elif len(tokens) >= 7 and tokens[0] == 'vizql':
+            # pylint: disable=line-too-long
+            # /vizql/t/<site>/w/<workbook.repository_url>/v/<viewname>/performPostLoadOperations...
+            #  0     1  2     3         4                 5  6          7
+            if tokens[1] == 't' and tokens[3] == 'w' and tokens[5] == 'v':
+                body['site'] = tokens[2]
+                body['repository_url'] = tokens[4]
+                body['view'] = tokens[6]
+            # /vizql/w/<workbook.repository_url>/v/<viewname>/bootstrapSession...
+            #  0     1               2           3      4         5
+            elif tokens[1] == 'w' and tokens[3] == 'v':
+                body['repository_url'] = tokens[2]
+                body['view'] = tokens[4]
 
     def _test_for_alerts(self, rows, entry, agent, controldata):
         if entry.http_request_uri.startswith('/admin'):
@@ -167,7 +180,8 @@ class HttpRequestManager(TableauCacheManager):
     def _test_for_load_alerts(self, rows, entry, agent, body):
     # pylint: disable=too-many-return-statements
     # pylint: disable=too-many-branches
-#        print "action = ", entry.action, "body = ", body
+    # Different event types are described in PD-5323.
+#        prin t "action = ", entry.action, "body = ", body
 
         errorlevel = self.system[SystemKeys.HTTP_LOAD_ERROR]
         warnlevel = self.system[SystemKeys.HTTP_LOAD_WARN]
@@ -329,9 +343,6 @@ class HttpRequestManager(TableauCacheManager):
     # translate workbook.repository_url -> system_user_id -> owner
     def _translate_workbook(self, body, entry):
         envid = self.server.environment.envid
-        # The event in the event_control table expects these to exist:
-        body['owner'] = None
-        body['workbook'] = None
 
         url = body['repository_url']
         try:
@@ -355,6 +366,8 @@ class HttpRequestManager(TableauCacheManager):
                                     workbook.system_user_id)
             return
         body['owner'] = user.display_name()
+        # Send this userid on event generation (owner, not viewer).
+        body['userid'] = user.userid
 
     def _eventgen(self, key, agent, entry, body=None):
         if body is None:
@@ -365,16 +378,22 @@ class HttpRequestManager(TableauCacheManager):
 
         body['http_status'] = responses[entry.status]
 
-        userid = None
-
         system_user_id = entry.system_user_id
         if system_user_id != -1:
             profile = UserProfile.get_by_system_user_id(entry.envid,
                                                         entry.system_user_id)
             if profile:
+                # This is the browser/viewer user, and not the
+                # workbook publisher/owner.
                 body['username'] = profile.display_name()
 
-                userid = profile.userid
+        # An event in the event_control table expects these to exist,
+        # but if workbook archiving is off, or the workbook isn't
+        # found they will not be set.
+        body['owner'] = None
+        body['workbook'] = None
+
+        body['userid'] = None       # default
 
         if 'repository_url' in body:
             self._translate_workbook(body, entry)
@@ -389,6 +408,8 @@ class HttpRequestManager(TableauCacheManager):
         if 'http_request_uri' in body:
             http_request_uri = unquote(body['http_request_uri'])
             body['http_request_uri'] = http_request_uri.decode('utf8')
+
+        userid = body['userid']
 
         completed_at = utc2local(entry.completed_at)
         self.server.event_control.gen(key, body,
