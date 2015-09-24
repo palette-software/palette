@@ -96,9 +96,10 @@ class CloudInfo(object):
         self.secret_key = None
 
     @classmethod
-    def from_url(cls, urlstring):
-        """ Create an instance using a url string. """
-        url = urlsplit(urlstring)
+    def from_url(cls, url):
+        """ Create an instance using a url string or ParseResult. """
+        if isinstance(url, basestring):
+            url = urlsplit(url)
         if not url.path:
             raise ValueError("No path specified in URL.")
 
@@ -179,14 +180,14 @@ class CloudManager(Manager):
             self.log.error(msg)
             raise IOError(msg)
 
-    def download(self, agent, urlstring, pwd=None):
+    def download(self, agent, url, pwd=None):
         """
-        Download the file pointed to by 'urlstring' into the agent data-dir and
+        Download the file pointed to by 'url' into the agent data-dir and
         return the body of the cli_cmd
 
         raises: ValueError, IOError (?)
         """
-        cloud_info = CloudInfo.from_url(urlstring)
+        cloud_info = CloudInfo.from_url(url)
 
         if cloud_info.cloud_type == CLOUD_TYPE_S3:
             send_get = self.s3.send_get
