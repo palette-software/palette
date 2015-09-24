@@ -95,6 +95,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # pylint: disable=too-many-return-statements
         # pylint: disable=too-many-statements
 
+        # FIXME: ensure that the returned body is a superset of FileEntry.api()
+
         if userid == None:
             auto = True     # It is an 'automatic/scheduled' backup
         else:
@@ -189,6 +191,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         else:
             stats += '\n'
 
+        body['fileid'] = place.placed_file_entry.fileid # needed by webapp
         body['info'] += '\n' + stats
 
         body['size'] = sizestr(backup_size)

@@ -1,7 +1,6 @@
 import time
 import datetime
 
-from collections import OrderedDict
 from webob import exc
 
 from akiri.framework import ENVIRON_PREFIX
@@ -29,15 +28,7 @@ class BackupApplication(PaletteRESTApplication):
         """ Convert to API naming
         FIXME: this can be removed when the UI uses this interface.
         """
-        data = OrderedDict()
-        data['id'] = entry.fileid
-        data['uri'] = entry.name
-        data['size'] = entry.size
-        if isinstance(entry.creation_time, basestring):
-            data['creation-time'] = entry.creation_time
-        else:
-            data['creation-time'] = entry.creation_time.isoformat('T') + 'Z'
-        return data
+        return entry.api()
 
     def service_one_backup(self, req, fileid):
         """Return information about a particular backup."""
