@@ -743,6 +743,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         # This allows another telnet command
         aconn.user_action_unlock()
 
+        if success(body):
+            entry = self.server.files.get_by_id(body['fileid'])
+            body = entry.api()
         self.report_status(body)
 
     @usage('deletefile file-name')

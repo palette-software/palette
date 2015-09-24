@@ -1,3 +1,6 @@
+import urllib
+from collections import OrderedDict
+
 import sqlalchemy
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func, or_
 from sqlalchemy import ForeignKey, UniqueConstraint, Boolean
@@ -6,9 +9,13 @@ from sqlalchemy.orm.exc import NoResultFound
 import akiri.framework.sqlalchemy as meta
 
 from agent import AgentVolumesEntry
+from cloud import CloudEntry
 from manager import Manager
 from mixin import BaseDictMixin
 from util import failed
+
+STORAGE_TYPE_VOL = "vol"
+STORAGE_TYPE_CLOUD = "cloud"
 
 class FileEntry(meta.Base, BaseDictMixin):
     __tablename__ = 'files'
@@ -28,11 +35,54 @@ class FileEntry(meta.Base, BaseDictMixin):
                                server_onupdate=func.current_timestamp())
     UniqueConstraint('envid', 'name')
 
+    @property
+    def storage(self):
+        """Return either the AgentVolumesEntry or CloudEntry associated with
+        this file."""
+        if self.storage_type == STORAGE_TYPE_VOL:
+            return AgentVolumesEntry.get_by_id(self.storageid)
+        elif self.storage_type == STORAGE_TYPE_CLOUD:
+            return CloudEntry.get_by_id(self.storageid)
+        # FIXME: assert and/or make enum
+        return None
+
+    @property
+    def url(self):
+        """Returns a file://, s3:// or gs:// URL pointing to this file."""
+        storage_entry = self.storage
+        if storage_entry is None:
+            return None
+        if isinstance(storage_entry, AgentVolumesEntry):
+            path = urllib.quote(self.name.replace('\\', '/'))
+            if storage_entry.agent.fqdn:
+                netloc = storage_entry.agent.fqdn
+            else:
+                netloc = storage_entry.agent.hostname
+            return 'file://' + netloc + '/' + path
+        elif isinstance(storage_entry, CloudEntry):
+            scheme = storage_entry.scheme
+            path = self.name
+            return scheme + '://' + storage_entry.bucket + '/' + path
+
+    def api(self):
+        """ Generate a backup API response."""
+        # FIXME: this is exactly what controller.backup_cmd() should return.
+        data = OrderedDict()
+        data['id'] = self.fileid
+        data['url'] = self.url
+        data['size'] = self.size
+        if isinstance(self.creation_time, basestring):
+            data['creation-time'] = self.creation_time
+        else:
+            data['creation-time'] = self.creation_time.isoformat('T') + 'Z'
+        # FIXME: add the eventid too.
+        return data
+
 
 class FileManager(Manager):
 
-    STORAGE_TYPE_VOL = "vol"
-    STORAGE_TYPE_CLOUD = "cloud"
+    STORAGE_TYPE_VOL = STORAGE_TYPE_VOL
+    STORAGE_TYPE_CLOUD = STORAGE_TYPE_CLOUD
 
     FILE_TYPE_BACKUP = "backup"
     FILE_TYPE_ZIPLOG = "ziplog"
@@ -186,6 +236,7 @@ class FileManager(Manager):
 
     def find_by_id(self, fileid):
         """ Return a file by id """
+        # deprecated
         # NOTE: the envid is used as a sanity check; fileid is globally unique.
         try:
             return meta.Session.query(FileEntry).\
@@ -195,6 +246,10 @@ class FileManager(Manager):
 
         except NoResultFound:
             return None
+
+    def get_by_id(self, fileid):
+        """ Same as above but without the sanity check """
+        return self.__class__.find_by_fileid(fileid)
 
     @classmethod
     def find_by_fileid(cls, fileid):

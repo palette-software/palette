@@ -45,6 +45,8 @@ class ManageApplication(PaletteRESTApplication, RestoreMixin):
         """ Do a backup (duplicated in backup.py) """
         sync = req.params_getbool('sync', default=False)
         self.commapp.send_cmd('backup', req=req, read_response=sync)
+        if sync:
+            return self.commapp.result
         return {'status': 'OK'}
 
     @required_role(Role.MANAGER_ADMIN)
