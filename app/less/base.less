@@ -54,9 +54,6 @@ a img {
     max-width: none !important;
     height: 100%;
 }
-.wrapper {
-    height: 100%;
-}
 .center-container {
     width: 860px;
     margin: 0 auto 0 auto;
@@ -84,14 +81,10 @@ a img {
 input[type="text"].invalid, input[type="text"].invalid:focus, input[type="password"].invalid, input[type="password"].invalid:focus {
     border: 1px solid red;
 }
-.container {
-    width: 100%;
-    display: block;
-    position: relative;
-    left: 0;
-    margin: 0;
+
+/* standard bootstrap element for using the entire window */
+.container-fluid {
     height: 100%;
-    padding: 0;
 }
 article.popup {
     position: fixed;
@@ -172,31 +165,6 @@ nav.navbar {
     margin: 63px 0 0 0;
     overflow-y: auto;
     height: auto;
-}
-.navbar-header {
-    background-image: url(@logo);
-    height: 60px;
-    width: 242px;
-    background-size: 100%;
-    background-repeat: no-repeat;
-    background-position: 50%;
-    box-sizing: content-box;
-    margin-left: 15px;
-}
-/* FIXME: formerly #mainNav a.site-id, redundant */
-a.site-id {
-    background-image: url(@logo);
-    background-size: 100%;
-    background-position: 50%;
-    position: absolute;
-    left: 0;
-    top: 0;
-    display: block;
-    height: 60px;
-    width: 242px;
-    box-sizing: content-box;
-    background-repeat: no-repeat;
-    margin-left: 15px;
 }
 /* FIXME: redundant with bootstrap */
 .text-center {
@@ -527,7 +495,6 @@ article.item article {
         margin-top: 0;
     }
 }
-
 /* Individual Elements */
 #type-dropdown, #status-dropdown {
     min-width: 175px;

@@ -124,8 +124,7 @@
 
 <%include file="mainnav.mako" />
 
-<div class="wrapper">
-<div class="container">
+<div class="container-fluid">
 
 <%include file="side-bar.mako" />
 
@@ -134,7 +133,6 @@
 </section>
 
 ${next.body()}
-</div>
 </div>
 
 <article class="popup" id="okcancel">

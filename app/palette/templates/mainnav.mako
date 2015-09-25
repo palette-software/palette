@@ -1,5 +1,5 @@
 <nav id="mainNav" data-topbar>
-  <div class="container">
+  <div class="container-fluid">
     <a class="site-id" href="/"></a>
     <span class="message"></span>
     <ul class="nav">
