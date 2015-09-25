@@ -11,8 +11,11 @@ from controller.profile import UserProfile
 class Page(GenericWSGIApplication):
     """Generic Page base class - for both 'internal' and 'external' pages."""
     # pylint: disable=no-member
-    def __init__(self):
+    def __init__(self, template=None):
         super(Page, self).__init__()
+        if template:
+            # pylint: disable=invalid-name
+            self.TEMPLATE = template
         modname = self.__class__.__module__
         directory = pkg_resources.resource_filename(modname, 'templates')
         self.template_lookup_directories = [os.path.abspath(directory)]

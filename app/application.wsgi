@@ -22,9 +22,13 @@ from palette.expire import ExpireMiddleware
 from palette.initial import InitialSetupPage, InitialSetupApplication
 from palette.initial import InitialMiddleware
 from palette.manage import ManagePage, ManageApplication
+from palette.page import Page
 from palette.profile import ProfilePage
 from palette.proxy import LicensingProxy
-from palette.request import BaseMiddleware, RemoteUserMiddleware
+from palette.request import (BaseMiddleware,
+                             RemoteUserMiddleware,
+                             SupportedBrowserMiddleware,
+                             UNSUPPORTED_BROWSER_URL)
 from palette.routing import RestRouter, ConfigureRouter
 from palette.state import StateApp
 from palette.workbook import WorkbookArchive, WorkbookData
@@ -39,6 +43,7 @@ DATABASE = 'postgresql://palette:palpass@localhost/paldb'
 
 # general configuration
 set_aes_key_file(AES_KEY_FILE)
+create_engine(DATABASE, echo=False, max_overflow=45)
 
 # individual apps
 loginapp = LoginApplication(secret=SHARED,
@@ -47,7 +52,12 @@ loginapp = LoginApplication(secret=SHARED,
 loginpage = LoginPage()
 loginpage = ExpireMiddleware(loginpage)
 loginpage = InitialMiddleware(loginpage)
+loginpage = SupportedBrowserMiddleware(loginpage,
+                                       redirect=UNSUPPORTED_BROWSER_URL)
 
+initialpage = InitialSetupPage()
+initialpage = SupportedBrowserMiddleware(initialpage,
+                                         redirect=UNSUPPORTED_BROWSER_URL)
 
 # remote_user -> auth_tkt -> 403 -> rest
 rest = RestRouter()
@@ -81,12 +91,14 @@ pages = AuthRedirectMiddleware(pages, redirect=LOGIN_URL)
 pages = ExpireMiddleware(pages)
 pages = InitialMiddleware(pages)
 pages = AuthTKTMiddleware(pages, secret=SHARED)
+pages = SupportedBrowserMiddleware(pages, redirect=UNSUPPORTED_BROWSER_URL)
 
 # top-level, first called router
 router = Router()
+router.add_route(UNSUPPORTED_BROWSER_URL + r'\Z', Page(template='browser.mako'))
 router.add_route(r'/licensing\Z', LicensingProxy())
 router.add_route(r'/open/setup\Z', InitialSetupApplication(secret=SHARED))
-router.add_route(r'/setup\Z', InitialSetupPage())
+router.add_route(r'/setup\Z', initialpage)
 router.add_route(r'/rest/', rest)
 router.add_route(r'/api/v1/', api)
 router.add_route(LOGIN_URL + r'\Z', loginpage)
@@ -96,9 +108,7 @@ router.add_route(r'/', pages)
 
 # session -> base  -> main-router
 application = BaseMiddleware(router)
-
-engine = create_engine(DATABASE, echo=False, max_overflow=45)
-application = SessionMiddleware(app=application, bind=engine)
+application = SessionMiddleware(app=application)
 application = Application(application)
 
 if __name__ == '__main__':
