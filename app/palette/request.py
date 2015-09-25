@@ -133,3 +133,33 @@ class RemoteUserMiddleware(GenericWSGI):
         # a different member like 'remote_user_profile'.
         req.remote_user = UserProfile.get_by_name(req.envid,
                                                   req.remote_user)
+
+
+def internet_explorer(req):
+    """Determine if the request came from IE using the user agent."""
+    user_agent = req.user_agent
+    if 'MSIE ' in user_agent:
+        # IE10 or older
+        return True
+    if 'Trident/' in user_agent:
+        # IE11
+        return True
+    if 'Edge/' in user_agent:
+        # IE12
+        return True
+    return False
+
+UNSUPPORTED_BROWSER_URL = '/unsupported-browser'
+
+class SupportedBrowserMiddleware(GenericWSGI):
+    """
+    Check if the request came from a supported browser and redirect otherwise.
+    """
+
+    def __init__(self, app, redirect=UNSUPPORTED_BROWSER_URL):
+        super(SupportedBrowserMiddleware, self).__init__(app=app)
+        self.redirect = redirect
+
+    def service(self, req):
+        if internet_explorer(req):
+            raise exc.HTTPTemporaryRedirect(location=self.redirect)
