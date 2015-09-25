@@ -58,6 +58,8 @@ class SystemKeys(object):
     EMAIL_MAX_COUNT = 'email-max-count'
     EMAIL_SPIKE_DISABLED_ALERTS = 'email-spike-disabled-alerts'
 
+    EMAIL_MUTE_RECONNECT_SECONDS = 'email-mute-reconnect-seconds'
+
     PALETTE_VERSION = 'palette-version'
     PALETTE_LOGIN = 'palette-login'
 
