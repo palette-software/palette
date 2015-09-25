@@ -29,7 +29,7 @@
         </li>
 	<li ${obj.active=='datasource-archive' and 'class="active"' or ''}>
 	  <a href="/datasource/archive">
-            <i class="fa fa-fw"></i><span>Datasource</span>
+            <i class="fa fa-fw"></i><span>Data Sources</span>
 	  </a>
 	</li>
       </ul>

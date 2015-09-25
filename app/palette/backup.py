@@ -56,18 +56,24 @@ class BackupApplication(PaletteRESTApplication):
 class RestoreMixin(object):
     """Mixin to add the 'restore' manage action."""
 
-    @required_parameters('filename')
     @required_role(Role.MANAGER_ADMIN)
     def handle_restore(self, req):
         """Do a Tableau restore using a given filename."""
         sync = req.params_getbool('sync', default=False)
-        filename = req.POST['filename']
 
-        backup_entry = FileManager.find_by_name_envid(req.envid, filename)
-        if not backup_entry:
-            return {'error': 'Backup not found: ' + filename}
+        # FIXME: merge...
+        if 'url' in req.POST:
+            cmd = 'restore-url "%s"' % req.POST['url']
+        elif 'filename' in req.POST:
+            filename = req.POST['filename']
 
-        cmd = 'restore "%s"' % backup_entry.name
+            backup_entry = FileManager.find_by_name_envid(req.envid, filename)
+            if not backup_entry:
+                return {'status': 'FAILED',
+                        'error': 'Backup not found: ' + filename}
+            cmd = 'restore "%s"' % backup_entry.name
+        else:
+            raise exc.HTTPBadRequest("Either 'url' or 'filename' is required.")
 
         password = req.params_get('password', default=None)
         if password:
@@ -75,8 +81,12 @@ class RestoreMixin(object):
 
         restore_type = req.params_get('restore-type', default=None)
         if restore_type and restore_type.lower() == 'data-only':
+            # FIXME: make the UX use the 'data-only' key
+            cmd = '/noconfig ' + cmd
+        elif req.params_getbool('data-only', default=False):
             cmd = '/noconfig ' + cmd
 
+        # These are silently ignored by restore-url
         if not req.params_getbool('backup', default=False):
             cmd = '/nobackup ' + cmd
         if not req.params_getbool('license', default=False):
