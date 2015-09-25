@@ -2,7 +2,7 @@
 <%inherit file="layout.mako" />
 
 <%block name="title">
-<title>Palette - Datasource Archive</title>
+<title>Palette - Data Source Archive</title>
 </%block>
 
 <div class="dynamic-content datasource-page">
@@ -10,8 +10,8 @@
     <section class="top-zone">
       <section class="row">
         <section class="col-xs-12">
-          <%include file="paging.mako" args="name='Datasources'" />
-          <h1>Datasource Archive</h1>
+          <%include file="paging.mako" args="name='Data Sources'" />
+          <h1>Data Source Archive</h1>
         </section>
       </section>
       <section class="row">

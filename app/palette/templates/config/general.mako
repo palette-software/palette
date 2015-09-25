@@ -207,7 +207,7 @@
           <span id="workbook-archive-enabled" class="onoffswitch"></span>
         </div>
         <div>
-          <div>Archive Datasources</div>
+          <div>Archive Data Sources</div>
           <span id="datasource-archive-enabled" class="onoffswitch"></span>
         </div>
       </div>
