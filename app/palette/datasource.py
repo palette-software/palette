@@ -27,8 +27,8 @@ class DatasourceShow(DictOption):
     @classmethod
     def items(cls):
         return OrderedDict({
-            cls.ALL: 'All Datasources',
-            cls.MINE: 'My Datasources'})
+            cls.ALL: 'All Data Sources',
+            cls.MINE: 'My Data Sources'})
 
     def __init__(self, valueid):
         super(DatasourceShow, self).__init__(self.NAME, valueid,
@@ -47,7 +47,7 @@ class DatasourceSort(DictOption):
     @classmethod
     def items(cls, req):
         info = OrderedDict({
-            cls.DATASOURCE: 'Datasource',
+            cls.DATASOURCE: 'Data Source',
             cls.SITE: 'Site',
             cls.PROJECT: 'Project',
             cls.PUBLISHER: 'Publisher',
