@@ -250,18 +250,20 @@ class AlertEmail(object):
         if self.email_limit_manager.email_limit_reached(event_entry, eventid):
             return
 
-        print "loc 1"
         sendit = True
+#        print '\n------------event key is', event_entry.key
         if self.system[SystemKeys.EMAIL_MUTE_RECONNECT_SECONDS]:
             # Potentially mute the connect or reconnect emails.
-            import pdb; pdb.set_trace()
             if event_entry.key == EventControl.AGENT_DISCONNECT:
                 self._mute_dis_check(data, to_emails, bcc, subject, message)
                 # If the event is emailed, it is done there,
                 # after a delay
                 return
 
-            elif event_entry.key == EventControl.AGENT_COMMUNICATION:
+            elif event_entry.key in [EventControl.AGENT_COMMUNICATION,
+                                     EventControl.INIT_STATE_STARTED,
+                                     EventControl.INIT_STATE_STOPPED,
+                                     EventControl.INIT_STATE_DEGRADED]:
                 sendit = self._mute_reconn_check(data)
 
         if sendit:
@@ -272,16 +274,27 @@ class AlertEmail(object):
             Send a reconnect event email only if the reconnect happened
             after EMAIL_MUTE_RECONNECT_SECONDS.
         """
-        if not 'last_disconnect_time' in data:
-            self.log.error("_mute_reconn_check: missing 'last_disconnect_time' "
-                           "in data '%s'", str(data))
+        if not 'agentid' in data:
+            self.log.error("_mute_reconn_check: missing 'agentid': %s",
+                            str(data))
+            return True
 
+        agentid = data['agentid']
+        entry = Agent.get_by_id(agentid)
+        if not entry:
+            self.log.error("_mute_reconn_check: No old row for agentid %d",
+                           agentid)
+            return True
 
-        timedelta = datetime.utcnow() - data['last_disconnect_time']
+        if not entry.last_disconnect_time:
+            return True
+
+        timedelta = int((datetime.utcnow() - \
+                        entry.last_disconnect_time).total_seconds())
         if timedelta <= self.system[SystemKeys.EMAIL_MUTE_RECONNECT_SECONDS]:
-            print "reconnect too soon"
+#            print "will not send reconnect: too soon", timedelta
             return False    # Don't send the reconnect email
-        print "will send reconnect email"
+#        print "will send reconnect email", timedelta
         return True         # send the reconenct email
 
     def _mute_dis_check(self, data, to_emails, bcc, subject, message):
@@ -297,7 +310,6 @@ class AlertEmail(object):
         tobj = threading.Thread(target=self._dis_thread,
                 args=(data, to_emails, bcc, subject, message))
         tobj.daemon = True
-        print 'starting thread'
         tobj.start()
 
     def _dis_thread(self, data, to_emails, bcc, subject, message):
@@ -309,28 +321,40 @@ class AlertEmail(object):
         """
         # pylint: disable=too-many-arguments
 
-        print "dis thread for", subject, message
-        if not 'last_disconnect_time' in data:
-            self.log.error("_dis_thread: Missing 'last_disconnect_time' "
-                           "in data %s", str(data))
-            return
-        orig_last_disconnect_time = data['last_disconnect_time']
-
-        time.sleep(self.system[SystemKeys.EMAIL_MUTE_RECONNECT_SECONDS])
-        print "woke up"
+#        print "dis thread for", subject
+        self.log.debug("_dis_thread for subject %s", subject)
         if not 'agentid' in data:
             self.log.error("_dis_thread: missing 'agentid': %s", str(data))
             return
         agentid = data['agentid']
+
+        old_entry = Agent.get_by_id(agentid)
+        if not old_entry:
+            self.log.error("_dis_thread: No old row for agentid %d",
+                       agentid)
+            return
+        old_last_disconnect_time = old_entry.last_disconnect_time
+
+#        print "about to sleep"
+        time.sleep(float(self.system[SystemKeys.EMAIL_MUTE_RECONNECT_SECONDS]))
+#        print "woke up"
+        meta.Session.expire(old_entry)
         entry = Agent.get_by_id(agentid)
         if not entry:
             self.log.error("_dis_thread: No row for agentid %d", agentid)
             return
+#        print "dis:\nold last_disconnect_time", old_last_disconnect_time
+#        print "new last_disconnect_time", entry.last_disconnect_time
+#        print "last_connection_time", entry.last_connection_time
         if entry.connected():
+#            print 'now connected'
             self.log.debug("_dis_thread: agentid %d now connected.", agentid)
             return
 
-        if orig_last_disconnect_time != entry.disconnect_time():
+#        print "not connected"
+
+        if old_last_disconnect_time != entry.last_disconnect_time:
+#            print "disconnect time changed"
             self.log.debug("_dis_thread: agentid %d disconnect time changed. "
                            "Ignoring.", agentid)
             return
@@ -386,7 +410,7 @@ class AlertEmail(object):
                 message, ex, self.smtp_server, self.smtp_port)
             return
 
-        print 'email sent', subject
+#        print 'email sent', subject
 
         self.log.info("Emailed alert: To: '%s' Subject: '%s', message: '%s'",
                                                 str(all_to), subject, message)

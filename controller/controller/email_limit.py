@@ -88,7 +88,7 @@ class EmailLimitManager(Manager):
                        "%d minutes.",
                        emails_sent_recently, email_lookback_minutes)
 
-        email_max_count = self.server[SystemKeys.EMAIL_MAX_COUNT]
+        email_max_count = self.system[SystemKeys.EMAIL_MAX_COUNT]
         if emails_sent_recently > email_max_count:
             # Don't sent this email alert
             # send an alert that we're disabling email alerts

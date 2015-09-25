@@ -46,7 +46,7 @@ class Agent(meta.Base, BaseDictMixin):
     tableau_data_size = Column(BigInteger)
     creation_time = Column(DateTime, server_default=func.now())
     modification_time = Column(DateTime, server_default=func.now(), \
-                                   server_onupdate=func.current_timestamp())
+                                   onupdate=func.current_timestamp())
     last_connection_time = Column(DateTime, server_default=func.now())
     last_disconnect_time = Column(DateTime)
     UniqueConstraint('envid', 'displayname')
