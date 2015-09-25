@@ -994,6 +994,10 @@ class AgentManager(threading.Thread):
                             self.agents[conn_id].connection.auth['hostname'],
                             reason)
 
+            # Need to update the last_disconect_time before generating
+            # the event so the disconnect event has the correct
+            # last_disconnect_time.
+            forgot = self.forget(agent)
             if gen_event:
                 # get the latest from the DB incase the display name changed
                 temp_agent = Agent.get_by_id(agent.agentid)
@@ -1011,7 +1015,6 @@ class AgentManager(threading.Thread):
                     self.log.debug(
                             "Already sent the disconnect event for conn_id %d",
                             conn_id)
-            forgot = self.forget(agent)
             self.log.debug("remove_agent: closing agent socket.")
             if self._close(agent.connection.socket):
                 self.log.debug("remove_agent: close agent socket succeeded")
@@ -1039,6 +1042,11 @@ class AgentManager(threading.Thread):
             self.log.error("remove_agent expunge error: %s", str(ex))
         #make_transient(agent)  # done above
         self.log.error("after expunge: %s", str(agent.todict()))
+
+        try:
+            meta.Session.remove()
+        except InvalidRequestError, ex:
+            self.log.error("remove_agent remove error: %s", str(ex))
 
     def _close(self, sock):
         self.log.warn("agentmanager._close socket")
