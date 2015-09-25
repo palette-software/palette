@@ -1,28 +1,5 @@
-/*
- * #5e646b; main-side-bar selected li, main-side-bar hover, button hover.
- * #697078; main-side-bar background, dropdowns, secondary-side-bar hover
- * #555A60; secondary-side-bar background;
- * #8d96a4; button background.
- * #5f6670; font color
- * #2AB8DC; light-blue
- * #FC7E6F; orange 
- * navbar height: 63px;
- */
+/* Everything else - avoid adding to this file. */
 
-html {
-    overflow: hidden;
-}
-html, body {
-    min-width: 0 !important;
-    font-family: @font-family-base;
-    height: 100%;
-    overflow: hidden;
-    position: relative;
-}
-body {
-    background: #f8f8f8;
-    margin: 0px;
-}
 body.scrollable {
     overflow-y: auto;
 }
@@ -54,6 +31,7 @@ a img {
     max-width: none !important;
     height: 100%;
 }
+/* deprecated - use the bootstrap class 'center-block' */
 .center-container {
     width: 860px;
     margin: 0 auto 0 auto;
@@ -82,10 +60,6 @@ input[type="text"].invalid, input[type="text"].invalid:focus, input[type="passwo
     border: 1px solid red;
 }
 
-/* standard bootstrap element for using the entire window */
-.container-fluid {
-    height: 100%;
-}
 article.popup {
     position: fixed;
     top: 40%;
@@ -495,6 +469,17 @@ article.item article {
         margin-top: 0;
     }
 }
+
+/* main logo - login page, etc. */
+.logo {
+    background-image: url(@logo-main);
+    background-size: contain;
+    background-repeat: no-repeat;
+    width: 320px;
+    height: 139.22px;
+    margin-bottom: 50px;
+}
+
 /* Individual Elements */
 #type-dropdown, #status-dropdown {
     min-width: 175px;
