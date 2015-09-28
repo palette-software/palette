@@ -108,7 +108,8 @@ class DataSourceUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
 
     dsuid = Column(BigInteger, unique=True, nullable=False, \
                   autoincrement=True, primary_key=True)
-    dsid = Column(BigInteger, ForeignKey("datasources.dsid"))
+    dsid = Column(BigInteger,
+                  ForeignKey("datasources.dsid", ondelete='CASCADE'))
     revision = Column(String, nullable=False)
     fileid_tds = Column(Integer, ForeignKey("files.fileid"))
     fileid_tdsx = Column(Integer, ForeignKey("files.fileid"))
