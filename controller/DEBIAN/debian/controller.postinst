@@ -139,14 +139,20 @@ elif [ "$oldversion" = "1.4.3" -o "$oldversion" = "1.4.4" -o "$oldversion" = "1.
     update system set value='735' where key='metric-save-days';
 
 XYZZY
-elif [ "$oldversion" = "1.5.3" ]; then
+elif [ "$oldversion" = "1.5.3" -o "$oldversion" = "1.5.4" ]; then
     psql paldb << XYZZY
     drop table event_control;
 
     alter table workbook_updates add column fileid_twbx character varying;
     alter table workbook_updates add column twb text;
+
+    alter table workbook_updates drop constraint workbook_updates_workbookid_fkey;
+    alter table workbook_updates add foreign key (workbookid) references workbooks(workbookid) on delete cascade;
+
     drop table datasources;
     drop table cron;
+
+    update system set key='workbook-archive-enabled' where key='archive-enabled';
 XYZZY
 elif [ "$oldversion" != "" ]; then
     echo Upgrading $oldversion
@@ -155,9 +161,6 @@ elif [ "$oldversion" != "" ]; then
     psql paldb << XYZZY
     drop table event_control;
 
-    alter table workbook_updates add column fileid_twbx character varying;
-    alter table workbook_updates add column twb text;
-    drop table datasources;
     drop table cron;
 XYZZY
 elif [ "$oldversion" = "" ]; then

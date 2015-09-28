@@ -130,7 +130,8 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
 
     wuid = Column(BigInteger, unique=True, nullable=False, \
                   autoincrement=True, primary_key=True)
-    workbookid = Column(BigInteger, ForeignKey("workbooks.workbookid"))
+    workbookid = Column(BigInteger,
+                        ForeignKey("workbooks.workbookid", ondelete='CASCADE'))
     revision = Column(String, nullable=False)
     fileid = Column(Integer, ForeignKey("files.fileid"))
     fileid_twbx = Column(Integer, ForeignKey("files.fileid"))
