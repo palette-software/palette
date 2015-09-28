@@ -151,6 +151,8 @@ elif [ "$oldversion" = "1.5.3" -o "$oldversion" = "1.5.4" ]; then
 
     drop table datasources;
     drop table cron;
+
+    update system set key='workbook-archive-enabled' where key='archive-enabled';
 XYZZY
 elif [ "$oldversion" != "" ]; then
     echo Upgrading $oldversion
