@@ -237,6 +237,13 @@ class EventControl(meta.Base, BaseMixin, BaseDictMixin):
         'workbook' : 'Workbooks'
     }
 
+    publisher_types = {
+        'extract' : 'Extracts',
+        'http' : 'HTTP Status',
+        'load' : 'Tableau Page Load',
+        'workbook' : 'Workbooks'
+    }
+
     @classmethod
     def types(cls):
         return cls.all_types

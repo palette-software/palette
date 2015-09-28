@@ -64,8 +64,12 @@ class EventType(DictOption):
     NAME = 'type-dropdown'
     ALL = 0
 
-    def __init__(self, valueid):
-        type_list = sorted(EventControl.all_types.items(),
+    def __init__(self, req, valueid):
+        if req.remote_user.roleid == Role.NO_ADMIN:
+            type_list = sorted(EventControl.publisher_types.items(),
+                           key=lambda item: item[1])
+        else:
+            type_list = sorted(EventControl.all_types.items(),
                            key=lambda item: item[1])
         options = OrderedDict([(self.ALL, 'All Types')] + type_list)
         super(EventType, self).__init__(self.NAME, valueid, options)
@@ -114,7 +118,7 @@ class MonitorApplication(PaletteRESTApplication):
         valueid = req.params_get('type', '0')
         if valueid == '0':
             valueid = EventType.ALL
-        return EventType(valueid).default()
+        return EventType(req, valueid).default()
 
     # FIXME - remove and/or use SystemKeys
     def disk_watermark(self, req, name):
