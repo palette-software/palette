@@ -1,5 +1,6 @@
 """ The complete list of allowable system table keys
 NOTE: when a new key is added here, that key *must* also be added to DEFAULTS.
+NOTE: never add a new key simply named 'status' (conflicts with responses)
 """
 
 class SystemKeys(object):

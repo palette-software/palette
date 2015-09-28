@@ -31,6 +31,7 @@ from palette.request import (BaseMiddleware,
                              UNSUPPORTED_BROWSER_URL)
 from palette.routing import RestRouter, ConfigureRouter
 from palette.state import StateApp
+from palette.system import SystemApplication
 from palette.workbook import WorkbookArchive, WorkbookData
 from palette.datasource import DatasourceArchive, DatasourceData
 
@@ -70,6 +71,7 @@ api = Router()
 api.add_route(r'/state\Z', StateApp())
 api.add_route(r'/manage\Z', ManageApplication())
 api.add_route(r'/backups(/(?P<id>[\d]+))?\Z', BackupApplication())
+api.add_route(r'/system(/(?P<key>[^\s]+))?\Z', SystemApplication())
 api = RemoteUserMiddleware(api)
 api = AuthForbiddenMiddleware(api)
 api = AuthTKTMiddleware(api, secret=SHARED)
