@@ -29,47 +29,16 @@ mako.runtime.UNDEFINED = UNDEFINED
 class AlertEmail(object):
     #pylint: disable=too-many-instance-attributes
 
-    DEFAULT_ALERTS_ENABLED = False
     DEFAULT_ALERT_LEVEL = 1
     DEFAULT_MAX_SUBJECT_LEN = 1000
 
-    def __init__(self, server, standalone=False):
-        if standalone:
-            self.envid = 1
-            self.standalone = True
-            self.to_email = "tim.flagg@gmail.com"
-            self.smtp_server = "localhost"
-            self.smtp_port = 25
-            self.alert_level = 1
-            self.enabled = 1
-            self.max_subject_len = 100
-            import logging
-
-            logging.basicConfig(level=logging.DEBUG)
-            self.log = logging
-            return
+    def __init__(self, server):
         self.envid = server.environment.envid
-        self.standalone = False
         self.config = server.config
         self.system = server.system
         self.log = server.log
         self.server = server
-        self.admin_enabled = True
         self.email_limit_manager = EmailLimitManager(server)
-
-        # Check to see if alert enabled/disabled is configured in the
-        # system table.  If not, 1) Use the *ini file or if not there,
-        # 2) default value and set that value in the system table.
-        try:
-            self.enabled = self.system[SystemKeys.ALERTS_ENABLED]
-        except ValueError:
-            # Alerts aren't in the system table, so check the *ini file.
-            self.enabled = self.config.getboolean('alert', 'enabled',
-                                       default=self.DEFAULT_ALERTS_ENABLED)
-
-            # Set this value in the system table.
-            self.system.save(SystemKeys.ALERTS_ENABLED, self.enabled)
-
 
         self.smtp_server = self.config.get('alert', 'smtp_server',
                                     default="localhost")
@@ -90,10 +59,7 @@ class AlertEmail(object):
         """Return a list of admins that have an email address, enabled
            and aren't the palette user."""
 
-        if self.standalone:
-            return [self.to_email]
-
-        if not self.admin_enabled and \
+        if not self.system[SystemKeys.ALERTS_ADMIN_ENABLED] and \
                 event_entry.key != EventControl.EMAIL_DISABLED_REMINDER:
             # If admin emails are disabled and it isn't the
             # EMAIL_DISABLED_REMINDER, then don't send email to any admins.
@@ -116,12 +82,7 @@ class AlertEmail(object):
         if not 'userid' in data:
             return []
 
-        try:
-            publisher_enabled = self.system[SystemKeys.ALERTS_PUBLISHER_ENABLED]
-        except ValueError:
-            # If not there, then set to enabled
-            publisher_enabled = True
-        if not publisher_enabled:
+        if not self.system[SystemKeys.ALERTS_PUBLISHER_ENABLED]:
             return []
 
         session = meta.Session()
@@ -146,12 +107,6 @@ class AlertEmail(object):
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-statements
         # pylint: disable=too-many-return-statements
-
-        try:
-            self.admin_enabled = self.system[SystemKeys.ALERTS_ADMIN_ENABLED]
-        except ValueError:
-            # If not there, then set to enabled
-            self.admin_enabled = True
 
         subject = event_entry.email_subject
         if subject == None:
@@ -189,12 +144,7 @@ class AlertEmail(object):
             # It is sent even if alerts are disabled.
             to_emails = [recipient]
         else:
-            try:
-                self.enabled = self.system[SystemKeys.ALERTS_ENABLED]
-            except ValueError:
-                self.enabled = self.DEFAULT_ALERTS_ENABLED
-
-            if not self.enabled:
+            if not self.system[SystemKeys.ALERTS_ENABLED]:
                 self.log.info(
                     "Alerts disabled.  Not sending: Subject: %s, Message: %s",
                     subject, message)
@@ -211,7 +161,7 @@ class AlertEmail(object):
         to_emails = list(set(to_emails))
 
         bcc = None
-        if not self.standalone and self.admin_enabled and not recipient:
+        if self.system[SystemKeys.ALERTS_ADMIN_ENABLED] and not recipient:
             # Get the diagnostics email and bcc it there if it exists.
             entry = UserProfile.get(self.envid, 0)
             if entry and entry.email != None and entry.email != "":
