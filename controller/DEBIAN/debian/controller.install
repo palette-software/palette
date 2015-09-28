@@ -4,6 +4,8 @@ etc/init.d/controller	/etc/init.d
 usr/bin/controller			/usr/bin
 usr/bin/upgrade-agent        /usr/bin
 usr/bin/palette-version	     /usr/bin
+usr/sbin/palette-backup     /usr/sbin
+usr/sbin/palette-restore    /usr/sbin
 usr/sbin/palette-update     /usr/sbin
 usr/sbin/palette-update-sc  /usr/sbin
 usr/share/palette/conf/key.asc      /usr/share/palette/conf
