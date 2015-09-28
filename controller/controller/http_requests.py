@@ -360,14 +360,24 @@ class HttpRequestManager(TableauCacheManager):
             self.server.log.warning("repository_url '%s' Not Found.", url)
             return
         body['workbook'] = workbook.name
+
+        # Send this userid on event generation (workbook owner, not viewer).
         user = UserProfile.get_by_system_user_id(envid, workbook.system_user_id)
-        if not user:
+        if user:
+            body['userid'] = user.userid
+            body['owner'] = user.display_name()
+        else:
             self.server.log.warning("system user '%d' Not Found.",
                                     workbook.system_user_id)
-            return
-        body['owner'] = user.display_name()
-        # Send this userid on event generation (owner, not viewer).
-        body['userid'] = user.userid
+        body['project'] = workbook.project
+
+        if workbook.site:
+            body['site'] = workbook.site
+        else:
+            if entry.site_id:
+                site = Site.get(entry.envid, entry.site_id)
+                if site:
+                    body['site'] = site.name
 
     def _eventgen(self, key, agent, entry, body=None):
         if body is None:
@@ -397,11 +407,6 @@ class HttpRequestManager(TableauCacheManager):
 
         if 'repository_url' in body:
             self._translate_workbook(body, entry)
-
-        if entry.site_id and 'site' not in body:
-            site = Site.get(entry.envid, entry.site_id)
-            if site:
-                body['site'] = site.name
 
         if 'http_referer' in body:
             body['http_referer'] = unquote(body['http_referer']).decode('utf8')
