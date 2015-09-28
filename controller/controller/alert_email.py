@@ -242,9 +242,13 @@ class AlertEmail(object):
         timedelta = int((datetime.utcnow() - \
                         entry.last_disconnect_time).total_seconds())
         if timedelta <= self.system[SystemKeys.EMAIL_MUTE_RECONNECT_SECONDS]:
+            self.log.debug("_mute_reconn_check: Will not send reconnect "
+                           "email, too soon, timedelta: %d", timedelta)
 #            print "will not send reconnect: too soon", timedelta
             return False    # Don't send the reconnect email
 #        print "will send reconnect email", timedelta
+        self.log.debug("_mute_reconn_check: Will send reconnect "
+                       "email, timedelta: %d", timedelta)
         return True         # send the reconenct email
 
     def _mute_dis_check(self, data, to_emails, bcc, subject, message):
