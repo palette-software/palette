@@ -31,7 +31,7 @@ function ($, common, Dropdown, OnOff)
      */
     function validateSection(name, gather, maySave, mayCancel)
     {
-        var data = gather();
+        var data = gather(name);
         if (maySave(data)) {
             $('#save-'+name).removeClass('disabled');
         } else {
@@ -184,7 +184,6 @@ function ($, common, Dropdown, OnOff)
         $('input[type="text"], input[type="password"], textarea').on('keyup', function() {
             callback();
         });
-
     }
 
     return {

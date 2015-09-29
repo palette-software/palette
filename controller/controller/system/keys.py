@@ -40,6 +40,11 @@ class SystemKeys(object):
     WATERMARK_LOW = 'disk-watermark-low'
     WATERMARK_HIGH = 'disk-watermark-high'
 
+    EXTRACT_DURATION_WARN = 'extract-duration-warn'
+    EXTRACT_DURATION_ERROR = 'extract-duration-error'
+    EXTRACT_DELAY_WARN = 'extract-delay-warn'
+    EXTRACT_DELAY_ERROR = 'extract-delay-error'
+
     HTTP_LOAD_WARN = 'http-load-warn'
     HTTP_LOAD_ERROR = 'http-load-error'
     HTTP_LOAD_RE = 'http-load-re'
