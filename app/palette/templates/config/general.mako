@@ -80,12 +80,12 @@
                   data-text="Are you sure you want to delete the GCS credentials?">
             Test Connection
           </button>
-
           <button type="button" id="remove-gcs" class="btn btn-test okcancel"
                   data-text="Are you sure you want to delete the GCS credentials?">
             Remove Credentials
           </button>
         </div>
+        <p id="gcs-test-message" class="hidden"></p>
         <div class="save-cancel">
           <button type="button" id="save-gcs" class="btn btn-primary disabled">
             Save
