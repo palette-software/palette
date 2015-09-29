@@ -195,9 +195,35 @@
       </div>
     </section>
 
+    <a name="extracts"></a>
+    <hr />
+    <section id="extracts" class="auto">
+      <a id="" href="#"><i class="fa fa-question-circle help"></i></a>
+      <h2>Extracts</h2>
+
+      <h3>Delayed Extracts</h3>
+      <p>Alert when scheduled extracts do not start before these duration thresholds.</p>
+      <p>
+        <span>Warning Alert at <span id="extract-delay-warn" class="btn-group time"></span></span>&nbsp;<span>Error Alert at <span id="extract-delay-error" class="btn-group time"></span></span>
+      </p>
+      <h3>Long-Running Extracts</h3>
+      <p>Alert when extracts take longer to run than these duration thresholds.</p>
+      <p>
+	<span>Warning Alert at <span id="extract-duration-warn" class="btn-group time"></span></span>&nbsp;<span>Error Alert at <span id="extract-duration-error" class="btn-group time"></span></span>
+      </p>
+      <div class="save-cancel">
+        <button type="button" id="save-extracts" class="btn btn-primary save disabled">
+          Save
+        </button>
+        <button type="button" id="cancel-extracts" class="btn btn-primary cancel disabled">
+          Cancel
+        </button>
+      </div>
+    </section>
+
     <a name="archives"></a>
     <hr />
-    <section id="archives">
+    <section id="archives" class="auto">
       <a id="229215" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Archiving</h2>
       <p>Designate what Palette Server should archive.</p>
@@ -230,10 +256,10 @@
         <input type="password" id="archive-password" />
       </div>
       <div class="save-cancel">
-        <button type="button" id="save-archives" class="btn btn-primary disabled">
+        <button type="button" id="save-archives" class="btn btn-primary save disabled">
           Save
         </button>
-        <button type="button" id="cancel-archives" class="btn btn-primary disabled">
+        <button type="button" id="cancel-archives" class="btn btn-primary cancel disabled">
           Cancel
         </button>
       </div>
@@ -254,10 +280,10 @@
       <div>
         <h3>CPU</h3>
         <p>
-          <span>Warning Alert at <span id="cpu-load-warn" class="btn-group percentage"></span></span>&nbsp;<span>for <span id="cpu-period-warn" class="btn-group percentage"></span> minutes</span>
+          <span>Warning Alert at <span id="cpu-load-warn" class="btn-group percentage"></span></span>&nbsp;<span>for <span id="cpu-period-warn" class="btn-group time"></span> minutes</span>
         </p>
         <p>
-          <span>Error Alert at <span id="cpu-load-error" class="btn-group percentage"></span></span>&nbsp;<span>for <span id="cpu-period-error" class="btn-group percentage"></span> minutes</span>
+          <span>Error Alert at <span id="cpu-load-error" class="btn-group percentage"></span></span>&nbsp;<span>for <span id="cpu-period-error" class="btn-group time"></span> minutes</span>
         </p>
       </div>
       <div>

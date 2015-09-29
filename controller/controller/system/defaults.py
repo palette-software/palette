@@ -97,6 +97,12 @@ DEFAULTS = SystemDefaults({
 
     SystemKeys.LOG_ARCHIVE_RETAIN_COUNT: 1, #FIXME: needed?
 
+    SystemKeys.EXTRACT_DURATION_WARN: 0,
+    SystemKeys.EXTRACT_DURATION_ERROR: 0,
+    SystemKeys.EXTRACT_DELAY_WARN: 0,
+    SystemKeys.EXTRACT_DELAY_ERROR: 0,
+
+
     SystemKeys.HTTP_LOAD_WARN: 0,
     SystemKeys.HTTP_LOAD_ERROR: 0,
     SystemKeys.HTTP_LOAD_RE: HTTP_LOAD_RE,

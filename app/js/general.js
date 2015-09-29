@@ -14,8 +14,9 @@ function ($, _, configure, common, Dropdown, OnOff)
     var emailAlertData = null;
     var backupData = null;
     var ziplogData = null;
-    var archiveData = null;
     var monitorData = null;
+
+    var sectionData = {};
 
     /*
      * changeStorageLocation()
@@ -582,81 +583,17 @@ function ($, _, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * getArchiveData()
+     * validateArchive()
+     * Validate callback for the 'archives' section
      */
-    function getArchiveData()
-    {
-        var section_name = 'archives';
-        var data = {};
-        
-        /* sliders */
-        $('#' + section_name + ' .onoffswitch').each(function(index){
-            var id = $(this).attr('id');
-            data[id] = OnOff.getValueById(id);
-        });
+    function validateArchive(section) {
+        var workbooks = OnOff.getValueById('workbook-archive-enabled');
+        var datasources = OnOff.getValueById('datasource-archive-enabled');
 
-        /* text inputs */
-        $('#' + section_name + ' input[type=text]').each(function(index){
-            var id = $(this).attr('id');
-            data[id] = $('#' + id).val();
-        });
-
-        /* password inputs */
-        $('#' + section_name + ' input[type=password]').each(function(index){
-            var id = $(this).attr('id');
-            data[id] = $('#' + id).val();
-        });
-
-        /* dropdowns */
-        $('#' + section_name + ' .btn-group').each(function(index){
-            var id =  $(this).attr('id');
-            data[id] = Dropdown.getValueById(id);
-        });
-
-        return data;
-    }
-
-    /*
-     * setArchiveData()
-     */
-    function setArchiveData(data)
-    {
-        var section_name = 'archives';
-
-        /* sliders */
-        $('#' + section_name + ' .onoffswitch').each(function(index){
-            var id = $(this).attr('id');
-            OnOff.setValueById(id, data[id]);
-        });
-
-        /* text inputs */
-        $('#' + section_name + ' input[type=text]').each(function(index){
-            var id = $(this).attr('id');
-            $(this).val(data[id]);
-        });
-
-        /* password inputs */
-        $('#' + section_name + ' input[type=password]').each(function(index){
-            var id = $(this).attr('id');
-            $(this).val(data[id]);
-        });
-
-        /* dropdowns */
-        $('#' + section_name + ' .btn-group').each(function(index){
-            var id =  $(this).attr('id');
-            Dropdown.setValueById(id, data[id]);
-        });
-    }
-
-    /*
-     * maySaveArchive()
-     * Return true if the 'Archives' section has changed and is valid.
-     */
-    function maySaveArchive(data)
-    {
-        if (_.isEqual(data, archiveData)) {
-            return false;
+        if (!workbooks && !datasources) {
+            return true;
         }
+
         if ($('#archive-username').val().length == 0) {
             return false;
         }
@@ -667,52 +604,34 @@ function ($, _, configure, common, Dropdown, OnOff)
     }
 
     /*
-     * mayCancelArchive()
-     * Return true if the 'Archives' section has changed.
-     */
-    function mayCancelArchive(data)
-    {
-        /* FIXME: test for archive-username, archive-password */
-        return !_.isEqual(data, archiveData);
-    }
-
-    /*
      * saveArchive()
      * Callback for the 'Save' button in the 'Archives' section.
      */
     function saveArchive() {
-        $('#save-archives, #cancel-archives').addClass('disabled');
-        var data = getArchiveData();
+        var section = $(this).closest("section");
+        var name = section.attr('id');
+
+        $('button.save, button.cancel', section).addClass('disabled');
+        var data = getSectionData(section);
+
         data['action'] = 'save';
 
         $.ajax({
             type: 'POST',
             url: '/rest/general/archive',
             data: data,
-            dataType: 'json',
 
             success: function() {
                 delete data['action'];
-                archiveData = data;
-                validate();
+                sectionData[name] = data;
+                callChangeCallback(section);
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 alert(this.url + ": " +
                       jqXHR.status + " (" + errorThrown + ")");
-                validate();
+                callValidateCallback(section); // ?!
             }
         });
-    }
-
-    /*
-     * cancelArchive()
-     * Callback for the 'Cancel' button in the 'Archives' section.
-     */
-    function cancelArchive()
-    {
-        setArchiveData(archiveData);
-        $('#save-archives, #cancel-archives').addClass('disabled');
-        changeArchive();
     }
 
     /*
@@ -739,7 +658,6 @@ function ($, _, configure, common, Dropdown, OnOff)
         } else {
             $('#archives .settings').addClass('hidden');
         }
-        validate();
     }
 
 
@@ -761,7 +679,6 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function setMonitorData(data)
     {
-        OnOff.setValueById('enable-archive', data['enable-archive']);
         for (var i = 0; i < MONITOR_DROPDOWN_IDS.length; i++) {
              var id = MONITOR_DROPDOWN_IDS[i];
              Dropdown.setValueById(id, data[id]);
@@ -818,6 +735,174 @@ function ($, _, configure, common, Dropdown, OnOff)
     }
 
     /*
+     * getSectionData()
+     */
+    function getSectionData(section)
+    {
+        var data = {};
+
+        /* sliders */
+        $('.onoffswitch', section).each(function(index){
+            var id = $(this).attr('id');
+            data[id] = OnOff.getValueById(id);
+        });
+
+        /* text inputs */
+        $('input[type=text]', section).each(function(index){
+            var id = $(this).attr('id');
+            data[id] = $('#' + id).val();
+        });
+
+        /* password inputs */
+        $('input[type=password]', section).each(function(index){
+            var id = $(this).attr('id');
+            data[id] = $('#' + id).val();
+        });
+
+        /* dropdowns */
+        $('.btn-group', section).each(function(index){
+            var id =  $(this).attr('id');
+            data[id] = Dropdown.getValueById(id);
+        });
+
+        return data;
+    }
+
+    /*
+     * setSectionData()
+     */
+    function setSectionData(section, data)
+    {
+        /* sliders */
+        $('.onoffswitch', section).each(function(index){
+            var id = $(this).attr('id');
+            OnOff.setValueById(id, data[id]);
+        });
+
+        /* text inputs */
+        $('input[type=text]', section).each(function(index){
+            var id = $(this).attr('id');
+            $(this).val(data[id]);
+        });
+
+        /* password inputs */
+        $('input[type=password]', section).each(function(index){
+            var id = $(this).attr('id');
+            $(this).val(data[id]);
+        });
+
+        /* dropdowns */
+        $('.btn-group', section).each(function(index){
+            var id =  $(this).attr('id');
+            Dropdown.setValueById(id, data[id]);
+        });
+    }
+
+    /*
+     * callChangeCallback()
+     * If a 'change' callback is attached to a given then section call it.
+     */
+    function callChangeCallback(section)
+    {
+        var func = $(section).data("change");
+        if (func != null) {
+            func(section);
+        }
+    }
+
+    /*
+     * callValidateCallback()
+     * If a 'validate' callback is attached to a given then section call it
+     * and return the result.  Returns 'true' if no validate callback exists.
+     */
+    function callValidateCallback(section)
+    {
+        var func = section.data("validate");
+        if (func != null) {
+            return func(section);
+        }
+        return true;
+    }
+
+    /*
+     * sectionCallback()
+     * Change/Validate callback for a given section.
+     */
+    function sectionCallback(section)
+    {
+        var name = section.attr('id');
+
+        var data = getSectionData(section);
+        if (_.isEqual(data, sectionData[name])) {
+            $('button.save, button.cancel', section).addClass('disabled');
+        } else {
+            if (callValidateCallback(section)) {
+                $('button.save', section).removeClass('disabled');
+            } else {
+                $('button.save', section).addClass('disabled');
+            }
+            $('button.cancel', section).removeClass('disabled');
+        }
+        callChangeCallback(section);
+    }
+
+    /*
+     * nodeCallback()
+     * Callback for a particular element that validates the containing section.
+     */
+    function nodeCallback(node)
+    {
+        var section = $(node).closest("section");
+        return sectionCallback(section);
+    }
+
+    /*
+     * widgetCallback()
+     * Callback for a widget that validates the containing section.
+     */
+    function widgetCallback()
+    {
+        return nodeCallback(this.node);
+    }
+
+    /*
+     * autoSave()
+     */
+    function autoSave()
+    {
+        var section = $(this).closest("section");
+        var name = section.attr('id');
+
+        $('button.save, button.cancel', section).addClass('disabled');
+        var data = getSectionData(section);
+
+        $.ajax({
+            type: 'POST',
+            url: '/api/v1/system',
+            data: data,
+
+            success: function() {
+                sectionData[name] = data;
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(this.url + ": " +
+                      jqXHR.status + " (" + errorThrown + ")");
+            }
+        });
+    }
+
+    /*
+     * autoCancel()
+     */
+    function autoCancel()
+    {
+        var section = $(this).closest("section");
+        var name = section.attr('id');
+        setSectionData(section, sectionData[name]);
+        callChangeCallback(section);
+    }
+
+    /*
      * validateS3()
      * Enable/Disable the Save and Cancel buttons on S3/GCS sections.
      */
@@ -847,6 +932,31 @@ function ($, _, configure, common, Dropdown, OnOff)
     }
 
     /*
+     * setAutoInputCallback()
+     * Set a callback for whenever input is entered - likely for validation.
+     * FIXME: remove when setInputCallback does this...
+     */
+    function setAutoInputCallback(callback)
+    {
+        var selector = 'section.auto input[type="text"], '
+            + 'section.auto input[type="password"], '
+            + 'section.auto textarea';
+        $(selector).on('paste', function() {
+            setTimeout(function() {
+                /* validate after paste completes by using a timeout. */
+                callback(this);
+            }, 100);
+        });
+        selector = 'section.auto input[type="text"], '
+            + 'section.auto input[type="password"], '
+            + 'section.auto textarea';
+        $(selector).on('keyup', function() {
+            callback(this);
+        });
+
+    }
+
+    /*
      * validate()
      * Enable/disable the buttons based on the field values.
      */
@@ -862,8 +972,6 @@ function ($, _, configure, common, Dropdown, OnOff)
                                   maySaveCancelBackup, maySaveCancelBackup);
         configure.validateSection('ziplogs', getZiplogData,
                                   maySaveCancelZiplog, maySaveCancelZiplog);
-        configure.validateSection('archives', getArchiveData,
-                                  maySaveArchive, mayCancelArchive);
         configure.validateSection('monitors', getMonitorData,
                                   maySaveCancelMonitor, maySaveCancelMonitor);
     }
@@ -921,12 +1029,6 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#cancel-ziplogs').bind('click', cancelZiplogs);
         ziplogData = getZiplogData();
 
-        /* Archives */
-        setArchiveData(data);
-        $('#save-archives').bind('click', saveArchive);
-        $('#cancel-archives').bind('click', cancelArchive);
-        archiveData = getArchiveData();
-
         /* Monitoring */
         setMonitorData(data);
         $('#save-monitors').bind('click', saveMonitors);
@@ -936,12 +1038,32 @@ function ($, _, configure, common, Dropdown, OnOff)
         /* validation */
         Dropdown.setCallback(validate);
         OnOff.setCallback(validate);
-        OnOff.setCallback(changeArchive, '#archives .onoffswitch');
 
         configure.setInputCallback(validate);
         /* implicitly calls validate() */
         changeStorageLocation(data['storage-type']);
-        changeArchive();
+
+        /* BEGIN: new auto-validation */
+        $('#archives').data('validate', validateArchive);
+        $('#archives').data('change', changeArchive);
+
+        $('section.auto').each(function(index) {
+            var name = $(this).attr('id');
+            setSectionData(this, data);
+            sectionData[name] = getSectionData(this);
+            callChangeCallback(this);
+        });
+
+        $('section.auto button.save').bind('click', autoSave);
+        $('section.auto button.cancel').bind('click', autoCancel);
+
+        /* FIXME: overrides */
+        $('#save-archives').off('click');
+        $('#save-archives').click(saveArchive);
+        Dropdown.setCallback(widgetCallback, 'section.auto .btn-group');
+        OnOff.setCallback(widgetCallback, 'section.auto .onoffswitch');
+        setAutoInputCallback(nodeCallback);
+        /* END: auto-validation */
 
         /* help */
         common.lightbox(229204, 'Storage Location');

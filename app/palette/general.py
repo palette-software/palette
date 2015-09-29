@@ -17,7 +17,7 @@ from controller.credential import CredentialEntry
 from controller.email_limit import EmailLimitEntry
 from controller.system import SystemKeys
 
-from .option import ListOption, DictOption
+from .option import ListOption, DictOption, MinuteOption
 from .page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
 from .s3 import S3Application
@@ -52,7 +52,8 @@ class DatasourceRetention(DictOption):
 
 class GeneralS3Application(PaletteRESTApplication, S3Application):
     """Handler for the 'STORAGE LOCATION' S3 section."""
-    @required_role(Role.MANAGER_ADMIN)
+
+    @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
         if 'action' in req.environ:
             raise exc.HTTPNotFound()
@@ -99,7 +100,8 @@ class GeneralS3Application(PaletteRESTApplication, S3Application):
 
 class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
     """Handler for the 'STORAGE LOCATION' GCS section."""
-    @required_role(Role.MANAGER_ADMIN)
+
+    @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
         if 'action' in req.environ:
             raise exc.HTTPNotFound()
@@ -164,7 +166,7 @@ class GeneralLocalApplication(PaletteRESTApplication):
 
         return "%s:%d" % (req.system[SystemKeys.BACKUP_DEST_TYPE], dest_id)
 
-    @required_role(Role.MANAGER_ADMIN)
+    @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
         data = {}
         for key in (SystemKeys.STORAGE_ENCRYPT, SystemKeys.WORKBOOKS_AS_TWB):
@@ -225,7 +227,7 @@ class _GeneralStorageApplication(PaletteRESTApplication):
         # pylint: disable=invalid-name
         self.s3 = GeneralS3Application()
 
-    @required_role(Role.MANAGER_ADMIN)
+    @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
         data = {}
         dest_type = req.system[SystemKeys.BACKUP_DEST_TYPE]
@@ -260,7 +262,7 @@ class GeneralBackupApplication(PaletteRESTApplication):
     BACKUP_SCHEDULED_RETAIN_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25]
     USER_BACKUP_RETAIN_RANGE = BACKUP_SCHEDULED_RETAIN_RANGE
 
-    @required_role(Role.MANAGER_ADMIN)
+    @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
         config = [ListOption(SystemKeys.BACKUP_SCHEDULED_PERIOD,
                              req.system[SystemKeys.BACKUP_SCHEDULED_PERIOD],
@@ -306,7 +308,8 @@ class GeneralBackupApplication(PaletteRESTApplication):
 
 class EmailAlertApplication(PaletteRESTApplication):
     """Handler for the 'EMAIL ALERTS' section."""
-    @required_role(Role.MANAGER_ADMIN)
+
+    @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
         data = {}
         data['alert-admins'] = req.system[SystemKeys.ALERTS_ADMIN_ENABLED]
@@ -336,7 +339,7 @@ class GeneralZiplogApplication(PaletteRESTApplication):
     SCHEDULED_RETAIN_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25]
     USER_RETAIN_RANGE = SCHEDULED_RETAIN_RANGE
 
-    @required_role(Role.MANAGER_ADMIN)
+    @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
         config = [ListOption(SystemKeys.ZIPLOG_AUTO_RETAIN_COUNT,
@@ -370,7 +373,7 @@ class GeneralZiplogApplication(PaletteRESTApplication):
 class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
     """Handler for 'ARCHIVE' section - both workbook and datasource settings."""
 
-    @required_role(Role.MANAGER_ADMIN)
+    @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
         data = {}
@@ -442,7 +445,7 @@ class GeneralMonitorApplication(PaletteRESTApplication):
             return '1 second'
         return '%d seconds' % seconds
 
-    @required_role(Role.MANAGER_ADMIN)
+    @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-statements
@@ -611,6 +614,26 @@ class GeneralMonitorApplication(PaletteRESTApplication):
         meta.commit()
         return {}
 
+class GeneralExtractApplication(PaletteRESTApplication):
+    """ The Extracts section of the General configuration page. """
+
+    DELAY_RANGE = [1, 2, 3, 4, 5, 10, 15, 30, 60]
+    DURATION_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 30, 60]
+
+    @required_role(Role.READONLY_ADMIN)
+    def service_GET(self, req):
+        config = []
+        for key in (SystemKeys.EXTRACT_DELAY_WARN,
+                    SystemKeys.EXTRACT_DELAY_ERROR):
+            option = MinuteOption(key, req.system[key], self.DELAY_RANGE)
+            config.append(option.default())
+        for key in (SystemKeys.EXTRACT_DURATION_WARN,
+                    SystemKeys.EXTRACT_DURATION_ERROR):
+            option = MinuteOption(key, req.system[key], self.DURATION_RANGE)
+            config.append(option.default())
+        return {'config': config}
+
+
 class _GeneralApplication(PaletteRESTApplication):
 
     def __init__(self):
@@ -621,8 +644,9 @@ class _GeneralApplication(PaletteRESTApplication):
         self.archive = GeneralArchiveApplication()
         self.storage = _GeneralStorageApplication() # Don't use the Router
         self.monitor = GeneralMonitorApplication()
+        self.extract = GeneralExtractApplication()
 
-    @required_role(Role.MANAGER_ADMIN)
+    @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
         data = {}
         extend(data, self.backup.service_GET(req))
@@ -631,6 +655,7 @@ class _GeneralApplication(PaletteRESTApplication):
         extend(data, self.archive.service_GET(req))
         extend(data, self.storage.service_GET(req))
         extend(data, self.monitor.service_GET(req))
+        extend(data, self.extract.service_GET(req))
         return data
 
 
@@ -645,6 +670,7 @@ class GeneralApplication(Router):
         self.add_route(r'/ziplog\Z', GeneralZiplogApplication())
         self.add_route(r'/monitor\Z', GeneralMonitorApplication())
         self.add_route(r'/archive\Z', GeneralArchiveApplication())
+        self.add_route(r'/extract\Z', GeneralExtractApplication())
 
 
 class GeneralPage(PalettePage):
