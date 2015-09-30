@@ -13,14 +13,14 @@ from controller.util import prettyify
 
 def status_ok(**kwargs):
     """ Create a successful response dict() """
-    res = OrderedDict({'status': 'OK'})
+    res = OrderedDict({u'status': u'OK'})
     for arg in kwargs:
         res[prettyify(arg)] = kwargs[arg]
     return res
 
 def status_failed(error, **kwargs):
     """ Create an error response dict() """
-    res = OrderedDict({'status': 'FAILED', 'error': error})
+    res = OrderedDict({u'status': 'FAILED', u'error': error})
     for arg in kwargs:
         res[prettyify(arg)] = kwargs[arg]
     return res
