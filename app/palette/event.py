@@ -58,7 +58,8 @@ class EventHandler(object):
         if not timestamp is None:
             query = query.filter(EventEntry.timestamp > timestamp)
 
-        query = query.order_by(EventEntry.timestamp.desc())
+        query = query.order_by(EventEntry.timestamp.desc(),
+                               EventEntry.eventid.desc())
         if not limit is None:
             query = query.limit(limit)
 
@@ -99,7 +100,8 @@ class EventHandler(object):
         if limit is None:
             limit = self.DEFAULT_PAGE_SIZE
         offset = (page - 1) * limit
-        query = query.order_by(EventEntry.timestamp.desc()).\
+        query = query.order_by(EventEntry.timestamp.desc(),
+                               EventEntry.eventid.desc()).\
                 limit(limit).\
                 offset(offset)
 
