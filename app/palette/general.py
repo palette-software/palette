@@ -128,7 +128,7 @@ class GeneralGCSApplication(PaletteRESTApplication, GCSApplication):
             err = str(ex)
             if err.find("(403) Forbidden") != -1:
                 err = "Credentials invalid."
-            return {'status': 'FAIL', 'error': ex}
+            return {'status': 'FAILED', 'error': err}
         return {'status': 'OK'}
 
     @required_role(Role.MANAGER_ADMIN)
