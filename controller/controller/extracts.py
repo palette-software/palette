@@ -151,7 +151,6 @@ class ExtractManager(TableauCacheManager):
         # Get the tableau system's idea of time which may be different
         # than ours (maybe somebody isn't running ntp or equivalent).
         db_now_utc = self._get_db_now_utc(agent)
-        print "db_now_utc = ", db_now_utc
 
         # Get the latest rows and row updates here
         session = meta.Session()
@@ -241,7 +240,6 @@ class ExtractManager(TableauCacheManager):
         """
         time_since_created = timedelta_total_seconds(db_now_utc,
                                                         entry.created_at)
-        print "-----------time_since_created:", time_since_created, entry.title
         # Check to see if the extract STARTED late.
         if self.system[SystemKeys.EXTRACT_DELAY_ERROR] and \
                 (time_since_created >= \
@@ -276,7 +274,6 @@ class ExtractManager(TableauCacheManager):
             # Compute how long it's been running so far
             run_time = int((db_now_utc - entry.started_at).\
                             total_seconds())
-        print "run_time:", run_time, entry.title
         if self.system[SystemKeys.EXTRACT_DURATION_ERROR] and \
                 (run_time >=
                     self.system[SystemKeys.EXTRACT_DURATION_ERROR]) and \
