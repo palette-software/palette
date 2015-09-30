@@ -309,7 +309,6 @@ class EventControlManager(Manager):
                                     install-dir
         """
 
-        print '-------------', key
         if data == None:
             data = {}
 
