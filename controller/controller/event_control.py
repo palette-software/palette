@@ -156,6 +156,11 @@ class EventControl(meta.Base, BaseMixin, BaseDictMixin):
     EXTRACT_OK = "EXTRACT-OK"
     EXTRACT_FAILED = "EXTRACT-FAILED"
 
+    EXTRACT_DURATION_WARN = "EXTRACT-DURATION-WARN"
+    EXTRACT_DURATION_ERROR = "EXTRACT-DURATION-ERROR"
+    EXTRACT_DELAY_WARN = "EXTRACT-DELAY-WARN"
+    EXTRACT_DELAY_ERROR = "EXTRACT-DELAY-ERROR"
+
     ZIPLOGS_STARTED = "ZIPLOGS-STARTED"
     ZIPLOGS_FINISHED = "ZIPLOGS-FINISHED"
     ZIPLOGS_FAILED = "ZIPLOGS-FAILED"
@@ -304,6 +309,7 @@ class EventControlManager(Manager):
                                     install-dir
         """
 
+        print '-------------', key
         if data == None:
             data = {}
 

@@ -149,6 +149,10 @@ elif [ "$oldversion" = "1.5.3" -o "$oldversion" = "1.5.4" ]; then
     alter table workbook_updates drop constraint workbook_updates_workbookid_fkey;
     alter table workbook_updates add foreign key (workbookid) references workbooks(workbookid) on delete cascade;
 
+    alter table extracts add column progress integer;
+    alter table extracts add column job_type character varying;
+    alter table extracts add column notification_state integer;
+
     drop table datasources;
     drop table cron;
 
