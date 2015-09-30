@@ -198,7 +198,7 @@
     <a name="extracts"></a>
     <hr />
     <section id="extracts" class="auto">
-      <a id="" href="#"><i class="fa fa-question-circle help"></i></a>
+      <a id="332776" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Extracts</h2>
 
       <h3>Delayed Extracts</h3>
