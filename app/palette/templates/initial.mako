@@ -7,7 +7,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=1000,minimal-ui" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css" />
   <link rel="stylesheet" type="text/css" href="/css/font-awesome.min.css" />
   <link rel="stylesheet" type="text/css" href="/fonts/fonts.css" />
   <link rel="stylesheet" type="text/css" href="/css/style.css" media="screen" />
