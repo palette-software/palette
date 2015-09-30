@@ -1071,6 +1071,7 @@ function ($, _, configure, common, Dropdown, OnOff)
         common.lightbox(229207, 'Email Alerts');
         common.lightbox(229213, 'Backups');
         common.lightbox(229214, 'Ziplogs');
+        common.lightbox(332776, 'Extracts');
         common.lightbox(229215, 'Archives');
         common.lightbox(229216, 'Monitoring');
     }
