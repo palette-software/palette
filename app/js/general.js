@@ -134,6 +134,7 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function test(id) {
         $('#'+id+'-save', '#'+id+'-cancel').addClass('disabled');
+        resetTestMessages()
 
         var data = {'action': 'test'}
         data['access-key'] = $('#'+id+'-access-key').val();
