@@ -271,14 +271,16 @@
       <a id="229216" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Monitoring</h2>
 
-      <h3>Storage</h3>
-      <p>Alert when my Machine attached volumes exceed these thresholds.</p>
-      <p>
-        <span>Warning Alert at <span id="disk-watermark-low" class="btn-group percentage"></span></span>&nbsp;<span>Error Alert at <span id="disk-watermark-high" class="btn-group percentage"></span></span>
-      </p>
-
+      <div>
+	<h3>Storage</h3>
+	<p>Alert when my Machine attached volumes exceed these thresholds.</p>
+	<p>
+          <span>Warning Alert at <span id="disk-watermark-low" class="btn-group percentage"></span></span>&nbsp;<span>Error Alert at <span id="disk-watermark-high" class="btn-group percentage"></span></span>
+	</p>
+      </div>
       <div>
         <h3>CPU</h3>
+	<p>Alert when the average CPU of my Machine(s) exceeds these thresholds for this duration.</p>
         <p>
           <span>Warning Alert at <span id="cpu-load-warn" class="btn-group percentage"></span></span>&nbsp;<span>for <span id="cpu-period-warn" class="btn-group time"></span> minutes</span>
         </p>
