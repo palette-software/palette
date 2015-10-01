@@ -1,8 +1,7 @@
 """ The workbook archive. """
 
 from collections import OrderedDict
-from webob import exc
-from paste.fileapp import DataApp
+from webob import exc, Response
 
 from akiri.framework import GenericWSGIApplication, ENVIRON_PREFIX
 import akiri.framework.sqlalchemy as meta
@@ -245,8 +244,10 @@ class WorkbookData(GenericWSGIApplication):
         if not self.check_permission(req, update):
             return exc.HTTPForbidden()
 
-        return DataApp(update.twb)
-
+        res = Response()
+        res.content_type = 'application/octet-stream'
+        res.text = update.twb
+        return res
 
 class WorkbookArchive(PalettePage):
     TEMPLATE = 'workbook.mako'
