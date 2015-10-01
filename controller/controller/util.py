@@ -196,6 +196,13 @@ def seconds_since(utc_time):
     """ Return the number of total seconds since the specified time """
     return (datetime.utcnow() - utc_time).total_seconds()
 
+def to_hhmmss(seconds):
+    hours = seconds // (60*60)
+    seconds %= (60*60)
+    minutes = seconds // 60
+    seconds %= 60
+    return "%02i:%02i:%02i" % (hours, minutes, seconds)
+
 def prettyify(name):
     """ Convert the name to a 'pretty' value with underscores (_) replaced
     with dashes (-). """
