@@ -151,7 +151,7 @@ elif [ "$oldversion" = "1.5.3" -o "$oldversion" = "1.5.4" ]; then
 
     alter table extracts add column progress integer;
     alter table extracts add column job_type character varying;
-    alter table extracts add column notification_state integer;
+    alter table extracts add column notification_state integer not null default 0;
 
     drop table datasources;
     drop table cron;

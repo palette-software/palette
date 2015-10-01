@@ -1,3 +1,6 @@
+import time
+from datetime import datetime
+
 from collections import OrderedDict
 
 from util import odbc2dt
@@ -83,6 +86,35 @@ class ODBC(CredentialMixin):
             return {'error': str(ex)}
 
         return self.server.send_immediate(self.agent, 'POST', self.URI, data)
+
+    def get_db_now_utc(self):
+        """
+            Get the tableau postgres database's idea of the current
+            time which may differ from our idea of the current time.
+        """
+        stmt = "select now()"
+        datadict = self.execute(stmt)
+
+        if 'error' in datadict or '' not in datadict:
+            return datadict
+
+        time_rows = datadict['']
+        if not len(time_rows) or not len(time_rows[0]):
+            self.server.log.error(
+                        "get_db_now_utc: Missing db time now: %s", time_rows)
+            return datetime.utcnow()
+
+        # Comes back something like "2015-09-29 18:19:08.156985+00"
+        time_str = time_rows[0][0]
+        if time_str.find('.'):
+            time_str = time_str.split('.')[0]
+        try:
+            struct = time.strptime(time_str, "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            self.server.log.error("get_db_now_utc: Bad db now: %s", time_str)
+            return datetime.utcnow()
+
+        return datetime.fromtimestamp(time.mktime(struct))
 
     @classmethod
     def schema(cls, data):
