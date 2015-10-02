@@ -17,7 +17,7 @@ from controller.credential import CredentialEntry
 from controller.email_limit import EmailLimitEntry
 from controller.system import SystemKeys
 
-from .option import ListOption, DictOption, MinuteOption
+from .option import ListOption, DictOption, TimeOption
 from .page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
 from .s3 import S3Application
@@ -617,19 +617,20 @@ class GeneralMonitorApplication(PaletteRESTApplication):
 class GeneralExtractApplication(PaletteRESTApplication):
     """ The Extracts section of the General configuration page. """
 
-    DELAY_RANGE = [1, 2, 3, 4, 5, 10, 15, 30, 60]
-    DURATION_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 30, 60]
+    DELAY_RANGE = {'minutes': (10, 30),
+                   'hours': (1, 2, 3, 4, 5, 6, 12, 24)}
+    DURATION_RANGE = {'minutes': (5, 10, 15, 30, 60)}
 
     @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
         config = []
         for key in (SystemKeys.EXTRACT_DELAY_WARN,
                     SystemKeys.EXTRACT_DELAY_ERROR):
-            option = MinuteOption(key, req.system[key], self.DELAY_RANGE)
+            option = TimeOption(key, req.system[key], self.DELAY_RANGE)
             config.append(option.default())
         for key in (SystemKeys.EXTRACT_DURATION_WARN,
                     SystemKeys.EXTRACT_DURATION_ERROR):
-            option = MinuteOption(key, req.system[key], self.DURATION_RANGE)
+            option = TimeOption(key, req.system[key], self.DURATION_RANGE)
             config.append(option.default())
         return {'config': config}
 
