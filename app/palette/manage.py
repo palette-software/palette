@@ -4,7 +4,8 @@ from controller.profile import Role
 from controller.palapi import CommException
 
 from .page import PalettePage
-from .rest import required_parameters, required_role, PaletteRESTApplication
+from .rest import required_parameters, required_role, status_ok, status_failed
+from .rest import PaletteRESTApplication
 from .backup import RestoreMixin
 
 class ManageApplication(PaletteRESTApplication, RestoreMixin):
@@ -27,7 +28,7 @@ class ManageApplication(PaletteRESTApplication, RestoreMixin):
             cmd = '/nolicense ' + cmd
         cmd = '/nomaint ' + cmd  # Never enable the maintenance web server
         self.commapp.send_cmd(cmd, req=req, read_response=sync)
-        return {'status': 'OK'}
+        return status_ok()
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_restart(self, req):
@@ -38,7 +39,7 @@ class ManageApplication(PaletteRESTApplication, RestoreMixin):
         if not req.params_getbool('license', default=False):
             cmd = '/nolicense ' + cmd
         self.commapp.send_cmd(cmd, req=req, read_response=sync)
-        return {'status': 'OK'}
+        return status_ok()
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_backup(self, req):
@@ -47,38 +48,38 @@ class ManageApplication(PaletteRESTApplication, RestoreMixin):
         self.commapp.send_cmd('backup', req=req, read_response=sync)
         if sync:
             return self.commapp.result
-        return {'status': 'OK'}
+        return status_ok()
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_repair_license(self, req):
         sync = req.params_getbool('sync', default=False)
         self.commapp.send_cmd('license repair', req=req, read_response=sync)
-        return {'status': 'OK'}
+        return status_ok()
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_ziplogs(self, req):
         sync = req.params_getbool('sync', default=False)
         cmd = 'ziplogs'
         self.commapp.send_cmd(cmd, req=req, read_response=sync)
-        return {'status': 'OK'}
+        return status_ok()
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_restart_controller(self, req):
         self.commapp.send_cmd('exit', req=req, read_response=False)
-        return {'status': 'OK'}
+        return status_ok()
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_restart_webserver(self, req):
         self.commapp.send_cmd('apache restart', req=req, read_response=False)
-        return {'status': 'OK'}
+        return status_ok()
 
     @required_role(Role.MANAGER_ADMIN)
     def handle_manual_update(self, req):
         import sys
         print >> sys.stderr, " *** MANUAL UPDATE *** "
         self.commapp.send_cmd("upgrade controller", req=req,
-                                                      read_response=False)
-        return {'status': 'OK'}
+                              read_response=False)
+        return status_ok()
 
     @required_parameters('action')
     def service(self, req):
@@ -107,8 +108,10 @@ class ManageApplication(PaletteRESTApplication, RestoreMixin):
                 return self.handle_restart_controller(req)
             elif action == 'manual-update':
                 return self.handle_manual_update(req)
-        except CommException:
-            raise exc.HTTPMethodNotAllowed()
+        except CommException, ex:
+            result = status_failed(ex.message)
+            result['errno'] = ex.errnum
+            return result
         raise exc.HTTPBadRequest()
 
 
