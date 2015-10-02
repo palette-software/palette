@@ -282,10 +282,10 @@
         <h3>CPU</h3>
 	<p>Alert when the average CPU of my Machine(s) exceeds these thresholds for this duration.</p>
         <p>
-          <span>Warning Alert at <span id="cpu-load-warn" class="btn-group percentage"></span></span>&nbsp;<span>for <span id="cpu-period-warn" class="btn-group time"></span> minutes</span>
+          <span>Warning Alert at <span id="cpu-load-warn" class="btn-group percentage"></span></span>&nbsp;<span>for <span id="cpu-period-warn" class="btn-group time"></span></span>
         </p>
         <p>
-          <span>Error Alert at <span id="cpu-load-error" class="btn-group percentage"></span></span>&nbsp;<span>for <span id="cpu-period-error" class="btn-group time"></span> minutes</span>
+          <span>Error Alert at <span id="cpu-load-error" class="btn-group percentage"></span></span>&nbsp;<span>for <span id="cpu-period-error" class="btn-group time"></span></span>
         </p>
       </div>
       <div>

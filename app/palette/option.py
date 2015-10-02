@@ -3,6 +3,8 @@
 
 from collections import OrderedDict
 
+DO_NOT_MONITOR = "Do Not Monitor"
+
 class ListOption(object):
     """Generates options for a list of values where the str(id) == value."""
     def __init__(self, name, valueid, valueid_list):
@@ -55,7 +57,7 @@ class TimeOption(DictOption):
 
     def __init__(self, name, valueid, value_dict):
         result = OrderedDict()
-        result[0] = "Do Not Monitor"
+        result[0] = DO_NOT_MONITOR
 
         if 'seconds' in value_dict:
             for value in value_dict['seconds']:
@@ -74,3 +76,16 @@ class TimeOption(DictOption):
 
         assert valueid in result
         super(TimeOption, self).__init__(name, valueid, result)
+
+class PercentOption(DictOption):
+    """Generates options specified as percentages. """
+
+    def __init__(self, name, valueid, value_range):
+        result = OrderedDict()
+        for value in value_range:
+            if value > 100:
+                result[value] = DO_NOT_MONITOR
+            else:
+                result[value] = str(value) + '%'
+        assert valueid in result
+        super(PercentOption, self).__init__(name, valueid, result)
