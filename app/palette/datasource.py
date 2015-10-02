@@ -1,8 +1,7 @@
 """ The datasource archive. """
 
 from collections import OrderedDict
-from webob import exc
-from paste.fileapp import DataApp
+from webob import exc, Response
 
 from akiri.framework import GenericWSGIApplication, ENVIRON_PREFIX
 import akiri.framework.sqlalchemy as meta
@@ -245,8 +244,10 @@ class DatasourceData(GenericWSGIApplication):
         if not self.check_permission(req, update):
             return exc.HTTPForbidden()
 
-        return DataApp(update.tds)
-
+        res = Response()
+        res.content_type = 'application/octet-stream'
+        res.text = update.tds
+        return res
 
 class DatasourceArchive(PalettePage):
     TEMPLATE = 'datasource.mako'
