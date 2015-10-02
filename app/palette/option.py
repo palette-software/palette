@@ -8,7 +8,7 @@ DO_NOT_MONITOR = "Do Not Monitor"
 class ListOption(object):
     """Generates options for a list of values where the str(id) == value."""
     def __init__(self, name, valueid, valueid_list):
-        # assert valueid in valueid_list
+        #assert valueid in valueid_list
         self.name = name
         self.valueid = valueid
         self.valueid_list = valueid_list
@@ -28,7 +28,7 @@ class ListOption(object):
 class DictOption(object):
     """Generates options for an (ordered) dict."""
     def __init__(self, name, valueid, valueid_dict):
-        assert valueid in valueid_dict
+        #assert valueid in valueid_dict
         self.name = name
         self.valueid = valueid
         self.valueid_dict = valueid_dict
@@ -74,7 +74,7 @@ class TimeOption(DictOption):
                 if value > 0:
                     result[value*60*60] = _timeopt_display(value, 'hour')
 
-        assert valueid in result
+        #assert valueid in result
         super(TimeOption, self).__init__(name, valueid, result)
 
 class PercentOption(DictOption):
@@ -87,5 +87,5 @@ class PercentOption(DictOption):
                 result[value] = DO_NOT_MONITOR
             else:
                 result[value] = str(value) + '%'
-        assert valueid in result
+        #assert valueid in result
         super(PercentOption, self).__init__(name, valueid, result)
