@@ -66,6 +66,9 @@ class EventControl(meta.Base, BaseMixin, BaseDictMixin):
     admin_visibility = Column(Boolean)
     publisher_visibility = Column(Boolean)
 
+    # On upgrade, don't remove event_control entries when True.
+    custom = Column(Boolean, default=False)
+
     # event keys
     INIT_STATE_STARTED = "INIT-STATE-STARTED"
     INIT_STATE_STOPPED = "INIT-STATE-STOPPED"
