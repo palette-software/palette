@@ -1234,9 +1234,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def controller_init_events(self):
         """Generate an event if we are running a new version."""
-        last_version = self.system[SystemKeys.PALETTE_VERSION]
 
-        body = {'version_previous': last_version,
+        body = {'version_previous': self.previous_version,
                 'version_current': self.version}
 
         system_key = SystemKeys.CONTROLLER_INITIAL_START
@@ -1245,17 +1244,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if not controller_initial_start:
             self.system.save(SystemKeys.CONTROLLER_INITIAL_START, True)
             self.event_control.gen(EventControl.CONTROLLER_STARTED, body)
-
         else:
             self.event_control.gen(EventControl.CONTROLLER_RESTARTED, body)
 
-        if self.version == last_version:
-            return last_version, self.version
+        if self.version != self.previous_version:
+            self.event_control.gen(EventControl.PALETTE_UPDATED, body)
 
-        self.system.save(SystemKeys.PALETTE_VERSION, self.version)
-        self.event_control.gen(EventControl.PALETTE_UPDATED, body)
-
-        return last_version, self.version
+        return
 
     def httperror(self, res, error='HTTP failure',
                   displayname=None, method='GET', uri=None, body=None):
@@ -1410,16 +1405,17 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             self.statusmon.remove_all_status()
             session.commit()
 
-    def upgrade_version(self, last_version, new_version):
+    def upgrade_version(self):
         """Make changes to the database, etc. as required for upgrading
            from last_version to new_version."""
 
-        self.log.debug("Upgrade from %s to %s", last_version, new_version)
+        self.log.debug("Upgrade from %s to %s", self.previous_version,
+                                                self.version)
 
-        if last_version == new_version or not last_version:
+        if self.previous_version == self.version or not self.previous_version:
             return
 
-        if last_version[:4] != '1.5.':
+        if self.previous_version[:4] != '1.5.':
             return
 
         self.workbooks.move_twb_to_db()
@@ -1525,6 +1521,11 @@ def main():
     server.system = SystemManager(server)
     SystemManager.populate()
 
+    # Set version info
+    server.previous_version = server.system[SystemKeys.PALETTE_VERSION]
+    server.version = version()
+    server.system.save(SystemKeys.PALETTE_VERSION, server.version)
+
     # Set the log level from the system table
     log.setLevel(server.system[SystemKeys.DEBUG_LEVEL])
 
@@ -1549,12 +1550,11 @@ def main():
     # Must be set before EventControlManager
     server.yml = YmlManager(server)
 
-    EventControl.populate()
+    EventControl.populate_upgrade(server.previous_version, server.version)
     server.event_control = EventControlManager(server)
 
-    server.version = version()
     # Send controller started/restarted and potentially "new version" events.
-    old_version, new_version = server.controller_init_events()
+    server.controller_init_events()
 
     server.upgrade_rwlock = RWLock()
 
@@ -1572,7 +1572,7 @@ def main():
     server.ports = PortManager(server)
     server.ports.populate()
 
-    server.upgrade_version(old_version, new_version)
+    server.upgrade_version()
 
     clicmdclass = CliCmd(server)
     server.cli_cmd = clicmdclass.cli_cmd

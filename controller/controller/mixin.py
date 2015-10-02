@@ -61,6 +61,48 @@ class BaseMixin(object):
         session.commit()
 
     @classmethod
+    def populate_upgrade(cls, previous_version, version):
+        """
+            For an empty table:
+                Populates it.
+            For an existing table when upgrading:
+                Replace rows only if the 'custom' column is False.
+            Requires 'key' and 'custom' columns in the table.
+        """
+
+        if not previous_version or previous_version == version:
+            cls.populate()
+            return
+
+        session = meta.Session()
+        entry = session.query(cls).first()
+        if not entry:
+            # Table is empty, add all rows.
+            cls.populate()
+            return
+
+        if not cls.defaults_filename is None:
+            rows = cls.populate_from_file(cls.defaults_filename)
+        else:
+            rows = cls.defaults
+
+        # We are upgrading.
+        # Delete all rows that aren't custom.
+        session.query(cls).\
+            filter(cls.custom != True).\
+            delete()
+
+        for d in rows:
+            entry = session.query(cls).\
+                                  filter(cls.key == d['key']).\
+                                  first()
+            # If the row didn't exist, add it.
+            if not entry:
+                obj = cls(**d)
+                session.add(obj)
+        session.commit()
+
+    @classmethod
     def populate_from_file(cls, filename):
         path = os.path.dirname(os.path.realpath(__file__)) + "/" + filename
 
