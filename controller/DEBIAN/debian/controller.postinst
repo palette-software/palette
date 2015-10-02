@@ -141,8 +141,6 @@ elif [ "$oldversion" = "1.4.3" -o "$oldversion" = "1.4.4" -o "$oldversion" = "1.
 XYZZY
 elif [ "$oldversion" = "1.5.3" -o "$oldversion" = "1.5.4" ]; then
     psql paldb << XYZZY
-    drop table event_control;
-
     alter table workbook_updates add column fileid_twbx character varying;
     alter table workbook_updates add column twb text;
 
@@ -162,11 +160,7 @@ elif [ "$oldversion" = "1.5.3" -o "$oldversion" = "1.5.4" ]; then
 XYZZY
 elif [ "$oldversion" != "" ]; then
     echo Upgrading $oldversion
-    # If we are upgrading from a previous version (vs. a new install),
-    # drop the event_control table as it almost always changes.
     psql paldb << XYZZY
-    drop table event_control;
-
     drop table cron;
 XYZZY
 elif [ "$oldversion" = "" ]; then
