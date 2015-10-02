@@ -42,38 +42,35 @@ class DictOption(object):
                 'value': str(self.valueid_dict[self.valueid]),
                 'options': options}
 
+def _timeopt_display(value, increment):
+    """ Build the display string for TimeOption """
+    if value == 1:
+        return '1 ' + increment
+    else:
+        return str(value) + ' ' + increment + 's'
+
 
 class TimeOption(DictOption):
-    """Generates options specified by time (e.g. second, minute, hour)"""
+    """Generates options specified by time (e.g. seconds, minutes, hours)"""
 
-    def __init__(self, name, valueid, value_range, increment='second'):
-        if not 0 in value_range:
-            value_range = [0] + value_range
+    def __init__(self, name, valueid, value_dict):
+        result = OrderedDict()
+        result[0] = "Do Not Monitor"
 
-        if increment == 'second':
-            multiplier = 1
-        elif increment == 'minute':
-            multiplier = 60
-        elif increment == 'hour':
-            multiplier = 3600
-        else:
-            raise ValueError("Increment must be 'second', 'minute' or 'hour'")
+        if 'seconds' in value_dict:
+            for value in value_dict['seconds']:
+                if value > 0:
+                    result[value] = _timeopt_display(value, 'second')
 
-        valueid_mapping = OrderedDict()
-        for value in value_range:
-            if value == 0:
-                display = "Do Not Monitor"
-            elif value == 1:
-                display = "1 " + increment
-            else:
-                display = str(value) + " " + increment + "s"
-            valueid_mapping[value * multiplier] = display
+        if 'minutes' in value_dict:
+            for value in value_dict['minutes']:
+                if value > 0:
+                    result[value*60] = _timeopt_display(value, 'minute')
 
-        assert valueid in valueid_mapping
-        super(TimeOption, self).__init__(name, valueid, valueid_mapping)
+        if 'hours' in value_dict:
+            for value in value_dict['hours']:
+                if value > 0:
+                    result[value*60*60] = _timeopt_display(value, 'hour')
 
-class MinuteOption(TimeOption):
-    """ TimeOption with 'minute' increments """
-    def __init__(self, name, valueid, value_range):
-        super(MinuteOption, self).__init__(name, valueid, value_range,
-                                           increment='minute')
+        assert valueid in result
+        super(TimeOption, self).__init__(name, valueid, result)
