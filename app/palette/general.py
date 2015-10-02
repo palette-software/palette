@@ -17,7 +17,7 @@ from controller.credential import CredentialEntry
 from controller.email_limit import EmailLimitEntry
 from controller.system import SystemKeys
 
-from .option import ListOption, DictOption, TimeOption
+from .option import ListOption, DictOption, TimeOption, PercentOption
 from .page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
 from .s3 import S3Application
@@ -438,163 +438,59 @@ class GeneralMonitorApplication(PaletteRESTApplication):
     WORKBOOK_LOAD_ERROR_RANGE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30,
                                  35, 40, 45]
 
-    def build_item_for_web_request(self, seconds):
-        if seconds == 0:
-            return 'Do not monitor'
-        if seconds == 1:
-            return '1 second'
-        return '%d seconds' % seconds
-
     @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
-        # pylint: disable=too-many-locals
-        # pylint: disable=too-many-statements
-        # pylint: disable=too-many-branches
-
-        # FIXME: make every commented paragraph below a private method
-        data = {}
-
+        config = []
 
         # watermark low
-        watermark_low = req.system[SystemKeys.WATERMARK_LOW]
-        if watermark_low > 100:
-            low = {'name': SystemKeys.WATERMARK_LOW,
-                   'value': "Do not monitor",
-                   'id': watermark_low}
-        else:
-            low = {'name': SystemKeys.WATERMARK_LOW,
-                   'value': "%d%%" % watermark_low,
-                   'id': watermark_low}
-        options = []
-        for value in self.LOW_WATERMARK_RANGE:
-            if value > 100:
-                options.append({'id':value, 'item': "Do not monitor"})
-            else:
-                options.append({'id':value, 'item': "%s%%" % str(value)})
-        low['options'] = options
+        percent = req.system[SystemKeys.WATERMARK_LOW]
+        option = PercentOption(SystemKeys.WATERMARK_LOW, percent,
+                               self.LOW_WATERMARK_RANGE)
+        config.append(option.default())
 
         # watermark high
-        watermark_high = req.system[SystemKeys.WATERMARK_HIGH]
-        if watermark_high > 100:
-            high = {'name': SystemKeys.WATERMARK_HIGH,
-                   'value': "Do not monitor",
-                   'id': watermark_high}
-        else:
-            high = {'name': SystemKeys.WATERMARK_HIGH,
-                   'value': '%d%%' % watermark_high,
-                   'id': watermark_high}
-        options = []
-        for value in self.HIGH_WATERMARK_RANGE:
-            if value > 100:
-                options.append({'id':value, 'item': 'Do not monitor'})
-            else:
-                options.append({'id':value, 'item': '%s%%' % str(value)})
-        high['options'] = options
+        percent = req.system[SystemKeys.WATERMARK_HIGH]
+        option = PercentOption(SystemKeys.WATERMARK_HIGH, percent,
+                               self.HIGH_WATERMARK_RANGE)
+        config.append(option.default())
 
         # workbook warn (formerly http load warn)
         seconds = req.system[SystemKeys.HTTP_LOAD_WARN]
-        value = self.build_item_for_web_request(seconds)
-        workbook_load_warn = {'name': SystemKeys.HTTP_LOAD_WARN,
-                              'value': value,
-                              'id': seconds}
-
-        options = []
-        for value in self.WORKBOOK_LOAD_WARN_RANGE:
-            item = self.build_item_for_web_request(value)
-            options.append({'id':value, 'item': item})
-        workbook_load_warn['options'] = options
+        option = TimeOption(SystemKeys.HTTP_LOAD_WARN, seconds,
+                            {'seconds': self.WORKBOOK_LOAD_WARN_RANGE})
+        config.append(option.default())
 
         # workbook error (formerly http load error)
         seconds = req.system[SystemKeys.HTTP_LOAD_ERROR]
-        value = self.build_item_for_web_request(seconds)
-        workbook_load_error = {'name': SystemKeys.HTTP_LOAD_ERROR,
-                               'value': value,
-                               'id': seconds}
-
-        options = []
-        for value in self.WORKBOOK_LOAD_ERROR_RANGE:
-            item = self.build_item_for_web_request(value)
-            options.append({'id':value, 'item': item})
-        workbook_load_error['options'] = options
+        option = TimeOption(SystemKeys.HTTP_LOAD_ERROR, seconds,
+                            {'seconds': self.WORKBOOK_LOAD_ERROR_RANGE})
+        config.append(option.default())
 
         # cpu load warn
-        seconds = req.system[SystemKeys.CPU_LOAD_WARN]
-        if seconds > 100:
-            cpu_load_warn = {'name': SystemKeys.CPU_LOAD_WARN,
-                             'value': 'Do not monitor',
-                             'id': 101}
-        else:
-            cpu_load_warn = {'name': SystemKeys.CPU_LOAD_WARN,
-                             'value': '%s%%' % str(seconds),
-                             'id': seconds}
-        options = []
-        for value in self.CPU_LOAD_WARN_RANGE:
-            if value > 100:
-                options.append({'id':value, 'item': "Do not monitor"})
-            else:
-                options.append({'id':value, 'item': '%s%%' % str(value)})
-        cpu_load_warn['options'] = options
+        percent = req.system[SystemKeys.CPU_LOAD_WARN]
+        option = PercentOption(SystemKeys.CPU_LOAD_WARN, percent,
+                               self.CPU_LOAD_WARN_RANGE)
+        config.append(option.default())
 
         # cpu load error
-        seconds = req.system[SystemKeys.CPU_LOAD_ERROR]
-        if seconds > 100:
-            cpu_load_error = {'name': SystemKeys.CPU_LOAD_ERROR,
-                              'value': 'Do not monitor',
-                              'id': 101}
-        else:
-            cpu_load_error = {'name': SystemKeys.CPU_LOAD_ERROR,
-                              'value': '%s%%' % str(seconds),
-                              'id': seconds}
-        options = []
-        for value in self.CPU_LOAD_ERROR_RANGE:
-            if value > 100:
-                options.append({'id':value, 'item': 'Do not monitor'})
-            else:
-                options.append({'id':value, 'item': '%s%%' % str(value)})
-        cpu_load_error['options'] = options
+        percent = req.system[SystemKeys.CPU_LOAD_ERROR]
+        option = PercentOption(SystemKeys.CPU_LOAD_ERROR, percent,
+                               self.CPU_LOAD_ERROR_RANGE)
+        config.append(option.default())
 
         # cpu period warn
-        period_seconds = req.system[SystemKeys.CPU_PERIOD_WARN]
-
-        value = req.system[SystemKeys.CPU_LOAD_WARN]
-        if value > 100:
-            # not monitoring
-            cpu_period_warn = {'name': SystemKeys.CPU_PERIOD_WARN,
-                               'value': "Do not Monitor",
-                               'id': period_seconds}
-        else:
-            cpu_period_warn = {'name': SystemKeys.CPU_PERIOD_WARN,
-                               'value': (period_seconds / 60),
-                               'id': period_seconds}
-        options = []
-        for value in self.CPU_PERIOD_WARN_RANGE:
-            options.append({'id':value * 60, 'item': str(value)})
-        cpu_period_warn['options'] = options
+        seconds = req.system[SystemKeys.CPU_PERIOD_WARN]
+        option = TimeOption(SystemKeys.CPU_PERIOD_WARN, seconds,
+                            {'minutes': self.CPU_PERIOD_WARN_RANGE})
+        config.append(option.default())
 
         # cpu period error
-        period_seconds = req.system[SystemKeys.CPU_PERIOD_ERROR
-]
-        value = req.system[SystemKeys.CPU_LOAD_ERROR]
-        if value > 100:
-            # not monitoring
-            cpu_period_error = {'name': SystemKeys.CPU_PERIOD_ERROR,
-                                'value': "Do not monitor",
-                                'id': period_seconds}
-        else:
-            cpu_period_error = {'name': SystemKeys.CPU_PERIOD_ERROR,
-                                'value': str(value / 60),
-                                'id': period_seconds}
-        options = []
-        for value in self.CPU_PERIOD_ERROR_RANGE:
-            options.append({'id':value * 60, 'item': str(value)})
-        cpu_period_error['options'] = options
+        seconds = req.system[SystemKeys.CPU_PERIOD_ERROR]
+        option = TimeOption(SystemKeys.CPU_PERIOD_ERROR, seconds,
+                            {'minutes': self.CPU_PERIOD_ERROR_RANGE})
+        config.append(option.default())
 
-        data['config'] = [low, high,
-                          workbook_load_warn, workbook_load_error,
-                          cpu_load_warn, cpu_load_error,
-                          cpu_period_warn, cpu_period_error]
-
-        return data
+        return {'config': config}
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
