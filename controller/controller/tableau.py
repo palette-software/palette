@@ -1,4 +1,4 @@
-import logger
+import logging
 import string
 import threading
 import time
@@ -27,6 +27,8 @@ from state_transitions import TRANSITIONS, START_DICT
 from system import SystemKeys
 from util import success
 from yml import YmlEntry
+
+logger = logging.getLogger()
 
 class SysteminfoException(Exception):
     def __init__(self, errnum, message):
@@ -77,8 +79,6 @@ class TableauStatusMonitor(threading.Thread):
     # before sending out the DEGRADED event.
     EVENT_DEGRADED_MIN_DEFAULT = 120    # in seconds
 
-    LOGGER_NAME = "status"
-
     # Possible return values when attempting to get systeminfo:
     # Only considered a failure if the http get of the URL
     # can't accept a connection.  Otherwise, Tableau could be up.
@@ -103,12 +103,12 @@ class TableauStatusMonitor(threading.Thread):
         self.event = self.server.event_control
         self.rwlock = self.server.upgrade_rwlock
         self.manager = manager # AgentManager instance
-        self.log = logger.get(self.LOGGER_NAME)
-        self.log.setLevel(self.system[SystemKeys.DEBUG_LEVEL])
         self.envid = self.server.environment.envid
 
         self.first_degraded_time = None
         self.sent_degraded_event = False
+
+        logger.setLevel(self.system[SystemKeys.DEBUG_LEVEL])
 
         # Start fresh: status table
         session = meta.Session()
@@ -178,13 +178,14 @@ class TableauStatusMonitor(threading.Thread):
         if tableau_status not in (TableauProcess.STATUS_RUNNING,
                                   TableauProcess.STATUS_STOPPED,
                                   TableauProcess.STATUS_DEGRADED):
-            self.log.error("status-check: Unknown reported tableau_status " + \
-                "from tableau: %s.  prev_state: %s", tableau_status, prev_state)
+            logger.error("status-check: Unknown reported tableau_status " + \
+                         "from tableau: %s.  prev_state: %s",
+                         tableau_status, prev_state)
             return  # fixme: do something more drastic than return?
 
         if prev_state not in TRANSITIONS:
-            self.log.error("status-check: prev state unexpected: %s",
-                            prev_state)
+            logger.error("status-check: prev state unexpected: %s",
+                         prev_state)
             return  # fixme: do something more drastic than return?
 
         # Get our new state and events to send based on the previous
@@ -201,10 +202,10 @@ class TableauStatusMonitor(threading.Thread):
         else:
             new_state_info = TRANSITIONS[prev_state][tableau_status]
 
-        self.log.debug("status-check: prev_state: %s, new state info: %s, " + \
-                       "prev_tableau_status %s, tableau_status: %s",
-                       prev_state, str(new_state_info),
-                       prev_tableau_status, tableau_status)
+        logger.debug("status-check: prev_state: %s, new state info: %s, " + \
+                     "prev_tableau_status %s, tableau_status: %s",
+                     prev_state, str(new_state_info),
+                     prev_tableau_status, tableau_status)
 
         if 'state' in new_state_info and \
                                         new_state_info['state'] != prev_state:
@@ -224,16 +225,16 @@ class TableauStatusMonitor(threading.Thread):
             # is not stopped.  For example, the user stopped
             # tableau via 'tabadmin stop' and then restarted it with
             # 'tabadmin start' without going through the Palette UI.
-            self.log.debug("status-check: May stop maint server. " + \
-                           "prev_state: %s, new state info: %s, " + \
-                           "prev_tableau_status %s, tableau_status: %s, " + \
-                           "maint_started: %s",
-                           prev_state, str(new_state_info),
-                           prev_tableau_status, tableau_status,
-                           str(self.server.maint_started))
+            logger.debug("status-check: May stop maint server. " + \
+                         "prev_state: %s, new state info: %s, " + \
+                         "prev_tableau_status %s, tableau_status: %s, " + \
+                         "maint_started: %s",
+                         prev_state, str(new_state_info),
+                         prev_tableau_status, tableau_status,
+                         str(self.server.maint_started))
 
             if not self.server.maint_started:
-                self.log.debug("state-check: maint server not running")
+                logger.debug("state-check: maint server not running")
                 return
 
             self.server.maint("stop")
@@ -246,16 +247,16 @@ class TableauStatusMonitor(threading.Thread):
             # We want to set the maint_started status.
             # We assume the user wanted the maint server started,
             # but can't be sure.
-            self.log.debug("status-check: Will start maint server. " + \
-                           "prev_state: %s, new state info: %s, " + \
-                           "prev_tableau_status %s, tableau_status: %s, " + \
-                           "maint_started: %s",
-                           prev_state, str(new_state_info),
-                           prev_tableau_status, tableau_status,
-                           str(self.server.maint_started))
+            logger.debug("status-check: Will start maint server. " + \
+                         "prev_state: %s, new state info: %s, " + \
+                         "prev_tableau_status %s, tableau_status: %s, " + \
+                         "maint_started: %s",
+                         prev_state, str(new_state_info),
+                         prev_tableau_status, tableau_status,
+                         str(self.server.maint_started))
 
             if self.server.maint_started:
-                self.log.debug("state-check: maint server already running")
+                logger.debug("state-check: maint server already running")
                 return
 
             self.server.maint("start")
@@ -304,12 +305,12 @@ class TableauStatusMonitor(threading.Thread):
                 event_degraded_min = self.EVENT_DEGRADED_MIN_DEFAULT
 
             now = time.time()
-            self.log.debug("status-check: now %d, first %d, min %d, diff %d",
-                           now, self.first_degraded_time,
-                           event_degraded_min,
-                           now - self.first_degraded_time)
+            logger.debug("status-check: now %d, first %d, min %d, diff %d",
+                         now, self.first_degraded_time,
+                         event_degraded_min,
+                         now - self.first_degraded_time)
             if now - self.first_degraded_time >= event_degraded_min:
-                self.log.debug("status-check: Sending degraded")
+                logger.debug("status-check: Sending degraded")
                 self.event.gen(event, dict(body.items() + data.items()))
                 self.sent_degraded_event = True
 
@@ -327,15 +328,15 @@ class TableauStatusMonitor(threading.Thread):
             edata = {'error': line, 'version': self.server.version}
 
             self.event.gen(EventControl.SYSTEM_EXCEPTION, edata)
-            self.log.error("status-check: Fatal: " + \
-                           "Exiting tableau_status_loop on exception.")
+            logger.error("status-check: Fatal: " + \
+                         "Exiting tableau_status_loop on exception.")
             # pylint: disable=protected-access
             os._exit(93)
 
     def tableau_status_loop(self):
         while True:
-            self.log.debug("status-check: About to timeout or " + \
-                           "wait for a new primary to connect")
+            logger.debug("status-check: About to timeout or " + \
+                         "wait for a new primary to connect")
             try:
                 system_key = SystemKeys.STATUS_REQUEST_INTERVAL
                 request_interval = self.system[system_key]
@@ -344,7 +345,7 @@ class TableauStatusMonitor(threading.Thread):
 
             new_primary = self.manager.check_status_event.wait(request_interval)
 
-            self.log.debug("status-check: new_primary: %s", new_primary)
+            logger.debug("status-check: new_primary: %s", new_primary)
             if new_primary:
                 self.manager.clear_check_status_event()
 
@@ -353,7 +354,7 @@ class TableauStatusMonitor(threading.Thread):
                 # Don't do a 'tabadmin status -v' if upgrading
                 acquired = self.rwlock.read_acquire(blocking=False)
                 if not acquired:
-                    self.log.debug("status-check: Upgrading.  Won't run.")
+                    logger.debug("status-check: Upgrading.  Won't run.")
                     continue
                 self.check_status()
             finally:
@@ -363,19 +364,18 @@ class TableauStatusMonitor(threading.Thread):
                 meta.Session.remove()
 
     def check_status(self):
-        self.log.setLevel(self.system[SystemKeys.DEBUG_LEVEL])
+        logger.setLevel(self.system[SystemKeys.DEBUG_LEVEL])
         # FIXME: Tie agent to domain.
         agent = self.manager.agent_by_type(AgentManager.AGENT_TYPE_PRIMARY)
         if not agent:
-            self.log.debug("status-check: The primary agent is either " + \
-                           "not connected or not enabled.")
+            logger.debug("status-check: The primary agent is either " + \
+                         "not connected or not enabled.")
             return
 
         aconn = agent.connection
         if not aconn:
             session = meta.Session()
-            self.log.debug(
-                    "status-check: No primary agent currently connected.")
+            logger.debug("status-check: No primary agent currently connected.")
             self.remove_all_status()
             session.commit()
             return
@@ -383,9 +383,8 @@ class TableauStatusMonitor(threading.Thread):
         # Don't do a 'tabadmin status -v' if the user is doing an action.
         acquired = aconn.user_action_lock(blocking=False)
         if not acquired:
-            self.log.debug(
-                "status-check: Primary agent locked for user action. " + \
-                "Skipping status check.")
+            logger.debug("status-check: Primary agent locked for user "
+                         "action. Skipping status check.")
             return
 
         # We don't force the user to delay starting their request
@@ -404,18 +403,17 @@ class TableauStatusMonitor(threading.Thread):
 
             Raises an exception if there is a problem with systeminfo.
         """
-        self.log.debug("_systeminfo_parse: Received: %s", systeminfo_xml)
+        logger.debug("_systeminfo_parse: Received: %s", systeminfo_xml)
         try:
             root = ET.fromstring(systeminfo_xml)
         except ET.ParseError as ex:
-            self.log.error(
-                    "_systeminfo_parse: xml parse error: '%s' from '%s':",
-                    str(ex), systeminfo_xml)
+            logger.error("_systeminfo_parse: xml parse error: '%s' from '%s':",
+                         str(ex), systeminfo_xml)
             raise SysteminfoException(SysteminfoError.PARSE_FAILURE,
-                                       "xml parse error: '%s'" % (str(ex)))
+                                      "xml parse error: '%s'" % (str(ex)))
 
         if root.tag != 'systeminfo':
-            self.log.error("_systeminfo_parse: wrong root tag: %s", root.tag)
+            logger.error("_systeminfo_parse: wrong root tag: %s", root.tag)
             raise SysteminfoException(SysteminfoError.PARSE_FAILURE,
                                       "wrong root tag: %s" % root.tag)
 
@@ -432,9 +430,9 @@ class TableauStatusMonitor(threading.Thread):
                 for machine in child:
 #                    print "machine:", machine.attrib
                     if not 'name' in machine.attrib:
-                        self.log.error("_systeminfo_parse: missing " + \
-                                       "'name' in machine attribute: %s",
-                                       str(machine.attrib))
+                        logger.error("_systeminfo_parse: missing " + \
+                                     "'name' in machine attribute: %s",
+                                     str(machine.attrib))
                         raise SysteminfoException(SysteminfoError.PARSE_FAILURE,
                                        ("missing " + \
                                        "'name' in machine attribute: %s") % \
@@ -444,9 +442,9 @@ class TableauStatusMonitor(threading.Thread):
                     agentid = Agent.get_agentid_from_host(self.envid, host)
 
                     if not agentid:
-                        self.log.error("_systeminfo_parse: No such" + \
-                                       " agent host known (yet/any more?): %s",
-                                       host)
+                        logger.error("_systeminfo_parse: No such" + \
+                                     " agent host known (yet/any more?): %s",
+                                     host)
                         continue
 
                     machine_agent = Agent.get_by_id(agentid)
@@ -459,9 +457,9 @@ class TableauStatusMonitor(threading.Thread):
                         #print "    ", info.tag, "attributes:", info.attrib
                         service_name = info.tag
                         if not 'status' in info.attrib:
-                            self.log.error("_systeminfo_parse: missing " + \
-                                           "'status' in machine %s attrib: %s",
-                                           host, str(info.attrib))
+                            logger.error("_systeminfo_parse: missing " + \
+                                         "'status' in machine %s attrib: %s",
+                                         host, str(info.attrib))
                             raise SysteminfoException(
                                       SysteminfoError.PARSE_FAILURE,
                                       ("missing " + \
@@ -473,11 +471,11 @@ class TableauStatusMonitor(threading.Thread):
                             parts = worker_info.split(':')
                             if len(parts) == 1 or not parts[1].isdigit():
                                 # port = -2
-                                self.log.error("_systeminfo_parse: missing " + \
-                                               "':' or not an integer in "
-                                               "machine %s for " + \
-                                               "worker: %s", host,
-                                               str(worker_info))
+                                logger.error("_systeminfo_parse: missing " + \
+                                             "':' or not an integer in "
+                                             "machine %s for " + \
+                                             "worker: %s", host,
+                                             str(worker_info))
 
                                 raise SysteminfoException(
                                                SysteminfoError.PARSE_FAILURE,
@@ -500,16 +498,16 @@ class TableauStatusMonitor(threading.Thread):
                                                  service_name, service_status)
 
                         self._add(agentid, service_name, port, service_status)
-                        self.log.debug("system_info_parse: logged: " + \
-                                       "%d, %s, %d, %s",
-                                       agentid, service_name, port,
-                                       service_status)
+                        logger.debug("system_info_parse: logged: " + \
+                                     "%d, %s, %d, %s",
+                                     agentid, service_name, port,
+                                     service_status)
             elif child.tag == 'service':
 #                print "service:",
                 info = child.attrib
                 if not 'status' in info:
-                    self.log.error("_systeminfo_parse: Missing 'status': %s",
-                                    str(info))
+                    logger.error("_systeminfo_parse: Missing 'status': %s",
+                                 str(info))
                     raise SysteminfoException(SysteminfoError.PARSE_FAILURE,
                                               "Missing 'status': %s" % \
                                               str(info))
@@ -526,8 +524,8 @@ class TableauStatusMonitor(threading.Thread):
                                         'StatusNotAvailableSyncing'):
                     tableau_status = TableauProcess.STATUS_UNKNOWN
                 else:
-                    self.log.error("_systeminfo_parse: Unexpected status: '%s'",
-                                  tableau_status)
+                    logger.error("_systeminfo_parse: Unexpected status: '%s'",
+                                 tableau_status)
                     tableau_status = TableauProcess.STATUS_UNKNOWN
 
                 # Note: The status can never be STOPPED since if Tableau
@@ -535,13 +533,12 @@ class TableauStatusMonitor(threading.Thread):
                 # GET URL.
                 self._add(agent.agentid, "Status", 0, tableau_status)
             else:
-                self.log.error("_systeminfo_parse: Unexpected child.tag: '%s'",
-                    child.tag)
+                logger.error("_systeminfo_parse: Unexpected child.tag: '%s'",
+                             child.tag)
 
         if tableau_status is None:
-            self.log.error(
-                        "_systeminfo_parse: Tableau status not valid: %s",
-                       str(systeminfo_xml))
+            logger.error("_systeminfo_parse: Tableau status not valid: %s",
+                         str(systeminfo_xml))
             session.rollback()
             raise SysteminfoException(SysteminfoError.PARSE_FAILURE,
                                       "Tableau status not valid")
@@ -569,13 +566,13 @@ class TableauStatusMonitor(threading.Thread):
         if not systeminfo_url:
             systeminfo_url = self.system[SystemKeys.TABLEAU_SERVER_URL]
         if not systeminfo_url:
-            self.log.error("_systeminfo_get: no url configured.")
+            logger.error("_systeminfo_get: no url configured.")
             return None
 
         result = urlparse(systeminfo_url)
 
         if not result.scheme:
-            self.log.error("_systeminfo_get: Bad url: %s", systeminfo_url)
+            logger.error("_systeminfo_get: Bad url: %s", systeminfo_url)
             return None
 
         if result.port:
@@ -600,16 +597,15 @@ class TableauStatusMonitor(threading.Thread):
             res = agent.connection.http_send_get(url, timeout=timeout_ms)
         except (socket.error, IOError, exc.HTTPException,
                                                 httplib.HTTPException) as ex:
-            self.log.info("_systeminfo_get %s failed: %s",
-                          url, str(ex))
+            logger.info("_systeminfo_get %s failed: %s",
+                        url, str(ex))
             raise SysteminfoException(SysteminfoError.COMM_FAILURE,
                                       "_systeminfo_get %s failed: %s" % \
                                       (url, str(ex)))
 
         content_type = res.getheader('Content-Type', '').lower()
 
-        self.server.log.info("GET %s, Headers: '%s'",
-                             url, str(res.getheaders()))
+        logger.info("GET %s, Headers: '%s'", url, str(res.getheaders()))
 
         if content_type == 'application/x-json':
             # This extended type indicates the agent generated the JSON,
@@ -617,14 +613,14 @@ class TableauStatusMonitor(threading.Thread):
             try:
                 data = json.loads(res.body)
             except ValueError as ex:
-                self.log.error("_systeminfo_get: Bad json returned for %s: %s",
-                               url, res.body)
+                logger.error("_systeminfo_get: Bad json returned for %s: %s",
+                             url, res.body)
                 raise SysteminfoException(SysteminfoError.JSON_PARSE_FAILURE,
                                           "Invalid json returned for %s: %s" % \
                                           (url, res.body))
 
-            self.log.info("_systeminfo_get: get %s reported failed: %s",
-                           url, data)
+            logger.info("_systeminfo_get: get %s reported failed: %s",
+                        url, data)
             if 'error' in data:
                 if data['error'].find(
                               "Unable to connect to the remote server") != -1:
@@ -659,8 +655,8 @@ class TableauStatusMonitor(threading.Thread):
         pid = 0
         tableau_status = TableauProcess.STATUS_STOPPED
         self._add(agent.agentid, name, 0, tableau_status)
-        self.log.debug("_set_status_stopped: logged: %s, %d, %s",
-                       name, pid, tableau_status)
+        logger.debug("_set_status_stopped: logged: %s, %d, %s",
+                     name, pid, tableau_status)
 
         self._finish_status(agent, tableau_status, prev_tableau_status,
                 {'stdout': 'systeminfo failed.  Assuming Tableau is stopped.'})
@@ -715,12 +711,12 @@ class TableauStatusMonitor(threading.Thread):
                     # Could be the maintenance web server responding with
                     # "Not found" since and tableau is stopped.
                     self._set_status_stopped(agent)
-                    self.log.info("_system_info: Page not found and "
-                        "it previously worked, but the state was %s "
-                        "so not sending systeminfo event.", prev_state)
+                    logger.info("_system_info: Page not found and "
+                                "it previously worked, but the state was %s "
+                                "so not sending systeminfo event.", prev_state)
                     return
                 elif ex.errnum == SysteminfoError.CONNECT_FAILURE:
-                    self.log.info("_system_info: failed to connect")
+                    logger.info("_system_info: failed to connect")
 
                     # Be as confident as possible that tableau really is stopped
                     # and the user didn't configure the tableau-server-url
@@ -728,9 +724,9 @@ class TableauStatusMonitor(threading.Thread):
                     # at least once with systeminfo # before the failure to
                     # get systeminfo should mean that tableau is really stopped.
                     if self.systeminfo_url_worked == systeminfo_url:
-                        self.log.error("status-check: systeminfo failed while "
-                                       "enabled in tableau: assuming tableu is "
-                                       "stopped.")
+                        logger.error("status-check: systeminfo failed while "
+                                     "enabled in tableau: assuming tableu is "
+                                     "stopped.")
                         self._set_status_stopped(agent)
                         data['info'] = "Systeminfo failed to connect, but " + \
                                        "connect previously worked.  " + \
@@ -749,11 +745,11 @@ class TableauStatusMonitor(threading.Thread):
                 self._systeminfo_eventit(agent, data, systeminfo_url)
 
                 if self.system[SystemKeys.STATUS_SYSTEMINFO_ONLY]:
-                    self.log.info("systeminfo failed but not allowed to use "
-                                  "tabadmin status -v")
+                    logger.info("systeminfo failed but not allowed to use "
+                                "tabadmin status -v")
                     self._set_status_unknown(agent,
                                 "systeminfo failed but configured to not "
-                                 "allow use of tabadmin status -v")
+                                "allow use of tabadmin status -v")
                     return
 
         # Get tableau status via 'tabadmin status -v' instead.
@@ -815,27 +811,26 @@ class TableauStatusMonitor(threading.Thread):
 
         body = self.server.status_cmd(agent)
         if 'error' in body:
-            self.log.error(
-                "status-check: Error from tabadmin status command: %s",
-                str(body))
+            logger.error("status-check: Error from tabadmin status command: %s",
+            str(body))
             return
 
         if 'exit-status' in body:
             if body['exit-status']:
-                self.log.error("status-check: Failed exit status: %d for " + \
-                               "tabadmin status command: %s",
-                               body['exit-status'], str(body))
+                logger.error("status-check: Failed exit status: %d for " + \
+                             "tabadmin status command: %s",
+                             body['exit-status'], str(body))
                 return
         else:
-            self.log.error("status-check: Missing exit-status from " + \
-                           "tabadmin status command: %s", str(body))
+            logger.error("status-check: Missing exit-status from " + \
+                         "tabadmin status command: %s", str(body))
             return
 
         if not body.has_key('stdout'):
             # fixme: Probably update the status table to say
             # something's wrong.
-            self.log.error("status-check: No output received for " + \
-                           "status monitor. body: " + str(body))
+            logger.error("status-check: No output received for " + \
+                        "status monitor. body: " + str(body))
             return
 
         stdout = body['stdout']
@@ -868,14 +863,13 @@ class TableauStatusMonitor(threading.Thread):
                               r"is\s(?P<status>.*)\."
                     match = re.search(pattern, line)
                     if not match:
-                        self.log.debug("status-check: unmatched line: %s",
-                                        line)
+                        logger.debug("status-check: unmatched line: " + line)
                         continue
 
                     service = match.group('service')        # "Repository"
                     if not 'service':
-                        self.log.debug("status-check: empty service in " + \
-                                       "line: %s", line)
+                        logger.debug("status-check: empty service in " + \
+                                     "line: %s", line)
                         continue
 
                     pid_str = match.group('pid')   # "1764"
@@ -883,20 +877,20 @@ class TableauStatusMonitor(threading.Thread):
                         try:
                             pid = int(pid_str)
                         except StandardError:
-                            self.log.error("status-check: Bad PID: " + pid_str)
+                            logger.error("status-check: Bad PID: " + pid_str)
                             continue
                     else:
                         pid = -2
 
                     status = match.group('status') # "running" or "running..."
                     if not 'status':
-                        self.log.debug("status-check: empty 'status' " + \
-                                       "in line: %s", line)
+                        logger.debug("status-check: empty 'status' " + \
+                                     "in line: %s", line)
                         continue
 
                     self._add(agentid, service, pid, status)
-                    self.log.debug("status-check: logged: %s, %d, %s", service,
-                                   pid, status)
+                    logger.debug("status-check: logged: %s, %d, %s", service,
+                                 pid, status)
 
                     if status.find('running') == -1:
                         # Keep track of failed tableau processes
@@ -934,17 +928,17 @@ class TableauStatusMonitor(threading.Thread):
                     #   'Tableau Server Repository' status is not available.
                     #   'Tableau Server File Store' status is not available.
                     if not agentid:
-                        self.log.debug("status-check: Can't log due to " + \
-                                       "unknown or disabled agent: %s, %d, %s",
-                                       line, -1, 'error')
+                        logger.debug("status-check: Can't log due to " + \
+                                     "unknown or disabled agent: %s, %d, %s",
+                                     line, -1, 'error')
                     else:
                         self._add(agentid, line, -1, 'error')
-                        self.log.debug("status-check: logged: %s, %d, %s",
-                                       line, -1, 'error')
+                        logger.debug("status-check: logged: %s, %d, %s",
+                                     line, -1, 'error')
 
         if tableau_status is None:
-            self.log.error("status-check: Tableau status not valid: %s",
-                           str(lines))
+            logger.error("status-check: Tableau status not valid: %s",
+                         str(lines))
             session.rollback()
             return
 
@@ -963,14 +957,14 @@ class TableauStatusMonitor(threading.Thread):
             # control the state.  We don't update the tableau process
             # table since state should be consistent with tableau process
             # status.
-            self.log.debug(
+            logger.debug(
                 "status-check: Primary agent locked for user action " + \
                 "after tabadmin status finished.  " + \
                 "Will not update state or tableau status.")
             meta.Session.rollback()
             return
 
-        self.log.debug("status-check: Logging main status: %s", tableau_status)
+        logger.debug("status-check: Logging main status: %s", tableau_status)
         self._set_main_state(prev_tableau_status, tableau_status, agent, body)
 
         meta.Session.commit()

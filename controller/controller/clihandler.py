@@ -1,3 +1,4 @@
+import logging
 import inspect
 import sys
 import os
@@ -35,6 +36,8 @@ import httplib
 import clierror
 from util import success, failed, traceback_string, upgrade_rwlock
 from util import is_cloud_url
+
+logger = logging.getLogger()
 
 # pylint: disable=too-many-public-methods
 
@@ -261,9 +264,8 @@ class CliHandler(socketserver.StreamRequestHandler):
         try:
             string = json.dumps(body, ensure_ascii=False)
         except StandardError as ex:
-            self.server.log.error(
-                "report_status json.dumps failed with: %s.  dict: %s",
-                str(ex), str(body))
+            logger.error("report_status json.dumps failed with: %s.  dict: %s",
+                         str(ex), str(body))
             string = \
                 "{'status': '%s', 'error': 'json decode error.  See log.'}" % \
                  CliHandler.STATUS_ERROR
@@ -392,7 +394,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.server.event_control.alert_email.send(event_entry, data,
                                                        recipient)
         except StandardError:
-            self.server.log.exception('CliHandler exception:')
+            logger.exception('CliHandler exception:')
             self.error(clierror.ERROR_COMMAND_FAILED, traceback_string())
             return
 
@@ -418,7 +420,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # pylint: disable=too-many-branches
 
         # Potentially update log level
-        self.server.log.setLevel(self.server.system[SystemKeys.DEBUG_LEVEL])
+        logger.setLevel(self.server.system[SystemKeys.DEBUG_LEVEL])
 
         stateman = self.server.state_manager
 
@@ -454,10 +456,9 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         # Note: an agent doesn't have to be connected to change upgrade mode.
         if cmd.args[0] == 'on':
-            self.server.log.debug(
-                            "Attempting to acquire the upgrade WRITE lock.")
+            logger.debug("Attempting to acquire the upgrade WRITE lock.")
             self.server.upgrade_rwlock.write_acquire()
-            self.server.log.debug("Acquired the upgrade WRITE lock.")
+            logger.debug("Acquired the upgrade WRITE lock.")
 
             # Check to see if we're in a state to upgrade
             main_state = stateman.get_state()
@@ -471,7 +472,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
                 msg = "Can't upgrade - main state is: " + main_state
                 self.error(clierror.ERROR_BUSY, 'FAIL: ' + msg)
-                self.server.log.debug(msg)
+                logger.debug(msg)
 
                 self.server.upgrade_rwlock.write_release()
 
@@ -504,14 +505,13 @@ class CliHandler(socketserver.StreamRequestHandler):
                        stateman.upgrading(),
                        main_state,
                        str(ex))
-            self.server.log.debug(
-                       "FAIL: Can't disable upgrade: " + \
-                       "upgrading: %s, " + \
-                       "main state: %s, " + \
-                       "error: %s",
-                       stateman.upgrading(),
-                       main_state,
-                       str(ex))
+            logger.debug("FAIL: Can't disable upgrade: " + \
+                         "upgrading: %s, " + \
+                         "main state: %s, " + \
+                         "error: %s",
+                         stateman.upgrading(),
+                         main_state,
+                         str(ex))
             return
 
         combined_status = {}
@@ -569,14 +569,13 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.report_status(self._package_info(packages))
             return
         elif cmd == 'controller':
-            self.server.log.debug("upgrade controller: Attempting to " + \
-                                  "acquire the upgrade WRITE lock.")
+            logger.debug("upgrade controller: Attempting to " + \
+                         "acquire the upgrade WRITE lock.")
             try:
                 self.server.upgrade_rwlock.write_acquire()
-                self.server.log.debug(
-                    "upgrade install: Acquired the upgrade WRITE lock.")
+                logger.debug("upgrade: Acquired the upgrade WRITE lock.")
 
-                self.server.log.info("Upgrading the controller.")
+                logger.info("Upgrading the controller.")
                 cmd = "nohup /usr/sbin/palette-update --now &"
                 process = subprocess.Popen(cmd,
                                stdout=subprocess.PIPE,
@@ -600,8 +599,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                     body['stderr'] = stderr
 
                 self.report_status(body)
-                self.server.log.debug("upgrade_controller result: %s",
-                                       str(body))
+                logger.debug("upgrade_controller result: %s", str(body))
                 return
             finally:
                 self.server.upgrade_rwlock.write_release()
@@ -666,7 +664,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                     StateManager.STATE_STOPPED_UNEXPECTED):
             self.error(clierror.ERROR_BUSY,
                        "FAIL: Can't backup - main state is: %s", main_state)
-            self.server.log.debug("Can't backup - main state is: " + main_state)
+            logger.debug("Can't backup - main state is: " + main_state)
             aconn.user_action_unlock()
             return
 
@@ -681,11 +679,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             msg = "Can't backup - reported status is: " + reported_status
             self.error(clierror.ERROR_WRONG_STATE, 'FAIL: ' + msg)
-            self.server.log.debug(msg)
+            logger.debug(msg)
             aconn.user_action_unlock()
             return
 
-        self.server.log.debug("---------------Starting Backup-----------------")
+        logger.debug("---------------Starting Backup-----------------")
         if cmd.dict.has_key('userid'):
             userid = int(cmd.dict['userid'])
         else:
@@ -711,7 +709,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         try:
             body = self.server.backup_cmd(agent, userid)
         except StandardError:
-            self.server.log.exception("Backup Exception:")
+            logger.exception("Backup Exception:")
             line = "Backup Error. Traceback: %s" % traceback_string()
             body = {'error': line, 'info': 'Failure'}
 
@@ -973,7 +971,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                     StateManager.STATE_STOPPED_UNEXPECTED):
             msg = "Can't backup before restore - main state is: " + main_state
             self.error(clierror.ERROR_WRONG_STATE, "FAIL: " + msg)
-            self.server.log.debug(msg)
+            logger.debug(msg)
             aconn.user_action_unlock()
             return
 
@@ -993,7 +991,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             GetFile(self.server, agent, backup_name, check_only=True)
         except IOError as ex:
             self.error(clierror.ERROR_COMMAND_FAILED, str(ex))
-            self.server.log.debug(str(ex))
+            logger.debug(str(ex))
             body = {'stderr': ex, 'stdout':"", "error":""}
             self.server.event_control.gen(EventControl.RESTORE_FAILED,
                                           dict(body.items() + data.items()),
@@ -1014,7 +1012,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         else:
             msg = "Can't backup before restore - status is: " + reported_status
             self.error(clierror.ERROR_WRONG_STATE, "FAIL: " + msg)
-            self.server.log.debug(msg)
+            logger.debug(msg)
             aconn.user_action_unlock()
             return
 
@@ -1033,15 +1031,14 @@ class CliHandler(socketserver.StreamRequestHandler):
         if backup_first:
             # No alerts or state updates are done in backup_cmd().
             #FIXME: refactor do_backup() into do_backup() and backup()
-            self.server.log.debug(
-                        "----------Starting Backup for Restore----------")
+            logger.debug("----------Starting Backup for Restore----------")
             self.server.event_control.gen(
                 EventControl.BACKUP_BEFORE_RESTORE_STARTED, data, userid=userid)
 
             try:
                 body = self.server.backup_cmd(agent, userid)
             except StandardError:
-                self.server.log.exception("Backup for Restore Exception:")
+                logger.exception("Backup for Restore Exception:")
                 line = "Backup For Restore Error. Traceback: %s" % \
                         traceback_string()
                 body = {'error': line}
@@ -1073,7 +1070,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                 aconn.user_action_unlock()
                 return
 
-        self.server.log.debug("-------------Starting Restore---------------")
+        logger.debug("-------------Starting Restore---------------")
 
         # restore_cmd() updates the state correctly depending on the
         # success of backup, copy, stop, restore, etc.
@@ -1082,7 +1079,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                                             no_config=no_config, userid=userid,
                                             user_password=user_password)
         except StandardError:
-            self.server.log.exception("Restore Exception:")
+            logger.exception("Restore Exception:")
             line = "Restore Error: Traceback: %s" % traceback_string()
             body = {'error': line}
 
@@ -1167,11 +1164,11 @@ class CliHandler(socketserver.StreamRequestHandler):
         if cmd.dict.has_key('noconfig'):
             kwargs['data_only'] = True
 
-        self.server.log.debug("-----------Starting Restore (URL)-------------")
+        logger.debug("-----------Starting Restore (URL)-------------")
         try:
             body = self.server.restore_url(agent, url, **kwargs)
         except StandardError:
-            self.server.log.exception("Restore Exception:")
+            logger.exception("Restore Exception:")
             line = "Restore Error: Traceback: %s" % traceback_string()
             body = {'error': line}
 
@@ -1363,7 +1360,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                 body = self.server.get_pinfo(agent, update_agent=True)
             except IOError as ex:
                 self.error(clierror.ERROR_COMMAND_FAILED, str(ex))
-                self.server.log.info("pinfo failed: %s", str(ex))
+                logger.info("pinfo failed: %s", str(ex))
                 return
 
             self.report_status(body)
@@ -1388,8 +1385,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                 body = self.server.get_pinfo(agent, update_agent=True)
             except IOError as ex:
                 self.error(clierror.ERROR_COMMAND_FAILED, str(ex))
-                self.server.log.info("pinfo failed for agent '%s': %s",
-                                            agent.displayname, str(ex))
+                logger.info("pinfo failed for agent '%s': %s",
+                            agent.displayname, str(ex))
                 return
 
             pinfos.append(body)
@@ -1419,7 +1416,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                 body = self.server.get_info(agent, update_agent=True)
             except IOError as ex:
                 self.error(clierror.ERROR_COMMAND_FAILED, str(ex))
-                self.server.log.info("info failed: %s", str(ex))
+                logger.info("info failed: %s", str(ex))
                 return
 
             self.report_status(body)
@@ -1444,8 +1441,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                 body = self.server.get_info(agent, update_agent=True)
             except IOError as ex:
                 self.error(clierror.ERROR_COMMAND_FAILED, str(ex))
-                self.server.log.info("info failed for agent '%s': %s",
-                                     agent.displayname, str(ex))
+                logger.info("info failed for agent '%s': %s",
+                            agent.displayname, str(ex))
                 return
 
             infos.append(body)
@@ -1525,7 +1522,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         except IOError as ex:
             self.error(clierror.ERROR_COMMAND_FAILED,
                        "FAIL: Can't get yml: %s", str(ex))
-            self.server.log.debug("FAIL: Can't get yml: %s", str(ex))
+            logger.debug("FAIL: Can't get yml: %s", str(ex))
             return
         self.report_status(body)
 
@@ -1753,7 +1750,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         stateman.update(StateManager.STATE_STARTING)
 
-        self.server.log.debug("--------------Starting Tableau----------------")
+        logger.debug("--------------Starting Tableau----------------")
         # fixme: Reply with "OK" only after the agent received the command?
         self.ack()
 
@@ -1839,7 +1836,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         if reported_status not in good_reported_status:
             msg = "Can't stop/restart - reported status is: " + reported_status
             self.error(clierror.ERROR_WRONG_STATE, "FAIL: " + msg)
-            self.server.log.debug(msg)
+            logger.debug(msg)
             aconn.user_action_unlock()
             return False
 
@@ -1872,8 +1869,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             event_backup_failed = EventControl.BACKUP_BEFORE_RESTART_FAILED
 
         if backup_first:
-            self.server.log.debug(
-                "------------Starting Backup before %s---------------" % action)
+            logger.debug("-----------Starting Backup before %s--------------",
+                         action)
             stateman.update(state_started)
 
             data = agent.todict()
@@ -1950,7 +1947,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # results in an immediate check of the state.
         stateman.update(StateManager.STATE_RESTARTING)
 
-        self.server.log.debug("-------------Restarting Tableau----------------")
+        logger.debug("-------------Restarting Tableau----------------")
         # fixme: Reply with "OK" only after the agent received the command?
         body = self.server.cli_cmd('tabadmin restart', agent, timeout=60*60)
 
@@ -2030,7 +2027,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # results in an immediate check of the state.
         stateman.update(StateManager.STATE_STOPPING)
 
-        self.server.log.debug("--------------Stopping Tableau-----------------")
+        logger.debug("--------------Stopping Tableau-----------------")
         # fixme: Reply with "OK" only after the agent received the command?
         body = self.server.cli_cmd('tabadmin stop', agent, timeout=60*30)
         if success(body) and start_maint:
@@ -2373,9 +2370,9 @@ class CliHandler(socketserver.StreamRequestHandler):
         dirpath = agent.path.join(agent.install_dir, "maint", "www", "image")
         body = cloud_instance.put(agent, entry, keypath, pwd=dirpath)
         if failed(body):
-            self.server.log.info("Put to keypath '%s', dirpath '%s', " + \
-                                 "cloud type '%s' failed.",
-                                 keypath, dirpath, cloud_type)
+            logger.info("Put to keypath '%s', dirpath '%s', " + \
+                        "cloud type '%s' failed.",
+                        keypath, dirpath, cloud_type)
             self.report_status(body)
             return
 
@@ -2385,9 +2382,8 @@ class CliHandler(socketserver.StreamRequestHandler):
             delete_body = {'error': str(ex)}
 
         if failed(delete_body):
-            self.server.log.info("Delete path '%s', " + \
-                                 "cloud type '%s' failed.",
-                                 keypath, cloud_type)
+            logger.info("Delete path '%s', cloud type '%s' failed.",
+                        keypath, cloud_type)
             self.report_status(delete_body)
             return
 
@@ -2815,8 +2811,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         content_type = res.getheader('Content-Type', '').lower()
         headers = res.getheaders()
 
-        self.server.log.info("GET %s, Headers: '%s'",
-                             url, str(res.getheaders()))
+        logger.info("GET %s, Headers: '%s'", url, str(res.getheaders()))
 
         if content_type == 'application/x-json':
             # This extended type indicates the agent generated the JSON,
@@ -2878,7 +2873,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
 
     def handle_exception(self, before_state, telnet_command):
-        self.server.log.exception("Command Failed with Exception:")
+        logger.exception("Command Failed with Exception:")
 
         # Remove password if it was:
         #   ad verify username password
@@ -2918,7 +2913,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             if not data:
                 break
 
-            self.server.log.debug("telnet command: '%s'", data)
+            logger.debug("telnet command: '%s'", data)
             stateman = self.server.state_manager
             before_state = stateman.get_state()
 
@@ -2931,8 +2926,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                 raise
             except BaseException:
                 self.handle_exception(before_state, data)
-                self.server.log.error("Fatal: Exiting clihandler command " + \
-                                      " parse '%s' on exception.", data)
+                logger.error("Fatal: Exiting clihandler command " + \
+                             " parse '%s' on exception.", data)
                 # pylint: disable=protected-access
                 os._exit(91)
 
@@ -2953,8 +2948,8 @@ class CliHandler(socketserver.StreamRequestHandler):
                 self.error(clierror.ERROR_WRONG_STATE, ex.message)
             except BaseException:
                 self.handle_exception(before_state, data)
-                self.server.log.error("Fatal: Exiting clihandler command " + \
-                                      "'%s' on exception.", data)
+                logger.error("Fatal: Exiting clihandler command " + \
+                             "'%s' on exception.", data)
                 # pylint: disable=protected-access
                 os._exit(92)
             finally:

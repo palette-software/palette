@@ -1,3 +1,4 @@
+import logging
 import os
 import socket
 import ssl
@@ -26,6 +27,8 @@ from odbc import ODBC
 from filemanager import FileManager
 from system import SystemKeys
 from util import sizestr, is_ip, traceback_string, failed
+
+logger = logging.getLogger()
 
 def protected(f):
     """Decorater."""
@@ -174,7 +177,6 @@ class AgentManager(threading.Thread):
         self.server = server
         self.system = server.system
         self.config = self.server.config
-        self.log = self.server.log
         self.domainid = self.server.domain.domainid
         self.envid = self.server.environment.envid
         self.metrics = self.server.metrics
@@ -207,12 +209,12 @@ class AgentManager(threading.Thread):
 
             if not self.config.has_option('controller', 'ssl_cert_file'):
                 msg = "Missing 'ssl_cert_file' certificate file specification"
-                self.log.critical(msg)
+                logger.critical(msg)
                 raise IOError(msg)
             self.cert_file = self.config.get('controller', 'ssl_cert_file')
             if not os.path.exists(self.cert_file):
-                self.log.critical("ssl enabled, but no ssl certificate: %s",
-                                  self.cert_file)
+                logger.critical("ssl enabled, but no ssl certificate: %s",
+                                self.cert_file)
                 raise IOError("Certificate file not found: " + self.cert_file)
 
     def update_last_disconnect_time(self):
@@ -238,8 +240,8 @@ class AgentManager(threading.Thread):
            - Adds the agent to the connected agents dictionary.
        """
 
-        self.log.debug("register: new agent name %s, uuid %s, conn_id %d", \
-                       agent.hostname, agent.uuid, agent.connection.conn_id)
+        logger.debug("register: new agent name %s, uuid %s, conn_id %d", \
+                     agent.hostname, agent.uuid, agent.connection.conn_id)
 
         new_agent_type = agent.agent_type
 
@@ -247,8 +249,8 @@ class AgentManager(threading.Thread):
            (new_agent_type == AgentManager.AGENT_TYPE_WORKER and \
               orig_agent_type == AgentManager.AGENT_TYPE_ARCHIVE and \
               self._displayname_changeable(agent)):
-            self.log.debug("register: setting or changing displayname for %s",
-                            str(agent.displayname))
+            logger.debug("register: setting or changing displayname for %s",
+                         str(agent.displayname))
 
             (displayname, display_order) = self._calc_new_displayname(agent)
             agent.displayname = displayname
@@ -260,17 +262,18 @@ class AgentManager(threading.Thread):
         for key in self.agents:
             atmp = self.agents[key]
             if atmp.uuid == agent.uuid:
-                self.log.info("Agent already connected with uuid '%s': " + \
-                    "will remove it and use the new connection.", agent.uuid)
+                logger.info("Agent already connected with uuid '%s': "
+                            "will remove it and use the new connection.",
+                            agent.uuid)
                 self.remove_agent(atmp, ("An agent is already connected " + \
                     "with uuid '%s': will remove it and use the new " + \
                         "connection.") % (agent.uuid), gen_event=False)
                 break
             elif new_agent_type == AgentManager.AGENT_TYPE_PRIMARY and \
                         atmp.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-                self.log.info("A primary agent is already connected: " + \
-                        "Will remove it and keep the new primary agent " + \
-                        "connection.")
+                logger.info("A primary agent is already connected: "
+                            "Will remove it and keep the new primary agent "
+                            "connection.")
                 self.remove_agent(atmp,
                         "A primary agent is already connected: Will " + \
                         "remove it and keep the new primary agent " + \
@@ -283,14 +286,14 @@ class AgentManager(threading.Thread):
         # for the agent.
         agent.last_connection_time = func.now()
 
-        self.log.debug("register agent: %s", agent.displayname)
+        logger.debug("register agent: %s", agent.displayname)
 
         self.agents[agent.connection.conn_id] = agent
 
-        self.log.debug("register: orig_agent_type: %s, new_agent_type: %s",
+        logger.debug("register: orig_agent_type: %s, new_agent_type: %s",
                        str(orig_agent_type), new_agent_type)
         if new_agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-            self.log.debug("register: Initializing state entries on connect")
+            logger.debug("register: Initializing state entries on connect")
             self.server.state_manager.update(StateManager.STATE_PENDING)
 
             # Check to see if we need to reclassify archive agents as
@@ -321,12 +324,12 @@ class AgentManager(threading.Thread):
                 agent_type = AgentManager.AGENT_TYPE_WORKER
             else:
                 agent_type = AgentManager.AGENT_TYPE_ARCHIVE
-            self.log.debug("set_all_agent_types for %s. Was %s is %s.",
-                            entry.displayname, entry.agent_type, agent_type)
+            logger.debug("set_all_agent_types for %s. Was %s is %s.",
+                         entry.displayname, entry.agent_type, agent_type)
 
             if entry.agent_type != agent_type:
-                self.log.debug("Correcting agent type from %s to %s",
-                               entry.agent_type, agent_type)
+                logger.debug("Correcting agent type from %s to %s",
+                             entry.agent_type, agent_type)
                 # Set the agent to the correct type.
                 entry.agent_type = agent_type
 
@@ -354,21 +357,20 @@ class AgentManager(threading.Thread):
 
         if agent.displayname is None or agent.displayname == "":
             # We are the first to name this one.
-            self.log.debug("naming: Empty displayname. Changeable.")
+            logger.debug("naming: Empty displayname. Changeable.")
             return True
 
         if agent.agent_type != AgentManager.AGENT_TYPE_WORKER:
             # Only workers could potentially need to be renamed/classified.
-            self.log.debug("naming: Wrong type to change: %s", agent.agent_type)
+            logger.debug("naming: Wrong type to change: %s", agent.agent_type)
             return False
 
         # Let's see if the worker is using a displayname we probably gave it
         # when we thought it was an archive.
 
         if agent.displayname == agent.hostname:
-            self.log.debug(
-                    "naming: Looks like we named it earlier: Can rename: %s",
-                    agent.displayname)
+            logger.debug("naming: it was named earlier: Can rename: %s",
+                         agent.displayname)
             return True
         else:
             return False
@@ -397,8 +399,8 @@ class AgentManager(threading.Thread):
         if new_agent.agent_type == AgentManager.AGENT_TYPE_WORKER:
             return self._calc_worker_name(new_agent)
 
-        self.log.error("calc_new_displayname: INVALID agent type: %s",
-                        new_agent.agent_type)
+        logger.error("calc_new_displayname: INVALID agent type: %s",
+                     new_agent.agent_type)
         return ("INVALID AGENT TYPE: %s" % new_agent.agent_type, 0)
 
     def _calc_worker_name(self, new_agent):
@@ -409,14 +411,13 @@ class AgentManager(threading.Thread):
         try:
             hosts = self.get_yml_list('worker.hosts')
         except ValueError, ex:
-            self.log.error("calc_worker_name: %s", str(ex))
+            logger.error("calc_worker_name: %s", str(ex))
             return (AgentManager.WORKER_TEMPLATE % 0,
                     AgentManager.WORKER_START)
 
         if len(hosts) <= 1:
-            self.log.error(
-                "calc_worker_name: host count is too small: %d: %s",
-                                                        len(hosts), str(hosts))
+            logger.error("calc_worker_name: host count is too small: %d: %s",
+                         len(hosts), str(hosts))
             return (AgentManager.WORKER_TEMPLATE % 0,
                     AgentManager.WORKER_START)
 
@@ -433,8 +434,8 @@ class AgentManager(threading.Thread):
 
             value = self.server.yml.get(worker_key, default=None)
             if not value:
-                self.log.error("calc_worker_name: Missing yml key: %s",
-                               worker_key)
+                logger.error("calc_worker_name: Missing yml key: %s",
+                             worker_key)
                 return (AgentManager.WORKER_TEMPLATE % 0,
                         AgentManager.WORKER_START)
 
@@ -450,15 +451,14 @@ class AgentManager(threading.Thread):
                     worker = value
                 if worker.upper() != hostname.upper():
                     continue
-            self.log.debug("calc_worker_name: We are %s (%s)",
-                           worker_key, value)
+            logger.debug("calc_worker_name: We are %s (%s)",
+                         worker_key, value)
             return (AgentManager.WORKER_TEMPLATE % worker_num,
                         AgentManager.WORKER_START + worker_num)
 
-        self.log.error(
-                "calc_worker_name: yml file was missing our " + \
-                "IP (%s) or name: %s", new_agent.ip_address,
-                new_agent.hostname)
+        logger.error("calc_worker_name: yml file was missing our " + \
+                     "IP (%s) or name: %s", new_agent.ip_address,
+                     new_agent.hostname)
 
         return (AgentManager.WORKER_TEMPLATE % 0,
                 AgentManager.WORKER_START)
@@ -470,9 +470,8 @@ class AgentManager(threading.Thread):
             return (new_agent.hostname,
                     AgentManager.ARCHIVE_START)
 
-        self.log.error(
-            "calc_archive_name: agent has no hostname! Don't know " + \
-            "what to name it: uuid: %s", new_agent.uuid)
+        logger.error("calc_archive_name: agent has no hostname! Don't know "
+                     "what to name it: uuid: %s", new_agent.uuid)
 
         return ("UNNAMED NON-WORKER/PRIMARY", AgentManager.WORKER_START)
 
@@ -487,7 +486,7 @@ class AgentManager(threading.Thread):
            is known and has been set."""
 
         if not agent.agent_type:
-            self.log.error("Unknown agent type for agent: " + agent.displayname)
+            logger.error("Unknown agent type for agent: " + agent.displayname)
 
         # FIXME: make automagic based on self.__table__.columns
         # Below are the only ones really needed as the others come
@@ -508,10 +507,9 @@ class AgentManager(threading.Thread):
         # If 'hostname' is ever updated from pinfo, mind 'static-hostname'
 
         if 'ip-address' in pinfo and pinfo['ip-address'] != agent.ip_address:
-            self.log.debug(
-                "update_agent_info_other: Updating ip address from %s to %s",
-                                                       agent.ip_address,
-                                                       pinfo['ip-address'])
+            logger.debug("update_agent_info_other: "
+                         "Updating ip address from %s to %s",
+                         agent.ip_address, pinfo['ip-address'])
             agent.ip_address = pinfo['ip-address']
             session = meta.Session()
             agentid = agent.agentid
@@ -537,8 +535,7 @@ class AgentManager(threading.Thread):
         # pylint: disable=too-many-locals
 
         if not agent.agent_type:
-            self.log.error("Unknown agent type for agent: %s",
-                                                    agent.displayname)
+            logger.error("Unknown agent type for agent: " + agent.displayname)
             return False
 
         session = meta.Session()
@@ -555,19 +552,19 @@ class AgentManager(threading.Thread):
         if agent.iswin:
             if aconn.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
                 if not 'tableau-data-dir' in pinfo:
-                    self.log.error("Missing 'tableau-data-dir' in pinfo: %s",
-                                    pinfo)
+                    logger.error("Missing 'tableau-data-dir' in pinfo: %s",
+                                 pinfo)
                     return False
                 parts = pinfo['tableau-data-dir'].split(':')
                 if len(parts) != 2:
-                    self.log.error("Bad format for tableau-install-dir: %s",
-                                   pinfo['tableau-data-dir'])
+                    logger.error("Bad format for tableau-install-dir: %s",
+                                 pinfo['tableau-data-dir'])
                     return False
 
             # fixme
             parts = agent.data_dir.split(':')
             if len(parts) != 2:
-                self.log.error("Bad format for data-dir: %s", agent.data_dir)
+                logger.error("Bad format for data-dir: %s", agent.data_dir)
                 return False
             palette_data_dir = agent.path.join(parts[1], self.server.DATA_DIR)
         else:
@@ -589,8 +586,9 @@ class AgentManager(threading.Thread):
                     if agent.iswin:
                         name = name.upper()
                 else:
-                    self.log.error("volume missing 'name' in pinfo for " + \
-                        "agentid %d. Will ignore: %s", agentid, str(volume))
+                    logger.error("volume missing 'name' in pinfo for "
+                                 "agentid %d. Will ignore: %s",
+                                 agentid, str(volume))
                     continue
 
                 # Check to see if the volume already exists.
@@ -668,11 +666,11 @@ class AgentManager(threading.Thread):
                                 # We sorted the volumes by name in reverse
                                 # order so '/' is checked last.
                                 if entry.name != '/':
-                                    self.log.error("entry.archive True " + \
-                                        "not agent.iswin, " + \
-                                        "linux_archive_volume_found " + \
-                                        "and entry.name != '/': %s" + \
-                                        entry.name)
+                                    logger.error("entry.archive True "
+                                                 "not agent.iswin, "
+                                                 "linux_archive_volume_found "
+                                                 "and entry.name != '/': %s",
+                                                 entry.name)
                                 entry.archive = False
                             else:
                                 linux_archive_volume_found = True
@@ -706,8 +704,7 @@ class AgentManager(threading.Thread):
         elif usage_color == 'r':
             event = EventControl.DISK_USAGE_ABOVE_HIGH_WATERMERK
         else:
-            self.log.error("gen_disk_event: Invalid usage color: %s",
-                           usage_color)
+            logger.error("gen_disk_event: Invalid usage color: " + usage_color)
             return
 
         msg = \
@@ -810,7 +807,7 @@ class AgentManager(threading.Thread):
         """
 
         if not agent.agentid:
-            self.log.debug("forget:  Won't try to forget agentid of None")
+            logger.debug("forget:  Won't try to forget agentid of None")
             # Can happen if we sent a failed command to the agent
             # that hasn't been remembered yet.
             return False
@@ -823,14 +820,14 @@ class AgentManager(threading.Thread):
                 filter(Agent.conn_id == agent.conn_id).\
                 one()
         except NoResultFound:
-            self.log.debug(
-                ("forget: Not found (was probably recently updated with a " + \
-                "new conn_id by a new thread).  agentid: %d, conn_id: %d") % \
-                (agent.agentid, agent.conn_id))
-
+            logger.debug("forget: Not found "
+                         "(was probably recently updated with a "
+                         "new conn_id by a new thread).  "
+                         "agentid: %d, conn_id: %d",
+                         agent.agentid, agent.conn_id)
         else:
-            self.log.debug("forget: Forgot agentid: %d, conn_id: %d",
-                           agent.agentid, agent.conn_id)
+            logger.debug("forget: Forgot agentid: %d, conn_id: %d",
+                         agent.agentid, agent.conn_id)
 
         session.query(Agent).\
             filter(Agent.agentid == agent.agentid).\
@@ -861,8 +858,8 @@ class AgentManager(threading.Thread):
             temp_agent = Agent.get_by_uuid(self.envid, agent.uuid)
             make_transient(temp_agent)
             if temp_agent == None:
-                self.log.info("all_agents: agent unexpected gone from db: %s",
-                               agent.displayname)
+                logger.info("all_agents: agent unexpected gone from db: %s",
+                            agent.displayname)
                 continue
 
             if not temp_agent.enabled:
@@ -989,10 +986,10 @@ class AgentManager(threading.Thread):
         conn_id = agent.connection.conn_id
         forgot = False
         if self.agents.has_key(conn_id):
-            self.log.debug("Removing agent with conn_id %d, uuid %s, " + \
-                           "name %s, reason: %s", conn_id, uuid,
-                            self.agents[conn_id].connection.auth['hostname'],
-                            reason)
+            logger.debug("Removing agent with conn_id %d, uuid %s, " + \
+                         "name %s, reason: %s", conn_id, uuid,
+                         self.agents[conn_id].connection.auth['hostname'],
+                         reason)
 
             # Need to update the last_disconect_time before generating
             # the event so the disconnect event has the correct
@@ -1012,25 +1009,23 @@ class AgentManager(threading.Thread):
                                                   data)
                     agent.connection.sent_disconnect_event = True
                 else:
-                    self.log.debug(
-                            "Already sent the disconnect event for conn_id %d",
-                            conn_id)
-            self.log.debug("remove_agent: closing agent socket.")
+                    logger.debug("Already sent the disconnect for conn_id %d",
+                                 conn_id)
+            logger.debug("remove_agent: closing agent socket.")
             if self._close(agent.connection.socket):
-                self.log.debug("remove_agent: close agent socket succeeded")
+                logger.debug("remove_agent: close agent socket succeeded")
             else:
-                self.log.debug("remove_agent: close agent socket failed")
+                logger.debug("remove_agent: close agent socket failed")
 
             del self.agents[conn_id]    # Deletes original one
         else:
-            self.log.debug("remove_agent: No agent with conn_id %d", conn_id)
+            logger.debug("remove_agent: No agent with conn_id %d", conn_id)
 
         if not forgot:
             return False
 
         if agent.agent_type == AgentManager.AGENT_TYPE_PRIMARY:
-            self.log.debug(
-                        "remove_agent: Initializing state entries on removal")
+            logger.debug("remove_agent: Initializing state entries on removal")
             self.server.state_manager.update(StateManager.STATE_DISCONNECTED)
             # Note: We don't update/clear the "reported" state from
             # a previous agent, so the user will see the last
@@ -1039,22 +1034,22 @@ class AgentManager(threading.Thread):
         try:
             session.expunge(agent)      # Removes the other one
         except InvalidRequestError, ex:
-            self.log.error("remove_agent expunge error: %s", str(ex))
+            logger.error("remove_agent expunge error: %s", str(ex))
         #make_transient(agent)  # done above
-        self.log.error("after expunge: %s", str(agent.todict()))
+        logger.error("after expunge: %s", str(agent.todict()))
 
         try:
             meta.Session.remove()
         except InvalidRequestError, ex:
-            self.log.error("remove_agent remove error: %s", str(ex))
+            logger.error("remove_agent remove error: %s", str(ex))
 
     def _close(self, sock):
-        self.log.warn("agentmanager._close socket")
+        logger.warn("agentmanager._close socket")
         try:
             sock.shutdown(socket.SHUT_RDWR)
             sock.close()
         except socket.error as ex:
-            self.log.debug("agentmanager._close socket failure: " + str(ex))
+            logger.debug("agentmanager._close socket failure: " + str(ex))
             return False
         return True
 
@@ -1072,14 +1067,14 @@ class AgentManager(threading.Thread):
         try:
             sock.bind((host, port))
         except socket.error as ex:
-            self.log.error("Fatal error: Could not bind to port %d: %s",
-                                                               port, str(ex))
+            logger.error("Fatal error: Could not bind to port %d: %s",
+                         port, str(ex))
             # NOTE: this call to _exit is correct.
             # pylint: disable=protected-access
             os._exit(99)
 
         sock.listen(8)
-        self.log.debug("Listening on port %d on %s", port, host)
+        logger.debug("Listening on port %d on %s", port, host)
         return sock
 
     def run(self):
@@ -1100,14 +1095,14 @@ class AgentManager(threading.Thread):
         session.commit()
 
         while True:
-            self.log.debug("about to select on %s", str(socks))
+            logger.debug("about to select on %s", str(socks))
             readable, _, _ = select.select(socks, [], [])
-            self.log.debug("select returned: %s", readable)
+            logger.debug("select returned: %s", readable)
             for sock in readable:
                 try:
                     conn, addr = sock.accept()
                 except socket.error:
-                    self.log.debug("Accept failed on socket %d.", sock.fileno())
+                    logger.debug("Accept failed on socket %d.", sock.fileno())
                     continue
 
                 if sock.fileno() == sock_main.fileno():
@@ -1116,10 +1111,10 @@ class AgentManager(threading.Thread):
                                     sock.fileno() == sock_clear.fileno():
                     ssl_enable = False
                 else:
-                    self.log.debug("Bad code: sock fileno %d, main %d",
+                    logger.debug("Bad code: sock fileno %d, main %d",
                                     sock.fileno(), sock_main.fileno())
                     if sock_clear:
-                        self.log.debug("sock_clear fileno %d",
+                        logger.debug("sock_clear fileno %d",
                                                     sock_clear.fileno())
                     # pylint: disable=protected-access
                     os._exit(101)
@@ -1139,14 +1134,14 @@ class AgentManager(threading.Thread):
         """called with agentmanager lock"""
         for key in self.agents:
             agent = self.agents[key]
-            self.log.debug("agent fileno to close: %d", agent.socket.fileno())
+            logger.debug("agent fileno to close: %d", agent.socket.fileno())
             if agent.connection.socket.fileno() == filedes:
-                self.log.debug("Agent closed connection for: %s", key)
+                logger.debug("Agent closed connection for: %s", key)
                 agent.socket.close()
                 del self.agents[key]
                 return
 
-        self.log.error("Couldn't find agent with fd: %d", filedes)
+        logger.error("Couldn't find agent with fd: %d", filedes)
 
     def handle_agent_connection_pre(self, conn, addr, ssl_enable):
         """Thread function: spawned on a new connection from an agent."""
@@ -1160,8 +1155,8 @@ class AgentManager(threading.Thread):
             self.server.event_control.gen(EventControl.SYSTEM_EXCEPTION,
                                       {'error': line,
                                        'version': self.server.version})
-            self.log.error("Fatal: Exiting agent_handle_connection_pre " + \
-                           "on exception.")
+            logger.error("Fatal: Exiting agent_handle_connection_pre " + \
+                         "on exception.")
             # pylint: disable=protected-access
             os._exit(90)
 
@@ -1182,8 +1177,8 @@ class AgentManager(threading.Thread):
                                            certfile=self.cert_file)
                 conn = ssl_sock
             except (ssl.SSLError, socket.error), ex:
-                self.log.info("Exception with ssl wrap from addr %s, " + \
-                              "peername %s: %s", addr, peername, str(ex))
+                logger.info("Exception with ssl wrap from addr %s, " + \
+                            "peername %s: %s", addr, peername, str(ex))
                 # http://bugs.python.org/issue9211, though takes
                 # a while to garbage collect and close the fd.
                 self._shutdown(conn)
@@ -1199,9 +1194,9 @@ class AgentManager(threading.Thread):
 
         try:
             aconn = AgentConnection(self.server, conn, addr, peername)
-            self.log.debug(
-                "New socket accepted from addr %s, peername %s, conn_id %d",
-                           addr, peername, aconn.conn_id)
+            logger.debug("New socket accepted from addr %s, "
+                         "peername %s, conn_id %d",
+                         addr, peername, aconn.conn_id)
 
             # sleep for 100ms to prevent:
             #  'An existing connection was forcibly closed by the remote host'
@@ -1212,19 +1207,20 @@ class AgentManager(threading.Thread):
             # FIXME: why is this a POST?
             body_json = aconn.http_send('POST', '/auth')
             if body_json:
-                self.log.debug("/auth returned " + str(body_json))
+                logger.debug("/auth returned " + str(body_json))
                 try:
                     body = json.loads(body_json)
                 except ValueError as ex:
-                    self.log.info("agentmanager with new connection "
-                         "from %s sent bad json data for /auth response: "
-                         "'%s'. Error: '%s'.  Will close the connection.",
-                         peername, body_json, str(ex))
+                    logger.info("agentmanager with new connection from %s "
+                                "sent bad json data for /auth response: "
+                                "'%s'. Error: '%s'.  "
+                                "Will close the connection.",
+                                peername, body_json, str(ex))
                     self._close(conn)
                     return
             else:
                 body = {}
-                self.log.debug("done.")
+                logger.debug("done.")
 
             # Inspect the reply to make sure it has all the required values.
             required = ['version',      # original
@@ -1243,7 +1239,7 @@ class AgentManager(threading.Thread):
 
             for item in required:
                 if not body.has_key(item):
-                    self.log.error("Missing '%s' from agent" % item)
+                    logger.error("Missing '%s' from agent", item)
                     self._close(conn)
                     return
 
@@ -1253,13 +1249,13 @@ class AgentManager(threading.Thread):
             license_key = domain_entry.license_key
             if license_key:
                 if not body.has_key('license-key'):
-                    self.log.error("Agent missing required 'license-key'")
+                    logger.error("Agent missing required 'license-key'")
                     self._close(conn)
                     return
                 agent_key = body['license-key'].strip()
                 if agent_key != license_key:
-                    self.log.error("Agent license is incorrect '%s' != '%s'",
-                                   agent_key, license_key)
+                    logger.error("Agent license is incorrect '%s' != '%s'",
+                                 agent_key, license_key)
                     self._close(conn)
                     return
 
@@ -1286,12 +1282,11 @@ class AgentManager(threading.Thread):
                     agent.connection = aconn
                     self.setup_agent(agent)
                 else:
-                    self.log.debug(
-                        "handle_agent_connection: unmonitored agent " + \
-                        "with displayname %s, uuid %s, conn_id %d" + \
-                        "has disconnected.",
-                        str(agent.displayname), agent.uuid,
-                        agent.connection.conn_id)
+                    logger.debug("handle_agent_connection: unmonitored agent "
+                                 "with displayname %s, uuid %s, conn_id %d"
+                                 "has disconnected.",
+                                 str(agent.displayname), agent.uuid,
+                                 agent.connection.conn_id)
                     return
 
             session = meta.Session()
@@ -1310,7 +1305,7 @@ class AgentManager(threading.Thread):
             self.ping_check(agent)
 
         except (socket.error, IOError, httplib.HTTPException) as ex:
-            self.log.warn("handle_agent_connection_error: " + str(ex))
+            logger.warn("handle_agent_connection_error: " + str(ex))
             self._close(aconn.socket)
 
             if agent:
@@ -1323,9 +1318,8 @@ class AgentManager(threading.Thread):
                         synchronize_session=False)
                     session.commit()
                 except BaseException as ex:
-                    self.log.info(
-                        "Updating failed agent last_disconnect_time failed: %s",
-                        str(ex))
+                    logger.info("Updating failed agent "
+                                "last_disconnect_time failed: %s", str(ex))
         finally:
             if acquired:
                 self.upgrade_rwlock.read_release()
@@ -1359,8 +1353,8 @@ class AgentManager(threading.Thread):
         except (IOError, ValueError, exc.InvalidStateError,
                 exc.HTTPException, httplib.HTTPException) as ex:
             self._close(aconn.socket)
-            self.log.error(str(ex))
-            self.log.debug(traceback.format_exc())
+            logger.error(str(ex))
+            logger.debug(traceback.format_exc())
             raise IOError(
                 "Bad agent with uuid: '%s', Disconnecting. Error: %s" % \
                 (uuid, str(ex)))
@@ -1431,13 +1425,12 @@ class AgentManager(threading.Thread):
         try:
             (_, primary_entry) = DiskCheck.get_primary_loc(agent, "")
         except DiskException, ex:
-            self.log.error("set_default_backup_destid: %s", str(ex))
+            logger.error("set_default_backup_destid: %s", str(ex))
             return
 
-        self.log.debug(
-            ("set_default_backup_destid: " + \
-            "volid: %d name %s, path %s") % \
-            (primary_entry.volid, primary_entry.name, primary_entry.path))
+        logger.debug("set_default_backup_destid: volid: %d name %s, path %s",
+                     primary_entry.volid, primary_entry.name,
+                     primary_entry.path)
 
         self.server.system.save(SystemKeys.BACKUP_DEST_ID, primary_entry.volid)
 
@@ -1456,20 +1449,20 @@ class AgentManager(threading.Thread):
         lines = ''.join(lines)
         route_path = agent.path.join(agent.data_dir, "archive", "routes.txt")
 
-        self.log.debug("save_routes: agent hostname '%s': saving to %s: '%s'",
+        logger.debug("save_routes: agent hostname '%s': saving to %s: '%s'",
                                     agent.hostname, route_path, lines)
         try:
             body = agent.filemanager.put(route_path, lines)
             if failed(body):
-                self.log.error("filemanager.put(%s) on %s failed with: %s",
+                logger.error("filemanager.put(%s) on %s failed with: %s",
                                agent.displayname, route_path, body['error'])
                 return False
         except IOError as ex:
-            self.log.error("filemanager.put(%s) on %s failed with: %s",
+            logger.error("filemanager.put(%s) on %s failed with: %s",
                            agent.displayname, route_path, str(ex))
             return False
 
-        self.log.debug("Saved agent file '%s' with contents: %s",
+        logger.debug("Saved agent file '%s' with contents: %s",
                        route_path, lines)
         return True
 
@@ -1494,11 +1487,11 @@ class AgentManager(threading.Thread):
         conn_id = aconn.conn_id
         while not self.server.noping:
             # Update log level in case it changed
-            self.log.setLevel(self.system[SystemKeys.DEBUG_LEVEL])
+            logger.setLevel(self.system[SystemKeys.DEBUG_LEVEL])
 
             if agent.enabled:
                 if conn_id not in self.all_agents(enabled_only=False):
-                    self.log.info(
+                    logger.info(
                             "ping_check: agent with connid %d is now gone",
                             conn_id)
                     return False    # end ping thread
@@ -1508,7 +1501,7 @@ class AgentManager(threading.Thread):
             temp_agent = Agent.get_by_uuid(self.envid, agent.uuid)
             make_transient(temp_agent)
             if temp_agent == None:
-                self.log.error(
+                logger.error(
                     "ping_check: Agent no longer exists with uuid: %s",
                     agent.uuid)
                 return False
@@ -1516,11 +1509,11 @@ class AgentManager(threading.Thread):
             if init_enabled == False and temp_agent.enabled == True:
                 # It was disabled on initial connection, but is now enabled,
                 # so return to continue the agent initialization.
-                self.log.debug("ping_check: Initially disabled agent " +
+                logger.debug("ping_check: Initially disabled agent " +
                                 "'%s', is now enabled.", agent.displayname)
                 return True
 
-            self.log.debug("ping: check for agent '%s', type '%s', " + \
+            logger.debug("ping: check for agent '%s', type '%s', " + \
                            "uuid '%s', conn_id %d, enabled %s.",
                            str(temp_agent.displayname),
                            str(temp_agent.agent_type),
@@ -1528,7 +1521,7 @@ class AgentManager(threading.Thread):
                            str(temp_agent.enabled))
 
             if not self.ping_agent(agent):
-                self.log.info("ping: failed. agent with conn_id %d is gone",
+                logger.info("ping: failed. agent with conn_id %d is gone",
                                conn_id)
                 return False
             time.sleep(self.ping_interval)
@@ -1544,16 +1537,15 @@ class AgentManager(threading.Thread):
         body = self.server.ping(agent)
         if body.has_key('error'):
             if stateman.upgrading():
-                self.log.info(
-                    ("Ping During UPDATE: Agent '%s', type '%s', " + \
-                    "uuid '%s', conn_id %d did  not respond to a " + \
-                    "ping.  Ignoring while UPGRADING.") %
-                    (agent.displayname, agent.agent_type, agent.uuid,
-                    agent.conn_id))
+                logger.info("Ping During UPDATE: Agent '%s', type '%s', "
+                            "uuid '%s', conn_id %d did  not respond to a "
+                            "ping.  Ignoring while UPGRADING.",
+                            agent.displayname, agent.agent_type,
+                            agent.uuid, agent.conn_id)
                 return True     # considered a success
 
             else:
-                self.log.info(
+                logger.info(
                     "Ping: Agent '%s', type '%s', uuid '%s', " + \
                     "conn_id %d, did not respond to a ping.  Removing.",
                     agent.displayname, agent.agent_type, agent.uuid,
@@ -1565,7 +1557,7 @@ class AgentManager(threading.Thread):
                 temp_agent = Agent.get_by_uuid(self.envid, agent.uuid)
                 make_transient(temp_agent)
                 if temp_agent == None:
-                    self.log.error(
+                    logger.error(
                         "ping_check: Agent no longer exists with uuid: %s",
                         agent.uuid)
                     return False
@@ -1575,7 +1567,7 @@ class AgentManager(threading.Thread):
                     self.remove_agent(agent, "Lost contact with an agent")
                 return False
         else:
-            self.log.debug(
+            logger.debug(
                 "Ping: Reply from agent '%s', type '%s', uuid %s, " + \
                 "conn_id %d, body: %s",
                     agent.displayname, agent.agent_type, agent.uuid,
@@ -1589,7 +1581,7 @@ class AgentManager(threading.Thread):
                         try:
                             cpu = float(counter['value'])
                         except ValueError as ex:
-                            self.log.error(
+                            logger.error(
                                 "ping: Error obtaining cpu metric: %s: %s",
                                 str(ex), str(body))
                             break

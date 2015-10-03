@@ -1,9 +1,12 @@
+import logging
 import os
 import time
 
 from cloud import CloudManager
 from files import FileManager
 from agent import AgentVolumesEntry
+
+logger = logging.getLogger()
 
 # This a transitory class - instantiated each time it is needed.
 class PlaceFile(object):
@@ -16,7 +19,6 @@ class PlaceFile(object):
                  enable_delete=True):
         # pylint: disable=too-many-arguments
         self.server = server
-        self.log = server.log
 
         self.copy_elapsed_time = 0
 
@@ -52,7 +54,7 @@ class PlaceFile(object):
                     'the Tableau primary agent, ' + \
                     'directory: %s') % self.dcheck.target_dir
 
-            self.log.debug(self.info)
+            logger.debug(self.info)
             self.delete_local_backup = False
             self.copy_failed = False
             self.copied = True
@@ -73,7 +75,7 @@ class PlaceFile(object):
                     ("\nDeletion of file failed after copy. "+\
                         "File: '%s'. Error was: %s") \
                         % (self.full_path, remove_body['error'])
-                self.log.debug(self.info)
+                logger.debug(self.info)
 
     def copy_to_cloud(self):
         if self.dcheck.target_entry.cloud_type == CloudManager.CLOUD_TYPE_S3:
@@ -93,7 +95,7 @@ class PlaceFile(object):
                     self.dcheck.target_entry.bucket,
                     self.full_path,
                     storage_body['error'])
-            self.log.debug(self.info)
+            logger.debug(self.info)
             self.delete_local_backup = False
             self.copied = False
             self.copy_failed = True
@@ -113,7 +115,7 @@ class PlaceFile(object):
                 (self.dcheck.target_entry.cloud_type,
                  self.dcheck.target_entry.bucket,
                  filename)
-            self.log.debug(self.info)
+            logger.debug(self.info)
             name = os.path.join(self.dcheck.parent_dir, self.name_only)
             # Backup was copied to gcs or s3
             self.placed_file_entry = self.server.files.add(name,
@@ -143,13 +145,12 @@ class PlaceFile(object):
                 "Backup will remain on the primary agent.") % \
                 (backup_vol, self.agent.agentid))
 
-        self.log.debug("backup_path: '%s' " + \
-                       "source_agent_vol_entry.path: '%s'",
-                       backup_path,
-                      source_agent_vol_entry.path)
+        logger.debug("backup_path: '%s' " + \
+                     "source_agent_vol_entry.path: '%s'",
+                     backup_path,
+                     source_agent_vol_entry.path)
         common = os.path.commonprefix([backup_path,
-                                      source_agent_vol_entry.path])
-
+                                       source_agent_vol_entry.path])
         if common:
             # Chop off the common part
             backup_path = backup_path[len(common):]
@@ -165,7 +166,7 @@ class PlaceFile(object):
                 "Error was: %s") \
                 % (self.full_path, self.dcheck.target_agent.displayname,
                                 self.dcheck.target_dir, copy_body['error'])
-            self.log.info(msg)
+            logger.info(msg)
             self.info += msg
             # Something was wrong with the copy to the non-primary agent.
             # Leave the backup on the primary after all.
@@ -185,7 +186,7 @@ class PlaceFile(object):
                 "File copied to agent '%s', directory: %s." % \
                 (self.dcheck.target_agent.displayname, self.dcheck.target_dir)
 
-            self.log.debug(self.info)
+            logger.debug(self.info)
             target_full_path = self.dcheck.target_agent.path.join(
                                         self.dcheck.target_dir, self.name_only)
 

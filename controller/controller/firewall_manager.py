@@ -1,10 +1,14 @@
+import logging
 from sqlalchemy import Column, Integer, BigInteger, String
 from sqlalchemy.schema import ForeignKey
 
 import akiri.framework.sqlalchemy as meta
 
+from .manager import Manager
 from agentmanager import AgentManager
 from event_control import EventControl
+
+logger = logging.getLogger()
 
 class FirewallEntry(meta.Base):
     # pylint: disable=no-init
@@ -22,7 +26,7 @@ class FirewallEntry(meta.Base):
     color = Column(String)
     status = Column(String)     # currently unused; for the future
 
-class FirewallManager(object):
+class FirewallManager(Manager):
 
     DEFAULT_PRIMARY_PORTS = [
             {"name": "HTTP",
@@ -37,10 +41,6 @@ class FirewallManager(object):
 
     # They are the same now.  May change in the future
     DEFAULT_NON_PRIMARY_PORTS = DEFAULT_PRIMARY_PORTS
-
-    def __init__(self, server):
-        self.server = server
-        self.log = server.log
 
     def init_firewall_ports(self, agent):
         """Make sure the agent's firewall ports have been initialized."""
@@ -86,10 +86,9 @@ class FirewallManager(object):
             if 'error' in body:
                 success = False
                 color = 'red'
-                self.log.error(\
-                    ("open_firewall_ports failed to open port '%s' on " +\
-                         "host %s, failed with: %s") % \
-                        (str(port), agent.displayname, body['error']))
+                logging.error("open_firewall_ports failed to open port '%s' "
+                              "on host %s, failed with: %s",
+                              str(port), agent.displayname, body['error'])
 
                 if entry.color != 'red':
                     data = agent.todict()

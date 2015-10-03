@@ -1,6 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
+""" Alerts delivery via Email """
+import logging
 import sys
 import time
 import traceback
@@ -23,8 +22,11 @@ from util import UNDEFINED
 
 from mako.template import Template
 from mako import exceptions
+
 import mako.runtime
 mako.runtime.UNDEFINED = UNDEFINED
+
+logger = logging.getLogger()
 
 class AlertEmail(object):
     #pylint: disable=too-many-instance-attributes
@@ -36,7 +38,6 @@ class AlertEmail(object):
         self.envid = server.environment.envid
         self.config = server.config
         self.system = server.system
-        self.log = server.log
         self.server = server
         self.email_limit_manager = EmailLimitManager(server)
 
@@ -51,8 +52,8 @@ class AlertEmail(object):
                                         default=self.DEFAULT_MAX_SUBJECT_LEN)
 
         if self.alert_level < 1:
-            self.log.error("Invalid alert level: %d, setting to %d",
-                           self.alert_level, self.DEFAULT_ALERT_LEVEL)
+            logger.error("Invalid alert level: %d, setting to %d",
+                         self.alert_level, self.DEFAULT_ALERT_LEVEL)
             self.alert_level = self.DEFAULT_ALERT_LEVEL
 
     def admin_emails(self, event_entry):
@@ -145,9 +146,8 @@ class AlertEmail(object):
             to_emails = [recipient]
         else:
             if not self.system[SystemKeys.ALERTS_ENABLED]:
-                self.log.info(
-                    "Alerts disabled.  Not sending: Subject: %s, Message: %s",
-                    subject, message)
+                logger.info("Alerts disabled.  Not sending: Subject: %s, %s",
+                            subject, message)
                 return
 
             to_emails = []
@@ -168,9 +168,9 @@ class AlertEmail(object):
                 bcc = [entry.email]
 
         if not to_emails and not bcc:
-            self.log.debug(
-                "No admin users exist with enabled email addresses.  " + \
-                "Not sending: Subject: %s, Message: %s", subject, message)
+            logger.debug("No admin users exist with enabled email addresses. "
+                         "Not sending: Subject: %s, Message: %s",
+                         subject, message)
             return
 
         # Send only PHONE-HOME related events if their palette license
@@ -181,9 +181,9 @@ class AlertEmail(object):
             entry = Domain.getone()
             if entry.expiration_time and \
                             datetime.utcnow() > entry.expiration_time:
-                self.log.debug("License expired. " +
-                                    "Not sending: Subject: %s, Message: %s",
-                                    subject, message)
+                logger.debug("License expired. " +
+                             "Not sending: Subject: %s, Message: %s",
+                             subject, message)
                 return
 
             if entry.contact_time:
@@ -191,10 +191,10 @@ class AlertEmail(object):
                                         entry.contact_time).total_seconds()
                 max_silence_time = self.system[SystemKeys.MAX_SILENCE_TIME]
                 if silence_time > max_silence_time and max_silence_time != -1:
-                    self.log.debug("Phonehome contact time is %d > %d. " +
-                                    "Not sending: Subject: %s, Message: %s",
-                                    silence_time, max_silence_time,
-                                    subject, message)
+                    logger.debug("Phonehome contact time is %d > %d. " +
+                                 "Not sending: Subject: %s, Message: %s",
+                                 silence_time, max_silence_time,
+                                 subject, message)
                     return
 
         if self.email_limit_manager.email_limit_reached(event_entry, eventid):
@@ -225,15 +225,14 @@ class AlertEmail(object):
             after EMAIL_MUTE_RECONNECT_SECONDS.
         """
         if not 'agentid' in data:
-            self.log.error("_mute_reconn_check: missing 'agentid': %s",
-                            str(data))
+            logger.error("_mute_reconn_check: missing 'agentid': " + str(data))
             return True
 
         agentid = data['agentid']
         entry = Agent.get_by_id(agentid)
         if not entry:
-            self.log.error("_mute_reconn_check: No old row for agentid %d",
-                           agentid)
+            logger.error("_mute_reconn_check: No old row for agentid %d",
+                         agentid)
             return True
 
         if not entry.last_disconnect_time:
@@ -242,13 +241,13 @@ class AlertEmail(object):
         timedelta = int((datetime.utcnow() - \
                         entry.last_disconnect_time).total_seconds())
         if timedelta <= self.system[SystemKeys.EMAIL_MUTE_RECONNECT_SECONDS]:
-            self.log.debug("_mute_reconn_check: Will not send reconnect "
-                           "email, too soon, timedelta: %d", timedelta)
+            logger.debug("_mute_reconn_check: Will not send reconnect "
+                         "email, too soon, timedelta: %d", timedelta)
 #            print "will not send reconnect: too soon", timedelta
             return False    # Don't send the reconnect email
 #        print "will send reconnect email", timedelta
-        self.log.debug("_mute_reconn_check: Will send reconnect "
-                       "email, timedelta: %d", timedelta)
+        logger.debug("_mute_reconn_check: Will send reconnect "
+                     "email, timedelta: %d", timedelta)
         return True         # send the reconenct email
 
     def _mute_dis_check(self, data, to_emails, bcc, subject, message):
@@ -276,16 +275,15 @@ class AlertEmail(object):
         # pylint: disable=too-many-arguments
 
 #        print "dis thread for", subject
-        self.log.debug("_dis_thread for subject %s", subject)
+        logger.debug("_dis_thread for subject %s", subject)
         if not 'agentid' in data:
-            self.log.error("_dis_thread: missing 'agentid': %s", str(data))
+            logger.error("_dis_thread: missing 'agentid': %s", str(data))
             return
         agentid = data['agentid']
 
         old_entry = Agent.get_by_id(agentid)
         if not old_entry:
-            self.log.error("_dis_thread: No old row for agentid %d",
-                       agentid)
+            logger.error("_dis_thread: No old row for agentid %d", agentid)
             return
         old_last_disconnect_time = old_entry.last_disconnect_time
 
@@ -295,26 +293,26 @@ class AlertEmail(object):
         meta.Session.expire(old_entry)
         entry = Agent.get_by_id(agentid)
         if not entry:
-            self.log.error("_dis_thread: No row for agentid %d", agentid)
+            logger.error("_dis_thread: No row for agentid %d", agentid)
             return
 #        print "dis:\nold last_disconnect_time", old_last_disconnect_time
 #        print "new last_disconnect_time", entry.last_disconnect_time
 #        print "last_connection_time", entry.last_connection_time
         if entry.connected():
 #            print 'now connected'
-            self.log.debug("_dis_thread: agentid %d now connected.", agentid)
+            logger.debug("_dis_thread: agentid %d now connected.", agentid)
             return
 
 #        print "not connected"
 
         if old_last_disconnect_time != entry.last_disconnect_time:
 #            print "disconnect time changed"
-            self.log.debug("_dis_thread: agentid %d disconnect time changed. "
-                           "Ignoring.", agentid)
+            logger.debug("_dis_thread: agentid %d disconnect time changed. "
+                         "Ignoring.", agentid)
             return
 
-        self.log.debug("_dis_thread: sending email for agentid %d: %s",
-                       agentid, subject)
+        logger.debug("_dis_thread: sending email for agentid %d: %s",
+                     agentid, subject)
         self._do_send(to_emails, bcc, subject, message)
 
     def _do_send(self, to_emails, bcc, subject, message):
@@ -329,10 +327,9 @@ class AlertEmail(object):
             exc_type, exc_value, exc_traceback = sys.exc_info()
             tbstr = ''.join(traceback.format_tb(exc_traceback))
             report = "Error: %s.  Traceback: %s." % (sys.exc_info()[1], tbstr)
-            self.log.error("alert send: MIMEText() failed for message." + \
-                           "will not send message: '%s'. %s" % \
-                           (message, report))
-
+            logger.error("alert send: MIMEText() failed for message."
+                         "will not send message: '%s'. %s",
+                         message, report)
             return
 
         if len(subject) > self.max_subject_len:
@@ -358,17 +355,15 @@ class AlertEmail(object):
             mail_server.sendmail(from_email, all_to, msg_str)
             mail_server.quit()
         except (smtplib.SMTPException, EnvironmentError) as ex:
-            self.log.error(
-                "Email send failed, text: %s, exception: %s, server: %s," + \
-                " port: %d",
-                message, ex, self.smtp_server, self.smtp_port)
+            logger.error("Email send failed, text: %s, exception: %s, "
+                         "server: %s, port: %d",
+                         message, ex, self.smtp_server, self.smtp_port)
             return
 
 #        print 'email sent', subject
 
-        self.log.info("Emailed alert: To: '%s' Subject: '%s', message: '%s'",
-                                                str(all_to), subject, message)
-
+        logger.info("Emailed alert: To: '%s' Subject: '%s', message: '%s'",
+                    str(all_to), subject, message)
         return
 
     def make_default_message(self, event_entry, subject, data):

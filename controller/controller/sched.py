@@ -1,4 +1,5 @@
 import os
+import logging
 import time
 import subprocess
 import threading
@@ -14,6 +15,8 @@ import akiri.framework.sqlalchemy as meta
 from mixin import BaseDictMixin
 from event_control import EventControl
 from croniter import Croniter
+
+logger = logging.getLogger()
 
 class Sched(threading.Thread):
 
@@ -46,8 +49,7 @@ class Sched(threading.Thread):
             nexttime = 61 +  now - (now % 60) # start of the minute
 
             for job in Crontab.get_ready_jobs():
-                self.server.log.debug("JOB: %s, enabled %s", job.name,
-                                      str(job.enabled))
+                logger.debug("JOB: %s, enabled %s", job.name, str(job.enabled))
                 if not job.enabled:
                     continue
                 try:
@@ -106,14 +108,14 @@ class Sched(threading.Thread):
     def populate(self):
         jobs = Crontab.get_jobs()
         if jobs:
-            self.server.log.debug("sched populate: already jobs")
+            logger.debug("sched populate: already jobs")
             # PD-4988: Backups and DST
             self.delete('backup')
             # Will be added correctly with respect to timezone
             self.add_cron_job(name='backup', hour=0, minute=0)
             return
 
-        self.server.log.debug("sched populate: adding jobs")
+        logger.debug("sched populate: adding jobs")
 
         # Backup every night at 12:00.
         self.add_cron_job(name='backup', hour=0, minute=0)
@@ -219,25 +221,23 @@ class JobHandler(object):
 
     def __call__(self, name):
         if self.server.state_manager.upgrading():
-            self.server.log.info(
-                "sched command will be SKIPPED due to upgrading.  "
-                "command: %s", name)
+            logger.info("sched command will be SKIPPED due to upgrading.  "
+                        "command: %s", name)
             return
 
-        self.server.log.debug("sched command: %s", name)
+        logger.debug("sched command: %s", name)
         path = os.path.join(self.scheduler.sched_dir, name)
 
         if not os.path.exists(path):
-            self.server.log.error("sched job: No such command: %s", path)
+            logger.error("sched job: No such command: %s", path)
             self.server.event_control.gen(
                 EventControl.SCHEDULED_JOB_FAILED,
                 {'error': "No such command: '%s'" % name})
             return
 
         if not os.access(path, os.X_OK):
-            self.server.log.debug(
-                "cmd '%s' does not have any execute bits on. Will not run.",
-                path)
+            logger.debug("cmd '%s' does not have any execute bits on. " + \
+                         "Will not run.", path)
             return
 
         cmd = [path,
@@ -257,7 +257,7 @@ class JobHandler(object):
 
         stdout, stderr = process.communicate()
 
-        self.server.log.debug("cmd '%s' exit status: %d, "
-                              "stdout: '%s', stderr: %s'",
-                              path, process.returncode, stdout, stderr)
+        logger.debug("cmd '%s' exit status: %d, "
+                     "stdout: '%s', stderr: %s'",
+                     path, process.returncode, stdout, stderr)
         return

@@ -24,7 +24,6 @@ class Manager(object):
             # SystemManager is a Manager which doesn't need self.system
             self.system = server.system
         self.envid = self.server.environment.envid
-        self.log = self.server.log
         self._lock = threading.RLock()
 
     def lock(self, blocking=True):

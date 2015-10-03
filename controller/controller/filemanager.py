@@ -1,8 +1,11 @@
+import logging
 import os
 import urllib
 import json
 import exc
 import httplib
+
+logger = logging.getLogger()
 
 class FileManager(object):
 
@@ -21,7 +24,7 @@ class FileManager(object):
         try:
             self.checkpath(path)
             uri = self.uri(path)
-            self.server.log.debug("FileManager GET %s", uri)
+            logger.debug("FileManager GET %s", uri)
             return self.agent.connection.http_send('GET', uri)
         except (exc.HTTPException, httplib.HTTPException,
                 EnvironmentError) as ex:
@@ -55,7 +58,7 @@ class FileManager(object):
         if not data:
             # http://bugs.python.org/issue14721
             headers['content-length'] = 0
-        self.server.log.debug("FileManager PUT %s: %d", uri, len(data))
+        logger.debug("FileManager PUT %s: %d", uri, len(data))
         try:
             body = self.agent.connection.http_send('PUT', uri, data,
                                                    headers=headers)
@@ -127,8 +130,8 @@ class FileManager(object):
         with open(source, "rb") as f:
             data = f.read()
             body = self.put(path, data)
-        self.server.log.debug("sendfile source '%s' path '%s' size %d." % \
-                                                    (source, path, len(data)))
+        logger.debug("sendfile source '%s' path '%s' size %d.",
+                     source, path, len(data))
         body['source'] = source
         body['path'] = path
         body['size'] = len(data)
@@ -137,7 +140,7 @@ class FileManager(object):
     def delete(self, path):
         self.checkpath(path)
         uri = self.uri(path)
-        self.server.log.debug("FileManager DELETE %s", uri)
+        logger.debug("FileManager DELETE %s", uri)
         try:
             body = self.agent.connection.http_send('DELETE', uri)
             return json.loads(body)

@@ -1,9 +1,12 @@
+import logging
 import os
 
 from agent import Agent, AgentVolumesEntry
 from cloud import CloudManager
 from diskcheck import DiskCheck, DiskException
 from files import FileManager
+
+logger = logging.getLogger()
 
 # This a transitory class - instantiated each time it is needed.
 class GetFile(object):
@@ -14,7 +17,6 @@ class GetFile(object):
 
     def __init__(self, server, agent, full_path, check_only=False):
         self.server = server
-        self.log = server.log
         self.files = server.files
 
         self.agent = agent
@@ -70,11 +72,10 @@ class GetFile(object):
         try:
             self.agent.filemanager.mkdirs(self.primary_dir)
         except (IOError, ValueError) as ex:
-            self.log.error(
-                "get_file.mkdirs: Could not create directory: '%s': %s",
-                self.primary_dir, str(ex))
+            logger.error("get_file.mkdirs: Could not create dir: '%s': %s",
+                         self.primary_dir, str(ex))
             raise IOError("Could not create directory '%s': %s" % \
-                                (self.primary_dir, str(ex)))
+                          (self.primary_dir, str(ex)))
 
     def _set_primary(self):
         """The case where the file is not on the primary.
@@ -88,13 +89,12 @@ class GetFile(object):
                                               self.server.STAGING_DIR,
                                               self.file_entry.size)
             except DiskException, ex:
-                self.log.error("get_file: get_primary_loc failed: %s",
-                               str(ex))
+                logger.error("get_file: get_primary_loc failed: %s", str(ex))
                 raise IOError("get_file: %s" % str(ex))
         else:
             self.primary_dir = self.agent.path.dirname(self.full_path)
 
-        self.log.debug("get_file: primary_dir: %s", self.primary_dir)
+        logger.debug("get_file: primary_dir: %s", self.primary_dir)
 
     def _set_source(self):
         """Set:
@@ -142,9 +142,8 @@ class GetFile(object):
         """The file is on cloud storage: s3 or gcs.
             Copy it to a staging area.
         """
-        self.log.debug(
-            "get_file: Sending %s command to primary '%s' to GET '%s'", \
-               self.source_type, self.agent.displayname, self.full_path)
+        logger.debug("get_file: Sending %s cmd to primary '%s' to GET '%s'",
+                     self.source_type, self.agent.displayname, self.full_path)
 
         # Cloud storage doesn't support directories.  The
         # full_path on the cloud storage was only the filename.
@@ -183,7 +182,7 @@ class GetFile(object):
                        self.full_path,
                        body['error'])
 
-            self.log.debug(text)
+            logger.debug(text)
             raise IOError(text)
 
         self.copied = True
@@ -220,13 +219,13 @@ class GetFile(object):
 
         copy_source = "%s%s" % (self.source_entry.name, path_spec)
 
-        self.log.debug("get_file: Sending copy command to " + \
-                       "agentid %d (%s) to get: %s",
-                       self.source_agent.agentid, self.source_agent.displayname,
-                       copy_source)
+        logger.debug("get_file: Sending copy command to " + \
+                     "agentid %d (%s) to get: %s",
+                     self.source_agent.agentid, self.source_agent.displayname,
+                     copy_source)
 
         body = self.server.copy_cmd(self.source_entry.agentid, copy_source,
-                            self.agent.agentid, self.primary_dir)
+                                    self.agent.agentid, self.primary_dir)
 
         if body.has_key("error"):
             fmt = "get_file: copy file specification '%s' " + \
@@ -239,7 +238,7 @@ class GetFile(object):
                            self.agent.agentid,
                            self.primary_dir,
                            body['error'])
-            self.log.debug(text)
+            logger.debug(text)
             raise IOError(text)
 
         # This is the filename to use for 'tabadmin restore'

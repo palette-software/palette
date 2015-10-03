@@ -1,9 +1,12 @@
+import logging
 import unicodedata
 
 from place_file import PlaceFile
 from sites import Site
 from profile import UserProfile
 from util import success
+
+logger = logging.getLogger()
 
 class ArchiveUpdateMixin(object):
     NAME = "unknown"
@@ -57,13 +60,13 @@ class ArchiveUpdateMixin(object):
         try:
             file_size_body = agent.filemanager.filesize(dst)
         except IOError as ex:
-            self.log.error("%s archive_file: filemanager.filesize('%s')" +
-                           "failed: %s", self.NAME, dst, str(ex))
+            logger.error("%s archive_file: filemanager.filesize('%s')" +
+                         "failed: %s", self.NAME, dst, str(ex))
         else:
             if not success(file_size_body):
-                self.log.error("%s archive_file: Failed to get size of " + \
-                               "datasource file %s: %s", dst,
-                               self.NAME, file_size_body['error'])
+                logger.error("%s archive_file: Failed to get size of " + \
+                             "datasource file %s: %s", dst,
+                             self.NAME, file_size_body['error'])
             else:
                 file_size = file_size_body['size']
 
@@ -74,7 +77,7 @@ class ArchiveUpdateMixin(object):
         # from the primary afterwards, due to "enable_delete=True":
         place = PlaceFile(self.server, agent, dcheck, dst, file_size, auto,
                           enable_delete=True)
-        self.log.debug("%s build filename %s: %s", self.NAME, dst, place.info)
+        logger.debug("%s build filename %s: %s", self.NAME, dst, place.info)
 
         return place
 
@@ -84,7 +87,7 @@ class ArchiveUpdateMixin(object):
         if 'embedded' in data:
             del data['embedded']
         if error:
-            self.log.error(error)
+            logger.error(error)
             data['error'] = error
 
         profile = UserProfile.get_by_system_user_id(
@@ -115,7 +118,7 @@ class ArchiveUpdateMixin(object):
         site_entry = Site.get(self.envid, site_id, default=None)
 
         if not site_entry:
-            self.log.error("%s: Missing site id: %d", self.NAME, site_id)
+            logger.error("%s: Missing site id: %d", self.NAME, site_id)
             return {'error': 'Missing site id: %d' % site_id}
 
         if site_entry.url_namespace:
@@ -125,7 +128,7 @@ class ArchiveUpdateMixin(object):
 
         cmd = 'get %s %s -f "%s"' % (url, site, dst)
 
-        self.log.debug('building %s archive: %s', self.NAME, dst)
+        logger.debug('building %s archive: %s', self.NAME, dst)
 
         for _ in range(3):
             body = self.server.tabcmd(cmd, agent)
@@ -145,8 +148,7 @@ class ArchiveUpdateMixin(object):
                 return body
             elif 'Service Unavailable' in body['stderr']:
                 # 503 error, retry
-                self.log.debug(cmd + \
-                                ' : 503 Service Unavailable, retrying')
+                logger.debug(cmd + ' : 503 Service Unavailable, retrying')
                 continue
             else:
                 # It failed for another reason. Don't try again now.

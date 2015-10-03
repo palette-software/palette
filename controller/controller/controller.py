@@ -1,4 +1,5 @@
 """ The main server instance of the controller. """
+import logging
 import sys
 import os
 import SocketServer as socketserver
@@ -67,14 +68,13 @@ from clihandler import CliHandler
 from util import version, success, failed, sizestr
 from rwlock import RWLock
 
-# pylint: disable=no-self-use
+logger = logging.getLogger()
 
 class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     # pylint: disable=too-many-public-methods
     # pylint: disable=too-many-instance-attributes
 
     CLI_URI = "/cli"
-    LOGGER_NAME = "main"
     allow_reuse_address = True
 
     DATA_DIR = "Data"
@@ -112,22 +112,21 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return self.error(str(ex))
 
         if dcheck.target_type == FileManager.STORAGE_TYPE_CLOUD:
-            self.log.debug("Backup will copy to cloud storage type %s " + \
-                           "name '%s' bucket '%s'",
-                            dcheck.target_entry.cloud_type,
-                            dcheck.target_entry.name,
-                            dcheck.target_entry.bucket)
+            logger.debug("Backup will copy to cloud storage type %s " + \
+                         "name '%s' bucket '%s'",
+                         dcheck.target_entry.cloud_type,
+                         dcheck.target_entry.name,
+                         dcheck.target_entry.bucket)
         elif dcheck.target_type == FileManager.STORAGE_TYPE_VOL:
             if dcheck.target_entry.agentid == agent.agentid:
-                self.log.debug("Backup will stay on the primary.")
+                logger.debug("Backup will stay on the primary.")
             else:
-                self.log.debug(
-                    "Backup will copy to target '%s', target_dir '%s'",
-                        dcheck.target_agent.displayname, dcheck.target_dir)
+                logger.debug("Backup will copy to target '%s', target_dir '%s'",
+                             dcheck.target_agent.displayname, dcheck.target_dir)
         else:
-            self.log.error("backup_cmd: Invalid target_type: %s" % \
-                           dcheck.target_type)
-            return self.error("backup_cmd: Invalid target_type: %s" % \
+            logger.error("backup_cmd: Invalid target_type: %s",
+                         dcheck.target_type)
+            return self.error("backup_cmd: Invalid target_type: %s",
                               dcheck.target_type)
         # Example name: 20140127_162225.tsbak
         backup_name = time.strftime(self.FILENAME_FMT) + ".tsbak"
@@ -152,12 +151,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         try:
             backup_size_body = agent.filemanager.filesize(backup_full_path)
         except IOError as ex:
-            self.log.error("filemanager.filesize('%s') failed: %s",
-                            backup_full_path, str(ex))
+            logger.error("filemanager.filesize('%s') failed: %s",
+                         backup_full_path, str(ex))
         else:
             if not success(backup_size_body):
-                self.log.error("Failed to get size of backup file '%s': %s" % \
-                                (backup_full_path, backup_size_body['error']))
+                logger.error("Failed to get size of backup file '%s': %s",
+                             backup_full_path, backup_size_body['error'])
             else:
                 backup_size = backup_size_body['size']
 
@@ -268,13 +267,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                    (len(rows), find_name, file_type,
                    retain_count, remove_count)
 
-            self.log.debug(info)
+            logger.debug(info)
 
         for entry in rows[:remove_count]:
-            self.log.debug(
-                    "file_rotate: deleting %s file type " +
-                    "%s name %s fileid %d", find_name, file_type, entry.name,
-                    entry.fileid)
+            logger.debug("file_rotate: deleting %s file type " +
+                         "%s name %s fileid %d", find_name, file_type,
+                         entry.name, entry.fileid)
             body = self.files.delfile_by_entry(entry)
             if 'error' in body:
                 info += '\n' + body['error']
@@ -319,12 +317,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             cred = self.cred.get('secondary', default=None)
             if cred is None:
                 errmsg = 'No credentials found.'
-                self.log.error('tabcmd: ' + errmsg)
+                logger.error('tabcmd: ' + errmsg)
                 return {'error': 'No credentials found.'}
         pw = cred.getpasswd()
         if not cred.user or not pw:
             errmsg = 'Invalid credentials.'
-            self.log.error('tabcmd: ' + errmsg)
+            logger.error('tabcmd: ' + errmsg)
             return {'error': errmsg}
         url = self.system[SystemKeys.TABLEAU_INTERNAL_SERVER_URL]
         if not url:
@@ -343,10 +341,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             Returns the body of the reply.
             Called without the connection lock."""
 
-        self.log.debug("kill_cmd")
+        logger.debug("kill_cmd")
         aconn = agent.connection
         aconn.lock()
-        self.log.debug("kill_cmd got lock")
+        logger.debug("kill_cmd got lock")
 
         data = {'action': 'kill', 'xid': xid}
         send_body = json.dumps(data)
@@ -354,28 +352,28 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         headers = {"Content-Type": "application/json"}
         uri = self.CLI_URI
 
-        self.log.debug('about to send the kill command, xid %d', xid)
+        logger.debug('about to send the kill command, xid %d', xid)
         try:
             aconn.httpconn.request('POST', uri, send_body, headers)
-            self.log.debug('sent kill command')
+            logger.debug('sent kill command')
             res = aconn.httpconn.getresponse()
-            self.log.debug('command: kill: ' + \
+            logger.debug('command: kill: ' + \
                                str(res.status) + ' ' + str(res.reason))
             body_json = res.read()
             if res.status != httplib.OK:
-                self.log.error("kill_cmd: POST failed: %d\n", res.status)
+                logger.error("kill_cmd: POST failed: %d\n", res.status)
                 alert = "Agent command failed with status: " + str(res.status)
                 self.remove_agent(agent, alert)
                 return self.httperror(res, method="POST",
                                       displayname=agent.displayname,
                                       uri=uri, body=body_json)
 
-            self.log.debug("headers: " + str(res.getheaders()))
+            logger.debug("headers: " + str(res.getheaders()))
 
         except (httplib.HTTPException, EnvironmentError) as ex:
             # bad agent
             msg = "kill_cmd: failed: " + str(ex)
-            self.log.error(msg)
+            logger.error(msg)
             self.remove_agent(agent, "Command to agent failed. " \
                                   + "Error: " + str(ex))
             return self.error(msg)
@@ -383,9 +381,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             # Must call aconn.unlock() even after self.remove_agent(),
             # since another thread may waiting on the lock.
             aconn.unlock()
-            self.log.debug("kill_cmd unlocked")
+            logger.debug("kill_cmd unlocked")
 
-        self.log.debug("done reading.")
+        logger.debug("done reading.")
         body = json.loads(body_json)
         if body == None:
             return self.error("POST /%s getresponse returned null body" % uri,
@@ -414,9 +412,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         for key in agents.keys():
             self.agentmanager.lock()
             if not agents.has_key(key):
-                self.log.info(
-                    "copy_cmd: agent with conn_id %d is now " + \
-                    "gone and won't be checked.", key)
+                logger.info("copy_cmd: agent with conn_id %d is now " + \
+                            "gone anqd won't be checked.", key)
                 self.agentmanager.unlock()
                 continue
             agent = agents[key]
@@ -441,13 +438,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if src.iswin:
             # Enable the firewall port on the source host.
-            self.log.debug("Enabling firewall port %d on src host '%s'", \
-                                    src.listen_port, src.displayname)
+            logger.debug("Enabling firewall port %d on src host '%s'", \
+                         src.listen_port, src.displayname)
             fw_body = src.firewall.enable([src.listen_port])
             if fw_body.has_key("error"):
-                self.log.error(
-                    "firewall enable port %d on src host %s failed with: %s",
-                        src.listen_port, src.displayname, fw_body['error'])
+                logger.error("firewall enable port %d on src host %s " + \
+                             "failed with: %s", src.listen_port,
+                             src.displayname, fw_body['error'])
                 data = agent.todict()
                 data['error'] = fw_body['error']
                 data['info'] = "Port " + str(src.listen_port)
@@ -460,34 +457,33 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         try:
             dst.filemanager.mkdirs(target_dir)
         except (IOError, ValueError) as ex:
-            self.log.error(
-                "copycmd: Could not create directory: '%s': %s" % (target_dir,
-                                                                   ex))
-            return self.error(
-                "Could not create directory '%s' on target agent '%s': %s" % \
-                (target_dir, dst.displayname, ex))
+            logger.error("copycmd: Could not create directory: '%s': %s",
+                         target_dir, ex)
+            error = "Could not create '%s' on target agent '%s': %s" % \
+                    (target_dir, dst.displayname, ex)
+            return self.error(error)
 
         if src.iswin:
             command = 'phttp GET "https://%s:%s/%s" "%s"' % \
-                (source_ip, src.listen_port, source_path, target_dir)
+                      (source_ip, src.listen_port, source_path, target_dir)
         else:
             command = 'phttp GET "https://%s:%s%s" "%s"' % \
-                (source_ip, src.listen_port, source_path, target_dir)
+                      (source_ip, src.listen_port, source_path, target_dir)
 
         try:
             entry = meta.Session.query(Agent).\
-                filter(Agent.agentid == src.agentid).\
-                one()
+                    filter(Agent.agentid == src.agentid).\
+                    one()
         except sqlalchemy.orm.exc.NoResultFound:
-            self.log.error("Source agent not found!  agentid: %d", src.agentid)
-            return self.error("Source agent not found in agent table: %d " % \
-                                                                src.agentid)
+            logger.error("Source agent not found!  agentid: %d", src.agentid)
+            return self.error("Source agent not found: %d ", src.agentid)
 
         env = {u'BASIC_USERNAME': entry.username,
                u'BASIC_PASSWORD': entry.password}
 
-        self.log.debug("agent username: %s, password: %s", entry.username,
-                                                            entry.password)
+        logger.debug("agent username: %s, password: %s",
+                     entry.username, entry.password)
+
         # Send command to target agent
         copy_body = self.cli_cmd(command, dst, env=env)
         if success(copy_body):
@@ -519,10 +515,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if reported_status == TableauProcess.STATUS_RUNNING:
             # Restore can run only when tableau is stopped.
             self.state_manager.update(StateManager.STATE_STOPPING_RESTORE)
-            self.log.debug("----------Stopping Tableau for restore-----------")
+            logger.debug("----------Stopping Tableau for restore-----------")
             stop_body = self.cli_cmd("tabadmin stop", agent, timeout=60*60)
             if stop_body.has_key('error'):
-                self.log.info("Restore: tabadmin stop failed")
+                logger.info("Restore: tabadmin stop failed")
                 return stop_body
 
             self.event_control.gen(EventControl.STATE_STOPPED, data,
@@ -540,7 +536,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         env = {u'PWD': agent.data_dir}
 
         try:
-            self.log.debug("restore sending command: %s", cmd)
+            logger.debug("restore sending command: %s", cmd)
             restore_body = self.cli_cmd(cmd, agent, env=env, timeout=60*60*2)
         except httplib.HTTPException, ex:
             restore_body = {"error": "HTTP Exception: " + str(ex)}
@@ -714,12 +710,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         try:
             pinfo = json.loads(json_str)
         except ValueError, ex:
-            self.log.error("Bad json from pinfo. Error: %s, json: %s", \
-                           str(ex), json_str)
+            logger.error("Bad json from pinfo. Error: %s, json: %s", \
+                         str(ex), json_str)
             raise IOError("Bad json from pinfo.  Error: %s, json: %s" % \
                           (str(ex), json_str))
         if pinfo is None:
-            self.log.error("Bad pinfo output: %s", json_str)
+            logger.error("Bad pinfo output: %s", json_str)
             raise IOError("Bad pinfo output: %s" % json_str)
 
         # When we are called from init_new_agent(), we don't know
@@ -732,12 +728,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.agentmanager.update_agent_pinfo_vols(agent, pinfo)
                 self.agentmanager.update_agent_pinfo_other(agent, pinfo)
             else:
-                self.log.error(
-                    "get_pinfo: Could not update agent: unknown " + \
-                                    "displayname.  uuid: %s", agent.uuid)
+                logger.error("get_pinfo: Could not update agent: unknown " + \
+                             "displayname.  uuid: %s", agent.uuid)
                 raise IOError("get_pinfo: Could not update agent: unknown " + \
-                        "displayname.  uuid: %s" % agent.uuid)
-
+                              "displayname.  uuid: %s" % agent.uuid)
         return pinfo
 
     def get_info(self, agent, update_agent=False):
@@ -747,12 +741,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         try:
             info = json.loads(body)
         except ValueError, ex:
-            self.log.error("Bad json from info. Error: %s, json: %s", \
-                           str(ex), body)
+            logger.error("Bad json from info. Error: %s, json: %s", \
+                         str(ex), body)
             raise IOError("Bad json from pinfo.  Error: %s, json: %s" % \
                           (str(ex), body))
         if info is None:
-            self.log.error("Bad info output: %s", body)
+            logger.error("Bad info output: %s", body)
             raise IOError("Bad info output: %s" % body)
 
         # When we are called from init_new_agent(), we don't know
@@ -765,11 +759,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.agentmanager.update_agent_pinfo_vols(agent, info)
                 self.agentmanager.update_agent_pinfo_other(agent, info)
             else:
-                self.log.error(
-                    "get_info: Could not update agent: unknown " + \
-                                    "displayname.  uuid: %s", agent.uuid)
+                logger.error("get_info: Could not update agent: unknown " + \
+                             "displayname.  uuid: %s", agent.uuid)
                 raise IOError("get_pinfo: Could not update agent: unknown " + \
-                        "displayname.  uuid: %s" % agent.uuid)
+                              "displayname.  uuid: %s" % agent.uuid)
 
         return info
 
@@ -798,9 +791,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         if check_odbc_state and not self.odbc_ok():
             main_state = self.state_manager.get_state()
-            self.log.info("Failed.  Current state: %s", main_state)
-            raise exc.InvalidStateError(
-                "Cannot run command while in state: %s" % main_state)
+            logger.info("Failed.  Current state: %s", main_state)
+            msg = "Cannot run command while in state: " + str(main_state)
+            raise exc.InvalidStateError(msg)
 
         error_msg = ""
         sync_dict = {}
@@ -843,7 +836,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # pylint: disable=too-many-statements
         """If agent is not specified, action is done for all gateway agents."""
         if action not in ("start", "stop"):
-            self.log.error("Invalid maint action: %s", action)
+            logger.error("Invalid maint action: %s", action)
             return self.error("Bad maint action: %s" % action)
 
         envid = self.environment.envid
@@ -852,11 +845,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         try:
             gateway_hosts = manager.get_yml_list('gateway.hosts')
         except ValueError:
-            self.log.error("maint: %s: No yml entry for 'gateway.hosts' yet.",
-                            action)
-            return self.error(
-                    "maint %s: No yml entry for 'gateway.hosts' yet." % \
-                    action)
+            logger.error("maint: %s: No yml entry for 'gateway.hosts' yet.",
+                         action)
+            return self.error("maint %s: No yml entry for 'gateway.hosts'.",
+                              action)
 
         # We're going to combine stdout/stderr/error for all gateway hosts.
         body_combined = {'stdout': "",
@@ -882,30 +874,30 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             if host == 'localhost' or host == '127.0.0.1':
                 agent = manager.agent_by_type(AgentManager.AGENT_TYPE_PRIMARY)
                 if not agent:
-                    self.log.debug("maint: %s: primary is not [yet] " + \
-                                   "fully connected.  Skipping.", action)
+                    logger.debug("maint: %s: primary is not [yet] " + \
+                                 "fully connected.  Skipping.", action)
                     continue
 
             else:
                 agentid = Agent.get_agentid_from_host(envid, host)
                 if not agentid:
-                    self.log.info("maint: %s: No such agent found " + \
-                                   "for host '%s' from gateway.hosts list: %s",
-                                    action, host, str(gateway_hosts))
+                    logger.info("maint: %s: No such agent found " + \
+                                "for host '%s' from gateway.hosts list: %s",
+                                action, host, str(gateway_hosts))
                     continue
 
                 agent = manager.agent_by_id(agentid)
                 if not agent:
-                    self.log.debug("maint: %s: Agent host '%s' with " + \
-                                   "agentid %d not connected. " + \
-                                   "gateway.hosts list: %s",
-                                    action, host, agentid, str(gateway_hosts))
+                    logger.debug("maint: %s: Agent host '%s' with " + \
+                                 "agentid %d not connected. " + \
+                                 "gateway.hosts list: %s",
+                                 action, host, agentid, str(gateway_hosts))
                     continue
 
             # We have a gateway agent.  Do the maint action if possible.
             if not agent.connection:
-                self.log.debug("maint: gateway agent not connected: %s. " + \
-                               "Skipping '%s'.", host, action)
+                logger.debug("maint: gateway agent not connected: %s. " + \
+                             "Skipping '%s'.", host, action)
                 continue
 
             if not agent_connected:
@@ -915,18 +907,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             body = self.send_maint(action, agent, send_maint_body)
 
             if 'stdout' in body:
-                body_combined['stdout'] += '%s: %s\n' % (agent.displayname,
-                                                body['stdout'])
+                text = '%s: %s\n' % (agent.displayname, body['stdout'])
+                body_combined['stdout'] += text
             if 'stderr' in body:
-                body_combined['stderr'] += '%s: %s\n' % (agent.displayname,
-                                                body['stderr'])
+                text = '%s: %s\n' % (agent.displayname, body['stderr'])
+                body_combined['stderr'] += text
             if 'error' in body:
-                body_combined['error'] += '%s: %s\n' % \
-                                        (agent.displayname, body['error'])
+                text = '%s: %s\n' % (agent.displayname, body['error'])
+                body_combined['error'] += text
                 maint_success = False
 
         if not agent_connected:
-            self.log.debug("maint: No agents are connected.  Did nothing.")
+            logger.debug("maint: No agents are connected.  Did nothing.")
             body_combined['error'] = "No agents are connected."
             return body_combined    # Empty as we did nothing
 
@@ -959,7 +951,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
            returns the body/result.
         """
 
-        self.log.debug("maint: %s for '%s'", action, agent.displayname)
+        logger.debug("maint: %s for '%s'", action, agent.displayname)
         body = self.send_immediate(agent, "POST", "/maint", send_maint_body)
 
         return body
@@ -996,8 +988,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 listen_port = int(ports[0])
                 send_body["listen-port"] = listen_port
             except StandardError:
-                self.log.error("Invalid yml entry for 'gatway.ports': %s",
-                                gateway_ports)
+                logger.error("Invalid yml entry for 'gatway.ports': %s",
+                             gateway_ports)
 
         ssl_enabled = self.yml.get('ssl.enabled', default=None)
         if ssl_enabled != 'true':
@@ -1009,8 +1001,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 ssl_port = int(ssl_port)
                 send_body['ssl-listen-port'] = ssl_port
             except StandardError:
-                self.log.error("Invalid yml entry for 'ssl.listen.port': %s",
-                                ssl_port)
+                logger.error("Invalid yml entry for 'ssl.listen.port': %s",
+                             ssl_port)
 
         # Mapping from the yml file to the json to send.
         file_map = {'ssl.cert.file': 'ssl-cert-file',
@@ -1046,21 +1038,20 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         for key in agents.keys():
             self.agentmanager.lock()
             if not agents.has_key(key):
-                self.log.info(
-                    "archive: agent with conn_id %d is now " + \
-                    "gone and won't be checked.", key)
+                logger.info("archive: agent with conn_id %d is now " + \
+                            "gone and won't be checked.", key)
                 self.agentmanager.unlock()
                 continue
             agent = agents[key]
             self.agentmanager.unlock()
             body = self.send_immediate(agent, "POST", "/archive", send_body)
             if 'stdout' in body:
-                body_combined['stdout'] += '%s: %s\n' % (agent.displayname,
-                                                          body['stdout'])
-                body_combined['stderr'] += '%s: %s\n' % (agent.displayname,
-                                                          body['stderr'])
-                body_combined['error'] += '%s: %s\n' % (agent.displayname,
-                                                          body['error'])
+                stdout = '%s: %s\n' % (agent.displayname, body['stdout'])
+                body_combined['stdout'] += stdout
+                stderr = '%s: %s\n' % (agent.displayname, body['stderr'])
+                body_combined['stderr'] += stderr
+                error = '%s: %s\n' % (agent.displayname, body['error'])
+                body_combined['error'] += error
                 archive_success = False
 
         if archive_success:
@@ -1091,11 +1082,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         aconn = agent.connection
 
-        self.log.debug(
-            "about to send an immediate command to '%s', conn_id %d, " + \
-                "type '%s', method '%s', uri '%s', body '%s'",
-                    agent.displayname, aconn.conn_id, agent.agent_type,
-                    method, uri, send_body)
+        logger.debug("sending an immediate command to '%s', conn_id %d, " + \
+                     "type '%s', method '%s', uri '%s', body '%s'",
+                     agent.displayname, aconn.conn_id, agent.agent_type,
+                     method, uri, send_body)
 
         aconn.lock()
         body = {}
@@ -1106,15 +1096,16 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             rawbody = res.read()
             if res.status != httplib.OK:
                 # bad agent
-                self.log.error(
-                    "immediate command to %s failed with status %d: %s " + \
-                    "%s, body: %s:",
-                            agent.displayname, res.status, method, uri, rawbody)
+                logger.error("immediate command to %s failed "
+                             "with status %d: %s %s, body: %s:",
+                             agent.displayname, res.status,
+                             method, uri, rawbody)
                 self.remove_agent(agent,\
-                    ("Communication failure with agent. " +\
-                    "Immediate command to %s, status returned: " +\
-                    "%d: %s %s, body: %s") % \
-                        (agent.displayname, res.status, method, uri, rawbody))
+                                  ("Communication failure with agent. " +\
+                                   "Immediate command to %s, status: " +\
+                                   "%d: %s %s, body: %s") % \
+                                  (agent.displayname, res.status,
+                                   method, uri, rawbody))
                 return self.httperror(res, method=method,
                                       displayname=agent.displayname,
                                       uri=uri, body=rawbody)
@@ -1123,19 +1114,18 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             else:
                 body = {}
         except (httplib.HTTPException, EnvironmentError) as ex:
-            self.log.error("Agent send_immediate command %s %s failed: %s",
-                           method, uri, str(ex))
+            logger.error("Agent send_immediate command %s %s failed: %s",
+                         method, uri, str(ex))
             self.remove_agent(agent, \
-                    "Agent send_immediate command %s %s failed: %s" % \
-                              (method, uri, str(ex)))
+                            "Agent send_immediate command %s %s failed: %s" % \
+                            (method, uri, str(ex)))
             return self.error("send_immediate method %s, uri %s failed: %s" % \
                               (method, uri, str(ex)))
         finally:
             aconn.unlock()
 
-        self.log.debug(
-            "send immediate %s %s success, conn_id %d, response: %s",
-                                    method, uri, aconn.conn_id, str(body))
+        logger.debug("send immediate %s %s success, conn_id %d, response: %s",
+                     method, uri, aconn.conn_id, str(body))
         return body
 
     def displayname_cmd(self, aconn, uuid, displayname):
@@ -1160,7 +1150,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             dcheck = DiskCheck(self, agent, self.LOG_DIR,
                                FileManager.FILE_TYPE_ZIPLOG, min_disk_needed)
         except DiskException, ex:
-            self.log.error("ziplogs_cmd: %s", str(ex))
+            logger.error("ziplogs_cmd: %s", str(ex))
             return self.error("ziplogs_cmd: %s" % str(ex))
 
         data = agent.todict()
@@ -1178,12 +1168,12 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             try:
                 ziplog_size_body = agent.filemanager.filesize(ziplogs_full_path)
             except IOError as ex:
-                self.log.error("filemanager.filesize('%s') failed: %s",
-                                ziplogs_full_path, str(ex))
+                logger.error("filemanager.filesize('%s') failed: %s",
+                             ziplogs_full_path, str(ex))
             else:
                 if not success(ziplog_size_body):
-                    self.log.error("Failed to get size of ziplogs file %s: %s",
-                                   ziplogs_full_path, ziplog_size_body['error'])
+                    logger.error("Failed to get size of ziplogs file %s: %s",
+                                 ziplogs_full_path, ziplog_size_body['error'])
                 else:
                     ziplog_size = ziplog_size_body['size']
 
@@ -1287,26 +1277,26 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         pinfo = self.get_pinfo(agent, update_agent=False)
 
-        self.log.debug("info returned from %s: %s",
-                       aconn.displayname, str(pinfo))
+        logger.debug("info returned from %s: %s",
+                     aconn.displayname, str(pinfo))
         # Set the type of THIS agent.
         if tableau_install_dir in pinfo:
             # FIXME: don't duplicate the data
-            agent.agent_type = aconn.agent_type \
-                = AgentManager.AGENT_TYPE_PRIMARY
+            agent.agent_type = AgentManager.AGENT_TYPE_PRIMARY
+            aconn.agent_type = AgentManager.AGENT_TYPE_PRIMARY
 
             if pinfo[tableau_install_dir].find(':') == -1:
-                self.log.error("agent %s is missing ':': %s for %s",
-                               aconn.displayname, tableau_install_dir,
-                               agent.tableau_install_dir)
+                logger.error("agent %s is missing ':': %s for %s",
+                             aconn.displayname, tableau_install_dir,
+                             agent.tableau_install_dir)
                 return False
         else:
             if self.agentmanager.is_tableau_worker(agent):
-                agent.agent_type = aconn.agent_type = \
-                                    AgentManager.AGENT_TYPE_WORKER
+                agent.agent_type = AgentManager.AGENT_TYPE_WORKER
+                aconn.agent_type = AgentManager.AGENT_TYPE_WORKER
             else:
-                agent.agent_type = aconn.agent_type = \
-                                    AgentManager.AGENT_TYPE_ARCHIVE
+                agent.agent_type = AgentManager.AGENT_TYPE_ARCHIVE
+                aconn.agent_type = AgentManager.AGENT_TYPE_ARCHIVE
 
         if agent.iswin:
             self.firewall_manager.do_firewall_ports(agent)
@@ -1332,9 +1322,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 self.sync_cmd(agent, check_odbc_state=False)
                 self.extract.load(agent, check_odbc_state=False)
             else:
-                self.log.debug(
-                    "init_new_agent: Couldn't do initial import of " + \
-                    "auth, etc. probably due to tableau stopped.")
+                logger.debug("init_new_agent: Couldn't do import of " + \
+                             "auth, etc. probably due to tableau stopped.")
 
         # Configuring the 'maint' web server requires the yml file,
         # so this must be done after the "yml_sync()" above.
@@ -1348,29 +1337,28 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         try:
             body = agent.filemanager.listdir(xid_dir)
         except IOError as ex:
-            self.log.error("filemanager.listdir('%s') for the XID " + \
-                           "directory failed: %s", xid_dir, str(ex))
+            logger.error("filemanager.listdir('%s') for the XID " + \
+                         "directory failed: %s", xid_dir, str(ex))
             return
 
         if not success(body):
-            self.log.error("Could not list the XID directory '%s': %s",
-                           xid_dir, body['error'])
+            logger.error("Could not list the XID directory '%s': %s",
+                         xid_dir, body['error'])
             return
 
         if not 'directories' in body:
-            self.log.error(
-                           ("clean_xid_dirs: Filemanager response missing " + \
-                             "directories.  Response: %s") % str(body))
+            logger.error("clean_xid_dirs: Filemanager response missing " + \
+                         "directories.  Response: %s", str(body))
             return
 
         for rem_dir in body['directories']:
             full_path = agent.path.join(xid_dir, rem_dir)
-            self.log.debug("Removing %s", full_path)
+            logger.debug("Removing %s", full_path)
             try:
                 agent.filemanager.delete(full_path)
             except IOError as ex:
-                self.log.error("filemanager.delete('%s') failed: %s",
-                                full_path, str(ex))
+                logger.error("filemanager.delete('%s') failed: %s",
+                             full_path, str(ex))
 
     def config_servers(self, agent):
         """Configure the maintenance and archive servers."""
@@ -1409,8 +1397,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """Make changes to the database, etc. as required for upgrading
            from last_version to new_version."""
 
-        self.log.debug("Upgrade from %s to %s", self.previous_version,
-                                                self.version)
+        logger.debug("Upgrade from %s to %s",
+                     self.previous_version, self.version)
 
         if self.previous_version == self.version or not self.previous_version:
             return
@@ -1420,16 +1408,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         self.workbooks.move_twb_to_db()
 
-import logging
-
 class StreamLogger(object):
     """
     File-like stream class that writes to a logger.
     Used for redirecting stdout & stderr to the log file.
     """
 
-    def __init__(self, logger, tag=None):
-        self.logger = logger
+    def __init__(self, tag=None):
         self.tag = tag
         # writes are buffered to ensure full lines are printed together.
         self.buf = ''
@@ -1440,7 +1425,7 @@ class StreamLogger(object):
             return
         if self.tag:
             line = '[' + self.tag + '] ' + line
-        self.logger.log(logging.ERROR, line)
+        logger.error(line)
 
     def write(self, buf):
         buf = self.buf + buf
@@ -1459,11 +1444,13 @@ class StreamLogger(object):
         self.buf = ''
 
 def main():
-    # pylint: disable=too-many-statements,too-many-locals
+    """ server main() """
     # pylint: disable=attribute-defined-outside-init
+    # pylint: disable=too-many-statements
+    # FIXME: 83/50!
 
     import argparse
-    import logger
+    from .logger import make_loggers
 
     parser = argparse.ArgumentParser(description='Palette Controller')
     parser.add_argument('config', nargs='?', default=None)
@@ -1480,13 +1467,12 @@ def main():
     # though uses a default.  After the database is available,
     # we reset the log-level, depending on the 'debug-level' value in the
     # system table.
-    logger.make_loggers(config)
-    log = logger.get(Controller.LOGGER_NAME)
-    log.info("Controller version: %s", version())
+    make_loggers(config)
+    logger.info("Controller version: %s", version())
 
     # Log stderr to the log file too.
     # NOTE: stdout is not logged so that PDB will work.
-    sys.stderr = StreamLogger(log, tag='STD')
+    sys.stderr = StreamLogger(tag='STD')
 
     # database configuration
     url = config.get("database", "url")
@@ -1502,9 +1488,6 @@ def main():
     server = Controller((host, port), CliHandler)
     server.config = config
 
-    # FIXME: deprecated
-    # We always use the root logger so use logging. instead of server.log.
-    server.log = log
     server.cli_get_status_interval = \
       config.getint('controller', 'cli_get_status_interval', default=10)
     server.noping = args.noping
@@ -1527,7 +1510,7 @@ def main():
     server.system.save(SystemKeys.PALETTE_VERSION, server.version)
 
     # Set the log level from the system table
-    log.setLevel(server.system[SystemKeys.DEBUG_LEVEL])
+    logger.setLevel(server.system[SystemKeys.DEBUG_LEVEL])
 
     HttpControl.populate()
     StateControl.populate()
@@ -1582,7 +1565,7 @@ def main():
 
     manager.update_last_disconnect_time()
 
-    log.debug("Starting agent listener.")
+    logger.debug("Starting agent listener.")
     manager.start()
 
     # Need to instantiate to initialize state and status tables,
@@ -1597,7 +1580,7 @@ def main():
         server.sched.start()
 
     if not args.nostatus:
-        log.debug("Starting status monitor.")
+        logger.debug("Starting status monitor.")
         statusmon.start()
 
     server.serve_forever()

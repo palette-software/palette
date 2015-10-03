@@ -1,3 +1,4 @@
+import logging
 import os
 import unicodedata
 
@@ -26,6 +27,7 @@ from files import FileManager
 from sites import Site
 from projects import Project
 
+logger = logging.getLogger()
 
 # NOTE: system_user_id is maintained in two places.  This is not ideal from
 # a db design perspective but makes the find-by-current-owner code clearer.
@@ -211,7 +213,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
                 with open(twb_path, "r") as fd_twb:
                     contents = fd_twb.read()
             except IOError as err:
-                self.log.error("move_twb_to_db open failed: %s", str(err))
+                logger.error("move_twb_to_db open failed: %s", str(err))
                 continue
 
             row.twb = contents
@@ -253,10 +255,10 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
         updates = []
 
         if 'error' in data or '' not in data:
-            self.log.debug("workbooks load: bad data: %s", str(data))
+            logger.debug("workbooks load: bad data: %s", str(data))
             return data
 
-        self.log.debug(data)
+        logger.debug(data)
 
         for odbcdata in ODBC.load(data):
             name = odbcdata.data['name']
@@ -294,7 +296,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
                 session.add(wbu)
                 updates.append(wbu)
 
-            self.log.debug("workbook update '%s', revision %s", name, revision)
+            logger.debug("workbook update '%s', revision %s", name, revision)
 
         session.commit()
 
@@ -334,8 +336,8 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
         connection.close()
 
         if result.rowcount:
-            self.log.debug("workbooks _prune_missed_revisions pruned %d",
-                           result.rowcount)
+            logger.debug("workbooks _prune_missed_revisions pruned %d",
+                         result.rowcount)
 
         return result.rowcount
 
@@ -363,7 +365,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
                   having(func.count() > retain_count).\
                   all()
 
-#        self.log.debug("workbooks _retain_some len: %d, results: %s",
+#        logger.debug("workbooks _retain_some len: %d, results: %s",
 #                                                len(results), str(results))
 
         for result in results:
@@ -416,14 +418,13 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
         count = 0
         for update in updates:
             if not self.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]:
-                self.log.info(
-                          "Workbook Archive disabled during fixup." + \
-                          "  Exiting for now.")
+                logger.info("Workbook Archive disabled during fixup. " + \
+                            "Exiting for now.")
                 break
 
             if not self.server.odbc_ok():
-                self.log.info("Workbook Archive Fixup: Archive build " + \
-                          "stopping due to current state")
+                logger.info("Workbook Archive Fixup: Archive build " + \
+                            "stopping due to current state")
                 break
 
             session.refresh(update)
@@ -446,11 +447,11 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
         """
         filename = self._build_twb(agent, update)
         if not filename:
-            self.log.error('Failed to retrieve twb: %s %s',
-                           update.workbook.repository_url, update.revision)
+            logger.error('Failed to retrieve twb: %s %s',
+                         update.workbook.repository_url, update.revision)
             return
         update.url = agent.path.basename(filename)
-        self.log.debug("workbooks load: update.url: %s", filename)
+        logger.debug("workbooks load: update.url: %s", filename)
 
         # retrieval is a long process, so commit after each.
         meta.Session.commit()
@@ -492,7 +493,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
             dst_twb = dst[0:-1] # drop the trailing 'x'
             agent.filemanager.move(dst, dst_twb)
             dst_twbx = None
-            self.log.debug("workbook: renamed %s to %s", dst, dst_twb)
+            logger.debug("workbook: renamed %s to %s", dst, dst_twb)
 
         # Pull the twb file contents over to the controller before sending the
         # file away (and deleting it on the primary if it will reside
@@ -519,8 +520,8 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
         try:
             type_body = agent.filemanager.filetype(dst)
         except IOError as ex:
-            self.log.error("get_wb_type: filetype on '%s' failed with: %s",
-                            dst, str(ex))
+            logger.error("get_wb_type: filetype on '%s' failed with: %s",
+                         dst, str(ex))
             return None
 
         if type_body['type'] == 'ZIP':
@@ -537,11 +538,11 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
                   "type of '%s' with an invalid signature: '%s' %s.") % \
                    (dst, type_body['type'], sig, str(type_body['signature']))
 
-            self.log.error("get_wb_type: %s", msg)
+            logger.error("get_wb_type: %s", msg)
             self._eventgen(update, error=msg)
             return None
 
-        self.log.debug("get_wb_type: File '%s' is type: %s", dst, file_type)
+        logger.debug("get_wb_type: File '%s' is type: %s", dst, file_type)
         return file_type
 
     def _copy_twb_to_controller(self, agent, update, dst_twb):
@@ -550,11 +551,11 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
                 Failure: None
                 Success: The passed filename
         """
-        self.log.debug('Retrieving workbook: %s', dst_twb)
+        logger.debug('Retrieving workbook: %s', dst_twb)
         try:
             contents = agent.filemanager.get(dst_twb)
         except IOError as ex:
-            self.log.debug("Error getting workbook '%s': %s", dst_twb, str(ex))
+            logger.debug("Error getting workbook '%s': %s", dst_twb, str(ex))
             return None
 
         update.twb = contents
@@ -570,7 +571,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
                 filter(WorkbookEntry.workbookid == update.workbookid).\
                 one()
         except NoResultFound:
-            self.log.error("Missing workbook id: %d", update.workbookdid)
+            logger.error("Missing workbook id: %d", update.workbookdid)
             return None
 
         url = '/workbooks/%s.twbx' % update.workbook.repository_url
@@ -598,8 +599,8 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
                 filter(WorkbookUpdateEntry.wuid == update.wuid).\
                 delete()
         except NoResultFound:
-            self.log.error("_remove_wbu: workbook already deleted: %d",
-                           update.wuid)
+            logger.error("_remove_wbu: workbook already deleted: %d",
+                         update.wuid)
             return
 
     def _extract_twb_from_twbx(self, agent, update, dst):
@@ -617,8 +618,8 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
             try:
                 agent.filemanager.delete(dst)
             except IOError as ex:
-                self.log.debug("Error deleting workbook dst '%s': %s",
-                                dst, str(ex))
+                logger.debug("Error deleting workbook dst '%s': %s",
+                             dst, str(ex))
         if failed(body):
             self._eventgen(update, data=body)
             return None
