@@ -1,5 +1,6 @@
-#!/usr/bin/env python
+""" Email limiter """
 
+import logging
 from sqlalchemy import Column, BigInteger, DateTime, func
 from sqlalchemy.schema import ForeignKey
 
@@ -8,6 +9,8 @@ import akiri.framework.sqlalchemy as meta
 from event_control import EventControl
 from manager import Manager
 from system import SystemKeys
+
+logger = logging.getLogger()
 
 class EmailLimitEntry(meta.Base):
     # pylint: disable=no-init
@@ -51,7 +54,7 @@ class EmailLimitManager(Manager):
         result = connection.execute(stmt)
         connection.close()
 
-        self.log.debug("email limit manager: pruned %d", result.rowcount)
+        logger.debug("email limit manager: pruned %d", result.rowcount)
 
     def _recent_count(self):
         return meta.Session.query(EmailLimitEntry).\
@@ -68,7 +71,7 @@ class EmailLimitManager(Manager):
                 False if email-limit hasn't been reached (keep sending emails).
         """
 
-        self.log.debug("email_limit_reached checking: event %s, eventid %d\n",
+        logger.debug("email_limit_reached checking: event %s, eventid %d\n",
                        event_entry.key, eventid)
 
         # We limit only ERROR events.
@@ -84,7 +87,7 @@ class EmailLimitManager(Manager):
 
         emails_sent_recently = self._recent_count()
         email_lookback_minutes = self.system[SystemKeys.EMAIL_LOOKBACK_MINUTES]
-        self.log.debug("email_limit: sent %d error emails in the last "
+        logger.debug("email_limit: sent %d error emails in the last "
                        "%d minutes.",
                        emails_sent_recently, email_lookback_minutes)
 

@@ -1,3 +1,4 @@
+import logging
 import time, datetime
 
 from sqlalchemy import Column, BigInteger, Float, DateTime, func
@@ -10,7 +11,7 @@ from event_control import EventControl
 from manager import Manager
 from system import SystemKeys
 
-#from event_control import EventControl
+logger = logging.getLogger()
 
 class MetricEntry(meta.Base):
     # pylint: disable=no-init
@@ -40,7 +41,7 @@ class MetricManager(Manager):
         """Prune/remove old rows from the metrics table."""
 
         metric_save_days = self.system[SystemKeys.METRIC_SAVE_DAYS]
-        self.log.debug("metrics: prune save %d days", metric_save_days)
+        logger.debug("metrics: prune save %d days", metric_save_days)
 
         stmt = ("DELETE FROM metrics " + \
                 "WHERE creation_time < NOW() - INTERVAL '%d DAYS'") % \
@@ -50,7 +51,7 @@ class MetricManager(Manager):
         result = connection.execute(stmt)
         connection.close()
 
-        self.log.debug("metrics: pruned %d rows", result.rowcount)
+        logger.debug("metrics: pruned %d rows", result.rowcount)
         return {'status': "OK", 'pruned': result.rowcount}
 
     def check(self, metric='cpu'):
@@ -74,16 +75,16 @@ class MetricManager(Manager):
             error_report = self._cpu_above_threshold(connection,
                                     agent, cpu_load_error,
                                     cpu_period_error)
-            self.log.debug("metrics: error_report '%s': %s",
-                            agent.displayname, str(error_report))
+            logger.debug("metrics: error_report '%s': %s",
+                         agent.displayname, str(error_report))
 
             if error_report['above'] != 'yes':
                 warn_report = self._cpu_above_threshold(connection,
                                     agent, cpu_load_warn,
                                     cpu_period_warn)
 
-                self.log.debug("metrics: warn_report '%s': %s",
-                                agent.displayname, str(warn_report))
+                logger.debug("metrics: warn_report '%s': %s",
+                             agent.displayname, str(warn_report))
                 if error_report['above'] == 'unknown' and \
                                     warn_report['above'] == 'unknown':
                     results.append({"displayname": agent.displayname,
@@ -133,11 +134,10 @@ class MetricManager(Manager):
             Returns a dictionary for the report.
         """
         notification = self.server.notifications.get(name, agent.agentid)
-        self.log.debug(
-            ("metric: %s.  agent '%s', color '%s', " + \
-            "notified_color '%s', report_value %d") % \
-            (name, agent.displayname, color,
-            str(notification.notified_color), report_value))
+        logger.debug("metric: %s.  agent '%s', color '%s', " + \
+                     "notified_color '%s', report_value %d",
+                     name, agent.displayname, color,
+                     str(notification.notified_color), report_value)
 
         if color != notification.notified_color:
             if color != 'green' or \
@@ -171,12 +171,12 @@ class MetricManager(Manager):
                 value: the average, if 'above' value is not 'unknown'
         """
 
-        self.log.debug(
-            "metrics: _cpu_above_threshold '%s', threshold %d, period %d",
-            agent.displayname, threshold, period)
+        logger.debug("metrics: _cpu_above_threshold '%s', " + \
+                     "threshold %d, period %d",
+                     agent.displayname, threshold, period)
         if not agent.last_connection_time:
-            self.log.error("metrics: no last_connection_time for '%s'",
-                            agent.displayname)
+            logger.error("metrics: no last_connection_time for '%s'",
+                         agent.displayname)
             return {"above": "unknown"}
 
         # Seconds since the epoch
@@ -187,9 +187,9 @@ class MetricManager(Manager):
         if time.time() - last_connection_time < period:
             # The agent hasn't been connected at least "period" amount
             # of time.
-            self.log.debug("metrics: too short connection: %d - %d < %d = %d",
-                            time.time(), last_connection_time, period,
-                            time.time() - last_connection_time)
+            logger.debug("metrics: too short connection: %d - %d < %d = %d",
+                         time.time(), last_connection_time, period,
+                         time.time() - last_connection_time)
             return {"above": "unknown"}
 
         stmt = ("SELECT AVG(cpu) FROM metrics WHERE " + \
@@ -205,12 +205,12 @@ class MetricManager(Manager):
             else:
                 report_value = int(round(row[0], 0))
 
-        self.log.debug("metrics: '%s' threshold: %d, average: %d",
-                        agent.displayname, threshold, report_value)
+        logger.debug("metrics: '%s' threshold: %d, average: %d",
+                     agent.displayname, threshold, report_value)
 
         if report_value == -1:
-            self.log.debug(
-                "metrics: No samples for agent '%s'." % agent.displayname)
+            logger.debug("metrics: No samples for agent '%s'.",
+                         agent.displayname)
             return {"above": "unknown"}
         elif report_value < threshold:
             return {"above": "no", "value": report_value}
@@ -225,7 +225,7 @@ class MetricManager(Manager):
         elif color == 'red':
             event = EventControl.CPU_LOAD_ABOVE_HIGH_WATERMARK
         else:
-            self.log.error("_gen_event: Invalid color: %s", color)
+            logger.error("_gen_event: Invalid color: %s", color)
             return
 
         data = agent.todict()

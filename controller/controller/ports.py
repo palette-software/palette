@@ -1,3 +1,4 @@
+import logging
 import threading
 import json
 
@@ -12,6 +13,8 @@ from event_control import EventControl
 from manager import Manager
 from mixin import BaseMixin
 from util import failed
+
+logger = logging.getLogger()
 
 class PortEntry(meta.Base, BaseMixin):
     __tablename__ = "ports"
@@ -65,7 +68,6 @@ class PortManager(Manager):
 
     def __init__(self, server):
         super(PortManager, self).__init__(server)
-        self.log = server.log
 
         # A lock to allow only one port check to be done at a time.
         # Otherwise: 1) We can send the same 'failed to connect' event
@@ -120,11 +122,10 @@ class PortManager(Manager):
 
         agent = self.server.agentmanager.agent_by_agentid(entry.agentid)
         if not agent:
-            self.log.debug(
-                "check_port: agentid %d not connected.  Will not " + \
-                "check service_name %s dest_host '%s' dest_port '%d'",
-                entry.agentid, entry.service_name, entry.dest_host,
-                entry.dest_port)
+            logger.debug("check_port: agentid %d not connected.  Will not " + \
+                         "check service_name %s dest_host '%s' dest_port '%d'",
+                         entry.agentid, entry.service_name, entry.dest_host,
+                         entry.dest_port)
             details['error'] = \
                 "agent %d not connected.  Can't do port check." % entry.agentid
             return details
@@ -135,7 +136,7 @@ class PortManager(Manager):
         data = agent.todict()
 
         if failed(body):
-            self.log.error(
+            logger.error(
                 "check_port: agentid %d command '%s' for service '%s' " + \
                 "failed: %s",
                 entry.agentid, command, entry.service_name,
@@ -143,7 +144,7 @@ class PortManager(Manager):
             details['error'] = body['error']
 
         if not 'exit-status' in body:
-            self.log.error(
+            logger.error(
                 "check_port: agentid %d command '%s' for service '%s' " + \
                 "did not have 'exit-status' in returned body: %s",
                 entry.agentid, command, entry.service_name,
@@ -155,17 +156,16 @@ class PortManager(Manager):
             try:
                 stdout = json.loads(body['stdout'])
             except ValueError as ex:
-                self.log.error("check_port: Bad json in stdout: %s: %s\n",
-                    str(ex), body['stdout'])
+                logger.error("check_port: Bad json in stdout: %s: %s\n",
+                             str(ex), body['stdout'])
                 stdout = {}
 
             if 'milliseconds' in stdout:
                 try:
                     details['connect_time'] = stdout['milliseconds']/1000.
                 except TypeError as ex:
-                    self.log.error(
-                        "check_port: Bad milliseconds value: %s: %s\n",
-                        str(ex), str(stdout))
+                    logger.error("check_port: Bad milliseconds value: %s: %s\n",
+                                 str(ex), str(stdout))
 
             if 'ip' in stdout:
                 details['ip'] = stdout['ip']
@@ -180,14 +180,14 @@ class PortManager(Manager):
                 details['error'] = \
                         "Connection to '%s' failed: host '%s', port %d" % \
                        (entry.service_name, entry.dest_host, entry.dest_port)
-            self.log.debug(details)
+            logger.debug(details)
         elif entry.max_time and 'connect_time' in details and \
                                 details['connect_time'] > entry.max_time:
             details['error'] = ("Connection time (%.1f) exceeded maximum " + \
                        "allowed (%d.0) to '%s': host '%s', port %d") % \
                        (details['connect_time'], entry.max_time,
                        entry.service_name, entry.dest_host, entry.dest_port)
-            self.log.debug(details)
+            logger.debug(details)
 
         if failed(details):
             color = 'red'

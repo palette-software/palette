@@ -1,3 +1,4 @@
+import logging
 import os
 import ntpath
 
@@ -19,6 +20,8 @@ from manager import Manager
 from passwd import aes_decrypt
 from .system import SystemKeys
 from .util import failed
+
+logger = logging.getLogger()
 
 CLOUD_TYPE_S3 = 's3'
 CLOUD_TYPE_GCS = 'gcs'
@@ -192,7 +195,7 @@ class CloudManager(Manager):
         else:
             msg = "delete_cloud_file: Unknown cloud_type %s for file: %s" % \
                   (cloud_entry.cloud_type, file_entry.name)
-            self.log.error(msg)
+            logging.error(msg)
             raise IOError(msg)
 
     def download(self, agent, url, pwd=None):
@@ -349,8 +352,8 @@ class CloudInstance(object):
         assert not self.EXE is None
         cmd = '%s PUT %s "%s"' % (self.EXE, arg1, arg2)
 
-        self.server.log.debug("cmd: '%s', pwd: '%s', path: '%s'",
-                              cmd, str(pwd), filepath)
+        logger.debug("cmd: '%s', pwd: '%s', path: '%s'",
+                     cmd, str(pwd), filepath)
 
         # Send the command to the agent
         return self.server.cli_cmd(cmd, agent, env=env, timeout=60*60*2)
@@ -370,7 +373,7 @@ class CloudInstance(object):
         assert not self.EXE is None
         cmd = '%s GET %s "%s"' % (self.EXE, arg1, arg2)
 
-        self.server.log.debug("cmd: '%s', pwd: '%s'", cmd, str(pwd))
+        logger.debug("cmd: '%s', pwd: '%s'", cmd, str(pwd))
 
         # Send the command to the agent
         body = self.server.cli_cmd(cmd, agent, env=env, timeout=60*60*2)

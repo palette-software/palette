@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import datetime
 
@@ -5,6 +6,8 @@ from collections import OrderedDict
 
 from util import odbc2dt
 from mixin import CredentialMixin
+
+logger = logging.getLogger()
 
 class ODBC(CredentialMixin):
 
@@ -38,7 +41,7 @@ class ODBC(CredentialMixin):
 
         bitness = self.agent.bitness
         if not bitness:
-            self.server.log.error("odbc.connection: " + \
+            logger.error("odbc.connection: " + \
                             "Missing yml 'agent.bitness'.  Will use 64-bit.")
         if bitness == 32:
             self.DRIVER = '{PostgreSQL Unicode}'
@@ -100,8 +103,7 @@ class ODBC(CredentialMixin):
 
         time_rows = datadict['']
         if not len(time_rows) or not len(time_rows[0]):
-            self.server.log.error(
-                        "get_db_now_utc: Missing db time now: %s", time_rows)
+            logger.error("get_db_now_utc: Missing db time now: %s", time_rows)
             return datetime.utcnow()
 
         # Comes back something like "2015-09-29 18:19:08.156985+00"
@@ -111,7 +113,7 @@ class ODBC(CredentialMixin):
         try:
             struct = time.strptime(time_str, "%Y-%m-%d %H:%M:%S")
         except ValueError:
-            self.server.log.error("get_db_now_utc: Bad db now: %s", time_str)
+            logger.error("get_db_now_utc: Bad db now: %s", time_str)
             return datetime.utcnow()
 
         return datetime.fromtimestamp(time.mktime(struct))

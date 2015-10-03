@@ -1,3 +1,4 @@
+import logging
 from httplib import responses
 from urllib import unquote
 from urlparse import urlparse
@@ -20,6 +21,8 @@ from workbooks import WorkbookEntry
 from profile import UserProfile
 from odbc import ODBC
 from system import SystemKeys
+
+logger = logging.getLogger()
 
 class HttpRequestEntry(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'http_requests'
@@ -221,11 +224,10 @@ class HttpRequestManager(TableauCacheManager):
                 show_entry = self._find_vizql_entry(rows, entry, 'show')
 
                 if not show_entry:
-                    self.server.log.error("http load test Type 1: "
-                        "http_requests "
-                        "For id %d, action %s, vizql_session %d, did not "
-                        "find 'show'",
-                        entry.id, entry.action, entry.vizql_session)
+                    logger.error("http load test Type 1: http_requests "
+                                 "For id %d, action %s, vizql_session %d, "
+                                 "did not find 'show'",
+                                 entry.id, entry.action, entry.vizql_session)
                     return
 
                 seconds_load = int(timedelta_total_seconds(
@@ -254,11 +256,11 @@ class HttpRequestManager(TableauCacheManager):
                 show_entry = self._find_vizql_entry(rows, entry, 'show')
 
                 if not show_entry:
-                    self.server.log.error("http load test Type 3: "
-                        "http_requests "
-                        "For id %d, action %s, vizql_session %d, did not "
-                        "find 'show'",
-                        entry.id, entry.action, entry.vizql_session)
+                    logger.error("http load test Type 3: "
+                                 "http_requests "
+                                 "For id %d, action %s, vizql_session %d, "
+                                 "did not find 'show'",
+                                 entry.id, entry.action, entry.vizql_session)
                     return
 
                 # Use the information from the 'show' row instead of
@@ -282,11 +284,11 @@ class HttpRequestManager(TableauCacheManager):
 #                                   agent, entry, body=body)
 #                return
             else:
-                self.server.log.debug("http load test: "
-                            "http_requests "
-                            "For id %d, action %s, currently unhandled "
-                            "bootstrapSession case",
-                            entry.id, entry.action)
+                logger.debug("http load test: "
+                             "http_requests "
+                             "For id %d, action %s, currently unhandled "
+                             "bootstrapSession case",
+                             entry.id, entry.action)
                 return
 
 #            print 'found it id:', entry.id, 'action:', entry.action,
@@ -349,15 +351,14 @@ class HttpRequestManager(TableauCacheManager):
             workbook = WorkbookEntry.get_by_url(envid, url, entry.site_id,
                                             default=None)
         except MultipleResultsFound:
-            self.server.log.warning(
-                    "Multiple rows found for url '%s', site_id: '%s'",
-                    url, entry.site_id)
+            logger.warning("Multiple rows found for url '%s', site_id: '%s'",
+                           url, entry.site_id)
             body['workbook'] = 'Unknown: Duplicate repository url'
             body['owner'] = 'Unknown: Duplicate repository url'
             return
 
         if not workbook:
-            self.server.log.warning("repository_url '%s' Not Found.", url)
+            logger.warning("repository_url '%s' Not Found.", url)
             return
         body['workbook'] = workbook.name
 
@@ -367,8 +368,8 @@ class HttpRequestManager(TableauCacheManager):
             body['userid'] = user.userid
             body['owner'] = user.display_name()
         else:
-            self.server.log.warning("system user '%d' Not Found.",
-                                    workbook.system_user_id)
+            logger.warning("system user '%d' Not Found.",
+                           workbook.system_user_id)
         body['project'] = workbook.project
 
         if workbook.site:

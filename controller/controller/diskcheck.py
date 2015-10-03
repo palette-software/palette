@@ -1,9 +1,12 @@
+import logging
 from files import FileManager
 
 from agent import AgentVolumesEntry
 from agent import Agent
 from system import SystemKeys
 from util import sizestr
+
+logger = logging.getLogger()
 
 class DiskException(Exception):
     def __init__(self, errmsg):
@@ -26,7 +29,6 @@ class DiskCheck(object):
         # inputs
         self.server = server
         self.system = server.system
-        self.log = server.log
 
         self.agent = agent
         self.parent_dir = parent_dir     # "backup", or "ziplogs"
@@ -83,9 +85,8 @@ class DiskCheck(object):
         try:
             self.agent.filemanager.mkdirs(self.primary_dir)
         except (IOError, ValueError) as ex:
-            self.log.error(
-                "diskcheck.mkdirs: Could not create directory: '%s': %s",
-                self.primary_dir, str(ex))
+            logger.error("diskcheck.mkdirs: Could not create dir: '%s': %s",
+                         self.primary_dir, str(ex))
             raise DiskException("Could not create directory '%s': %s" % \
                                 (self.primary_dir, str(ex)))
 
@@ -98,8 +99,8 @@ class DiskCheck(object):
             try:
                 self.agent.filemanager.mkdirs(self.target_dir)
             except (IOError, ValueError) as ex:
-                self.log.error("diskcheck.mkdirs: Could not create " + \
-                               "target directory: '%s': %s",
+                logger.error("diskcheck.mkdirs: Could not create " + \
+                             "target directory: '%s': %s",
                                 self.target_dir, str(ex))
                 raise DiskException(
                     ("Could not create target directory " + \
@@ -123,7 +124,7 @@ class DiskCheck(object):
                DiskCheck.get_primary_loc(self.agent,
                                          self.parent_dir,
                                          self.min_disk_needed)
-        self.log.debug("cloud: primary_dir: %s", self.primary_dir)
+        logger.debug("cloud: primary_dir: %s", self.primary_dir)
         return
 
     def _config_vol_target(self):
@@ -188,16 +189,16 @@ class DiskCheck(object):
                                 self.parent_dir,
                                 self.min_disk_needed)
 
-        self.log.debug("check_volume_from_config: set target to " + \
-                "agent '%s', volid %d, target dir '%s', " + \
-                "primary_dir '%s'. " + \
-                "Need %s, have %s, size %s, " + \
-                "archive limit %s",
-                   self.target_agent.displayname, entry.volid, self.target_dir,
-                   self.primary_dir,
-                   sizestr(self.min_disk_needed),
-                                        sizestr(entry.available_space),
-                   sizestr(entry.size), sizestr(entry.archive_limit))
+        logger.debug("check_volume_from_config: set target to " + \
+                     "agent '%s', volid %d, target dir '%s', " + \
+                     "primary_dir '%s'. " + \
+                     "Need %s, have %s, size %s, " + \
+                     "archive limit %s",
+                     self.target_agent.displayname, entry.volid,
+                     self.target_dir, self.primary_dir,
+                     sizestr(self.min_disk_needed),
+                     sizestr(entry.available_space),
+                     sizestr(entry.size), sizestr(entry.archive_limit))
 
     @classmethod
     def get_primary_loc(cls, agent, parent_dir, min_disk_needed=0):

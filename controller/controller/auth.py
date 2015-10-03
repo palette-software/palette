@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from sqlalchemy import not_, func
 
@@ -8,6 +9,8 @@ from event_control import EventControl
 from profile import UserProfile, Publisher, License, Role
 from system import SystemKeys
 from util import odbc2dt, DATEFMT, success, failed
+
+logger = logging.getLogger()
 
 # FIXME: use the ODBC class here instead.
 class AuthManager(Manager):
@@ -189,7 +192,7 @@ class AuthManager(Manager):
         self.system.save(SystemKeys.AUTH_TIMESTAMP, timestamp)
 
         d = {u'status': 'OK', u'count': len(data[''])}
-        self.server.log.debug("auth load returning: %s", str(d))
+        logger.debug("auth load returning: %s", str(d))
         return d
 
     def verify(self, name, password):

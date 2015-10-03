@@ -1,5 +1,8 @@
+import logging
 from manager import Manager
 from system import SystemKeys
+
+logger = logging.getLogger()
 
 class StateManager(Manager):
     # possible states
@@ -59,14 +62,13 @@ class StateManager(Manager):
         super(StateManager, self).__init__(server)
         self.system = self.server.system
         self.config = self.server.config
-        self.log = self.server.log
 
     def update(self, state):
         if state == "RUNNING":
             # tabadmin calls it "RUNNING"; we called it "STARTED"
             state = StateManager.STATE_STARTED
 
-        self.log.info("-------state changing to %s----------", state)
+        logger.info("-------state changing to %s----------", state)
 
         self.system.save(SystemKeys.STATE, state)
 

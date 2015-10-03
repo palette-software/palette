@@ -1,3 +1,4 @@
+import logging
 from sqlalchemy import Column, String, DateTime, Boolean, Integer, BigInteger
 from sqlalchemy import UniqueConstraint, Text
 from sqlalchemy.schema import ForeignKey
@@ -22,6 +23,8 @@ from files import FileManager
 
 from sites import Site
 from projects import Project
+
+logger = logging.getLogger()
 
 # NOTE: system_user_id is maintained in two places.  This is not ideal from
 # a db design perspective but makes the find-by-current-owner code clearer.
@@ -180,10 +183,10 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         updates = []
 
         if 'error' in data or '' not in data:
-            self.log.debug("datasources load: bad data: %s", str(data))
+            logger.debug("datasources load: bad data: %s", str(data))
             return data
 
-        self.log.debug(data)
+        logger.debug(data)
 
         for odbcdata in ODBC.load(data):
             name = odbcdata.data['name']
@@ -221,8 +224,8 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
                 session.add(dsu)
                 updates.append(dsu)
 
-            self.log.debug("datasource update '%s', revision %s",
-                            name, revision)
+            logger.debug("datasource update '%s', revision %s",
+                         name, revision)
 
         session.commit()
 
@@ -263,8 +266,8 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         connection.close()
 
         if result.rowcount:
-            self.log.debug("datasource _prune_missed_revisions pruned %d",
-                           result.rowcount)
+            logger.debug("datasource _prune_missed_revisions pruned %d",
+                         result.rowcount)
 
         return result.rowcount
 
@@ -292,7 +295,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
                   having(func.count() > retain_count).\
                   all()
 
-#        self.log.debug("datasources _retain_some len: %d, results: %s",
+#        logger.debug("datasources _retain_some len: %d, results: %s",
 #                                                len(results), str(results))
 
         for result in results:
@@ -345,14 +348,13 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         count = 0
         for update in updates:
             if not self.system[SystemKeys.DATASOURCE_ARCHIVE_ENABLED]:
-                self.log.info(
-                          "Datasource Archive disabled during fixup." + \
-                          "  Exiting for now.")
+                logger.info("Datasource Archive disabled during fixup. " + \
+                            "Exiting for now.")
                 break
 
             if not self.server.odbc_ok():
-                self.log.info("Datasource Archive Fixup: Archive build " + \
-                          "stopping due to current state")
+                logger.info("Datasource Archive Fixup: Archive build " + \
+                            "stopping due to current state")
                 break
 
             session.refresh(update)
@@ -378,11 +380,11 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         filename = self._build_tds(agent, update)
         if not filename:
             # Generates an event on error.
-            self.log.error('Failed to retrieve tdsx: %s %s',
-                           update.datasource.repository_url, update.revision)
+            logger.error('Failed to retrieve tdsx: %s %s',
+                         update.datasource.repository_url, update.revision)
             return
         update.url = agent.path.basename(filename)
-        self.log.debug("datasource load: update.url: %s", filename)
+        logger.debug("datasource load: update.url: %s", filename)
 
         # retrieval is a long process, so commit after each.
         meta.Session.commit()
@@ -394,9 +396,9 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         required_exe = self.PCMD + '.exe'
         body = agent.filemanager.listdir(agent.install_dir)
         if not required_exe in body['files']:
-            self.log.info("%s: Missing %s/%s.  Skipping datasource "
-                          "archiving for now.", self.NAME, agent.install_dir,
-                                                required_exe)
+            logger.info("%s: Missing %s/%s.  Skipping datasource "
+                        "archiving for now.",
+                        self.NAME, agent.install_dir, required_exe)
             return False
         return True
 
@@ -447,7 +449,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
                 filter(DataSourceEntry.dsid == update.dsid).\
                 one()
         except NoResultFound:
-            self.log.error("Missing datasource id: %d", update.dsid)
+            logger.error("Missing datasource id: %d", update.dsid)
             return None
 
         url = '/datasources/%s.tdsx' % update.datasource.repository_url
@@ -474,8 +476,8 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
                 filter(DataSourceUpdateEntry.dsuid == update.dsuid).\
                 delete()
         except NoResultFound:
-            self.log.error("_remove_dsu: datasource already deleted: %d",
-                           update.dsuid)
+            logger.error("_remove_dsu: datasource already deleted: %d",
+                         update.dsuid)
             return
 
     def _extract_tds_from_tdsx(self, agent, update, dst_tdsx):
@@ -489,7 +491,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         try:
             agent.filemanager.delete(dst_tds)
         except IOError as ex:
-            self.log.debug("extract_tds_from_tdsx: Expected error deleting "
+            logger.debug("extract_tds_from_tdsx: Expected error deleting "
                            "datasource dst_tds '%s': %s",
                             dst_tds, str(ex))
 
@@ -501,8 +503,8 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
             try:
                 agent.filemanager.delete(dst_tdsx)
             except IOError as ex:
-                self.log.debug("Error deleting datasource dst_tdsx '%s': %s",
-                                dst_tdsx, str(ex))
+                logger.debug("Error deleting datasource dst_tdsx '%s': %s",
+                             dst_tdsx, str(ex))
         if failed(body):
             self._eventgen(update, data=body)
             return None
@@ -515,12 +517,12 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
                 Failure: None
                 Success: True
         """
-        self.log.debug('Retrieving datasource tds: %s', dst_tds)
+        logger.debug('Retrieving datasource tds: %s', dst_tds)
         try:
             contents = agent.filemanager.get(dst_tds)
         except IOError as ex:
-            self.log.debug("Error getting datasource '%s': %s", dst_tds,
-                                                                str(ex))
+            logger.debug("Error getting datasource '%s': %s",
+                         dst_tds, str(ex))
             return None
 
         update.tds = contents

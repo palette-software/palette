@@ -28,7 +28,6 @@ class NotificationManager(object):
 
     def __init__(self, server):
         self.server = server
-        self.log = server.log
         self.envid = server.environment.envid
 
     def get(self, name, agentid=None):

@@ -1,3 +1,4 @@
+import logging
 import urllib
 from collections import OrderedDict
 
@@ -16,6 +17,8 @@ from util import failed
 
 STORAGE_TYPE_VOL = "vol"
 STORAGE_TYPE_CLOUD = "cloud"
+
+logger = logging.getLogger()
 
 class FileEntry(meta.Base, BaseDictMixin):
     __tablename__ = 'files'
@@ -117,18 +120,15 @@ class FileManager(Manager):
         """
         file_entry = self.server.files.find_by_id(fileid)
         if not file_entry:
-            self.log.info(
-                    "remove_file fileid %d disappeared, or was never added.",
-                    fileid)
+            logger.info("remove_file fileid %d disappeared, or wasn't added.",
+                        fileid)
             return
 
         body = self.delfile_by_entry(file_entry)
         if failed(body):
-            self.log.info(
-                "remove_file failed to delete fileid %d", fileid)
+            logger.info("remove_file failed to delete fileid %d", fileid)
         else:
-            self.log.debug(
-                "remove_file deleted fileid %d", fileid)
+            logger.debug("remove_file deleted fileid %d", fileid)
 
     def delfile_by_entry(self, file_entry):
         """Delete a file, wherever it is
@@ -162,9 +162,8 @@ class FileManager(Manager):
         for key in agents.keys():
             self.server.agentmanager.lock()
             if not agents.has_key(key):
-                self.log.info(
-                    "copy_cmd: agent with conn_id %d is now " + \
-                    "gone and won't be checked.", key)
+                logger.info("copy_cmd: agent with conn_id %d is now " + \
+                            "gone and won't be checked.", key)
                 self.server.agentmanager.unlock()
                 continue
             agent = agents[key]
@@ -178,8 +177,8 @@ class FileManager(Manager):
             return {'error': "Agentid %d not connected." % vol_entry.agentid}
 
         file_full_path = file_entry.name
-        self.log.debug("delfile_cmd: Deleting path '%s' on agent '%s'",
-                       file_full_path, target_agent.displayname)
+        logger.debug("delfile_cmd: Deleting path '%s' on agent '%s'",
+                     file_full_path, target_agent.displayname)
 
         body = self.delete_vol_file(target_agent, file_full_path)
 
@@ -199,27 +198,27 @@ class FileManager(Manager):
         """Delete a file, check the error, and return the body result.
            Note: Does not remove the entry from the files table.
            If that is needed, that must be done by the caller."""
-        self.log.debug("Removing file '%s'", source_fullpathname)
+        logger.debug("Removing file '%s'", source_fullpathname)
 
         # Verify file exists.
         try:
             exists_body = agent.filemanager.filesize(source_fullpathname)
         except IOError as ex:
-            self.log.info("filemanager.filesize('%s') failed: %s",
-                            source_fullpathname, str(ex))
+            logger.info("filemanager.filesize('%s') failed: %s",
+                        source_fullpathname, str(ex))
             return {'error': str(ex)}
 
         if failed(exists_body):
-            self.log.info("filemanager.filesize('%s') error: %s",
-                            source_fullpathname, str(exists_body))
+            logger.info("filemanager.filesize('%s') error: %s",
+                        source_fullpathname, str(exists_body))
             return exists_body
 
         # Remove file.
         try:
             remove_body = agent.filemanager.delete(source_fullpathname)
         except IOError as ex:
-            self.log.info("filemanager.delete('%s') failed: %s",
-                            source_fullpathname, str(ex))
+            logger.info("filemanager.delete('%s') failed: %s",
+                        source_fullpathname, str(ex))
             return {'error': str(ex)}
 
         return remove_body

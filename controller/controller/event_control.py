@@ -1,5 +1,9 @@
-import sys, traceback
+import logging
+import sys
+import traceback
 import datetime
+import re
+
 from mako.template import Template
 from mako import exceptions
 from mako.exceptions import MakoException
@@ -21,9 +25,8 @@ import tz
 from sites import Site
 from projects import Project
 
+logger = logging.getLogger()
 mako.runtime.UNDEFINED = UNDEFINED
-
-import re
 
 class EventControl(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = "event_control"
@@ -265,7 +268,6 @@ class EventControlManager(Manager):
         super(EventControlManager, self).__init__(server)
         self.alert_email = server.alert_email
         self.indented = self.alert_email.indented
-        self.log = server.log
         self.envid = server.environment.envid
 
     def get_event_control_entry(self, key):
@@ -316,8 +318,8 @@ class EventControlManager(Manager):
             data = {}
 
         if 'enabled' in data and not data['enabled']:
-            self.log.debug("Agent is disabled so no event will be " + \
-                           "generated.  key: %s, data: %s", key, data)
+            logger.debug("Agent is disabled so no event will be " + \
+                         "generated.  key: %s, data: %s", key, data)
             return
 
         event_entry = self.get_event_control_entry(key)
@@ -325,14 +327,14 @@ class EventControlManager(Manager):
             subject = event_entry.subject
             event_description = event_entry.event_description
         else:
-            self.log.error("No such event key: %s. data: %s\n", key, str(data))
+            logger.error("No such event key: %s. data: %s\n", key, str(data))
             return
 
         # add all system table entries to the data dictionary.
         data = dict(data.items() + \
                     self.system.todict(include_defaults=True).items())
 
-        self.log.debug(key + " DATA: " + str(data))
+        logger.debug(key + " DATA: " + str(data))
 
         if 'exit-status' in data:
             data['exit_status'] = data['exit-status']
@@ -341,7 +343,7 @@ class EventControlManager(Manager):
         # FIXME: remove when browser-aware timezone support is available.
         if timestamp is None:
             timestamp = datetime.datetime.now(tz=tz.tzlocal())
-            self.log.debug(key + " timestamp : " + timestamp.strftime(DATEFMT))
+            logger.debug(key + " timestamp : " + timestamp.strftime(DATEFMT))
         data['timestamp'] = timestamp.strftime(DATEFMT)
 
         # The userid for other events is the Palette "userid".
@@ -471,9 +473,9 @@ class EventControlManager(Manager):
             report = "Error: %s.  Traceback: %s" % (sys.exc_info()[1],
                                                     tback)
 
-            self.log.error(("alert_email: Failed for event '%s', ' + \
-                             data '%s'.  Will not send email. %s"),
-                                 event_entry.key, str(data), report)
+            logger.error("alert_email: Failed for event '%s', '"
+                         "data '%s'.  Will not send email. %s",
+                         event_entry.key, str(data), report)
 
     def make_default_description(self, data):
         """Create a default event message given the incoming dictionary."""

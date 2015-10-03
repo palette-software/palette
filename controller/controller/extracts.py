@@ -1,6 +1,7 @@
+"""Manages events for the Tableau background_jobs table."""
 # pylint: enable=relative-import,missing-docstring
 
-"""Manages events for the Tableau background_jobs table."""
+import logging
 
 from sqlalchemy import Column, BigInteger, Integer, String, DateTime
 from sqlalchemy import UniqueConstraint
@@ -19,6 +20,7 @@ from .system import SystemKeys
 from datasources import DataSourceEntry
 from workbooks import WorkbookEntry
 
+logger = logging.getLogger()
 
 class ExtractNotification(object):
     """Bits used for the notification_state column."""
@@ -89,9 +91,8 @@ class ExtractManager(TableauCacheManager):
 
         args = entry.args.split()
         if len(args) < 11 or not args[4].isdigit():
-            self.log.error("extract add_info: args bad for %s title %s: %s",
-                                obj_class.__tablename__,
-                                entry.title, entry.args)
+            logger.error("extract add_info: args bad for %s title %s: %s",
+                         obj_class.__tablename__, entry.title, entry.args)
             return
 
         entry_id = int(args[4])
@@ -99,10 +100,9 @@ class ExtractManager(TableauCacheManager):
 
         item_entry = obj_class.get_newest_by_id(envid, entry_id)
         if not item_entry:
-            self.log.error("extract _add_info for %s: No such item "
-                           "with title %s, id %d",
-                           obj_class.__tablename__,
-                           entry.title, entry.id)
+            logger.error("extract _add_info for %s: No such item "
+                         "with title %s, id %d",
+                         obj_class.__tablename__, entry.title, entry.id)
             return
 
         entry.system_user_id = item_entry.system_user_id
@@ -123,12 +123,10 @@ class ExtractManager(TableauCacheManager):
         try:
             self._prune(agent, envid)
         except ValueError as ex:
-            self.log.debug(
-                "extract prune: Max background job retrieval failed: %s",
-                str(ex))
+            logger.debug("extract prune: Max background job failed: %s",
+                         str(ex))
             # The agent probably disconnected
-            return {u'error': \
-                    'max background job retrieval failed: %s' % str(ex)}
+            return {u'error': 'max background job retrieval failed: ' + str(ex)}
 
         stmt = \
             "SELECT id, job_type, progress, args, notes, finish_code, " +\
