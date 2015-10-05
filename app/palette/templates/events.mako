@@ -1,11 +1,7 @@
 <div class="scrollable">
-  <section class="top-zone">
-    <section class="row">
-      <section class="col-xs-12">
-        <%include file="paging.mako" args="name='Events'" />
-        <h1>Events</h1>
-      </section>
-    </section>
+  <div class="top-zone">
+    <%include file="paging.mako" args="name='Events'" />
+    <h1>Events</h1>
     <section class="row">
       <section class="col-xs-12 filter-dropdowns">
         <div id="status-dropdown" class="dropdown-toggle btn-group"></div>
