@@ -27,11 +27,6 @@ a img {
     max-width: none !important;
     height: 100%;
 }
-/* deprecated - use the bootstrap class 'center-block' */
-.center-container {
-    width: 860px;
-    margin: 0 auto 0 auto;
-}
 .hidden {
     visibility: hidden;
 }
@@ -173,112 +168,9 @@ p.error {
     font-size: 14px;
     color: @red;
 }
-.checkbox, .radio {
-    padding: 0;
-}
-article.popup p.radio-text {
-    font-family: @font-family-light;
-    font-size: 17px;
-    text-align: left;
-    line-height: 25px;
-    margin-left: 30px;
-}
-
 ul {
     padding: 0;
 }
-ul.checkbox, ul.radio {
-    margin: 15px 0;
-    list-style-type: none;
-}
-ul.checkbox li, ul.radio li {
-    position: relative;
-    height: 28px;
-    width: 100%;
-    display: inline-block;
-    vertical-align: middle;
-    margin: 0 0 5px 0;
-}
-
-ul.checkbox li label, ul.radio li label {
-    font-family: @font-family-light;
-    margin-bottom: 0;
-    margin-top: 7px;
-    display: inline-block;
-    font-weight: 300;
-    float: left;
-    line-height: 18px;
-}
-
-ul.checkbox li input[type="checkbox"], ul.radio li input[type="radio"] {
-    display: block;
-    width: 16px;
-    height: 16px;
-    float: right;
-    position: absolute;
-    top: 50%;
-    margin-top: -7px;
-    right: 0;
-    z-index: 0;
-}
-
-ul.checkbox li label span, ul.radio li label span {
-    background-color: #ddd;
-    border-radius: 2px;
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-    display: block;
-    float: right;
-    box-sizing: content-box;
-    vertical-align: middle;
-    position: absolute;
-    top: 50%;
-    pointer-events: none;
-    margin-top: -9px;
-    right: 0;
-    z-index: 2;
-    -webkit-transition: all 0.2s ease-out;
-    -moz-transition: all 0.2s ease-out;
-    -ms-transition: all 0.2s ease-out;
-    -o-transition: all 0.2s ease-out;
-    transition: all 0.2s ease-out;
-}
-
-ul.radio li label span {
-    border-radius: 50%;
-}
-
-ul.checkbox li label div, ul.radio li label div {
-    display: inline-block;
-}
-
-ul.checkbox li input[type="checkbox"]:hover, ul.radio li input[type="radio"]:hover  {
-    cursor: pointer;
-}
-
-ul.checkbox li input[type="checkbox"]:checked + label span, ul.radio li input[type="radio"]:checked + label span {
-    background-color: #a2adbd;
-}
-
-ul.checkbox li input[type="checkbox"]:checked + label span:after, ul.radio li input[type="radio"]:checked + label span:after {
-    content: "\f00c";
-    display: inline-block;
-    font-family: FontAwesome;
-    font-style: normal;
-    font-weight: normal;
-    line-height: 1;
-    -webkit-font-smoothing: antialiased;
-    line-height: 18px;
-    text-align: center;
-    width: 18px;
-    position: absolute;
-    top: 0;
-    left: 0;
-    color: #fff;
-    font-size: 12px;
-}
-
 /* items are generic events workbooks, users etc. */
 article.item {
     background-color: #e5e5e5;
@@ -435,9 +327,6 @@ article.item article {
 label + input[type="text"], label + input[type="password"] {
     margin-top: 0;
     margin-bottom: 5px;
-}
-div.save-cancel {
-    margin-top: 25px;
 }
 .fake-text-input {
     line-height: 35px;

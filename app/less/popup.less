@@ -46,3 +46,56 @@
     font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: 17px;
 }
+
+.popup .radio label {
+    font-family: @font-family-light;
+    margin-top: 10px;
+}
+
+.popup .checkbox label {
+    font-family: @font-family-light;
+    margin-bottom: 0;
+    margin-top: 7px;
+    display: inline-block;
+    font-weight: 300;
+    float: left;
+    line-height: 18px;
+    cursor: default;
+}
+
+
+.popup p.radio-text {
+    font-family: @font-family-light;
+    font-size: 17px;
+    text-align: left;
+    line-height: 25px;
+    margin-left: 30px;
+}
+
+.popup .checkbox {
+    margin: 15px 0;
+    list-style-type: none;
+}
+
+/* FIXME: all used for popups */
+.popup .checkbox li {
+    position: relative;
+    height: 28px;
+    width: 100%;
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0 0 5px 0;
+}
+
+.popup input[type="checkbox"] {
+    display: block;
+    width: 16px;
+    height: 16px;
+    float: right;
+    position: absolute;
+    top: 50%;
+    margin-top: -7px;
+    right: 0;
+    z-index: 0;
+    cursor: pointer;
+}

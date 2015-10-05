@@ -21,11 +21,11 @@
     <section>
       <%include file="server-url.mako" />
       <div class="save-cancel">
-        <button type="button" id="save-url" class="save disabled">
-          Save
-        </button>
         <button type="button" id="cancel-url" class="cancel disabled">
           Cancel
+        </button>
+        <button type="button" id="save-url" class="save disabled">
+          Save
         </button>
       </div>
     </section>
@@ -38,11 +38,11 @@
     <section>
       <%include file="tableau-server-url.mako" />
       <div class="save-cancel">
-        <button type="button" id="save-tableau-url" class="save disabled">
-          Save
-        </button>
         <button type="button" id="cancel-tableau-url" class="cancel disabled">
           Cancel
+        </button>
+        <button type="button" id="save-tableau-url" class="save disabled">
+          Save
         </button>
       </div>
     </section>
@@ -61,11 +61,11 @@
       <label for="confirm-password">Confirm New Password *</label>
       <input type="password" id="confirm-password" />
       <div class="save-cancel">
-        <button type="button" id="save-admin" class="save disabled">
-          Save
-        </button>
         <button type="button" id="cancel-admin" class="cancel disabled">
           Cancel
+        </button>
+        <button type="button" id="save-admin" class="save disabled">
+          Save
         </button>
       </div>
     </section>
@@ -76,11 +76,11 @@
     <section id="mail">
       <%include file="mail.mako" />
       <div class="save-cancel">
-        <button type="button" id="save-mail" class="save disabled">
-          Save
-        </button>
         <button type="button" id="cancel-mail" class="cancel disabled">
           Cancel
+        </button>
+        <button type="button" id="save-mail" class="save disabled">
+          Save
         </button>
       </div>
     </section>
@@ -90,11 +90,11 @@
     <section id="ssl">
       <%include file="ssl.mako" />
       <div class="save-cancel">
-        <button type="button" id="save-ssl" class="save disabled">
-          Save
-        </button>
         <button type="button" id="cancel-ssl" class="cancel disabled">
           Cancel
+        </button>
+        <button type="button" id="save-ssl" class="save disabled">
+          Save
         </button>
       </div>
     </section>
@@ -105,11 +105,11 @@
     <section id="tz">
       <%include file="tz.mako" />
       <div class="save-cancel">
-        <button type="button" id="save-tz" class="save disabled">
-          Save
-        </button>
         <button type="button" id="cancel-tz" class="cancel disabled">
           Cancel
+        </button>
+        <button type="button" id="save-tz" class="save disabled">
+          Save
         </button>
       </div>
     </section>
@@ -122,11 +122,11 @@
       <p>This setting overrides Palette's default Authentication Method.</p>
       <span id="authentication-type" class="btn-group"></span>
       <div class="save-cancel">
-        <button type="button" id="save-auth" class="save disabled">
-          Save
-        </button>
         <button type="button" id="cancel-auth" class="cancel disabled">
           Cancel
+        </button>
+        <button type="button" id="save-auth" class="save disabled">
+          Save
         </button>
       </div>
     </section>

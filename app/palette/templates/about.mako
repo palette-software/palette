@@ -48,7 +48,7 @@
 
       <h3>Manual Updates</h3>
       <p>Update your Palette Server to the latest version, on-demand and on your schedule.</p>
-      <button type="button" id="manual-update" class="okcancel disabled"
+      <button type="button" id="manual-update" class="action okcancel disabled"
               data-text="Update Palette Server to the latest available version now?">
         Update Now
       </button>
@@ -70,14 +70,14 @@
 
       <h3>Palette Webserver</h3>
       <p>Restart your Palette Webserver to reset the Web UI during support engagements.</p>
-      <button type="button" id="restart-webserver" class="okcancel disabled"
+      <button type="button" id="restart-webserver" class="action okcancel disabled"
               data-text="Are you sure you want to restart the webserver?">
         Restart Webserver
       </button>
 
       <h3>Palette Controller</h3>
       <p>Restart your Palette Controller to reset the Server during support engagements.</p>
-      <button type="button" id="restart-controller" class="okcancel disabled"
+      <button type="button" id="restart-controller" class="action okcancel disabled"
               data-text="Are you sure you want to restart the controller?">
         Restart Controller
       </button>
