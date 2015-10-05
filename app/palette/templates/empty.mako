@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 <div class="empty-message hidden">
   <h2>Palette Server Cannot Connect to Tableau Server</h2>
   <p>This page is empty because Palette Server can't connect to the Palette Agent(s) on your Tableau Server Machine(s)</p>

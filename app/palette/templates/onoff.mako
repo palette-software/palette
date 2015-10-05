@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 <script id="onoffswitch" type="x-tmpl-mustache">
   <input type="checkbox" class="onoffswitch-checkbox" {{checked}} />
   <label class="onoffswitch-label">

@@ -1,27 +1,10 @@
-<!DOCTYPE html>
-<html>
-<head>
+# -*- coding: utf-8 -*-
+<%inherit file="layout.mako" />
 
 <%block name="title">
 <title>Palette | Welcome</title>
 </%block>
 
-<%block name="favicon">
-<%include file="favicon.mako" />
-</%block>
-
-<%block name="fullstyle">
-<meta charset="utf-8">
-<meta name="viewport" content="width=900, minimal-ui">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="stylesheet" type="text/css" href="/fonts/fonts.css" media="screen">
-<link rel="stylesheet" type="text/css" href="/css/style.css" media="screen">
-
-<script src="/js/vendor/require.js" data-main="/js/login.js" >
-</script>
-</%block>
-
-</head>
 <body>
   <div class="container-vcenter">
     <section class="login-box">

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 <%page args="name" />
 <div class="paging">
   <span class="item-count">

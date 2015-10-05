@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 <div class="scrollable">
   <div class="top-zone">
     <%include file="paging.mako" args="name='Events'" />

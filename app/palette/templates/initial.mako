@@ -1,40 +1,5 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Palette | Setup</title>
-  <%include file="favicon.mako" />
-
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=1000,minimal-ui" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <link rel="stylesheet" type="text/css" href="/css/font-awesome.min.css" />
-  <link rel="stylesheet" type="text/css" href="/fonts/fonts.css" />
-  <link rel="stylesheet" type="text/css" href="/css/style.css" media="screen" />
-
-  <!-- FIXME: merge with layout.mako -->
-  <script>
-  var require = {
-    paths: {
-      'jquery': '/js/vendor/jquery',
-      'topic': '/js/vendor/pubsub',
-      'template' : '/js/vendor/mustache',
-      'domReady': '/js/vendor/domReady',
-
-      'bootstrap': '/js/vendor/bootstrap',
-      'lightbox': '//www.helpdocsonline.com/v2/lightbox'
-    },
-    shim: {
-      'bootstrap': {
-         deps: ['jquery']
-      },
-      'lightbox': {
-         deps: ['jquery']
-      }
-    }
-  };
-  </script>
-
-</head>
+# -*- coding: utf-8 -*-
+<%inherit file="layout.mako" />
 
 <body class="scrollable">
   <nav class="navbar">
@@ -134,4 +99,3 @@
   <script src="/js/vendor/require.js" data-main="/js/initial.js" >
   </script>
 </body>
-</html>
