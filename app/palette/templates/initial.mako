@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 <%inherit file="layout.mako" />
 
-<body class="scrollable">
+<body>
   <nav class="navbar">
     <div class="navbar-header">
       <a class="navbar-brand" href="/"></a>
     </div>
   </nav>
-  <div class="center-container initial hidden" id="licensing-status">
+  <div class="container initial hidden" id="licensing-status">
     <h1>Prepare<br/>for<br/>Awesomeness!
     <span id="wrap">
       <div class="dot"></div>
@@ -17,7 +17,7 @@
     </h1>
     <p>We are trying to Contact Palette License Server licensing.palette-software.com on HTTPS port 443.</p>
   </div>
-  <div class="center-container initial hidden" id="licensing-error">
+  <div class="container initial hidden" id="licensing-error">
     <h2>
       <span class="fa-stack">
         <i class="fa fa-fw fa-stack-1x fa-times-circle red"></i>
@@ -39,7 +39,7 @@
     <p>If your settings are correct and this message persists, please contact Palette Support at <a href="mailto:support@palette-software.com">support@palette-software.com</a>.
     </p>
   </div>
-  <div class="center-container configuration setup-page initial hidden">
+  <div class="container configuration setup-page initial hidden">
     <section class="top-zone">
       <h1>Welcome to Palette Server Setup</h1>
       <p>Please configure your Palette Server.</p>
@@ -86,7 +86,7 @@
     </section>
     <hr />
     <section class="bottom-zone">
-      <button type="button" id="save" class="btn btn-primary">
+      <button type="button" id="save" class="btn-control-action">
         Save Settings
       </button>
     </section>

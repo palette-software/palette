@@ -176,10 +176,10 @@ function ($, topic, template, items, paging, Dropdown)
     }
 
     /*
-     * setupDialogs()
-     * Connect dialogs to their relevant click handlers.
+     * setupPopups()
+     * Connect dialogs (popups) to their relevant click handlers.
      */
-    function setupDialogs()
+    function setupPopups()
     {
         $('a.popup-link').bind('click', function() {
             var popupLink = $(this).hasClass('inactive');
@@ -190,10 +190,13 @@ function ($, topic, template, items, paging, Dropdown)
             }
         });
 
-        $('.popup-close, article.popup .shade').bind('click', function() {
-            $('article.popup').removeClass('visible');
+        $('.popup .cancel, .popup .shade').bind('click', function() {
+            $('.popup').removeClass('visible');
             $('#password').val('');
         });
+
+        /* mild redundancy */
+        setupOkCancel()
     }
 
     /*
@@ -203,7 +206,7 @@ function ($, topic, template, items, paging, Dropdown)
     function setupOkCancel()
     {
         $().ready(function() {
-            $('#okcancel .popup-ok').bind('click', function() {
+            $('#okcancel .ok').bind('click', function() {
                 var data = $(this).closest('article').data();
                 var callback = data['callback'];
                 if (callback != null) {
@@ -212,7 +215,7 @@ function ($, topic, template, items, paging, Dropdown)
                 $('#okcancel').removeClass('visible');
             });
 
-            $('#okcancel .popup-close').bind('click', function() {
+            $('#okcancel .cancel').bind('click', function() {
                 $('#okcancel').removeClass('visible');
             });
 
@@ -709,8 +712,8 @@ function ($, topic, template, items, paging, Dropdown)
     return {'startMonitor': startMonitor,
             'ajaxError': ajaxError,
             'lightbox': lightbox,
-            'setupDialogs': setupDialogs,
             'setupEventDropdowns' : setupEventDropdowns,
+            'setupPopups': setupPopups,
             'setupOkCancel' : setupOkCancel,
             'validEmail' : validEmail,
             'validURL' : validURL,

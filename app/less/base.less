@@ -1,8 +1,4 @@
 /* Everything else - avoid adding to this file. */
-
-body.scrollable {
-    overflow-y: auto;
-}
 h1 {
     font-family: @font-family-light;
     font-size: @font-size-h1;
@@ -58,53 +54,6 @@ a img {
 
 input[type="text"].invalid, input[type="text"].invalid:focus, input[type="password"].invalid, input[type="password"].invalid:focus {
     border: 1px solid red;
-}
-
-article.popup {
-    position: fixed;
-    top: 40%;
-    text-align: center; 
-    width:100%;
-    margin:0 auto;
-    display: none;
-    z-index:10000;   
-}
-article.popup.visible {
-    display: block;
-}
-article.popup .popup-body {
-    margin: 0 auto;
-    display: inline-block;
-    padding: 25px 60px;
-    width: 90%;
-    max-width: 400px;
-    margin:0 auto;
-    background-color: #fafafa;
-    position: relative;
-    z-index: 9999;
-}
-article.popup .shade {
-    content: "";
-    display: block;
-    height: 100%;
-    width: 100%;
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    background-color: rgba(0,0,0,0.2);
-    z-index: 9998;
-}
-article.popup p {
-    font-family: @font-family-base;
-    font-size: 17px;
-}
-.btn-test {
-    width: 158px;
-}
-.btn-bar {
-    margin: 0 0 15px 0;
 }
 .btn-group {
     max-width: 320px;
