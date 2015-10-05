@@ -48,6 +48,7 @@
 
 button.save, button.ok {
     .btn;
+    margin-left: 20px; // +4px for whitespace
     text-transform: uppercase;
 
     &.disabled {
@@ -67,8 +68,6 @@ button.save, button.ok {
 button.cancel {
     .btn;
     text-transform: uppercase;
-
-    margin-left: 24px;
     background-color: #d0d1d4;
     border: 1px solid #9ea3a8;
     color: @btn-cancel-color;
@@ -88,36 +87,51 @@ button.cancel {
     }
 }
 
-/* Base class for 'wide' buttons, e.g. update to.., restart webserver, etc.
- * see also .about-page.button
- */
-.btn-control-action {
-    .btn;
-    text-transform: uppercase;
-    width: 194px;
-    height: 40px;
+.btn-action-base {
     background-color: #737a81;
 
     &.disabled {
-	color: @btn-disabled-color !important;
-	background-color: @btn-disabled-bg !important;
-	border: @btn-disabled-border;
-
+	    color: @btn-disabled-color !important;
+	    background-color: @btn-disabled-bg !important;
+	    border: @btn-disabled-border;
+    }
 	&:hover, &:focus, &:active {
 	    outline: 0;
-	}
     }
     &:hover, &:focus, &:active {
-	background-color: @btn-hover-bg;
+	    background-color: @btn-hover-bg;
     }
 }
+
+/* Base class for 'wide' buttons, e.g. update to.., restart webserver, etc.
+ * see also .about-page.button
+ */
+.btn-action {
+    .btn-action-base;
+    text-transform: uppercase;
+    width: 194px;
+    height: 40px;
+}
+
+button.action {
+    .btn-action;
+}
+
 
 /* Base class for 'test' actions, e.g. Test Email, Test Connection, etc.
    NOTE: no text transform.
  */
 .btn-test {
-    .btn-control-action;
+    .btn-action-base;
     width: 160px;
     height: 35px;
 }
 
+button.test {
+    .btn-test;
+}
+
+/* save-cancel button sets */
+.save-cancel {
+    margin-top: 25px;
+}

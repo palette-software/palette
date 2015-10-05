@@ -29,11 +29,11 @@
       <section id="local" class="hidden">
         <span class="btn-group" id="storage-destination"></span>
         <div class="save-cancel">
-          <button type="button" id="save-local" class="save disabled">
-            Save
-          </button>
           <button type="button" id="cancel-local" class="cancel disabled">
             Cancel
+          </button>
+          <button type="button" id="save-local" class="save disabled">
+            Save
           </button>
         </div>
       </section>
@@ -46,23 +46,22 @@
         <label for="s3-url">S3 URL or Bucket Name</label>
         <input type="text" id="s3-url" />
         <div class="btn-bar">
-          <button type="button" id="test-s3" class="btn btn-test okcancel"
+          <button type="button" id="test-s3" class="test okcancel"
                   data-text="Are you sure you want to delete the S3 credentials?">
             Test Connection
           </button>
-
-          <button type="button" id="remove-s3" class="btn btn-test okcancel"
+	  <button type="button" id="remove-s3" class="test okcancel"
                   data-text="Are you sure you want to delete the S3 credentials?">
             Remove Credentials
           </button>
         </div>
         <p id="s3-test-message" class="hidden"></p>
         <div class="save-cancel">
+	  <button type="button" id="cancel-s3" class="cancel disabled">
+            Cancel
+          </button>
           <button type="button" id="save-s3" class="save disabled">
             Save
-          </button>
-          <button type="button" id="cancel-s3" class="cancel disabled">
-            Cancel
           </button>
         </div>
       </section>
@@ -79,18 +78,18 @@
                   data-text="Are you sure you want to delete the GCS credentials?">
             Test Connection
           </button>
-          <button type="button" id="remove-gcs" class="btn btn-test okcancel"
+	  <button type="button" id="remove-gcs" class="btn btn-test okcancel"
                   data-text="Are you sure you want to delete the GCS credentials?">
             Remove Credentials
           </button>
         </div>
         <p id="gcs-test-message" class="hidden"></p>
         <div class="save-cancel">
-          <button type="button" id="save-gcs" class="save disabled">
-            Save
-          </button>
           <button type="button" id="cancel-gcs" class="cancel disabled">
             Cancel
+          </button>
+          <button type="button" id="save-gcs" class="save disabled">
+            Save
           </button>
         </div>
       </section>
@@ -114,11 +113,11 @@
       </div>
 
       <div class="save-cancel">
-        <button type="button" id="save-email-alerts" class="save disabled">
-          Save
-        </button>
         <button type="button" id="cancel-email-alerts" class="cancel disabled">
           Cancel
+        </button>
+        <button type="button" id="save-email-alerts" class="save disabled">
+          Save
         </button>
       </div>
     </section>
@@ -153,11 +152,11 @@
         <span id="backup-user-retain-count" class="btn-group count"></span> Backups
       </p>
       <div class="save-cancel">
-        <button type="button" id="save-backups" class="save disabled">
-          Save
-        </button>
         <button type="button" id="cancel-backups" class="cancel disabled">
           Cancel
+        </button>
+        <button type="button" id="save-backups" class="save disabled">
+          Save
         </button>
       </div>
     </section>
@@ -185,11 +184,11 @@
         <span id="ziplog-user-retain-count" class="btn-group count"></span> Ziplogs
       </p>
       <div class="save-cancel">
-        <button type="button" id="save-ziplogs" class="save disabled">
-          Save
-        </button>
         <button type="button" id="cancel-ziplogs" class="cancel disabled">
           Cancel
+        </button>
+        <button type="button" id="save-ziplogs" class="save disabled">
+          Save
         </button>
       </div>
     </section>
@@ -211,11 +210,11 @@
 	<span>Warning Alert at <span id="extract-duration-warn" class="btn-group time"></span></span>&nbsp;<span>Error Alert at <span id="extract-duration-error" class="btn-group time"></span></span>
       </p>
       <div class="save-cancel">
-        <button type="button" class="save disabled">
-          Save
-        </button>
         <button type="button" class="cancel disabled">
           Cancel
+        </button>
+        <button type="button" class="save disabled">
+          Save
         </button>
       </div>
     </section>
@@ -255,11 +254,11 @@
         <input type="password" id="archive-password" />
       </div>
       <div class="save-cancel">
-        <button type="button" id="save-workbooks" class="save disabled">
-          Save
-        </button>
         <button type="button" id="cancel-workbooks" class="cancel disabled">
           Cancel
+        </button>
+        <button type="button" id="save-workbooks" class="save disabled">
+          Save
         </button>
       </div>
     </section>
@@ -295,11 +294,11 @@
         </p>
       </div>
       <div class="save-cancel">
-        <button type="button" id="save-monitors" class="save disabled">
-          Save
-        </button>
         <button type="button" id="cancel-monitors" class="cancel disabled">
           Cancel
+        </button>
+        <button type="button" id="save-monitors" class="save disabled">
+          Save
         </button>
       </div>
     </section>

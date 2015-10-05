@@ -115,8 +115,8 @@
         </ul>
       </div>
       <div>
-        <button id="stop-ok" class="ok">OK</button>
         <button class="cancel">Cancel</button>
+        <button id="stop-ok" class="ok">OK</button>
       </div>
     </div>
   </section>
@@ -146,8 +146,8 @@
         </ul>
       </div>
       <div>
-        <button id="restart-ok" class="ok">OK</button>
         <button class="cancel">Cancel</button>
+        <button id="restart-ok" class="ok">OK</button>
       </div>
     </div>
   </section>
@@ -195,8 +195,8 @@
         <input type="password" name="password" id="password" />
       </div>
       <div>
-        <button id="restore-ok" class="ok">OK</button>
         <button class="cancel">Cancel</button>
+        <button id="restore-ok" class="ok">OK</button>
       </div>
     </div>
   </section>

@@ -87,8 +87,8 @@ ${next.body()}
 
 <script id="editbox-edit" type="x-tmpl-mustache">
   <input type="text" value="{{value}}" />
-  <i class="fa fa-fw fa-check ok"></i>
   <i class="fa fa-fw fa-times cancel"></i>
+  <i class="fa fa-fw fa-check ok"></i>
 </script>
 
 <article class="popup" id="okcancel">
@@ -97,8 +97,8 @@ ${next.body()}
       <p>&nbsp;</p>
     </div>
     <div>
-      <button class="ok">OK</button>
       <button class="cancel">Cancel</button>
+      <button class="ok">OK</button>
     </div>
   </section>
   <div class="shade">&nbsp;</div>
