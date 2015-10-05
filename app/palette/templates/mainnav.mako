@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 <nav id="mainNav" class="navbar navbar-default">
   <div class="container-fluid">
     <div class="navbar-header">

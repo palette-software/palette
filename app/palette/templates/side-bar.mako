@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 <section class="main-side-bar">
   <section class="status">
     <span class="fa-stack">

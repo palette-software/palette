@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-<%inherit file="layout.mako" />
+<%inherit file="webapp.mako" />
 
 <%block name="title">
     <title>Palette - Home</title>

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 <a id="236543" href="#"><i class="fa fa-question-circle help"></i></a>
 <h2>Server SSL Certificate</h2>
 <section class="slider-group">
