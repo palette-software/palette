@@ -7,8 +7,9 @@
 
 <div class="dynamic-content about-page">
   <div class="scrollable">
-    <h1>About Palette</h1>
-
+    <div class="top-zone">
+      <h1>About Palette</h1>
+    </div>
     <h3>Version <span id="version"></span></h3>
     <div>
       <p>&copy; 2015 Palette Software</p>

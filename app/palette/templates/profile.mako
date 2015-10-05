@@ -7,7 +7,9 @@
 
 <div class="dynamic-content profile-page">
   <div class="scrollable">
-    <h1>Profile</h1>
+    <div class="top-zone">
+      <h1>Profile</h1>
+    </div>
 
     <h2>Tableau Server Display Name</h2>
     <p>${req.remote_user.friendly_name}</p>

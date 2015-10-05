@@ -7,7 +7,8 @@
 
 <div class="dynamic-content configuration">
   <div class="scrollable">
-    <div class="refresh">
+    <section class="top-zone">
+      <div class="refresh">
         <p>
           <span class="message"></span>
           Updated <span id="last-update"></span>
@@ -15,8 +16,7 @@
           <i class="fa fa-fw fa-refresh inactive"></i>
           %endif
         </p>
-    </div>
-    <section class="top-zone">
+      </div>
       <h1>Users</h1>
     </section>
     <div class="letters"></div>
