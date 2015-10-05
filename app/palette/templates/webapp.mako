@@ -93,22 +93,19 @@ ${next.body()}
 
 <article class="popup" id="okcancel">
   <section class="popup-body">
-    <section class="row">
-      <section class="col-xs-12">
-        <p>&nbsp;</p>
-      </section>
-    </section>
-    <section class="row">
-      <section class="col-xs-6">
-        <button class="p-btn popup-ok">OK</button>
-      </section>
-      <section class="col-xs-6">
-        <button class="p-btn popup-close">Cancel</button>
-      </section>
-    </section>
+    <div>
+      <p>&nbsp;</p>
+    </div>
+    <div>
+      <button class="ok">OK</button>
+      <button class="cancel">Cancel</button>
+    </div>
   </section>
   <div class="shade">&nbsp;</div>
 </article>
+
+<%block name="popups">
+</%block>
 
 <%include file="dropdown.mako" />
 <%include file="onoff.mako" />

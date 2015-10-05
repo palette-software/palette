@@ -267,6 +267,6 @@ function ($, topic, template, common)
         }
 
         bind('#restore', restore);
-        common.setupDialogs();
+        common.setupPopups();
     });
 });

@@ -1,0 +1,48 @@
+.popup {
+    position: fixed;
+    top: 40%;
+    text-align: center; 
+    width:100%;
+    margin:0 auto;
+    display: none;
+    z-index:10000;
+
+    &.visible {
+	display: block;
+    }
+}
+
+.popup-tall {
+    top: 20%;
+}
+
+.popup .popup-body {
+    margin: 0 auto;
+    display: inline-block;
+    padding: 25px 60px;
+    width: 90%;
+    max-width: 600px;
+    margin:0 auto;
+    background-color: #fafafa;
+    position: relative;
+    z-index: 9999;
+}
+
+.popup .shade {
+    content: "";
+    display: block;
+    height: 100%;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-color: rgba(0,0,0,0.2);
+    z-index: 9998;
+}
+
+.popup p {
+    font-family: "Proxima Nova regular","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 17px;
+}

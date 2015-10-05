@@ -44,7 +44,7 @@
   <div class="col-xs-10">
     <label for="test-email-recipient">Test Email Recipient</label>
     <input type="text" id="test-email-recipient" />
-    <button type="button" id="test-mail" class="btn disabled">
+    <button type="button" id="test-mail" class="btn-test disabled">
       Test Email
     </button>
   </div>

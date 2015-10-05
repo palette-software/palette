@@ -29,10 +29,10 @@
       <section id="local" class="hidden">
         <span class="btn-group" id="storage-destination"></span>
         <div class="save-cancel">
-          <button type="button" id="save-local" class="btn btn-primary disabled">
+          <button type="button" id="save-local" class="save disabled">
             Save
           </button>
-          <button type="button" id="cancel-local" class="btn btn-primary disabled">
+          <button type="button" id="cancel-local" class="cancel disabled">
             Cancel
           </button>
         </div>
@@ -58,10 +58,10 @@
         </div>
         <p id="s3-test-message" class="hidden"></p>
         <div class="save-cancel">
-          <button type="button" id="save-s3" class="btn btn-primary disabled">
+          <button type="button" id="save-s3" class="save disabled">
             Save
           </button>
-          <button type="button" id="cancel-s3" class="btn btn-primary disabled">
+          <button type="button" id="cancel-s3" class="cancel disabled">
             Cancel
           </button>
         </div>
@@ -86,10 +86,10 @@
         </div>
         <p id="gcs-test-message" class="hidden"></p>
         <div class="save-cancel">
-          <button type="button" id="save-gcs" class="btn btn-primary disabled">
+          <button type="button" id="save-gcs" class="save disabled">
             Save
           </button>
-          <button type="button" id="cancel-gcs" class="btn btn-primary disabled">
+          <button type="button" id="cancel-gcs" class="cancel disabled">
             Cancel
           </button>
         </div>
@@ -114,10 +114,10 @@
       </div>
 
       <div class="save-cancel">
-        <button type="button" id="save-email-alerts" class="btn btn-primary disabled">
+        <button type="button" id="save-email-alerts" class="save disabled">
           Save
         </button>
-        <button type="button" id="cancel-email-alerts" class="btn btn-primary disabled">
+        <button type="button" id="cancel-email-alerts" class="cancel disabled">
           Cancel
         </button>
       </div>
@@ -153,10 +153,10 @@
         <span id="backup-user-retain-count" class="btn-group count"></span> Backups
       </p>
       <div class="save-cancel">
-        <button type="button" id="save-backups" class="btn btn-primary disabled">
+        <button type="button" id="save-backups" class="save disabled">
           Save
         </button>
-        <button type="button" id="cancel-backups" class="btn btn-primary disabled">
+        <button type="button" id="cancel-backups" class="cancel disabled">
           Cancel
         </button>
       </div>
@@ -185,10 +185,10 @@
         <span id="ziplog-user-retain-count" class="btn-group count"></span> Ziplogs
       </p>
       <div class="save-cancel">
-        <button type="button" id="save-ziplogs" class="btn btn-primary disabled">
+        <button type="button" id="save-ziplogs" class="save disabled">
           Save
         </button>
-        <button type="button" id="cancel-ziplogs" class="btn btn-primary disabled">
+        <button type="button" id="cancel-ziplogs" class="cancel disabled">
           Cancel
         </button>
       </div>
@@ -211,10 +211,10 @@
 	<span>Warning Alert at <span id="extract-duration-warn" class="btn-group time"></span></span>&nbsp;<span>Error Alert at <span id="extract-duration-error" class="btn-group time"></span></span>
       </p>
       <div class="save-cancel">
-        <button type="button" id="save-extracts" class="btn btn-primary save disabled">
+        <button type="button" class="save disabled">
           Save
         </button>
-        <button type="button" id="cancel-extracts" class="btn btn-primary cancel disabled">
+        <button type="button" class="cancel disabled">
           Cancel
         </button>
       </div>
@@ -255,10 +255,10 @@
         <input type="password" id="archive-password" />
       </div>
       <div class="save-cancel">
-        <button type="button" id="save-archives" class="btn btn-primary save disabled">
+        <button type="button" id="save-workbooks" class="save disabled">
           Save
         </button>
-        <button type="button" id="cancel-archives" class="btn btn-primary cancel disabled">
+        <button type="button" id="cancel-workbooks" class="cancel disabled">
           Cancel
         </button>
       </div>
@@ -295,10 +295,10 @@
         </p>
       </div>
       <div class="save-cancel">
-        <button type="button" id="save-monitors" class="btn btn-primary disabled">
+        <button type="button" id="save-monitors" class="save disabled">
           Save
         </button>
-        <button type="button" id="cancel-monitors" class="btn btn-primary disabled">
+        <button type="button" id="cancel-monitors" class="cancel disabled">
           Cancel
         </button>
       </div>
