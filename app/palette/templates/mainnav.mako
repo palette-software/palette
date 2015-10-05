@@ -1,6 +1,8 @@
-<nav id="mainNav" data-topbar>
+<nav id="mainNav" class="navbar navbar-default">
   <div class="container-fluid">
-    <a class="site-id" href="/"></a>
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/"></a>
+    </div>
     <span class="message"></span>
     <ul class="nav">
       <li class="buy hidden">

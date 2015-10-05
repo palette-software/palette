@@ -38,7 +38,9 @@
 
 <body class="scrollable">
   <nav class="navbar">
-    <div class="navbar-header"></div>
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/"></a>
+    </div>
   </nav>
   <div class="center-container initial hidden" id="licensing-status">
     <h1>Prepare<br/>for<br/>Awesomeness!
