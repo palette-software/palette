@@ -115,6 +115,10 @@ class SystemKeys(object):
     S3_ID = 's3-id'
     GCS_ID = 'gcs-id'
 
+    SUPPORT_CASE_BUCKET = 'support-case-bucket'
+    ANONYMOUS_ACCESS_KEY = 'anonymous--access-key'
+    ANONYMOUS_SECRET_KEY = 'anonymous-secret-key'
+
     PLATFORM_PRODUCT = 'platform-product'
     PLATFORM_IMAGE = 'platform-image'
     PLATFORM_LOCATION = 'platform-location'

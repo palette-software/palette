@@ -2675,6 +2675,30 @@ class CliHandler(socketserver.StreamRequestHandler):
         session.commit()
         return self.report_status(body)
 
+    @usage('support-case')
+    @upgrade_rwlock
+    def do_support_case(self, cmd):
+        """ Generate a support case and return the zip file information. """
+
+        if len(cmd.args) != 0:
+            self.print_usage(self.do_support_case.__usage__)
+
+        agent = self.get_agent(cmd.dict)
+        if not agent:
+            return
+
+        if cmd.dict.has_key('userid'):
+            userid = int(cmd.dict['userid'])
+        else:
+            userid = None
+
+        self.ack()
+
+        agent.connection.user_action_lock(blocking=False)
+        body = self.server.support_case(agent, userid=userid)
+        agent.connection.user_action_unlock()
+        return self.report_status(body)
+
     @usage('ziplogs')
     @upgrade_rwlock
     def do_ziplogs(self, cmd):
@@ -2696,7 +2720,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman = self.server.state_manager
         main_state = stateman.get_state()
         if main_state in (StateManager.STATE_STARTED,
-                                                StateManager.STATE_DEGRADED):
+                          StateManager.STATE_DEGRADED):
             stateman.update(StateManager.STATE_STARTED_ZIPLOGS)
         elif main_state in (StateManager.STATE_STOPPED,
                             StateManager.STATE_STOPPED_UNEXPECTED):

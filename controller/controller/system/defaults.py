@@ -174,6 +174,10 @@ DEFAULTS = SystemDefaults({
     SystemKeys.S3_ID: UNDEFINED_INTEGER,
     SystemKeys.GCS_ID: UNDEFINED_INTEGER,
 
+    SystemKeys.SUPPORT_CASE_BUCKET: 'palette-support-case',
+    SystemKeys.ANONYMOUS_ACCESS_KEY: "",
+    SystemKeys.ANONYMOUS_SECRET_KEY: "",
+
     SystemKeys.PLATFORM_PRODUCT: {'value': 'enterprise', 'populate': False},
     SystemKeys.PLATFORM_IMAGE: {'value': 'vmware', 'populate': False},
     SystemKeys.PLATFORM_LOCATION: {'value': 'customer', 'populate': False},

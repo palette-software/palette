@@ -22,6 +22,15 @@ def success(body):
 def failed(body):
     return 'error' in body
 
+# fixme: merge with app
+def status_ok():
+    """ Build the OK result mapping """
+    return {u'status': u'OK'}
+
+def status_failed(error):
+    """ Build a mapping indicating a failure. """
+    return {u'status': u'FAILED', u'error': unicode(error)}
+
 def sizestr(n, fmt=SIZEFMT):
     n = int(n)
     if n < 0:
