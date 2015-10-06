@@ -250,6 +250,12 @@ class Agent(meta.Base, BaseDictMixin):
             entry.data_dir = body['data-dir']
         return entry
 
+    def find_space(self, needed):
+        """ Find an AgentVolumesEntry with sufficient available space. """
+        entry = AgentVolumesEntry.has_available_space(self.agentid, needed)
+        if not entry:
+            return None
+        return entry
 
 class AgentVolumesEntry(meta.Base, BaseDictMixin):
     __tablename__ = "agent_volumes"
@@ -257,8 +263,8 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
     volid = Column(Integer, unique=True, nullable=False, primary_key=True)
 
     agentid = Column(BigInteger,
-                      ForeignKey("agent.agentid", ondelete='CASCADE'),
-                      nullable=False)
+                     ForeignKey("agent.agentid", ondelete='CASCADE'),
+                     nullable=False)
 
     name = Column(String)
     path = Column(String)
@@ -285,6 +291,10 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
                                          order_by='AgentVolumesEntry.name')
                          )
     UniqueConstraint('agentid', 'name')
+
+    def full_path(self):
+        """ This is the full path of this volume is that OS format. """
+        return self.name + ":" +  self.path
 
     def todict(self, pretty=False, exclude=None):
         d = super(AgentVolumesEntry, self).todict(pretty=pretty)

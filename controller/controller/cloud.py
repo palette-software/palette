@@ -113,6 +113,16 @@ class CloudInfo(object):
         self.access_key = None
         self.secret_key = None
 
+    def external_url(self):
+        """ Return a URL suitable for accessing this object from anywhere. """
+        if self.cloud_type == CLOUD_TYPE_S3:
+            base_url = 'http://' + self.bucket + '.s3.amazonaws.com'
+        elif self.cloud_type == CLOUD_TYPE_GCS:
+            base_url = 'https://' + self.bucket + '.storage.googleapis.com'
+        else:
+            return None
+        return base_url + self.path
+
     @classmethod
     def from_url(cls, url):
         """ Create an instance using a url string or ParseResult. """
@@ -341,12 +351,14 @@ class CloudInstance(object):
     def send_put(self, agent, cloud_info, filepath, pwd=None):
         """ Perform a PUT of the file specified by cloud_info """
         # fixme: sanity check on data-dir on the primary?
-        # fixme: create the path first
 
         env = _cloud_command_environment(agent, cloud_info, pwd)
 
         bucket_subdir = os.path.dirname(cloud_info.path)
-        arg1 = os.path.join(cloud_info.bucket, bucket_subdir)
+        if not bucket_subdir or bucket_subdir == '/':
+            arg1 = cloud_info.bucket
+        else:
+            arg1 = os.path.join(cloud_info.bucket, bucket_subdir)
         arg2 = filepath
 
         assert not self.EXE is None

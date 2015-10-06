@@ -13,6 +13,7 @@ import exc
 import httplib
 import ntpath
 import urllib
+from rwlock import RWLock
 from urlparse import urlsplit
 
 import sqlalchemy
@@ -54,6 +55,10 @@ from system import SystemManager, SystemKeys
 from tableau import TableauStatusMonitor, TableauProcess
 from workbooks import WorkbookEntry, WorkbookUpdateEntry, WorkbookManager
 from yml import YmlEntry, YmlManager
+
+# pylint seems to get this wrong...
+from support import support_case
+
 #pylint: enable=unused-import
 
 from sites import Site
@@ -65,8 +70,8 @@ from get_file import GetFile
 from cloud import CloudManager
 
 from clihandler import CliHandler
+
 from util import version, success, failed, sizestr
-from rwlock import RWLock
 
 logger = logging.getLogger()
 
@@ -87,6 +92,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     STAGING_DIR = "staging"
 
     FILENAME_FMT = "%Y%m%d_%H%M%S"
+
+    # mixin-like functionality
+    support_case = support_case
 
     def backup_cmd(self, agent, userid):
         """Perform a backup - not including any necessary migration."""
@@ -1139,7 +1147,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # pylint: disable=too-many-locals
 
         if userid == None:
-            auto = True     # It is an 'automatic/scheduled' backup
+            auto = True     # It is an 'automatic/scheduled' ziplogs
         else:
             auto = False    # It was requested by a specific user
 
@@ -1150,6 +1158,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             dcheck = DiskCheck(self, agent, self.LOG_DIR,
                                FileManager.FILE_TYPE_ZIPLOG, min_disk_needed)
         except DiskException, ex:
+            # fixme: why no event?
             logger.error("ziplogs_cmd: %s", str(ex))
             return self.error("ziplogs_cmd: %s" % str(ex))
 
