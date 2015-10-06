@@ -7,8 +7,6 @@
 
 <div class="dynamic-content configuration general-page">
   <div class="scrollable">
-
-    <a name="storage"></a>
     <section class="top-zone">
       <section class="row">
         <section class="col-xs-12">
@@ -17,6 +15,7 @@
       </section>
     </section>
 
+    <a name="storage"></a>
     <section id="storage">
       <a id="229204" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Storage Location</h2>
