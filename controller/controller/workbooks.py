@@ -15,7 +15,7 @@ from archive_mixin import ArchiveUpdateMixin
 from mixin import BaseMixin, BaseDictMixin
 from cache import TableauCacheManager #FIXME
 from manager import synchronized
-from util import failed, success
+from util import failed
 from odbc import ODBC
 from .system import SystemKeys
 
@@ -444,10 +444,15 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
         """
             Retrieve the twb/twbx file of an update and set the url.
         """
+        # Cache these as they may no longer be available if _build_twb
+        # fails.
+        repository_url = update.workbook.repository_url
+        revision = update.revision
+
         filename = self._build_twb(agent, update)
         if not filename:
-            self.log.error('Failed to retrieve twb: %s %s',
-                           update.workbook.repository_url, update.revision)
+            self.log.error('Failed to retrieve twb: %s %s', repository_url,
+                                                            revision)
             return
         update.url = agent.path.basename(filename)
         self.log.debug("workbooks load: update.url: %s", filename)
@@ -579,11 +584,20 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
                              self.clean_filename(wb_entry, update.revision) + \
                              '.twbx')
 
-        body = self.tabcmd_run(agent, update, url, dst, wb_entry.site_id,
-                                   self._remove_wbu)
+        body = self.tabcmd_run(agent, url, dst, wb_entry.site_id)
 
-        if not success(body):
+        if failed(body):
             self._eventgen(update, data=body)
+            if 'stderr' in body and '404' in body['stderr'] and \
+                                                "Not Found" in body['stderr']:
+
+                # The update was deleted before we
+                # got to it.  Subsequent attempts will also fail,
+                # so delete the update row to stop
+                # attempting to retrieve it again.
+                # Note: We didn't remove the update row until after
+                # _eventgen uses it.
+                self._remove_wbu(update)
             return None
         return dst
 
@@ -601,6 +615,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
             self.log.error("_remove_wbu: workbook already deleted: %d",
                            update.wuid)
             return
+        session.commit()
 
     def _extract_twb_from_twbx(self, agent, update, dst):
         """A twbx file is just a zipped twb + associated tde files.

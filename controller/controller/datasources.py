@@ -13,7 +13,7 @@ from archive_mixin import ArchiveUpdateMixin
 from mixin import BaseMixin, BaseDictMixin
 from cache import TableauCacheManager #FIXME
 from manager import synchronized
-from util import failed, success
+from util import failed
 from .system import SystemKeys
 
 from diskcheck import DiskCheck, DiskException
@@ -375,11 +375,16 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         if not self._have_pcmd(agent):
             return None
 
+        # Cache these as they may no longer be avialable if _build_tw
+        # fails.
+        repository_url = update.datasource.repository_url
+        revision = update.revision
+
         filename = self._build_tds(agent, update)
         if not filename:
             # Generates an event on error.
-            self.log.error('Failed to retrieve tdsx: %s %s',
-                           update.datasource.repository_url, update.revision)
+            self.log.error('Failed to retrieve tdsx: %s %s', repository_url,
+                            revision)
             return
         update.url = agent.path.basename(filename)
         self.log.debug("datasource load: update.url: %s", filename)
@@ -455,11 +460,19 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
                               self.clean_filename(ds_entry, update.revision) + \
                               '.tdsx')
 
-        body = self.tabcmd_run(agent, update, url, dst, ds_entry.site_id,
-                            self._remove_dsu)
+        body = self.tabcmd_run(agent, url, dst, ds_entry.site_id)
 
-        if not success(body):
+        if failed(body):
             self._eventgen(update, data=body)
+            if 'stderr' in body and '404' in body['stderr'] and \
+                                                "Not Found" in body['stderr']:
+                # The update was deleted before we
+                # got to it.  Subsequent attempts will also fail,
+                # so delete the update row to stop
+                # attempting to retrieve it again.
+                # Note: Don't remove the update row until after
+                # _eventgen uses it.
+                self._remove_dsu(update)
             return None
         return dst
 
@@ -477,6 +490,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
             self.log.error("_remove_dsu: datasource already deleted: %d",
                            update.dsuid)
             return
+        session.commit()
 
     def _extract_tds_from_tdsx(self, agent, update, dst_tdsx):
         """

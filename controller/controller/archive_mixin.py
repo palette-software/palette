@@ -103,9 +103,7 @@ class ArchiveUpdateMixin(object):
 
         return self.server.event_control.gen(key, data, userid=userid)
 
-    def tabcmd_run(self, agent, update, url, dst, site_id,
-                   remove_update_method):
-        # pylint: disable=too-many-arguments
+    def tabcmd_run(self, agent, url, dst, site_id):
         """Does the tabcmd_run to get the datasource or workbook file.
            Returns:
                 True:   Returns dst (unchanged)
@@ -136,14 +134,7 @@ class ArchiveUpdateMixin(object):
                 continue    # try again
 
             # It failed and we have stderr.
-            if "404" in body['stderr'] and "Not Found" in body['stderr']:
-                # The update was deleted before we
-                # got to it.  Subsequent attempts will also fail,
-                # so delete the update row to stop
-                # attempting to retrieve it again.
-                remove_update_method(update)
-                return body
-            elif 'Service Unavailable' in body['stderr']:
+            if 'Service Unavailable' in body['stderr']:
                 # 503 error, retry
                 self.log.debug(cmd + \
                                 ' : 503 Service Unavailable, retrying')
