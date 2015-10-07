@@ -601,10 +601,13 @@ function ($, topic, template, items, paging, Dropdown)
         }
         $('#mainNav li.buy a').prop('href', data['buy-url']);
 
-        if (data['environments'][0]['agents'].length > 0) {
-            var rendered = template.render(server_list_template, data);
-            $('#server-list').html(rendered);
-            setupServerList();
+        if (data['environments'] != null) {
+            var envs = data['environments'];
+            if ((envs.length > 0) && (envs[0]['agents'].length > 0)) {
+                var rendered = template.render(server_list_template, data);
+                $('#server-list').html(rendered);
+                setupServerList();
+            }
         }
 
         if (needEvents) {
