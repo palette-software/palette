@@ -10,7 +10,7 @@
     <section class="top-zone">
       <h1>Machines</h1>
     </section>
-    <div id="server-detail">
+    <div id="server-detail" class="clearfix">
       <%include file="empty.mako" />	
     </div>
   </div>
