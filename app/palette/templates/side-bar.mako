@@ -41,6 +41,11 @@
         <i class="fa fa-fw fa-wrench"></i><span>Manage Tableau</span>
       </a>
     </li>
+    <li class="${obj.active=='support-case' and 'active' or ''}">
+      <a href="/support-case">
+        <i class="fa fa-fw fa-comments-o"></i><span>Support Case</span>
+      </a>
+    </li>
     <li class="category">
       <a>
         <i class="fa fa-fw fa-cog"></i><span>Configuration</span>

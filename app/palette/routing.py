@@ -12,6 +12,7 @@ from .profile import ProfileApplication
 from .setup import SetupApplication
 from .server import ServerApplication
 from .s3 import S3Application
+from .support import SupportCaseApplication
 from .user import UserApplication
 from .yml import YmlApplication
 from .workbook import WorkbookApplication
@@ -33,6 +34,7 @@ class RestRouter(Router):
         self.add_route(r'/servers?(/(?P<action>[^\s]+))?\Z',
                        ServerApplication())
         self.add_route(r'/support\Z', SupportApplication())
+        self.add_route(r'/support-case\Z', SupportCaseApplication())
         self.add_route(r'/update\Z', AutoUpdateApplication())
         self.add_route(r'/users?(/(?P<action>[^\s]+))?\Z',
                        UserApplication())

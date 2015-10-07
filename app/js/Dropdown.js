@@ -1,4 +1,4 @@
-define("Dropdown", ['jquery', 'template'],
+define("Dropdown", ['jquery', 'template', 'bootstrap'],
 function($, template) {
 
     function Dropdown(node, data, callback, error) {

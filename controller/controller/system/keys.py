@@ -116,6 +116,7 @@ class SystemKeys(object):
     GCS_ID = 'gcs-id'
 
     SUPPORT_CASE_BUCKET = 'support-case-bucket'
+    SUPPORT_CASE_EMAIL = 'support-case-email'
     ANONYMOUS_ACCESS_KEY = 'anonymous--access-key'
     ANONYMOUS_SECRET_KEY = 'anonymous-secret-key'
 
