@@ -121,7 +121,7 @@ function ($, topic, template, items, paging, Dropdown)
     function getCookie(cname) {
         var name = cname + "=";
         var ca = document.cookie.split(';');
-        for(var i=0; i<ca.length; i++) {
+        for(var i=0; i < ca.length; i++) {
             var c = ca[i];
             while (c.charAt(0)==' ') {
                 c = c.substring(1);
@@ -601,9 +601,11 @@ function ($, topic, template, items, paging, Dropdown)
         }
         $('#mainNav li.buy a').prop('href', data['buy-url']);
 
-        var rendered = template.render(server_list_template, data);
-        $('#server-list').html(rendered);
-        setupServerList();
+        if (data['environments'][0]['agents'].length > 0) {
+            var rendered = template.render(server_list_template, data);
+            $('#server-list').html(rendered);
+            setupServerList();
+        }
 
         if (needEvents) {
             monitorUpdateEvents(data);
