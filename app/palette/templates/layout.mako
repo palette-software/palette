@@ -130,8 +130,7 @@
 <section class="secondary-side-bar servers">
   <div id="server-list">
     <h1>My Machines</h1>
-    <p>Palette cannot connect to your Tableau Machine.</p>
-    <p>Please Install a <a href="http://www.palette-software.com/agent">Palette Agent</a> on your Tableau Machine.</p>
+    <p>This menu is empty because Palette Server <a href="http://kb.palette-software.com/network-configuration">can't connect</a> to the <a href="http://www.palette-software.com/agent">Palette Agent</a> on your Tableau Machine.</p>
   </div>
 </section>
 
