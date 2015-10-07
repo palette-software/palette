@@ -9,7 +9,11 @@
 <%include file="side-bar.mako" />
 
 <section class="secondary-side-bar servers">
-  <div id="server-list"></div>
+  <div id="server-list">
+    <h1>My Machines</h1>
+    <p>Palette cannot connect to your Tableau Machine.</p>
+    <p>Please Install a <a href="http://www.palette-software.com/agent">Palette Agent</a> on your Tableau Machine.
+  </div>
 </section>
 
 ${next.body()}
