@@ -8,7 +8,7 @@
         <div id="type-dropdown" class="dropdown-toggle btn-group"></div>
       </section>
     </section>
-  </section>
+  </div>
   <section class="bottom-zone">
     <section id="event-list"></section>
     <%include file="paging.mako" args="name='Events'" />
