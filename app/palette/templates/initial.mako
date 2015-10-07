@@ -86,7 +86,7 @@
     </section>
     <hr />
     <section class="bottom-zone">
-      <button type="button" id="save" class="btn-control-action">
+      <button type="button" id="save" class="action">
         Save Settings
       </button>
     </section>
