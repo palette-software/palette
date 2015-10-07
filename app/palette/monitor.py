@@ -67,10 +67,10 @@ class EventType(DictOption):
     def __init__(self, req, valueid):
         if req.remote_user.roleid == Role.NO_ADMIN:
             type_list = sorted(EventControl.publisher_types.items(),
-                           key=lambda item: item[1])
+                           key=lambda item: item[1].lower())
         else:
             type_list = sorted(EventControl.all_types.items(),
-                           key=lambda item: item[1])
+                           key=lambda item: item[1].lower())
         options = OrderedDict([(self.ALL, 'All Types')] + type_list)
         super(EventType, self).__init__(self.NAME, valueid, options)
 
