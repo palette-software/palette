@@ -175,6 +175,7 @@ DEFAULTS = SystemDefaults({
     SystemKeys.GCS_ID: UNDEFINED_INTEGER,
 
     SystemKeys.SUPPORT_CASE_BUCKET: 'palette-support-case',
+    SystemKeys.SUPPORT_CASE_EMAIL: 'support@palette-software.com',
     SystemKeys.ANONYMOUS_ACCESS_KEY: "",
     SystemKeys.ANONYMOUS_SECRET_KEY: "",
 

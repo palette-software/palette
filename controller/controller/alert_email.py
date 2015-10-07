@@ -1,13 +1,8 @@
 """ Alerts delivery via Email """
 import logging
-import sys
 import time
-import traceback
-import smtplib
 from datetime import datetime
 import threading
-from email.mime.text import MIMEText
-from email.header import Header
 from sqlalchemy.orm.exc import NoResultFound
 
 import akiri.framework.sqlalchemy as meta
@@ -16,6 +11,7 @@ from agent import Agent
 from domain import Domain
 from event_control import EventControl
 from email_limit import EmailLimitManager
+from .mailer import Mailer
 from profile import UserProfile
 from system import SystemKeys
 from util import UNDEFINED
@@ -41,15 +37,8 @@ class AlertEmail(object):
         self.server = server
         self.email_limit_manager = EmailLimitManager(server)
 
-        self.smtp_server = self.config.get('alert', 'smtp_server',
-                                    default="localhost")
-        self.smtp_port = self.config.getint("alert", "smtp_port", default=25)
-
         self.alert_level = self.config.getint("alert", "alert_level",
-                                        default=self.DEFAULT_ALERT_LEVEL)
-
-        self.max_subject_len = self.config.getint("alert", "max_subject_len",
-                                        default=self.DEFAULT_MAX_SUBJECT_LEN)
+                                              default=self.DEFAULT_ALERT_LEVEL)
 
         if self.alert_level < 1:
             logger.error("Invalid alert level: %d, setting to %d",
@@ -316,55 +305,9 @@ class AlertEmail(object):
         self._do_send(to_emails, bcc, subject, message)
 
     def _do_send(self, to_emails, bcc, subject, message):
-        # pylint: disable=too-many-locals
-
-        # Convert from Unicode to utf-8
-        message = message.encode('utf-8')    # prevent unicode exception
-        try:
-            msg = MIMEText(message, "plain", "utf-8")
-        except StandardError:
-            # pylint: disable=unused-variable
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            tbstr = ''.join(traceback.format_tb(exc_traceback))
-            report = "Error: %s.  Traceback: %s." % (sys.exc_info()[1], tbstr)
-            logger.error("alert send: MIMEText() failed for message."
-                         "will not send message: '%s'. %s",
-                         message, report)
-            return
-
-        if len(subject) > self.max_subject_len:
-            subject = subject[:self.max_subject_len]  + "..."
-
-        subject = Header(unicode(subject), 'utf-8')
-        msg['Subject'] = subject
-        from_email = self.system[SystemKeys.FROM_EMAIL]
-        msg['From'] = from_email
-
-        all_to = []
-
-        if to_emails:
-            msg['To'] = ', '.join(to_emails)
-            all_to += to_emails
-        if bcc:
-            all_to += bcc
-
-        msg_str = msg.as_string()
-
-        try:
-            mail_server = smtplib.SMTP(self.smtp_server, self.smtp_port)
-            mail_server.sendmail(from_email, all_to, msg_str)
-            mail_server.quit()
-        except (smtplib.SMTPException, EnvironmentError) as ex:
-            logger.error("Email send failed, text: %s, exception: %s, "
-                         "server: %s, port: %d",
-                         message, ex, self.smtp_server, self.smtp_port)
-            return
-
-#        print 'email sent', subject
-
-        logger.info("Emailed alert: To: '%s' Subject: '%s', message: '%s'",
-                    str(all_to), subject, message)
-        return
+        """ Do the actual send for a plain-text message """
+        mailer = Mailer(self.system[SystemKeys.FROM_EMAIL])
+        mailer.send_msg(to_emails, subject, message, bcc=bcc)
 
     def make_default_message(self, event_entry, subject, data):
         """Given the event entry, subject (string)and data (dictionary),
