@@ -163,9 +163,17 @@ class WorkbookApplication(ArchiveApplication):
 
     # FIXME: move build options to a separate file.
     def handle_get(self, req):
+        if req.remote_user.roleid == Role.NO_ADMIN:
+            publisher_only = True
+        else:
+            publisher_only = False
+
+
         if not req.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]:
             return {'workbooks': [],
-                    'item-count': 0}
+                    'item-count': 0,
+                    'publisher-only': publisher_only
+            }
 
         filters = self.build_query_filters(req)
         entries = self.do_query(req, filters)
@@ -198,11 +206,6 @@ class WorkbookApplication(ArchiveApplication):
                 data['project'] = projects[entry.project_id].name
 
             workbooks.append(data)
-
-        if req.remote_user.roleid == Role.NO_ADMIN:
-            publisher_only = True
-        else:
-            publisher_only = False
 
         return {'workbooks': workbooks,
                 'config': self.build_config(req, sites, projects),

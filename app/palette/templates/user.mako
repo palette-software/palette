@@ -19,7 +19,6 @@
       </div>
       <h1>Users</h1>
     </section>
-    <div class="letters"></div>
     <div id="user-list">
       <%include file="empty.mako" />
     </div>
@@ -27,6 +26,7 @@
 </div>
 
 <script id="user-list-template" type="x-tmpl-mustache">
+  <div class="letters"></div>
   {{#users}}
   <article class="item">
     <div class="summary clearfix">
