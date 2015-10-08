@@ -24,6 +24,8 @@ function ($, topic, template, items, paging, Dropdown)
     var sidebar_open = false;
     var status_bound = false;
 
+    var filters_hidden = false;
+
     /*
      * EventFilter
      * pseudo-class for maintaining the selected events
@@ -129,11 +131,14 @@ function ($, topic, template, items, paging, Dropdown)
             if (sidebar_open) {
                 $('#expand-right').removeClass('fa-angle-left');
                 $('#expand-right').addClass('fa-angle-right');
-                $('.filter-dropdowns').removeClass('hidden');
+                if (!filters_hidden) {
+                    $('.filter-dropdowns').removeClass('hidden');
+                }
                 sidebar_open = false;
             } else {
                 $('#expand-right').removeClass('fa-angle-right');
                 $('#expand-right').addClass('fa-angle-left');
+                filters_hidden = $('.filter-dropdowns').hasClass('hidden');
                 $('.filter-dropdowns').addClass('hidden');
                 sidebar_open = true;
             }
@@ -455,6 +460,7 @@ function ($, topic, template, items, paging, Dropdown)
 
         var rendered = template.render(event_list_template, data);
         $('#event-list').html(rendered);
+        $('.filter-dropdowns').removeClass('hidden');
 
         for (var i=0; i < events_open.length; i++) {
             $('#' + events_open[i]).addClass('open');
