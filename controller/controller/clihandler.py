@@ -1079,6 +1079,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                                             no_config=no_config, userid=userid,
                                             user_password=user_password)
         except StandardError:
+            stateman.update(main_state)
             logger.exception("Restore Exception:")
             line = "Restore Error: Traceback: %s" % traceback_string()
             body = {'error': line}
