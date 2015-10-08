@@ -50,8 +50,9 @@ function ($, template, common, paging, items, Dropdown, EditBox)
             $("#show-dropdown").removeClass('hidden');
         }
 
-        var count = data['datasources'].length;
-        if (count > 0) {
+        /* does this table have any items? */
+        var populated = data['enabled'];
+        if (populated) {
             $(".filter-dropdowns").removeClass('hidden');
             var rendered = template.render(t, data);
             $('#datasource-list').html(rendered);
