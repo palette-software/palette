@@ -3,7 +3,7 @@
     <%include file="paging.mako" args="name='Events'" />
     <h1>Events</h1>
     <section class="row">
-      <section class="col-xs-12 filter-dropdowns">
+      <section class="col-xs-12 filter-dropdowns hidden">
         <div id="status-dropdown" class="dropdown-toggle btn-group"></div>
         <div id="type-dropdown" class="dropdown-toggle btn-group"></div>
       </section>

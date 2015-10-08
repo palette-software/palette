@@ -163,21 +163,28 @@ class WorkbookApplication(ArchiveApplication):
 
     # FIXME: move build options to a separate file.
     def handle_get(self, req):
+
+        enabled = req.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]
+
         if req.remote_user.roleid == Role.NO_ADMIN:
             publisher_only = True
         else:
             publisher_only = False
 
+        # total count for this environment
+        # FIXME: too heavy weight for setting populated
+        if WorkbookEntry.count(filters={'envid':req.envid}) > 0:
+            populated = True
+        else:
+            populated = False
 
-        if not req.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]:
-            return {'workbooks': [],
-                    'item-count': 0,
-                    'publisher-only': publisher_only
-            }
-
-        filters = self.build_query_filters(req)
-        entries = self.do_query(req, filters)
-        count = WorkbookEntry.count(filters=filters)
+        if populated and enabled:
+            filters = self.build_query_filters(req)
+            entries = self.do_query(req, filters)
+            count = WorkbookEntry.count(filters=filters)
+        else:
+            entries = []
+            count = 0
 
         # lookup caches
         users = ArchiveUserCache(req.envid)
@@ -210,6 +217,8 @@ class WorkbookApplication(ArchiveApplication):
         return {'workbooks': workbooks,
                 'config': self.build_config(req, sites, projects),
                 'item-count': count,
+                'populated': populated,
+                'enabled': enabled,
                 'publisher-only': publisher_only
         }
 
