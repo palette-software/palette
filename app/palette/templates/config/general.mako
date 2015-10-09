@@ -238,15 +238,15 @@
       </div>
       <div class="settings hidden">
         <div class="workbooks">
-          <p>The number of user Worbook Versions you want Palette to retain</p>
+          <p>The number of user Workbook Versions you want Palette to retain</p>
           <p>
             <span id="workbook-retain-count" class="btn-group count"></span> Workbook Versions
           </p>
         </div>
         <div class="datasources">
-          <p>The number of user Datasource Versions you want Palette to retain</p>
+          <p>The number of user Data Source Versions you want Palette to retain</p>
           <p>
-            <span id="datasource-retain-count" class="btn-group count"></span> Datasource Versions
+            <span id="datasource-retain-count" class="btn-group count"></span> Data Source Versions
           </p>
         </div>
         <label for="archive-username">Tableau Server Admin Username *</label>
