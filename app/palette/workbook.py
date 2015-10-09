@@ -153,7 +153,7 @@ class WorkbookApplication(ArchiveApplication):
         """ Build a list of updates for the specified workbook entry."""
         updates = []
         for update in entry.updates:
-            data = update.todict(pretty=True)
+            data = update.todict(pretty=True, exclude='twb')
             data['username'] = users[update.system_user_id]
             if 'url' in data and data['url']:
                 # FIXME: make this configurable
