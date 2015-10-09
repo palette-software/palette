@@ -77,7 +77,7 @@
           <div>
             <span class="label">Note</span>
             <span class="editbox"
-                  data-id="{{dsid}}"
+                  data-id="{{dsuid}}"
                   data-href="/rest/datasources/updates/note">
               {{note}}
             </span>
