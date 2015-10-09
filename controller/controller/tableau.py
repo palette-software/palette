@@ -191,16 +191,16 @@ class TableauStatusMonitor(threading.Thread):
         # Get our new state and events to send based on the previous
         # state and new tableau status.
 
-        # Special case (fixme)
-        if prev_state == StateManager.STATE_STARTING_RESTORE and \
-                                YmlEntry.get(self.envid, 'version.external',
-                                                    default='8')[0:1] == '8':
+        new_state_info = TRANSITIONS[prev_state][tableau_status]
 
-            # If v8, 'tabadmin restore' success results in RUNNING/STARTED
-            # If v9, 'tabadmin restore' success results in STOPPED
-            new_state_info = START_DICT
-        else:
-            new_state_info = TRANSITIONS[prev_state][tableau_status]
+        # Special case (fixme)
+        if prev_state == StateManager.STATE_STARTING_RESTORE:
+            tversion = YmlEntry.get(self.envid, 'version.external', default='8')
+            if tversion[0:1] == '8' and (tversion[1:4] == '.0.' or \
+                                         tversion[1:4] == '.1.'):
+                # For pre 8.2, 'tabadmin restore' ends in RUNNING/STARTED
+                # After 8.2 and v9, 'tabadmin restore' ends in STOPPED
+                new_state_info = START_DICT
 
         logger.debug("status-check: prev_state: %s, new state info: %s, " + \
                      "prev_tableau_status %s, tableau_status: %s",
