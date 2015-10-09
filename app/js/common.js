@@ -686,8 +686,22 @@ function ($, topic, template, items, paging, Dropdown)
      * Common routine for displaying AJAX error messages.
      */
     function ajaxError(jqXHR, textStatus, errorThrown) {
-        alert(this.url + ': ' + jqXHR.status + " (" + errorThrown + ")");
-        location.reload();
+        var msg = jqXHR.status + " (" + errorThrown + ")";
+        if (this.url != null) {
+            msg = this.url + ':' + msg;
+        }
+        if (jqXHR.responseText != null) {
+            var $dom = $($.parseHTML(jqXHR.responseText));
+            var str = $("<div>").html(jqXHR.responseText)
+                .contents()
+                .filter(function() {
+                    return this.nodeType == Node.TEXT_NODE;
+                }).text();
+            str = str.replace(/\s+/g, ' ');
+            msg += '\n' + str.trim();
+        }
+        alert(msg);
+        //location.reload();
     }
 
     /*
