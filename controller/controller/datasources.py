@@ -64,7 +64,7 @@ class DataSourceEntry(meta.Base, BaseMixin, BaseDictMixin):
     asset_key_id = Column(Integer)
     document_version = Column(String)
 
-    # Added in 1.6:
+    # In Tableau 9.x, but not in Tableau 8.3.10.
     description = Column(String)
 
     __table_args__ = (UniqueConstraint('envid', 'site_id', 'project_id',
@@ -165,8 +165,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
             ' repository_data_id, repository_extract_data_id,' +\
             ' embedded, incrementable_extracts, refreshable_extracts,' +\
             ' first_published_at, connectable, is_hierarchical,' +\
-            ' extracts_incremented_at, luid, asset_key_id,' +\
-            ' description ' +\
+            ' extracts_incremented_at, luid, asset_key_id ' +\
             'FROM datasources'
 
         session = meta.Session()
