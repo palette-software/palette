@@ -153,7 +153,7 @@ class DatasourceApplication(ArchiveApplication):
         """ Build a list of updates for the specified datasource entry."""
         updates = []
         for update in entry.updates:
-            data = update.todict(pretty=True)
+            data = update.todict(pretty=True, exclude='tds')
             data['username'] = users[update.system_user_id]
             if 'url' in data and data['url']:
                 # FIXME: make this configurable
@@ -163,6 +163,7 @@ class DatasourceApplication(ArchiveApplication):
 
     # FIXME: move build options to a separate file.
     def handle_get(self, req):
+        #pylint: disable=too-many-locals
 
         enabled = req.system[SystemKeys.DATASOURCE_ARCHIVE_ENABLED]
 
