@@ -1,6 +1,6 @@
-require(['jquery', 'underscore', 'configure', 'common',
+require(['jquery', 'underscore', 'configure', 'common', 'form',
          'Dropdown', 'OnOff', 'bootstrap'],
-function ($, _, configure, common, Dropdown, OnOff)
+function ($, _, configure, common, form, Dropdown, OnOff)
 {
     var hasSettings = {'server-url': true, 'mail': true, 'ssl': true}
 
@@ -18,7 +18,7 @@ function ($, _, configure, common, Dropdown, OnOff)
     function maySaveURL(data)
     {
         var server_url = data['server-url'];
-        if (common.validURL(server_url)
+        if (form.validURL(server_url)
             && (server_url != urlData['server-url']))
         {
             return true;
@@ -88,7 +88,7 @@ function ($, _, configure, common, Dropdown, OnOff)
     function maySaveTableauURL(data)
     {
         var server_url = data['tableau-server-url'];
-        if (common.validURL(server_url)
+        if (form.validURL(server_url)
             && (server_url != tableauURLData['tableau-server-url']))
         {
             return true;
@@ -252,7 +252,7 @@ function ($, _, configure, common, Dropdown, OnOff)
             $('#cancel-mail').addClass('disabled');
         }
 
-        if (common.validEmail(testEmailRecipient)) {
+        if (form.validEmail(testEmailRecipient)) {
             if (_.isEqual(data, mailData)) {
                 $('#test-mail').removeClass('disabled');
             } else {

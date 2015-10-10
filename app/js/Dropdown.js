@@ -1,6 +1,15 @@
 define("Dropdown", ['jquery', 'template', 'bootstrap'],
 function($, template) {
 
+    /*
+     * jq()
+     * Escape selector characters in 'id'.
+     * see: learn.jquery.com -> jq().
+     */
+    function jq(id) {
+        return "#" + id.replace( /(:|\.|\[|\]|,)/g, "\\$1" );
+    }
+
     function Dropdown(node, data, callback, error) {
         this.node = node;
         this.callback = callback;
@@ -102,7 +111,7 @@ function($, template) {
 
     Dropdown.bind2 = function(id, data, callback)
     {
-        var $this = $('#' + id);
+        var $this = $(jq(id));
         var obj = new Dropdown($this.get(0), data, callback);
         $this.data(obj);
     }
@@ -130,7 +139,7 @@ function($, template) {
     Dropdown.getValueById = function(id)
     {
         try {
-            var dd = $('#' + id).data();
+            var dd = $(jq(id)).data();
             return dd.getDataId();
         } catch (err) {
             return null;
@@ -141,6 +150,16 @@ function($, template) {
     {
         var dd = $('#' + id).data();
         return dd.set(value);
+    }
+
+    Dropdown.getValueByNode = function(node)
+    {
+        try {
+            var dd = $(node).data();
+            return dd.getDataId();
+        } catch (err) {
+            return null;
+        }
     }
 
     Dropdown.setCallback = function(callback, selector)

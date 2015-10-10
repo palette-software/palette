@@ -4,7 +4,7 @@
 .dropdown-toggle {
     background-color: @btn-dd-bg !important;
     color: @text-color !important;
-    border: 1px solid #e1e1e1 !important;
+    border: 1px solid #e1e1e1;
     -webkit-box-shadow: inset 0 3px 5px rgba(0,0,0,0) !important;
 }
 
@@ -20,6 +20,7 @@
     box-shadow: 0 6px 12px rgba(0,0,0,0);
 }
 
+/* FIXME: use bootstrap standard dropup */
 .up .dropdown-menu {
     top: auto;
     bottom: 100%;
@@ -63,4 +64,11 @@
 
 .open > .dropdown-menu {
     display: table;
+}
+
+/* errors */
+.has-error .dropdown-toggle,
+.has-error .dropdown-toggle.btn-default,
+.has-error .dropdown-menu {
+    border-color: @state-danger-border;
 }

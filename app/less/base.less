@@ -160,17 +160,14 @@ label.checkbox-label {
     display: inline-block;
     margin: 4px 15px 0 0;
 }
+
+/* deprecated use bootstrap has-error */
 label.error {
     width: 100%;
     font-size: 14px;
     text-align: center;
     margin: 0px 0 15px 0;
     color: #E52C22;
-}
-p.error {
-    width: 100%;
-    font-size: 14px;
-    color: @red;
 }
 ul {
     padding: 0;
@@ -214,4 +211,11 @@ label + input[type="text"], label + input[type="password"] {
 .fake-text-input {
     line-height: 35px;
     margin: 0 0 5px 0;
+}
+
+/* error messages */
+p.error, .field-error {
+    width: 100%;
+    font-size: 14px;
+    color: @red;
 }
