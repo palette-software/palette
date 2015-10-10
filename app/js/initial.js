@@ -1,5 +1,6 @@
-require(['jquery', 'configure', 'common', 'Dropdown', 'OnOff', 'bootstrap'],
-function ($, configure, common, Dropdown, OnOff)
+require(['jquery', 'configure', 'common', 'form', 'Dropdown', 'OnOff',
+         'bootstrap'],
+function ($, configure, common, form, Dropdown, OnOff)
 {
     var setupDone = false;
 
@@ -98,7 +99,7 @@ function ($, configure, common, Dropdown, OnOff)
              */
             data['value'] = null;
         } else {
-            if (!common.validURL(proxy_https)) {
+            if (!form.validURL(proxy_https)) {
                 // put the error at the end of the proxy div
                 setError('#connect', 'The URL is invalid.');
                 return;
@@ -259,7 +260,7 @@ function ($, configure, common, Dropdown, OnOff)
             return true;
         }
 
-        if (!common.validEmail(data['alert-email-address'])) {
+        if (!form.validEmail(data['alert-email-address'])) {
             setError("#alert-email-address", "The email address is invalid.");
             result = false;
         }
@@ -310,12 +311,12 @@ function ($, configure, common, Dropdown, OnOff)
         }
 
         if (hasSettings['server-url']) {
-            if (!common.validURL(data['server-url'])) {
+            if (!form.validURL(data['server-url'])) {
                 setError("#server-url", "Invalid URL");
                 result = false;
             }
         }
-        if (!common.validURL(data['tableau-server-url'])) {
+        if (!form.validURL(data['tableau-server-url'])) {
             setError("#tableau-server-url", "Invalid URL");
             result = false;
         }
@@ -342,7 +343,7 @@ function ($, configure, common, Dropdown, OnOff)
      */
     function validateForTest(data) {
         var result = validateMailData(data);
-        if (!common.validEmail(data['test-email-recipient'])) {
+        if (!form.validEmail(data['test-email-recipient'])) {
             /* put the error after the button */
             setError("#test-mail","Invalid email address");
             result = false;

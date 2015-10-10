@@ -43,7 +43,7 @@
     </li>
     <li class="${obj.active=='support-case' and 'active' or ''}">
       <a href="/support-case">
-        <i class="fa fa-fw fa-comments-o"></i><span>Support Case</span>
+        <i class="fa fa-fw fa-support"></i><span>Support Case</span>
       </a>
     </li>
     <li class="category">

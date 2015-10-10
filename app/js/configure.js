@@ -1,5 +1,5 @@
-define(['jquery', 'common', 'Dropdown', 'OnOff', 'lightbox'],
-function ($, common, Dropdown, OnOff)
+define(['jquery', 'form', 'Dropdown', 'OnOff', 'lightbox'],
+function ($, form, Dropdown, OnOff)
 {
     var MAIL_DIRECT = 1;
     var MAIL_RELAY = 2;
@@ -146,7 +146,7 @@ function ($, common, Dropdown, OnOff)
             return false;
         }
         */
-        if (!common.validEmail(data['alert-email-address'])) {
+        if (!form.validEmail(data['alert-email-address'])) {
             return false;
         }
 
