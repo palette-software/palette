@@ -22,7 +22,7 @@ function($, template) {
 
         for (var i in data['options']) {
             var option = data['options'][i];
-            this.options[option.id] = option.item;
+            this.options[option.id.toString()] = option.item;
         }
 
         this.original_html = $(node).html();
@@ -30,7 +30,7 @@ function($, template) {
         $(node).html(html);
 
         this.set = function (id) {
-            var value = this.options[id]
+            var value = this.options[id];
             var $div = $('button > div', this.node);
             $div.attr('data-id', id);
             $div.text(value);
@@ -160,6 +160,12 @@ function($, template) {
         } catch (err) {
             return null;
         }
+    }
+
+    Dropdown.setValueByNode = function(node, value)
+    {
+        var dd = $(node).data();
+        return dd.set(value);
     }
 
     Dropdown.setCallback = function(callback, selector)

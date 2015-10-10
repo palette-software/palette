@@ -168,6 +168,7 @@ DEFAULTS = SystemDefaults({
     SystemKeys.TABLEAU_INTERNAL_SERVER_URL: None,
     SystemKeys.TIMEZONE: "US/Pacific",
     SystemKeys.PROXY_HTTPS: None,
+    SystemKeys.COMPANY_NAME: None,
 
     SystemKeys.STATE: "DISCONNECTED",
 

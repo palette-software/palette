@@ -1,6 +1,8 @@
 """ Support case application support. """
 #pylint: enable=relative-import,missing-docstring
 
+import akiri.framework.sqlalchemy as meta
+
 from controller.mailer import Mailer
 from controller.profile import Role
 from controller.system import SystemKeys
@@ -28,7 +30,21 @@ class SupportCaseApplication(PaletteRESTApplication):
                   SupportCaseOSOption('environment:operating-system'),
                   SupportCaseDataSourceOption('environment:data-source')
         ]
-        return {'config': [option.default() for option in config]}
+        data = {'config': [option.default() for option in config]}
+
+        profile = req.environ['REMOTE_USER']
+        if profile.userid > 0:
+            if profile.friendly_name:
+                data['environment:name'] = profile.friendly_name
+            if profile.email:
+                data['environment:email'] = profile.email
+
+        company_name = req.system[SystemKeys.COMPANY_NAME]
+        if company_name:
+            data['contact:company'] = company_name
+        meta.commit()
+
+        return data
 
     @required_parameters('problem:statement', 'contact:email')
     @required_role(Role.MANAGER_ADMIN)
@@ -45,6 +61,14 @@ class SupportCaseApplication(PaletteRESTApplication):
             message += '\n'
 
         sender = req.params['contact:email']
+
+        company_name = req.params.get('contact:company')
+        if company_name:
+            req.system[SystemKeys.COMPANY_NAME] = company_name
+        else:
+            del req.system[SystemKeys.COMPANY_NAME]
+        meta.commit()
+            
 
         mailer = Mailer(sender)
         mailer.send_msg(req.system[SystemKeys.SUPPORT_CASE_EMAIL],
@@ -194,7 +218,7 @@ class SupportCaseDataSourceOption(ListOption):
             "Google Analytics", "Google BigQuery", "Google Cloud SQL",
             "Greenplum", "Hortonworks Hadoop Hive", "IBM BigInsights",
             "IBM OLAP", "MapR Hadoop Hive", "MarkLogic", "Microsoft Azure SQL",
-            "Microsoft Windows Azure Marketplace DataMarket",
+            "Microsoft Azure Marketplace DataMarket",
             "MSAS", "MS SQL Server", "MySQL", "Netezza",
             "Odata", "ODBC", "Oracle",
             "ParAccel", "Postgres", "Powerpivot", "Progress OpenEdge",

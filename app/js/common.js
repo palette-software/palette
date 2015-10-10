@@ -91,6 +91,14 @@ function ($, topic, template, items, paging, Dropdown)
     }
 
     /*
+     * deleteCookie()
+     * Delete a cookie by name by setting it to expire.
+     */
+    function deleteCookie(name) {
+        document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    }
+
+    /*
      * getCookie()
      */
     function getCookie(cname) {
@@ -101,8 +109,9 @@ function ($, topic, template, items, paging, Dropdown)
             while (c.charAt(0)==' ') {
                 c = c.substring(1);
             }
-            if (c.indexOf(name) != -1)
-                return c.substring(name.length, c.length);
+            if (c.indexOf(name) != -1) {
+                return c.substring(name.length, c.length).toString();
+            }
         }
         return null;
     }
@@ -705,6 +714,9 @@ function ($, topic, template, items, paging, Dropdown)
 
     return {'startMonitor': startMonitor,
             'ajaxError': ajaxError,
+            'getCookie': getCookie,
+            'setCookie': setCookie,
+            'deleteCookie': deleteCookie,
             'lightbox': lightbox,
             'setupEventDropdowns' : setupEventDropdowns,
             'setupPopups': setupPopups,
