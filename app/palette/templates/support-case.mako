@@ -44,17 +44,17 @@
       <div class="form-group required">
         <label class="control-label" for="contact:name">Name</label>
         <input type="text" id="contact:name"
-               class="form-control" />
+               class="form-control cache" />
       </div>
       <div class="form-group required">
         <label class="control-label" for="contact:phone">Phone</label>
         <input type="text" id="contact:phone"
-               class="form-control" />
+               class="form-control cache phone" />
       </div>
       <div class="form-group required">
         <label class="control-label" for="contact:email">Email</label>
         <input type="text" id="contact:email"
-               class="form-control" />
+               class="form-control cache email" />
       </div>
       <div class="form-group">
         <label class="control-label" for="contact:company">Company</label>
@@ -81,7 +81,7 @@
         <label class="control-label" for="environment:product">
           Product
         </label>
-        <span class="btn-group" id="environment:product"></span>
+        <span class="btn-group cache" id="environment:product"></span>
       </div>
       <div class="form-group required">
         <label class="control-label" for="environment:language">
@@ -93,7 +93,7 @@
         <label class="control-label" for="environment:version">
           Product Version
         </label>
-        <span class="btn-group" id="environment:version"></span>
+        <span class="btn-group cache" id="environment:version"></span>
       </div>
       <div class="form-group">
         <label class="control-label" for="environment:build-number">
@@ -105,7 +105,7 @@
         <label class="control-label" for="environment:operating-system">
           Operating System
         </label>
-        <span class="btn-group" id="environment:operating-system"></span>
+        <span class="btn-group cache" id="environment:operating-system"></span>
       </div>
       <div class="form-group">
         <label class="control-label" for="environment:data-source">

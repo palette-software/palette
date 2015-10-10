@@ -28,6 +28,7 @@ class UserProfile(meta.Base, BaseMixin, BaseDictMixin):
     friendly_name = Column(String)
     email = Column(String)
     email_level = Column(Integer, default=1)
+    phone = Column(String)
     hashed_password = Column(String)
     salt = Column(String)
     roleid = Column(BigInteger, ForeignKey("roles.roleid"), default=0)

@@ -1,3 +1,25 @@
+.form-control {
+    transition: none;
+    color: black; /* FIXME */
+    border: 1px solid #e1e1e1; /* FIXME */
+
+    /* FIXME: merge with base.less */
+    &:focus {
+        border: 1px solid #e1e1e1;
+        box-shadow: none;
+    }
+
+}
+
+/* errors */
+.has-error .form-control {
+    box-shadow: none;
+
+    &:focus {
+        box-shadow: none;
+    }
+}
+
 .required label::after {
     content: " *";
 }

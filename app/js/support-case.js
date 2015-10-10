@@ -20,11 +20,46 @@ function ($, common, form, Dropdown)
     function gather() {
         var data = {}
 
+        /* inputs */
         $('input[type=text], textarea').each(function(index){
             var id = $(this).attr('id');
             data[id] = $(jq(id)).val();
         });
+
+        /* dropdowns */
+        $('.btn-group').each(function(index){
+            var id = $(this).attr('id');
+            data[id] = Dropdown.getValueByNode(this);
+        });
         return data;
+    }
+
+    /*
+     * cache()
+     * Save fields marked with the 'cache' class to cookies.
+     * NOTE: should be called after validate().
+     */
+    function cache() {
+        $('input[type=text].cache, textarea.cache').each(function(index){
+            var id = $(this).attr('id');
+            var value = $(jq(id)).val();
+            if (value != null && value.length > 0) {
+                common.setCookie(id, value);
+            } else {
+                common.deleteCookie(id);
+            }
+        });
+
+        /* dropdowns */
+        $('.btn-group.cache').each(function(index){
+            var id = $(this).attr('id');
+            var value = Dropdown.getValueByNode(this);
+            if (value != null && value.length > 0) {
+                common.setCookie(id, value);
+            } else {
+                common.deleteCookie(id);
+            }
+        });
     }
 
     /*
@@ -101,11 +136,13 @@ function ($, common, form, Dropdown)
      */
     function sendSupportCase() {
         $('#send-support-case').addClass('disabled');
+        clearErrors();
 
         if (!validate()) {
             $('#send-support-case').removeClass('disabled');
             return;
         }
+        cache();
 
         $.ajax({
             type: 'POST',
@@ -124,6 +161,42 @@ function ($, common, form, Dropdown)
         });
     }
 
+    /*
+     * update()
+     */
+    function update(data) {
+        $('input[type=text]').each(function(index){
+            var id = $(this).attr('id');
+            if (id == null) {
+                return;
+            }
+            var value = data[id];
+            if (value != null) {
+                $(jq(id)).val(value);
+            } else {
+                value = common.getCookie(id);
+                if (value != null) {
+                    $(jq(id)).val(value);
+                }
+            }
+        });
+
+        Dropdown.setupAll(data);
+        
+        /* dropdowns */
+        $('.btn-group.cache').each(function(index){
+            var id = $(this).attr('id');
+            var value = Dropdown.getValueByNode(this);
+            if (value == NONE) {
+                var cookie = common.getCookie(id);
+                if (cookie != null && cookie.length > 0) {
+                    cookie = cookie.replace('_', ' ');
+                    Dropdown.setValueByNode(this, cookie);
+                }
+            }
+        });
+    }
+
     common.startMonitor(false);
     common.setupOkCancel();
 
@@ -133,7 +206,7 @@ function ($, common, form, Dropdown)
         
         success: function(data) {
             $().ready(function() {
-                Dropdown.setupAll(data);
+                update(data);
                 $('#send-support-case').data('callback', sendSupportCase);
                 $('#send-support-case').removeClass('disabled');
             });
