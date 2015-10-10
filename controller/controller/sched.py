@@ -119,7 +119,7 @@ class Sched(threading.Thread):
         self.add_cron_job(name='backup', hour=0, minute=0)
 
         self.add_cron_job(name='daily', minute=0, hour=9)
-        self.add_cron_job(name='agent_upgrader', minute=45, hour=6)
+        self.add_cron_job(name='agent_upgrader', minute=45, hour='*/4')
         self.add_cron_job(name='metrics_prune', minute=15, hour=3)
         self.add_cron_job(name='license_check', minute="8")
         self.add_cron_job(name='license_verify', minute=6)
