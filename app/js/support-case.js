@@ -120,6 +120,15 @@ function ($, common, form, Dropdown)
                 }
             }
         });
+
+        if (!result) {
+            var msg = "The page contains invalid input, please correct."
+
+            var html = form.pageError(msg);
+            $(".top-zone").append(html);
+            $(".save-cancel").prepend(html);
+        }
+
         return result;
     }
 
@@ -128,7 +137,7 @@ function ($, common, form, Dropdown)
      */
     function clearErrors() {
         $('.has-error').removeClass('has-error');
-        $('.field-error').remove();
+        $('.field-error, .page-error').remove();
     }
 
     /*

@@ -38,16 +38,26 @@ function ($)
 
     /*
      * fieldError() {
-     * Add an error message to a form-group.
+     * Create an error message for a particular field.
      */
     function fieldError(msg) {
         return '<p class="field-error">' + msg + '</p>';
+    }
+
+    /*
+     * pageError()
+     * Create a page error message.
+     */
+    function pageError(msg)
+    {
+        return '<h3 class="page-error">' + msg + '</h3>';
     }
 
     return {'validEmail' : validEmail,
             'validURL' : validURL,
             'validPassword' : validPassword,
             'validPhoneNumber': validPhoneNumber,
-            'fieldError': fieldError
+            'fieldError': fieldError,
+            'pageError': pageError
            };
 });
