@@ -22,6 +22,8 @@ function ($, configure, common, form, Dropdown, OnOff)
     var PASSWORD_MIN_CHARS = 8;
     var PASSWORD_MATCH = /^[A-Za-z0-9!@#$%]+$/;
 
+    /* FIXME: use form.js */
+
     /*
      * setPageError()
      * Set the main error reporting at the top and bottom of the page.

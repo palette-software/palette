@@ -1,3 +1,8 @@
+.required label::after {
+    content: " *";
+}
+
+/* bootstrap form-control */
 .form-control {
     transition: none;
     color: black; /* FIXME */
@@ -20,6 +25,13 @@
     }
 }
 
-.required label::after {
-    content: " *";
+/* error messages */
+p.error, .field-error {
+    width: 100%;
+    font-size: 14px;
+    color: @red;
+}
+
+.page-error {
+    color: @red !important; /* fixme */
 }
