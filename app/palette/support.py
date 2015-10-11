@@ -1,11 +1,16 @@
 """ Support case application support. """
 #pylint: enable=relative-import,missing-docstring
+from copy import deepcopy
+from datetime import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 import akiri.framework.sqlalchemy as meta
 
 from controller.mailer import Mailer
 from controller.profile import Role
 from controller.system import SystemKeys
+from controller.util import DATEFMT
 
 from .option import ListOption
 from .page import PalettePage
@@ -13,6 +18,51 @@ from .rest import PaletteRESTApplication, status_ok
 from .rest import required_parameters, required_role
 
 NONE = '--None--'
+
+FIELDS = ('problem:statement',
+          'problem:category',
+          'problem:impact',
+          'problem:description',
+          'contact:name',
+          'contact:phone',
+          'contact:email',
+          'contact:company',
+          'contact:language',
+          'contact:timezone',
+          'environment:product',
+          'environment:language',
+          'environment:version',
+          'environment:build-number',
+          'environment:operating-system',
+          'environment:data-source')
+
+def _subject(text):
+    """ Build the mail subject: first 5 words of the problem + the date. """
+    tokens = [token.strip() for token in text.split()]
+    if len(tokens) > 5:
+        tokens = tokens[0:5]
+    timestamp = datetime.now().strftime(DATEFMT)
+    return ' '.join(tokens) + ' ' + timestamp
+
+def _text(key, value):
+    """ format the key/value as plaintext """
+    text = key.upper() + ':\n'
+    text += value + '\n'
+    text += '\n'
+    return text
+
+def _html(key, value):
+    """ format the key/value as html """
+    html = '<div style="margin-bottom:3em">'
+    html += '<h3>' + key + '</h3>'
+    html += '<p>' + value + '</p>'
+    html += '</div>'
+    return html
+
+def _display_name(name):
+    """ translate the name to a display-able format. """
+    name = name.replace('-', ' ').title()
+    return name.replace(':', ' ')
 
 class SupportCaseApplication(PaletteRESTApplication):
     """ Email the POST data to Tableau support. """
@@ -23,7 +73,7 @@ class SupportCaseApplication(PaletteRESTApplication):
         config = [SupportCaseCategoryOption('problem:category'),
                   SupportCaseImpactOption('problem:impact'),
                   SupportCaseLangOption('contact:language'),
-                  SupportCaseTzOption('contact:tz'),
+                  SupportCaseTzOption('contact:timezone'),
                   SupportCaseProductOption('environment:product'),
                   SupportCaseLangOption('environment:language'),
                   SupportCaseVersionOption('environment:version'),
@@ -50,15 +100,44 @@ class SupportCaseApplication(PaletteRESTApplication):
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
         """ Handle POST requests """
-        subject = 'Support Case: ' + req.params['problem:statement']
-        message = ''
+        subject = _subject(req.params['problem:statement'])
+        text = ''
+        html = '<html><head></head><body>'
 
-        for key in req.params:
-            name = key.replace('-', ' ').title()
-            name = name.replace(':', ' ')
-            message += name + ':\n'
-            message += req.params[key] + '\n'
-            message += '\n'
+        params = deepcopy(req.POST)
+
+        # handle the known fields
+        for key in FIELDS:
+            if not key in params:
+                continue
+            name = _display_name(key)
+            value = params[key]
+            if not value:
+                value = NONE
+            # text version
+            text += _text(name, value)
+            # html version
+            html += _html(name, value)
+            del params[key]
+
+        # add anything else that was sent
+        for key in params:
+            name = _display_name(key)
+            value = params[key]
+            if not value:
+                value = NONE
+            # text version
+            text += _text(name, value)
+            # html version
+            html += _html(name, value)
+
+        html += '</body>'
+
+        # see the last example at:
+        # https://docs.python.org/2/library/email-examples.html
+        msg = MIMEMultipart('alternative')
+        msg.attach(MIMEText(text, 'plain'))
+        msg.attach(MIMEText(html, 'html'))
 
         sender = req.params['contact:email']
 
@@ -68,11 +147,10 @@ class SupportCaseApplication(PaletteRESTApplication):
         else:
             del req.system[SystemKeys.COMPANY_NAME]
         meta.commit()
-            
 
         mailer = Mailer(sender)
         mailer.send_msg(req.system[SystemKeys.SUPPORT_CASE_EMAIL],
-                        subject, message, bcc=[sender])
+                        subject, msg, bcc=[sender])
         return status_ok()
 
 class SupportCasePage(PalettePage):

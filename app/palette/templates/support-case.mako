@@ -71,7 +71,7 @@
         <label class="control-label" for="contact:language">
           Preferred Support timezone for this request
         </label>
-        <span class="btn-group" id="contact:tz"></span>
+        <span class="btn-group" id="contact:timezone"></span>
       </div>
     </section>
     <hr />
