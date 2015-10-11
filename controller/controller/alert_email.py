@@ -307,7 +307,7 @@ class AlertEmail(object):
     def _do_send(self, to_emails, bcc, subject, message):
         """ Do the actual send for a plain-text message """
         mailer = Mailer(self.system[SystemKeys.FROM_EMAIL])
-        mailer.send_msg(to_emails, subject, message, bcc=bcc)
+        mailer.send(to_emails, subject, message, bcc=bcc)
 
     def make_default_message(self, event_entry, subject, data):
         """Given the event entry, subject (string)and data (dictionary),

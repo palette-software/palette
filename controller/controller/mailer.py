@@ -24,21 +24,13 @@ class Mailer(object):
         self.smtp_port = port
         self.max_subject_len = max_subject_len
 
-    def send_msg(self, recipients, subject, message, bcc=None):
-        """ Send a generic (plain-text) message """
+    def send_msg(self, recipients, subject, msg, bcc=None):
+        """ Send a generic MIME message object"""
 
         if isinstance(recipients, basestring):
             recipients = [email.strip() for email in recipients.split(',')]
         if bcc and isinstance(bcc, basestring):
             bcc = [email.strip() for email in bcc.split(',')]
-
-        # Convert from Unicode to utf-8
-        message = message.encode('utf-8')    # prevent unicode exception
-        try:
-            msg = MIMEText(message, "plain", "utf-8")
-        except StandardError, ex:
-            logger.exception(ex)
-            return False
 
         if len(subject) > self.max_subject_len:
             subject = subject[:self.max_subject_len]  + "..."
@@ -61,9 +53,22 @@ class Mailer(object):
         except (smtplib.SMTPException, EnvironmentError) as ex:
             logger.error("Email send failed, text: %s, exception: %s, "
                          "server: %s, port: %d",
-                         message, ex, self.smtp_host, self.smtp_port)
+                         msg.as_string(), ex, self.smtp_host, self.smtp_port)
             return False
 
         logger.info("Emailed alert: To: '%s' Subject: '%s', message: '%s'",
-                    ",".join(recipients), subject, message)
+                    ",".join(recipients), subject, msg.as_string())
         return True
+
+    def send(self, recipients, subject, message, bcc=None):
+        """ Send a generic (plain-text) message """
+
+        # Convert from Unicode to utf-8
+        message = message.encode('utf-8')    # prevent unicode exception
+        try:
+            msg = MIMEText(message, "plain", "utf-8")
+        except StandardError, ex:
+            logger.exception(ex)
+            return False
+
+        return self.send_msg(recipients, subject, msg, bcc=bcc)
