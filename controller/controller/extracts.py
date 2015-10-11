@@ -240,7 +240,7 @@ class ExtractManager(TableauCacheManager):
                                 ExtractNotification.EXTRACT_DELAY_ERROR):
             # Note: We don't send a WARN event if we already sent an ERROR
             data['extract_delay_seconds'] = time_since_created
-            self._eventgen(EventControl.EXTRACT_DURATION_WARN, data, entry)
+            self._eventgen(EventControl.EXTRACT_DELAY_WARN, data, entry)
             entry.notification_state |= ExtractNotification.EXTRACT_DELAY_WARN
 
 
