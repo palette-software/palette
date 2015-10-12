@@ -249,6 +249,7 @@ class EventControl(meta.Base, BaseMixin, BaseDictMixin):
     }
 
     publisher_types = {
+        'datasource' : 'Datasources',
         'extract' : 'Extracts',
         'http' : 'HTTP Status',
         'load' : 'Tableau Page Load',
