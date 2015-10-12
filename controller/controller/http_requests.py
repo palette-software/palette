@@ -180,7 +180,7 @@ class HttpRequestManager(TableauCacheManager):
     def _test_for_load_alerts(self, rows, entry, agent, body):
     # pylint: disable=too-many-return-statements
     # pylint: disable=too-many-branches
-    # Different event types are described in PD-5323.
+    # Different event types are described in PD-5352.
 #        print "action = ", entry.action, "body = ", body
 
         errorlevel = self.system[SystemKeys.HTTP_LOAD_ERROR]
