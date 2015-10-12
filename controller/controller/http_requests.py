@@ -181,7 +181,7 @@ class HttpRequestManager(TableauCacheManager):
     # pylint: disable=too-many-return-statements
     # pylint: disable=too-many-branches
     # Different event types are described in PD-5323.
-#        prin t "action = ", entry.action, "body = ", body
+#        print "action = ", entry.action, "body = ", body
 
         errorlevel = self.system[SystemKeys.HTTP_LOAD_ERROR]
         warnlevel = self.system[SystemKeys.HTTP_LOAD_WARN]
@@ -266,12 +266,6 @@ class HttpRequestManager(TableauCacheManager):
                 body = {}
                 entry = show_entry
                 self._parseuri(entry.http_request_uri, body)
-                if 'http_request_uri' in body:
-                    # Remove query string for type 3 http_request_uri.
-                    urip = urlparse(body['http_request_uri'])
-                    http_request_uri = urip.scheme + "://" + urip.netloc + \
-                                       urip.path
-                    body['http_request_uri'] = http_request_uri
                 self._eventgen(EventControl.HTTP_LOAD_TYPE_3,
                                agent, entry, body=body)
                 return
@@ -410,8 +404,13 @@ class HttpRequestManager(TableauCacheManager):
 
         if 'http_referer' in body:
             body['http_referer'] = unquote(body['http_referer']).decode('utf8')
+
         if 'http_request_uri' in body:
-            http_request_uri = unquote(body['http_request_uri'])
+            # Remove query string from the http_request_uri.
+            urip = urlparse(body['http_request_uri'])
+            http_request_uri = urip.scheme + "://" + urip.netloc + urip.path
+
+            http_request_uri = unquote(http_request_uri)
             body['http_request_uri'] = http_request_uri.decode('utf8')
 
         userid = body['userid']
