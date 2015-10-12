@@ -1,0 +1,54 @@
+input[type="text"], input[type="password"], select {
+    width: 100%;
+    box-shadow: 0 0;
+    box-sizing:border-box;
+    max-width: 320px;
+}
+
+label {
+    display: block; /* labels are above their element - not inline */
+    margin: 25px 0 8px 0;
+    color: @label-color;
+    font-size: 15px;
+    font-weight: normal;
+}
+
+.required label::after, .control-label.required::after {
+    content: " *";
+}
+
+/* bootstrap form-control */
+.form-control {
+    transition: none;
+
+    &:focus {
+        box-shadow: none;
+    }
+}
+
+/* errors */
+.has-error .form-control {
+    box-shadow: none;
+
+    &:focus {
+        box-shadow: none;
+    }
+}
+
+/* error messages */
+p.error, .field-error {
+    width: 100%;
+    font-size: 14px;
+    color: @red;
+}
+
+.page-error {
+    color: @red !important; /* fixme */
+}
+
+/* 'fake' input - component that looks like an input but isn't editable. */
+.fake-text-input {
+    line-height: 35px;
+    margin: 0;
+}
+

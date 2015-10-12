@@ -16,16 +16,18 @@
     </section>
 
     <a name="storage"></a>
-    <section id="storage">
+    <section class="form-group" id="storage">
       <a id="229204" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Storage Location</h2>
       <p>Your Backups, Ziplogs, and Workbooks will be saved in this location.</p>
-      <input type="radio" id="storage-local" name="storage-type" value="local" />
-      <label for="storage-local">My Machine(s)</label>
-      <input type="radio" id="storage-s3" name="storage-type" value="s3" />
-      <label for="storage-s3">Amazon S3</label>
-      <input type="radio" id="storage-gcs" name="storage-type" value="gcs" />
-      <label for="storage-gcs">Google Cloud Storage</label>
+      <div> <!-- class="radio -->
+        <input type="radio" id="storage-local" name="storage-type" value="local" />
+        <label for="storage-local">My Machine(s)</label>
+        <input type="radio" id="storage-s3" name="storage-type" value="s3" />
+        <label for="storage-s3">Amazon S3</label>
+        <input type="radio" id="storage-gcs" name="storage-type" value="gcs" />
+        <label for="storage-gcs">Google Cloud Storage</label>
+      </div>
       <section id="local" class="hidden">
         <span class="btn-group" id="storage-destination"></span>
         <div class="save-cancel">
@@ -39,25 +41,25 @@
       </section>
       <section id="s3" class="hidden">
         <h3>Credentials</h3>
-        <label for="s3-access-key">Access Key ID</label>
-        <input type="text" id="s3-access-key" />
-        <label for="s3-secret-key">Secret Access Key</label>
-        <input type="password" id="s3-secret-key" />
-        <label for="s3-url">S3 URL or Bucket Name</label>
-        <input type="text" id="s3-url" />
+        <label class="control-label" for="s3-access-key">Access Key ID</label>
+        <input class="form-control" type="text" id="s3-access-key" />
+        <label class="control-label" for="s3-secret-key">Secret Access Key</label>
+        <input class="form-control" type="password" id="s3-secret-key" />
+        <label class="control-label" for="s3-url">S3 URL or Bucket Name</label>
+        <input class="form-control" type="text" id="s3-url" />
         <div class="btn-bar">
           <button type="button" id="test-s3" class="test okcancel"
                   data-text="Are you sure you want to delete the S3 credentials?">
             Test Connection
           </button>
-	  <button type="button" id="remove-s3" class="test okcancel"
+          <button type="button" id="remove-s3" class="test okcancel"
                   data-text="Are you sure you want to delete the S3 credentials?">
             Remove Credentials
           </button>
         </div>
         <p id="s3-test-message" class="hidden"></p>
         <div class="save-cancel">
-	  <button type="button" id="cancel-s3" class="cancel disabled">
+          <button type="button" id="cancel-s3" class="cancel disabled">
             Cancel
           </button>
           <button type="button" id="save-s3" class="save disabled">
@@ -67,18 +69,18 @@
       </section>
       <section id="gcs" class="hidden">
         <h3>Credentials</h3>
-        <label for="gcs-access-key">Access Key ID</label>
-        <input type="text" id="gcs-access-key" />
-        <label for="gcs-secret-key">Secret Access Key</label>
-        <input type="password" id="gcs-secret-key" />
-        <label for="gcs-url">GCS URL or Bucket Name</label>
-        <input type="text" id="gcs-url" />
+        <label class="control-label" for="gcs-access-key">Access Key ID</label>
+        <input class="form-control" type="text" id="gcs-access-key" />
+        <label class="control-label" for="gcs-secret-key">Secret Access Key</label>
+        <input class="form-control" type="password" id="gcs-secret-key" />
+        <label class="control-label" for="gcs-url">GCS URL or Bucket Name</label>
+        <input class="form-control" type="text" id="gcs-url" />
         <div class="btn-bar">
           <button type="button" id="test-gcs" class="btn btn-test okcancel"
                   data-text="Are you sure you want to delete the GCS credentials?">
             Test Connection
           </button>
-	  <button type="button" id="remove-gcs" class="btn btn-test okcancel"
+          <button type="button" id="remove-gcs" class="btn btn-test okcancel"
                   data-text="Are you sure you want to delete the GCS credentials?">
             Remove Credentials
           </button>
@@ -93,11 +95,11 @@
           </button>
         </div>
       </section>
-    </section>
+    </section>  <!-- section storage -->
 
     <a name="email-alerts"></a>
     <hr />
-    <section id="email-alerts">
+    <section class="form-group" id="email-alerts">
       <a id="229207" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Email Alerts</h2>
       <p>Designate which groups of Palette Users receive Email Alerts.</p>
@@ -120,11 +122,11 @@
           Save
         </button>
       </div>
-    </section>
+    </section> <!-- section email alerts -->
 
     <a name="backups"></a>
     <hr />
-    <section id="backups">
+    <section class="form-group" id="backups">
       <a id="229213" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Backups</h2>
       <!---
@@ -159,11 +161,11 @@
           Save
         </button>
       </div>
-    </section>
+    </section> <!-- section backups -->
 
     <a name="ziplogs"></a>
     <hr />
-    <section id="ziplogs">
+    <section class="form-group" id="ziplogs">
       <a id="229214" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Ziplogs</h2>
       <!--
@@ -191,11 +193,11 @@
           Save
         </button>
       </div>
-    </section>
+    </section> <!-- section ziplogs -->
 
     <a name="extracts"></a>
     <hr />
-    <section id="extracts" class="auto">
+    <section class="form-group auto" id="extracts">
       <a id="332776" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Extracts</h2>
 
@@ -207,7 +209,7 @@
       <h3>Long-Running Extracts</h3>
       <p>Alert when extracts take longer to run than these duration thresholds.</p>
       <p>
-	<span>Warning Alert at <span id="extract-duration-warn" class="btn-group time"></span></span>&nbsp;<span>Error Alert at <span id="extract-duration-error" class="btn-group time"></span></span>
+    <span>Warning Alert at <span id="extract-duration-warn" class="btn-group time"></span></span>&nbsp;<span>Error Alert at <span id="extract-duration-error" class="btn-group time"></span></span>
       </p>
       <div class="save-cancel">
         <button type="button" class="cancel disabled">
@@ -217,11 +219,11 @@
           Save
         </button>
       </div>
-    </section>
+    </section> <!-- section extracts -->
 
     <a name="archives"></a>
     <hr />
-    <section id="archives" class="auto">
+    <section class="form-group auto" id="archives">
       <a id="229215" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Archiving</h2>
       <p>Designate what Palette Server should archive.</p>
@@ -248,37 +250,37 @@
             <span id="datasource-retain-count" class="btn-group count"></span> Datasource Versions
           </p>
         </div>
-        <label for="archive-username">Tableau Server Admin Username *</label>
-        <input type="text" id="archive-username" />
-        <label for="archive-password">Tableau Server Admin Password *</label>
-        <input type="password" id="archive-password" />
+        <label class="control-label required" for="archive-username">Tableau Server Admin Username</label>
+        <input class="form-control" type="text" id="archive-username" />
+        <label class="control-label required" for="archive-password">Tableau Server Admin Password</label>
+        <input class="form-control" type="password" id="archive-password" />
       </div>
       <div class="save-cancel">
-        <button type="button" id="cancel-workbooks" class="cancel disabled">
+        <button type="button" id="cancel-archives" class="cancel disabled">
           Cancel
         </button>
-        <button type="button" id="save-workbooks" class="save disabled">
+        <button type="button" id="save-archives" class="save disabled">
           Save
         </button>
       </div>
-    </section>
+    </section> <!-- section archives -->
 
     <a name="monitoring"></a>
     <hr />
-    <section id="monitoring">
+    <section class="form-group" id="monitoring">
       <a id="229216" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Monitoring</h2>
 
       <div>
-	<h3>Storage</h3>
-	<p>Alert when my Machine attached volumes exceed these thresholds.</p>
-	<p>
+        <h3>Storage</h3>
+        <p>Alert when my Machine attached volumes exceed these thresholds.</p>
+        <p>
           <span>Warning Alert at <span id="disk-watermark-low" class="btn-group percentage"></span></span>&nbsp;<span>Error Alert at <span id="disk-watermark-high" class="btn-group percentage"></span></span>
-	</p>
+        </p>
       </div>
       <div>
         <h3>CPU</h3>
-	<p>Alert when the average CPU of my Machine(s) exceeds these thresholds for this duration.</p>
+        <p>Alert when the average CPU of my Machine(s) exceeds these thresholds for this duration.</p>
         <p>
           <span>Warning Alert at <span id="cpu-load-warn" class="btn-group percentage"></span></span>&nbsp;<span>for <span id="cpu-period-warn" class="btn-group time"></span></span>
         </p>
@@ -301,7 +303,7 @@
           Save
         </button>
       </div>
-    </section>
+    </section> <!-- section monitoring -->
   </div>
 </div>
 

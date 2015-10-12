@@ -18,7 +18,7 @@
     </section>
 
 %if req.platform.product != req.platform.PRODUCT_PRO:
-    <section>
+    <section class="form-group">
       <%include file="server-url.mako" />
       <div class="save-cancel">
         <button type="button" id="cancel-url" class="cancel disabled">
@@ -35,7 +35,7 @@
 %if req.platform.product != req.platform.PRODUCT_PRO:
     <hr />
 %endif
-    <section>
+    <section class="form-group">
       <%include file="tableau-server-url.mako" />
       <div class="save-cancel">
         <button type="button" id="cancel-tableau-url" class="cancel disabled">
@@ -49,17 +49,17 @@
 
     <a name="admin"></a>
     <hr />
-    <section id="admin">
+    <section  class="form-group" id="admin">
       <a id="236536" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Palette Server Admin Credentials</h2>
       <p>Change the password for the built-in "Palette" username.</p>
       <p>Any combination of 8+ case-sensitive, alphanumeric characters (i.e. A-Z, a-z, 0-9, and !,@,#,$,%).</p>
       <label>Username</label>
       <p class="fake-text-input">Palette</p>
-      <label for="password">New Password *</label>
-      <input type="password" id="password" />
-      <label for="confirm-password">Confirm New Password *</label>
-      <input type="password" id="confirm-password" />
+      <label class="control-label required" for="password">New Password</label>
+      <input type="password" class="form-control" id="password" />
+      <label class="control-label" for="confirm-password">Confirm New Password</label>
+      <input type="password" class="form-control" id="confirm-password" />
       <div class="save-cancel">
         <button type="button" id="cancel-admin" class="cancel disabled">
           Cancel
@@ -73,7 +73,7 @@
 %if req.platform.product != req.platform.PRODUCT_PRO:
     <a name="mail"></a>
     <hr />
-    <section id="mail">
+    <section class="form-group" id="mail">
       <%include file="mail.mako" />
       <div class="save-cancel">
         <button type="button" id="cancel-mail" class="cancel disabled">
@@ -87,7 +87,7 @@
 
     <a name="ssl"></a>
     <hr />
-    <section id="ssl">
+    <section class="form-group" id="ssl">
       <%include file="ssl.mako" />
       <div class="save-cancel">
         <button type="button" id="cancel-ssl" class="cancel disabled">
@@ -102,7 +102,7 @@
 
     <a name="tz"></a>
     <hr />
-    <section id="tz">
+    <section class="form-group" id="tz">
       <%include file="tz.mako" />
       <div class="save-cancel">
         <button type="button" id="cancel-tz" class="cancel disabled">
@@ -116,7 +116,7 @@
 
     <a name="auth"></a>
     <hr />
-    <section id="auth">
+    <section class="form-group" id="auth">
       <a id="236544" href="#"><i class="fa fa-question-circle help"></i></a>
       <h2>Authentication</h2>
       <p>This setting overrides Palette's default Authentication Method.</p>
