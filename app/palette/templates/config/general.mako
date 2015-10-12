@@ -289,7 +289,7 @@
         </p>
       </div>
       <div>
-        <h2>Workbook</h2>
+        <h3>Workbook</h3>
         <p>Alert when workbook web view Page Load Times exceed these thresholds.</p>
         <p>
           Warning Alert at <span id="http-load-warn" class="btn-group percentage up"></span>&nbsp;Error Alert at <span id="http-load-error" class="btn-group percentage up"></span>
