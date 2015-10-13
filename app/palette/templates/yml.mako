@@ -5,12 +5,12 @@
 <title>Palette - Tableau Settings</title>
 </%block>
 
-<div class="dynamic-content configuration">
+<div class="dynamic-content">
   <div class="scrollable">
     <section class="top-zone">
       <div class="refresh">
-	<p>Updated <span id="last-update"></span></p>
-	<p id="location"></p>
+        <p>Updated <span id="last-update"></span></p>
+        <p id="location"></p>
       </div>
       <h1>Tableau&nbsp;Settings</h1>
     </section>

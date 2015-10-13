@@ -5,7 +5,7 @@
 <title>Palette - Support Case</title>
 </%block>
 
-<div class="dynamic-content configuration support-case-page">
+<div class="dynamic-content support-case-page">
   <div class="scrollable">
     <div class="top-zone">
       <h1>Submit a case to Tableau support</h1>

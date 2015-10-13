@@ -3,17 +3,15 @@
   <div class="top-zone">
     <%include file="paging.mako" args="name='Events'" />
     <h1>Events</h1>
-    <section class="row">
-      <section class="col-xs-12 filter-dropdowns">
+    <div class="filter-dropdowns">
         <div id="status-dropdown" class="btn-group"></div>
         <div id="type-dropdown" class="btn-group"></div>
-      </section>
-    </section>
-  </section>
-  <section class="bottom-zone">
+    </div> <!-- filter-dropdowns -->
+  </div> <!-- top-zone -->
+  <div class="bottom-zone">
     <section id="event-list"></section>
     <%include file="paging.mako" args="name='Events'" />
-  </section>
+  </div>
 
   <script id="event-list-template" type="x-tmpl-mustache">
     {{#events}}

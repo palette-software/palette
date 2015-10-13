@@ -133,19 +133,11 @@ function ($, common, form, Dropdown)
     }
 
     /*
-     * clearErrors()
-     */
-    function clearErrors() {
-        $('.has-error').removeClass('has-error');
-        $('.field-error, .page-error').remove();
-    }
-
-    /*
      * sendSupportCase()
      */
     function sendSupportCase() {
         $('#send-support-case').addClass('disabled');
-        clearErrors();
+        form.clearErrors();
 
         if (!validate()) {
             $('#send-support-case').removeClass('disabled');
