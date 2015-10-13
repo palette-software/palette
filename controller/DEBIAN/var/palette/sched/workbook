@@ -11,7 +11,7 @@ if __name__ == "__main__":
     # which could block backups, etc.
     comm.send_cmd("workbook import", skip_on_wrong_state=True,
                    read_response=False)
-    time.sleep(1)
+    time.sleep(4)   # Give the import time to finish or fixup will be locked out
     comm.send_cmd("workbook fixup", skip_on_wrong_state=True,
                    read_response=False)
     sys.exit(0)

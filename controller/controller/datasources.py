@@ -155,7 +155,6 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
 
         envid = self.server.environment.envid
 
-        users = self.load_users(agent)
 
         stmt = \
             'SELECT id, name, repository_url, owner_id,' +\
@@ -184,6 +183,9 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
 
         self.log.debug(data)
 
+        # Get users only if needed
+        users = None
+
         for odbcdata in ODBC.load(data):
             name = odbcdata.data['name']
             revision = odbcdata.data['revision']
@@ -201,6 +203,8 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
             # NOTE: id is updated with each revision.
             odbcdata.copyto(dse, excludes=['revision'])
 
+            if not users:
+                users = self.load_users(agent)
             system_user_id = users.get(dse.site_id, dse.owner_id)
             dse.system_user_id = system_user_id
 

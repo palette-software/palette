@@ -207,8 +207,6 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
 
         envid = self.server.environment.envid
 
-        users = self.load_users(agent)
-
         stmt = \
             'SELECT id, name, repository_url, description,' +\
             ' created_at, updated_at, owner_id, project_id,' +\
@@ -238,6 +236,9 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
 
         self.log.debug(data)
 
+        # Get users only if needed
+        users = None
+
         for odbcdata in ODBC.load(data):
             name = odbcdata.data['name']
             revision = odbcdata.data['revision']
@@ -254,6 +255,9 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
 
             # NOTE: id is updated with each revision.
             odbcdata.copyto(wbe, excludes=['revision'])
+
+            if not users:
+                users = self.load_users(agent)
 
             system_user_id = users.get(wbe.site_id, wbe.owner_id)
             wbe.system_user_id = system_user_id

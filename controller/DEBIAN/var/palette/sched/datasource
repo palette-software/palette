@@ -11,7 +11,10 @@ if __name__ == "__main__":
     # which could block backups, etc.
     comm.send_cmd("datasource import", skip_on_wrong_state=True,
                    read_response=False)
-    time.sleep(1)
+    # Give the import time to finish or fixup will be locked out
+    # Also, reduce conflict with 'workbook fixup', with a different
+    # sleep here.
+    time.sleep(6)
     comm.send_cmd("datasource fixup", skip_on_wrong_state=True,
                    read_response=False)
     sys.exit(0)
