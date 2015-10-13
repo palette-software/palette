@@ -7,29 +7,31 @@
 
 <div class="dynamic-content">
   <div class="scrollable">
-    <section class="top-zone">
+    <div class="top-zone">
       <div class="refresh">
         <p>Updated <span id="last-update"></span></p>
         <p id="location"></p>
       </div>
       <h1>Tableau&nbsp;Settings</h1>
-    </section>
-    <div id="yml-list">
-      <%include file="empty.mako" />
+    </div> <!-- top-zone -->
+    <div class="bottom-zone">
+      <div id="yml-list">
+	<%include file="empty.mako" />
+      </div>
     </div>
   </div>
 </div>
 
 <script id="yml-list-template" type="x-tmpl-mustache">
   {{#items}}
-  <section class="row">
-    <section class="col-md-4 key">
+  <div class="row">
+    <div class="col-md-4 key">
       {{key}}
-    </section>
-    <section class="col-md-6">
+    </div>
+    <div class="col-md-6">
       {{value}}
-    </section>
-  </section>
+    </div>
+  </div>
   {{/items}}
 </script>
 
