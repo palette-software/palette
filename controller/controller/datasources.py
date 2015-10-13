@@ -417,15 +417,30 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
             return None
 
         tmpdir = dcheck.primary_dir
-        dst_tdsx = self._tabcmd_get(agent, update, tmpdir)
-        if dst_tdsx is None:
+        dst = self._tabcmd_get(agent, update, tmpdir)
+        if dst is None:
             # _tabcmd_get generates an event on failure.
             return None
 
-        dst_tds = self._extract_tds_from_tdsx(agent, update, dst_tdsx)
-        if not dst_tds:
-            # _extract_tds_from_tdsx generates an event on failure.
+        try:
+            file_type = self.get_archive_file_type(agent, dst)
+        except IOError as ex:
+            self._eventgen(update, error=str(ex))
             return None
+
+        if file_type == 'zip':
+            dst_tds = self._extract_tds_from_tdsx(agent, update, dst)
+            if not dst_tds:
+                # _extract_tds_from_tdsx generates an event on failure.
+                return None
+            dst_tdsx = dst
+        else:
+            # It is type 'xml'.
+            # Rename .tdsx to the .tds (xml) it really is.
+            dst_tds = dst[0:-1] # drop the trailing 'x'
+            agent.filemanager.move(dst, dst_tds)
+            dst_tdsx = None
+            self.log.debug("datasource: renamed %s to %s", dst, dst_tds)
 
         # Pull the tds file contents over to the controller before sending the
         # file away (and deleting it on the primary if it will reside
@@ -436,7 +451,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         place = self.archive_file(agent, dcheck, dst_tds)
         update.fileid_tds = place.placed_file_entry.fileid
 
-        if self.system[SystemKeys.DATASOURCE_SAVE_TDSX]:
+        if dst_tdsx and self.system[SystemKeys.DATASOURCE_SAVE_TDSX]:
             place_tdsx = self.archive_file(agent, dcheck, dst_tdsx)
             update.fileid_tdsx = place_tdsx.placed_file_entry.fileid
 

@@ -144,3 +144,35 @@ class ArchiveUpdateMixin(object):
                 return body
 
         return body
+
+    def get_archive_file_type(self, agent, dst):
+        """Inspects the 'dst' file, checks to make sure it's valid.
+            Returns:
+                file_type ("xml" or "zip") on success
+                raises an IOError exception on failure to recognize file type
+       """
+        try:
+            type_body = agent.filemanager.filetype(dst)
+        except IOError as ex:
+            self.log.error(
+                "get_archive_file_type: filetype on '%s' failed with: %s",
+                            dst, str(ex))
+            raise IOError("Filetype on '%s' failed with: %s" % (dst, str(ex)))
+
+        if type_body['type'] == 'ZIP':
+            file_type = 'zip'
+        elif type_body['signature'][0] == ord('<') and \
+                           type_body['signature'][1] == ord('?') and \
+                           type_body['signature'][2] == ord('x') and \
+                           type_body['signature'][3] == ord('m') and \
+                           type_body['signature'][4] == ord('l'):
+            file_type = 'xml'
+        else:
+            # dst is unicode
+            msg = "file '%s' is an unknown type of " % dst
+            msg += "'%s' with an invalid signature: " % type_body['type']
+            msg += "%s" % str(type_body['signature'])
+
+            self.log.error("get_archive_type: %s", msg)
+            raise IOError(msg)
+        return file_type

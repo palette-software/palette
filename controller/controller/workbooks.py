@@ -1,5 +1,4 @@
 import os
-import unicodedata
 
 from sqlalchemy import Column, BigInteger, Integer, Boolean, String, DateTime
 from sqlalchemy import UniqueConstraint, Text
@@ -149,25 +148,6 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     )
 
     __table_args__ = (UniqueConstraint('workbookid', 'revision'),)
-
-    # ideally: site-project-name-rev.twb
-    def basename(self):
-        # pylint: disable=no-member
-        site = self.workbook.site
-        if not site:
-            site = str(self.workbook.site_id)
-        project = self.workbook.project
-        if not project:
-            project = str(self.workbook.project_id)
-        filename = site + '-' + project + '-'
-        filename += self.workbook.repository_url + '-rev' + self.revision
-        filename = filename.replace(' ', '_')
-        filename = filename.replace('/', '_')
-        filename = filename.replace('\\', '_')
-        filename = filename.replace(':', '_')
-        filename = unicodedata.normalize('NFKD', filename).encode('ascii',
-                                                                  'ignore')
-        return filename
 
     @classmethod
     def get(cls, wbid, revision, **kwargs):
@@ -479,10 +459,10 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
             # _tabcmd_get generates an event on failure.
             return None
 
-        file_type = self._get_wb_type(agent, update, dst)
-
-        if not file_type:
-            # _get_wb_type sends an event on failure
+        try:
+            file_type = self.get_archive_file_type(agent, dst)
+        except IOError as ex:
+            self._eventgen(update, error=str(ex))
             return None
 
         if file_type == 'zip':
@@ -513,41 +493,6 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
             update.fileid_twbx = place_twbx.placed_file_entry.fileid
 
         return dst_twb
-
-    def _get_wb_type(self, agent, update, dst):
-        """Inspects the 'dst' file, checks to make sure it's valid,
-           sends an event if not.
-            Returns:
-                file_type ("xml" or "zip") on success
-                None on bad type.
-       """
-        try:
-            type_body = agent.filemanager.filetype(dst)
-        except IOError as ex:
-            self.log.error("get_wb_type: filetype on '%s' failed with: %s",
-                            dst, str(ex))
-            return None
-
-        if type_body['type'] == 'ZIP':
-            file_type = 'zip'
-        elif type_body['signature'][0] == ord('<') and \
-                           type_body['signature'][1] == ord('?') and \
-                           type_body['signature'][2] == ord('x') and \
-                           type_body['signature'][3] == ord('m') and \
-                           type_body['signature'][4] == ord('l'):
-            file_type = 'xml'
-        else:
-            sig = ''.join([chr(i) for i in type_body['signature']])
-            msg = ("file '%s' is an unknown " + \
-                  "type of '%s' with an invalid signature: '%s' %s.") % \
-                   (dst, type_body['type'], sig, str(type_body['signature']))
-
-            self.log.error("get_wb_type: %s", msg)
-            self._eventgen(update, error=msg)
-            return None
-
-        self.log.debug("get_wb_type: File '%s' is type: %s", dst, file_type)
-        return file_type
 
     def _copy_twb_to_controller(self, agent, update, dst_twb):
         """Copy the twb file from the Tableau server to the controller.
