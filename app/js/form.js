@@ -37,7 +37,7 @@ function ($)
     }
 
     /*
-     * fieldError() {
+     * fieldError()
      * Create an error message for a particular field.
      */
     function fieldError(msg) {
@@ -53,11 +53,22 @@ function ($)
         return '<h3 class="page-error">' + msg + '</h3>';
     }
 
+    /*
+     * clearErrors()
+     * Remove all created error elements.
+     */
+    function clearErrors()
+    {
+        $('.has-error').removeClass('has-error');
+        $('.page-error, .field-error').remove();
+    }
+
     return {'validEmail' : validEmail,
             'validURL' : validURL,
             'validPassword' : validPassword,
             'validPhoneNumber': validPhoneNumber,
             'fieldError': fieldError,
-            'pageError': pageError
+            'pageError': pageError,
+            'clearErrors': clearErrors
            };
 });

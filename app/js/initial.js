@@ -30,7 +30,7 @@ function ($, configure, common, form, Dropdown, OnOff)
      */
     function setPageError(msg)
     {
-        var html = '<h2 class="error">' + msg + '</h2>'
+        var html = form.pageError(msg);
         $("section.top-zone").append(html);
         $("section.bottom-zone").prepend(html);
     }
@@ -42,17 +42,9 @@ function ($, configure, common, form, Dropdown, OnOff)
      */
     function setError(selector, msg)
     {
-        var html = '<p class="error">' + msg + '</p>';
+        var html = form.fieldError(msg)
+        $(selector).parent().addClass('has-error');
         $(selector).after(html);
-    }
-
-    /*
-     * clearPageErrors()
-     * Remove all generated error message for re-validation.
-     */
-    function clearPageErrors()
-    {
-        $('.error').remove();
     }
 
     /*
@@ -89,7 +81,7 @@ function ($, configure, common, form, Dropdown, OnOff)
      * Callback for the 'connect' button during 'Failed to Contact Licensing'.
      */
     function connect() {
-        clearPageErrors();
+        form.clearErrors();
 
         var data = {'action': 'proxy'}
 
@@ -134,7 +126,7 @@ function ($, configure, common, form, Dropdown, OnOff)
      * Callback for the 'Save' button.
      */
     function save() {
-        clearPageErrors();
+        form.clearErrors();
 
         var data = {'action': 'save'}
         $.extend(data, gatherData());
@@ -163,7 +155,7 @@ function ($, configure, common, form, Dropdown, OnOff)
      * Callback for the 'Test Email' button.
      */
     function testMail() {
-        clearPageErrors();
+        form.clearErrors();
         $('#mail-test-message').html("");
         $('#mail-test-message').addClass('hidden');
         $('#mail-test-message').removeClass('green red');

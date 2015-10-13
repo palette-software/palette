@@ -5,14 +5,16 @@
 <title>Palette - Server Configuration</title>
 </%block>
 
-<div class="dynamic-content configuration">
+<div class="dynamic-content">
   <div class="scrollable">
-    <section class="top-zone">
+    <div class="top-zone">
       <h1>Machines</h1>
-    </section>
-    <div id="server-detail" class="clearfix">
-      <%include file="empty.mako" />	
     </div>
+    <div class="bottom-zone">
+      <div id="server-detail" class="clearfix">
+        <%include file="empty.mako" />	
+      </div>
+    </div> <!-- bottom-zone -->
   </div>
 </div>
 

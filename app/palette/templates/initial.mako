@@ -39,58 +39,64 @@
     <p>If your settings are correct and this message persists, please contact Palette Support at <a href="mailto:support@palette-software.com">support@palette-software.com</a>.
     </p>
   </div>
-  <div class="container configuration form-group setup-page initial hidden">
+  <div class="container form-group setup-page initial hidden">
     <section class="top-zone">
       <h1>Welcome to Palette Server Setup</h1>
       <p>Please configure your Palette Server.</p>
     </section>
 
+    <div class="bottom-zone">
 %if req.platform.product != req.platform.PRODUCT_PRO:
-    <section>
-      <%include file="config/server-url.mako" />
-    </section>
-    <hr />
+      <section>
+        <%include file="config/server-url.mako" />
+      </section>
+      <hr />
 %endif
-    <section>
-      <%include file="config/tableau-server-url.mako" />
-    </section>
-    <hr />
+      <section>
+        <%include file="config/tableau-server-url.mako" />
+      </section>
+      <hr />
 %if req.platform.product != req.platform.PRODUCT_PRO:
-    <section>
-      <a id="237795" href="#"><i class="fa fa-question-circle help"></i></a>
-      <h2>Palette License Key *</h2>
-      <p>Your 32 digit Palette License Key is found in the confirmation email.</p>
-      <input class="form-control" type="text" id="license-key" />
-    </section>
-    <hr />
+      <section>
+        <a id="237795" href="#"><i class="fa fa-question-circle help"></i></a>
+        <h2>Palette License Key *</h2>
+        <p>Your 32 digit Palette License Key is found in the confirmation email.</p>
+        <input class="form-control" type="text" id="license-key" />
+      </section>
+      <hr />
 %endif
-    <section id="admin">
-      <a id="236536" href="#"><i class="fa fa-question-circle help"></i></a>
-      <h2>Palette Server Admin Credentials</h2>
-      <p>Create a password for the built-in "Palette" username.</p>
-      <p>Any combination of 8+ case-sensitive, alphanumeric characters (i.e. A-Z, a-z, 0-9, and !,@,#,$,%).</p>
-      <label class="control-label" for="password">Password</label>
-      <input class="form-control" type="password" id="password" />
-      <label class="control-label" for="confirm-password">Confirm Password</label>
-      <input class="form-control" type="password" id="confirm-password" />
-    </section>
+      <section id="admin">
+        <a id="236536" href="#"><i class="fa fa-question-circle help"></i></a>
+        <h2>Palette Server Admin Credentials</h2>
+        <p>Create a password for the built-in "Palette" username.</p>
+        <p>Any combination of 8+ case-sensitive, alphanumeric characters (i.e. A-Z, a-z, 0-9, and !,@,#,$,%).</p>
+        <div>
+          <label class="control-label" for="password">Password</label>
+          <input class="form-control" type="password" id="password" />
+        </div>
+        <div>
+          <label class="control-label" for="confirm-password">Confirm Password</label>
+          <input class="form-control" type="password" id="confirm-password" />
+        </div>
+      </section>
 %if req.platform.product != req.platform.PRODUCT_PRO:
-    <hr />
-    <section id="mail">
-      <%include file="config/mail.mako" />
-    </section>
+      <hr />
+      <section id="mail">
+        <%include file="config/mail.mako" />
+      </section>
 %endif
-    <hr />
-    <section id="tz">
-      <%include file="config/tz.mako" />
-    </section>
-    <hr />
-    <section class="bottom-zone">
-      <button type="button" id="save" class="action">
-        Save Settings
-      </button>
-    </section>
-    <div class="version"></div>
+      <hr />
+      <section id="tz">
+        <%include file="config/tz.mako" />
+      </section>
+      <hr />
+      <section class="bottom-zone">
+        <button type="button" id="save" class="action">
+          Save Settings
+        </button>
+      </section>
+      <div class="version"></div>
+    </div> <!-- bottom-zone -->
   </div>
 
   <%include file="dropdown.mako" />

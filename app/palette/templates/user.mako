@@ -5,9 +5,9 @@
 <title>Palette - User Configuration</title>
 </%block>
 
-<div class="dynamic-content configuration">
+<div class="dynamic-content">
   <div class="scrollable">
-    <section class="top-zone">
+    <div class="top-zone">
       <div class="refresh">
         <p>
           <span class="message"></span>
@@ -18,11 +18,13 @@
         </p>
       </div>
       <h1>Users</h1>
-    </section>
-    <div class="letters"></div>
-    <div id="user-list">
-      <%include file="empty.mako" />
     </div>
+    <div class="bottom-zone">
+      <div class="letters"></div>
+      <div id="user-list">
+        <%include file="empty.mako" />
+      </div>
+    </div> <!-- bottom-zone -->
   </div>
 </div>
 
