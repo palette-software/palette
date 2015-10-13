@@ -1,8 +1,14 @@
-input[type="text"], input[type="password"], select {
+input[type="text"], input[type="password"], select, textarea {
     width: 100%;
     box-shadow: 0 0;
     box-sizing:border-box;
     max-width: 320px;
+}
+
+textarea {
+    border: 1px solid @input-border;
+    resize: none;
+    box-shadow: none !important; /* so for form-control doesn't overwrite */
 }
 
 label {

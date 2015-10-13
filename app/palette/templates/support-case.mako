@@ -36,7 +36,7 @@
           <label class="control-label" for="problem:description">
             Description
           </label>
-          <textarea id="problem:description" class="form-control"></textarea>
+          <textarea rows="3" id="problem:description" class="form-control"></textarea>
         </div>
       </section>
       <hr />
@@ -128,3 +128,8 @@
 
 <script src="/js/vendor/require.js" data-main="/js/support-case.js">
 </script>
+
+<script id="thank-you" type="x-tmpl-mustache">
+  <h2>Thank you!</h2>
+</script>
+

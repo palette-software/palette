@@ -207,10 +207,17 @@ function ($, topic, template, items, paging, Dropdown)
                 $('#okcancel').removeClass('visible');
             });
 
+            /* this is the actual form button */
             $('.okcancel').bind('click', function() {
                 var data = $(this).data();
                 var inactive = $(this).hasClass('inactive');
                 if (inactive == false) {
+                    var validate = data['validate'];
+                    if (validate != null) {
+                        if (!validate(this)) {
+                            return;
+                        }
+                    }
                     /* link button data to the article. */
                     $('#okcancel').data(data);
                     var text = data['text'];
@@ -706,6 +713,22 @@ function ($, topic, template, items, paging, Dropdown)
         });
     }
 
+    /*
+     * loadTemplates()
+     * Find all the mustache templates on this page and load them.
+     */
+    function loadTemplates() {
+        var data = {};
+
+        $('script[type="x-tmpl-mustache"]').each(function() {
+            var id = $(this).attr('id');
+            data[id] = $(this).html();
+            template.parse(data[id]);
+        });
+        return data;
+    }
+    
+
     /* Code run automatically when 'common' is included */
     $().ready(function() {
         setupHeaderMenus();
@@ -720,6 +743,7 @@ function ($, topic, template, items, paging, Dropdown)
             'lightbox': lightbox,
             'setupEventDropdowns' : setupEventDropdowns,
             'setupPopups': setupPopups,
-            'setupOkCancel' : setupOkCancel
+            'setupOkCancel' : setupOkCancel,
+            'loadTemplates' : loadTemplates
            };
 });

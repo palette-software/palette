@@ -85,9 +85,9 @@ class SupportCaseApplication(PaletteRESTApplication):
         profile = req.environ['REMOTE_USER']
         if profile.userid > 0:
             if profile.friendly_name:
-                data['environment:name'] = profile.friendly_name
+                data['contact:name'] = profile.friendly_name
             if profile.email:
-                data['environment:email'] = profile.email
+                data['contact:email'] = profile.email
 
         company_name = req.system[SystemKeys.COMPANY_NAME]
         if company_name:
@@ -140,6 +140,12 @@ class SupportCaseApplication(PaletteRESTApplication):
         msg.attach(MIMEText(html, 'html'))
 
         sender = req.params['contact:email']
+        phone = req.params.get('contact:phone')
+
+        if phone:
+            profile = req.environ['REMOTE_USER']
+            if profile.userid > 0:
+                profile.phone = phone
 
         company_name = req.params.get('contact:company')
         if company_name:
