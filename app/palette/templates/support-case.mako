@@ -130,6 +130,9 @@
 </script>
 
 <script id="thank-you" type="x-tmpl-mustache">
-  <h2>Thank you!</h2>
+  <h3>And that's it! Your case is on its way to Tableau Support!</h3>
+  <p>
+    Next, you'll get an email from Palette with a copy of your new request followed by an email from Tableau with your new case number. To check the status of your case, login to Tableau's <a href="http://customer.tableausoftware.com">Customer Portal</a>.
+  </p>
 </script>
 
