@@ -854,6 +854,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         elif action == 'fixup':
             body = self.server.workbooks.fixup(agent)
         self.report_status(body)
+        self.server.log.debug("do_workbook result: %s", str(body))
 
     @usage('datasource [IMPORT|FIXUP]')
     @upgrade_rwlock
@@ -884,6 +885,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = self.server.datasources.load(agent)
         elif action == 'fixup':
             body = self.server.datasources.fixup(agent)
+        self.server.log.debug("do_datasource result: %s", str(body))
         self.report_status(body)
 
 

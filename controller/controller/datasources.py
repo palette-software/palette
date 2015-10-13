@@ -323,6 +323,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
     @synchronized('datasource.fixup')
     def fixup(self, agent):
         if not self.system[SystemKeys.DATASOURCE_ARCHIVE_ENABLED]:
+            self.log.debug("Datasource archives are disabled. Fixup not done.")
             return {u'disabled':
                     'Datasource Archives are not enabled.  Fixup not done.'}
 
@@ -342,6 +343,9 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         session = meta.Session()
 
         count = 0
+
+        self.log.debug("Datasource Archive update count: %d", len(updates))
+
         for update in updates:
             if not self.system[SystemKeys.DATASOURCE_ARCHIVE_ENABLED]:
                 self.log.info(
@@ -353,6 +357,9 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
                 self.log.info("Datasource Archive Fixup: Archive build " + \
                           "stopping due to current state")
                 break
+
+            self.log.debug("Datasource Archive update refresh dsid %d",
+                           update.dsid)
 
             session.refresh(update)
             self._archive_ds(agent, update)
@@ -374,7 +381,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         if not self._have_pcmd(agent):
             return None
 
-        # Cache these as they may no longer be avialable if _build_tw
+        # Cache these as they may no longer be available if _build_tds
         # fails.
         repository_url = update.datasource.repository_url
         revision = update.revision

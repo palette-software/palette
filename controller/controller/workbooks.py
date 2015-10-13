@@ -375,6 +375,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
     @synchronized('workbook.fixup')
     def fixup(self, agent):
         if not self.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]:
+            self.log.debug("Workbook archives are not enabled. Fixup not done.")
             return {u'disabled':
                     'Workbook Archives are not enabled.  Fixup not done.'}
 
@@ -394,6 +395,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
         session = meta.Session()
 
         count = 0
+        self.log.debug("Workbook archive update count: %d\n", len(updates))
         for update in updates:
             if not self.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]:
                 self.log.info(
@@ -406,6 +408,8 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
                           "stopping due to current state")
                 break
 
+            self.log.debug("Workbook archive update refresh wid %d",
+                           update.workbookid)
             session.refresh(update)
             self._archive_wb(agent, update)
             count += 1
