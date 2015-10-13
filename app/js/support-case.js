@@ -1,8 +1,10 @@
-require(['jquery', 'common', 'form', 'Dropdown'],
-function ($, common, form, Dropdown)
+require(['jquery', 'common', 'form', 'template', 'Dropdown'],
+function ($, common, form, template, Dropdown)
 {
     var URL = '/rest/support-case';
     var NONE = '--None--'
+
+    var templates;
 
     /*
      * jq()
@@ -74,7 +76,9 @@ function ($, common, form, Dropdown)
     /*
      * validate()
      */
-    function validate() {
+    function validate(button) {
+        form.clearErrors();
+
         var result = true;
         $('input[type=text], textarea').each(function(index){
             var $fg = $(this).parent();
@@ -83,6 +87,7 @@ function ($, common, form, Dropdown)
 
             if (required && value.length == 0) {
                 fgError($fg, 'This field is required.');
+                result = false;
                 return;
             }
 
@@ -127,6 +132,7 @@ function ($, common, form, Dropdown)
             var html = form.pageError(msg);
             $(".top-zone").append(html);
             $(".save-cancel").prepend(html);
+            $(".dynamic-content .scrollable").scrollTop(0);
         }
 
         return result;
@@ -138,11 +144,6 @@ function ($, common, form, Dropdown)
     function sendSupportCase() {
         $('#send-support-case').addClass('disabled');
         form.clearErrors();
-
-        if (!validate()) {
-            $('#send-support-case').removeClass('disabled');
-            return;
-        }
         cache();
 
         $.ajax({
@@ -152,6 +153,9 @@ function ($, common, form, Dropdown)
             dataType: 'json',
             
             success: function(data) {
+                var rendered = template.render(templates['thank-you']);
+                $('.bottom-zone').html(rendered);
+
                 $('#send-support-case').removeClass('disabled');
                 $('#okcancel').removeClass('visible');
             },
@@ -207,7 +211,9 @@ function ($, common, form, Dropdown)
         
         success: function(data) {
             $().ready(function() {
+                templates = common.loadTemplates();
                 update(data);
+                $('#send-support-case').data('validate', validate);
                 $('#send-support-case').data('callback', sendSupportCase);
                 $('#send-support-case').removeClass('disabled');
             });
