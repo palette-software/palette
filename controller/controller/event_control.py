@@ -229,7 +229,7 @@ class EventControl(meta.Base, BaseMixin, BaseDictMixin):
         'backup': 'Tableau Backup',
         'cleanup' : 'Tableau Log Cleanup',
         'communication' : 'Communication',
-        'datasource' : 'Datasources',
+        'datasource' : 'Data Sources',
         'extract' : 'Extracts',
         'network': 'Network Test',
         'http' : 'HTTP Status',
@@ -246,7 +246,7 @@ class EventControl(meta.Base, BaseMixin, BaseDictMixin):
     }
 
     publisher_types = {
-        'datasource' : 'Datasources',
+        'datasource' : 'Data Sources',
         'extract' : 'Extracts',
         'http' : 'HTTP Status',
         'load' : 'Tableau Page Load',
