@@ -24,7 +24,7 @@ from palette.initial import InitialMiddleware
 from palette.manage import ManagePage, ManageApplication
 from palette.page import Page
 from palette.profile import ProfilePage
-from palette.proxy import LicensingProxy
+from palette.proxy import LicensingHelloProxy
 from palette.request import (BaseMiddleware,
                              RemoteUserMiddleware,
                              SupportedBrowserMiddleware,
@@ -100,7 +100,7 @@ pages = SupportedBrowserMiddleware(pages, redirect=UNSUPPORTED_BROWSER_URL)
 # top-level, first called router
 router = Router()
 router.add_route(UNSUPPORTED_BROWSER_URL + r'\Z', Page(template='browser.mako'))
-router.add_route(r'/licensing\Z', LicensingProxy())
+router.add_route(r'/licensing\Z', LicensingHelloProxy())
 router.add_route(r'/open/setup\Z', InitialSetupApplication(secret=SHARED))
 router.add_route(r'/setup\Z', initialpage)
 router.add_route(r'/rest/', rest)
