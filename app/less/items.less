@@ -1,7 +1,7 @@
 /* items are generic events workbooks, users etc. */
 
 .item {
-    background-color: #e5e5e5;
+    background-color: @item-color;
     display: block;
     min-height: 55px;
     width: 100%;
@@ -42,7 +42,7 @@
     color: white;
 }
 .item .summary i.expand {
-    color: #5f6670;
+    color: @text-color;
 }
 .item a i.help {
     float: none;
@@ -95,15 +95,10 @@
 .item > div.summary p {
     font-size: 14px;
     font-weight: 300 !important;
-    color: #5F6670;
     margin: 0;
     overflow: hidden;
     white-space: nowrap;
     text-overflow:ellipsis;
-}
-.item input[type="text"] {
-    height:20px;
-    margin: 0;
 }
 .item > div.description {
     display: none;
@@ -115,9 +110,6 @@
 }
 .item li {
     list-style-type: none;
-}
-.item article {
-    padding-top: 5px;
 }
 
 /* e.g. Tableau User Details */

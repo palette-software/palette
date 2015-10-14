@@ -3,17 +3,17 @@
 .dynamic-content {
     position: fixed;
     height: inherit;
-    top: 63px;
+    top: @header-height;
     right: 0;
     left: 250px;
     overflow: auto;
-    padding-bottom: 67px;
+    padding-bottom: @header-height;
 }
 .dynamic-content > div.scrollable {
     overflow-x: hidden;
     overflow-y: auto;
     height: 100%;
-    padding: 0 15px 72px 18px;
+    padding: 0 15px 72px 19px;
 }
 .dynamic-content a, .dynamic-content a:hover {
     color: #697078; /* FIXME */
@@ -23,18 +23,18 @@
     left: 550px;
 
     .filter-dropdowns {
-	@media screen and (max-width: @screen-sm) {
-	    display: none;
-	}
+        @media screen and (max-width: @screen-sm) {
+            display: none;
+        }
     }
 }
 .dynamic-content.servers-visible {
     left: 550px;
 
     .filter-dropdowns {
-	@media screen and (max-width: @screen-sm) {
-	    display: none;
-	}
+        @media screen and (max-width: @screen-sm) {
+            display: none;
+        }
     }
 }
 
