@@ -161,7 +161,7 @@ XYZZY
 elif [ "$oldversion" != "" ]; then
     echo Upgrading $oldversion
     psql paldb << XYZZY
-    drop table cron;
+    drop table event_control;
 XYZZY
 elif [ "$oldversion" = "" ]; then
     echo First install
