@@ -115,6 +115,13 @@
           <span class="btn-group" id="environment:data-source"></span>
         </div>
       </section>
+      <hr />
+      <div class="checkbox">
+	<label for="include-logs">
+	  <input type="checkbox" id="include-logs" checked />
+	  Include Tableau Server log files
+	</label>
+      </div>
       <div class="save-cancel">
         <button type="button" id="send-support-case"
                 class="action okcancel"
