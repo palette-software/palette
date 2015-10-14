@@ -5,6 +5,8 @@ The only interface to this module should be the 'support_case' function.
 # pylint: enable=relative-import,missing-docstring
 from __future__ import absolute_import
 
+from akiri.framework.util import generate_token
+
 import logging
 import os
 import binascii
@@ -18,12 +20,6 @@ from .util import failed, status_ok, status_failed
 SUPPORT_DATEFMT = '%m/%d/%Y'
 
 logger = logging.getLogger()
-
-# fixme: copied from (broken) akiri.framework
-# from akiri.framework.util import generate_token
-def generate_token(length=16):
-    """Generate a random token of a specified length."""
-    return binascii.hexlify(os.urandom(length))
 
 def support_date():
     """Return the 'from' date - i.e. two days ago - for the request."""
