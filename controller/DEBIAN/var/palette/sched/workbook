@@ -13,6 +13,9 @@ if __name__ == "__main__":
     if pid:
         sys.exit(0)
 
+    os.close(0)
+    os.close(1)
+    os.close(2)
     comm = CommHandlerCmd()
 
     comm.send_cmd("workbook import", skip_on_wrong_state=True,

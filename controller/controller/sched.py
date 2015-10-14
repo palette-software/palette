@@ -258,6 +258,6 @@ class JobHandler(object):
         stdout, stderr = process.communicate()
 
         self.server.log.debug("cmd '%s' exit status: %d, "
-                              "stdout: '%s', stderr: %s'",
+                              "stdout: '%s', stderr: '%s'",
                               path, process.returncode, stdout, stderr)
         return
