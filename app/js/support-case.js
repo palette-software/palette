@@ -16,16 +16,29 @@ function ($, common, form, template, Dropdown)
     }
 
     /*
+     * cookieName()
+     * cookies can't contain semicolons...
+     */
+    function cookieName(id) {
+        return id.replace(':', '.');
+    }
+
+    /*
      * gather()
      * Collect all of the form information.
      */
     function gather() {
         var data = {}
 
-        /* inputs */
-        $('input[type=text], textarea').each(function(index){
+        /* text inputs */
+        $('input[type=text], textarea').each(function(index) {
             var id = $(this).attr('id');
             data[id] = $(jq(id)).val();
+        });
+
+        $('input[type=checkbox]').each(function(index) {
+            var id = $(this).attr('id');
+            data[id] = this.checked;
         });
 
         /* dropdowns */
@@ -46,9 +59,9 @@ function ($, common, form, template, Dropdown)
             var id = $(this).attr('id');
             var value = $(jq(id)).val();
             if (value != null && value.length > 0) {
-                common.setCookie(id, value);
+                common.setCookie(cookieName(id), value);
             } else {
-                common.deleteCookie(id);
+                common.deleteCookie(cookieName(id));
             }
         });
 
@@ -57,9 +70,9 @@ function ($, common, form, template, Dropdown)
             var id = $(this).attr('id');
             var value = Dropdown.getValueByNode(this);
             if (value != null && value.length > 0) {
-                common.setCookie(id, value);
+                common.setCookie(cookieName(id), value);
             } else {
-                common.deleteCookie(id);
+                common.deleteCookie(cookieName(id));
             }
         });
     }
@@ -161,6 +174,7 @@ function ($, common, form, template, Dropdown)
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 common.ajaxError(jqXHR, textStatus, errorThrown);
+                $('#send-support-case').removeClass('disabled');
                 $('#okcancel').removeClass('visible');
             }
         });
@@ -179,8 +193,9 @@ function ($, common, form, template, Dropdown)
             if (value != null) {
                 $(jq(id)).val(value);
             } else {
-                value = common.getCookie(id);
+                value = common.getCookie(cookieName(id));
                 if (value != null) {
+                    value = value.replace('_', ' ');
                     $(jq(id)).val(value);
                 }
             }
@@ -190,10 +205,9 @@ function ($, common, form, template, Dropdown)
         
         /* dropdowns */
         $('.btn-group.cache').each(function(index){
-            var id = $(this).attr('id');
             var value = Dropdown.getValueByNode(this);
             if (value == NONE) {
-                var cookie = common.getCookie(id);
+                var cookie = common.getCookie(cookieName($(this).attr('id')));
                 if (cookie != null && cookie.length > 0) {
                     cookie = cookie.replace('_', ' ');
                     Dropdown.setValueByNode(this, cookie);
