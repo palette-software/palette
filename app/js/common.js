@@ -722,6 +722,13 @@ function ($, topic, template, items, paging, Dropdown)
 
         $('script[type="x-tmpl-mustache"]').each(function() {
             var id = $(this).attr('id');
+            if (id == null) {
+                id = $(this).data('id');
+                if (id == null) {
+                    console.log("A x-tmpl-mustache script is missing an id.");
+                    return;
+                }
+            }
             data[id] = $(this).html();
             template.parse(data[id]);
         });
