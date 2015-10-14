@@ -1,14 +1,17 @@
 """ Support case application support. """
 #pylint: enable=relative-import,missing-docstring
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import akiri.framework.sqlalchemy as meta
+from akiri.framework.util import generate_token
 
+from controller.cloud import s3_external_url
 from controller.mailer import Mailer
 from controller.profile import Role
+from controller.support import SUPPORT_DATEFMT
 from controller.system import SystemKeys
 from controller.util import DATEFMT
 
@@ -36,6 +39,57 @@ FIELDS = ('problem:statement',
           'environment:operating-system',
           'environment:data-source')
 
+def _display_name(name):
+    """ translate the name to a display-able format. """
+    name = name.replace('-', ' ').title()
+    return name.replace(':', ' ')
+
+def _loghdr():
+    """ The text title of the log files email section. """
+    avail = datetime.now() + timedelta(days=30)
+    text = 'Tableau Server Log Files (Downloadable until '
+    text += avail.strftime(SUPPORT_DATEFMT)
+    return text + ')'
+
+class SupportCaseEmail(object):
+    """ Helper class for building up the email contents of a support case. """
+
+    def __init__(self):
+        self.text = ''
+        self._html = ''
+
+    @property
+    def html(self):
+        """ The html output. """
+        return '<html><head></head><body>' + self._html + '</body>'
+
+    def add(self, key, value):
+        """ Add a section with heading 'key' and contents 'value' """
+        name = _display_name(key)
+        if not value:
+            value = NONE
+        # text message
+        self.text += name.upper() + ':\n'
+        self.text += value + '\n\n'
+        # html message
+        self._html += '<div style="margin-bottom:3em">'
+        self._html += '<h3>' + name + '</h3>'
+        self._html += '<p>' + value + '</p>'
+        self._html += '</div>'
+
+    def append_logs(self, url):
+        """ Include a link/url to the specified ziplogs """
+        header = _loghdr()
+        # text
+        self.text += header + ':\n'
+        self.text += url + '\n'
+        self.text += '\n'
+        # html
+        self._html += '<div style="margin-bottom:3em">'
+        self._html += '<h3>' + header + '</h3>'
+        self._html += '<a href="' + url + '">' + url + '</a>'
+        self._html += '</div>'
+
 def _subject(text):
     """ Build the mail subject: first 5 words of the problem + the date. """
     tokens = [token.strip() for token in text.split()]
@@ -44,25 +98,6 @@ def _subject(text):
     timestamp = datetime.now().strftime(DATEFMT)
     return ' '.join(tokens) + ' ' + timestamp
 
-def _text(key, value):
-    """ format the key/value as plaintext """
-    text = key.upper() + ':\n'
-    text += value + '\n'
-    text += '\n'
-    return text
-
-def _html(key, value):
-    """ format the key/value as html """
-    html = '<div style="margin-bottom:3em">'
-    html += '<h3>' + key + '</h3>'
-    html += '<p>' + value + '</p>'
-    html += '</div>'
-    return html
-
-def _display_name(name):
-    """ translate the name to a display-able format. """
-    name = name.replace('-', ' ').title()
-    return name.replace(':', ' ')
 
 class SupportCaseApplication(PaletteRESTApplication):
     """ Email the POST data to Tableau support. """
@@ -96,52 +131,9 @@ class SupportCaseApplication(PaletteRESTApplication):
 
         return data
 
-    @required_parameters('problem:statement', 'contact:email')
-    @required_role(Role.MANAGER_ADMIN)
-    def service_POST(self, req):
-        """ Handle POST requests """
-        subject = _subject(req.params['problem:statement'])
-        text = ''
-        html = '<html><head></head><body>'
-
-        params = deepcopy(req.POST)
-
-        # handle the known fields
-        for key in FIELDS:
-            if not key in params:
-                continue
-            name = _display_name(key)
-            value = params[key]
-            if not value:
-                value = NONE
-            # text version
-            text += _text(name, value)
-            # html version
-            html += _html(name, value)
-            del params[key]
-
-        # add anything else that was sent
-        for key in params:
-            name = _display_name(key)
-            value = params[key]
-            if not value:
-                value = NONE
-            # text version
-            text += _text(name, value)
-            # html version
-            html += _html(name, value)
-
-        html += '</body>'
-
-        # see the last example at:
-        # https://docs.python.org/2/library/email-examples.html
-        msg = MIMEMultipart('alternative')
-        msg.attach(MIMEText(text, 'plain'))
-        msg.attach(MIMEText(html, 'html'))
-
-        sender = req.params['contact:email']
+    def _store_info(self, req):
+        """ Cache information from this request that will be used later. """
         phone = req.params.get('contact:phone')
-
         if phone:
             profile = req.environ['REMOTE_USER']
             if profile.userid > 0:
@@ -153,6 +145,44 @@ class SupportCaseApplication(PaletteRESTApplication):
         else:
             del req.system[SystemKeys.COMPANY_NAME]
         meta.commit()
+
+    @required_parameters('problem:statement', 'contact:email', 'include-logs')
+    @required_role(Role.MANAGER_ADMIN)
+    def service_POST(self, req):
+        """ Handle POST requests """
+        subject = _subject(req.params['problem:statement'])
+        email = SupportCaseEmail()
+        params = deepcopy(req.POST)
+
+        include_logs = req.params_getbool('include-logs')
+        del params['include-logs']
+
+        # handle the known fields
+        for key in FIELDS:
+            if not key in params:
+                continue
+            email.add(key, params[key])
+            del params[key]
+
+        # add anything else that was sent
+        for key in params:
+            email.add(key, params[key])
+
+        if include_logs:
+            bucket = req.system[SystemKeys.SUPPORT_CASE_BUCKET]
+            filename = generate_token() + '.zip'
+            email.append_logs(s3_external_url(bucket, '/' + filename))
+            cmd = 'support-case ' + filename
+            self.commapp.send_cmd(cmd, req=req, read_response=False)
+
+        # see the last example at:
+        # https://docs.python.org/2/library/email-examples.html
+        msg = MIMEMultipart('alternative')
+        msg.attach(MIMEText(email.text, 'plain'))
+        msg.attach(MIMEText(email.html, 'html'))
+
+        sender = req.params['contact:email']
+        self._store_info(req)
 
         mailer = Mailer(sender)
         mailer.send_msg(req.system[SystemKeys.SUPPORT_CASE_EMAIL],

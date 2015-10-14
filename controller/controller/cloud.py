@@ -31,10 +31,14 @@ S3_POLICY = '{"Statement":[{"Effect":"Allow","Action": "s3:*","Resource":"*"}]}'
 
 def s3_external_url(bucket, path):
     """ Generate a HTTPS external url for the s3 object in a bucket. """
+    if not path.startswith('/'):
+        path = '/' + path
     return 'https://' + bucket + '.s3.amazonaws.com' + path
 
 def gcs_external_url(bucket, path):
     """ Generate a HTTPS external url for the gcs object in a bucket. """
+    if not path.startswith('/'):
+        path = '/' + path
     return 'https://' + bucket + '.storage.googleapis.com' + path
 
 class CloudEntry(meta.Base, BaseMixin, BaseDictMixin, OnlineMixin):
