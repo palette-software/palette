@@ -7,45 +7,13 @@
       <a class="navbar-brand" href="/"></a>
     </div>
   </nav>
-  <div class="container initial hidden" id="licensing-status">
-    <h1>Prepare<br/>for<br/>Awesomeness!
-    <span id="wrap">
-      <div class="dot"></div>
-      <div class="dot"></div>
-      <div class="dot"></div>
-    </span>
-    </h1>
-    <p>We are trying to Contact Palette License Server licensing.palette-software.com on HTTPS port 443.</p>
-  </div>
-  <div class="container initial hidden" id="licensing-error">
-    <h2>
-      <span class="fa-stack">
-        <i class="fa fa-fw fa-stack-1x fa-times-circle red"></i>
-      </span>
-      Failed to Contact Palette License Server</h2>
-    <p>This Palette Server failed to contact Palette Licensing at licensing.palette-software.com on HTTPS port 443.  This is how Palette verifies the validity of your license.  Palette is inaccessible until this communication is possible.</p>
-    <p>To help you troubleshoot, start with the most common blockers: HTTPS Proxy Server and Firewall Settings.</p>
-
-    <h3>HTTP Proxy Server URL</h3>
-    <p>If you use a HTTPS proxy server, input the URL here.  The URL must contain the protocol (e.g. http, https, etc.) For example: https://yourproxyserverurl.com</p>
-
-    <div class="proxy">
-      <input type="text" id="proxy-https" />
-      <button id="connect">Connect</button>
-    </div>
-
-    <h3>Filewall Settings</h3>
-    <p>Next, check that your firewall settings meet the <a href="http://kb.palette-software.com/network-configuration">Network Configuration Requirements</a>.</p>
-    <p>If your settings are correct and this message persists, please contact Palette Support at <a href="mailto:support@palette-software.com">support@palette-software.com</a>.
-    </p>
-  </div>
-  <div class="container form-group setup-page initial hidden">
-    <section class="top-zone">
+  <div class="container form-group initial">
+    <div class="top-zone hidden">
       <h1>Welcome to Palette Server Setup</h1>
       <p>Please configure your Palette Server.</p>
-    </section>
+    </div>
 
-    <div class="bottom-zone">
+    <div class="bottom-zone hidden">
 %if req.platform.product != req.platform.PRODUCT_PRO:
       <section>
         <%include file="config/server-url.mako" />
@@ -90,18 +58,54 @@
         <%include file="config/tz.mako" />
       </section>
       <hr />
-      <section class="bottom-zone">
-        <button type="button" id="save" class="action">
-          Save Settings
-        </button>
-      </section>
+      <button type="button" id="save" class="action">
+        Save Settings
+      </button>
       <div class="version"></div>
     </div> <!-- bottom-zone -->
-  </div>
+  </div> <!-- container -->
 
   <%include file="dropdown.mako" />
   <%include file="onoff.mako" />
 
   <script src="/js/vendor/require.js" data-main="/js/initial.js" >
+  </script>
+
+  <script data-id="licensing-status" type="x-tmpl-mustache">
+    <div id="licensing-status">
+      <h1>Prepare<br/>for<br/>Awesomeness!
+        <span id="wrap">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </span>
+      </h1>
+      <p>We are trying to Contact Palette License Server licensing.palette-software.com on HTTPS port 443.</p>
+      <div> <!-- licensing-status -->
+  </script>
+
+  <script data-id="licensing-error" type="x-tmpl-mustache">
+    <div id="licensing-error">
+      <h2>
+        <span class="fa-stack">
+          <i class="fa fa-fw fa-stack-1x fa-times-circle red"></i>
+        </span>
+        Failed to Contact Palette License Server</h2>
+      <p>This Palette Server failed to contact Palette Licensing at licensing.palette-software.com on HTTPS port 443.  This is how Palette verifies the validity of your license.  Palette is inaccessible until this communication is possible.</p>
+      <p>To help you troubleshoot, start with the most common blockers: HTTPS Proxy Server and Firewall Settings.</p>
+
+      <h3>HTTP Proxy Server URL</h3>
+      <p>If you use a HTTPS proxy server, input the URL here.  The URL must contain the protocol (e.g. http, https, etc.) For example: https://yourproxyserverurl.com</p>
+
+      <div class="proxy">
+        <input class="form-control" type="text" id="proxy-https" />
+        <button class="action" id="connect">Connect</button>
+      </div>
+
+      <h3>Firewall Settings</h3>
+      <p>Next, check that your firewall settings meet the <a href="http://kb.palette-software.com/network-configuration">Network Configuration Requirements</a>.</p>
+      <p>If your settings are correct and this message persists, please contact Palette Support at <a href="mailto:support@palette-software.com">support@palette-software.com</a>.
+      </p>
+    </div> <!-- licensing-error -->
   </script>
 </body>

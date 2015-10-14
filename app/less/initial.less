@@ -5,48 +5,6 @@
     margin-bottom: 50px;
 }
 
-#licensing-status h1 {
-    margin: 90px 0 12px 0;
-    font-size: 60px;
-    line-height: 50px;
-}
-
-#licensing-error h2 {
-    margin: 90px 0 12px 0;
-    font-size: 33px;
-    color: @heading-color;
-}
-
-#licensing-error h3 {
-    margin-top: 30px;
-    font-size: 19px;
-}
-
-#licensing-error h2 span.fa-stack {
-    height: 1em;
-    width: 1em;
-    line-height: 1em;
-    font-size: 24px;
-}
-
-#licensing-error p {
-    margin: 0;
-}
-
-#licensing-error p + p, #licensing-status p + p {
-    margin-top: 30px;
-}
-
-#licensing-error p + div {
-    margin-top: 24px;
-}
-
-.initial #connect {
-    .btn;
-    .btn-primary;
-    height: 35px;
-}
-
 .initial #save {
     background-color: @blue;
     width: inherit;
@@ -55,15 +13,62 @@
     outline: none;
 }
 
-/* FIXME: same as password, combine rule? */
-.initial input[type="text"], .initial textarea {
-    margin-top: 0;
-    margin-bottom: 5px;
+/* FIXME: remove */
+.initial .error-page p {
+    color: #ef5557;
+    margin: 20px 0;
+    text-align: center;
+}
+.initial .version {
+    font-size: 10px;
+    width: 100%;
+    text-align: right;
 }
 
-/* FIXME: get rid of this rule - all text inputs should be 35px; */
-#proxy-https {
-    height: 35px;
+.initial #license-key {
+    width: 450px;
+    max-width: none;
+}
+
+.initial #smtp-port {
+    width: 64px;
+}
+.initial #test-email-recipient {
+    width: 50%;
+}
+
+/* licensing error subpage */
+#licensing-error h2 {
+    margin: 90px 0 12px 0;
+    font-size: 33px;
+    color: @heading-color;
+    text-transform: none;
+
+    span.fa-stack {
+	height: 1em;
+	width: 1em;
+	line-height: 1em;
+	font-size: 24px;
+    }
+}
+
+#licensing-error p + p  {
+    margin-top: 30px;
+}
+
+#licensing-error p + div {
+    margin-top: 24px;
+}
+
+#licensing-error .form-control {
+    display: inline-block; /* align the connect button with the proxy input */
+}
+
+/* licensing status subpage */
+#licensing-status h1 {
+    margin: 90px 0 12px 0;
+    font-size: 60px;
+    line-height: 50px;
 }
 
 /* http://codepen.io/vcmg/pen/JdKeVG */
@@ -92,19 +97,3 @@
 }
 
 /* end dots */
-
-.initial .error-page p {
-    color: #ef5557;
-    margin: 20px 0;
-    text-align: center;
-}
-.initial .version {
-    font-size: 10px;
-    width: 100%;
-    text-align: right;
-}
-#license-key {
-    width: 450px;
-    max-width: none;
-}
-

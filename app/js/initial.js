@@ -1,6 +1,7 @@
-require(['jquery', 'configure', 'common', 'form', 'Dropdown', 'OnOff',
+require(['jquery', 'configure', 'common', 'form', 'template',
+         'Dropdown', 'OnOff',
          'bootstrap'],
-function ($, configure, common, form, Dropdown, OnOff)
+function ($, configure, common, form, template, Dropdown, OnOff)
 {
     var setupDone = false;
 
@@ -18,11 +19,12 @@ function ($, configure, common, form, Dropdown, OnOff)
 
     var licensingState = LICENSING_UNKNOWN;
     var licensingTimeout = null;
+    var licensingStatusTimeout = null;
 
     var PASSWORD_MIN_CHARS = 8;
     var PASSWORD_MATCH = /^[A-Za-z0-9!@#$%]+$/;
 
-    /* FIXME: use form.js */
+    var templates;
 
     /*
      * setPageError()
@@ -31,8 +33,8 @@ function ($, configure, common, form, Dropdown, OnOff)
     function setPageError(msg)
     {
         var html = form.pageError(msg);
-        $("section.top-zone").append(html);
-        $("section.bottom-zone").prepend(html);
+        $(".top-zone").append(html);
+        $("#save").before(html);
     }
 
     /*
@@ -133,6 +135,7 @@ function ($, configure, common, form, Dropdown, OnOff)
 
         if (!validateForSave(data)) {
             setPageError("The page contains invalid input, please correct.");
+            $("body").scrollTop(0);
             return;
         }
 
@@ -361,7 +364,6 @@ function ($, configure, common, form, Dropdown, OnOff)
         OnOff.setup();
 
         $('#proxy-https').val(data['proxy-https']);
-
         $('#save').bind('click', save);
 
         if (hasSettings['mail']) {
@@ -409,6 +411,20 @@ function ($, configure, common, form, Dropdown, OnOff)
     }
 
     /*
+     * displayTemplate()
+     * Show the content of a template in the main container.
+     */
+    function displayTemplate(tmpl)
+    {
+        /* don't display the 'prepare for awesomeness' message */
+        $("body .container > div").not('.top-zone, .bottom-zone').remove();
+
+        var rendered = template.render(templates[tmpl]);
+        $("body .container").prepend(rendered);
+        $("#connect").removeClass("disabled");
+    }
+
+    /*
      * licensingQuery()
      */
     function licensingQuery()
@@ -417,16 +433,19 @@ function ($, configure, common, form, Dropdown, OnOff)
             url: '/licensing',
             success: function(data) {
                 $().ready(function() {
-                    /* implicity cancels licensingTryMsgTimeout */
-                    $("#licensing-status, #licensing-error").remove();
-                    $("body > div").removeClass("hidden");
+                    licensingState = LICENSING_OK;
+                    $("body .container > div").not('.top-zone, .bottom-zone').remove();
+                    $(".top-zone, .bottom-zone").removeClass('hidden');
                 });
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 $().ready(function() {
-                    $("#licensing-status").remove();
-                    $("#licensing-error").removeClass("hidden");
-                    $('#connect').removeClass('disabled');
+                    if (licensingState != LICENSING_FAILED) {
+                        var tmpl = templates['licensing-error'];
+                        displayTemplate('licensing-error');
+                        licensingState = LICENSING_FAILED;
+                    }
+                    /* try again ... */
                     licensingTimeout = setTimeout(licensingQuery,
                                                   LICENSING_TIMEOUT);
                 });
@@ -437,10 +456,14 @@ function ($, configure, common, form, Dropdown, OnOff)
     /* Ensure that the server can talk to licensing. */
     licensingQuery();
     $().ready(function() {
+        templates = common.loadTemplates();
+        page = $("body > div").html();
         /* Display a status message after half a second if the
            licensing query is not already complete. */
-        setTimeout(function () {
-            $("#licensing-status").removeClass("hidden");
+        licensingStatusTimeout = setTimeout(function () {
+            if (licensingState == LICENSING_UNKNOWN) {
+                displayTemplate('licensing-status');
+            }
         }, 500); /* half second? */
 
         $('#connect').bind('click', connect);
