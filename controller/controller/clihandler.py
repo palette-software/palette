@@ -2675,12 +2675,15 @@ class CliHandler(socketserver.StreamRequestHandler):
         session.commit()
         return self.report_status(body)
 
-    @usage('support-case')
+    @usage('support-case [filename.zip]')
     @upgrade_rwlock
     def do_support_case(self, cmd):
         """ Generate a support case and return the zip file information. """
 
-        if len(cmd.args) != 0:
+        filename = None
+        if len(cmd.args) == 1:
+            filename = cmd.args[0]
+        elif cmd.args:
             self.print_usage(self.do_support_case.__usage__)
 
         agent = self.get_agent(cmd.dict)
@@ -2695,7 +2698,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
 
         agent.connection.user_action_lock(blocking=False)
-        body = self.server.support_case(agent, userid=userid)
+        body = self.server.support_case(agent, userid=userid, filename=filename)
         agent.connection.user_action_unlock()
         return self.report_status(body)
 

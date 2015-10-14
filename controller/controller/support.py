@@ -30,9 +30,13 @@ def support_date():
     date = datetime.now() - timedelta(days=2)
     return date.strftime(SUPPORT_DATEFMT)
 
-def support_ziplogs(server, agent, volume_entry):
+def support_ziplogs(server, agent, volume_entry, filename=None):
     """Run the prescribed ziplogs command and return the path on success."""
-    filename = generate_token() + '.zip'
+    if filename:
+        if not filename.lower().endswith('.zip'):
+            filename = filename + '.zip'
+    else:
+        filename = generate_token() + '.zip'
     path = agent.path.join(volume_entry.full_path(), filename)
     date = support_date()
     cmd = 'tabadmin ziplogs -f -l -n -d %s \\\"%s\\\"' % (date, path)
@@ -55,7 +59,7 @@ def support_failed(server, agent, data, userid=None):
             result[unicode(key)] = unicode(data[key])
     return result
 
-def support_case(server, agent, userid=None):
+def support_case(server, agent, userid=None, filename=None):
     """
     Builds a support case and uploads it to anonymous S3.
     NOTES:
@@ -69,7 +73,7 @@ def support_case(server, agent, userid=None):
 
     logger.debug("Support case will use '%s'", volume_entry.full_path)
 
-    data = support_ziplogs(server, agent, volume_entry)
+    data = support_ziplogs(server, agent, volume_entry, filename=filename)
     if failed(data):
         return support_failed(server, agent, data, userid=userid)
 
