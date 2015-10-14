@@ -21,7 +21,17 @@
     white-space: nowrap;
     -ms-overflow-style: none;
 }
-.secondary-side-bar h1, .secondary-side-bar h2, .secondary-side-bar h3, .secondary-side-bar h4, .secondary-side-bar h5 {
+
+.secondary-side-bar a {
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: none;
+    }
+}
+
+.secondary-side-bar h1, .secondary-side-bar h2, .secondary-side-bar h3,
+.secondary-side-bar h4, .secondary-side-bar h5 {
     color: white;
 }
 .secondary-side-bar h1, .secondary-side-bar h2, .secondary-side-bar h5 {
@@ -42,15 +52,9 @@
 .secondary-side-bar h2 {
     font-size: 22px;
 }
-.secondary-side-bar h5.sub {
-    padding: 10px 0 0 26px;
-    margin: 0 0 5px 0;
-    font-family: @font-family-light;
-    font-size: 14px;
-    text-transform: none;
-    
-}
-.secondary-side-bar h5.backup-page, .secondary-side-bar h5.logs-page {
+
+/* next scheduled backup (title) + restore list */
+.secondary-side-bar h5.backup-page {
     margin-top: 50px;
 }
 .secondary-side-bar h5 i {
@@ -262,6 +266,15 @@
     display: block;
     width: 100%;
     background-color: rgba(0, 0, 0, 0.1);
+}
+
+.secondary-side-bar #next-backup {
+    padding: 10px 0 0 26px;
+    margin: 0 0 5px 0;
+    font-family: @font-family-light;
+    font-size: 14px;
+    text-transform: none;
+    
 }
 
 /* 'empty' message only */
