@@ -160,8 +160,7 @@ elif [ "$oldversion" = "1.5.3" -o "$oldversion" = "1.5.4" ]; then
 XYZZY
 elif [ "$oldversion" != "" ]; then
     echo Upgrading $oldversion
-    psql paldb << XYZZY
-    drop table event_control;
+    # Nothing needed as of now.
 XYZZY
 elif [ "$oldversion" = "" ]; then
     echo First install
