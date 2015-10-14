@@ -29,6 +29,14 @@ CLOUD_TYPE_GCS = 'gcs'
 # FIXME: This policy is *way* too permissive.
 S3_POLICY = '{"Statement":[{"Effect":"Allow","Action": "s3:*","Resource":"*"}]}'
 
+def s3_external_url(bucket, path):
+    """ Generate a HTTPS external url for the s3 object in a bucket. """
+    return 'https://' + bucket + '.s3.amazonaws.com' + path
+
+def gcs_external_url(bucket, path):
+    """ Generate a HTTPS external url for the gcs object in a bucket. """
+    return 'https://' + bucket + '.storage.googleapis.com' + path
+
 class CloudEntry(meta.Base, BaseMixin, BaseDictMixin, OnlineMixin):
     __tablename__ = 'cloud'
 
@@ -116,12 +124,10 @@ class CloudInfo(object):
     def external_url(self):
         """ Return a URL suitable for accessing this object from anywhere. """
         if self.cloud_type == CLOUD_TYPE_S3:
-            base_url = 'http://' + self.bucket + '.s3.amazonaws.com'
-        elif self.cloud_type == CLOUD_TYPE_GCS:
-            base_url = 'https://' + self.bucket + '.storage.googleapis.com'
-        else:
-            return None
-        return base_url + self.path
+            return s3_external_url(self.bucket, self.path)
+        if self.cloud_type == CLOUD_TYPE_GCS:
+            return gcs_external_url(self.bucket, self.path)
+        return None
 
     @classmethod
     def from_url(cls, url):
