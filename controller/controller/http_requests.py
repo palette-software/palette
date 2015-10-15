@@ -200,15 +200,16 @@ class HttpRequestManager(TableauCacheManager):
 
         if entry.action in ('performPostLoadOperations', 'sessions',
                                                 'get_customized_views'):
-            # Type 2
+            # Type 2: Post-Initial View Generation, but Success Not Certain
             seconds = int(timedelta_total_seconds(entry.completed_at,
                                                   entry.created_at))
             body['post_initial_compute'] = seconds
             body['duration'] = seconds  # fixme: remove when event doesn't use
 
         elif entry.action == 'bootstrapSession':
-            if entry.currentsheet and entry.vizql_session:
-                # Type 1
+            if entry.currentsheet and entry.vizql_session and \
+                                                        entry.status == 200:
+                # Type 1: Initial Successful View Generation
 
                 # Remove information from the 'bootstrapSession' row
                 # as we will be using the better information from the
@@ -245,12 +246,8 @@ class HttpRequestManager(TableauCacheManager):
                 # Update the body repository_url, view, etc. with the
                 # 'show' row.
                 self._parseuri(entry.http_request_uri, body)
-            elif entry.vizql_session and not entry.currentsheet:
-                if entry.status != 500:
-                    # At least for now, ignore other http status, such as
-                    # 401 which is the embedded password failure.
-                    return
-                # Type 3
+            elif entry.vizql_session and entry.status == 500:
+                # Type 3: Failed Initial View Generation
                 show_entry = self._find_vizql_entry(rows, entry, 'show')
 
                 if not show_entry:
