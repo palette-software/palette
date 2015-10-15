@@ -353,22 +353,19 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
     def has_available_space(cls, agentid, min_needed):
         """Searches for a volume on the agent that has
         the requested disk space for archiving.  If found, returns
-        the volume entry.  If not, returns False."""
+        the volume entry.  If not, returns None."""
 
-        try:
-            return meta.Session.query(AgentVolumesEntry).\
-                    filter(AgentVolumesEntry.agentid == agentid).\
-                    filter(AgentVolumesEntry.vol_type == "Fixed").\
-                    filter(AgentVolumesEntry.archive == True).\
-                    filter(AgentVolumesEntry.active == True).\
-                    filter(AgentVolumesEntry.available_space >= min_needed).\
-                    filter(AgentVolumesEntry.size - \
-                                AgentVolumesEntry.available_space +
-                                min_needed < AgentVolumesEntry.archive_limit).\
-                    one()   # for now, choosen any one - no particular order.
 
-        except NoResultFound:
-            return False
+        return meta.Session.query(AgentVolumesEntry).\
+                filter(AgentVolumesEntry.agentid == agentid).\
+                filter(AgentVolumesEntry.vol_type == "Fixed").\
+                filter(AgentVolumesEntry.archive == True).\
+                filter(AgentVolumesEntry.active == True).\
+                filter(AgentVolumesEntry.available_space >= min_needed).\
+                filter(AgentVolumesEntry.size - \
+                            AgentVolumesEntry.available_space +
+                            min_needed < AgentVolumesEntry.archive_limit).\
+                first()   # for now, choosen any one - no particular order.
 
     @classmethod
     def get_vol_entry_by_agentid_vol_name(cls, agentid, vol_name):

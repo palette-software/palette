@@ -214,16 +214,14 @@ class DiskCheck(object):
 
         """
 
-        for volume in \
-            AgentVolumesEntry.get_vol_archive_entries_by_agentid(agent.agentid):
+        primary_entry = AgentVolumesEntry.has_available_space(agent.agentid,
+                                                              min_disk_needed)
+        if primary_entry:
+            # fixme: agent.path... and support linux
 
-            if not min_disk_needed or volume.available_space > min_disk_needed:
-                # fixme: agent.path... and support linux
-                primary_dir = volume.name + ":" + volume.path + \
-                                                "\\" + parent_dir
-                primary_entry = volume
-
-                return (primary_dir, primary_entry)
+            primary_dir = primary_entry.name + ":" + primary_entry.path + \
+                                            "\\" + parent_dir
+            return (primary_dir, primary_entry)
 
         raise DiskException("There is not enough disk space on any " + \
             "volumes on the Tableau Primary to temporarily hold the " + \
