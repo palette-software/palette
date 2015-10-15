@@ -27,8 +27,11 @@ class Mailer(object):
     def send_msg(self, recipients, subject, msg, bcc=None):
         """ Send a generic MIME message object"""
 
-        if isinstance(recipients, basestring):
+        if not recipients:
+            recipients = []
+        elif isinstance(recipients, basestring):
             recipients = [email.strip() for email in recipients.split(',')]
+
         if bcc and isinstance(bcc, basestring):
             bcc = [email.strip() for email in bcc.split(',')]
 

@@ -8,8 +8,6 @@ from __future__ import absolute_import
 from akiri.framework.util import generate_token
 
 import logging
-import os
-import binascii
 from datetime import datetime, timedelta
 
 from .cloud import CloudInfo
