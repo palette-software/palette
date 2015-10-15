@@ -11,7 +11,7 @@ from akiri.framework.admin import LogoutApplication
 from akiri.framework.middleware.auth import AuthForbiddenMiddleware
 from akiri.framework.middleware.auth import AuthRedirectMiddleware
 from akiri.framework.route import Router
-from akiri.framework.sqlalchemy import create_engine
+from akiri.framework.sqlalchemy import create_engine, sqa
 from akiri.framework.middleware.sqlalchemy import SessionMiddleware
 
 from palette import HomePage, set_aes_key_file
@@ -45,7 +45,8 @@ DATABASE = 'postgresql://palette:palpass@localhost/paldb'
 
 # general configuration
 set_aes_key_file(AES_KEY_FILE)
-create_engine(DATABASE, echo=False, max_overflow=45)
+if not sqa.engine:
+    create_engine(DATABASE, echo=False, max_overflow=45)
 
 # individual apps
 loginapp = LoginApplication(secret=SHARED,
