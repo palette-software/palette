@@ -132,8 +132,9 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     workbookid = Column(BigInteger,
                         ForeignKey("workbooks.workbookid", ondelete='CASCADE'))
     revision = Column(String, nullable=False)
-    fileid = Column(Integer, ForeignKey("files.fileid"))
-    fileid_twbx = Column(Integer, ForeignKey("files.fileid"))
+    fileid = Column(Integer, ForeignKey("files.fileid", ondelete='CASCADE'))
+    fileid_twbx = Column(Integer,
+                         ForeignKey("files.fileid", ondelete='CASCADE'))
     timestamp = Column(DateTime, nullable=False)
     system_user_id = Column(Integer)
     url = Column(String)  # FIXME: make this unique.

@@ -111,8 +111,9 @@ class DataSourceUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     dsid = Column(BigInteger,
                   ForeignKey("datasources.dsid", ondelete='CASCADE'))
     revision = Column(String, nullable=False)
-    fileid_tds = Column(Integer, ForeignKey("files.fileid"))
-    fileid_tdsx = Column(Integer, ForeignKey("files.fileid"))
+    fileid_tds = Column(Integer, ForeignKey("files.fileid", ondelete='CASCADE'))
+    fileid_tdsx = Column(Integer,
+                         ForeignKey("files.fileid", ondelete='CASCADE'))
     timestamp = Column(DateTime, nullable=False)
     system_user_id = Column(Integer)
     url = Column(String)  # FIXME: make this unique.
