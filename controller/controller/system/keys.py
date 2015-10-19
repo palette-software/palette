@@ -118,7 +118,7 @@ class SystemKeys(object):
 
     SUPPORT_CASE_BUCKET = 'support-case-bucket'
     SUPPORT_CASE_EMAIL = 'support-case-email'
-    ANONYMOUS_ACCESS_KEY = 'anonymous--access-key'
+    ANONYMOUS_ACCESS_KEY = 'anonymous-access-key'
     ANONYMOUS_SECRET_KEY = 'anonymous-secret-key'
 
     PLATFORM_PRODUCT = 'platform-product'
