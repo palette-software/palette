@@ -375,7 +375,7 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
                     filter(AgentVolumesEntry.size - \
                                 AgentVolumesEntry.available_space +
                                 min_needed < AgentVolumesEntry.archive_limit).\
-                    one()   # for now, choosen any one - no particular order.
+                    first()   # for now, choosen any one - no particular order.
 
         except NoResultFound:
             return False
