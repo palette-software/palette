@@ -18,6 +18,17 @@ function ($, template)
         });
     });
 
+    /*
+     * Escape selector characters in 'id'.
+     * see: learn.jquery.com -> jq().
+     */
+    $.jq = function jq(id) {
+        return "#" + id.replace( /(:|\.|\[|\]|,)/g, "\\$1" );
+    }
+
+    /*
+     * Render a template and return the resulting html.
+     */
     $.render = function(name, data) {
         /* fixme: allow name to be null i.e. use id of this */
         var tmpl = templates[name];
@@ -28,6 +39,9 @@ function ($, template)
         return template.render(tmpl, data);
     }
 
+    /*
+     * Replace the html of selected elements with the rendered template.
+     */
     $.fn.render = function(name, data) {
         $(this).html($.render(name, data));
     };

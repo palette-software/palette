@@ -1,15 +1,6 @@
 define("Dropdown", ['jquery', 'plugin', 'bootstrap'],
 function($) {
 
-    /*
-     * jq()
-     * Escape selector characters in 'id'.
-     * see: learn.jquery.com -> jq().
-     */
-    function jq(id) {
-        return "#" + id.replace( /(:|\.|\[|\]|,)/g, "\\$1" );
-    }
-
     function Dropdown(node, data, callback, error) {
         this.node = node;
         this.callback = callback;
@@ -107,7 +98,7 @@ function($) {
 
     Dropdown.bind2 = function(id, data, callback)
     {
-        var $this = $(jq(id));
+        var $this = $($.jq(id));
         var obj = new Dropdown($this.get(0), data, callback);
         $this.data(obj);
     }
@@ -135,7 +126,7 @@ function($) {
     Dropdown.getValueById = function(id)
     {
         try {
-            var dd = $(jq(id)).data();
+            var dd = $($.jq(id)).data();
             return dd.getDataId();
         } catch (err) {
             return null;

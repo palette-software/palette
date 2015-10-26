@@ -5,15 +5,6 @@ function ($, common, form, Dropdown)
     var NONE = '--None--'
 
     /*
-     * jq()
-     * Escape selector characters in 'id'.
-     * see: learn.jquery.com -> jq().
-     */
-    function jq(id) {
-        return "#" + id.replace( /(:|\.|\[|\]|,)/g, "\\$1" );
-    }
-
-    /*
      * cookieName()
      * cookies can't contain semicolons...
      */
@@ -31,7 +22,7 @@ function ($, common, form, Dropdown)
         /* text inputs */
         $('input[type=text], textarea').each(function(index) {
             var id = $(this).attr('id');
-            data[id] = $(jq(id)).val();
+            data[id] = $($.jq(id)).val();
         });
 
         $('input[type=checkbox]').each(function(index) {
@@ -55,7 +46,7 @@ function ($, common, form, Dropdown)
     function cache() {
         $('input[type=text].cache, textarea.cache').each(function(index){
             var id = $(this).attr('id');
-            var value = $(jq(id)).val();
+            var value = $($.jq(id)).val();
             if (value != null && value.length > 0) {
                 common.setCookie(cookieName(id), value);
             } else {
@@ -187,12 +178,12 @@ function ($, common, form, Dropdown)
             }
             var value = data[id];
             if (value != null) {
-                $(jq(id)).val(value);
+                $($.jq(id)).val(value);
             } else {
                 value = common.getCookie(cookieName(id));
                 if (value != null) {
                     value = value.replace('_', ' ');
-                    $(jq(id)).val(value);
+                    $($.jq(id)).val(value);
                 }
             }
         });
