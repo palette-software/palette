@@ -1,5 +1,5 @@
-define("items", ['jquery', 'template'],
-function($, template) 
+define("items", ['jquery'],
+function($)
 {
     /*
      * bind()

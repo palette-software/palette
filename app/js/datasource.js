@@ -1,10 +1,7 @@
-require(['jquery', 'template', 'common', 'paging', 'items',
+require(['jquery', 'common', 'paging', 'items',
          'Dropdown', 'EditBox', 'bootstrap'],
-function ($, template, common, paging, items, Dropdown, EditBox)
+function ($, common, paging, items, Dropdown, EditBox)
 {
-    var t = $('#datasource-list-template').html();
-    template.parse(t);
-
     /*
      * siteDropdownCallback()
      * Clear the project selection when the site selection changes.
@@ -54,8 +51,7 @@ function ($, template, common, paging, items, Dropdown, EditBox)
         var populated = data['enabled'];
         if (populated) {
             $(".filter-dropdowns").removeClass('hidden');
-            var rendered = template.render(t, data);
-            $('#datasource-list').html(rendered);
+            $('#datasource-list').render('datasource-list-template', data);
             items.bind();
         } else {
             $(".filter-dropdowns").addClass('hidden');

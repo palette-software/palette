@@ -1,5 +1,5 @@
-define("EditBox", ['jquery', 'template'],
-function($, template) {
+define("EditBox", ['jquery', 'plugin'],
+function($) {
 
     var EDIT = 'EDIT';
     var VIEW = 'VIEW';
@@ -16,26 +16,18 @@ function($, template) {
         this.href = $(node).attr('data-href');
         this.pw = $(node).hasClass('password');
 
-        this.view_template = $('#editbox-view').html();
-        template.parse(this.view_template);
-        this.edit_template = $('#editbox-edit').html();
-        template.parse(this.edit_template);
-
         this.render = function (value)
         {
             if (this.pw) {
                 value = (value.length > 0) ? PW : '';
             }
-            var html = template.render(this.view_template, {'value':value});
-            $(this.node).html(html);
+            $(this.node).render('editbox-view', {'value': value});
         }
         this.render(this.value);
 
         this.edit = function ()
         {
-            var data = {'value':this.value};
-            var html = template.render(this.edit_template, data);
-            $(node).html(html);
+            $(node).render('editbox-edit', {'value': this.value});
             $('input', node).focus();
             this.state = EDIT;
             $('.ok', this.node).bind('click', function(event) {

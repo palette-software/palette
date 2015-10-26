@@ -1,6 +1,6 @@
-require(['jquery', 'topic', 'template', 'common', 'items',
+require(['jquery', 'topic', 'common', 'items',
          'Dropdown', 'OnOff', 'bootstrap', 'lightbox'],
-        function ($, topic, template, common, items, Dropdown, OnOff)
+function ($, topic, common, items, Dropdown, OnOff)
 {
     var LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -57,10 +57,7 @@ require(['jquery', 'topic', 'template', 'common', 'items',
                 return;
             }
 
-            var t = $('#user-list-template').html();
-            var rendered = template.render(t, data);
-                
-            $('#user-list').html(rendered);
+            $('#user-list').render('user-list-template', data);
             setup_letters(total);
 
             items.bind();

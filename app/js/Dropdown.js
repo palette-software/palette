@@ -1,5 +1,5 @@
-define("Dropdown", ['jquery', 'template', 'bootstrap'],
-function($, template) {
+define("Dropdown", ['jquery', 'plugin', 'bootstrap'],
+function($) {
 
     /*
      * jq()
@@ -17,17 +17,13 @@ function($, template) {
         this.options = {}
         this.href = $(node).attr('data-href');
 
-        this.template = $('#dropdown-template').html();
-        template.parse(this.template);
-
         for (var i in data['options']) {
             var option = data['options'][i];
             this.options[option.id.toString()] = option.item;
         }
 
         this.original_html = $(node).html();
-        var html = template.render(this.template, data);
-        $(node).html(html);
+        $(node).render('dropdown-template', data);
 
         this.set = function (id) {
             var value = this.options[id];

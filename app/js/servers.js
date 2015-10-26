@@ -1,5 +1,5 @@
-require(['jquery', 'template', 'common', 'items', 'EditBox', 'OnOff'],
-function ($, template, common, items, EditBox, OnOff)
+require(['jquery', 'common', 'items', 'EditBox', 'OnOff'],
+function ($, common, items, EditBox, OnOff)
 {
     function change() {
         var node = $(this).get(0);
@@ -27,10 +27,9 @@ function ($, template, common, items, EditBox, OnOff)
                 return;
             }
 
-            var t = $('#server-detail-template').html();
-            var rendered = template.render(t, data);
-            $('#server-detail').html(rendered);
+            $('#server-detail').render('server-detail-template', data);
             items.bind();
+
             EditBox.bind('.editbox.displayname');
             EditBox.bind('.editbox.environment', function(value) {
                 $('.editbox.environment >span').html(value);
