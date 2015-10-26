@@ -4,7 +4,7 @@ function ($, topic, common, OnOff)
     /*
      * restartWebserver()
      */
-    function restartWebserver() {        
+    function restartWebserver(modal) {
         $.ajax({
             type: 'POST',
             url: '/rest/manage',
@@ -100,12 +100,11 @@ function ($, topic, common, OnOff)
     });
 
     common.startMonitor(false);
-    common.setupOkCancel();
 
     $().ready(function() {
-        $('#restart-webserver').data('callback', restartWebserver);
-        $('#restart-controller').data('callback', restartController);
-        $('#manual-update').data('callback', manualUpdate);
+        $('#manual-update').data('confirm', manualUpdate);
+        $('#restart-webserver').data('confirm', restartWebserver);
+        $('#restart-controller').data('confirm', restartController);
         OnOff.setup();
     });
 });
