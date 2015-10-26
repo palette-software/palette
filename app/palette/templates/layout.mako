@@ -24,7 +24,6 @@
       'underscore': '/js/vendor/underscore',
       'topic': '/js/vendor/pubsub',
       'template' : '/js/vendor/mustache',
-      'domReady': '/js/vendor/domReady',
 
       'bootstrap': '/js/vendor/bootstrap',
       'lightbox': '//www.helpdocsonline.com/v2/lightbox'

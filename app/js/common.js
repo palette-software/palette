@@ -561,19 +561,23 @@ function ($, topic, items, paging, Dropdown)
         $.ajax({
             url: url,
             success: function(data) {
-                var retval = monitorUpdate(data);
-                if (retval) {
-                    timer = setTimeout(poll, interval);
-                }
+                $().ready(function() {
+                    var retval = monitorUpdate(data);
+                    if (retval) {
+                        timer = setTimeout(poll, interval);
+                    }
+                });
             },
             error: function(req, textStatus, errorThrown)
             {
-                var data = {}
-                data['text'] = 'Your Browser is Disconnected';
-                data['color'] = 'yellow';
-                data['connected'] = false;
-                monitorUpdate(data); /* can't return false. */
-                timer = setTimeout(poll, interval);
+                $().ready(function() {
+                    var data = {}
+                    data['text'] = 'Your Browser is Disconnected';
+                    data['color'] = 'yellow';
+                    data['connected'] = false;
+                    monitorUpdate(data); /* can't return false. */
+                    timer = setTimeout(poll, interval);
+                });
             }
         });
     }

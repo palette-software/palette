@@ -1,4 +1,4 @@
-require(['jquery', 'template', 'base'],
+define(['jquery', 'template', 'base'],
 function ($, template)
 {
     var templates = {};
