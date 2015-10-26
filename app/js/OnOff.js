@@ -1,5 +1,5 @@
-define("OnOff", ['jquery', 'plugin'],
-function($,) {
+define(['jquery', 'plugin'],
+       function($, plugin) {
 
     function str2bool(val) {
         if (val == null) return false;

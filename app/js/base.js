@@ -1,4 +1,4 @@
-require(['jquery',],
+define(['jquery',],
 function ($)
 {
     /* http://stackoverflow.com/a/4673436/716118 */

@@ -1,7 +1,10 @@
-require(['jquery', 'common', 'EditBox', 'OnOff', 'bootstrap'],
-function ($, common, EditBox, OnOff)
+require(['jquery', 'common', 'EditBox', 'plugin', 'OnOff', 'bootstrap'],
+        function ($, common, EditBox, plugin, OnOff)
 {
-    EditBox.setup();
-    OnOff.setup();
-    common.startMonitor();
+    common.startMonitor(false);
+
+    $().ready(function() {
+        EditBox.setup();
+        OnOff.setup();
+    });
 });
