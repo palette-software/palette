@@ -1,9 +1,6 @@
-require(['jquery', 'template', 'common', 'domReady!'],
-function (jquery, template, common)
+require(['jquery', 'common'],
+function ($, common)
 {
-    var t = jquery('#yml-list-template').html();
-    template.parse(t);
-
     function update(data) {
         $().ready(function() {
             var count = data["items"].length;
@@ -11,9 +8,7 @@ function (jquery, template, common)
                 $('#yml-list div').removeClass("hidden");
                 return;
             }
-
-            var rendered = template.render(t, data);
-            $('#yml-list').html(rendered);
+            $('#yml-list').render('yml-list-template', data);
 
             var location = data['location'];
             if (location != null) {
@@ -28,7 +23,7 @@ function (jquery, template, common)
         });
     }
 
-    jquery.ajax({
+    $.ajax({
         url: '/rest/yml',
         success: function(data) {
             update(data);

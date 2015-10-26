@@ -1,5 +1,5 @@
-define("OnOff", ['jquery', 'template'],
-function($, template) {
+define("OnOff", ['jquery', 'plugin'],
+function($,) {
 
     function str2bool(val) {
         if (val == null) return false;
@@ -18,15 +18,14 @@ function($, template) {
         this.name = $(node).attr('data-name');
         this.href = $(node).attr('data-href');
 
-        var value = str2bool($(node).html());
-
-        this.template = $('#onoffswitch').html();
-        template.parse(this.template);
-
         var data = {'name': this.name}
-        if (value) data['checked'] = 'checked';
-        var html = template.render(this.template, data);
-        $(node).html(html);
+
+        var value = str2bool($(node).html());
+        if (value) {
+            data['checked'] = 'checked';
+        }
+
+        $(node).render('onoffswitch', data);
 
         this.change = function () {
             var checked = $('input[type="checkbox"]', this.node).prop("checked");
