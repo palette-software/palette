@@ -1,10 +1,8 @@
-require(['jquery', 'common', 'form', 'template', 'Dropdown'],
-function ($, common, form, template, Dropdown)
+require(['jquery', 'common', 'form', 'Dropdown'],
+function ($, common, form, Dropdown)
 {
     var URL = '/rest/support-case';
     var NONE = '--None--'
-
-    var templates;
 
     /*
      * jq()
@@ -166,9 +164,7 @@ function ($, common, form, template, Dropdown)
             dataType: 'json',
             
             success: function(data) {
-                var rendered = template.render(templates['thank-you']);
-                $('.bottom-zone').html(rendered);
-
+                $('.bottom-zone').render('thank-you');
                 $('#send-support-case').removeClass('disabled');
                 $('#okcancel').removeClass('visible');
             },
@@ -217,7 +213,6 @@ function ($, common, form, template, Dropdown)
     }
 
     common.startMonitor(false);
-    common.setupOkCancel();
 
     $.ajax({
         url: URL,
@@ -225,7 +220,6 @@ function ($, common, form, template, Dropdown)
         
         success: function(data) {
             $().ready(function() {
-                templates = common.loadTemplates();
                 update(data);
                 $('#send-support-case').data('validate', validate);
                 $('#send-support-case').data('callback', sendSupportCase);

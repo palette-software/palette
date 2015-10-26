@@ -141,16 +141,8 @@ class BackupRestoreApplication(BackupApplication, RestoreMixin):
                                      0, 0, 0, 0, tzlocal())
         scheduled = midnight.strftime(DATEFMT)
 
-        # FIXME: confirm usage
-        options = [{'item': 'Palette Cloud Storage'},
-                   {'item': 'On-Premise Storage'}]
-        archive_backup_config = {'name': 'archive-backup',
-                                 'options': options,
-                                 'value': options[1]['item']}
-
         # FIXME: simplify 'backups'
-        return {'config': [archive_backup_config],
-                'backups': {'type': 'Restore From', 'items': items},
+        return {'backups': {'type': 'Restore From', 'items': items},
                 'next': scheduled}
 
     def service(self, req):

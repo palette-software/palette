@@ -3,15 +3,10 @@
  * templates and should be named accordingly.
  */
 
-define(['jquery', 'topic', 'template', 'items', 'paging', 'Dropdown'],
-function ($, topic, template, items, paging, Dropdown)
+define(['jquery', 'topic', 'items', 'paging', 'Dropdown',
+        'plugin', 'modal'],
+function ($, topic, items, paging, Dropdown)
 {
-    var server_list_template = $('#server-list-template').html();
-    template.parse(server_list_template);
-
-    var event_list_template = $('#event-list-template').html();
-    template.parse(event_list_template);
-
     /* MONITOR TIMER */
     var interval = 1000; // milliseconds
     var timer = null;
@@ -162,78 +157,6 @@ function ($, topic, template, items, paging, Dropdown)
         $('#mainNav ul.nav li.more').bind('mouseleave', function() {
             $(this).find('ul').removeClass('visible');
         });     
-    }
-
-    /*
-     * setupPopups()
-     * Connect dialogs (popups) to their relevant click handlers.
-     */
-    function setupPopups()
-    {
-        $('a.popup-link').bind('click', function() {
-            var popupLink = $(this).hasClass('inactive');
-            if (popupLink == false) {
-                $('article.popup').removeClass('visible');
-                var popTarget = $(this).attr('name');
-                $('article.popup#'+popTarget).addClass('visible');
-            }
-        });
-
-        $('.popup .cancel, .popup .shade').bind('click', function() {
-            $('.popup').removeClass('visible');
-            $('#password').val('');
-        });
-
-        /* mild redundancy */
-        setupOkCancel()
-    }
-
-    /*
-     * setupOkCancel()
-     * Instantiate the generic OK/Cancel dialog.
-     */
-    function setupOkCancel()
-    {
-        $().ready(function() {
-            $('#okcancel .ok').bind('click', function() {
-                var data = $(this).closest('article').data();
-                var callback = data['callback'];
-                if (callback != null) {
-                    callback($(this));
-                }
-                $('#okcancel').removeClass('visible');
-            });
-
-            $('#okcancel .cancel').bind('click', function() {
-                $('#okcancel').removeClass('visible');
-            });
-
-            $('#okcancel .shade').bind('click', function() {
-                $('#okcancel').removeClass('visible');
-            });
-
-            /* this is the actual form button */
-            $('.okcancel').bind('click', function() {
-                var data = $(this).data();
-                var inactive = $(this).hasClass('inactive');
-                if (inactive == false) {
-                    var validate = data['validate'];
-                    if (validate != null) {
-                        if (!validate(this)) {
-                            return;
-                        }
-                    }
-                    /* link button data to the article. */
-                    $('#okcancel').data(data);
-                    var text = data['text'];
-                    if (text == null) {
-                        text = $(this).attr('data-text');
-                    }
-                    $('#okcancel p').html(text);
-                    $('#okcancel').addClass('visible');
-                }
-            });
-        });
     }
 
     /*
@@ -458,8 +381,7 @@ function ($, topic, template, items, paging, Dropdown)
             events_open.push($(this).attr('id'));
         });
 
-        var rendered = template.render(event_list_template, data);
-        $('#event-list').html(rendered);
+        $('#event-list').render("event-list-template", data);
         $('.filter-dropdowns').removeClass('hidden');
 
         for (var i=0; i < events_open.length; i++) {
@@ -604,8 +526,7 @@ function ($, topic, template, items, paging, Dropdown)
         if (data['environments'] != null) {
             var envs = data['environments'];
             if ((envs.length > 0) && (envs[0]['agents'].length > 0)) {
-                var rendered = template.render(server_list_template, data);
-                $('#server-list').html(rendered);
+                $('#server-list').render("server-list-template", data);
                 setupServerList();
             }
         }
@@ -719,29 +640,6 @@ function ($, topic, template, items, paging, Dropdown)
         });
     }
 
-    /*
-     * loadTemplates()
-     * Find all the mustache templates on this page and load them.
-     */
-    function loadTemplates() {
-        var data = {};
-
-        $('script[type="x-tmpl-mustache"]').each(function() {
-            var id = $(this).attr('id');
-            if (id == null) {
-                id = $(this).data('id');
-                if (id == null) {
-                    console.log("A x-tmpl-mustache script is missing an id.");
-                    return;
-                }
-            }
-            data[id] = $(this).html();
-            template.parse(data[id]);
-        });
-        return data;
-    }
-    
-
     /* Code run automatically when 'common' is included */
     $().ready(function() {
         setupHeaderMenus();
@@ -755,8 +653,5 @@ function ($, topic, template, items, paging, Dropdown)
             'deleteCookie': deleteCookie,
             'lightbox': lightbox,
             'setupEventDropdowns' : setupEventDropdowns,
-            'setupPopups': setupPopups,
-            'setupOkCancel' : setupOkCancel,
-            'loadTemplates' : loadTemplates
            };
 });

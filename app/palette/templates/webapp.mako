@@ -98,7 +98,7 @@ ${next.body()}
 <article class="popup" id="okcancel">
   <section class="popup-body">
     <div>
-      <p>&nbsp;</p>
+      <p>Are you sure you want to continue?</p>
     </div>
     <div>
       <button class="cancel">Cancel</button>

@@ -1,5 +1,5 @@
-require(['jquery', 'topic', 'template', 'common', 'bootstrap'],
-function ($, topic, template, common)
+require(['jquery', 'topic', 'common', 'bootstrap'],
+function ($, topic, common)
 {
     var actions = {'start': start,
                    'stop': stop,
@@ -9,28 +9,19 @@ function ($, topic, template, common)
                    'ziplogs': ziplogs,
                   };
 
-    var templates = {'backup-list-template': null,
-                     'archive-backup-template': null};
-
     var allowed = [];
     var connected;
 
-    function disableAll() {
-        /* FIXME - do this with a class */
-        for (var action in actions) {
-            $('#'+action).addClass('inactive');
-        }
-    }
-
     /*
-     * ok()
-     * Generic 'OK' handler for placeholder actions.
+     * disableAll()
      */
-    function ok() {
-        updateState();
+    function disableAll() {
+        $('.actions a').addClass('inactive');
+        return true;
     }
 
     function start() {
+        disableAll();
         $.ajax({
             type: 'POST',
             url: '/rest/manage',
@@ -43,6 +34,7 @@ function ($, topic, template, common)
     }
 
     function stop() {
+        disableAll();
         data = {'action': 'stop'}
         $('#popupStop input[type=checkbox]').each(
             function(index, item){
@@ -64,6 +56,7 @@ function ($, topic, template, common)
     }
 
     function restart() {
+        disableAll();
         data = {'action': 'restart'}
         $('#popupRestart input[type=checkbox]').each(
             function(index, item){
@@ -85,6 +78,7 @@ function ($, topic, template, common)
     }
 
     function ziplogs() {
+        disableAll();
         $.ajax({
             type: 'POST',
             url: '/rest/manage',
@@ -97,6 +91,7 @@ function ($, topic, template, common)
     }
 
     function backup() {
+        disableAll();
         $.ajax({
             type: 'POST',
             url: '/rest/backup',
@@ -109,6 +104,7 @@ function ($, topic, template, common)
     }
 
     function repair_license() {
+        disableAll();
         $.ajax({
             type: 'POST',
             url: '/rest/manage',
@@ -122,6 +118,22 @@ function ($, topic, template, common)
         });
     }
 
+    /*
+     * showRestore()
+     * show action for the restore popup - sets up the dialog text.
+     */
+    function showRestore(modal) {
+        var timestamp = $('span.timestamp', modal).text();
+        var filename = $('span.filename', modal).text();
+        $('#restore-timestamp').html(timestamp);
+        $('#restore-filename').val(filename);
+        return true;
+    }
+
+    /*
+     * restore()
+     * confirm action
+     */
     function restore() {
         var data = {'action': 'restore',
                     'filename': $('#restore-filename').val()};
@@ -175,39 +187,10 @@ function ($, topic, template, common)
     }
 
     function updateBackupSuccess(data) {
-        var t = templates['backup-list-template'];
-        var rendered = template.render(t, data);
-        $('#backup-list').html(rendered);
+        $('#backup-list').render('backup-list-template', data);
 
-        var config = data['config'];
-        if (config == null) return;
-
-        for (var i in config) {
-            var d = config[i];
-            if (!d.hasOwnProperty('name')) {
-                console.log("'config' value has no 'name' property.");
-                continue;
-            }
-            var name = d['name'];
-            var t = templates[name+'-template'];
-            if (t == null) continue;
-            rendered = template.render(t, d);
-            $('#'+name).html(rendered);
-        }
-
-        $('li.backup a').bind('click', function(event) {
-            event.preventDefault();
-            var ts = $('span.timestamp', this).text();
-            var filename = $('span.filename', this).text();
-
-            var popupLink = $(this).hasClass('inactive');
-            if (popupLink == false) {
-                $('article.popup').removeClass('visible');
-                $('#restore-timestamp').html(ts);
-                $('#restore-filename').val(filename);
-                $('article.popup#restore-dialog').addClass('visible');
-            }
-        });
+        $('li.backup a').data('show', showRestore);
+        $('li.backup a').data('confirm', restore);
 
         if ($.inArray('restore', allowed) >= 0) {
             $('li.backup a').removeClass('inactive');
@@ -230,43 +213,19 @@ function ($, topic, template, common)
         }
     }
 
-    function bind(id, f) {
-        $(id+'-ok').bind('click', function(event) {
-            event.stopPropagation();
-            event.preventDefault();
-            if ($(this).hasClass('inactive')) {
-                return;
-            }
-            disableAll();
-            if (f) {
-                f();
-            }
-            $('article.popup').removeClass('visible');
-        });
-    }
-
+    /* setup */
     topic.subscribe('state', function(message, data) {
         allowed = data['allowable-actions'];
         connected = data['connected'];
         updateState();
     });
+    common.startMonitor();
 
     $().ready(function() {
-        common.startMonitor();
-
-        /* parse all page templates */
-        for (var name in templates) {
-            var t = $('#'+name).html();
-            template.parse(t);
-            templates[name] = t;
-        }
 
         /* bind basic actions */
         for (var key in actions) {
-            bind('#'+key, actions[key]);
+            $('#'+key).data('confirm', actions[key]);
         }
-
-        bind('#restore', restore);
-        common.setupPopups();
     });
 });

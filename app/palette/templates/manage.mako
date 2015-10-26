@@ -9,41 +9,47 @@
   <h1>Actions</h1>
   <ul class="actions">
     <li>
-      <a class="okcancel inactive" id="start"
-	 data-text="Are you sure you want to start the Tableau Server?"> 
+      <a id="start" class="inactive"
+         data-toggle="modal-popup"
+         data-text="Are you sure you want to start the Tableau Server?"> 
         <i class="fa fa-fw fa-play"></i>
         <span>Start Application</span>
       </a>
     </li>
     <li>
-      <a name="popupStop" class="popup-link inactive" id="stop"> 
+      <a id="stop" class="inactive"
+         data-toggle="modal-popup" data-target="popupStop">
         <i class="fa fa-fw fa-stop"></i>
         <span>Stop Application</span>
       </a>
     </li>
     <li>
-      <a name="popupRestart" class="popup-link inactive" id="restart">
+      <a id="restart" class="inactive"
+         data-toggle="modal-popup" data-target="popupRestart">
         <i class="fa fa-fw fa-power-off"></i>
         <span>Restart Application</span>
       </a>
     </li>
     <li>
-      <a class="okcancel inactive" id="backup"
-	 data-text="Are you sure you want to backup?">
+      <a id="backup" class="inactive"
+         data-toggle="modal-popup"
+         data-text="Are you sure you want to backup?">
         <i class="fa fa-fw fa-upload"></i>
         <span>Backup</span>
       </a>
     </li>
     <li>
-      <a class="okcancel inactive" id="repair-license"
-	 data-text="Are you sure want to repair the license?">
+      <a id="repair-license" class="inactive"
+         data-toggle="modal-popup"
+         data-text="Are you sure want to repair the license?">
         <i class="fa fa-fw fa-gavel"></i>
         <span>Repair License</span>
       </a>
     </li>
     <li>
-      <a class="okcancel inactive" id="ziplogs"
-	 data-text="Are you sure want to run ziplogs?">
+      <a id="ziplogs" class="inactive"
+         data-toggle="modal-popup"
+	     data-text="Are you sure want to run ziplogs?">
         <i class="fa fa-fw fa-archive"></i>
         <span>Make Ziplogs</span>
       </a>
@@ -67,7 +73,9 @@
   <ul>
     {{#items}}
     <li class="backup">
-      <a class="inactive">
+      <a class="inactive"
+         data-toggle="modal-popup"
+         data-target="restore-dialog">
         <span class="timestamp">{{creation-time}}</span>
         <span class="filename">{{name}}</span>
       </a>
@@ -75,17 +83,6 @@
     {{/items}}
   </ul>
   {{/backups}}
-</script>
-
-<script id="archive-backup-template" type="x-tmpl-mustache">
-  <button type="button" class="btn btn-default dropdown-toggle"
-          data-toggle="dropdown"><div>{{value}}</div><span class="caret"></span>
-  </button>
-  <ul class="dropdown-menu" role="menu">
-    {{#options}}
-    <li><a data-value="{{item}}" href="/rest/backup/location">{{item}}</a></li>
-    {{/options}}
-  </ul>
 </script>
 
 <script src="/js/vendor/require.js" data-main="/js/manage.js">
@@ -191,10 +188,10 @@
         </ul>
       </div>
       <div class=" run-as-user">
-        <p>Tableau 'Run-As-User' Password<br/>(If Any)</p>
+        <p>Tableau 'Run-As-User' Password<mbr/>(If Any)</p>
         <input type="password" name="password" id="password" />
       </div>
-      <div>
+      <div class="save-cancel">
         <button class="cancel">Cancel</button>
         <button id="restore-ok" class="ok">OK</button>
       </div>

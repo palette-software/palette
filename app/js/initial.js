@@ -1,7 +1,7 @@
-require(['jquery', 'configure', 'common', 'form', 'template',
+require(['jquery', 'configure', 'common', 'form',
          'Dropdown', 'OnOff',
          'bootstrap'],
-function ($, configure, common, form, template, Dropdown, OnOff)
+function ($, configure, common, form, Dropdown, OnOff)
 {
     var setupDone = false;
 
@@ -23,8 +23,6 @@ function ($, configure, common, form, template, Dropdown, OnOff)
 
     var PASSWORD_MIN_CHARS = 8;
     var PASSWORD_MATCH = /^[A-Za-z0-9!@#$%]+$/;
-
-    var templates;
 
     /*
      * setPageError()
@@ -418,9 +416,7 @@ function ($, configure, common, form, template, Dropdown, OnOff)
     {
         /* don't display the 'prepare for awesomeness' message */
         $("body .container > div").not('.top-zone, .bottom-zone').remove();
-
-        var rendered = template.render(templates[tmpl]);
-        $("body .container").prepend(rendered);
+        $("body .container").prepend($.render(tmpl));
         $("#connect").removeClass("disabled");
     }
 
@@ -441,7 +437,6 @@ function ($, configure, common, form, template, Dropdown, OnOff)
             error: function (jqXHR, textStatus, errorThrown) {
                 $().ready(function() {
                     if (licensingState != LICENSING_FAILED) {
-                        var tmpl = templates['licensing-error'];
                         displayTemplate('licensing-error');
                         licensingState = LICENSING_FAILED;
                     }
@@ -456,7 +451,6 @@ function ($, configure, common, form, template, Dropdown, OnOff)
     /* Ensure that the server can talk to licensing. */
     licensingQuery();
     $().ready(function() {
-        templates = common.loadTemplates();
         page = $("body > div").html();
         /* Display a status message after half a second if the
            licensing query is not already complete. */
