@@ -181,6 +181,12 @@ elif [ "$oldversion" = "1.6.3" ]; then
     psql paldb << XYZZY
     alter table users add column phone character varying;
 XYZZY
+elif [ "$oldversion" != "" ]; then
+    echo Upgrading $oldversion
+    # We are upgrading from a previous version (vs. a new install).
+    # Currently: nothing special to do.
+XYZZY
+
 elif [ "$oldversion" = "" ]; then
     echo First install
 
