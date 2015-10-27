@@ -1,17 +1,25 @@
 #!/usr/bin/env python
+import os
 import sys
 import time
 
 from controller.palapi import CommHandlerCmd
 
 if __name__ == "__main__":
-    comm = CommHandlerCmd()
-    # If "read_response=True", then it would block sched from
+    # If we ran in the foreground, then it would block sched from
     # running other cron jobs. This can take a long time (too long)
     # which could block backups, etc.
+    pid = os.fork()
+    if pid:
+        sys.exit(0)
+
+    os.close(0)
+    os.close(1)
+    os.close(2)
+    comm = CommHandlerCmd()
+
     comm.send_cmd("workbook import", skip_on_wrong_state=True,
-                   read_response=False)
-    time.sleep(1)
+                   read_response=True)
     comm.send_cmd("workbook fixup", skip_on_wrong_state=True,
                    read_response=False)
     sys.exit(0)

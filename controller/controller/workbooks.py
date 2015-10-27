@@ -1,6 +1,5 @@
 import logging
 import os
-import unicodedata
 
 from sqlalchemy import Column, BigInteger, Integer, Boolean, String, DateTime
 from sqlalchemy import UniqueConstraint, Text
@@ -16,7 +15,7 @@ from archive_mixin import ArchiveUpdateMixin
 from mixin import BaseMixin, BaseDictMixin
 from cache import TableauCacheManager #FIXME
 from manager import synchronized
-from util import failed, success
+from util import failed
 from odbc import ODBC
 from .system import SystemKeys
 
@@ -28,6 +27,7 @@ from sites import Site
 from projects import Project
 
 logger = logging.getLogger()
+
 
 # NOTE: system_user_id is maintained in two places.  This is not ideal from
 # a db design perspective but makes the find-by-current-owner code clearer.
@@ -135,8 +135,9 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     workbookid = Column(BigInteger,
                         ForeignKey("workbooks.workbookid", ondelete='CASCADE'))
     revision = Column(String, nullable=False)
-    fileid = Column(Integer, ForeignKey("files.fileid"))
-    fileid_twbx = Column(Integer, ForeignKey("files.fileid"))
+    fileid = Column(Integer, ForeignKey("files.fileid", ondelete='CASCADE'))
+    fileid_twbx = Column(Integer,
+                         ForeignKey("files.fileid", ondelete='CASCADE'))
     timestamp = Column(DateTime, nullable=False)
     system_user_id = Column(Integer)
     url = Column(String)  # FIXME: make this unique.
@@ -151,25 +152,6 @@ class WorkbookUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     )
 
     __table_args__ = (UniqueConstraint('workbookid', 'revision'),)
-
-    # ideally: site-project-name-rev.twb
-    def basename(self):
-        # pylint: disable=no-member
-        site = self.workbook.site
-        if not site:
-            site = str(self.workbook.site_id)
-        project = self.workbook.project
-        if not project:
-            project = str(self.workbook.project_id)
-        filename = site + '-' + project + '-'
-        filename += self.workbook.repository_url + '-rev' + self.revision
-        filename = filename.replace(' ', '_')
-        filename = filename.replace('/', '_')
-        filename = filename.replace('\\', '_')
-        filename = filename.replace(':', '_')
-        filename = unicodedata.normalize('NFKD', filename).encode('ascii',
-                                                                  'ignore')
-        return filename
 
     @classmethod
     def get(cls, wbid, revision, **kwargs):
@@ -229,8 +211,6 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
 
         envid = self.server.environment.envid
 
-        users = self.load_users(agent)
-
         stmt = \
             'SELECT id, name, repository_url, description,' +\
             ' created_at, updated_at, owner_id, project_id,' +\
@@ -260,6 +240,9 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
 
         logger.debug(data)
 
+        # Get users only if needed
+        users = None
+
         for odbcdata in ODBC.load(data):
             name = odbcdata.data['name']
             revision = odbcdata.data['revision']
@@ -276,6 +259,9 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
 
             # NOTE: id is updated with each revision.
             odbcdata.copyto(wbe, excludes=['revision'])
+
+            if not users:
+                users = self.load_users(agent)
 
             system_user_id = users.get(wbe.site_id, wbe.owner_id)
             wbe.system_user_id = system_user_id
@@ -337,7 +323,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
 
         if result.rowcount:
             logger.debug("workbooks _prune_missed_revisions pruned %d",
-                         result.rowcount)
+                           result.rowcount)
 
         return result.rowcount
 
@@ -397,6 +383,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
     @synchronized('workbook.fixup')
     def fixup(self, agent):
         if not self.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]:
+            logger.debug("Workbook archives are not enabled. Fixup not done.")
             return {u'disabled':
                     'Workbook Archives are not enabled.  Fixup not done.'}
 
@@ -416,17 +403,21 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
         session = meta.Session()
 
         count = 0
+        logger.debug("Workbook archive update count: %d\n", len(updates))
         for update in updates:
             if not self.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]:
-                logger.info("Workbook Archive disabled during fixup. " + \
-                            "Exiting for now.")
+                logger.info(
+                          "Workbook Archive disabled during fixup." + \
+                          "  Exiting for now.")
                 break
 
             if not self.server.odbc_ok():
                 logger.info("Workbook Archive Fixup: Archive build " + \
-                            "stopping due to current state")
+                          "stopping due to current state")
                 break
 
+            logger.debug("Workbook archive update refresh wid %d",
+                           update.workbookid)
             session.refresh(update)
             self._archive_wb(agent, update)
             count += 1
@@ -445,10 +436,15 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
         """
             Retrieve the twb/twbx file of an update and set the url.
         """
+        # Cache these as they may no longer be available if _build_twb
+        # fails.
+        repository_url = update.workbook.repository_url
+        revision = update.revision
+
         filename = self._build_twb(agent, update)
         if not filename:
-            logger.error('Failed to retrieve twb: %s %s',
-                         update.workbook.repository_url, update.revision)
+            logger.error('Failed to retrieve twb: %s %s', repository_url,
+                                                            revision)
             return
         update.url = agent.path.basename(filename)
         logger.debug("workbooks load: update.url: %s", filename)
@@ -475,10 +471,10 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
             # _tabcmd_get generates an event on failure.
             return None
 
-        file_type = self._get_wb_type(agent, update, dst)
-
-        if not file_type:
-            # _get_wb_type sends an event on failure
+        try:
+            file_type = self.get_archive_file_type(agent, dst)
+        except IOError as ex:
+            self._eventgen(update, error=str(ex))
             return None
 
         if file_type == 'zip':
@@ -509,41 +505,6 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
             update.fileid_twbx = place_twbx.placed_file_entry.fileid
 
         return dst_twb
-
-    def _get_wb_type(self, agent, update, dst):
-        """Inspects the 'dst' file, checks to make sure it's valid,
-           sends an event if not.
-            Returns:
-                file_type ("xml" or "zip") on success
-                None on bad type.
-       """
-        try:
-            type_body = agent.filemanager.filetype(dst)
-        except IOError as ex:
-            logger.error("get_wb_type: filetype on '%s' failed with: %s",
-                         dst, str(ex))
-            return None
-
-        if type_body['type'] == 'ZIP':
-            file_type = 'zip'
-        elif type_body['signature'][0] == ord('<') and \
-                           type_body['signature'][1] == ord('?') and \
-                           type_body['signature'][2] == ord('x') and \
-                           type_body['signature'][3] == ord('m') and \
-                           type_body['signature'][4] == ord('l'):
-            file_type = 'xml'
-        else:
-            sig = ''.join([chr(i) for i in type_body['signature']])
-            msg = ("file '%s' is an unknown " + \
-                  "type of '%s' with an invalid signature: '%s' %s.") % \
-                   (dst, type_body['type'], sig, str(type_body['signature']))
-
-            logger.error("get_wb_type: %s", msg)
-            self._eventgen(update, error=msg)
-            return None
-
-        logger.debug("get_wb_type: File '%s' is type: %s", dst, file_type)
-        return file_type
 
     def _copy_twb_to_controller(self, agent, update, dst_twb):
         """Copy the twb file from the Tableau server to the controller.
@@ -580,11 +541,20 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
                              self.clean_filename(wb_entry, update.revision) + \
                              '.twbx')
 
-        body = self.tabcmd_run(agent, update, url, dst, wb_entry.site_id,
-                                   self._remove_wbu)
+        body = self.tabcmd_run(agent, url, dst, wb_entry.site_id)
 
-        if not success(body):
+        if failed(body):
             self._eventgen(update, data=body)
+            if 'stderr' in body and '404' in body['stderr'] and \
+                                                "Not Found" in body['stderr']:
+
+                # The update was deleted before we
+                # got to it.  Subsequent attempts will also fail,
+                # so delete the update row to stop
+                # attempting to retrieve it again.
+                # Note: We didn't remove the update row until after
+                # _eventgen uses it.
+                self._remove_wbu(update)
             return None
         return dst
 
@@ -600,8 +570,9 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
                 delete()
         except NoResultFound:
             logger.error("_remove_wbu: workbook already deleted: %d",
-                         update.wuid)
+                           update.wuid)
             return
+        session.commit()
 
     def _extract_twb_from_twbx(self, agent, update, dst):
         """A twbx file is just a zipped twb + associated tde files.
@@ -619,7 +590,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
                 agent.filemanager.delete(dst)
             except IOError as ex:
                 logger.debug("Error deleting workbook dst '%s': %s",
-                             dst, str(ex))
+                                dst, str(ex))
         if failed(body):
             self._eventgen(update, data=body)
             return None

@@ -61,12 +61,12 @@ class ArchiveUpdateMixin(object):
             file_size_body = agent.filemanager.filesize(dst)
         except IOError as ex:
             logger.error("%s archive_file: filemanager.filesize('%s')" +
-                         "failed: %s", self.NAME, dst, str(ex))
+                           "failed: %s", self.NAME, dst, str(ex))
         else:
             if not success(file_size_body):
                 logger.error("%s archive_file: Failed to get size of " + \
-                             "datasource file %s: %s", dst,
-                             self.NAME, file_size_body['error'])
+                               "datasource file %s: %s", dst,
+                               self.NAME, file_size_body['error'])
             else:
                 file_size = file_size_body['size']
 
@@ -106,9 +106,7 @@ class ArchiveUpdateMixin(object):
 
         return self.server.event_control.gen(key, data, userid=userid)
 
-    def tabcmd_run(self, agent, update, url, dst, site_id,
-                   remove_update_method):
-        # pylint: disable=too-many-arguments
+    def tabcmd_run(self, agent, url, dst, site_id):
         """Does the tabcmd_run to get the datasource or workbook file.
            Returns:
                 True:   Returns dst (unchanged)
@@ -139,14 +137,7 @@ class ArchiveUpdateMixin(object):
                 continue    # try again
 
             # It failed and we have stderr.
-            if "404" in body['stderr'] and "Not Found" in body['stderr']:
-                # The update was deleted before we
-                # got to it.  Subsequent attempts will also fail,
-                # so delete the update row to stop
-                # attempting to retrieve it again.
-                remove_update_method(update)
-                return body
-            elif 'Service Unavailable' in body['stderr']:
+            if 'Service Unavailable' in body['stderr']:
                 # 503 error, retry
                 logger.debug(cmd + ' : 503 Service Unavailable, retrying')
                 continue
@@ -155,3 +146,35 @@ class ArchiveUpdateMixin(object):
                 return body
 
         return body
+
+    def get_archive_file_type(self, agent, dst):
+        """Inspects the 'dst' file, checks to make sure it's valid.
+            Returns:
+                file_type ("xml" or "zip") on success
+                raises an IOError exception on failure to recognize file type
+       """
+        try:
+            type_body = agent.filemanager.filetype(dst)
+        except IOError as ex:
+            logger.error(
+                "get_archive_file_type: filetype on '%s' failed with: %s",
+                            dst, str(ex))
+            raise IOError("Filetype on '%s' failed with: %s" % (dst, str(ex)))
+
+        if type_body['type'] == 'ZIP':
+            file_type = 'zip'
+        elif type_body['signature'][0] == ord('<') and \
+                           type_body['signature'][1] == ord('?') and \
+                           type_body['signature'][2] == ord('x') and \
+                           type_body['signature'][3] == ord('m') and \
+                           type_body['signature'][4] == ord('l'):
+            file_type = 'xml'
+        else:
+            # dst is unicode
+            msg = "file '%s' is an unknown type of " % dst
+            msg += "'%s' with an invalid signature: " % type_body['type']
+            msg += "%s" % str(type_body['signature'])
+
+            logger.error("get_archive_type: %s", msg)
+            raise IOError(msg)
+        return file_type
