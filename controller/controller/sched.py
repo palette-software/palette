@@ -49,7 +49,8 @@ class Sched(threading.Thread):
             nexttime = 61 +  now - (now % 60) # start of the minute
 
             for job in Crontab.get_ready_jobs():
-                logger.debug("JOB: %s, enabled %s", job.name, str(job.enabled))
+                logger.debug("JOB: %s, enabled %s", job.name,
+                                      str(job.enabled))
                 if not job.enabled:
                     continue
                 try:
@@ -221,8 +222,9 @@ class JobHandler(object):
 
     def __call__(self, name):
         if self.server.state_manager.upgrading():
-            logger.info("sched command will be SKIPPED due to upgrading.  "
-                        "command: %s", name)
+            logger.info(
+                "sched command will be SKIPPED due to upgrading.  "
+                "command: %s", name)
             return
 
         logger.debug("sched command: %s", name)
@@ -236,8 +238,9 @@ class JobHandler(object):
             return
 
         if not os.access(path, os.X_OK):
-            logger.debug("cmd '%s' does not have any execute bits on. " + \
-                         "Will not run.", path)
+            logger.debug(
+                "cmd '%s' does not have any execute bits on. Will not run.",
+                path)
             return
 
         cmd = [path,
@@ -258,6 +261,6 @@ class JobHandler(object):
         stdout, stderr = process.communicate()
 
         logger.debug("cmd '%s' exit status: %d, "
-                     "stdout: '%s', stderr: %s'",
-                     path, process.returncode, stdout, stderr)
+                              "stdout: '%s', stderr: '%s'",
+                              path, process.returncode, stdout, stderr)
         return

@@ -1,4 +1,5 @@
 import logging
+
 from sqlalchemy import Column, String, DateTime, Boolean, Integer, BigInteger
 from sqlalchemy import UniqueConstraint, Text
 from sqlalchemy.schema import ForeignKey
@@ -14,7 +15,7 @@ from archive_mixin import ArchiveUpdateMixin
 from mixin import BaseMixin, BaseDictMixin
 from cache import TableauCacheManager #FIXME
 from manager import synchronized
-from util import failed, success
+from util import failed
 from .system import SystemKeys
 
 from diskcheck import DiskCheck, DiskException
@@ -25,6 +26,7 @@ from sites import Site
 from projects import Project
 
 logger = logging.getLogger()
+
 
 # NOTE: system_user_id is maintained in two places.  This is not ideal from
 # a db design perspective but makes the find-by-current-owner code clearer.
@@ -114,8 +116,9 @@ class DataSourceUpdateEntry(meta.Base, BaseMixin, BaseDictMixin):
     dsid = Column(BigInteger,
                   ForeignKey("datasources.dsid", ondelete='CASCADE'))
     revision = Column(String, nullable=False)
-    fileid_tds = Column(Integer, ForeignKey("files.fileid"))
-    fileid_tdsx = Column(Integer, ForeignKey("files.fileid"))
+    fileid_tds = Column(Integer, ForeignKey("files.fileid", ondelete='CASCADE'))
+    fileid_tdsx = Column(Integer,
+                         ForeignKey("files.fileid", ondelete='CASCADE'))
     timestamp = Column(DateTime, nullable=False)
     system_user_id = Column(Integer)
     url = Column(String)  # FIXME: make this unique.
@@ -158,7 +161,6 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
 
         envid = self.server.environment.envid
 
-        users = self.load_users(agent)
 
         stmt = \
             'SELECT id, name, repository_url, owner_id,' +\
@@ -187,6 +189,9 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
 
         logger.debug(data)
 
+        # Get users only if needed
+        users = None
+
         for odbcdata in ODBC.load(data):
             name = odbcdata.data['name']
             revision = odbcdata.data['revision']
@@ -204,6 +209,8 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
             # NOTE: id is updated with each revision.
             odbcdata.copyto(dse, excludes=['revision'])
 
+            if not users:
+                users = self.load_users(agent)
             system_user_id = users.get(dse.site_id, dse.owner_id)
             dse.system_user_id = system_user_id
 
@@ -224,7 +231,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
                 updates.append(dsu)
 
             logger.debug("datasource update '%s', revision %s",
-                         name, revision)
+                            name, revision)
 
         session.commit()
 
@@ -266,7 +273,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
 
         if result.rowcount:
             logger.debug("datasource _prune_missed_revisions pruned %d",
-                         result.rowcount)
+                           result.rowcount)
 
         return result.rowcount
 
@@ -326,6 +333,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
     @synchronized('datasource.fixup')
     def fixup(self, agent):
         if not self.system[SystemKeys.DATASOURCE_ARCHIVE_ENABLED]:
+            logger.debug("Datasource archives are disabled. Fixup not done.")
             return {u'disabled':
                     'Datasource Archives are not enabled.  Fixup not done.'}
 
@@ -345,16 +353,23 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         session = meta.Session()
 
         count = 0
+
+        logger.debug("Datasource Archive update count: %d", len(updates))
+
         for update in updates:
             if not self.system[SystemKeys.DATASOURCE_ARCHIVE_ENABLED]:
-                logger.info("Datasource Archive disabled during fixup. " + \
-                            "Exiting for now.")
+                logger.info(
+                          "Datasource Archive disabled during fixup." + \
+                          "  Exiting for now.")
                 break
 
             if not self.server.odbc_ok():
                 logger.info("Datasource Archive Fixup: Archive build " + \
-                            "stopping due to current state")
+                          "stopping due to current state")
                 break
+
+            logger.debug("Datasource Archive update refresh dsid %d",
+                           update.dsid)
 
             session.refresh(update)
             self._archive_ds(agent, update)
@@ -376,11 +391,16 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         if not self._have_pcmd(agent):
             return None
 
+        # Cache these as they may no longer be available if _build_tds
+        # fails.
+        repository_url = update.datasource.repository_url
+        revision = update.revision
+
         filename = self._build_tds(agent, update)
         if not filename:
             # Generates an event on error.
-            logger.error('Failed to retrieve tdsx: %s %s',
-                         update.datasource.repository_url, update.revision)
+            logger.error('Failed to retrieve tdsx: %s %s', repository_url,
+                            revision)
             return
         update.url = agent.path.basename(filename)
         logger.debug("datasource load: update.url: %s", filename)
@@ -396,8 +416,8 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         body = agent.filemanager.listdir(agent.install_dir)
         if not required_exe in body['files']:
             logger.info("%s: Missing %s/%s.  Skipping datasource "
-                        "archiving for now.",
-                        self.NAME, agent.install_dir, required_exe)
+                          "archiving for now.", self.NAME, agent.install_dir,
+                                                required_exe)
             return False
         return True
 
@@ -414,15 +434,30 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
             return None
 
         tmpdir = dcheck.primary_dir
-        dst_tdsx = self._tabcmd_get(agent, update, tmpdir)
-        if dst_tdsx is None:
+        dst = self._tabcmd_get(agent, update, tmpdir)
+        if dst is None:
             # _tabcmd_get generates an event on failure.
             return None
 
-        dst_tds = self._extract_tds_from_tdsx(agent, update, dst_tdsx)
-        if not dst_tds:
-            # _extract_tds_from_tdsx generates an event on failure.
+        try:
+            file_type = self.get_archive_file_type(agent, dst)
+        except IOError as ex:
+            self._eventgen(update, error=str(ex))
             return None
+
+        if file_type == 'zip':
+            dst_tds = self._extract_tds_from_tdsx(agent, update, dst)
+            if not dst_tds:
+                # _extract_tds_from_tdsx generates an event on failure.
+                return None
+            dst_tdsx = dst
+        else:
+            # It is type 'xml'.
+            # Rename .tdsx to the .tds (xml) it really is.
+            dst_tds = dst[0:-1] # drop the trailing 'x'
+            agent.filemanager.move(dst, dst_tds)
+            dst_tdsx = None
+            logger.debug("datasource: renamed %s to %s", dst, dst_tds)
 
         # Pull the tds file contents over to the controller before sending the
         # file away (and deleting it on the primary if it will reside
@@ -433,7 +468,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         place = self.archive_file(agent, dcheck, dst_tds)
         update.fileid_tds = place.placed_file_entry.fileid
 
-        if self.system[SystemKeys.DATASOURCE_SAVE_TDSX]:
+        if dst_tdsx and self.system[SystemKeys.DATASOURCE_SAVE_TDSX]:
             place_tdsx = self.archive_file(agent, dcheck, dst_tdsx)
             update.fileid_tdsx = place_tdsx.placed_file_entry.fileid
 
@@ -456,11 +491,19 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
                               self.clean_filename(ds_entry, update.revision) + \
                               '.tdsx')
 
-        body = self.tabcmd_run(agent, update, url, dst, ds_entry.site_id,
-                            self._remove_dsu)
+        body = self.tabcmd_run(agent, url, dst, ds_entry.site_id)
 
-        if not success(body):
+        if failed(body):
             self._eventgen(update, data=body)
+            if 'stderr' in body and '404' in body['stderr'] and \
+                                                "Not Found" in body['stderr']:
+                # The update was deleted before we
+                # got to it.  Subsequent attempts will also fail,
+                # so delete the update row to stop
+                # attempting to retrieve it again.
+                # Note: Don't remove the update row until after
+                # _eventgen uses it.
+                self._remove_dsu(update)
             return None
         return dst
 
@@ -476,8 +519,9 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
                 delete()
         except NoResultFound:
             logger.error("_remove_dsu: datasource already deleted: %d",
-                         update.dsuid)
+                           update.dsuid)
             return
+        session.commit()
 
     def _extract_tds_from_tdsx(self, agent, update, dst_tdsx):
         """
@@ -503,7 +547,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
                 agent.filemanager.delete(dst_tdsx)
             except IOError as ex:
                 logger.debug("Error deleting datasource dst_tdsx '%s': %s",
-                             dst_tdsx, str(ex))
+                                dst_tdsx, str(ex))
         if failed(body):
             self._eventgen(update, data=body)
             return None
@@ -520,8 +564,8 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         try:
             contents = agent.filemanager.get(dst_tds)
         except IOError as ex:
-            logger.debug("Error getting datasource '%s': %s",
-                         dst_tds, str(ex))
+            logger.debug("Error getting datasource '%s': %s", dst_tds,
+                                                                str(ex))
             return None
 
         update.tds = contents
