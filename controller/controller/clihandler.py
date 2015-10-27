@@ -851,6 +851,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = self.server.workbooks.load(agent)
         elif action == 'fixup':
             body = self.server.workbooks.fixup(agent)
+        logger.debug("do_workbook result: %s", str(body))
         self.report_status(body)
 
     @usage('datasource [IMPORT|FIXUP]')
@@ -882,6 +883,7 @@ class CliHandler(socketserver.StreamRequestHandler):
             body = self.server.datasources.load(agent)
         elif action == 'fixup':
             body = self.server.datasources.fixup(agent)
+        logger.debug("do_datasource result: %s", str(body))
         self.report_status(body)
 
 
