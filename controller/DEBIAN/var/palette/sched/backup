@@ -12,9 +12,16 @@ if __name__ == "__main__":
     try:
         comm.send_cmd("ziplogs", read_response=True, skip_on_wrong_state=True)
         print "ziplogs reply:", comm.response
+    except CommException as ex:
+        print >> sys.stderr, str(ex)
 
+    try:
         comm.send_cmd("backup", read_response=True, skip_on_wrong_state=True)
         print "backup reply:", comm.response
+    except CommException as ex:
+        print >> sys.stderr, str(ex)
+
+    try:
         comm.send_cmd("cleanup", read_response=True, skip_on_wrong_state=True)
         print "cleanup data:", comm.response
     except CommException as ex:
