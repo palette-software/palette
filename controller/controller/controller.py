@@ -102,7 +102,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         else:
             auto = False    # It was requested by a specific user
 
-        min_disk_needed = agent.tableau_data_size * .3
+        min_disk_needed = 1024 * 1024
 
         # Disk space check.
         try:
@@ -1148,22 +1148,26 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         """Run tabadmin ziplogs."""
         # pylint: disable=too-many-locals
 
+        data = agent.todict()
+
         if userid == None:
             auto = True     # It is an 'automatic/scheduled' backup
         else:
             auto = False    # It was requested by a specific user
 
         # fixme: get more accurate estimate of ziplog size
-        min_disk_needed = agent.tableau_data_size * .3
+        min_disk_needed = 1024 * 1024
         # Disk space check.
         try:
             dcheck = DiskCheck(self, agent, self.LOG_DIR,
                                FileManager.FILE_TYPE_ZIPLOG, min_disk_needed)
         except DiskException, ex:
+            data['error'] = str(ex)
+            self.event_control.gen(EventControl.ZIPLOGS_FAILED,
+                                   data, userid=userid)
             self.log.error("ziplogs_cmd: %s", str(ex))
             return self.error("ziplogs_cmd: %s" % str(ex))
 
-        data = agent.todict()
         self.event_control.gen(EventControl.ZIPLOGS_STARTED,
                                data, userid=userid)
 
