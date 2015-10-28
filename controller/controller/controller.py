@@ -1170,7 +1170,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         ziplogs_name = time.strftime(self.FILENAME_FMT) + ".logs.zip"
         ziplogs_full_path = agent.path.join(dcheck.primary_dir, ziplogs_name)
         cmd = 'tabadmin ziplogs -f -l -n -a \\\"%s\\\"' % ziplogs_full_path
-        body = self.cli_cmd(cmd, agent, timeout=60*60)
+        body = self.cli_cmd(cmd, agent, timeout=60*60*3)    # 3 hours max
         body[u'info'] = unicode(cmd)
 
         if success(body):
