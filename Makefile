@@ -48,6 +48,11 @@ publish-square: $(PREBUILT_PACKAGES)
 	GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
 	chmod 600 dpkg/client/id_rsa; cd dpkg/apt; scp -r -i ../client/id_rsa -r . ubuntu@apt.palette-software.com:/var/packages/square
 
+publish-tlc: $(PREBUILT_PACKAGES)
+	make clean all
+	GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
+	chmod 600 dpkg/client/id_rsa; cd dpkg/apt; scp -r -i ../client/id_rsa -r . ubuntu@apt.palette-software.com:/var/packages/tlc
+
 $(POOL_DIR)/$(PKG1):
 	wget -N --directory-prefix=$(POOL_DIR) $(DOWNLOAD_DIR1)/$(PKG1)
 
