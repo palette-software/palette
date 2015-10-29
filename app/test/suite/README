@@ -1,0 +1,47 @@
+This test suite runs only with Firefox.
+You must first add the Selenium IDE Firefox plugin:
+
+    Navigate to:
+        http://www.seleniumhq.org/download/
+
+    Scroll down to "Selenium IDE"
+            "Selenium IDE is a Firefox plugin which records and plays back
+            user interactions with the browser. Use this to either create
+            simple scripts or assist in exploratory testing. It can also
+            export Remote Control or WebDriver scripts, though they tend
+            to be somewhat brittle and should be overhauled into some
+            sort of Page Object-y structure for any kind of resiliency."
+
+    Download the latest reeleased version (currently 2.9.0).
+
+    Firefox will protect you from installing addons from unfamiliar
+    locations, so you will need to click ‘Allow’ to proceed with
+    the installation...
+
+Start the Selenium IDE by clicking on the Firefox menu:
+    Tools-->Selenium IDE
+
+Load the test suite:
+    File-->Open Test Suite
+
+        palette/app/test/suite/testsuite
+
+At the top of the Selenium IDE, set the "Base URL" to the URL of
+your Palette test URL.
+
+Configure the tableau administrator username and password by clicking on:
+    Enable Archives (left pane)
+    type id=archive-username ...
+        change the Value at the bottom
+
+    type id=archive-password
+        change the Value at the bottom
+
+Click on the furthest left green button ("Play entire test suite").
+
+Notes:
+    There will be failures.
+    Some of the failures are due to unexpected alerts.
+
+    You can slow down the speed of the test near the upper-left corner
+    which reduces failures.
