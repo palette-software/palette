@@ -3,13 +3,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head profile="http://selenium-ide.openqa.org/profiles/test-case">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<link rel="selenium.base" href="https://192.168.2.23/" />
-<title>Datasources</title>
+<link rel="selenium.base" />
+<title>Archive: Data Sources</title>
 </head>
 <body>
 <table cellpadding="1" cellspacing="1" border="1">
 <thead>
-<tr><td rowspan="1" colspan="3">Datasources</td></tr>
+<tr><td rowspan="1" colspan="3">Archive: Data Sources</td></tr>
 </thead><tbody>
 <tr>
 	<td>click</td>
@@ -23,7 +23,17 @@
 </tr>
 <tr>
 	<td>waitForElementPresent</td>
-	<td>//button[@type='button']</td>
+	<td>//div[@id='show-dropdown']/button</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='show-dropdown']/button</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=My Data Sources</td>
 	<td></td>
 </tr>
 <tr>
@@ -38,12 +48,12 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>//button[@type='button']</td>
+	<td>xpath=(//button[@type='button'])[2]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>link=My Data Sources</td>
+	<td>link=Site</td>
 	<td></td>
 </tr>
 <tr>
@@ -53,7 +63,37 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>link=Site</td>
+	<td>link=Project</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Publisher</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Revision Date</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Data Source</td>
 	<td></td>
 </tr>
 <tr>
@@ -68,7 +108,12 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//button[@type='button'])[2]</td>
+	<td>xpath=(//button[@type='button'])[4]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=div.top-zone &gt; h1</td>
 	<td></td>
 </tr>
 <tr>
@@ -83,12 +128,22 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//button[@type='button'])[2]</td>
+	<td>css=a &gt; i.fa.fa-angle-right</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>link=Data Source</td>
+	<td>css=i.fa.fa-angle-left</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=i.fa.fa-angle-double-left</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=i.fa.fa-angle-double-right</td>
 	<td></td>
 </tr>
 </tbody></table>

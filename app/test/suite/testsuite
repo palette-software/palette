@@ -11,10 +11,18 @@
 <tr><td><a href="setup">Setup</a></td></tr>
 <tr><td><a href="general">General</a></td></tr>
 <tr><td><a href="users">Users</a></td></tr>
+<tr><td><a href="machines">Machines</a></td></tr>
+<tr><td><a href="settings">Tableau Settings</a></td></tr>
 <tr><td><a href="events">Events</a></td></tr>
-<tr><td><a href="workbooks">Workbooks</a></td></tr>
-<tr><td><a href="datasources">Datasources</a></td></tr>
+<tr><td><a href="enable_archives">Enable Archives</a></td></tr>
+<tr><td><a href="archive_workbook">Archive: Workbook</a></td></tr>
+<tr><td><a href="datasources">Archive: Data Sources</a></td></tr>
+<tr><td><a href="disable_archives">Disable Archives</a></td></tr>
 <tr><td><a href="manage">Manage</a></td></tr>
+<tr><td><a href="green_check">Green Check</a></td></tr>
+<tr><td><a href="settings">Settings</a></td></tr>
+<tr><td><a href="help">Help</a></td></tr>
+<tr><td><a href="profile">Profile</a></td></tr>
 </tbody></table>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head profile="http://selenium-ide.openqa.org/profiles/test-case">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<link rel="selenium.base" href="https://192.168.2.23/" />
+<link rel="selenium.base" />
 <title>General</title>
 </head>
 <body>
@@ -13,7 +13,7 @@
 </thead><tbody>
 <tr>
 	<td>open</td>
-	<td>/configure/general</td>
+	<td>/configure/setup</td>
 	<td></td>
 </tr>
 <tr>
@@ -23,12 +23,12 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>link=Configuration</td>
+	<td>//li[5]/a/span</td>
 	<td></td>
 </tr>
 <tr>
 	<td>clickAndWait</td>
-	<td>//li[4]/ul/li[2]/a/span</td>
+	<td>link=General</td>
 	<td></td>
 </tr>
 <tr>
@@ -53,7 +53,52 @@
 </tr>
 <tr>
 	<td>click</td>
+	<td>id=test-s3</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
 	<td>id=save-s3</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=remove-s3</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=storage-gcs</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=gcs-access-key</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=gcs-secret-key</td>
+	<td>/13</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=gcs-url</td>
+	<td>palette-test-bucket</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=test-gcs</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-gcs</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=remove-gcs</td>
 	<td></td>
 </tr>
 <tr>
@@ -67,23 +112,23 @@
 	<td></td>
 </tr>
 <tr>
-	<td>click</td>
-	<td>id=storage-s3</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>id=storage-local</td>
-	<td></td>
-</tr>
-<tr>
 	<td>waitForElementPresent</td>
-	<td>//span[@id='alert-admins']/label/span</td>
+	<td>css=span.onoffswitch-inner</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>//span[@id='alert-admins']/label/span</td>
+	<td>css=span.onoffswitch-inner</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-email-alerts</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#alert-publishers &gt; label.onoffswitch-label &gt; span.onoffswitch-switch</td>
 	<td></td>
 </tr>
 <tr>
@@ -98,7 +143,7 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>link=5</td>
+	<td>link=2</td>
 	<td></td>
 </tr>
 <tr>
@@ -108,7 +153,7 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//a[contains(text(),'6')])[3]</td>
+	<td>xpath=(//a[contains(text(),'2')])[5]</td>
 	<td></td>
 </tr>
 <tr>
@@ -148,7 +193,7 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//a[contains(text(),'6')])[4]</td>
+	<td>xpath=(//a[contains(text(),'2')])[8]</td>
 	<td></td>
 </tr>
 <tr>
@@ -158,7 +203,7 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//a[contains(text(),'8')])[4]</td>
+	<td>xpath=(//a[contains(text(),'2')])[11]</td>
 	<td></td>
 </tr>
 <tr>
@@ -173,7 +218,7 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//a[contains(text(),'2')])[9]</td>
+	<td>css=#ziplog-auto-retain-count &gt; ul.dropdown-menu &gt; li &gt; a</td>
 	<td></td>
 </tr>
 <tr>
@@ -183,57 +228,12 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//a[contains(text(),'3')])[4]</td>
+	<td>css=#ziplog-user-retain-count &gt; ul.dropdown-menu &gt; li &gt; a</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
 	<td>id=save-ziplogs</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>xpath=(//button[@type='button'])[22]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>link=30 minutes</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>xpath=(//button[@type='button'])[23]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>xpath=(//a[contains(text(),'1 hour')])[2]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>xpath=(//button[@type='button'])[24]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>link=5 minutes</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>xpath=(//button[@type='button'])[25]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>xpath=(//a[contains(text(),'10 minutes')])[4]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>id=save-extracts</td>
 	<td></td>
 </tr>
 <tr>
@@ -273,17 +273,72 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>//section[@id='extracts']/p[4]</td>
+	<td>xpath=(//a[contains(text(),'10 minutes')])[4]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>id=save-extracts</td>
+	<td>css=#extracts &gt; div.save-cancel &gt; button.save</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=#workbook-archive-enabled &gt; label.onoffswitch-label &gt; span.onoffswitch-inner</td>
+	<td>xpath=(//button[@type='button'])[22]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Do Not Monitor</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[23]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#extract-delay-error &gt; ul.dropdown-menu &gt; li &gt; a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[24]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#extract-duration-warn &gt; ul.dropdown-menu &gt; li &gt; a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[25]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#extract-duration-error &gt; ul.dropdown-menu &gt; li &gt; a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[28]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'3')])[11]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[29]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'2')])[22]</td>
 	<td></td>
 </tr>
 <tr>
@@ -298,32 +353,52 @@
 </tr>
 <tr>
 	<td>click</td>
+	<td>xpath=(//button[@type='button'])[28]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'3')])[12]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[29]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'2')])[22]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=archive-username</td>
+	<td>administrator</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=archive-password</td>
+	<td>tableau!2014</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-archives</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#workbook-archive-enabled &gt; label.onoffswitch-label &gt; span.onoffswitch-inner</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
 	<td>css=#datasource-archive-enabled &gt; label.onoffswitch-label &gt; span.onoffswitch-inner</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//button[@type='button'])[32]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>link=55%</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>xpath=(//button[@type='button'])[33]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>xpath=(//a[contains(text(),'55%')])[2]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>id=save-monitors</td>
+	<td>id=save-archives</td>
 	<td></td>
 </tr>
 <tr>
@@ -343,7 +418,22 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//a[contains(text(),'85%')])[2]</td>
+	<td>xpath=(//button[@type='button'])[32]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=85%</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[33]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'90%')])[2]</td>
 	<td></td>
 </tr>
 <tr>
@@ -353,7 +443,7 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//a[contains(text(),'70%')])[3]</td>
+	<td>xpath=(//a[contains(text(),'50%')])[3]</td>
 	<td></td>
 </tr>
 <tr>
@@ -363,17 +453,7 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>link=3 minutes</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>xpath=(//button[@type='button'])[35]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>link=1 minute</td>
+	<td>link=2 minutes</td>
 	<td></td>
 </tr>
 <tr>
@@ -383,7 +463,7 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//a[contains(text(),'85%')])[4]</td>
+	<td>xpath=(//a[contains(text(),'65%')])[4]</td>
 	<td></td>
 </tr>
 <tr>
@@ -393,7 +473,7 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//a[contains(text(),'2 minutes')])[2]</td>
+	<td>xpath=(//a[contains(text(),'3 minutes')])[2]</td>
 	<td></td>
 </tr>
 <tr>
@@ -428,7 +508,77 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>link=80%</td>
+	<td>css=#disk-watermark-low &gt; ul.dropdown-menu &gt; li &gt; a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[33]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#disk-watermark-high &gt; ul.dropdown-menu &gt; li &gt; a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[34]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#cpu-load-warn &gt; ul.dropdown-menu &gt; li &gt; a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[35]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#cpu-period-warn &gt; ul.dropdown-menu &gt; li &gt; a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[36]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#cpu-load-error &gt; ul.dropdown-menu &gt; li &gt; a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[37]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#cpu-period-error &gt; ul.dropdown-menu &gt; li &gt; a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[38]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#http-load-warn &gt; ul.dropdown-menu &gt; li &gt; a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[39]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#http-load-error &gt; ul.dropdown-menu &gt; li &gt; a</td>
 	<td></td>
 </tr>
 <tr>
@@ -436,7 +586,6 @@
 	<td>id=save-monitors</td>
 	<td></td>
 </tr>
-
 </tbody></table>
 </body>
 </html>

@@ -4,187 +4,161 @@
 <head profile="http://selenium-ide.openqa.org/profiles/test-case">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="selenium.base" />
-<title>Setup</title>
+<title>Archive: Workbook</title>
 </head>
 <body>
 <table cellpadding="1" cellspacing="1" border="1">
 <thead>
-<tr><td rowspan="1" colspan="3">Setup</td></tr>
+<tr><td rowspan="1" colspan="3">Archive: Workbook</td></tr>
 </thead><tbody>
-<!--Requirement: Start with Archives disabled-->
 <tr>
-	<td>open</td>
-	<td>/</td>
+	<td>click</td>
+	<td>link=Archive</td>
 	<td></td>
 </tr>
 <tr>
 	<td>clickAndWait</td>
-	<td>link=Events</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>//li[5]/a/span</td>
-	<td></td>
-</tr>
-<tr>
-	<td>clickAndWait</td>
-	<td>link=Setup</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>xpath=(//button[@type='button'])[7]</td>
+	<td>//li[2]/ul/li/a/span</td>
 	<td></td>
 </tr>
 <tr>
 	<td>waitForElementPresent</td>
-	<td>link=Direct SMTP Mail Server (Default)</td>
+	<td>//button[@type='button']</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>link=Direct SMTP Mail Server (Default)</td>
-	<td></td>
-</tr>
-<tr>
-	<td>type</td>
-	<td>id=alert-email-address</td>
-	<td>alerts@palette-software.com</td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>id=save-mail</td>
+	<td>//button[@type='button']</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//button[@type='button'])[7]</td>
+	<td>link=My Workbooks</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>link=Relay SMTP Mail Server Settings</td>
-	<td></td>
-</tr>
-<tr>
-	<td>type</td>
-	<td>id=smtp-username</td>
-	<td>mailservice@palette-software.com</td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>id=save-mail</td>
+	<td>//button[@type='button']</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//button[@type='button'])[7]</td>
+	<td>link=All Workbooks</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>link=None</td>
+	<td>xpath=(//button[@type='button'])[2]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>id=save-mail</td>
+	<td>link=Site</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//button[@type='button'])[7]</td>
+	<td>xpath=(//button[@type='button'])[2]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=div.row</td>
+	<td>link=Project</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=span.onoffswitch-inner</td>
+	<td>xpath=(//button[@type='button'])[2]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=span.onoffswitch-inner</td>
+	<td>link=Publisher</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//button[@type='button'])[13]</td>
+	<td>xpath=(//button[@type='button'])[2]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>link=US/Eastern</td>
+	<td>link=Revision Date</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>id=save-tz</td>
+	<td>xpath=(//button[@type='button'])[2]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//button[@type='button'])[13]</td>
+	<td>link=Workbook</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>link=US/Pacific</td>
+	<td>xpath=(//button[@type='button'])[3]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>id=save-tz</td>
+	<td>link=Default</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//button[@type='button'])[16]</td>
+	<td>xpath=(//button[@type='button'])[3]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>link=Active Directory</td>
+	<td>css=div.top-zone &gt; h1</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>id=save-auth</td>
+	<td>xpath=(//button[@type='button'])[4]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//button[@type='button'])[16]</td>
+	<td>css=div.top-zone &gt; h1</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>link=Tableau Local Authentication</td>
+	<td>xpath=(//button[@type='button'])[3]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>id=save-auth</td>
+	<td>link=All Sites</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//button[@type='button'])[16]</td>
+	<td>css=i.fa.fa-angle-left</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>link=Tableau Server's Configured Authentication</td>
+	<td>css=a &gt; i.fa.fa-angle-right</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>id=save-auth</td>
+	<td>css=i.fa.fa-angle-double-right</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=i.fa.fa-angle-double-left</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
 	<td></td>
 </tr>
 </tbody></table>

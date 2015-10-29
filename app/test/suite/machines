@@ -4,21 +4,21 @@
 <head profile="http://selenium-ide.openqa.org/profiles/test-case">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="selenium.base" />
-<title>Users</title>
+<title>Machines</title>
 </head>
 <body>
 <table cellpadding="1" cellspacing="1" border="1">
 <thead>
-<tr><td rowspan="1" colspan="3">Users</td></tr>
+<tr><td rowspan="1" colspan="3">Machines</td></tr>
 </thead><tbody>
 <tr>
 	<td>open</td>
-	<td>/configure/general</td>
+	<td>/configure/users</td>
 	<td></td>
 </tr>
 <tr>
 	<td>clickAndWait</td>
-	<td>css=ul.actions &gt; li &gt; a &gt; span</td>
+	<td>link=Events</td>
 	<td></td>
 </tr>
 <tr>
@@ -28,12 +28,7 @@
 </tr>
 <tr>
 	<td>clickAndWait</td>
-	<td>link=Users</td>
-	<td></td>
-</tr>
-<tr>
-	<td>waitForElementPresent</td>
-	<td>id=user-list</td>
+	<td>link=Machines</td>
 	<td></td>
 </tr>
 <tr>
@@ -48,7 +43,22 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=span.onoffswitch-inner</td>
+	<td>//div[@id='server-detail']/article/div/div/div/h3/span/i</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=input[type=&quot;text&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='server-detail']/article/div/div/div[2]/div/span[2]/i</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=div.col2 &gt; div</td>
 	<td></td>
 </tr>
 <tr>
@@ -58,17 +68,12 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>//button[@type='button']</td>
+	<td>css=span.onoffswitch-inner</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>link=Super Admin</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>css=div.col2 &gt; h3</td>
+	<td>css=input[type=&quot;text&quot;]</td>
 	<td></td>
 </tr>
 </tbody></table>

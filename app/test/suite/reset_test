@@ -4,16 +4,17 @@
 <head profile="http://selenium-ide.openqa.org/profiles/test-case">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="selenium.base" />
-<title>Users</title>
+<title>Disable Archives</title>
 </head>
 <body>
 <table cellpadding="1" cellspacing="1" border="1">
 <thead>
-<tr><td rowspan="1" colspan="3">Users</td></tr>
+<tr><td rowspan="1" colspan="3">Disable Archives</td></tr>
 </thead><tbody>
+<!--This disables workbook and datasource archiving so it can be re-enabled on the next test.-->
 <tr>
-	<td>open</td>
-	<td>/configure/general</td>
+	<td>selectWindow</td>
+	<td>null</td>
 	<td></td>
 </tr>
 <tr>
@@ -23,54 +24,35 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>//li[5]/a/span</td>
+	<td>//li[4]/a/span</td>
 	<td></td>
 </tr>
 <tr>
 	<td>clickAndWait</td>
-	<td>link=Users</td>
+	<td>//li[4]/ul/li[2]/a/span</td>
 	<td></td>
 </tr>
 <tr>
 	<td>waitForElementPresent</td>
-	<td>id=user-list</td>
-	<td></td>
-</tr>
-<tr>
-	<td>waitForElementPresent</td>
-	<td>css=div.col2 &gt; h3</td>
+	<td>css=#workbook-archive-enabled &gt; label.onoffswitch-label &gt; span.onoffswitch-inner</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=div.col2 &gt; h3</td>
+	<td>css=#workbook-archive-enabled &gt; label.onoffswitch-label &gt; span.onoffswitch-inner</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=span.onoffswitch-inner</td>
+	<td>css=#datasource-archive-enabled &gt; label.onoffswitch-label &gt; span.onoffswitch-switch</td>
 	<td></td>
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=span.onoffswitch-inner</td>
+	<td>id=save-archives</td>
 	<td></td>
 </tr>
-<tr>
-	<td>click</td>
-	<td>//button[@type='button']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>link=Super Admin</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>css=div.col2 &gt; h3</td>
-	<td></td>
-</tr>
+
 </tbody></table>
 </body>
 </html>
