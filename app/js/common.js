@@ -3,9 +3,9 @@
  * templates and should be named accordingly.
  */
 
-define(['jquery', 'topic', 'items', 'paging', 'Dropdown',
-        'plugin', 'modal'],
-function ($, topic, items, paging, Dropdown)
+define(['jquery', 'topic', 'paging', 'Dropdown',
+        'plugin', 'modal', 'items'],
+function ($, topic, paging, Dropdown)
 {
     /* MONITOR TIMER */
     var interval = 1000; // milliseconds
@@ -411,8 +411,6 @@ function ($, topic, items, paging, Dropdown)
         if (paging.getPageNumber() > 1) {
             eventFilter.liveUpdate = false;
         }
-
-        items.bind();
 
         setupEventDropdowns();
         paging.bind(eventPageCallback);

@@ -1,6 +1,5 @@
-require(['jquery', 'common', 'paging', 'items',
-         'Dropdown', 'EditBox', 'bootstrap'],
-function ($, common, paging, items, Dropdown, EditBox)
+require(['jquery', 'common', 'paging', 'Dropdown', 'EditBox'],
+function ($, common, paging, Dropdown, EditBox)
 {
     /*
      * siteDropdownCallback()
@@ -52,7 +51,6 @@ function ($, common, paging, items, Dropdown, EditBox)
         if (populated) {
             $(".filter-dropdowns").removeClass('hidden');
             $('#workbook-list').render('workbook-list-template', data);
-            items.bind();
         } else {
             $(".filter-dropdowns").addClass('hidden');
             if (publisher_only) {

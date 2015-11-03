@@ -21,7 +21,7 @@
 <script id="server-detail-template" type="x-tmpl-mustache">
   {{#servers}}
   <article class="item">
-    <div class="summary clearfix">
+    <div class="summary clearfix" data-toggle="item">
       <i class="fa fa-fw fa-laptop"></i>
       <div>
         <div class="col2">

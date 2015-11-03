@@ -1,4 +1,4 @@
-define("items", ['jquery'],
+define(['jquery'],
 function($)
 {
     /*
@@ -16,5 +16,10 @@ function($)
         });
     }
 
-    return {'bind': bind}
+    $(document).on('click.item.data-api', '[data-toggle="item"]', function (evt) {
+        var $item = $(this).closest(".item");
+        $item.toggleClass('open');
+        /* fixme */
+        $('i.expand', $item).toggleClass("fa-angle-up fa-angle-down");
+    });
 });

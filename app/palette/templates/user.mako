@@ -30,7 +30,7 @@
 
 <script id="user-list-template" type="x-tmpl-mustache">
   {{#users}}
-  <article class="item">
+  <article class="item" data-toggle="item">
     <div class="summary clearfix">
       <i class="fa fa-fw fa-user"></i>
       <div>

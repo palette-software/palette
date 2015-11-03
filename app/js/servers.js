@@ -1,5 +1,5 @@
-require(['jquery', 'common', 'items', 'EditBox', 'OnOff'],
-function ($, common, items, EditBox, OnOff)
+require(['jquery', 'common', 'EditBox', 'OnOff'],
+function ($, common, EditBox, OnOff)
 {
     function change() {
         var node = $(this).get(0);
@@ -28,8 +28,6 @@ function ($, common, items, EditBox, OnOff)
             }
 
             $('#server-detail').render('server-detail-template', data);
-            items.bind();
-
             EditBox.bind('.editbox.displayname');
             EditBox.bind('.editbox.environment', function(value) {
                 $('.editbox.environment >span').html(value);
