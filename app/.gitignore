@@ -5,6 +5,11 @@
 /data
 /*.ini
 /bootstrap-*
+bootstrap.js
+bootstrap.min.js
 /downloads
 /node_modules
+font-awesome-*
+fontawesome-*
+FontAwesome.otf
 webapp.log

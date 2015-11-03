@@ -8,7 +8,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 
 <%include file="favicon.mako" />
-<link rel="stylesheet" type="text/css" href="/css/font-awesome.min.css">
 <link rel="stylesheet" type="text/css" href="/fonts/fonts.css">
 <link rel="stylesheet" type="text/css" href="/css/style.css" media="screen">
 

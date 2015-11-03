@@ -25,7 +25,7 @@
           <h3>{{title}}</h3>
           <p>{{summary}}</p>
         </div>
-        <i class="fa fa-fw fa-angle-down expand"></i>
+        <i class="expand"></i>
       </div>
       <div class="description">{{{description}}}</div>
     </article>

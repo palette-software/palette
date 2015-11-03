@@ -4,7 +4,7 @@
  */
 
 define(['jquery', 'topic', 'paging', 'Dropdown',
-        'plugin', 'modal', 'items'],
+        'plugin', 'modal', 'sidebar', 'items'],
 function ($, topic, paging, Dropdown)
 {
     /* MONITOR TIMER */
@@ -116,6 +116,7 @@ function ($, topic, paging, Dropdown)
      /*
      * bindStatus()
      * Make the clicking on the status box show the server list.
+     * fixme: move to sidebar.js
      */
     function bindStatus() {
         $('.main-side-bar .status').off('click');
@@ -238,26 +239,6 @@ function ($, topic, paging, Dropdown)
                 paging.set(1);
                 resetPoll();
             });
-        });
-    }
-
-    /*
-     * setupCategories
-     * Enable the configure expansion item on main sidebar.
-     */
-    function setupCategories() {
-        $('.expand').parent().off('click');
-        $('.expand').parent().bind('click', function(event) {
-            event.preventDefault();
-            if ($('.expand', this).hasClass('fa-angle-down')) {
-                $('.expand', this).removeClass('fa-angle-down');
-                $('.expand', this).addClass('fa-angle-up');
-                $(this).parent().find('ul').addClass('visible');
-            } else {
-                $('.expand', this).removeClass('fa-angle-up');
-                $('.expand', this).addClass('fa-angle-down');
-                $(this).parent().find('ul').removeClass('visible');
-            }                
         });
     }
 
@@ -645,7 +626,6 @@ function ($, topic, paging, Dropdown)
     /* Code run automatically when 'common' is included */
     $().ready(function() {
         setupHeaderMenus();
-        setupCategories();
     });
 
     return {'startMonitor': startMonitor,

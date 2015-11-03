@@ -34,7 +34,7 @@ clean:
 .PHONY: pylint
 
 realclean: clean
-	rm -rf bootstrap-* downloads node_modules
+	rm -rf bootstrap-* font-awesome-* downloads node_modules
 .PHONY: realclean
 
 setup:
