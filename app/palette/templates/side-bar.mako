@@ -17,22 +17,22 @@
         <i class="fa fa-fw fa-clock-o"></i><span>Events</span>
       </a>
     </li>
-    <li class="category">
-      <a href="/workbook/archive">
+    <li class="category ${obj.archive and 'open' or ''}">
+      <a data-toggle="category">
         <i class="fa fa-fw fa-copy"></i><span>Archive</span>
-        <i class="fa fa-fw fa-angle-${obj.archive and 'up' or 'down'} expand"></i>
+        <i class="expand"></i>
       </a>
-      <ul ${obj.archive and 'class="visible"' or ''}>
+      <ul>
         <li ${obj.active=='workbook-archive' and 'class="active"' or ''}>
           <a href="/workbook/archive">
             <i class="fa fa-fw"></i><span>Workbooks</span>
           </a>
         </li>
-	<li ${obj.active=='datasource-archive' and 'class="active"' or ''}>
-	  <a href="/datasource/archive">
+        <li ${obj.active=='datasource-archive' and 'class="active"' or ''}>
+          <a href="/datasource/archive">
             <i class="fa fa-fw"></i><span>Data Sources</span>
-	  </a>
-	</li>
+          </a>
+        </li>
       </ul>
     </li>
 %if req.remote_user.roleid > req.remote_user.role.NO_ADMIN:
@@ -46,12 +46,12 @@
         <i class="fa fa-fw fa-support"></i><span>Tableau Support</span>
       </a>
     </li>
-    <li class="category">
-      <a>
+    <li class="category ${obj.expanded and 'open' or ''}">
+      <a data-toggle="category">
         <i class="fa fa-fw fa-cog"></i><span>Configuration</span>
-        <i class="fa fa-fw fa-angle-${obj.expanded and 'up' or 'down'} expand"></i>
+        <i class="expand"></i>
       </a>
-      <ul ${obj.expanded and 'class="visible"' or ''}>
+      <ul>
 %if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:
         <li ${obj.active=='setup' and 'class="active"' or ''}>
           <a href="/configure/setup">

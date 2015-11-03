@@ -15,9 +15,19 @@ i.tableau {
     margin: 13px 14px 13px 17px !important;
 }
 i.expand {
+    .fa;
+    .fa-fw;
     position: absolute;
     right: 0;
     color: white;
     font-size: 26px !important;
     clear: none !important;
+
+    &:before {
+        content: @fa-var-angle-down;
+    }
+}
+
+.open i.expand:before {
+    content: @fa-var-angle-up;
 }
