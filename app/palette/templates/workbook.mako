@@ -37,7 +37,7 @@
 <script id="workbook-list-template" type="x-tmpl-mustache">
   {{#workbooks}}
   <article class="item">
-    <div class="summary clearfix">
+    <div class="summary clearfix" data-toggle="item">
       <i class="fa fa-fw fa-book {{color}}"></i>
       <div>
         <div class="col2">

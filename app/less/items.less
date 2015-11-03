@@ -15,13 +15,16 @@
     transition: all 0.3s ease-in;
     position: relative;
     overflow: hidden;
+    border: 1px solid @item-border;
+
+    &:hover {
+	background-color: @item-color-hover;
+    }
 }
 .item.open {
     height: auto;
 }
-.item:hover {
-    background-color: #e1e1e1;
-}
+
 .item .summary > i, article.item .summary > span > i {
     float: left;
     width: 60px;

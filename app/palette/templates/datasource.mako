@@ -37,7 +37,7 @@
 <script id="datasource-list-template" type="x-tmpl-mustache">
   {{#datasources}}
   <article class="item">
-    <div class="summary clearfix">
+    <div class="summary clearfix" data-toggle="item">
       <i class="fa fa-fw fa-database {{color}}"></i>
       <div>
         <div class="col2">

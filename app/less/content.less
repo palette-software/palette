@@ -15,10 +15,6 @@
     height: 100%;
     padding: 0 15px 72px 19px;
 }
-.dynamic-content a, .dynamic-content a:hover {
-    color: #697078; /* FIXME */
-    text-decoration: underline;
-}
 .dynamic-content.with-secondary-sidebar {
     left: 550px;
 
@@ -47,25 +43,6 @@
 	}
     }
 }
-
-/*
-.dynamic-content.collapsed.servers-visible {
-    left: 550px;
-}
-*
-/*
-.dynamic-content.servers-visible.collapsed {
-    left: 660px;
-}
-*/
-/*
-.btn-group>.btn, .btn-group-vertical>.btn {
-    padding-right: 30px;
-}
-.dynamic-content .top-zone .btn-group:first-of-type {
-    margin-left: 0;
-}
-*/
 .dynamic-content .key, .dynamic-content .label {
     display: inline;
     font-family: @font-family-bold;
@@ -86,8 +63,8 @@
 }
 // letter bar e.g. users page
 .dynamic-content .letters a {
+    color: @text-color;
     cursor: pointer;
-    text-decoration: none;
 }
 
 .letters {

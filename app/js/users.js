@@ -1,6 +1,5 @@
-require(['jquery', 'topic', 'common', 'items',
-         'Dropdown', 'OnOff', 'bootstrap', 'lightbox'],
-function ($, topic, common, items, Dropdown, OnOff)
+require(['jquery', 'topic', 'common', 'Dropdown', 'OnOff', 'lightbox'],
+function ($, topic, common, Dropdown, OnOff)
 {
     var LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -60,7 +59,6 @@ function ($, topic, common, items, Dropdown, OnOff)
             $('#user-list').render('user-list-template', data);
             setup_letters(total);
 
-            items.bind();
             Dropdown.bind('.admin-type', data['admin-levels'], ddCallback);
             $('.admin-type').each(function() {
                 var dd = $(this).data();
