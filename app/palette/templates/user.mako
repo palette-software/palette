@@ -5,8 +5,8 @@
 <title>Palette - User Configuration</title>
 </%block>
 
-<div class="dynamic-content">
-  <div class="scrollable">
+<div class="content">
+  <div>
     <div class="top-zone">
       <div class="refresh">
         <p>
@@ -26,7 +26,7 @@
       </div>
     </div> <!-- bottom-zone -->
   </div>
-</div>
+</div> <!-- content -->
 
 <script id="user-list-template" type="x-tmpl-mustache">
   {{#users}}

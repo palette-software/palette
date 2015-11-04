@@ -2,9 +2,9 @@
 <%inherit file="layout.mako" />
 
 <body>
-<%include file="mainnav.mako" />
+<%include file="navbar.mako" />
 
-<div class="container-fluid">
+<div class="container-webapp">
 
 <%include file="side-bar.mako" />
 
@@ -17,7 +17,8 @@
 </section>
 
 ${next.body()}
-</div>
+
+</div> <!-- container-webapp -->
 
 <script id="server-list-template" type="x-tmpl-mustache">
   {{#environments}}

@@ -6,6 +6,7 @@
 @border-radius-base:     0;
 @border-radius-large:    0;
 @border-radius-small:    0;
+@border-color:           #EBEBEB;
 
 @padding-base-horizontal:  10px;
 
@@ -13,12 +14,18 @@
 
 // colors
 @blue:                   #5AC0DC;
-@orange:                 #FC7E6F;
+//@orange:                 #FC7E6F;
 @red:                    #EF5557;
 @yellow:                 #DC994C;
 @green:                  #76E259;
 @light-blue:             #00C2E8;
+@blue-gray:              #57A4BC;
 @gray:                   #8D96A3;
+@light-gray:             #80858D;
+@light-salmon:           #F69586;
+@salmon:                  #F47d70;
+
+@brand-primary:          @light-blue;
 
 @state-danger-text:      @red;
 @state-danger-border:    @red;
@@ -34,6 +41,7 @@
 @font-family-light:      "Proxima Nova light","Helvetica Neue",Helvetica,Arial,sans-serif;
 @font-family-bold:       "Proxima Nova semibold","Helvetica Neue",Helvetica,Arial,sans-serif;
 
+@font-size-base:          16px;
 @font-size-h1:            35px;
 @font-size-h2:            17px;
 @font-size-h3:            16px;
@@ -63,6 +71,7 @@
 
 // nav
 @navbar-default-bg:       @body-bg;
+@navbar-height:           60px;
 
 // header (mainNav)
 @header-line-height:          60px;
@@ -70,12 +79,13 @@
 @header-height:               (@header-line-height + @header-bottom-border-width);
 
 // sidebar
-// @sidebar-width:
+@sidebar-width:           250px;
+@sidebar-width-secondary: 300px;
 
 // items
 @item-color:              #f6f6f6;
 @item-color-hover:        #ededed;
-@item-border:             #ebebeb;
+@item-border:             @border-color;
 
 // top-zone
 @top-zone-margin-bottom:  14px;  // FIXME: merge into the top-zone class.

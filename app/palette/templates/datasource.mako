@@ -5,8 +5,8 @@
 <title>Palette - Data Source Archive</title>
 </%block>
 
-<div class="dynamic-content datasource-page">
-  <div class="scrollable">
+<div class="content datasource-page">
+  <div>
     <div class="top-zone">
       <%include file="paging.mako" args="name='Data Sources'" />
       <h1>Data Source Archive</h1>
@@ -32,7 +32,7 @@
       </div>
     </div> <!-- bottom-zone -->
   </div>
-</div>
+</div> <!-- content -->
 
 <script id="datasource-list-template" type="x-tmpl-mustache">
   {{#datasources}}

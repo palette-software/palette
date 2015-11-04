@@ -46,43 +46,6 @@
         <i class="fa fa-fw fa-support"></i><span>Tableau Support</span>
       </a>
     </li>
-    <li class="category ${obj.expanded and 'open' or ''}">
-      <a data-toggle="category">
-        <i class="fa fa-fw fa-cog"></i><span>Configuration</span>
-        <i class="expand"></i>
-      </a>
-      <ul>
-%if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:
-        <li ${obj.active=='setup' and 'class="active"' or ''}>
-          <a href="/configure/setup">
-            <i class="fa fa-fw"></i><span>Setup</span>
-          </a>
-        </li>
-%endif
-%if req.remote_user.roleid > req.remote_user.role.READONLY_ADMIN:
-        <li ${obj.active=='general' and 'class="active"' or ''}>
-          <a href="/configure/general">
-            <i class="fa fa-fw"></i><span>General</span>
-          </a>
-        </li>
-%endif
-        <li ${obj.active=='users' and 'class="active"' or ''}>
-          <a href="/configure/users">
-            <i class="fa fa-fw"></i><span>Users</span>
-          </a>
-        </li>
-        <li ${obj.active=='servers' and 'class="active"' or ''}>
-          <a href="/configure/servers">
-            <i class="fa fa-fw"></i><span>Machines</span>
-          </a>
-        </li>
-        <li  ${obj.active=='yml' and 'class="active"' or ''}>
-          <a href="/configure/yml">
-            <i class="fa fa-fw"></i><span>Tableau Settings</span>
-          </a>
-        </li>
-      </ul>
-    </li>
 %endif
   </ul>
 </section>

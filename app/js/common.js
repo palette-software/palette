@@ -475,32 +475,31 @@ function ($, topic, paging, Dropdown)
 
         /* FIXME: break above into separate monitorUpdateStatus() function. */
 
-        if (data['nav-message'] != null) {
-            $('#mainNav .message').html(data['nav-message']);
-        } else if (data['trial-days'] != null) {
-            var msg = 'Trial Status: <span class="highlight">';
-            if (data['trial-days'] == 1) {
-                msg += '1 Day Remaining';
+        if (data['trial-days'] != null) {
+            var trial_days = data['trial-days'];
+            if (trial_days == 1) {
+                var msg = '1 Day Remaining';
             } else {
-                msg += data['trial-days']+' Days Remaining';
+                var msg = data['trial-days']+' Days Remaining';
             }
-            msg += '</span>';
-            $('#mainNav .message').html(msg);
-        } else {
-            $('#mainNav .message').html('');
-        }
+            $('.navbar-announcement .trial-status').html(msg);
+            if (trial_days <= 3) {
+                $('.navbar-announcement').addClass('urgent');
+            }
 
-        if (data['trial-days'] == null) {
-            $('#mainNav li.buy').addClass('hidden');
+
+            var url = data['buy-url'];
+            $('.navbar-announcement .trial-subscribe a').prop('href', url);
+            $('.navbar-announcement').height("37px");
+
+            /* this makes the content scrollbar work properly */
+            var margin = $(".navbar").height() + 37;
+            $('.content').css("margin-bottom", margin.toString() + "px");
         } else {
-            $('#mainNav li.buy').removeClass('hidden');
-            if (data['trial-days'] <= 3) {
-                $('#mainNav li.buy, #mainNav .message').addClass('urgent');
-            } else {
-                $('#mainNav li.buy, #mainNav .message').removeClass('urgent');
-            }
+            $('.navbar-announcement').remove();
+            var margin = $(".navbar").height();
+            $('.content').css("margin-bottom", margin.toString() + "px");
         }
-        $('#mainNav li.buy a').prop('href', data['buy-url']);
 
         if (data['environments'] != null) {
             var envs = data['environments'];

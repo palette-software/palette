@@ -5,8 +5,8 @@
 <title>Palette - Profile</title>
 </%block>
 
-<div class="dynamic-content profile-page">
-  <div class="scrollable">
+<div class="content profile-page">
+  <div>
     <div class="top-zone">
       <h1>Profile</h1>
     </div>
@@ -43,7 +43,7 @@
       </div>
     </div> <!-- bottom-zone -->
   </div>
-</div>
+</div> <!-- content -->
 
 <script src="/js/vendor/require.js" data-main="/js/profile.js">
 </script>
