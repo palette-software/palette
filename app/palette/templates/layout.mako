@@ -11,7 +11,6 @@
 <link rel="stylesheet" type="text/css" href="/fonts/fonts.css">
 <link rel="stylesheet" type="text/css" href="/css/style.css" media="screen">
 
-
 <%block name="title">
 <title>Palette</title>
 </%block>

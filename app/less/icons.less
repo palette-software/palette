@@ -1,3 +1,8 @@
+i {
+    .fa;
+    .fa-fw;
+}
+    
 i.help {
     color: #c1c1c1;
     float: right;
@@ -6,6 +11,7 @@ i.help {
     -webkit-text-stroke-width: 1px;
     -webkit-text-stroke-color: #BDBDBD;
 }
+
 i.tableau {
     background:url(/images/tableau.svg);
     background-repeat: no-repeat;
@@ -31,3 +37,22 @@ i.expand {
 .open i.expand:before {
     content: @fa-var-angle-up;
 }
+
+i.config-menu {
+    &:before {
+        content: @fa-var-cog;
+    }
+}
+
+i.help-menu {
+    &:before {
+        content: @fa-var-question-circle;
+    }
+}
+
+i.user-menu {
+    &:before {
+        content: @fa-var-user;
+    }
+}
+

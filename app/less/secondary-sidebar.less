@@ -1,25 +1,21 @@
 /* FIXME: clean this up... */
 .secondary-side-bar {
+    position: absolute;
     height: 100%;
     display: block;
-    position: fixed;
-    top: @header-height;
+    top: 0;
     left: 250px;
     width: 300px;
     background-color: #555A60;
     color: white;
     z-index: 20;
-    -webkit-transition: all 0.3s ease-out;
-    -moz-transition: all 0.3s ease-out;
-    -ms-transition: all 0.3s ease-out;
-    -o-transition: all 0.3s ease-out;
-    transition: all 0.3s ease-out;
     overflow-y:auto;
     overflow-x:hidden;
     padding-bottom: 64px;
     max-width: 600px;
     white-space: nowrap;
     -ms-overflow-style: none;
+    .transition(all 0.3s ease-out);
 }
 
 .secondary-side-bar a {
@@ -85,14 +81,10 @@
     position: relative;
     display: block;
     padding: 12px 0 12px 25px;
-    -webkit-transition: all 0.1s ease-in;
-    -moz-transition: all 0.1s ease-in;
-    -ms-transition: all 0.1s ease-in;
-    -o-transition: all 0.1s ease-in;
-    transition: all 0.1s ease-in;
     cursor: pointer;
     color: white;
     font-family: @font-family-light;
+    .transition(all 0.1s ease-in);
 }
 .secondary-side-bar ul > li a span.filename {
     display: none;

@@ -1,7 +1,44 @@
+@navbar-height-trial:    37px;
+
 .navbar {
+    color: @light-gray;
     border: none;
-    border-bottom: 1px solid @gray;
+    border-bottom: 1px solid @border-color;
     margin-bottom: 0;
+    .box-sizing(content-box);
+
+    i {
+        width: 60px;
+        font-size: 22px;
+        line-height: @navbar-height;
+
+        &.user-menu {
+            padding: 0 5px 0 20px;
+            width: inherit;
+        }
+    }
+
+    /* hide any descriptive text on small screens */
+    span {
+        
+    }
+
+    li.dropdown {
+        border-left: 1px solid @item-border;
+    }
+}
+
+.navbar-nav {
+    float: right;
+
+    /* fixme: replace this with the hamburger ... */
+    @media screen and (max-width: @screen-sm) {
+        display: none;
+    }
+}
+.navbar-nav > li > .dropdown-menu {
+    /* this is needed due to the box-sizing() above */
+    left: -1px;
 }
 
 .navbar-brand {
@@ -9,5 +46,42 @@
     background-size: contain;
     background-repeat: no-repeat;
     width: 242px;
-    height: 60px;
+}
+
+.navbar-announcement {
+    font-size: 17px;
+    height: 0; /* setup by common.js for transition */
+    line-height: @navbar-height-trial;
+    text-align: center;
+    color: white;
+    background-color: @brand-primary;
+
+    .transition(height .2s linear);
+
+    .trial-status {
+        font-family: @font-family-light;
+        margin: 0 23px;
+    }
+
+    .trial-subscribe {
+        font-family: @font-family-light;
+        text-transform: uppercase;
+        background-color: @blue-gray;
+        display: inline-block;
+        padding: 0 23px;
+        border-left: 1px solid @item-border;
+        border-right: 1px solid @item-border;
+
+        a {
+            color: white;
+        }
+    }
+
+    &.urgent {
+        background-color: @light-salmon;
+
+        .trial-subscribe {
+            background-color: @salmon;
+        }
+    }
 }

@@ -5,18 +5,18 @@
 <title>Palette - Server Configuration</title>
 </%block>
 
-<div class="dynamic-content">
-  <div class="scrollable">
+<div class="content">
+  <div>
     <div class="top-zone">
       <h1>Machines</h1>
-    </div>
+    </div> <!-- top-zone -->
     <div class="bottom-zone">
       <div id="server-detail" class="clearfix">
         <%include file="empty.mako" />	
       </div>
     </div> <!-- bottom-zone -->
   </div>
-</div>
+</div> <!-- content -->
 
 <script id="server-detail-template" type="x-tmpl-mustache">
   {{#servers}}

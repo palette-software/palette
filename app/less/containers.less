@@ -4,17 +4,21 @@
     overflow-x: hidden;
 }
 
-/* FIXME: needed to make dynamic-content scrollable. */
 .container-fluid {
     height: 100%;
 }
 
-.container-full {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+.container-all {
+    height: inherit;
+    overflow-y: auto;
+}
+
+
+.container-webapp {
+    position: relative; /* non-static so that the contents can use absolute */
+    width: 100%;
+    height: 100%;
+    padding: 0;
 }
 
 .container-vcenter {
