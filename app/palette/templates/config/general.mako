@@ -14,7 +14,7 @@
     <div class="bottom-zone">
       <a name="storage"></a>
       <section class="form-group" id="storage">
-        <a id="229204" href="#"><i class="fa fa-question-circle help"></i></a>
+        <a id="229204" data-toggle="help" href="#"><i class="help"></i></a>
         <h2>Storage Location</h2>
         <p>Your Backups, Ziplogs, and Workbooks will be saved in this location.</p>
         <div> <!-- class="radio -->
@@ -97,7 +97,7 @@
       <a name="email-alerts"></a>
       <hr />
       <section class="form-group" id="email-alerts">
-        <a id="229207" href="#"><i class="fa fa-question-circle help"></i></a>
+        <a id="229207" data-toggle="help" href="#"><i class="help"></i></a>
         <h2>Email Alerts</h2>
         <p>Designate which groups of Palette Users receive Email Alerts.</p>
         <div class="slider-group">
@@ -124,7 +124,7 @@
       <a name="backups"></a>
       <hr />
       <section class="form-group" id="backups">
-        <a id="229213" href="#"><i class="fa fa-question-circle help"></i></a>
+        <a id="229213" data-toggle="help" href="#"><i class="help"></i></a>
         <h2>Backups</h2>
         <!---
             <p class="slider-group">
@@ -163,7 +163,7 @@
       <a name="ziplogs"></a>
       <hr />
       <section class="form-group" id="ziplogs">
-        <a id="229214" href="#"><i class="fa fa-question-circle help"></i></a>
+        <a id="229214" data-toggle="help" href="#"><i class="help"></i></a>
         <h2>Ziplogs</h2>
         <!--
             <p class="slider-group">
@@ -195,7 +195,7 @@
       <a name="extracts"></a>
       <hr />
       <section class="form-group auto" id="extracts">
-        <a id="332776" href="#"><i class="fa fa-question-circle help"></i></a>
+        <a id="332776" data-toggle="help" href="#"><i class="help"></i></a>
         <h2>Extracts</h2>
 
         <h3>Delayed Extracts</h3>
@@ -221,7 +221,7 @@
       <a name="archives"></a>
       <hr />
       <section class="form-group auto" id="archives">
-        <a id="229215" href="#"><i class="fa fa-question-circle help"></i></a>
+        <a id="229215" data-toggle="help" href="#"><i class="help"></i></a>
         <h2>Archiving</h2>
         <p>Designate what Palette Server should archive.</p>
         <div class="slider-group">
@@ -265,7 +265,7 @@
       <a name="monitoring"></a>
       <hr />
       <section class="form-group" id="monitoring">
-        <a id="229216" href="#"><i class="fa fa-question-circle help"></i></a>
+        <a id="229216" data-toggle="help" href="#"><i class="help"></i></a>
         <h2>Monitoring</h2>
 
         <div>

@@ -1065,15 +1065,6 @@ function ($, _, configure, common, Dropdown, OnOff)
         OnOff.setCallback(widgetCallback, 'section.auto .onoffswitch');
         setAutoInputCallback(nodeCallback);
         /* END: auto-validation */
-
-        /* help */
-        common.lightbox(229204, 'Storage Location');
-        common.lightbox(229207, 'Email Alerts');
-        common.lightbox(229213, 'Backups');
-        common.lightbox(229214, 'Ziplogs');
-        common.lightbox(332776, 'Extracts');
-        common.lightbox(229215, 'Archives');
-        common.lightbox(229216, 'Monitoring');
     }
 
     common.startMonitor(false);

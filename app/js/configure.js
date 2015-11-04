@@ -1,4 +1,4 @@
-define(['jquery', 'form', 'Dropdown', 'OnOff', 'lightbox'],
+define(['jquery', 'form', 'Dropdown', 'OnOff'],
 function ($, form, Dropdown, OnOff)
 {
     var MAIL_DIRECT = 1;

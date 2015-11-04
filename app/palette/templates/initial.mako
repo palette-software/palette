@@ -27,7 +27,7 @@
         <hr />
         %if req.platform.product != req.platform.PRODUCT_PRO:
         <section>
-          <a id="237795" href="#"><i class="fa fa-question-circle help"></i></a>
+          <a id="237795" data-toggle="help" href="#"><i class="help"></i></a>
           <h2>Palette License Key *</h2>
           <p>Your 32 digit Palette License Key is found in the confirmation email.</p>
           <input class="form-control" type="text" id="license-key" />
@@ -35,7 +35,7 @@
         <hr />
         %endif
         <section id="admin">
-          <a id="236536" href="#"><i class="fa fa-question-circle help"></i></a>
+          <a id="236536" data-toggle="help" href="#"><i class="help"></i></a>
           <h2>Palette Server Admin Credentials</h2>
           <p>Create a password for the built-in "Palette" username.</p>
           <p>Any combination of 8+ case-sensitive, alphanumeric characters (i.e. A-Z, a-z, 0-9, and !,@,#,$,%).</p>
