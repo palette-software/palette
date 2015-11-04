@@ -5,8 +5,8 @@
 <title>Palette - General Configuration</title>
 </%block>
 
-<div class="dynamic-content general-page">
-  <div class="scrollable">
+<div class="content general-page">
+  <div>
     <div class="top-zone">
       <h1>General Configuration</h1>
     </div> <!-- top-zone -->
@@ -303,7 +303,7 @@
       </section> <!-- section monitoring -->
     </div> <!-- bottom-zone -->
   </div>
-</div>
+</div> <!-- content -->
 
 <script src="/js/vendor/require.js" data-main="/js/general.js">
 </script>

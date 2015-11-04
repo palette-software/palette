@@ -1,22 +1,23 @@
 /* lower-right-hand dynamic content pane */
-
-.dynamic-content {
-    position: fixed;
-    height: inherit;
-    top: @header-height;
+.content {
+    position: absolute;
+    left: @sidebar-width;
     right: 0;
-    left: 250px;
-    overflow: auto;
-    padding-bottom: @header-height;
-}
-.dynamic-content > div.scrollable {
-    overflow-x: hidden;
-    overflow-y: auto;
-    height: 100%;
-    padding: 0 15px 72px 19px;
-}
-.dynamic-content.with-secondary-sidebar {
-    left: 550px;
+    top: 0;
+    bottom: 0;
+
+    /* this is modified in JS when a trial is active. */
+    margin-bottom: @navbar-height;
+
+    & > div {
+        padding: 0 15px 100px 15px; /* 100px is enough space for the header */
+        height: 100%;
+        overflow-y: auto;
+    }
+
+    &.with-secondary-sidebar {
+        left: (@sidebar-width + @sidebar-width-secondary);
+    }
 
     .filter-dropdowns {
         @media screen and (max-width: @screen-sm) {
@@ -24,26 +25,9 @@
         }
     }
 }
-.dynamic-content.servers-visible {
-    left: 550px;
 
-    .filter-dropdowns {
-        @media screen and (max-width: @screen-sm) {
-            display: none;
-        }
-    }
-}
-
-.dynamic-content.with-secondary-sidebar.servers-visible {
-    left: 850px;
-
-    .filter-dropdowns {
-	@media screen and (max-width: @screen-md) {
-	    display: none;
-	}
-    }
-}
-.dynamic-content .key, .dynamic-content .label {
+/* key is only in yml, label is used in items... */
+.content .key, .content .label {
     display: inline;
     font-family: @font-family-bold;
     font-size: inherit;
@@ -55,18 +39,19 @@
     padding: 0;
     font-weight: 400;
 }
-.dynamic-content .key {
+.content .key {
     padding: .25em .25em .25em 1em;
 }
-.dynamic-content .label {
+.content .label {
     padding: 0 .25em 0 0;
 }
-// letter bar e.g. users page
-.dynamic-content .letters a {
-    color: @text-color;
-    cursor: pointer;
-}
 
-.letters {
+// letter bar e.g. users page
+.content .letters {
     clear: both;
+
+    a {
+        color: @text-color;
+        cursor: pointer;
+    }
 }

@@ -5,8 +5,8 @@
 <title>Palette - Support Case</title>
 </%block>
 
-<div class="dynamic-content support-case-page">
-  <div class="scrollable">
+<div class="content support-case-page">
+  <div>
     <div class="top-zone">
       <h1>Submit a case to Tableau support</h1>
     </div>
@@ -131,7 +131,7 @@
       </div>
     </div> <!-- bottom-zone -->
   </div>
-</div>
+</div> <!-- content -->
 
 <script src="/js/vendor/require.js" data-main="/js/support-case.js">
 </script>

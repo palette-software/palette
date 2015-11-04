@@ -5,12 +5,11 @@
 <title>Palette - Setup Configuration</title>
 </%block>
 
-<div class="dynamic-content setup-page">
-  <div class="scrollable">
-
+<div class="content setup-page">
+  <div>
     <div class="top-zone">
       <h1>Setup Configuration</h1>
-    </div>
+    </div> <!-- top-zone -->
     <div class="bottom-zone">
 %if req.platform.product != req.platform.PRODUCT_PRO:
       <a name="url"></a>
@@ -128,7 +127,7 @@
       </section>
     </div> <!-- bottom-zone -->
   </div>
-</div>
+</div> <!-- content -->
 
 <script id="dropdown-template" type="x-tmpl-mustache">
   <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><div data-id="{{id}}">{{value}}</div><span class="caret"></span>

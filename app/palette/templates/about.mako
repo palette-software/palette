@@ -5,8 +5,8 @@
 <title>About Palette</title>
 </%block>
 
-<div class="dynamic-content about-page">
-  <div class="scrollable">
+<div class="content about-page">
+  <div>
     <div class="top-zone">
       <h1>About Palette</h1>
     </div> <!-- top-zone -->
@@ -91,7 +91,7 @@
       %endif
     </div> <!-- bottom-zone -->
   </div>
-</section>
+</div> <!-- content -->
 
 <script src="/js/vendor/require.js" data-main="/js/about.js">
 </script>
