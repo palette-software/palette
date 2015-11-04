@@ -579,5 +579,5 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
                     update.todict().items() + \
                     data.items())
 
-        self.sendevent(EventControl.DATASOURCE_ARCHIVE_FAILED, update, error,
-                        data)
+        self.sendevent(EventControl.DATASOURCE_ARCHIVE_FAILED,
+                       update.system_user_id, error, data)

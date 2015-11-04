@@ -1799,6 +1799,42 @@
 "event_label_desc":null,
 "admin_visibility":true,
 "publisher_visibility":true
+},
+{
+"eventid":102,
+"key":"WORKBOOK-REFRESH-ARCHIVE-FAILED",
+"level":"E",
+"send_email":"t",
+"subject":"ERROR Workbook Extract Refresh Archive Failed for '%(name)s' (ID: %(eventid)s)",
+"event_description":"SUMMARY\nThe Workbook extract refresh '${name}' by ${owner} was not archived by Palette due to a failure. Full context is provided below for your reference. \n\nDETAILS\nEvent Type: ${event_type_label}\nEnvironment: ${environment}\nPublisher: ${owner}\n% if info is not UNDEFINED or error is not UNDEFINED or stderr is not UNDEFINED or stdout is not UNDEFINED:\nSystem Message:\n% endif\n% if info is not UNDEFINED:\n${info}\n% endif\n% if error is not UNDEFINED:\n${error}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif\n\nWHY THIS EVENT OCCURRED\nWe suggest you contact your system administrator with the contents of this event in order to diagnose the problem. If this problem persists, please contact Palette support at support@palette-software.com.",
+"email_subject":"ERROR Workbook Archive Failed for '%(name)s' (ID: %(eventid)s)",
+"email_message":"SUMMARY\nThe Workbook Extract Refresh for '${name}' by ${owner} was not archived by Palette due to a failure. Full context is provided below for your reference. \n\nDETAILS\nTime: ${timestamp}\nEvent Type: ${event_type_label}\nEnvironment: ${environment}\nPublisher: ${owner}\n% if info is not UNDEFINED or error is not UNDEFINED or stderr is not UNDEFINED or stdout is not UNDEFINED:\nSystem Message:\n% endif\n% if info is not UNDEFINED:\n${info}\n% endif\n% if error is not UNDEFINED:\n${error}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif\n\nWHY THIS EVENT OCCURRED \nWe suggest you contact your system administrator with the contents of this event in order to diagnose the problem. If this problem persists, please contact Palette support at support@palette-software.com.\n\nHOW TO STOP RECEIVING THIS EMAIL ALERT\nThis message was sent from your Palette Server at ${server_url}. You can turn off these email alerts on your profile page found at ${server_url}/profile.\n",
+"icon":"",
+"color":"red",
+"event_type":"workbook",
+"event_type_label":"Workbooks",
+"event_label":"Workbook Extract Archive Refresh Failed",
+"event_label_desc":null,
+"admin_visibility":true,
+"publisher_visibility":true
+},
+{
+"eventid":103,
+"key":"DATASOURCE-REFRESH-ARCHIVE-FAILED",
+"level":"E",
+"send_email":"t",
+"subject":"ERROR Data Source Extract Refresh Archive Failed for '%(name)s' (ID: %(eventid)s)",
+"event_description":"SUMMARY\nThe Data Source extract refresh '${name}' by ${owner} was not archived by Palette due to a failure. Full context is provided below for your reference. \n\nDETAILS\nEvent Type: ${event_type_label}\nEnvironment: ${environment}\nPublisher: ${owner}\n% if info is not UNDEFINED or error is not UNDEFINED or stderr is not UNDEFINED or stdout is not UNDEFINED:\nSystem Message:\n% endif\n% if info is not UNDEFINED:\n${info}\n% endif\n% if error is not UNDEFINED:\n${error}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif\n\nWHY THIS EVENT OCCURRED\nWe suggest you contact your system administrator with the contents of this event in order to diagnose the problem. If this problem persists, please contact Palette support at support@palette-software.com.",
+"email_subject":"ERROR Data Source Archive Failed for '%(name)s' (ID: %(eventid)s)",
+"email_message":"SUMMARY\nThe Data Source Extract Refresh for '${name}' by ${owner} was not archived by Palette due to a failure. Full context is provided below for your reference. \n\nDETAILS\nTime: ${timestamp}\nEvent Type: ${event_type_label}\nEnvironment: ${environment}\nPublisher: ${owner}\n% if info is not UNDEFINED or error is not UNDEFINED or stderr is not UNDEFINED or stdout is not UNDEFINED:\nSystem Message:\n% endif\n% if info is not UNDEFINED:\n${info}\n% endif\n% if error is not UNDEFINED:\n${error}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif\n\nWHY THIS EVENT OCCURRED \nWe suggest you contact your system administrator with the contents of this event in order to diagnose the problem. If this problem persists, please contact Palette support at support@palette-software.com.\n\nHOW TO STOP RECEIVING THIS EMAIL ALERT\nThis message was sent from your Palette Server at ${server_url}. You can turn off these email alerts on your profile page found at ${server_url}/profile.\n",
+"icon":"",
+"color":"red",
+"event_type":"datasource",
+"event_type_label":"Datasources",
+"event_label":"Data Source Extract Archive Refresh Failed",
+"event_label_desc":null,
+"admin_visibility":true,
+"publisher_visibility":true
 }
 ]
 }
