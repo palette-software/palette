@@ -45,6 +45,9 @@ class SystemKeys(object):
     EXTRACT_DELAY_WARN = 'extract-delay-warn'
     EXTRACT_DELAY_ERROR = 'extract-delay-error'
 
+    EXTRACT_REFRESH_WB_RETAIN_COUNT = 'extract-refresh-wb-retain-count'
+    EXTRACT_REFRESH_DS_RETAIN_COUNT = 'extract-refresh-ds-retain-count'
+
     HTTP_LOAD_WARN = 'http-load-warn'
     HTTP_LOAD_ERROR = 'http-load-error'
     HTTP_LOAD_RE = 'http-load-re'

@@ -887,13 +887,20 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.report_status(body)
 
 
-    @usage('extract IMPORT')
+    @usage('extract [IMPORT|ARCHIVE]')
     @upgrade_rwlock
     def do_extract(self, cmd):
-        """Import extracts from the background_jobs table in Tableau"""
+        """import: Import extracts "from the background_jobs table in Tableau
+           archive: Archive extract refreshes
+        """
 
         # Reserved for later expansion
-        if len(cmd.args) != 1 or cmd.args[0].upper() != 'IMPORT':
+        if len(cmd.args) != 1:
+            self.print_usage(self.do_extract.__usage__)
+            return
+
+        action = cmd.args[0].lower()
+        if action not in ('import', 'archive'):
             self.print_usage(self.do_extract.__usage__)
             return
 
@@ -908,7 +915,10 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         self.ack()
-        body = self.server.extract.load(agent)
+        if action == 'import':
+            body = self.server.extract.load(agent)
+        elif action == 'archive':
+            body = self.server.extract_archive.refresh(agent)
         self.report_status(body)
 
 
