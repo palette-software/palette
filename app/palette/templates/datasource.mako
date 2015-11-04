@@ -38,7 +38,7 @@
   {{#datasources}}
   <article class="item">
     <div class="summary clearfix" data-toggle="item">
-      <i class="fa fa-fw fa-database {{color}}"></i>
+      <i class="data-source {{color}}"></i>
       <div>
         <div class="col2">
           <h3>{{name}}</h3>
@@ -58,7 +58,7 @@
           </div>
         </div>
       </div>
-      <i class="fa fa-fw fa-angle-down expand"></i>
+      <i class="expand"></i>
     </div>
     <div class="description">
       <ul>

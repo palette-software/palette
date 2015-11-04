@@ -17,23 +17,16 @@
         <i class="fa fa-fw fa-clock-o"></i><span>Events</span>
       </a>
     </li>
-    <li class="category ${obj.archive and 'open' or ''}">
-      <a data-toggle="category">
-        <i class="fa fa-fw fa-copy"></i><span>Archive</span>
-        <i class="expand"></i>
+    <li ${obj.active=='workbook-archive' and 'class="active"' or ''}>
+      <a href="/workbook/archive">
+        <i class="workbook"></i><span>Workbooks</span>
       </a>
-      <ul>
-        <li ${obj.active=='workbook-archive' and 'class="active"' or ''}>
-          <a href="/workbook/archive">
-            <i class="fa fa-fw"></i><span>Workbooks</span>
-          </a>
-        </li>
-        <li ${obj.active=='datasource-archive' and 'class="active"' or ''}>
-          <a href="/datasource/archive">
-            <i class="fa fa-fw"></i><span>Data Sources</span>
-          </a>
-        </li>
-      </ul>
+    </li>
+    <li ${obj.active=='datasource-archive' and 'class="active"' or ''}>
+      <a href="/datasource/archive">
+        <i class="data-source"></i><span>Data Sources</span>
+      </a>
+    </li>
     </li>
 %if req.remote_user.roleid > req.remote_user.role.NO_ADMIN:
     <li class="has-side-bar ${obj.active=='manage' and 'active' or ''}">
