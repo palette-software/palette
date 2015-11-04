@@ -12,8 +12,7 @@ import akiri.framework.sqlalchemy as meta
 from event_control import EventControl
 from profile import UserProfile
 from mixin import BaseMixin, BaseDictMixin
-from cache import TableauCacheManager
-from manager import synchronized
+from manager import synchronized, Manager
 from odbc import ODBC
 from util import timedelta_total_seconds, utc2local, to_hhmmss
 from .system import SystemKeys
@@ -70,7 +69,7 @@ class ExtractEntry(meta.Base, BaseMixin, BaseDictMixin):
         keys = {'envid':envid, 'id':extract_id}
         return cls.get_unique_by_keys(keys, **kwargs)
 
-class ExtractManager(TableauCacheManager):
+class ExtractManager(Manager):
     """Manages alerting for background_jobs."""
 
     def _add_info(self, entry):
@@ -79,6 +78,10 @@ class ExtractManager(TableauCacheManager):
            for entry attributes such as:
                 system_user_id
                 project_id
+
+            Returns:
+                Siccess: The entry from the datasource or workbooks table.
+                Fail:    None (not found)
         """
 
         if entry.subtitle == 'Workbook':
@@ -87,13 +90,13 @@ class ExtractManager(TableauCacheManager):
                                 'RefreshExtractTask'):
             obj_class = DataSourceEntry
         else:
-            return
+            return None
 
         args = entry.args.split()
         if len(args) < 11 or not args[4].isdigit():
             logger.error("extract add_info: args bad for %s title %s: %s",
                          obj_class.__tablename__, entry.title, entry.args)
-            return
+            return None
 
         entry_id = int(args[4])
         envid = self.server.environment.envid
@@ -103,10 +106,12 @@ class ExtractManager(TableauCacheManager):
             logger.error("extract _add_info for %s: No such item "
                          "with title %s, id %d",
                          obj_class.__tablename__, entry.title, entry.id)
-            return
+            return None
 
         entry.system_user_id = item_entry.system_user_id
         entry.project_id = item_entry.project_id
+
+        return item_entry
 
     @synchronized('extracts')
     def load(self, agent, check_odbc_state=True):
@@ -328,7 +333,10 @@ class ExtractManager(TableauCacheManager):
         # Placeholder to be set by the next steps.
         entry.system_user_id = -1
 
-        self._add_info(entry)
+        item_entry = self._add_info(entry)
+
+        if key == EventControl.EXTRACT_OK:
+            self.server.extract_archive.add(item_entry)
 
         data = dict(data.items() + entry.todict().items())
 

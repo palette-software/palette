@@ -102,6 +102,8 @@ DEFAULTS = SystemDefaults({
     SystemKeys.EXTRACT_DELAY_WARN: 0,
     SystemKeys.EXTRACT_DELAY_ERROR: 0,
 
+    SystemKeys.EXTRACT_REFRESH_WB_RETAIN_COUNT: 0,
+    SystemKeys.EXTRACT_REFRESH_DS_RETAIN_COUNT: 0,
 
     SystemKeys.HTTP_LOAD_WARN: 0,
     SystemKeys.HTTP_LOAD_ERROR: 0,

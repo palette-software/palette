@@ -38,6 +38,7 @@ from domain import Domain
 from environment import Environment
 from event_control import EventControl, EventControlManager
 from extracts import ExtractManager
+from extract_archive import ExtractRefreshManager
 from files import FileManager
 from firewall_manager import FirewallManager
 from http_control import HttpControl
@@ -87,6 +88,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     LOG_DIR = "tableau-logs"
     WORKBOOKS_DIR = "tableau-workbooks"
     DATASOURCES_DIR = "tableau-datasources"
+    WORKBOOKS_REFRESH_DIR = "tableau-workbooks-refresh"
+    DATASOURCES_REFRESH_DIR = "tableau-datasources-refresh"
     PALETTE_DIR = "palette-system"
 
     STAGING_DIR = "staging"
@@ -1531,6 +1534,7 @@ def main():
     server.auth = AuthManager(server)
     server.cred = CredentialManager(server)
     server.extract = ExtractManager(server)
+    server.extract_archive = ExtractRefreshManager(server)
     server.hrman = HttpRequestManager(server)
 
     # Status of the maintenance web server(s)
