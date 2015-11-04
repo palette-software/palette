@@ -222,7 +222,7 @@ function ($, topic, common)
     common.startMonitor();
 
     $().ready(function() {
-
+        $(".content").addClass("with-secondary-sidebar");
         /* bind basic actions */
         for (var key in actions) {
             $('#'+key).data('confirm', actions[key]);

@@ -5,8 +5,8 @@
 <title>Palette - Tableau Settings</title>
 </%block>
 
-<div class="dynamic-content">
-  <div class="scrollable">
+<div class="content">
+  <div>
     <div class="top-zone">
       <div class="refresh">
         <p>Updated <span id="last-update"></span></p>
@@ -18,9 +18,9 @@
       <div id="yml-list">
 	<%include file="empty.mako" />
       </div>
-    </div>
+    </div> <!-- bottom-zone -->
   </div>
-</div>
+</div> <!-- content -->
 
 <script id="yml-list-template" type="x-tmpl-mustache">
   {{#items}}

@@ -63,9 +63,7 @@
   <div id="backup-list"></div>
 </section>
 
-<div class="dynamic-content with-secondary-sidebar">
-  <%include file="events.mako" />
-</div>
+<%include file="events.mako" />
 
 <script id="backup-list-template" type="x-tmpl-mustache">
   {{#backups}}

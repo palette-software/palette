@@ -5,8 +5,8 @@
 <title>Palette - Workbook Archive</title>
 </%block>
 
-<div class="dynamic-content workbook-page">
-  <div class="scrollable">
+<div class="content workbook-page">
+  <div>
     <div class="top-zone">
       <%include file="paging.mako" args="name='Workbooks'" />
       <h1>Workbook Archive</h1>
@@ -32,7 +32,7 @@
       </div> <!-- workbook-list -->
     </div> <!-- bottom-zone -->
   </div>
-</div>
+</div> <!-- content -->
 
 <script id="workbook-list-template" type="x-tmpl-mustache">
   {{#workbooks}}
