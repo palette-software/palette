@@ -4,7 +4,7 @@
  */
 
 define(['jquery', 'topic', 'paging', 'Dropdown',
-        'plugin', 'modal', 'sidebar', 'items'],
+        'plugin', 'modal', 'sidebar', 'items', 'help'],
 function ($, topic, paging, Dropdown)
 {
     /* MONITOR TIMER */
@@ -113,7 +113,7 @@ function ($, topic, paging, Dropdown)
         return null;
     }
 
-     /*
+    /*
      * bindStatus()
      * Make the clicking on the status box show the server list.
      * fixme: move to sidebar.js
@@ -143,21 +143,6 @@ function ($, topic, paging, Dropdown)
             $(this).css('cursor','pointer');
         });
         status_bound = true;
-    }
-
-    /*
-     * setupHeaderMenus
-     * Enable the popup menus in the navigation bar.
-     */
-    function setupHeaderMenus()
-    {
-        $('#mainNav ul.nav li.more').bind('mouseenter', function() {
-            $('#mainNav ul.nav li.more ul').removeClass('visible');
-            $(this).find('ul').addClass('visible');
-        });
-        $('#mainNav ul.nav li.more').bind('mouseleave', function() {
-            $(this).find('ul').removeClass('visible');
-        });     
     }
 
     /*
@@ -527,6 +512,7 @@ function ($, topic, paging, Dropdown)
      * ddDataId
      * Get the data-id of the current selection in a particular dropdown.
      * '0' is always 'all' or 'unset'.
+     * fixme: move to dropdown.js
      */
     function ddDataId(name) {
         var selector = "#"+name+'-dropdown > button > div';
@@ -604,35 +590,11 @@ function ($, topic, paging, Dropdown)
         //location.reload();
     }
 
-    /*
-     * lightbox()
-     * Create lightboxes that bind to the help icons.
-     * Requires 'lightbox'
-     */
-    function lightbox(id, title) {
-        /* The title is now ignored but keeping it improves code readablity
-           where this function is called (gives a keyword to the id number.) */
-        var lb = new TopicLightBox({
-            baseUrl: 'http://kb.palette-software.com',
-            id: id,
-            title: ' ',
-            background: true,
-            width: 800,
-            height: 500
-        });
-    }
-
-    /* Code run automatically when 'common' is included */
-    $().ready(function() {
-        setupHeaderMenus();
-    });
-
     return {'startMonitor': startMonitor,
             'ajaxError': ajaxError,
             'getCookie': getCookie,
             'setCookie': setCookie,
             'deleteCookie': deleteCookie,
-            'lightbox': lightbox,
             'setupEventDropdowns' : setupEventDropdowns,
            };
 });

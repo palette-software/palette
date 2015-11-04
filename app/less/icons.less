@@ -10,8 +10,11 @@ i.help {
     font-size: 23px;
     -webkit-text-stroke-width: 1px;
     -webkit-text-stroke-color: #BDBDBD;
-}
 
+   &:before {
+        content: @fa-var-question-circle;
+    }
+}
 i.tableau {
     background:url(/images/tableau.svg);
     background-repeat: no-repeat;

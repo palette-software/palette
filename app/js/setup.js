@@ -683,16 +683,6 @@ function ($, _, configure, common, form, Dropdown, OnOff)
         }
         configure.setInputCallback(validate);
         validate();
-
-        /* help */
-        common.lightbox(236535, 'Palette Server URL');
-        common.lightbox(237794, 'Tableau Server URL');
-        common.lightbox(236536, 'Palette Admin Password');
-        common.lightbox(252063, 'Tableau Server Repository Database User Password');
-        common.lightbox(236542, 'Mail Server');
-        common.lightbox(236543, 'Server SSL Certificate');
-        common.lightbox(236544, 'Authentication');
-        common.lightbox(237785, 'Timezone');
     }
 
     common.startMonitor(false);

@@ -87,7 +87,10 @@
               <span class="btn-group admin-type"
                     data-userid="{{userid}}" data-href="/rest/users/admin">
                 {{roleid}}
-              </span><a id="252067" href=""><i class="fa fa-question-circle help"></i></a>
+              </span>
+              <a id="252067" data-toggle="help" href="#">
+                <i class="help"></i>
+              </a>
             </div>
           </article>
           {{/current}}

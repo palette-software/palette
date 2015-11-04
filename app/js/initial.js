@@ -393,16 +393,6 @@ function ($, configure, common, form, Dropdown, OnOff)
             configure.changeMail();
         }
 
-        /* help */
-        common.lightbox(236535, 'Palette Server URL');
-        common.lightbox(237794, 'Tableau Server URL');
-        common.lightbox(237795, 'License Key');
-        common.lightbox(236536, 'Palette Admin Password');
-        common.lightbox(252063, 'Tableau Server Repository Database User Password');
-        common.lightbox(236542, 'Mail Server');
-        common.lightbox(236544, 'Authentication');
-        common.lightbox(237785, 'Timezone');
-
         $(".version").html(data['version']);
 
         setupDone = true;

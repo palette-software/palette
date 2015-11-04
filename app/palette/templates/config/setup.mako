@@ -45,7 +45,7 @@
       <a name="admin"></a>
       <hr />
       <section  class="form-group" id="admin">
-        <a id="236536" href="#"><i class="fa fa-question-circle help"></i></a>
+        <a id="236536" data-toggle="help" href="#"><i class="help"></i></a>
         <h2>Palette Server Admin Credentials</h2>
         <p>Change the password for the built-in "Palette" username.</p>
         <p>Any combination of 8+ case-sensitive, alphanumeric characters (i.e. A-Z, a-z, 0-9, and !,@,#,$,%).</p>
@@ -112,7 +112,7 @@
       <a name="auth"></a>
       <hr />
       <section class="form-group" id="auth">
-        <a id="236544" href="#"><i class="fa fa-question-circle help"></i></a>
+        <a id="236544" data-toggle="help" href="#"><i class="help"></i></a>
         <h2>Authentication</h2>
         <p>This setting overrides Palette's default Authentication Method.</p>
         <span id="authentication-type" class="btn-group"></span>
