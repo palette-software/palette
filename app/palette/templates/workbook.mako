@@ -38,7 +38,7 @@
   {{#workbooks}}
   <article class="item">
     <div class="summary clearfix" data-toggle="item">
-      <i class="fa fa-fw fa-book {{color}}"></i>
+      <i class="workbook {{color}}"></i>
       <div>
         <div class="col2">
           <h3>{{name}}</h3>
@@ -58,7 +58,7 @@
           </div>
         </div>
       </div>
-      <i class="fa fa-fw fa-angle-down expand"></i>
+      <i class="expand"></i>
     </div>
     <div class="description">
       <ul>
