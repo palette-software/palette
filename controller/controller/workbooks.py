@@ -608,5 +608,5 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
         if 'embedded' in data:
             del data['embedded']
 
-        self.sendevent(EventControl.WORKBOOK_ARCHIVE_FAILED, update, error,
-                        data)
+        self.sendevent(EventControl.WORKBOOK_ARCHIVE_FAILED,
+                        update.system_user_id, error, data)

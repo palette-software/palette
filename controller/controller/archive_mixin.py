@@ -11,7 +11,7 @@ logger = logging.getLogger()
 class ArchiveUpdateMixin(object):
     NAME = "unknown"
 
-    def clean_filename(self, entry, revision):
+    def clean_filename(self, entry, revision=None, date_str=None):
         """Given an archive entry (datasource, workbook), create
            a unique, acceptable filename using the site, project, url, etc.
            Ideally: site-project-name-rev.ext"""
@@ -23,7 +23,11 @@ class ArchiveUpdateMixin(object):
         if not project:
             project = str(entry.project_id)
         filename = site + '-' + project + '-'
-        filename += entry.repository_url + '-rev' + revision
+        filename += entry.repository_url
+        if revision:
+            filename += '-rev' + revision
+        if date_str:
+            filename += '-' + date_str
         filename = filename.replace(' ', '_')
         filename = filename.replace('/', '_')
         filename = filename.replace('\\', '_')
@@ -48,8 +52,8 @@ class ArchiveUpdateMixin(object):
         return cred
 
     def archive_file(self, agent, dcheck, dst):
-        """Copy the given datasource filename from the Tableau server to
-           its configured storage location.
+        """Copy the given workbook or datasource filename from the
+           Tableau server to its configured storage location.
 
            Returns:
                 The PlaceFile instance.
@@ -65,7 +69,7 @@ class ArchiveUpdateMixin(object):
         else:
             if not success(file_size_body):
                 logger.error("%s archive_file: Failed to get size of " + \
-                               "datasource file %s: %s", dst,
+                               "datasource or workbook file %s: %s", dst,
                                self.NAME, file_size_body['error'])
             else:
                 file_size = file_size_body['size']
@@ -77,11 +81,12 @@ class ArchiveUpdateMixin(object):
         # from the primary afterwards, due to "enable_delete=True":
         place = PlaceFile(self.server, agent, dcheck, dst, file_size, auto,
                           enable_delete=True)
-        logger.debug("%s build filename %s: %s", self.NAME, dst, place.info)
+        logger.debug("%s archive_file filename %s: %s", self.NAME, dst,
+                     place.info)
 
         return place
 
-    def sendevent(self, key, update, error, data):
+    def sendevent(self, key, system_user_id, error, data):
         """Send the event."""
 
         if 'embedded' in data:
@@ -92,7 +97,7 @@ class ArchiveUpdateMixin(object):
 
         profile = UserProfile.get_by_system_user_id(
                                                 self.server.environment.envid,
-                                                update.system_user_id)
+                                                system_user_id)
 
         if profile:
             username = profile.display_name()
