@@ -177,7 +177,7 @@ elif [ "$oldversion" = "1.6.0" -o "$oldversion" = "1.6.1" ]; then
     alter table datasource_updates add foreign key (fileid_tds) references files(fileid) on delete cascade;
     alter table datasource_updates add foreign key (fileid_tdsx) references files(fileid) on delete cascade;
 XYZZY
-elif [ "$oldversion" = "1.6.5" ]; then
+elif [ "$oldversion" = "1.6.3" -o "$oldversion" = "1.6.5" ]; then
     psql paldb << XYZZY
     alter table users add column phone character varying;
 
