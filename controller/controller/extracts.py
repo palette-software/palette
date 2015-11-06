@@ -337,7 +337,7 @@ class ExtractManager(Manager):
 
         if key == EventControl.EXTRACT_OK:
             if item_entry:
-                self.server.extract_archive.add(item_entry)
+                self.server.extract_archive.add(item_entry, entry)
             else:
                 logger.info("extract OK: Can't archive workbook/datasource "
                             "row  - not found.")
