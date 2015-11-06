@@ -336,7 +336,11 @@ class ExtractManager(Manager):
         item_entry = self._add_info(entry)
 
         if key == EventControl.EXTRACT_OK:
-            self.server.extract_archive.add(item_entry)
+            if item_entry:
+                self.server.extract_archive.add(item_entry)
+            else:
+                logger.info("extract OK: Can't archive workbook/datasource "
+                            "row  - not found.")
 
         data = dict(data.items() + entry.todict().items())
 
