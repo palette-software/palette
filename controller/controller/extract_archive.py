@@ -28,10 +28,15 @@ class WorkbookExtractEntry(meta.Base, BaseMixin, BaseDictMixin):
 
     sid = Column(BigInteger, unique=True, nullable=False,
                         autoincrement=True, primary_key=True)
+
+    extractid = Column(BigInteger,
+                        ForeignKey("extracts.extractid", ondelete='CASCADE'))
+
     parentid = Column(BigInteger,
                         ForeignKey("workbooks.workbookid", ondelete='CASCADE'))
     fileid = Column(Integer,
                          ForeignKey("files.fileid", ondelete='CASCADE'))
+
 
     creation_time = Column(DateTime, server_default=func.now())
 
@@ -43,9 +48,10 @@ class WorkbookExtractEntry(meta.Base, BaseMixin, BaseDictMixin):
                            order_by='WorkbookExtractEntry.sid'))
 
     @classmethod
-    def add(cls, wb_entry):
+    def add(cls, wb_entry, extract_entry):
         session = meta.Session()
-        entry = WorkbookExtractEntry(parentid=wb_entry.workbookid)
+        entry = WorkbookExtractEntry(parentid=wb_entry.workbookid,
+                                     extractid=extract_entry.extractid)
         session.add(entry)
         session.commit()
 
@@ -54,11 +60,16 @@ class DataSourceExtractEntry(meta.Base, BaseMixin, BaseDictMixin):
 
     sid = Column(BigInteger, unique=True, nullable=False,
                         autoincrement=True, primary_key=True)
+
+    extractid = Column(BigInteger,
+                        ForeignKey("extracts.extractid", ondelete='CASCADE'))
+
     parentid = Column(BigInteger,
                         ForeignKey("datasources.dsid", ondelete='CASCADE'))
 
     fileid = Column(Integer,
                            ForeignKey("files.fileid", ondelete='CASCADE'))
+
 
     creation_time = Column(DateTime, server_default=func.now())
 
@@ -70,9 +81,10 @@ class DataSourceExtractEntry(meta.Base, BaseMixin, BaseDictMixin):
                            order_by='DataSourceExtractEntry.sid'))
 
     @classmethod
-    def add(cls, ds_entry):
+    def add(cls, ds_entry, extract_entry):
         session = meta.Session()
-        entry = DataSourceExtractEntry(parentid=ds_entry.dsid)
+        entry = DataSourceExtractEntry(parentid=ds_entry.dsid,
+                                       extractid=extract_entry.extractid)
         session.add(entry)
         session.commit()
 
@@ -80,7 +92,7 @@ class DataSourceExtractEntry(meta.Base, BaseMixin, BaseDictMixin):
 class ExtractRefreshManager(Manager, ArchiveUpdateMixin):
     NAME = 'archive extract refresh'
 
-    def add(self, entry):
+    def add(self, item_entry, extract_entry):
         """Add a workbook or datasource entry row.
             Called with either a WorkbookEntry or DataSourceEntry row.
         """
@@ -90,13 +102,13 @@ class ExtractRefreshManager(Manager, ArchiveUpdateMixin):
         # future: Use separate wb and ds retain counts when UI is updated.
         ds_retain_count = wb_retain_count
 
-        if isinstance(entry, WorkbookEntry) and wb_retain_count:
-            WorkbookExtractEntry.add(entry)
-        elif isinstance(entry, DataSourceEntry)and ds_retain_count:
-            DataSourceExtractEntry.add(entry)
+        if isinstance(item_entry, WorkbookEntry) and wb_retain_count:
+            WorkbookExtractEntry.add(item_entry, extract_entry)
+        elif isinstance(item_entry, DataSourceEntry) and ds_retain_count:
+            DataSourceExtractEntry.add(item_entry, extract_entry)
         else:
             logger.error("ExtractRefreshManager Add: Unexpected subtitle: %s",
-                          entry.subtitle)
+                          item_entry.subtitle)
 
     @synchronized('refresh')
     def refresh(self, agent, check_odbc_state=True):
