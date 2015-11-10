@@ -187,8 +187,6 @@ elif [ "$oldversion" != "" ]; then
     echo Upgrading $oldversion
     # We are upgrading from a previous version (vs. a new install).
     # Currently: nothing special to do.
-XYZZY
-
 elif [ "$oldversion" = "" ]; then
     echo First install
 
