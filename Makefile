@@ -1,4 +1,4 @@
-PKG1 = akiri.framework_0.5.3_all.deb
+PKG1 = akiri.framework_0.5.5_all.deb
 PKG2 = proxytunnel_1.9.0%2Bsvn250-5_amd64.deb
 PKG2_LINUX_NAME = proxytunnel_1.9.0+svn250-5_amd64.deb
 POOL_DIR = dpkg/pool
