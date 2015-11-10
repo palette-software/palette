@@ -1,29 +1,31 @@
 /* Style for the page numbering widget. */
+@paging-font-size:       22px;
+@paging-line-height:     22px;
 
 .paging {
     display: none;
     float: right;
-    //font-size: 18px;
-    height: 32px;
-    line-height: 18px;
+    height: @paging-line-height;
+    line-height: @paging-line-height;
     vertical-align: middle;
     font-family: @font-family-light;
 
     i {
+	font-size: @paging-font-size;
         width: inherit;
     }
 }
 
 .paging > span, .paging > span a {
-    line-height: 32px;
+    line-height: @paging-line-height;
     vertical-align: middle;
 }
 
 .paging > span {
+    display: inline-block;
     padding-right: 5px;
 }
 
 .paging a, .paging a:link, .paging a:active, .paging a:visited, .paging a:hover {
-    font-size: 32px;
     color: @text-color;
 }
