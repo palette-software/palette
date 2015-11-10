@@ -3,22 +3,15 @@
  * templates and should be named accordingly.
  */
 
-define(['jquery', 'topic', 'paging', 'Dropdown',
-        'plugin', 'modal', 'sidebar', 'items', 'help'],
-function ($, topic, paging, Dropdown)
+define(['jquery', 'topic', 'status', 'paging', 'Dropdown',
+        'plugin', 'cookie', 'modal', 'sidebar', 'items', 'help'],
+function ($, topic, status, paging, Dropdown)
 {
     /* MONITOR TIMER */
     var interval = 1000; // milliseconds
     var timer = null;
     var current = null;
     var needEvents = true;
-
-    var status_color = null;
-    var status_text = null;
-
-    var sidebar_open = false;
-    var status_bound = false;
-
     var filters_hidden = false;
 
     /*
@@ -71,78 +64,6 @@ function ($, topic, paging, Dropdown)
             }
             return array.join('&');
         }
-    }
-
-    /*
-     * setCookie()
-     */
-    function setCookie(cname, cvalue, exdays) {
-        var value = cname + "=" + cvalue.replace(" ", "_");
-        if (exdays != undefined) {
-            var d = new Date();
-            d.setTime(d.getTime() + (exdays*24*60*60*1000));
-            value += "; expires="+d.toUTCString();
-        }
-        value += "; path=" + "/";
-        document.cookie = value;
-    }
-
-    /*
-     * deleteCookie()
-     * Delete a cookie by name by setting it to expire.
-     */
-    function deleteCookie(name) {
-        document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-    }
-
-    /*
-     * getCookie()
-     */
-    function getCookie(cname) {
-        var name = cname + "=";
-        var ca = document.cookie.split(';');
-        for(var i=0; i < ca.length; i++) {
-            var c = ca[i];
-            while (c.charAt(0)==' ') {
-                c = c.substring(1);
-            }
-            if (c.indexOf(name) != -1) {
-                return c.substring(name.length, c.length).toString();
-            }
-        }
-        return null;
-    }
-
-    /*
-     * bindStatus()
-     * Make the clicking on the status box show the server list.
-     * fixme: move to sidebar.js
-     */
-    function bindStatus() {
-        $('.main-side-bar .status').off('click');
-        $('.main-side-bar .status').bind('click', function() {
-            $('.main-side-bar li.active, ' +
-              '.secondary-side-bar, .dynamic-content, ' +
-              '.secondary-side-bar.servers').toggleClass('servers-visible');
-            if (sidebar_open) {
-                $('#expand-right').removeClass('fa-angle-left');
-                $('#expand-right').addClass('fa-angle-right');
-                if (!filters_hidden) {
-                    $('.filter-dropdowns').removeClass('hidden');
-                }
-                sidebar_open = false;
-            } else {
-                $('#expand-right').removeClass('fa-angle-right');
-                $('#expand-right').addClass('fa-angle-left');
-                filters_hidden = $('.filter-dropdowns').hasClass('hidden');
-                $('.filter-dropdowns').addClass('hidden');
-                sidebar_open = true;
-            }
-        });
-        $('.main-side-bar .status').hover(function() {
-            $(this).css('cursor','pointer');
-        });
-        status_bound = true;
     }
 
     /*
@@ -268,49 +189,6 @@ function ($, topic, paging, Dropdown)
     }
 
     /*
-     * setStatusColor() {
-     */
-    function setStatusColor(color) {
-
-        if (color == status_color)
-            return;
-
-        var $i = $('#status-icon')
-
-        /* FIXME: do this with LESS */
-        if (color == 'green') {
-            $i.removeClass('fa-exclamation-circle yellow');
-            $i.removeClass('fa-times-circle red');
-            $i.addClass('fa-check-circle green');
-        } else if (color == 'yellow') {
-            $i.removeClass('fa-check-circle green');
-            $i.removeClass('fa-times-circle red');
-            $i.addClass('fa-exclamation-circle yellow');
-        } else if (color == 'red') {
-            $i.removeClass('fa-check-circle green');
-            $i.removeClass('fa-exclamation-circle yellow');
-            $i.addClass('fa-times-circle red');
-        } else {
-            return;
-        }
-        status_color = color;
-        setCookie('status_color', color);
-    }
-
-    /*
-     * setStatusText() {
-     */
-    function setStatusText(text) {
-
-        if (text == status_text)
-            return;
-
-        $('#status-text').html(text);
-        status_text = text;
-        setCookie('status_text', text);
-    }
-
-    /*
      * updateEventList
      */
     function updateEventList(data) {
@@ -422,10 +300,8 @@ function ($, topic, paging, Dropdown)
             return true;
         }
 
-        var admin = data['admin'];
-        if (admin && !status_bound) {
-            bindStatus();
-        }
+        /* sidebar is only available for admins */
+        status.enableSidebar(data['admin']);
 
         topic.publish('state', data);
         current = json;
@@ -453,10 +329,10 @@ function ($, topic, paging, Dropdown)
         }
 
         var text = data['text'] != null ? data['text'] : 'SERVER ERROR';
-        setStatusText(text);
+        status.setText(text);
 
         var color = data['color'] != null ? data['color'] : 'red';
-        setStatusColor(color);
+        status.setColor(color);
 
         /* FIXME: break above into separate monitorUpdateStatus() function. */
 
@@ -592,9 +468,6 @@ function ($, topic, paging, Dropdown)
 
     return {'startMonitor': startMonitor,
             'ajaxError': ajaxError,
-            'getCookie': getCookie,
-            'setCookie': setCookie,
-            'deleteCookie': deleteCookie,
             'setupEventDropdowns' : setupEventDropdowns,
            };
 });

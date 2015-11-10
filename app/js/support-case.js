@@ -1,5 +1,5 @@
-require(['jquery', 'common', 'form', 'Dropdown'],
-function ($, common, form, Dropdown)
+require(['jquery', 'common', 'cookie', 'form', 'Dropdown'],
+function ($, common, cookie, form, Dropdown)
 {
     var URL = '/rest/support-case';
     var NONE = '--None--'
@@ -48,9 +48,9 @@ function ($, common, form, Dropdown)
             var id = $(this).attr('id');
             var value = $($.jq(id)).val();
             if (value != null && value.length > 0) {
-                common.setCookie(cookieName(id), value);
+                cookie.set(cookieName(id), value);
             } else {
-                common.deleteCookie(cookieName(id));
+                cookie.remove(cookieName(id));
             }
         });
 
@@ -59,9 +59,9 @@ function ($, common, form, Dropdown)
             var id = $(this).attr('id');
             var value = Dropdown.getValueByNode(this);
             if (value != null && value.length > 0) {
-                common.setCookie(cookieName(id), value);
+                cookie.set(cookieName(id), value);
             } else {
-                common.deleteCookie(cookieName(id));
+                cookie.remove(cookieName(id));
             }
         });
     }
@@ -180,7 +180,7 @@ function ($, common, form, Dropdown)
             if (value != null) {
                 $($.jq(id)).val(value);
             } else {
-                value = common.getCookie(cookieName(id));
+                value = cookie.get(cookieName(id));
                 if (value != null) {
                     value = value.replace('_', ' ');
                     $($.jq(id)).val(value);
@@ -194,10 +194,10 @@ function ($, common, form, Dropdown)
         $('.btn-group.cache').each(function(index){
             var value = Dropdown.getValueByNode(this);
             if (value == NONE) {
-                var cookie = common.getCookie(cookieName($(this).attr('id')));
-                if (cookie != null && cookie.length > 0) {
-                    cookie = cookie.replace('_', ' ');
-                    Dropdown.setValueByNode(this, cookie);
+                var cvalue = cookie.get(cookieName($(this).attr('id')));
+                if (cvalue != null && cvalue.length > 0) {
+                    cvalue = cvalue.replace('_', ' ');
+                    Dropdown.setValueByNode(this, cvalue);
                 }
             }
         });
