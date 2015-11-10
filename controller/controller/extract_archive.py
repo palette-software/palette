@@ -102,13 +102,15 @@ class ExtractRefreshManager(Manager, ArchiveUpdateMixin):
         # future: Use separate wb and ds retain counts when UI is updated.
         ds_retain_count = wb_retain_count
 
-        if isinstance(item_entry, WorkbookEntry) and wb_retain_count:
-            WorkbookExtractEntry.add(item_entry, extract_entry)
-        elif isinstance(item_entry, DataSourceEntry) and ds_retain_count:
-            DataSourceExtractEntry.add(item_entry, extract_entry)
+        if isinstance(item_entry, WorkbookEntry):
+            if wb_retain_count:
+                WorkbookExtractEntry.add(item_entry, extract_entry)
+        elif isinstance(item_entry, DataSourceEntry):
+            if ds_retain_count:
+                DataSourceExtractEntry.add(item_entry, extract_entry)
         else:
             logger.error("ExtractRefreshManager Add: Unexpected subtitle: %s",
-                          item_entry.subtitle)
+                          extract_entry.subtitle)
 
     @synchronized('refresh')
     def refresh(self, agent, check_odbc_state=True):
