@@ -1,8 +1,11 @@
 define(['jquery', 'cookie'],
 function ($, cookie)
 {
-    var sidebar_open = false;
     var sidebar_enabled = false;
+    var SIDEBAR_WIDTH = 300;
+
+    var content_left = null;
+    var CONTENT_MIN_WIDTH = 720 + SIDEBAR_WIDTH;
 
     /*
      * setColor() {
@@ -41,34 +44,36 @@ function ($, cookie)
     /* Allow opening/closing the sidebar by clicking on the status div */
     function enableSidebar(value) {
         sidebar_enabled = value;
+        if (value) {
+            var cursor = 'pointer';
+        } else {
+            var cursor = 'auto';
+        }
+        $().ready(function() {
+            $('.main-side-bar .status').hover(function() {
+                $(this).css('cursor', cursor);
+            });
+        });
     }
 
     $(document).on('click.status.data-api', '[data-toggle="status"]', function (evt) {
-        $('.main-side-bar li.active, ' +
-          '.secondary-side-bar, .dynamic-content, ' +
-          '.secondary-side-bar.servers').toggleClass('servers-visible');
-        if (sidebar_open) {
-            $('#expand-right').removeClass('fa-angle-left');
-            $('#expand-right').addClass('fa-angle-right');
-            if (!filters_hidden) {
-                $('.filter-dropdowns').removeClass('hidden');
-            }
-            sidebar_open = false;
-        } else {
-            if (sidebar_enabled) {
-                $('#expand-right').removeClass('fa-angle-right');
-                $('#expand-right').addClass('fa-angle-left');
-                filters_hidden = $('.filter-dropdowns').hasClass('hidden');
-                $('.filter-dropdowns').addClass('hidden');
-                sidebar_open = true;
+        if (sidebar_enabled) {
+            var content_width = $('.content').outerWidth();
+            if ( $('.container-webapp').hasClass('servers-visible')) {
+                // sidebar is open
+                $('.content').css("left", content_left);
+                $('.container-webapp').removeClass('servers-visible');
+            } else {
+                // sidebar is closed
+                if (content_left == null) {
+                    content_left = parseInt($('.content').css("left"));
+                }
+                if (content_width >= CONTENT_MIN_WIDTH) {
+                    $('.content').css("left", "+=" + SIDEBAR_WIDTH.toString());
+                }
+                $('.container-webapp').addClass('servers-visible');
             }
         }
-    });
-
-    $().ready(function() {
-        $('.main-side-bar .status').hover(function() {
-            $(this).css('cursor','pointer');
-        });
     });
 
     return {

@@ -5,7 +5,7 @@
 <title>Palette - Manage</title>
 </%block>
 
-<section class="secondary-side-bar">
+<section class="secondary-side-bar actions-side-bar">
   <h1>Actions</h1>
   <ul class="actions">
     <li>

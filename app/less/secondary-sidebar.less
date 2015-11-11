@@ -1,4 +1,7 @@
-/* FIXME: clean this up... */
+/*
+ * Generic secondary sidebar
+ * Base class for the action sidebar and the servers sidebar
+ */
 .secondary-side-bar {
     position: absolute;
     height: 100%;
@@ -6,16 +9,15 @@
     top: 0;
     left: 250px;
     width: 300px;
-    background-color: #555A60;
+    background-color: #555A60; /* fixme */
     color: white;
     z-index: 20;
-    overflow-y:auto;
+    overflow-y:auto; /* fixme - hide the scrollbar always */
     overflow-x:hidden;
     padding-bottom: 64px;
-    max-width: 600px;
     white-space: nowrap;
     -ms-overflow-style: none;
-    .transition(all 0.3s ease-out);
+    .transition(all @transition-time ease-out);
 }
 
 .secondary-side-bar a {
@@ -121,36 +123,58 @@
     display: block;
     float: left;
 }
+.secondary-side-bar > div.btn-group {
+    display: block;
+    margin: 10px 25px;
+    height: 32px;
+}
+.secondary-side-bar::-webkit-scrollbar {
+    width: 0 !important;
+    position: fixed;
+    z-index: 11000;
+}
 
-/* Servers / My Machine list */
-.secondary-side-bar.servers {
+.secondary-side-bar #next-backup {
+    padding: 10px 0 0 26px;
+    margin: 0 0 5px 0;
+    font-family: @font-family-light;
+    font-size: 14px;
+    text-transform: none;
+    
+}
+
+// 'empty' message only
+.secondary-side-bar p {
+    white-space: normal;
+    padding: 0 26px;
+    width: 299px;
+
+    a {
+        color: white;
+        text-decoration: underline;
+    }
+}
+
+/*
+ * Servers / My Machine list
+ */
+.servers-side-bar {
     width: 0px;
 }
-.secondary-side-bar.servers.servers-visible {
+.servers-visible .servers-side-bar {
     width: 300px;
-}
-.secondary-side-bar.servers-visible {
-    left: 550px;
-}
-.secondary-side-bar.servers.servers-visible {
     left: 250px;
     border-right: 1px solid rgba(0,0,0,0.2);
 }
-.secondary-side-bar.collapsed.servers-visible {
-    left: 360px;
-}
-.secondary-side-bar.servers.collapsed.servers-visible {
-    left: 60px;
-}
-.secondary-side-bar ul.server-list > li > a {
+.servers-side-bar ul.server-list > li > a {
     height: 100px;
 }
-.secondary-side-bar ul.server-list > li > a > div {
+.servers-side-bar ul.server-list > li > a > div {
     position: absolute;
     left:80px;
     top: 15px;
 }
-.secondary-side-bar ul.server-list > li > a > div > span {
+.servers-side-bar ul.server-list > li > a > div > span {
     position: relative;
     margin: 0 0 0 0;
     font-size: 16px;
@@ -163,7 +187,7 @@
     display: block;
     float: left;
 }
-.secondary-side-bar ul.server-list > li > a > i {
+.servers-side-bar ul.server-list > li > a > i {
     position: absolute;
     line-height: 100px;
     top: 0;
@@ -171,70 +195,51 @@
     width: 80px;
     font-size: 50px;
 }
-.secondary-side-bar ul.server-list > li > a > i.down-arrow  {
+.servers-side-bar ul.server-list > li > a > i.down-arrow  {
     position: absolute;
     line-height: 100px;
     top: 0;
     left: 240px;
     font-size: 26px;
 }
-.secondary-side-bar ul.actions li.active a:after {
-    content:"";
-    position: absolute;
-    right: 0;
-    top: 50%;
-    margin-top: -12px;
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 12px 12px 12px 0;
-    border-color: transparent #ececec transparent transparent;
-    display: block;
-}
-.secondary-side-bar ul.actions li a {
-    padding: 0 12px;
-}
-.secondary-side-bar > div.btn-group {
-    display: block;
-    margin: 10px 25px;
-    height: 32px;
-}
-.secondary-side-bar::-webkit-scrollbar {
-    width: 0 !important;
-    position: fixed;
-    z-index: 11000;
-}
 
 // Process list
-.secondary-side-bar .processes {
+.servers-side-bar .processes {
     display: none;
     background-color: rgba(0,0,0,0.1); // FIXME
     border-bottom: 1px solid rgba(0,0,0,0.2);
 }
-.secondary-side-bar .processes.visible {
+.servers-side-bar .processes.visible {
     display: block;
 }
-.secondary-side-bar ul.processes > li {
+.servers-side-bar ul.processes > li {
     padding: 4px 15px 4px 15px;
     font-size: 14px;
     font-family: @font-family-light;
 }
-.secondary-side-bar > ul.actions {
+
+/* 
+ * Actions Sidebar (manage page)
+*/
+.servers-visible .actions-side-bar {
+    left: 550px;
+}
+.actions-side-bar > ul.actions {
     margin: 0;
     padding:0;
     list-style-type: none;
 }
-.secondary-side-bar > ul.actions li i {
+.actions-side-bar > ul.actions li i {
     color: #ffffff;
     font-size: 25px;
     line-height: 55px;
     margin: 0 0px 0 4px;
     vertical-align: middle;
 }
-.secondary-side-bar > ul.actions li:hover i {
+.actions-side-bar > ul.actions li:hover i {
     color: #D3D3D3;
 }
-.secondary-side-bar > ul.actions li a {
+.actions-side-bar > ul.actions li a {
     line-height: 55px;
     width: 100%;
     display: block;
@@ -243,40 +248,16 @@
     font-weight: 500;
     vertical-align: top;
     position: relative;
-    -webkit-transition: all 0.1s ease-in;
-    -moz-transition: all 0.1s ease-in;
-    -ms-transition: all 0.1s ease-in;
-    -o-transition: all 0.1s ease-in;
-    transition: all 0.1s ease-in;
     width: 100%;
     overflow: hidden;
     text-overflow:ellipsis;
     white-space: nowrap;
+    padding: 0 12px;
 }
-.secondary-side-bar ul.actions li.divider {
+
+.actions-side-bar ul.actions li.divider {
     height: 2px;
     display: block;
     width: 100%;
     background-color: rgba(0, 0, 0, 0.1);
-}
-
-.secondary-side-bar #next-backup {
-    padding: 10px 0 0 26px;
-    margin: 0 0 5px 0;
-    font-family: @font-family-light;
-    font-size: 14px;
-    text-transform: none;
-    
-}
-
-/* 'empty' message only */
-.secondary-side-bar p {
-    white-space: normal;
-    padding: 0 26px;
-    width: 299px;
-
-    a {
-        color: white;
-        text-decoration: underline;
-    }
 }
