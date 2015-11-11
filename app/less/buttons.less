@@ -14,6 +14,7 @@
 @btn-disabled-bg:         #e1e3e5;
 
 @btn-cancel-color:        #3d3f41;
+@btn-spacing:             20px; // +4px for whitespace
 
 // Base button
 .btn {
@@ -48,7 +49,7 @@
 
 button.save, button.ok {
     .btn;
-    margin-left: 20px; // +4px for whitespace
+    margin-left: @btn-spacing;
     text-transform: uppercase;
 
     &.disabled {
@@ -135,4 +136,9 @@ button.test {
 /* save-cancel button sets */
 .save-cancel {
     margin-top: 25px;
+}
+
+/* specific buttons */
+#remove-s3, #remove-gcs {
+    margin-left: @btn-spacing;
 }

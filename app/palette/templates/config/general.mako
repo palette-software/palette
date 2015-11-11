@@ -45,11 +45,11 @@
           <label class="control-label" for="s3-url">S3 URL or Bucket Name</label>
           <input class="form-control" type="text" id="s3-url" />
           <div class="btn-bar">
-            <button type="button" id="test-s3" class="test okcancel"
+            <button type="button" id="test-s3" class="btn-test"
                     data-text="Are you sure you want to delete the S3 credentials?">
               Test Connection
             </button>
-            <button type="button" id="remove-s3" class="test okcancel"
+            <button type="button" id="remove-s3" class="btn-test"
                     data-text="Are you sure you want to delete the S3 credentials?">
               Remove Credentials
             </button>
