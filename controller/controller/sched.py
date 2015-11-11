@@ -7,7 +7,7 @@ import re
 
 from datetime import datetime
 
-from sqlalchemy import Column, String, BigInteger, DateTime, Boolean
+from sqlalchemy import Column, String, Integer, BigInteger, DateTime, Boolean
 from sqlalchemy.orm.exc import NoResultFound
 
 import akiri.framework.sqlalchemy as meta
@@ -49,8 +49,8 @@ class Sched(threading.Thread):
             nexttime = 61 +  now - (now % 60) # start of the minute
 
             for job in Crontab.get_ready_jobs():
-                logger.debug("JOB: %s, enabled %s", job.name,
-                                      str(job.enabled))
+                logger.debug("JOB: %s, priority %s, enabled %s", job.name,
+                                      str(job.priority), str(job.enabled))
                 if not job.enabled:
                     continue
                 try:
@@ -65,7 +65,8 @@ class Sched(threading.Thread):
     # pylint: disable=too-many-arguments
     def add_cron_job(self, name,
                      minute="*", hour="*", day_of_month="*",
-                     month="*", day_of_week="*"):
+                     month="*", day_of_week="*",
+                     priority=None):
 
         entry = Crontab.get(name)
         entry.minute = str(minute)
@@ -77,6 +78,7 @@ class Sched(threading.Thread):
         entry.day_of_month = str(day_of_month)
         entry.month = str(month)
         entry.day_of_week = str(day_of_week)
+        entry.priority = priority
 
         entry.set_next_run_time()
         meta.Session.commit()
@@ -121,22 +123,36 @@ class Sched(threading.Thread):
         # Backup every night at 12:00.
         self.add_cron_job(name='backup', hour=0, minute=0)
 
-        self.add_cron_job(name='daily', minute=0, hour=9)
-        self.add_cron_job(name='agent_upgrader', minute=45, hour='*/4')
-        self.add_cron_job(name='metrics_prune', minute=15, hour=3)
+        # Every minute
+        # Do these first:
+        self.add_cron_job(priority=1, name='sync', minute="*")
+        self.add_cron_job(priority=1, name='auth_import', minute="*")
+
+        # When the above are finished, continue with these:
+        self.add_cron_job(priority=2, name='workbook', minute='*')
+        self.add_cron_job(priority=2, name='datasource', minute='*')
+
+        # Lower priority
+        self.add_cron_job(priority=10, name='cpu_load', minute="*")
+        self.add_cron_job(priority=11, name='yml', minute="*")
+        self.add_cron_job(priority=12, name='checkports', minute="*")
+
+        self.add_cron_job(priority=2, name='extract', minute="*")
+
+        # Every 5 minutes
+        # If it has no specific priority, it is lowest priority.
+        self.add_cron_job(name='info_all', minute="0/5")
+
+        # Hourly
         self.add_cron_job(name='license_check', minute="8")
         self.add_cron_job(name='license_verify', minute=6)
-        self.add_cron_job(name='yml', minute="*")
-        self.add_cron_job(name='cpu_load', minute="*")
-        self.add_cron_job(name='info_all', minute="0/5")
-        self.add_cron_job(name='auth_import', minute="*")
-        self.add_cron_job(name='sync', minute="*")
-        self.add_cron_job(name='http_request', minute='*')
-        self.add_cron_job(name='extract', minute="*")
-        self.add_cron_job(name='extract_archive', minute="*")
-        self.add_cron_job(name='workbook', minute='*')
-        self.add_cron_job(name='datasource', minute='*')
-        self.add_cron_job(name='checkports', minute="*")
+
+        # Periodic hours
+        self.add_cron_job(name='agent_upgrader', minute=45, hour='*/4')
+
+        # Daily
+        self.add_cron_job(name='daily', minute=0, hour=9)
+        self.add_cron_job(name='metrics_prune', minute=15, hour=3)
 
 
 class Crontab(meta.Base, BaseDictMixin):
@@ -152,6 +168,7 @@ class Crontab(meta.Base, BaseDictMixin):
     month = Column(String, nullable=False) # 1-12,*
     day_of_week = Column(String, nullable=False) # 0-6,# or names
     enabled = Column(Boolean, nullable=False, default=True)
+    priority = Column(Integer)  # Lower is sooner. (1 is first.)
 
     # convert X/Y format to comma delimetted list
     def commafy(self, s, maxval=60):
@@ -197,12 +214,12 @@ class Crontab(meta.Base, BaseDictMixin):
     def get_ready_jobs(cls):
         return meta.Session.query(Crontab).\
                 filter(Crontab.next_run_time <= datetime.utcnow()).\
-                order_by(Crontab.cronid).all()
+                order_by(Crontab.priority).all()
 
     @classmethod
     def get_jobs(cls):
         return meta.Session.query(Crontab).\
-                order_by(Crontab.cronid).all()
+                order_by(Crontab.priority).all()
 
     @classmethod
     def delete(cls, arg):

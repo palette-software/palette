@@ -21,5 +21,7 @@ if __name__ == "__main__":
     comm.send_cmd("workbook import", skip_on_wrong_state=True,
                    read_response=True)
     comm.send_cmd("workbook fixup", skip_on_wrong_state=True,
+                   read_response=True)
+    comm.send_cmd("http_request import", skip_on_wrong_state=True,
                    read_response=False)
     sys.exit(0)
