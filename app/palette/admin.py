@@ -51,6 +51,8 @@ class LoginApplication(BaseLoginApplication):
 
         if auth_type == AuthType.ACTIVE_DIRECTORY:
             cmd = "ad verify " + username + " " + password
+            if req.system[SystemKeys.ACTIVE_DIRECTORY_AGENT]:
+                cmd = '/uuid=%s ' + cmd
             try:
                 self.commapp.send_cmd(cmd, read_response=True)
             except StandardError:

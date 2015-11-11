@@ -93,6 +93,7 @@ class SystemKeys(object):
     TABLEAU_SERVER_URL = 'tableau-server-url'
     TABLEAU_INTERNAL_SERVER_URL = 'tableau-internal-server-url'
     AUTHENTICATION_TYPE = 'authentication-type'
+    ACTIVE_DIRECTORY_AGENT = 'active-directory-agent'
     COMPANY_NAME = 'company-name'
 
     SOCKET_TIMEOUT = 'socket-timeout'

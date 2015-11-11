@@ -15,7 +15,6 @@ var/palette/sched/checkports    /var/palette/sched
 var/palette/sched/cpu_load    /var/palette/sched
 var/palette/sched/daily    /var/palette/sched
 var/palette/sched/extract    /var/palette/sched
-var/palette/sched/http_request    /var/palette/sched
 var/palette/sched/info_all    /var/palette/sched
 var/palette/sched/license_check    /var/palette/sched
 var/palette/sched/license_verify    /var/palette/sched

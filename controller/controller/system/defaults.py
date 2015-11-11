@@ -145,6 +145,7 @@ DEFAULTS = SystemDefaults({
     SystemKeys.PALETTE_VERSION: None,
 
     SystemKeys.AUTHENTICATION_TYPE: 1, # FIXME: AuthType.TABLEAU
+    SystemKeys.ACTIVE_DIRECTORY_AGENT: None,     # UUID
     SystemKeys.PALETTE_LOGIN: True,
 
     SystemKeys.SUPPORT_ENABLED: False,
