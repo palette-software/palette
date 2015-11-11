@@ -57,6 +57,6 @@ class ConfigureRouter(Router):
         super(ConfigureRouter, self).__init__()
         self.add_route(r'/setup\Z', SetupConfigPage())
         self.add_route(r'/general\Z', GeneralPage())
-        self.add_route(r'/servers?\Z', ServerConfigPage())
+        self.add_route(r'/machines?\Z', ServerConfigPage())
         self.add_route(r'/users?\Z', UserConfigPage())
         self.add_route(r'/yml\Z', YmlPage())
