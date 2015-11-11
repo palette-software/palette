@@ -18,10 +18,19 @@
       <h2>Tableau Server Username</h2>
       <p>${req.remote_user.name}</p>
 
+%if req.remote_user.email:
       <h2>Email</h2>
       <p>${req.remote_user.email or ''}</p>
+%endif
 
-      %if req.remote_user.userid > 0:
+%if req.remote_user.phone:
+      <h2>Phone</h2>
+      <p>${req.remote_user.phone or ''}</p>
+%endif
+
+%if 0:
+      <!-- fixme -->
+
       <h2>Tableau Server User License</h2>
       <p>Interactor</p>
 
@@ -30,7 +39,7 @@
 
       <h2>Tableau Server User Publisher Role</h2>
       <p>Publisher</p>
-      %endif
+%endif
 
       <h2>Palette Role</h2>
       <p>${req.remote_user.display_role()}</p>
