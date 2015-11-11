@@ -22,7 +22,7 @@
           <li><a href="/configure/setup">Setup Palette</a></li>
             <li><a href="/configure/general">General Configuration</a></li>
             <li><a href="/configure/users">Users</a></li>
-            <li><a href="/configure/servers">Servers</a></li>
+            <li><a href="/configure/machines">Machines</a></li>
             <li><a href="/configure/yml">Tableau Settings</a></li>
           </ul>
       </li>
