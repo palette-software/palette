@@ -334,7 +334,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
         """
 
         retain_count = self.system[SystemKeys.WORKBOOK_RETAIN_COUNT]
-        if not retain_count:
+        if not retain_count or retain_count == -1:
             return 0
 
         removed_count = 0
