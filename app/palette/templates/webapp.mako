@@ -8,7 +8,7 @@
 
 <%include file="side-bar.mako" />
 
-<section class="secondary-side-bar servers">
+<section class="secondary-side-bar servers-side-bar">
   <div id="server-list">
     <h1>My Machines</h1>
     <p>Palette cannot connect to your Tableau Machine.</p>

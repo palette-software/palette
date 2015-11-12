@@ -8,24 +8,19 @@
     color: @text-color;
     font-size: 14px;
     margin-bottom: 8px;
-    -webkit-transition: all 0.3s ease-in;
-    -moz-transition: all 0.3s ease-in;
-    -ms-transition: all 0.3s ease-in;
-    -o-transition: all 0.3s ease-in;
-    transition: all 0.3s ease-in;
     position: relative;
     overflow: hidden;
     border: 1px solid @item-border;
 
     &:hover {
-	background-color: @item-color-hover;
+        background-color: @item-color-hover;
     }
 }
 .item.open {
     height: auto;
 }
 
-.item .summary > i, article.item .summary > span > i {
+.item .summary > i, .item .summary > span > i {
     float: left;
     width: 60px;
     display: block;
@@ -68,6 +63,12 @@
     float: left;
     width: 50%;
 }
+
+.item > div.description {
+    line-height: 28px;
+    vertical-align: middle;
+}
+
 .item > div.description > div {
     padding: 0 50px 0 0;
 }

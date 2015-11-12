@@ -4,35 +4,32 @@
     top: 0;
     left: 0;
     width: 250px;
-    background-color: #697078;
+    background-color: @darker-gray;
     color: white;
-    z-index: 100;
-    -webkit-transition: all 0.3s ease-out;
-    -moz-transition: all 0.3s ease-out;
-    -ms-transition: all 0.3s ease-out;
-    -o-transition: all 0.3s ease-out;
-    -ms-overflow-style: none;
-    transition: all 0.3s ease-out;
-    overflow-y:scroll;
-    overflow: -moz-scrollbars-none;
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
-/* status box */
+// allow the sidebar to be scrollable but don't show the scrollbar
 .main-side-bar::-webkit-scrollbar {
     width: 0 !important;
     position: fixed;
-    z-index: 11000;
+//    z-index: 11000;
 }
+
+/* status box */
 .main-side-bar .status {
     position: relative;
     top: 0;
     width: 100%;
     display: block;
     height: 120px;
-    color: #5f6670;
+    color: @text-color;
     background-color: white;
     border-right: 1px solid @border-color;
 }
+
+// the main icon
 .main-side-bar .status > i {
     position: absolute;
     display: block;
@@ -77,41 +74,26 @@
     text-align: left;
 }
 
+/* open/close icon in the status panel */
+.main-side-bar .status i.expand {
+    color: @text-color;
+    &:before {
+        content: @fa-var-angle-right;
+    }
+
+}
+.servers-visible .main-side-bar .status i.expand {
+    &:before {
+        content: @fa-var-angle-left;
+    }
+}
+
 /* navigation items */
 .main-side-bar ul.actions li.active a, .main-side-bar ul.actions li a:hover {
     background-color: #5e646b;
     box-shadow:0 -1px rgba(0,0,0,0.1);
 }
-.main-side-bar ul.actions li.active a:after {
-    content: "";
-    position: absolute;
-    right: 0;
-    top: 50%;
-    margin-top: -12px;
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 12px 12px 12px 0;
-    border-color: transparent white transparent transparent;
-    display: block;
-    -webkit-transition-delay: 0.3s;
-    -moz-transition-delay: 0.3s;
-    -ms-transition-delay: 0.3s;
-    -o-transition-delay: 0.3s;
-    transition-delay: 0.3s;
-}
-.main-side-bar ul.actions li.has-side-bar a:after {
-    border-color: transparent #555A60 transparent transparent;
-}
-.main-side-bar ul.actions li.active.servers-visible a:after {
-    border-color: transparent #555A60 transparent transparent;
-    -webkit-transition: all 0.3s ease-in;
-    -moz-transition: all 0.3s ease-in;
-    -ms-transition: all 0.3s ease-in;
-    -o-transition: all 0.3s ease-in;
-    transition: all 0.3s ease-in;
 
-}
 .main-side-bar ul.actions ul {
     padding: 0;
     display: none;
@@ -150,11 +132,6 @@
     color: white;
     vertical-align: top;
     position: relative;
-    -webkit-transition: all 0.1s ease-in;
-    -moz-transition: all 0.1s ease-in;
-    -ms-transition: all 0.1s ease-in;
-    -o-transition: all 0.1s ease-in;
-    transition: all 0.1s ease-in;
     width: 100%;
     overflow: hidden;
     text-overflow:ellipsis;
@@ -167,6 +144,31 @@
 {
     text-decoration: none;
 }
+
+/* carats */
+.main-side-bar ul.actions li.active a:after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 50%;
+    margin-top: -12px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 12px 12px 12px 0;
+    border-color: transparent white transparent transparent;
+    display: block;
+    .transition(all @transition-time step-end);
+}
+
+.main-side-bar ul.actions li.has-side-bar a:after {
+    border-color: transparent @darkest-gray transparent transparent;
+}
+.servers-visible .main-side-bar ul.actions li.active a:after {
+    border-color: transparent @darkest-gray transparent transparent;
+    .transition(all @transition-time step-start);
+}
+
 /* For IE11 */
 .main-side-bar ul.actions li.category ul.visible li {
     display: block;

@@ -1,5 +1,5 @@
-require(['jquery', 'common', 'EditBox', 'plugin', 'OnOff', 'bootstrap'],
-        function ($, common, EditBox, plugin, OnOff)
+require(['jquery', 'common', 'OnOff', 'EditBox'],
+        function ($, common, OnOff, EditBox)
 {
     common.startMonitor(false);
 
