@@ -8,6 +8,16 @@ from util import success
 
 logger = logging.getLogger()
 
+class ArchiveError(object):
+    BAD_CREDENTIALS = "Bad Credentials"
+
+class ArchiveException(Exception):
+    def __init__(self, value):
+        super(ArchiveException, self).__init__(value)
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
 class ArchiveUpdateMixin(object):
     NAME = "unknown"
 
