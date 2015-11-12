@@ -33,7 +33,10 @@ class BackupZiplogsRetention(DictOption):
 
     def __init__(self, name, valueid):
         options = OrderedDict({})
-        options[self.NONE] = 'Disabled'
+        if name.find('-user') == -1:
+            # Only have a 'disabled' retain count option if it isn't for
+            # user-requested backups.
+            options[self.NONE] = 'Disabled'
         for count in self.RETAIN_RANGE:
             options[count] = str(count)
         options[self.ALL] = 'All'
