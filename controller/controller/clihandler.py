@@ -643,6 +643,16 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_usage(self.do_backup.__usage__)
             return
 
+        if cmd.dict.has_key('userid'):
+            userid = int(cmd.dict['userid'])
+        else:
+            userid = None
+            if self.server.system[SystemKeys.BACKUP_AUTO_RETAIN_COUNT] == 0:
+                self.ack()
+                self.report_status({'status': 'OK',
+                                     'info': 'Scheduled backups are disabled'})
+                return
+
         agent = self.get_agent(cmd.dict)
         if not agent:
             return
@@ -684,11 +694,6 @@ class CliHandler(socketserver.StreamRequestHandler):
             return
 
         logger.debug("---------------Starting Backup-----------------")
-        if cmd.dict.has_key('userid'):
-            userid = int(cmd.dict['userid'])
-        else:
-            userid = None
-
         if userid != None:
             backup_started_event = EventControl.BACKUP_STARTED
             backup_finished_event = EventControl.BACKUP_FINISHED
@@ -2724,6 +2729,16 @@ class CliHandler(socketserver.StreamRequestHandler):
             self.print_usage(self.do_ziplogs.__usage__)
             return
 
+        if cmd.dict.has_key('userid'):
+            userid = int(cmd.dict['userid'])
+        else:
+            userid = None
+            if self.server.system[SystemKeys.ZIPLOG_AUTO_RETAIN_COUNT] == 0:
+                self.ack()
+                self.report_status({'status': 'OK',
+                                     'info': 'Scheduled ziplogs are disabled'})
+                return
+
         agent = self.get_agent(cmd.dict)
         if not agent:
             return
@@ -2746,11 +2761,6 @@ class CliHandler(socketserver.StreamRequestHandler):
                        "FAIL: Main state is " + main_state)
             aconn.user_action_unlock()
             return
-
-        if cmd.dict.has_key('userid'):
-            userid = int(cmd.dict['userid'])
-        else:
-            userid = None
 
         self.ack()
 

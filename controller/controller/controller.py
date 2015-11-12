@@ -268,6 +268,13 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         rows = find_method(self.environment.envid, file_type)
 
+        if retain_count == -1:
+            info = ("\nThere are %d %s %s files.  The configuration is to " + \
+                    "retain all %s %s files.") % \
+                    (len(rows), find_name, file_type, find_name, file_type)
+            logger.debug(info)
+            return info
+
         remove_count = len(rows) - retain_count
         if remove_count <= 0:
             remove_count = 0

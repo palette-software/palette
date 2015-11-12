@@ -11,7 +11,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 import akiri.framework.sqlalchemy as meta
 
-from archive_mixin import ArchiveUpdateMixin
+from archive_mixin import ArchiveUpdateMixin, ArchiveException, ArchiveError
 from mixin import BaseMixin, BaseDictMixin
 from cache import TableauCacheManager #FIXME
 from manager import synchronized
@@ -403,6 +403,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
         session = meta.Session()
 
         count = 0
+        data = {}
         logger.debug("Workbook archive update count: %d\n", len(updates))
         for update in updates:
             if not self.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]:
@@ -419,7 +420,18 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
             logger.debug("Workbook archive update refresh wid %d",
                            update.workbookid)
             session.refresh(update)
-            self._archive_wb(agent, update)
+            try:
+                self._archive_wb(agent, update)
+            except ArchiveException as ex:
+                if ex.value == ArchiveError.BAD_CREDENTIALS:
+                    msg = "workbook _archive_updates: tabcmd failed due to " + \
+                          "bad credentials. " + \
+                          "Skipping any remaining workbook updates now."
+                    logger.info(msg)
+                    data[u'error'] = msg
+                    break
+                else:
+                    raise # should never happen
             count += 1
 
         # Retain only configured number of versions
@@ -428,9 +440,9 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
         else:
             retain_removed_count = 0
 
-        return {u'status': 'OK',
-                u'updates-archived': count,
-                u'retain-removed-count': retain_removed_count}
+        data[u'updates-archived'] = count
+        data[u'retain-removed-count'] = retain_removed_count
+        return data
 
     def _archive_wb(self, agent, update):
         """
@@ -545,17 +557,22 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
 
         if failed(body):
             self._eventgen(update, data=body)
-            if 'stderr' in body and '404' in body['stderr'] and \
-                                                "Not Found" in body['stderr']:
-
-                # The update was deleted before we
-                # got to it.  Subsequent attempts will also fail,
-                # so delete the update row to stop
-                # attempting to retrieve it again.
-                # Note: We didn't remove the update row until after
-                # _eventgen uses it.
-                self._remove_wbu(update)
-            return None
+            if 'stderr' in body:
+                if 'Not authorized' in body['stderr']:
+                    self.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED] = False
+                    self._eventgen(update, data=body,
+                            key=EventControl.\
+                                    TABLEAU_ADMIN_CREDENTIALS_FAILED_WORKBOOKS)
+                    raise ArchiveException(ArchiveError.BAD_CREDENTIALS)
+                elif '404' in body['stderr'] and "Not Found" in body['stderr']:
+                    # The update was deleted before we
+                    # got to it.  Subsequent attempts will also fail,
+                    # so delete the update row to stop
+                    # attempting to retrieve it again.
+                    # Note: We didn't remove the update row until after
+                    # _eventgen used it.
+                    self._remove_wbu(update)
+                return None
         return dst
 
     def _remove_wbu(self, update):
@@ -598,7 +615,8 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
         return dst
 
     # Generate an event in case of a failure.
-    def _eventgen(self, update, error=None, data=None):
+    def _eventgen(self, update, error=None, data=None,
+                                key=EventControl.WORKBOOK_ARCHIVE_FAILED):
         if data is None:
             data = {}
 
@@ -608,5 +626,4 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
         if 'embedded' in data:
             del data['embedded']
 
-        self.sendevent(EventControl.WORKBOOK_ARCHIVE_FAILED,
-                        update.system_user_id, error, data)
+        self.sendevent(key, update.system_user_id, error, data)

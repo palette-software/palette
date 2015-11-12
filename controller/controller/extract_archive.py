@@ -9,7 +9,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 import akiri.framework.sqlalchemy as meta
 
-from archive_mixin import ArchiveUpdateMixin
+from archive_mixin import ArchiveUpdateMixin, ArchiveException, ArchiveError
 from mixin import BaseMixin, BaseDictMixin
 from manager import synchronized, Manager
 from util import failed
@@ -155,8 +155,26 @@ class ExtractRefreshManager(Manager, ArchiveUpdateMixin):
 
         count = 0
         for update in updates:
+            # fixme: When a system table entry is added for extract
+            # refresh data source, check which one is being archived and
+            # if it is still enabled, etc.
+            if not self.system[SystemKeys.EXTRACT_REFRESH_WB_RETAIN_COUNT]:
+                logger.info("Extract Archiving disabled during archiving."
+                            "  Exiting for now.")
+                break
             name = update.parent.name    # cache in case it fails and is removed
-            filename = self._build_extract(agent, update)
+            try:
+                filename = self._build_extract(agent, update)
+            except ArchiveException as ex:
+                if ex.value == ArchiveError.BAD_CREDENTIALS:
+                    msg = "extract archive: tabcmd failed due to " + \
+                          "bad credentials. " + \
+                          "Skipping any remaining extract archives now."
+                    logger.info(msg)
+                    break
+                else:
+                    raise # should never happen
+
             if not filename:
                 logger.error(
                     "Failed to retrieve extract refresh: from %s: %d - %s",
@@ -214,16 +232,20 @@ class ExtractRefreshManager(Manager, ArchiveUpdateMixin):
 
         if failed(body):
             self._eventgen(update, data=body)
-
-            if 'stderr' in body and '404' in body['stderr'] and \
-                                                "Not Found" in body['stderr']:
-
-                # The extract refresh was deleted before we
-                # got to it.  Subsequent attempts will also fail,
-                # so delete the row to stop attempting to retrieve it again.
-                # Note: We didn't remove the row until after
-                # _eventgen used it.
-                self._remove_refresh_entry(update)
+            if 'stderr' in body:
+                if 'Not authorized' in body['stderr']:
+                    self.system[SystemKeys.EXTRACT_REFRESH_WB_RETAIN_COUNT] = \
+                                                                         0
+                    self._eventgen(update, data=body, key=EventControl.\
+                                   TABLEAU_ADMIN_CREDENTIALS_FAILED_EXTRACTS)
+                    raise ArchiveException(ArchiveError.BAD_CREDENTIALS)
+                elif '404' in body['stderr'] and "Not Found" in body['stderr']:
+                    # The extract refresh was deleted before we
+                    # got to it.  Subsequent attempts will also fail,
+                    # so delete the row to stop attempting to retrieve it again.
+                    # Note: We didn't remove the row until after
+                    # _eventgen used it.
+                    self._remove_refresh_entry(update)
             return None
 
         if dst is None:
@@ -295,7 +317,9 @@ class ExtractRefreshManager(Manager, ArchiveUpdateMixin):
 
         wb_retain_count = \
                         self.system[SystemKeys.EXTRACT_REFRESH_WB_RETAIN_COUNT]
-        if not wb_retain_count:
+        if not wb_retain_count or wb_retain_count == -1:
+            # 0 means disabled so don't bother to remove any.
+            # -1 means retain them all.
             return 0
 
         wb_removed_count = self._retain_some_obj(wb_retain_count,
@@ -312,7 +336,7 @@ class ExtractRefreshManager(Manager, ArchiveUpdateMixin):
            Called with:
                 - How many to retain
                 - The object class (WorkbookExtractEntry or
-                                    DataSourceExtractEntry
+                                    DataSourceExtractEntry)
         """
 
         session = meta.Session()
@@ -357,14 +381,18 @@ class ExtractRefreshManager(Manager, ArchiveUpdateMixin):
         return removed_count
 
     # Generate an event in case of a failure.
-    def _eventgen(self, update, error=None, data=None):
+    def _eventgen(self, update, error=None, data=None,
+                  key=None):
         if data is None:
             data = {}
 
-        if isinstance(update, WorkbookExtractEntry):
-            key = EventControl.WORKBOOK_REFRESH_ARCHIVE_FAILED
-        elif isinstance(update, DataSourceExtractEntry):
-            key = EventControl.DATASOURCE_REFRESH_ARCHIVE_FAILED
+        if not key:
+            if isinstance(update, WorkbookExtractEntry):
+                key = EventControl.WORKBOOK_REFRESH_ARCHIVE_FAILED
+            elif isinstance(update, DataSourceExtractEntry):
+                key = EventControl.DATASOURCE_REFRESH_ARCHIVE_FAILED
+            else:
+                raise RuntimeError("extract: archive eventgen: bad type")
 
         data = dict(update.parent.todict().items() + \
                     update.todict().items() + \

@@ -11,7 +11,7 @@ import akiri.framework.sqlalchemy as meta
 
 from odbc import ODBC
 
-from archive_mixin import ArchiveUpdateMixin
+from archive_mixin import ArchiveUpdateMixin, ArchiveException, ArchiveError
 from mixin import BaseMixin, BaseDictMixin
 from cache import TableauCacheManager #FIXME
 from manager import synchronized
@@ -372,7 +372,17 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
                            update.dsid)
 
             session.refresh(update)
-            self._archive_ds(agent, update)
+            try:
+                self._archive_ds(agent, update)
+            except ArchiveException as ex:
+                if ex.value == ArchiveError.BAD_CREDENTIALS:
+                    msg = "datasource _archive_updates: tabcmd failed due " + \
+                          "to bad credentials. " + \
+                          "Skipping any remaining datasource updates now."
+                    logger.info(msg)
+                    break
+                else:
+                    raise   # should never happen
             count += 1
 
         # Retain only configured number of versions
@@ -495,15 +505,20 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
 
         if failed(body):
             self._eventgen(update, data=body)
-            if 'stderr' in body and '404' in body['stderr'] and \
-                                                "Not Found" in body['stderr']:
-                # The update was deleted before we
-                # got to it.  Subsequent attempts will also fail,
-                # so delete the update row to stop
-                # attempting to retrieve it again.
-                # Note: Don't remove the update row until after
-                # _eventgen uses it.
-                self._remove_dsu(update)
+            if 'stderr' in body:
+                if 'Not authorized' in body['stderr']:
+                    self.system[SystemKeys.DATASOURCE_ARCHIVE_ENABLED] = False
+                    self._eventgen(update, data=body, key=EventControl.\
+                                   TABLEAU_ADMIN_CREDENTIALS_FAILED_DATASOURCES)
+                    raise ArchiveException(ArchiveError.BAD_CREDENTIALS)
+                elif '404' in body['stderr'] and "Not Found" in body['stderr']:
+                    # The update was deleted before we
+                    # got to it.  Subsequent attempts will also fail,
+                    # so delete the update row to stop
+                    # attempting to retrieve it again.
+                    # Note: Don't remove the update row until after
+                    # _eventgen uses it.
+                    self._remove_dsu(update)
             return None
         return dst
 
@@ -572,12 +587,12 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         return True
 
     # Generate an event in case of a failure.
-    def _eventgen(self, update, error=None, data=None):
+    def _eventgen(self, update, error=None, data=None,
+                  key=EventControl.DATASOURCE_ARCHIVE_FAILED):
         if data is None:
             data = {}
         data = dict(update.datasource.todict().items() + \
                     update.todict().items() + \
                     data.items())
 
-        self.sendevent(EventControl.DATASOURCE_ARCHIVE_FAILED,
-                       update.system_user_id, error, data)
+        self.sendevent(key, update.system_user_id, error, data)
