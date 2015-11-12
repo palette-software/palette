@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-<section class="main-side-bar">
-  <section class="status">
+<div class="main-side-bar">
+  <div class="status" data-toggle="status">
     <span class="fa-stack">
       <i class="fa fa-circle fa-stack-1x"></i>
       <i id="status-icon" class="fa fa-fw fa-stack-1x ${obj.status_class}"></i>
@@ -8,9 +8,9 @@
     <h1>STATUS</h1>
     <h3 id="status-text">${obj.status_text}</h3>
 %if req.remote_user.roleid > req.remote_user.role.NO_ADMIN:
-    <i class="fa fa-fw fa-angle-right" id="expand-right"></i>
+    <i class="expand"></i>
 %endif
-  </section>
+  </div> <!-- status -->
   <ul class="actions">
     <li ${obj.active=='home' and 'class="active"' or ''}>
       <a href="/">
@@ -41,4 +41,4 @@
     </li>
 %endif
   </ul>
-</section>
+</div> <!-- main-side-bar -->
