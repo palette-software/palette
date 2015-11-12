@@ -17,12 +17,27 @@ from controller.credential import CredentialEntry
 from controller.email_limit import EmailLimitEntry
 from controller.system import SystemKeys
 
-from .option import ListOption, DictOption, TimeOption, PercentOption
+from .option import DictOption, TimeOption, PercentOption
 from .page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
 from .s3 import S3Application
 from .gcs import GCSApplication
 from .mixin import CredentialMixin
+
+class BackupZiplogsRetention(DictOption):
+    """Representation of the 'Workbook Retention' dropdown."""
+    NONE = 0
+    ALL = -1
+
+    RETAIN_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25]
+
+    def __init__(self, name, valueid):
+        options = OrderedDict({})
+        options[self.NONE] = 'Disabled'
+        for count in self.RETAIN_RANGE:
+            options[count] = str(count)
+        options[self.ALL] = 'All'
+        super(BackupZiplogsRetention, self).__init__(name, valueid, options)
 
 class WorkbookRetention(DictOption):
     """Representation of the 'Workbook Retention' dropdown."""
@@ -256,48 +271,25 @@ class GeneralStorageApplication(Router):
 
 class GeneralBackupApplication(PaletteRESTApplication):
     """Handler for the 'BACKUPS' section."""
-    BACKUP_SCHEDULED_PERIOD_RANGE = [1, 2, 3, 4, 6, 8, 12, 24]
-    BACKUP_SCHEDULED_HOUR_RANGE = range(1, 12)
-    BACKUP_SCHEDULED_MINUTE_RANGE = ['00', '15', '30', '45']
-    BACKUP_SCHEDULED_RETAIN_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25]
-    USER_BACKUP_RETAIN_RANGE = BACKUP_SCHEDULED_RETAIN_RANGE
 
     @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
-        config = [ListOption(SystemKeys.BACKUP_SCHEDULED_PERIOD,
-                             req.system[SystemKeys.BACKUP_SCHEDULED_PERIOD],
-                             self.BACKUP_SCHEDULED_PERIOD_RANGE),
-                  ListOption(SystemKeys.BACKUP_AUTO_RETAIN_COUNT,
-                             req.system[SystemKeys.BACKUP_AUTO_RETAIN_COUNT],
-                             self.BACKUP_SCHEDULED_RETAIN_RANGE),
-                  ListOption(SystemKeys.BACKUP_USER_RETAIN_COUNT,
-                             req.system[SystemKeys.BACKUP_USER_RETAIN_COUNT],
-                             self.USER_BACKUP_RETAIN_RANGE),
-                  ListOption(SystemKeys.BACKUP_SCHEDULED_HOUR,
-                             req.system[SystemKeys.BACKUP_SCHEDULED_HOUR],
-                             self.BACKUP_SCHEDULED_HOUR_RANGE),
-                  ListOption(SystemKeys.BACKUP_SCHEDULED_MINUTE,
-                             req.system[SystemKeys.BACKUP_SCHEDULED_MINUTE],
-                             self.BACKUP_SCHEDULED_MINUTE_RANGE),
-                  ListOption(SystemKeys.BACKUP_SCHEDULED_AMPM,
-                             req.system[SystemKeys.BACKUP_SCHEDULED_AMPM],
-                             ['AM', 'PM'])
-              ]
+        name = SystemKeys.BACKUP_USER_RETAIN_COUNT
+        valueid = req.system[name]
+        backup_user_retain_opts = BackupZiplogsRetention(name, valueid)
 
-        scheduled_enabled = req.system[SystemKeys.BACKUP_SCHEDULED_ENABLED]
+        name = SystemKeys.BACKUP_AUTO_RETAIN_COUNT
+        valueid = req.system[name]
+        backup_auto_retain_opts = BackupZiplogsRetention(name, valueid)
 
         data = {}
-        data['config'] = [option.default() for option in config]
-        data['scheduled-backups'] = scheduled_enabled
-        data['timezone'] = time.strftime("%Z")
+        data['config'] = [backup_user_retain_opts.default(),
+                           backup_auto_retain_opts.default()]
+        data['timezone'] = time.strftime("%Z")  # remove?
         return data
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
-        if 'scheduled-backups' in req.POST:
-            req.system[SystemKeys.BACKUP_SCHEDULED_ENABLED] = \
-                                        str2bool(req.POST['scheduled-backups'])
-
         req.system[SystemKeys.BACKUP_AUTO_RETAIN_COUNT] = \
                                         req.POST['backup-auto-retain-count']
         req.system[SystemKeys.BACKUP_USER_RETAIN_COUNT] = \
@@ -336,33 +328,25 @@ class EmailAlertApplication(PaletteRESTApplication):
 
 class GeneralZiplogApplication(PaletteRESTApplication):
     """Handler for the 'ZIPLOGSS' section."""
-    SCHEDULED_RETAIN_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25]
-    USER_RETAIN_RANGE = SCHEDULED_RETAIN_RANGE
 
     @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
         # pylint: disable=unused-argument
-        config = [ListOption(SystemKeys.ZIPLOG_AUTO_RETAIN_COUNT,
-                             req.system[SystemKeys.ZIPLOG_AUTO_RETAIN_COUNT],
-                             self.SCHEDULED_RETAIN_RANGE),
-                  ListOption(SystemKeys.ZIPLOG_USER_RETAIN_COUNT,
-                             req.system[SystemKeys.ZIPLOG_USER_RETAIN_COUNT],
-                             self.USER_RETAIN_RANGE)
-              ]
+        name = SystemKeys.ZIPLOG_USER_RETAIN_COUNT
+        valueid = req.system[name]
+        ziplog_user_retain_opts = BackupZiplogsRetention(name, valueid)
 
-        enabled_scheduled = req.system[SystemKeys.ZIPLOG_SCHEDULED_ENABLED]
+        name = SystemKeys.ZIPLOG_AUTO_RETAIN_COUNT
+        valueid = req.system[name]
+        ziplog_auto_retain_opts = BackupZiplogsRetention(name, valueid)
 
         data = {}
-        data['config'] = [option.default() for option in config]
-        data['schedule-ziplogs'] = enabled_scheduled
+        data['config'] = [ziplog_user_retain_opts.default(),
+                           ziplog_auto_retain_opts.default()]
         return data
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
-        if 'scheduled-ziplogs' in req.POST:
-            req.system[SystemKeys.ZIPLOG_SCHEDULED_ENABLED] = \
-                            req.POST['scheduled-ziplogs']
-
         req.system[SystemKeys.ZIPLOG_AUTO_RETAIN_COUNT] = \
                             req.POST['ziplog-auto-retain-count']
         req.system[SystemKeys.ZIPLOG_USER_RETAIN_COUNT] = \
