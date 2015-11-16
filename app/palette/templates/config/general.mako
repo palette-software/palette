@@ -45,12 +45,10 @@
           <label class="control-label" for="s3-url">S3 URL or Bucket Name</label>
           <input class="form-control" type="text" id="s3-url" />
           <div class="btn-bar">
-            <button type="button" id="test-s3" class="btn-test"
-                    data-text="Are you sure you want to delete the S3 credentials?">
+            <button type="button" id="test-s3" class="btn-test">
               Test Connection
             </button>
-            <button type="button" id="remove-s3" class="btn-test"
-                    data-text="Are you sure you want to delete the S3 credentials?">
+            <button type="button" id="remove-s3" class="btn-test">
               Remove Credentials
             </button>
           </div>
@@ -73,12 +71,10 @@
           <label class="control-label" for="gcs-url">GCS URL or Bucket Name</label>
           <input class="form-control" type="text" id="gcs-url" />
           <div class="btn-bar">
-            <button type="button" id="test-gcs" class="btn btn-test okcancel"
-                    data-text="Are you sure you want to delete the GCS credentials?">
+            <button type="button" id="test-gcs" class="btn-test">
               Test Connection
             </button>
-            <button type="button" id="remove-gcs" class="btn btn-test okcancel"
-                    data-text="Are you sure you want to delete the GCS credentials?">
+            <button type="button" id="remove-gcs" class="btn-test">
               Remove Credentials
             </button>
           </div>
