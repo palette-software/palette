@@ -1966,10 +1966,13 @@ class CliHandler(socketserver.StreamRequestHandler):
         stateman.update(StateManager.STATE_RESTARTING)
 
         logger.debug("-------------Restarting Tableau----------------")
+        data = agent.todict()
+        self.server.event_control.gen(EventControl.RESTART_STARTED, data,
+                                      userid=userid)
+
         # fixme: Reply with "OK" only after the agent received the command?
         body = self.server.cli_cmd('tabadmin restart', agent, timeout=60*60)
 
-        data = agent.todict()
 
         if success(body):
             stateman.update(StateManager.STATE_STARTED)

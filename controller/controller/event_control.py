@@ -116,6 +116,7 @@ class EventControl(meta.Base, BaseMixin, BaseDictMixin):
                                 "BACKUP-BEFORE-RESTORE-FINISHED-COPY-FAILED"
     BACKUP_BEFORE_RESTORE_FAILED = "BACKUP-BEFORE-RESTORE-FAILED"
 
+    RESTART_STARTED = "RESTART-STARTED"
     RESTART_FINISHED = "RESTART-FINISHED"
     RESTART_FAILED = "RESTART-FAILED"
 
@@ -251,6 +252,7 @@ class EventControl(meta.Base, BaseMixin, BaseDictMixin):
         'logs' : 'Tableau Ziplog',
         'maintenance' : 'Maintenance Page',
         'restore' : 'Tableau Restore',
+        'restart' : 'Tableau Restart',
         'server' : 'Palette Server',
         'storage' : 'Storage',
         'cpu' : 'CPU Load',
