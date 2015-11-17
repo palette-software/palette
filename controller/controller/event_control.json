@@ -1889,6 +1889,24 @@
 "event_label_desc":null,
 "admin_visibility":true,
 "publisher_visibility":true
+},
+{
+"eventid":107,
+"key":"RESTART-STARTED",
+"level":"I",
+"send_email":"t",
+"subject":"INFO Restart Requested by %(username)s Initiated (ID: %(eventid)s)",
+"event_description":"SUMMARY\nA restart requested was initiated by ${username}. Full context is provided below for your reference.\n\nDETAILS\nEvent Type: ${event_type_label}\nEnvironment: ${environment}\nRequesting User: ${username}\nMachine Name: ${displayname}\nMachine IP: ${ip_address}\nMachine Hostname: ${fqdn}\n% if tableau_server_url is not UNDEFINED: \nTableau Server Application URL: <a href=\"${tableau_server_url}\" target=\"_blank\">${tableau_server_url}</a>\n% else: \nTableau Server Application URL: URL is not currently set. \n% endif\n% if info is not UNDEFINED or stdout is not UNDEFINED or stderr is not UNDEFINED:\nSystem Message:\n% endif\n% if info is not UNDEFINED:\n${info}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif\n\nWHY THIS EVENT OCCURRED\nPalette always records which users initiate system restart and when these restarts were initiated, in order to create a complete record of system health.",
+"email_subject":"INFO Restart Requested by %(username)s Initiated (ID: %(eventid)s)",
+"email_message":"SUMMARY\nA restart requested was initiated by ${username}. Full context is provided below for your reference.\n\nDETAILS\nTime: ${timestamp}\nEvent Type: ${event_type_label}\nEnvironment: ${environment}\nRequesting User: ${username}\nMachine Name: ${displayname}\nMachine IP: ${ip_address}\nMachine Hostname: ${fqdn}\n% if tableau_server_url is not UNDEFINED: \nTableau Server Application URL: ${tableau_server_url}\n% else: \nTableau Server Application URL: URL is not currently set. \n% endif\n% if info is not UNDEFINED or stdout is not UNDEFINED or stderr is not UNDEFINED:\nSystem Message:\n% endif\n% if info is not UNDEFINED:\n${info}\n% endif\n% if stderr is not UNDEFINED:\n${stderr}\n% endif\n% if stdout is not UNDEFINED:\n${stdout}\n% endif\n\nWHY THIS EVENT OCCURRED \nPalette always records which users initiate system restarts and when these restarts were initiated, in order to create a complete record of system health.\n\nHOW TO STOP RECEIVING THIS EMAIL ALERT\nThis message was sent from your Palette Server at ${server_url}. You can turn off these email alerts on your profile page found at ${server_url}/profile.",
+"icon":"",
+"color":"green",
+"event_type":"restart",
+"event_type_label":"Tableau Restart",
+"event_label":"",
+"event_label_desc":null,
+"admin_visibility":true,
+"publisher_visibility":false
 }
 ]
 }
