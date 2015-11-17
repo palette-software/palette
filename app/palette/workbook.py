@@ -191,6 +191,7 @@ class WorkbookApplication(ArchiveApplication):
         users = ArchiveUserCache(req.envid)
         sites = Site.cache(req.envid)
         projects = Project.cache(req.envid)
+        projects = self._remove_sample_project(projects)
 
         workbooks = []
         for entry in entries:
@@ -222,6 +223,19 @@ class WorkbookApplication(ArchiveApplication):
                 'enabled': enabled,
                 'publisher-only': publisher_only
         }
+
+    def _remove_sample_project(self, projects):
+        """Remove the 'Tableau Samples' project, if it exists."""
+        sample_key = None
+        for key in projects.keys():
+            if projects[key].name == 'Tableau Samples':
+                sample_key = key
+                break
+
+        if sample_key:
+            del projects[sample_key]
+
+        return projects
 
     # FIXME: route correctly.
     def service(self, req):

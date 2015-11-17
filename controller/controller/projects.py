@@ -38,6 +38,11 @@ class Project(meta.Base, BaseMixin):
         return entry.name
 
     @classmethod
+    def get_by_name(cls, envid, name):
+        return cls.get_unique_by_keys({'envid': envid, 'name': name},
+                                      default=None)
+
+    @classmethod
     def all(cls, envid):
         return cls.get_all_by_keys({'envid':envid}, order_by='name')
 

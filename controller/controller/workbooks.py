@@ -173,6 +173,12 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
 
     def __init__(self, server):
         super(WorkbookManager, self).__init__(server)
+        self.sample_project_id = None
+        sample_project_entry = Project.get_by_name(
+                                                self.server.environment.envid,
+                                                'Tableau Samples')
+        if sample_project_entry:
+            self.sample_project_id = sample_project_entry.id
 
     def move_twb_to_db(self):
         """Copy the twb file contents on the controller to the database
@@ -208,8 +214,14 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
     @synchronized('workbooks')
     def load(self, agent):
         # pylint: disable=too-many-locals
+        # pylint: disable=too-many-statements
 
         envid = self.server.environment.envid
+        if not self.sample_project_id:
+            sample_project_entry = Project.get_by_name(envid,
+                                                       'Tableau Samples')
+            if sample_project_entry:
+                self.sample_project_id = sample_project_entry.id
 
         stmt = \
             'SELECT id, name, repository_url, description,' +\
@@ -249,6 +261,12 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
             site_id = odbcdata.data['site_id']
             project_id = odbcdata.data['project_id']
             luid = odbcdata.data['luid']
+
+            if project_id == self.sample_project_id:
+                logger.debug(
+                        "workbooks load: Ignoring Tableau Sample wb: %s, %s",
+                        name, revision)
+                continue
 
             wbe = WorkbookEntry.get(envid, site_id, project_id, luid,
                                                             default=None)
