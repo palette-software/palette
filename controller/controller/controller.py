@@ -147,7 +147,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # e.g. E:\\ProgramData\Palette\Data\tableau-backups\<name>.tsbak
         backup_full_path = agent.path.join(dcheck.primary_dir, backup_name)
 
-        cmd = 'blah tabadmin backup \\\"%s\\\"' % backup_full_path
+        cmd = 'tabadmin backup \\\"%s\\\"' % backup_full_path
 
         backup_start_time = time.time()
         body = self.cli_cmd(cmd, agent, timeout=60*60*2)
