@@ -309,7 +309,8 @@ def move_bucket_subdirs_to_path(in_bucket, in_path):
     return (bucket, path)
 
 
-def _cloud_command_environment(agent, cloud_info, pwd=None):
+def _cloud_command_environment(agent, cloud_info,
+                               pwd=None, token=None, proxy_https=None):
     """ Build the environment dict sent to send to ps3/pgcs
           keys: ACCESS_KEY, SECRET_KEY and PWD
     """
@@ -318,6 +319,18 @@ def _cloud_command_environment(agent, cloud_info, pwd=None):
         env['ACCESS_KEY'] = cloud_info.access_key
     if cloud_info.secret_key:
         env['SECRET_KEY'] = cloud_info.secret_key
+
+    if token:
+        env['SESSION_TOKEN'] = token
+
+    if proxy_https:
+        result = urlsplit(proxy_https)
+        if result.scheme:
+            env['PROXY_PROTOCOL'] = result.scheme
+        if result.hostname:
+            env['PROXY_HOST'] = result.hostname
+        if result.port:
+            env['PROXY_PORT'] = str(result.port)
 
     if not pwd:
         if agent.data_dir:
@@ -358,11 +371,12 @@ class CloudInstance(object):
         cloud_info = CloudInfo.from_cloud_entry(cloud_entry, cloud_path)
         return self.send_put(agent, cloud_info, filepath, pwd=pwd)
 
-    def send_put(self, agent, cloud_info, filepath, pwd=None):
+    def send_put(self, agent, cloud_info, filepath, pwd=None, proxy_https=None):
         """ Perform a PUT of the file specified by cloud_info """
         # fixme: sanity check on data-dir on the primary?
 
-        env = _cloud_command_environment(agent, cloud_info, pwd)
+        env = _cloud_command_environment(agent, cloud_info,
+                                         pwd=pwd, proxy_https=proxy_https)
 
         bucket_subdir = os.path.dirname(cloud_info.path)
         if not bucket_subdir or bucket_subdir == '/':
@@ -380,12 +394,13 @@ class CloudInstance(object):
         # Send the command to the agent
         return self.server.cli_cmd(cmd, agent, env=env, timeout=60*60*2)
 
-    def send_get(self, agent, cloud_info, pwd=None):
+    def send_get(self, agent, cloud_info, pwd=None, proxy_https=None):
         """ Perform a GET on the file specified by cloud_info """
         # fixme: sanity check on data-dir on the primary?
         # fixme: create the path first
 
-        env = _cloud_command_environment(agent, cloud_info, pwd)
+        env = _cloud_command_environment(agent, cloud_info,
+                                         pwd=pwd, proxy_https=proxy_https)
         arg1 = cloud_info.bucket
         arg2 = cloud_info.path
 
