@@ -82,7 +82,10 @@ def support_case(server, agent, userid=None, filename=None):
 
     logger.debug("Sending support case to S3 bucket '%s'.", cloud_info.bucket)
 
-    data = server.cloud.s3.send_put(agent, cloud_info, path)
+    proxy_https = server.system[SystemKeys.SERVER_URL]
+
+    data = server.cloud.s3.send_put(agent, cloud_info, path,
+                                    proxy_https=proxy_https)
     agent.filemanager.delete(path)
 
     if failed(data):
