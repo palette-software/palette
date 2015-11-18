@@ -1915,6 +1915,7 @@ class CliHandler(socketserver.StreamRequestHandler):
                     body['info'] += '\n' + msg
                 else:
                     body['info'] = msg
+                stateman.update(main_state)
                 self.report_status(body)
                 aconn.user_action_unlock()
                 return False
