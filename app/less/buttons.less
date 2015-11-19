@@ -41,25 +41,19 @@
     padding: 9px 0;
 }
 
-// Alternate buttons (avoid use)
-.btn-primary {
-    padding: 9px 0;
-    text-transform: uppercase;
-}
-
 button.save, button.ok {
     .btn;
     margin-left: @btn-spacing;
     text-transform: uppercase;
 
     &.disabled {
-	color: @btn-disabled-color !important;
-	background-color: @btn-disabled-bg !important;
-	border: @btn-disabled-border;
+        color: @btn-disabled-color !important;
+        background-color: @btn-disabled-bg !important;
+        border: @btn-disabled-border;
 
-	&:hover, &:focus, &:active {
-	    outline: 0;
-	}
+        &:hover, &:focus, &:active {
+            outline: 0;
+        }
     }
     &:hover, &:focus, &:active {
         background-color: @btn-hover-bg;
@@ -141,4 +135,13 @@ button.test {
 /* specific buttons */
 #remove-s3, #remove-gcs {
     margin-left: @btn-spacing;
+}
+
+#login {
+    .btn;
+    width: 100%;
+    max-width: 320px;
+    height: 48px;
+    font-size: 20px;
+    margin-top: 23px;
 }

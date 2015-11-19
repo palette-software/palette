@@ -66,15 +66,6 @@ class LoginApplication(BaseLoginApplication):
         raise ValueError("Invalid authentication configuration: " + \
                           str(auth_type))
 
-    def service_POST(self, req):
-        """Workaround for a framework bug that returns None on failed
-        authentication."""
-        # FIXME: remove
-        res = super(LoginApplication, self).service_POST(req)
-        if res is None:
-            raise exc.HTTPForbidden()
-        return res
-
 
 class LoginPage(Page):
     """Basic login page."""
