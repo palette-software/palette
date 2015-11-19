@@ -87,12 +87,16 @@ class CloudApplication(object):
         entry.access_key = req.POST['access-key']
         entry.secret = aes_encrypt(req.POST['secret-key'])
 
+        meta.commit()
+        # commit first to have entry.cloudid set which is saved into
+        # the system table next.
         req.system[self.KEY] = entry.cloudid
 
         backup_dest_type = FileManager.STORAGE_TYPE_CLOUD
         req.system[SystemKeys.BACKUP_DEST_TYPE] = backup_dest_type
         req.system[SystemKeys.BACKUP_DEST_ID] = entry.cloudid
 
+        # Commit for system table changes
         meta.commit()
         return self._todict(entry)
 
