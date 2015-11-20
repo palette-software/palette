@@ -206,7 +206,7 @@ class CloudManager(Manager):
         cloud_entry = self.get_by_cloudid(file_entry.storageid)
         if not cloud_entry:
             raise IOError("No such cloudid: %d for file %s" % \
-                          (file_entry.cloudid, file_entry.name))
+                          (file_entry.storageid, file_entry.name))
 
         if cloud_entry.cloud_type == CloudManager.CLOUD_TYPE_S3:
             self.s3.delete_file(cloud_entry, file_entry.name)
