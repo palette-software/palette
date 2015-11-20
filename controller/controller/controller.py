@@ -350,9 +350,10 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
             return {'error': errmsg}
         # tabcmd options must come last.
         cmd = ('tabcmd %s -u %s --password %s ' + \
-               '--no-cookie --server %s --no-certcheck --timeout 600') %\
-              (args, cred.user, pw, url)
-        return self.cli_cmd(cmd, agent, timeout=30*60)
+               '--no-cookie --server %s --no-certcheck --timeout %d') %\
+              (args, cred.user, pw, url, self.system[SystemKeys.TABCMD_TIMEOUT])
+        return self.cli_cmd(cmd, agent,
+                                timeout=self.system[SystemKeys.TABCMD_TIMEOUT])
 
     def kill_cmd(self, xid, agent):
         """Send a "kill" command to an Agent to end a process by XID.
