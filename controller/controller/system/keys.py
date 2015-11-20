@@ -111,6 +111,8 @@ class SystemKeys(object):
     STATUS_SYSTEMINFO_SEND_ALERTS = 'status-systeminfo-send-alerts'
     STATUS_SYSTEMINFO_TIMEOUT_MS = 'status-systeminfo-timeout-ms'
 
+    TABCMD_TIMEOUT = 'tabcmd-timeout'
+
     PROXY_HTTPS = 'proxy-https'
     MAX_SILENCE_TIME = 'max-silence-time'
 
