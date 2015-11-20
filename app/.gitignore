@@ -9,6 +9,7 @@ bootstrap.js
 bootstrap.min.js
 /downloads
 /node_modules
+/package.json
 font-awesome-*
 fontawesome-*
 FontAwesome.otf
