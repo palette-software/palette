@@ -137,7 +137,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         else:
             logger.error("backup_cmd: Invalid target_type: %s",
                          dcheck.target_type)
-            return self.error("backup_cmd: Invalid target_type: %s" % \
+            return self.error("backup_cmd: Invalid target_type: %s",
                               dcheck.target_type)
         # Example name: 20140127_162225.tsbak
         backup_name = time.strftime(self.FILENAME_FMT) + ".tsbak"
@@ -494,7 +494,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
                     one()
         except sqlalchemy.orm.exc.NoResultFound:
             logger.error("Source agent not found!  agentid: %d", src.agentid)
-            return self.error("Source agent not found: %d " % src.agentid)
+            return self.error("Source agent not found: %d ", src.agentid)
 
         env = {u'BASIC_USERNAME': entry.username,
                u'BASIC_PASSWORD': entry.password}
@@ -865,7 +865,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         except ValueError:
             logger.error("maint: %s: No yml entry for 'gateway.hosts' yet.",
                          action)
-            return self.error("maint %s: No yml entry for 'gateway.hosts'." % \
+            return self.error("maint %s: No yml entry for 'gateway.hosts'.",
                               action)
 
         # We're going to combine stdout/stderr/error for all gateway hosts.
