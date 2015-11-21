@@ -47,6 +47,7 @@ class SystemKeys(object):
 
     EXTRACT_REFRESH_WB_RETAIN_COUNT = 'extract-refresh-wb-retain-count'
     EXTRACT_REFRESH_DS_RETAIN_COUNT = 'extract-refresh-ds-retain-count'
+    EXTRACT_RETAIN_COUNT = EXTRACT_REFRESH_WB_RETAIN_COUNT
 
     HTTP_LOAD_WARN = 'http-load-warn'
     HTTP_LOAD_ERROR = 'http-load-error'

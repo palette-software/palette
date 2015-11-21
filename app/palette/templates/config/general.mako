@@ -220,32 +220,32 @@
         <a id="229215" data-toggle="help" href="#"><i class="help"></i></a>
         <h2>Archiving</h2>
         <p>Designate what Palette Server should archive.</p>
-        <div class="slider-group">
-          <div>
-            <div>Archive Workbooks</div>
-            <span id="workbook-archive-enabled" class="onoffswitch"></span>
-          </div>
-          <div>
-            <div>Archive Data Sources</div>
-            <span id="datasource-archive-enabled" class="onoffswitch"></span>
-          </div>
+        <div class="workbooks">
+          <p>The number of user Worbook Versions you want Palette to retain</p>
+          <p>
+            <span id="workbook-retain-count" class="btn-group count"></span> Workbook Versions
+          </p>
         </div>
-        <div class="settings hidden">
-          <div class="workbooks">
-            <p>The number of user Worbook Versions you want Palette to retain</p>
-            <p>
-              <span id="workbook-retain-count" class="btn-group count"></span> Workbook Versions
-            </p>
-          </div>
-          <div class="datasources">
-            <p>The number of user Datasource Versions you want Palette to retain</p>
-            <p>
-              <span id="datasource-retain-count" class="btn-group count"></span> Datasource Versions
-            </p>
-          </div>
-          <label class="control-label required" for="archive-username">Tableau Server Admin Username</label>
+        <div class="datasources">
+          <p>The number of user Datasource Versions you want Palette to retain</p>
+          <p>
+            <span id="datasource-retain-count" class="btn-group count"></span> Datasource Versions
+          </p>
+        </div>
+        <div class="extracts">
+          <p>The number of Data Extract refreshes, packaged with the Workbook or Data Source, that you want to retain</p>
+          <p>
+            <span id="extract-retain-count" class="btn-group count"></span> Data Extraction Refreshes
+          </p>
+        </div>
+        <div class="credentials">
+          <label class="control-label required" for="archive-username">
+            Tableau Server Admin Username
+          </label>
           <input class="form-control" type="text" id="archive-username" />
-          <label class="control-label required" for="archive-password">Tableau Server Admin Password</label>
+          <label class="control-label required" for="archive-password">
+            Tableau Server Admin Password
+          </label>
           <input class="form-control" type="password" id="archive-password" />
         </div>
         <div class="save-cancel">

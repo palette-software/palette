@@ -42,31 +42,18 @@ class BackupZiplogsRetention(DictOption):
         options[self.ALL] = 'All'
         super(BackupZiplogsRetention, self).__init__(name, valueid, options)
 
-class WorkbookRetention(DictOption):
-    """Representation of the 'Workbook Retention' dropdown."""
-    NAME = SystemKeys.WORKBOOK_RETAIN_COUNT
+class RetentionOption(DictOption):
+    """Representation of a general 'Retention' option dropdown."""
     ALL = 0
+    NONE = -1
 
-    def __init__(self, valueid):
+    def __init__(self, name, valueid):
         options = OrderedDict({})
-        options[self.ALL] = 'All'
+        options[self.NONE] = 'Disabled'
         for count in [2, 3, 4, 5, 10, 25]:
             options[count] = str(count)
-        super(WorkbookRetention, self).__init__(self.NAME, valueid, options)
-
-
-class DatasourceRetention(DictOption):
-    """Representation of the 'Datasource Retention' dropdown."""
-    NAME = SystemKeys.DATASOURCE_RETAIN_COUNT
-    ALL = 0
-
-    def __init__(self, valueid):
-        options = OrderedDict({})
         options[self.ALL] = 'All'
-        for count in [2, 3, 4, 5, 10, 25]:
-            options[count] = str(count)
-        super(DatasourceRetention, self).__init__(self.NAME, valueid, options)
-
+        super(RetentionOption, self).__init__(name, valueid, options)
 
 class GeneralS3Application(PaletteRESTApplication, S3Application):
     """Handler for the 'STORAGE LOCATION' S3 section."""
@@ -365,10 +352,6 @@ class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
         # pylint: disable=unused-argument
         data = {}
 
-        for key in (SystemKeys.WORKBOOK_ARCHIVE_ENABLED,
-                    SystemKeys.DATASOURCE_ARCHIVE_ENABLED):
-            data[key] = req.system[key]
-
         primary = self.get_cred(req.envid, self.PRIMARY_KEY)
         secondary = self.get_cred(req.envid, self.SECONDARY_KEY)
         if primary:
@@ -380,23 +363,32 @@ class GeneralArchiveApplication(PaletteRESTApplication, CredentialMixin):
         else:
             data['archive-username'] = data['archive-password'] = ''
 
-        valueid = req.system[SystemKeys.WORKBOOK_RETAIN_COUNT]
-        workbook_retain_opts = WorkbookRetention(valueid)
+        name = SystemKeys.WORKBOOK_RETAIN_COUNT
+        valueid = req.system[name]
+        workbook_retain_opts = RetentionOption(name, valueid)
 
-        valueid = req.system[SystemKeys.DATASOURCE_RETAIN_COUNT]
-        datasource_retain_opts = DatasourceRetention(valueid)
+        name = SystemKeys.DATASOURCE_RETAIN_COUNT
+        valueid = req.system[name]
+        datasource_retain_opts = RetentionOption(name, valueid)
+
+        name = "extract-retain-count"
+        valueid = req.system[SystemKeys.EXTRACT_RETAIN_COUNT]
+        extract_retain_opts = RetentionOption(name, valueid)
 
         data['config'] = [workbook_retain_opts.default(),
-                          datasource_retain_opts.default()]
+                          datasource_retain_opts.default(),
+                          extract_retain_opts.default()
+                          ]
         return data
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
-        for key in (SystemKeys.WORKBOOK_ARCHIVE_ENABLED,
-                    SystemKeys.DATASOURCE_ARCHIVE_ENABLED,
-                    SystemKeys.WORKBOOK_RETAIN_COUNT,
+        for key in (SystemKeys.WORKBOOK_RETAIN_COUNT,
                     SystemKeys.DATASOURCE_RETAIN_COUNT):
             req.system[key] = req.POST[key]
+
+        key = 'extract-retain-count'
+        req.system[SystemKeys.EXTRACT_RETAIN_COUNT] = req.POST[key]
 
         cred = self.get_cred(req.envid, self.PRIMARY_KEY)
         if not cred:
