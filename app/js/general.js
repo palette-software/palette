@@ -588,10 +588,11 @@ function ($, _, configure, common, Dropdown, OnOff)
      * Validate callback for the 'archives' section
      */
     function validateArchive(section) {
-        var workbooks = OnOff.getValueById('workbook-archive-enabled');
-        var datasources = OnOff.getValueById('datasource-archive-enabled');
+        var workbooks = Dropdown.getValueById('workbook-retain-count');    
+        var datasources = Dropdown.getValueById('datasource-retain-count');
+        var extracts = Dropdown.getValueById('extract-retain-count');
 
-        if (!workbooks && !datasources) {
+        if ((workbooks < 0) && (datasources < 0) && (extracts < 0)) {
             return true;
         }
 
@@ -641,23 +642,14 @@ function ($, _, configure, common, Dropdown, OnOff)
      */
     function changeArchive(checked)
     {
-        var workbooks = OnOff.getValueById('workbook-archive-enabled');
-        var datasources = OnOff.getValueById('datasource-archive-enabled');
-        
-        if (workbooks || datasources) {
-            $('#archives .settings').removeClass('hidden');
-            if (workbooks) {
-                $('#archives .settings div.workbooks').removeClass('hidden');
-            } else {
-                $('#archives .settings div.workbooks').addClass('hidden');
-            }
-            if (datasources) {
-                $('#archives .settings div.datasources').removeClass('hidden');
-            } else {
-                $('#archives .settings div.datasources').addClass('hidden');
-            }
+        var workbooks = Dropdown.getValueById('workbook-retain-count');    
+        var datasources = Dropdown.getValueById('datasource-retain-count');
+        var extracts = Dropdown.getValueById('extract-retain-count');
+
+        if ((workbooks >= 0) || (datasources >= 0) || (extracts >= 0)) {
+            $('#archives .credentials').removeClass('hidden');
         } else {
-            $('#archives .settings').addClass('hidden');
+            $('#archives .credentials').addClass('hidden');
         }
     }
 
