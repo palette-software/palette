@@ -126,6 +126,8 @@ DEFAULTS = SystemDefaults({
     SystemKeys.STATUS_SYSTEMINFO_SEND_ALERTS: False,
     SystemKeys.STATUS_SYSTEMINFO_TIMEOUT_MS: 15000,
 
+    SystemKeys.TABCMD_TIMEOUT: 600,     # Seconds
+
     SystemKeys.ALERTS_ENABLED: True,
     SystemKeys.ALERTS_ADMIN_ENABLED: False,
     SystemKeys.ALERTS_PUBLISHER_ENABLED: False,
