@@ -26,12 +26,12 @@ class SystemKeys(object):
     ARCHIVE_SAVE_TWBX = 'archive-save-twbx'
     WORKBOOKS_AS_TWB = 'workbooks-as-twb'
 
-    WORKBOOK_ARCHIVE_ENABLED = 'workbook-archive-enabled'
+    WORKBOOK_ARCHIVE_ENABLED = 'workbook-archive-enabled'    # deprecated
     WORKBOOK_RETAIN_COUNT = 'workbook-retain-count'
     WORKBOOK_LOAD_WARN = 'workbook-load-warn'
     WORKBOOK_LOAD_ERROR = 'workbook-load-error'
 
-    DATASOURCE_ARCHIVE_ENABLED = 'datasource-archive-enabled'
+    DATASOURCE_ARCHIVE_ENABLED = 'datasource-archive-enabled'   # deprecated
     DATASOURCE_RETAIN_COUNT = 'datasource-retain-count'
     DATASOURCE_SAVE_TDSX = 'datasource-save-tdsx'
 

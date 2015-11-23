@@ -237,7 +237,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
 
         prune_count = self._prune_missed_revisions()
 
-        if not self.system[SystemKeys.DATASOURCE_ARCHIVE_ENABLED]:
+        if not self.system[SystemKeys.DATASOURCE_RETAIN_COUNT]:
             result = {u'disabled':
                       'Datasource Archives are not enabled. Will not archive.'}
         elif not self.cred_check():
@@ -332,7 +332,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
 
     @synchronized('datasource.fixup')
     def fixup(self, agent):
-        if not self.system[SystemKeys.DATASOURCE_ARCHIVE_ENABLED]:
+        if not self.system[SystemKeys.DATASOURCE_RETAIN_COUNT]:
             logger.debug("Datasource archives are disabled. Fixup not done.")
             return {u'disabled':
                     'Datasource Archives are not enabled.  Fixup not done.'}
@@ -357,7 +357,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
         logger.debug("Datasource Archive update count: %d", len(updates))
 
         for update in updates:
-            if not self.system[SystemKeys.DATASOURCE_ARCHIVE_ENABLED]:
+            if not self.system[SystemKeys.DATASOURCE_RETAIN_COUNT]:
                 logger.info(
                           "Datasource Archive disabled during fixup." + \
                           "  Exiting for now.")
@@ -507,7 +507,7 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
             self._eventgen(update, data=body)
             if 'stderr' in body:
                 if 'Not authorized' in body['stderr']:
-                    self.system[SystemKeys.DATASOURCE_ARCHIVE_ENABLED] = False
+                    self.system[SystemKeys.DATASOURCE_RETAIN_COUNT] = 0
                     self._eventgen(update, data=body, key=EventControl.\
                                    TABLEAU_ADMIN_CREDENTIALS_FAILED_DATASOURCES)
                     raise ArchiveException(ArchiveError.BAD_CREDENTIALS)

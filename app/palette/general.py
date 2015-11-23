@@ -44,8 +44,8 @@ class BackupZiplogsRetention(DictOption):
 
 class RetentionOption(DictOption):
     """Representation of a general 'Retention' option dropdown."""
-    ALL = 0
-    NONE = -1
+    NONE = 0
+    ALL = -1
 
     def __init__(self, name, valueid):
         options = OrderedDict({})

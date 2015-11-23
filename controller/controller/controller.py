@@ -1426,10 +1426,27 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         if self.previous_version == self.version or not self.previous_version:
             return
 
-        if self.previous_version[:4] != '1.5.':
+        if self.previous_version[:4] == '1.5.':
+            # Upgrade from 1.5 to 1.6
+            self.workbooks.move_twb_to_db()
+
+        if self.previous_version[:2] == '2.':
             return
 
-        self.workbooks.move_twb_to_db()
+        # Upgrade to 2.0
+        if self.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]:
+            # Retain count of 0 used to be unlimited but now -1 is
+            # unlimited and 0 is disabled.
+            if self.system[SystemKeys.WORKBOOK_RETAIN_COUNT] == 0:
+                self.system.save(SystemKeys.WORKBOOK_RETAIN_COUNT, -1)
+        else:
+            self.system.save(SystemKeys.WORKBOOK_RETAIN_COUNT, 0)
+
+        if self.system[SystemKeys.DATASOURCE_ARCHIVE_ENABLED]:
+            if self.system[SystemKeys.DATASOURCE_RETAIN_COUNT] == 0:
+                self.system.save(SystemKeys.DATASOURCE_RETAIN_COUNT, -1)
+        else:
+            self.system.save(SystemKeys.DATASOURCE_RETAIN_COUNT, 0)
 
 class StreamLogger(object):
     """
