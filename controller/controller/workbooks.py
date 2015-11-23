@@ -306,7 +306,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
 
         prune_count = self._prune_missed_revisions()
 
-        if not self.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]:
+        if not self.system[SystemKeys.WORKBOOK_RETAIN_COUNT]:
             result = {u'disabled':
                       'Workbook Archives are not enabled. Will not archive.'}
         elif not self.cred_check():
@@ -400,7 +400,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
 
     @synchronized('workbook.fixup')
     def fixup(self, agent):
-        if not self.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]:
+        if not self.system[SystemKeys.WORKBOOK_RETAIN_COUNT]:
             logger.debug("Workbook archives are not enabled. Fixup not done.")
             return {u'disabled':
                     'Workbook Archives are not enabled.  Fixup not done.'}
@@ -424,7 +424,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
         data = {}
         logger.debug("Workbook archive update count: %d\n", len(updates))
         for update in updates:
-            if not self.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]:
+            if not self.system[SystemKeys.WORKBOOK_RETAIN_COUNT]:
                 logger.info(
                           "Workbook Archive disabled during fixup." + \
                           "  Exiting for now.")
@@ -577,7 +577,7 @@ class WorkbookManager(TableauCacheManager, ArchiveUpdateMixin):
             self._eventgen(update, data=body)
             if 'stderr' in body:
                 if 'Not authorized' in body['stderr']:
-                    self.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED] = False
+                    self.system[SystemKeys.WORKBOOK_RETAIN_COUNT] = 0
                     self._eventgen(update, data=body,
                             key=EventControl.\
                                     TABLEAU_ADMIN_CREDENTIALS_FAILED_WORKBOOKS)
