@@ -1,4 +1,3 @@
-from webob import exc
 from akiri.framework.admin import BaseLoginApplication
 
 from controller.profile import UserProfile
