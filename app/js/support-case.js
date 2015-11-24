@@ -213,7 +213,7 @@ function ($, common, cookie, form, Dropdown)
             $().ready(function() {
                 update(data);
                 $('#send-support-case').data('validate', validate);
-                $('#send-support-case').data('callback', sendSupportCase);
+                $('#send-support-case').data('confirm', sendSupportCase);
                 $('#send-support-case').removeClass('disabled');
             });
         },
