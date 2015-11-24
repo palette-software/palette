@@ -9,6 +9,7 @@ from akiri.framework.util import generate_token
 
 import logging
 from datetime import datetime, timedelta
+from dateutil import tz
 
 from .cloud import CloudInfo
 from .event_control import EventControl
@@ -44,7 +45,7 @@ def support_failed(server, agent, data, userid=None):
     The output of this call should be ok to send back to the user as the
     response to an API call.
     """
-    server.event_control.gen(EventControl.ZIPLOGS_FAILED,
+    server.event_control.gen(EventControl.SUPPORT_CASE_FAILED,
                              dict(data.items() + agent.todict().items()),
                              userid=userid)
     result = status_failed(data['error'])
@@ -72,6 +73,7 @@ def support_case(server, agent, userid=None, filename=None):
         return support_failed(server, agent, data, userid=userid)
 
     filename = data['filename']
+    timestamp = datetime.now(tz=tz.tzlocal())
     path = data['path']
     logger.debug("Generated ziplog '%s' for support case.", path)
 
@@ -96,6 +98,11 @@ def support_case(server, agent, userid=None, filename=None):
     result[u'url'] = unicode(cloud_info.external_url())
     if 'size' in data:
         result[u'size'] = data['size']
+
+    server.event_control.gen(EventControl.SUPPORT_CASE_FAILED,
+                             dict(data.items() + agent.todict().items()),
+                             userid=userid,
+                             timestamp=timestamp)
 
     logger.debug("Support case is available at '%s'", result['url'])
     return result
