@@ -1907,6 +1907,41 @@
 "event_label_desc":null,
 "admin_visibility":true,
 "publisher_visibility":false
+},
+"eventid":108,
+"key":"SUPPORT-CASE-SUCCESS",
+"level":"I",
+"send_email":"f",
+"subject":"INFO Support Case Sent Successfully",
+"event_description":"SUMMARY \nThe Tableau Support Case sent by ${username} was successfully submitted at ${timestamp}. Full context is provided below for your reference.\n\nDETAILS \nEvent Type: ${event_type_label}\nEnvironment: ${environment} \nSender's Name: ${username}\nCase Contents: ${case} \n\nWHY THIS EVENT OCCURRED: \nPalette alerts admin users when a Tableau Support Case is submitted to Tableau's Support Team.  \n",
+"email_subject":"INFO Support Case Sent Successfully",
+"email_message":"SUMMARY \nThe Tableau Support Case sent by ${username} was successfully submitted at ${timestamp}. Full context is provided below for your reference.\n\nDETAILS \nEvent Type: ${event_type_label}\nEnvironment: ${environment} \nSender's Name: ${username}\nCase Contents: ${case} \n\nWHY THIS EVENT OCCURRED: \nPalette alerts admin users when a Tableau Support Case is submitted to Tableau's Support Team.  \n\nHOW TO STOP RECEIVING THIS EMAIL ALERT\nThis message was sent from your Palette Server at ${server_url}. You can turn off these email alerts on your profile page found at ${server_url}/profile.",
+"icon":null,
+"color":"green",
+"event_type":"support",
+"event_type_label":"Tableau Support",
+"event_label":null,
+"event_label_desc":null,
+"admin_visibility":true,
+"publisher_visibility":false
+},
+{
+"eventid":109,
+"key":"SUPPORT-CASE-FAILED",
+"level":"E",
+"send_email":"t",
+"subject":"ERROR Support Case Failure",
+"event_description":"SUMMARY \n% if ${stderr} == askmattforstderr: \nThe Tableau Support Case sent by ${username} at ${timestamp} was emailed successfully, but the download link for the log files experienced an error. Full context is provided below for your reference. Palette suggests that you attempt to file the support case again. If this message persists, contact Palette Support at support@palette-software.com. \n% else:\nThe Tableau Support Case sent by ${username} failed to send at ${timestamp}. Full context is provided below for your reference. Palette suggests that you attempt to file the support case again. If this message persists, contact Palette Support at support@palette-software.com. \n% endif\n\nDETAILS \nEvent Type: ${event_type_label}\nEnvironment: ${environment} \nSender's Name: ${username}\nCase Contents: ${case} \n\nWHY THIS EVENT OCCURRED: \nPalette alerts admin users when a Tableau Support Case is attempted and fails to send.  \n",
+"email_subject":"ERROR Support Case Failure",
+"email_message":"SUMMARY \n% if ${stderr} == askmattforstderr: \nThe Tableau Support Case sent by ${username} at ${timestamp} was emailed successfully, but the download link for the log files experienced an error. Full context is provided below for your reference. Palette suggests that you attempt to file the support case again. If this message persists, contact Palette Support at support@palette-software.com. \n% else:\nThe Tableau Support Case sent by ${username} failed to send at ${timestamp}. Full context is provided below for your reference. Palette suggests that you attempt to file the support case again. If this message persists, contact Palette Support at support@palette-software.com. \n% endif\n\nDETAILS \nEvent Type: ${event_type_label}\nEnvironment: ${environment} \nSender's Name: ${username}\nCase Contents: ${case} \n\nWHY THIS EVENT OCCURRED: \nPalette alerts admin users when a Tableau Support Case is attempted and fails to send. \n\nHOW TO STOP RECEIVING THIS EMAIL ALERT\nThis message was sent from your Palette Server at ${server_url}. You can turn off these email alerts on your profile page found at ${server_url}/profile.",
+"icon":null,
+"color":"red",
+"event_type":"support",
+"event_type_label":"Tableau Support",
+"event_label":null,
+"event_label_desc":null,
+"admin_visibility":true,
+"publisher_visibility":false
 }
 ]
 }
