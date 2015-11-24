@@ -124,7 +124,8 @@
       </div>
       <div class="save-cancel">
         <button type="button" id="send-support-case"
-                class="action okcancel"
+                class="action"
+                data-toggle="modal-popup"
                 data-text="Are you sure you want to submit this support case?">
           Send Support Case
         </button>
