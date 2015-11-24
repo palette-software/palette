@@ -374,6 +374,7 @@ class CloudInstance(object):
     def send_put(self, agent, cloud_info, filepath, pwd=None, proxy_https=None):
         """ Perform a PUT of the file specified by cloud_info """
         # fixme: sanity check on data-dir on the primary?
+        # pylint: disable=too-many-arguments
 
         env = _cloud_command_environment(agent, cloud_info,
                                          pwd=pwd, proxy_https=proxy_https)
