@@ -2415,6 +2415,7 @@ class CliHandler(socketserver.StreamRequestHandler):
         # pylint: disable=too-many-branches
         # pylint: disable=too-many-return-statements
         # pylint: disable=too-many-locals
+        # pylint: disable=too-many-statements
 
         if cloud_type == CloudManager.CLOUD_TYPE_S3:
             cloud_type_id = SystemKeys.S3_ID
@@ -2477,15 +2478,21 @@ class CliHandler(socketserver.StreamRequestHandler):
         self.ack()
 
         if action == 'GET':
-            body = cloud_instance.get(agent, entry, keypath,
-                                      bucket_subdir=bucket_subdir,
-                                      pwd=dirpath)
+            if bucket_subdir:
+                cloud_path = os.path.join(bucket_subdir, keypath)
+            else:
+                cloud_path = keypath
+            body = cloud_instance.get(agent, entry, cloud_path, pwd=dirpath)
         elif action == 'PUT':
             body = cloud_instance.put(agent, entry, keypath,
                                       bucket_subdir=bucket_subdir, pwd=dirpath)
         elif action == 'DELETE':
+            if bucket_subdir:
+                cloud_path = os.path.join(bucket_subdir, keypath)
+            else:
+                cloud_path = keypath
             try:
-                body = cloud_instance.delete_file(entry, keypath)
+                body = cloud_instance.delete_file(entry, cloud_path)
             except IOError as ex:
                 body['error'] = str(ex)
 
