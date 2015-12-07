@@ -24,7 +24,7 @@ Start the Selenium IDE by clicking on the Firefox menu:
 Load the test suite:
     File-->Open Test Suite
 
-        palette/app/test/suite/testsuite
+        palette/app/test/suite/.../testsuite
 
 At the top of the Selenium IDE, set the "Base URL" to the URL of
 your Palette test URL.
