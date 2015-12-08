@@ -7,7 +7,7 @@ from controller.palapi import CommHandlerCmd
 
 if __name__ == "__main__":
     # If we ran in the foreground, then it would block sched from
-    # running other cron jobs. This can take a long time (too long)
+    # running other sched jobs. This can take a long time (too long)
     # which could block backups, etc.
     pid = os.fork()
     if pid:

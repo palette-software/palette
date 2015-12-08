@@ -1,30 +1,46 @@
 #!/usr/bin/env python
+import os
 import sys
 import time
 
 from controller.palapi import CommHandlerCmd, CommException
 
 if __name__ == "__main__":
+    # If we ran in the foreground, then it would block sched from
+    # running other sched jobs.
+    pid = os.fork()
+    if pid:
+        sys.exit(0)
+
+    os.close(0)
+    os.close(1)
+    os.close(2)
+
     comm = CommHandlerCmd()
-    comm.parse_args()
-    comm.verbose = 2
+#    comm.parse_args()
+#    comm.verbose = 2
 
     try:
         comm.send_cmd("ziplogs", read_response=True, skip_on_wrong_state=True)
+        # Note: Below, print statement fails when os.close(1) is
+        # not commented out, above.
         print "ziplogs reply:", comm.response
     except CommException as ex:
-        print >> sys.stderr, str(ex)
+        pass
+#        print >> sys.stderr, str(ex)
 
     try:
         comm.send_cmd("backup", read_response=True, skip_on_wrong_state=True)
         print "backup reply:", comm.response
     except CommException as ex:
-        print >> sys.stderr, str(ex)
+        pass
+#        print >> sys.stderr, str(ex)
 
     try:
         comm.send_cmd("cleanup", read_response=True, skip_on_wrong_state=True)
         print "cleanup data:", comm.response
     except CommException as ex:
-        print >> sys.stderr, str(ex)
+        pass
+#        print >> sys.stderr, str(ex)
 
     sys.exit(0)
