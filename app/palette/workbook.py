@@ -165,7 +165,7 @@ class WorkbookApplication(ArchiveApplication):
     def handle_get(self, req):
         # pylint: disable=too-many-locals
 
-        enabled = req.system[SystemKeys.WORKBOOK_ARCHIVE_ENABLED]
+        enabled = req.system[SystemKeys.WORKBOOK_RETAIN_COUNT]
 
         if req.remote_user.roleid == Role.NO_ADMIN:
             publisher_only = True
