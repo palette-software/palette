@@ -163,7 +163,7 @@ class DatasourceApplication(ArchiveApplication):
 
     def handle_get(self, req):
         # pylint: disable=too-many-locals
-        enabled = req.system[SystemKeys.DATASOURCE_ARCHIVE_ENABLED]
+        enabled = req.system[SystemKeys.DATASOURCE_RETAIN_COUNT]
 
         if req.remote_user.roleid == Role.NO_ADMIN:
             publisher_only = True
