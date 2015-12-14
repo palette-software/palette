@@ -131,13 +131,12 @@ class Sched(threading.Thread):
         # When the above are finished, continue with these:
         self.add_cron_job(priority=2, name='workbook', minute='*')
         self.add_cron_job(priority=2, name='datasource', minute='*')
+        self.add_cron_job(priority=2, name='extract', minute="*")
 
         # Lower priority
         self.add_cron_job(priority=10, name='cpu_load', minute="*")
         self.add_cron_job(priority=11, name='yml', minute="*")
         self.add_cron_job(priority=12, name='checkports', minute="*")
-
-        self.add_cron_job(priority=2, name='extract', minute="*")
 
         # Every 5 minutes
         # If it has no specific priority, it is lowest priority.
