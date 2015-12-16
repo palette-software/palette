@@ -1,0 +1,842 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" />
+<title>Tableau Support</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">Tableau Support</td></tr>
+</thead><tbody>
+<tr>
+	<td>open</td>
+	<td>/support-case</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>css=a.navbar-brand</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>//li[5]/a/span</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=problem:statement</td>
+	<td>Test Problem</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//button[@type='button']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForElementPresent</td>
+	<td>link=I need assistance connecting to data / accessing data</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=I need assistance connecting to data / accessing data</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//button[@type='button']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=I need assistance with a data extract</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//button[@type='button']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=I need assistance optimizing the product performance</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//button[@type='button']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=I need assistance with product licensing/activation</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//button[@type='button']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=I need assistance to configure the product correctly</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//button[@type='button']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=I need assistance with user authentication/permissions</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//button[@type='button']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=I need assistance with filters or actions in a workbook</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//button[@type='button']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=I need assistance with calculations</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//button[@type='button']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=I need assistance creating a dashboard/view</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//button[@type='button']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=I need assistance working with dates and times</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//button[@type='button']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=I need assistance with formatting and display</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//button[@type='button']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=I need assistance with maps in a visualization</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//button[@type='button']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=I need assistance printing or exporting a visualization</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//button[@type='button']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=I need assistance sharing or publishing a visualization</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//button[@type='button']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//section[2]/div[2]/label</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[3]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=How-to/General Information</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Standard Support Issue</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Major impact on current work/project</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=System down/Total loss of fuctionality</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=problem:description</td>
+	<td>My description</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=contact:name</td>
+	<td>Tab Leau</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=contact:phone</td>
+	<td>800-555-1212</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=contact:email</td>
+	<td>tab@leau.com</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=contact:company</td>
+	<td>Acme LLC</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[3]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=French</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[3]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=German</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[3]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Japanese</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[3]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Korean</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[3]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Mandarin</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[3]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Portuguese</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[3]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Spanish</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[3]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=English</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[4]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Europe/Middle East/AfricaAsia Pacific</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[4]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=North/Central/South America</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[5]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Tableau Server</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[5]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Tableau Desktop + Server</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[5]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Tableau Reader</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[5]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Tableau Public</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[5]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Tableau App (Mobile)</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[5]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Tableau Online</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[5]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Tableau Server</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[6]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'French')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[6]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'German')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[6]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'Japanese')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[6]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'Korean')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[6]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'Mandarin')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[6]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'Portuguese')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[6]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'Spanish')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[6]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'English')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=9.2</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=9.1</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=9.0.6</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=9.0.5</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=9.0.4</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=9.0.3</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=9.0.2</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=9.0.1</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=9.0.0</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=8.3.10</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=8.3.9</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=8.3.8</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=8.3.7</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=9.2</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=environment:build-number</td>
+	<td>abcd</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[8]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Windows 10</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[8]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Windows 8.1</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[8]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Windows 8</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[8]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Windows 7</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[8]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Windows Vista</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[8]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Windows XP</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[8]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Mac OS</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[8]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Windows Server 2012</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[8]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Windows Server 2008</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[8]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Windows Server 2003</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[8]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=iOS</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[8]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Android</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[8]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Windows Server 2008</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[9]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Amazon Aurora</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[9]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Amazon Elastic MapReduce</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[9]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Birst</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[9]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Vertica</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=include-logs</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=include-logs</td>
+	<td></td>
+</tr>
+
+</tbody></table>
+</body>
+</html>

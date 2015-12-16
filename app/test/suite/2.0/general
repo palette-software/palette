@@ -1,0 +1,841 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" />
+<title>General</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">General</td></tr>
+</thead><tbody>
+<tr>
+	<td>open</td>
+	<td>/configure/general</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>css=a.navbar-brand</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=i.config-menu</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=General Configuration</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=storage-s3</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=s3-access-key</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=s3-secret-key</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=s3-url</td>
+	<td>test1-palette-com</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=s3-access-key</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-s3</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=s3-access-key</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-s3</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=storage-gcs</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=gcs-access-key</td>
+	<td>bad1</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=gcs-secret-key</td>
+	<td>bad2</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=gcs-url</td>
+	<td>nosuchbucket3</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-gcs</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=storage-local</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-local</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForElementPresent</td>
+	<td>css=span.onoffswitch-inner</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=span.onoffswitch-inner</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=span.onoffswitch-inner</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#alert-publishers &gt; label.onoffswitch-label &gt; span.onoffswitch-inner</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#alert-publishers &gt; label.onoffswitch-label &gt; span.onoffswitch-inner</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[14]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Disabled</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-backups</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[14]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=3</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-backups</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[15]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'All')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-backups</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[15]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'2')])[5]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-backups</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[18]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#ziplog-auto-retain-count &gt; ul.dropdown-menu &gt; li &gt; a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-ziplogs</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[18]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'2')])[8]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-ziplogs</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[19]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'All')])[4]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-ziplogs</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[19]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'4')])[6]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-ziplogs</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[22]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=10 minutes</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[23]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//section[@id='extracts']/h3[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#extracts &gt; div.save-cancel &gt; button.save</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[22]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=1 hour</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#extracts &gt; div.save-cancel &gt; button.save</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[22]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=10 minutes</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#extracts &gt; div.save-cancel &gt; button.save</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[23]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'24 hours')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#extracts &gt; div.save-cancel &gt; button.save</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[23]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'30 minutes')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#extracts &gt; div.save-cancel &gt; button.save</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[24]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=60 minutes</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#extracts &gt; div.save-cancel &gt; button.save</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[24]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=5 minutes</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#extracts &gt; div.save-cancel &gt; button.save</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[25]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'60 minutes')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#extracts &gt; div.save-cancel &gt; button.save</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[25]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'10 minutes')])[4]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#extracts &gt; div.save-cancel &gt; button.save</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[28]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'All')])[5]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[29]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'All')])[6]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[30]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'All')])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[30]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'2')])[24]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[30]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'All')])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[30]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'25')])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[30]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'All')])[7]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[30]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#archives &gt; div.save-cancel</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-archives</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[28]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'2')])[20]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[29]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'3')])[12]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[30]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'4')])[13]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=archive-username</td>
+	<td>administrator</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=archive-password</td>
+	<td>tableau!2014</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=archive-username</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=archive-password</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[28]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=div.workbooks</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=archive-username</td>
+	<td>administrator</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=archive-password</td>
+	<td>tableau!2014</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[28]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'All')])[5]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[29]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'All')])[6]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-archives</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[28]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'2')])[20]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[29]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'3')])[12]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[30]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'5')])[24]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-archives</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[33]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#disk-watermark-low &gt; ul.dropdown-menu &gt; li &gt; a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[34]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[33]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=70%</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[34]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#monitoring &gt; div &gt; h3</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[33]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=50%</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[34]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'55%')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-monitors</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[33]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=90%</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[34]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'95%')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-monitors</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[35]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'50%')])[3]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[36]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=2 minutes</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[37]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'55%')])[4]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[38]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'3 minutes')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-monitors</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[35]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'90%')])[3]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[36]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=1 minute</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[37]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'95%')])[4]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[38]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'2 minutes')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-monitors</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[39]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=45 seconds</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[40]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'45 seconds')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-monitors</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[39]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=1 second</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//button[@type='button'])[40]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>xpath=(//a[contains(text(),'2 seconds')])[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=save-monitors</td>
+	<td></td>
+</tr>
+</tbody></table>
+</body>
+</html>

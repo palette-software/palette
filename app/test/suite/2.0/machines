@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" />
+<title>Machines</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">Machines</td></tr>
+</thead><tbody>
+<tr>
+	<td>open</td>
+	<td>/configure/machines</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=i.config-menu</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Machines</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForElementPresent</td>
+	<td>//article/div/div/div/h3</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//article/div/div/div/h3</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='server-detail']/article/div/div/div/h3/span/i</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=input[type=&quot;text&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>css=input[type=&quot;text&quot;]</td>
+	<td>Tableau PrimaryXX</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='server-detail']/article/div/div/div/h3/span/i[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='server-detail']/article/div/div/div[2]/div/span[2]/i</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=input[type=&quot;text&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>css=input[type=&quot;text&quot;]</td>
+	<td>ProductionXX</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='server-detail']/article/div/div/div[2]/div/span[2]/i[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='server-detail']/article/div/div/div/h3/span/i</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=input[type=&quot;text&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>css=input[type=&quot;text&quot;]</td>
+	<td>Tableau Primary</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='server-detail']/article/div/div/div/h3/span/i[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='server-detail']/article/div/div/div[2]/div/span[2]/i</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=input[type=&quot;text&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>css=input[type=&quot;text&quot;]</td>
+	<td>Production</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='server-detail']/article/div/div/div[2]/div/span[2]/i[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=span.onoffswitch-inner</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=span.onoffswitch-inner</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=div.col2 &gt; h3</td>
+	<td></td>
+</tr>
+
+</tbody></table>
+</body>
+</html>
