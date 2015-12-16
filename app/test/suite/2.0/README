@@ -1,0 +1,8 @@
+For Mail Server Type: Relay SMTP Mail Server Settings
+    Palette Alerts                      alerts@palette-software.com
+    smtp.mandrillapp.com                587
+    mailservice@palette-software.com    [removed]
+
+You can change between (with and without the final period)
+    smtp.mandrillapp.com.
+    smtp.mandrillapp.com
