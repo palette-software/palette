@@ -1,3 +1,5 @@
+import yaml
+
 from datetime import datetime
 from sqlalchemy import Column, String, BigInteger, Integer, DateTime
 from sqlalchemy import func, not_, UniqueConstraint
@@ -67,20 +69,26 @@ class YmlEntry(meta.Base, BaseMixin, BaseDictMixin):
         The new contents are then returned as a dictionary.
         """
         session = meta.Session()
-
+        
+        # Parse the document as YAML
+        parsedYaml = yaml.load(yml)
+        
         d = {}
-        # This is the first line ('---')
-        for line in yml.strip().split('\n')[1:]:
-            key, value = line.split(":", 1)
-            value = value.strip()
-
+        # For each k/v pair try to replace it if we need to
+        for key, value in parsedYaml.iteritems():
+            # Check if we need can replace the entry with a YmlEntry
+            # from our 'cache'
             entry = cls.entry(envid, key, default=None)
+            # if not, create a new entry
             if entry is None:
                 entry = cls(envid=envid, key=key)
+            # Set its value
             entry.value = value
+            # Add to the session
             session.add(entry)
+            # And store it in the output dict
             d[key] = value
-
+            
         session.query(cls).\
             filter(not_(cls.key.in_(d.keys()))).\
             delete(synchronize_session='fetch')
