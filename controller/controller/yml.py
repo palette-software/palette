@@ -76,7 +76,7 @@ class YmlEntry(meta.Base, BaseMixin, BaseDictMixin):
         d = {}
         # For each k/v pair try to replace it if we need to
         for key, value in parsedYaml.iteritems():
-            # Check if nwe need can replace the entry with a YmlEntry
+            # Check if we need can replace the entry with a YmlEntry
             # from our 'cache'
             entry = cls.entry(envid, key, default=None)
             # if not, create a new entry
