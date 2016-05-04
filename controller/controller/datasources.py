@@ -163,21 +163,22 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
 
 
         stmt = \
-            'SELECT id, name, repository_url, owner_id,' +\
-            ' created_at, updated_at, project_id,' +\
-            ' size, lock_version, state, db_class,' +\
-            ' db_name, table_name, site_id, revision,' +\
-            ' repository_data_id, repository_extract_data_id,' +\
-            ' embedded, incrementable_extracts, refreshable_extracts,' +\
-            ' first_published_at, connectable, is_hierarchical,' +\
-            ' extracts_incremented_at, luid, asset_key_id ' +\
-            'FROM datasources'
+            'SELECT t1.id, t1.name, t1.repository_url, t1.owner_id,' +\
+            ' t1.created_at, t1.updated_at, t1.project_id,' +\
+            ' t1.size, t1.lock_version, t1.state, t1.db_class,' +\
+            ' t1.db_name, t1.table_name, t1.site_id, t1.revision,' +\
+            ' t1.repository_data_id, t1.repository_extract_data_id,' +\
+            ' t1.embedded, t1.incrementable_extracts, t1.refreshable_extracts,' +\
+            ' t1.first_published_at, t1.connectable, t1.is_hierarchical,' +\
+            ' t1.extracts_incremented_at, t1.luid, t1.asset_key_id ' +\
+            'FROM datasources t1 ' +\
+            'INNER JOIN _datasources t2 on (t1.id = t2.id)'
 
         session = meta.Session()
 
         last_updated_at = DataSourceEntry.get_last_updated_at(envid)
         if last_updated_at:
-            stmt += " WHERE updated_at > '" + last_updated_at + "'"
+            stmt += " WHERE t1.updated_at > '" + last_updated_at + "'"
 
         data = agent.odbc.execute(stmt)
 

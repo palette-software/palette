@@ -19,7 +19,7 @@ from util import timedelta_total_seconds, utc2local
 from sites import Site
 from workbooks import WorkbookEntry
 from profile import UserProfile
-from odbc import ODBC
+from odbc import ODBC, ODBCData
 from system import SystemKeys
 
 logger = logging.getLogger()
@@ -104,29 +104,34 @@ class HttpRequestManager(TableauCacheManager):
             return datadict
 
         rows = []
-        session = meta.Session()
-        for odbcdata in ODBC.load(datadict):
+        schema = ODBC.schema(datadict)
+        counter = 0
+	session = None
+        for row in datadict['']:
+            if counter % 1000 == 0:
+                if session != None:
+                    session.commit()
+                    # Our table was empty so don't test for alerts on the one
+                    # placeholder row we brought in.
+                    if maxid is not None:
+                        for entry in rows:
+#                           print "entry: id", entry.id, "action", entry.action,
+#                           print "vizal_session", entry.vizql_session
+                            self._test_for_alerts(rows, entry, agent, controldata)
+                session = meta.Session()
+		rows = []
+            counter += 1
+            odbcdata = ODBCData(schema, row) 
             entry = HttpRequestEntry()
             entry.envid = envid
             odbcdata.copyto(entry)
-
             system_user_id = userdata.get(entry.site_id, entry.user_id)
             entry.system_user_id = system_user_id
-
             session.add(entry)
-
             rows.append(entry)
 
-        session.commit()
-
-        # Our table was empty so don't test for alerts on the one
-        # placeholder row we brought in.
-        if maxid is not None:
-            for entry in rows:
-#                print "entry: id", entry.id, "action", entry.action,
-#                print "vizal_session", entry.vizql_session
-                self._test_for_alerts(rows, entry, agent, controldata)
-
+        if session != None:
+            session.commit()
         return {u'status': 'OK', u'count': len(datadict[''])}
 
     def _parseuri(self, uri, body):
