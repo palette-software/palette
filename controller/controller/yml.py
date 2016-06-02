@@ -1,5 +1,6 @@
 import yaml
 
+from datetime import date
 from datetime import datetime
 from sqlalchemy import Column, String, BigInteger, Integer, DateTime
 from sqlalchemy import func, not_, UniqueConstraint
@@ -69,10 +70,10 @@ class YmlEntry(meta.Base, BaseMixin, BaseDictMixin):
         The new contents are then returned as a dictionary.
         """
         session = meta.Session()
-        
+
         # Parse the document as YAML
         parsedYaml = yaml.load(yml)
-        
+
         d = {}
         # For each k/v pair try to replace it if we need to
         for key, value in parsedYaml.iteritems():
@@ -82,13 +83,19 @@ class YmlEntry(meta.Base, BaseMixin, BaseDictMixin):
             # if not, create a new entry
             if entry is None:
                 entry = cls(envid=envid, key=key)
-            # Set its value
-            entry.value = value
+
+            # Set its value. We need to have values
+            # that can be JSON serialized later
+            jsonSafeValue = value
+            if isinstance(jsonSafeValue, date):
+                jsonSafeValue = value.__str__()
+
+            entry.value = jsonSafeValue
             # Add to the session
             session.add(entry)
             # And store it in the output dict
-            d[key] = value
-            
+            d[key] = jsonSafeValue
+
         session.query(cls).\
             filter(not_(cls.key.in_(d.keys()))).\
             delete(synchronize_session='fetch')
