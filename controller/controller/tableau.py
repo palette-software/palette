@@ -311,8 +311,9 @@ class TableauStatusMonitor(threading.Thread):
                          now - self.first_degraded_time)
             if now - self.first_degraded_time >= event_degraded_min:
                 logger.debug("status-check: Sending degraded")
-                
-                # TODO: check if this fix for exceptions thrown when line 974 gives us a None body
+
+                # TODO: check if this fix for exceptions thrown when
+                # line 974 gives us a None body
                 body_items = [] if body is None else body.items()
                 self.event.gen(event, dict(body_items + data.items()))
                 self.sent_degraded_event = True
