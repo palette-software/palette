@@ -4,19 +4,19 @@ python:
   - "2.7"
 
 before_install:
-  # - apt-get update
-  - apt-get install language-pack-UTF-8
-  - apt-get install debhelper
-  - apt-get install pylint python-tz python-passlib 
-  - apt-get install python-dateutil python-boto python-crypto
-  - apt-get install python-mako python-webob python-pastescript 
-  - apt-get install python-sqlalchemy python-paste python-pastedeploy
-  - apt-get install git
+  - sudo apt-get update
+  - sudo apt-get install language-pack-UTF-8
+  - sudo apt-get install debhelper
+  - sudo apt-get install pylint python-tz python-passlib 
+  - sudo apt-get install python-dateutil python-boto python-crypto
+  - sudo apt-get install python-mako python-webob python-pastescript 
+  - sudo apt-get install python-sqlalchemy python-paste python-pastedeploy
+  - sudo apt-get install git
   - curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
-  - apt-get install nodejs
-  - apt-get install unzip
+  - sudo apt-get install nodejs
+  - sudo apt-get install unzip
   # - dpkg --install akiri.framework_0.5.6_all.deb
-  - npm install grunt -g
+  - sudo npm install grunt -g
 
 install:
   - echo $PWD
