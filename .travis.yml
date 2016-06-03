@@ -4,7 +4,7 @@ python:
   - "2.7"
 
 before_install:
-  - apt-get update
+  # - apt-get update
   - apt-get install language-pack-UTF-8
   - apt-get install debhelper
   - apt-get install pylint python-tz python-passlib 
