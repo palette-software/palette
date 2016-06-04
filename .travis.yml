@@ -21,7 +21,7 @@ before_install:
 install:
   - echo $PWD
   - ls -ltr
-  - cd palette/app
+  - cd app
   - make setup
   - cd ..
   - make palette
