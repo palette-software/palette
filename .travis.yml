@@ -33,3 +33,9 @@ install:
 script:
   - make palette
   - make controller
+    # - make clean all
+  - GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
+  - chmod 600 dpkg/client/id_rsa
+  - cd dpkg/apt
+  - scp -r -i ../client/id_rsa -r . ubuntu@54.209.53.120:/var/packages/dev
+
