@@ -6,4 +6,4 @@ export DH_VERBOSE=1
 	dh $@ --with python2
 
 override_dh_auto_install:
-	python setup.py install --force --root=/home/travis/build/palette-software/palette/app/DEBIAN/palette-2.0.0/debian/palette --no-compile -O0 
+	python setup.py install --force --root=$PWD/debian/palette --no-compile -O0 
