@@ -21,7 +21,7 @@ before_install:
   - sudo dpkg --install akiri.framework_0.5.6_all.deb
   - sudo npm install grunt -g
   - pip install --upgrade pip
-  - pip install dateutil
+  - pip install python-dateutil
 
 install:
   - echo $PWD
