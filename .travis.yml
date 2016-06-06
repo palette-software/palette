@@ -26,8 +26,9 @@ before_install:
 install:
   - echo $PWD
   - ls -ltr
-  - cd app
+  - pushd app
   - make setup
+  - popd
 
 script:
   - make palette
