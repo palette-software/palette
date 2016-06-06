@@ -28,6 +28,7 @@ install:
   - ls -ltr
   - cd app
   - make setup
-  - cd ..
+
+script:
   - make palette
   - make controller
