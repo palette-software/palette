@@ -14,7 +14,6 @@ all:
 	cp -a ../js var/www
 	mkdir -p opt
 	cp -a ../application.wsgi opt
-	deactivate
 	cd $(PACKAGE)-$(VERSION) && python setup.py sdist --dist-dir=../
 	echo "xxxxxxxxxxxxxxxxxxxx"
 	tar -tzvf $(PACKAGE)-$(VERSION).tar.gz
