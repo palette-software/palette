@@ -28,7 +28,7 @@ before_install:
   - sudo apt-get install -y reprepro
   - wget https://s3.amazonaws.com/versions-palette-software/akiri.framework_0.5.6_all.deb
   - sudo dpkg --install akiri.framework_0.5.6_all.deb
-  - sudo npm install grunt -g
+  - npm install grunt -g
   - sudo pip install --upgrade pip
   - sudo pip install python-dateutil
 
