@@ -23,10 +23,7 @@ all:
 	../../scripts/genchangelog.sh $(PACKAGE) $(VERSION) > $(PACKAGE)-$(VERSION)/debian/changelog
 	ls -ltr $(PACKAGE)-$(VERSION)/debian/
 	cat $(PACKAGE)-$(VERSION)/debian/changelog
-	cd $(PACKAGE)-$(VERSION)
-	ls -ltr
-	ls -ltr debian
-	dpkg-buildpackage -i -I -rfakeroot -uc -us
+	cd $(PACKAGE)-$(VERSION) && dpkg-buildpackage -i -I -rfakeroot -uc -us
 .PHONY: all
 
 clean:
