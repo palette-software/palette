@@ -9,6 +9,8 @@ env:
   - PALETTE_VERSION=2.0.$TRAVIS_BUILD_NUMBER CONTROLLER_VERSION=2.0.$TRAVIS_BUILD_NUMBER
 
 before_install:
+  - ls ~/virtualenv/python2.7_with_system_site_packages/bin/
+  - ~/virtualenv/python2.7_with_system_site_packages/bin/deactivate
   - sudo apt-get update
   # - sudo apt-get install language-pack-UTF-8
   - sudo apt-get install -y debhelper
@@ -28,8 +30,6 @@ before_install:
   - pip install python-dateutil
 
 install:
-  # fetch "normal" debian python for 3.3
-  - if [ "$TRAVIS_PYTHON_VERSION" == "3.3" ]; then sudo add-apt-repository -y ppa:fkrull/deadsnakes && sudo apt-get -y update && sudo apt-get install python3.3 python3.3-dev && virtualenv -p /usr/bin/python3.3 ~/virtualenvs/3.3_debian && source ~/virtualenvs/3.3_debian/bin/activate; fi
   - pushd app
   - make setup
   - popd
@@ -44,3 +44,5 @@ script:
   - echo "54.209.53.120 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFb0QGqwwyiwlSJ2kfOi+XavgQEuE15dGDMwy9Trl69Aoj2JA9DtfEYhixb4lKmD/3XPulajWuuzIhMvXEQJ1LE=" > ~/.ssh/known_hosts
   - scp -r -i ../client/id_rsa -r . ubuntu@54.209.53.120:/var/packages/dev
 
+notifications:
+  email: false
