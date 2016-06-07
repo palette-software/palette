@@ -4,4 +4,3 @@ export DH_VERBOSE=1
 
 %:
 	dh $@ --with python2
-	mv ./home/travis/virtualenv/python2.7_with_system_site_packages/lib ./usr/
