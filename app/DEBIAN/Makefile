@@ -21,7 +21,10 @@ all:
 	mv $(PACKAGE)-$(VERSION).tar.gz $(PACKAGE)_$(VERSION).orig.tar.gz
 	../../scripts/genchangelog.sh $(PACKAGE) $(VERSION) >\
 		$(PACKAGE)-$(VERSION)/debian/changelog
-	cd $(PACKAGE)-$(VERSION) && dpkg-buildpackage -i -I -rfakeroot -uc -us
+	cd $(PACKAGE)-$(VERSION)
+	ls -ltr
+	ls -ltr palette/
+	dpkg-buildpackage -i -I -rfakeroot -uc -us
 .PHONY: all
 
 clean:
