@@ -3,7 +3,7 @@ dist: trusty
 language: python
 
 python:
-  - "2.7"
+  - "2.7_with_system_site_packages"
 
 env:
   - PALETTE_VERSION=2.0.$TRAVIS_BUILD_NUMBER CONTROLLER_VERSION=2.0.$TRAVIS_BUILD_NUMBER
