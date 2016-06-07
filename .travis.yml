@@ -28,19 +28,13 @@ before_install:
   - pip install python-dateutil
 
 install:
-  - echo $PWD
-  - ls -ltr
   - pushd app
   - make setup
   - popd
 
 script:
   - make palette
-  - ls -ltr
-  - ls -ltr dpkg/pool
   - make controller
-  - ls -ltr
-  - ls -ltr dpkg/pool
     # - make clean all
   - GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
   - chmod 600 dpkg/client/id_rsa
