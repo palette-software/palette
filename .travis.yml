@@ -14,7 +14,7 @@ before_install:
   # - sudo apt-get install language-pack-UTF-8
   - sudo add-apt-repository -y ppa:fkrull/deadsnakes
   - sudo apt-get update
-  - sudo apt-get install -y python=2.7.6-2+lucid1
+  - sudo apt-get install -y python2.6
   - python --version
   - sudo apt-get install -y debhelper
   - sudo apt-get install -y pylint python-tz python-passlib 
