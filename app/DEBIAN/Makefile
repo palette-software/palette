@@ -23,7 +23,6 @@ all:
 		$(PACKAGE)-$(VERSION)/debian/changelog
 	cd $(PACKAGE)-$(VERSION)
 	ls -ltr
-	ls -ltr palette/
 	dpkg-buildpackage -i -I -rfakeroot -uc -us
 .PHONY: all
 
