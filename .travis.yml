@@ -9,10 +9,8 @@ env:
   - PALETTE_VERSION=2.0.$TRAVIS_BUILD_NUMBER CONTROLLER_VERSION=2.0.$TRAVIS_BUILD_NUMBER
 
 before_install:
-  - ls ~/virtualenv/python2.7_with_system_site_packages/bin/
-  - pip uninstall virtualenv
-  - cat ~/virtualenv/python2.7_with_system_site_packages/bin/activate
   # - sudo apt-get install language-pack-UTF-8
+  - sudo apt-get update
   - sudo apt-get install -y debhelper
   - sudo apt-get install -y pylint python-tz python-passlib 
   - sudo apt-get install -y python-dateutil python-boto python-crypto
@@ -23,6 +21,7 @@ before_install:
   - sudo apt-get install -y nodejs
   - sudo apt-get install -y unzip wget
   - sudo apt-get install -y reprepro
+  - sudo apt-get install -y dh-virtualenv
   - wget https://s3.amazonaws.com/versions-palette-software/akiri.framework_0.5.6_all.deb
   - sudo dpkg --install akiri.framework_0.5.6_all.deb
   - sudo npm install grunt -g
