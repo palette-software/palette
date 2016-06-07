@@ -19,7 +19,10 @@ all:
 	tar -tzvf $(PACKAGE)-$(VERSION).tar.gz
 	echo "xxxxxxxxxxxxxxxxxxx"
 	mv $(PACKAGE)-$(VERSION).tar.gz $(PACKAGE)_$(VERSION).orig.tar.gz
+	../../scripts/genchangelog.sh $(PACKAGE) $(VERSION)
 	../../scripts/genchangelog.sh $(PACKAGE) $(VERSION) > $(PACKAGE)-$(VERSION)/debian/changelog
+	ls -ltr $(PACKAGE)-$(VERSION)/debian/
+	cat $(PACKAGE)-$(VERSION)/debian/changelog
 	cd $(PACKAGE)-$(VERSION)
 	ls -ltr
 	ls -ltr debian
