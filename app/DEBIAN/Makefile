@@ -15,6 +15,9 @@ all:
 	mkdir -p opt
 	cp -a ../application.wsgi opt
 	cd $(PACKAGE)-$(VERSION) && python setup.py sdist --dist-dir=../
+	echo "xxxxxxxxxxxxxxxxxxxx"
+	tar -lzvf $(PACKAGE)-$(VERSION).tar.gz
+	echo "xxxxxxxxxxxxxxxxxxx"
 	mv $(PACKAGE)-$(VERSION).tar.gz $(PACKAGE)_$(VERSION).orig.tar.gz
 	../../scripts/genchangelog.sh $(PACKAGE) $(VERSION) >\
 		$(PACKAGE)-$(VERSION)/debian/changelog
