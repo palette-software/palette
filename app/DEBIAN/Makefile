@@ -19,10 +19,10 @@ all:
 	tar -tzvf $(PACKAGE)-$(VERSION).tar.gz
 	echo "xxxxxxxxxxxxxxxxxxx"
 	mv $(PACKAGE)-$(VERSION).tar.gz $(PACKAGE)_$(VERSION).orig.tar.gz
-	../../scripts/genchangelog.sh $(PACKAGE) $(VERSION) >\
-		$(PACKAGE)-$(VERSION)/debian/changelog
+	../../scripts/genchangelog.sh $(PACKAGE) $(VERSION) > $(PACKAGE)-$(VERSION)/debian/changelog
 	cd $(PACKAGE)-$(VERSION)
 	ls -ltr
+	ls -ltr debian
 	dpkg-buildpackage -i -I -rfakeroot -uc -us
 .PHONY: all
 
