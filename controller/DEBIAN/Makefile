@@ -4,7 +4,7 @@ PACKAGE := controller
 VERSION := $(CONTROLLER_VERSION)
 # VERSION := $(shell awk 'match($$0, /[0-9]+\.[0-9]+\.[0-9]+/) { print substr($$0, RSTART, RLENGTH) }' ../setup.py)
 
-export PYTHONPATH:=$(PYTHONPATH):$(PWD)/..
+export PYTHONPATH:=$(PYTHONPATH):$(PWD)/controller
 DATE:=`date +"%b %d, %Y"`
 
 all:
@@ -12,7 +12,8 @@ all:
 	cp -a ../$(PACKAGE) ../setup.py $(PACKAGE)-$(VERSION)/
 	cp -a MANIFEST.in etc var usr debian $(PACKAGE)-$(VERSION)/
 	echo "PYTHONPATH=$(PYTHONPATH)"
-	ls -ltr .
+	echo $(PWD)
+	ls -ltr $(PWD)
 	ls -ltr ..
 	python -c "from controller.util import version; print 'VERSION=\'' + version() + '\''" >$(PACKAGE)-$(VERSION)/controller/version.py
 	echo "DATE='"$(DATE)"'" >> $(PACKAGE)-$(VERSION)/controller/version.py
