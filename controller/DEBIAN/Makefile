@@ -11,6 +11,9 @@ all:
 	rm -rf $(PACKAGE)-*; mkdir -p $(PACKAGE)-$(VERSION)
 	cp -a ../$(PACKAGE) ../setup.py $(PACKAGE)-$(VERSION)/
 	cp -a MANIFEST.in etc var usr debian $(PACKAGE)-$(VERSION)/
+	echo "PYTHONPATH=$PYTHONPATH"
+	ls -ltr .
+	ls -ltr ..
 	python -c "from controller.util import version; print 'VERSION=\'' + version() + '\''" >$(PACKAGE)-$(VERSION)/controller/version.py
 	echo "DATE='"$(DATE)"'" >> $(PACKAGE)-$(VERSION)/controller/version.py
 	cd $(PACKAGE)-$(VERSION) && python setup.py sdist --dist-dir=../
