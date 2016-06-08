@@ -10,7 +10,11 @@ env:
 
 before_install:
   - ls ~/virtualenv/python2.7_with_system_site_packages/bin/
-  - ~/virtualenv/python2.7_with_system_site_packages/bin/pip uninstall virtualenv
+  - export PATH="$_OLD_VIRTUAL_PATH"
+  - export PYTHONHOME="$_OLD_VIRTUAL_PYTHONHOME"
+  - hash -r 2>/dev/null
+  - export PS1="$_OLD_VIRTUAL_PS1"
+  #- ~/virtualenv/python2.7_with_system_site_packages/bin/pip uninstall virtualenv
   #- cat ~/virtualenv/python2.7_with_system_site_packages/bin/activate
   # - sudo apt-get install language-pack-UTF-8
   - sudo apt-get install -y debhelper
