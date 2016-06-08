@@ -38,7 +38,10 @@ before_install:
   - sudo dpkg --install akiri.framework_0.5.6_all.deb
   - npm install grunt -g
   - sudo pip install --upgrade pip
-  - sudo pip install python-dateutil
+  # - sudo pip install python-dateutil
+  - echo "PYTHONPATH=$PYTHONPATH"
+  - export PYTHONPATH=$PYTHONPATH:/usr/lib/python2.7/dist-packages
+  - echo "PYTHONPATH=$PYTHONPATH"
 
 install:
   - pushd app
