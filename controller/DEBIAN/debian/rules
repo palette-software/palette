@@ -6,4 +6,4 @@ export DH_VERBOSE=1
 	dh $@ --with python2
 
 override_dh_auto_install:
-	$(python setup.py install --root=$(CURDIR)/debian/$(DEB_SOURCE))
+	python setup.py install --root=$(PWD)/debian/controller --prefix=/usr
