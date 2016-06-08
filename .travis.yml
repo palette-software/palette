@@ -10,7 +10,7 @@ env:
 
 before_install:
   - ls ~/virtualenv/python2.7_with_system_site_packages/bin/
-  - echo "VIRTUAL_ENV_DISABLE_PROMPT: $VIRTUAL_ENV_DISABLE_PROMPT"
+  - echo "VIRTUAL_ENV_DISABLE_PROMPT=" $VIRTUAL_ENV_DISABLE_PROMPT
   - virtualenv --system-site-packages /usr/lib
   # - export PATH="$_OLD_VIRTUAL_PATH"
   # - which pip
