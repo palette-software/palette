@@ -11,7 +11,7 @@ env:
 before_install:
   - ls ~/virtualenv/python2.7_with_system_site_packages/bin/
   - echo "VIRTUAL_ENV_DISABLE_PROMPT=" $VIRTUAL_ENV_DISABLE_PROMPT
-  - virtualenv --system-site-packages /usr/lib
+  - sudo virtualenv --system-site-packages /usr/lib
   # - export PATH="$_OLD_VIRTUAL_PATH"
   # - which pip
   # - export PYTHONHOME="$_OLD_VIRTUAL_PYTHONHOME"
