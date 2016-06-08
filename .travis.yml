@@ -10,10 +10,14 @@ env:
 
 before_install:
   - ls ~/virtualenv/python2.7_with_system_site_packages/bin/
-  - export PATH="$_OLD_VIRTUAL_PATH"
-  - export PYTHONHOME="$_OLD_VIRTUAL_PYTHONHOME"
-  - hash -r 2>/dev/null
-  - export PS1="$_OLD_VIRTUAL_PS1"
+  - echo "VIRTUAL_ENV_DISABLE_PROMPT: $VIRTUAL_ENV_DISABLE_PROMPT"
+  - virtualenv --system-site-packages /usr/lib
+  # - export PATH="$_OLD_VIRTUAL_PATH"
+  # - which pip
+  # - export PYTHONHOME="$_OLD_VIRTUAL_PYTHONHOME"
+  # - which pip
+  # - hash -r 2>/dev/null
+  # - export PS1="$_OLD_VIRTUAL_PS1"
   #- ~/virtualenv/python2.7_with_system_site_packages/bin/pip uninstall virtualenv
   #- cat ~/virtualenv/python2.7_with_system_site_packages/bin/activate
   # - sudo apt-get install language-pack-UTF-8
