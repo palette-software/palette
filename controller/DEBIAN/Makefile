@@ -4,14 +4,14 @@ PACKAGE := controller
 VERSION := $(CONTROLLER_VERSION)
 # VERSION := $(shell awk 'match($$0, /[0-9]+\.[0-9]+\.[0-9]+/) { print substr($$0, RSTART, RLENGTH) }' ../setup.py)
 
-export PYTHONPATH=$PYTHONPATH:$PWD/..
+export PYTHONPATH=$(PYTHONPATH):$(PWD)/..
 DATE:=`date +"%b %d, %Y"`
 
 all:
 	rm -rf $(PACKAGE)-*; mkdir -p $(PACKAGE)-$(VERSION)
 	cp -a ../$(PACKAGE) ../setup.py $(PACKAGE)-$(VERSION)/
 	cp -a MANIFEST.in etc var usr debian $(PACKAGE)-$(VERSION)/
-	echo "PYTHONPATH=$PYTHONPATH"
+	echo "PYTHONPATH=$(PYTHONPATH)"
 	ls -ltr .
 	ls -ltr ..
 	python -c "from controller.util import version; print 'VERSION=\'' + version() + '\''" >$(PACKAGE)-$(VERSION)/controller/version.py
