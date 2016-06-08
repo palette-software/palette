@@ -1,9 +1,10 @@
 dist: trusty
 
-language: python
+language: node_js
 
-python:
-  - "2.7"
+node_js:
+  - "4"
+    # - "2.7"
     # - "2.7_with_system_site_packages"
 
 env:
@@ -22,21 +23,22 @@ before_install:
   #- ~/virtualenv/python2.7_with_system_site_packages/bin/pip uninstall virtualenv
   #- cat ~/virtualenv/python2.7_with_system_site_packages/bin/activate
   # - sudo apt-get install language-pack-UTF-8
+  - sudo apt-get install -y python
   - sudo apt-get install -y debhelper
   - sudo apt-get install -y pylint python-tz python-passlib 
   - sudo apt-get install -y python-dateutil python-boto python-crypto
   - sudo apt-get install -y python-mako python-webob python-pastescript 
   - sudo apt-get install -y python-sqlalchemy python-paste python-pastedeploy
   - sudo apt-get install -y git
-  - curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
+  # - curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
   - sudo apt-get install -y nodejs
   - sudo apt-get install -y unzip wget
   - sudo apt-get install -y reprepro
   - wget https://s3.amazonaws.com/versions-palette-software/akiri.framework_0.5.6_all.deb
   - sudo dpkg --install akiri.framework_0.5.6_all.deb
-  - sudo npm install grunt -g
-  - pip install --upgrade pip
-  - pip install python-dateutil
+  - npm install grunt -g
+  - sudo pip install --upgrade pip
+  - sudo pip install python-dateutil
 
 install:
   - pushd app
