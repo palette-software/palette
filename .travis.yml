@@ -3,14 +3,15 @@ dist: trusty
 language: python
 
 python:
-  - "2.7_with_system_site_packages"
+  - "2.7"
+    # - "2.7_with_system_site_packages"
 
 env:
   - PALETTE_VERSION=2.0.$TRAVIS_BUILD_NUMBER CONTROLLER_VERSION=2.0.$TRAVIS_BUILD_NUMBER
 
 before_install:
-  - ls ~/virtualenv/python2.7_with_system_site_packages/bin/
-  - echo "VIRTUAL_ENV_DISABLE_PROMPT=" $VIRTUAL_ENV_DISABLE_PROMPT
+  # - ls ~/virtualenv/python2.7_with_system_site_packages/bin/
+  # - echo "VIRTUAL_ENV_DISABLE_PROMPT=" $VIRTUAL_ENV_DISABLE_PROMPT
   # - sudo virtualenv --system-site-packages /usr/lib
   # - export PATH="$_OLD_VIRTUAL_PATH"
   # - which pip
