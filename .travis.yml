@@ -53,14 +53,15 @@ after_success:
   # - zip -r -j palette-${TRAVIS_TAG}.zip ~/dpkg/apt
 
   # Create the zip package fo GoCD
-  - zip -r -j ~/palette-${PALETTE_VERSION}.zip ~/dpkg/apt
+  - pwd
+  - zip -r -j palette-${PALETTE_VERSION}.zip dpkg/apt
 
   # Only deploy to GoCD server from the origin/cen-13/ci-alternative!!! branch (temporarily)
   - test $TRAVIS_BRANCH = "origin/cen-13/ci-alternative" &&
     chmod 600 dpkg/client/id_rsa &&
     cd dpkg/apt &&
     echo "gocd-server.palette-software.net,52.201.226.91 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBG0Q+RykruJhy6ZPOdoUUROgxyMODms0seb29/Ujg2dsxharXLDmFiNQ3dO8J8NTKeNE12WAILl6cjZRawnhQ1g=" > ~/.ssh/known_hosts &&
-    scp -r -i ../client/id_rsa ~/palette-${PALETTE_VERSION}.zip ec2-user@gocd-server.palette-software.net:/var/go/packages/dev
+    scp -r -i ../client/id_rsa ../../palette-${PALETTE_VERSION}.zip ec2-user@gocd-server.palette-software.net:/var/go/packages/dev
 
 script:
   - make palette
