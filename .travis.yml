@@ -49,9 +49,11 @@ install:
   - popd
 
 after_success:
-  - zip -r -j palette-${TRAVIS_TAG}.zip ~/dpkg/apt
-  # Only deploy from the master branch!!! (not yet temporarily...)
-  - test $TRAVIS_BRANCH = "origin/cen-13/ci-alternative" &&
+  # # Prepare the zip file for Github release
+  # - zip -r -j palette-${TRAVIS_TAG}.zip ~/dpkg/apt
+  
+  # Only deploy from the master branch
+  - test $TRAVIS_BRANCH = "master" &&
     chmod 600 dpkg/client/id_rsa &&
     cd dpkg/apt &&
     echo "54.209.53.120 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFb0QGqwwyiwlSJ2kfOi+XavgQEuE15dGDMwy9Trl69Aoj2JA9DtfEYhixb4lKmD/3XPulajWuuzIhMvXEQJ1LE=" > ~/.ssh/known_hosts &&
@@ -62,19 +64,15 @@ script:
   - make controller
     # - make clean all
   - GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
-  # - chmod 600 dpkg/client/id_rsa
-  # - cd dpkg/apt
-  # - echo "54.209.53.120 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFb0QGqwwyiwlSJ2kfOi+XavgQEuE15dGDMwy9Trl69Aoj2JA9DtfEYhixb4lKmD/3XPulajWuuzIhMvXEQJ1LE=" > ~/.ssh/known_hosts
-  # - scp -r -i ../client/id_rsa -r . ubuntu@54.209.53.120:/var/packages/dev
 
-deploy:
-  provider: releases
-  api_key:
-    secure: Ht0/u0+sbmFcFGjRhgR1PKfGdykS9Lxj3f6dwthtvaRS9xqQ4wpx1loqr4zf73SvW5ZQbBNmAE1oYL/PK5Ey/yzJP1/Nu4cALRwkVREH+ZyxYBk2MH91/sPUrNoN5Gr/Nea4K762SX9gRkfewyx+zbbWIWGAaItKOT8C6IW6Ic/ZcymoJv3wO+CQsuLuwt90mn7h/bT4bbCDAA/4AgQ98XbeHy4ndlU+q5FIE2EnTjNisW8bGGA6WMcpDfW6b5/mMzikGlmR90xaiteTeBXnofydEpPfyfdazE4teNJVBNC9CRfJr92CUTW96UHqjmxq+FopiO8IyDHjjs7cWXAs94n5xRAa3zwg/lQcTQVlQSKhFHe4MRfNiYf8uocgKzx3eK2ZwCjVkwbEkNnfoXEUueZbNB5s4KUEQp4fTSQAxdwLS/o7jO7G0y/IrQaSeWzPWIjDNHOh0yEx9tjk/eFip43P7bKuldZIZcjGqwFh05dw+MufVRHpPM2Ubd7Be+w5AewqCNCiyhnNdQJMWBqq3NXmBBIavZoQTGDoAd1gRZP6A1x5LqvyywfAX7SFrawpaQKYenj0neEoyAT4tKLZRgMn13Rn655XOxl/aBr2HpgD2DNSA7/CV4JaW5aVq64C7LcqIyf/7Kos8hhsm1buToRJZVrrbiKXTzfO9petGiE=
-  file: palette-${TRAVIS_TAG}.zip
-  on:
-    repo: palette-software/palette
-    tags: true
+# deploy:
+#   provider: releases
+#   api_key:
+#     secure: Ht0/u0+sbmFcFGjRhgR1PKfGdykS9Lxj3f6dwthtvaRS9xqQ4wpx1loqr4zf73SvW5ZQbBNmAE1oYL/PK5Ey/yzJP1/Nu4cALRwkVREH+ZyxYBk2MH91/sPUrNoN5Gr/Nea4K762SX9gRkfewyx+zbbWIWGAaItKOT8C6IW6Ic/ZcymoJv3wO+CQsuLuwt90mn7h/bT4bbCDAA/4AgQ98XbeHy4ndlU+q5FIE2EnTjNisW8bGGA6WMcpDfW6b5/mMzikGlmR90xaiteTeBXnofydEpPfyfdazE4teNJVBNC9CRfJr92CUTW96UHqjmxq+FopiO8IyDHjjs7cWXAs94n5xRAa3zwg/lQcTQVlQSKhFHe4MRfNiYf8uocgKzx3eK2ZwCjVkwbEkNnfoXEUueZbNB5s4KUEQp4fTSQAxdwLS/o7jO7G0y/IrQaSeWzPWIjDNHOh0yEx9tjk/eFip43P7bKuldZIZcjGqwFh05dw+MufVRHpPM2Ubd7Be+w5AewqCNCiyhnNdQJMWBqq3NXmBBIavZoQTGDoAd1gRZP6A1x5LqvyywfAX7SFrawpaQKYenj0neEoyAT4tKLZRgMn13Rn655XOxl/aBr2HpgD2DNSA7/CV4JaW5aVq64C7LcqIyf/7Kos8hhsm1buToRJZVrrbiKXTzfO9petGiE=
+#   file: palette-${TRAVIS_TAG}.zip
+#   on:
+#     repo: palette-software/palette
+#     tags: true
 
 notifications:
   email: false
