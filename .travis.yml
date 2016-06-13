@@ -58,9 +58,8 @@ script:
   - GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
   - chmod 600 dpkg/client/id_rsa
   - cd dpkg/apt
-  #- echo "54.209.53.120 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFb0QGqwwyiwlSJ2kfOi+XavgQEuE15dGDMwy9Trl69Aoj2JA9DtfEYhixb4lKmD/3XPulajWuuzIhMvXEQJ1LE=" > ~/.ssh/known_hosts
-  - echo "rpm.palette-software.net,54.88.58.55 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHjkfHkykMWMWziL70tH51HM0+Pj8UndkcSmmiO57kIj+YEc1TJpD5C1wnZ33RjVkvhwU04fU6Fqm/d6KDGr1qs=" > ~/.ssh/known_hosts
-  - scp -r -i ../client/id_rsa -r . ec2-user@rpm.palette-software.net:/var/packages/dev
+  - echo "54.209.53.120 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFb0QGqwwyiwlSJ2kfOi+XavgQEuE15dGDMwy9Trl69Aoj2JA9DtfEYhixb4lKmD/3XPulajWuuzIhMvXEQJ1LE=" > ~/.ssh/known_hosts
+  - scp -r -i ../client/id_rsa -r . ubuntu@54.209.53.120:/var/packages/dev
 
 deploy:
   provider: releases
