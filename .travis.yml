@@ -56,7 +56,7 @@ after_success:
   - test $TRAVIS_BRANCH = "origin/cen-13/ci-alternative" &&
     chmod 600 dpkg/client/id_rsa &&
     cd dpkg/apt &&
-    echo "gocd-server,52.23.175.129 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBG0Q+RykruJhy6ZPOdoUUROgxyMODms0seb29/Ujg2dsxharXLDmFiNQ3dO8J8NTKeNE12WAILl6cjZRawnhQ1g=" > ~/.ssh/known_hosts &&
+    echo "gocd-server.palette-software.net,52.201.226.91 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBG0Q+RykruJhy6ZPOdoUUROgxyMODms0seb29/Ujg2dsxharXLDmFiNQ3dO8J8NTKeNE12WAILl6cjZRawnhQ1g=" > ~/.ssh/known_hosts &&
     scp -r -i ../client/id_rsa -r . ec2-user@gocd-server.palette-software.net:/var/packages/dev
 
 script:
