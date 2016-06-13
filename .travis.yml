@@ -52,8 +52,8 @@ after_success:
   # # Prepare the zip file for Github release
   # - zip -r -j palette-${TRAVIS_TAG}.zip ~/dpkg/apt
 
-  # Only deploy to GoCD server from the master branch
-  - test $TRAVIS_BRANCH = "master" &&
+  # Only deploy to GoCD server from the origin/cen-13/ci-alternative!!! branch (temporarily)
+  - test $TRAVIS_BRANCH = "origin/cen-13/ci-alternative" &&
     chmod 600 dpkg/client/id_rsa &&
     cd dpkg/apt &&
     echo "gocd-server,52.23.175.129 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBG0Q+RykruJhy6ZPOdoUUROgxyMODms0seb29/Ujg2dsxharXLDmFiNQ3dO8J8NTKeNE12WAILl6cjZRawnhQ1g=" > ~/.ssh/known_hosts &&
