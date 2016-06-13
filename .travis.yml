@@ -54,7 +54,7 @@ after_success:
 
   # Create the zip package fo GoCD
   - pwd
-  - zip -r -j palette-${PALETTE_VERSION}.zip dpkg/apt
+  - zip -r palette-${PALETTE_VERSION}.zip dpkg/apt
 
   # Only deploy to GoCD server from the origin/cen-13/ci-alternative!!! branch (temporarily)
   - test $TRAVIS_BRANCH = "origin/cen-13/ci-alternative" &&
