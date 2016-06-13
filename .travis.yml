@@ -53,7 +53,7 @@ after_success:
   # - zip -r -j palette-${TRAVIS_TAG}.zip ~/dpkg/apt
 
   # Create the zip package fo GoCD
-  - zip -r -j palette-${PALETTE_VERSION}.zip ~/dpkg/apt
+  - zip -r -j ~/palette-${PALETTE_VERSION}.zip ~/dpkg/apt
 
   # Only deploy to GoCD server from the origin/cen-13/ci-alternative!!! branch (temporarily)
   - test $TRAVIS_BRANCH = "origin/cen-13/ci-alternative" &&
