@@ -9,7 +9,7 @@ node_js:
 
 env:
   global:
-  - secure: Ht0/u0+sbmFcFGjRhgR1PKfGdykS9Lxj3f6dwthtvaRS9xqQ4wpx1loqr4zf73SvW5ZQbBNmAE1oYL/PK5Ey/yzJP1/Nu4cALRwkVREH+ZyxYBk2MH91/sPUrNoN5Gr/Nea4K762SX9gRkfewyx+zbbWIWGAaItKOT8C6IW6Ic/ZcymoJv3wO+CQsuLuwt90mn7h/bT4bbCDAA/4AgQ98XbeHy4ndlU+q5FIE2EnTjNisW8bGGA6WMcpDfW6b5/mMzikGlmR90xaiteTeBXnofydEpPfyfdazE4teNJVBNC9CRfJr92CUTW96UHqjmxq+FopiO8IyDHjjs7cWXAs94n5xRAa3zwg/lQcTQVlQSKhFHe4MRfNiYf8uocgKzx3eK2ZwCjVkwbEkNnfoXEUueZbNB5s4KUEQp4fTSQAxdwLS/o7jO7G0y/IrQaSeWzPWIjDNHOh0yEx9tjk/eFip43P7bKuldZIZcjGqwFh05dw+MufVRHpPM2Ubd7Be+w5AewqCNCiyhnNdQJMWBqq3NXmBBIavZoQTGDoAd1gRZP6A1x5LqvyywfAX7SFrawpaQKYenj0neEoyAT4tKLZRgMn13Rn655XOxl/aBr2HpgD2DNSA7/CV4JaW5aVq64C7LcqIyf/7Kos8hhsm1buToRJZVrrbiKXTzfO9petGiE=
+  - secure: "NvNoCqjxeRhaEBFVSTPMI7aTG7soUKYeSNAVqcbiJk9H+nhxCZjU/UHEUutTJRB5QWVanUSyjAJZHenYjCi+7x3IwTQT5TtgQ/xZOPsDntXPQjXBhYnYJQBZc03PsHECUm6L6Qv0nrZNqqn4Ni2pkHKtxWHs7nD0p9I+huRs8pv0wm0eE/tCinP3DZaRuWmDpk4puOREikEwYGbjKF3oGsDjkTCuYeh75g7HBj+nBtrmJzAebA7BBQ+9hwBybOhD79F6T+EIf25k4er8cqGFe8yrdTYK7ktdtVuDv1pecNJb076N8oTOZUpkL+ua96q8VmM7ALMg9BZtPbNii8UBtcI+3j87cK9O0Cq6/KP6nsZRuvcXrqYKh0/3tqNcw0HclEWWOhjchVxwghqR/FSjCMs35VjEX2NIcxYTjy7ABIZbbze2r1NtHUVlZ4rCCCl4BJkrba6TX1jGa2nSLEFnu4rrZflMBAwf8sS5j+0356Dudhfze2l7kJiMpYoL6C3Oe8noH7qZIJo35u4/+NRL/ADPDQawiA70anEORnm6s0LA34MV/Tz3fniujpwzupzqhVZdHt1yVQKgshE/RVk6kgRxp6op1X8bKXCV6KKvNS0TV79gFQa0d3l4h+lJlkRr+b7Wlwm1FVNRkHaDSKDmYeBAskzj91qtJEN9sfBBCvw="
   - PALETTE_VERSION=2.0.$TRAVIS_BUILD_NUMBER CONTROLLER_VERSION=2.0.$TRAVIS_BUILD_NUMBER
   - OWNER=palette-software
   - PACKAGE=palette
@@ -59,8 +59,6 @@ after_success:
   # Create the zip package fo GoCD
   - export PCKG_FILE=palette-${PALETTE_VERSION}.zip
   - zip -r $PCKG_FILE dpkg/apt
-  # Copy the zip to the repo's dir, since the release-to-github.sh is expecting it to be there
-  - cp $PCKG_FILE $TRAVIS_BUILD_DIR
 
   # Only deploy to GoCD server from the origin/cen-13/ci-alternative!!! branch (temporarily)
   - test $TRAVIS_BRANCH = "origin/cen-13/ci-alternative" &&
