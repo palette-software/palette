@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#if [ "Xmaster" != "X$TRAVIS_BRANCH" ]; then echo "Current branch is $TRAVIS_BRANCH. We are deploying only from the master branch"; exit 0; fi
+# THIS IS A TEMPORARY CHECK FOR THIS BRANCH!!!
+if [ "Xorigin/cen-13/ci-alternative" != "X$TRAVIS_BRANCH" ]; then echo "Current branch is $TRAVIS_BRANCH. We are deploying only from the origin/cen-13/ci-alternative branch temporarily."; exit 0; fi
+if [ "X" != "X$TRAVIS_TAG" ]; then echo "Tags are auto-committed by deploys, so this is already a result of a deploy. Skip deploy this time."; exit 0; fi
 if [ "X" == "X$GITHUB_TOKEN" ]; then echo "Need GITHUB_TOKEN environment variable"; exit 10; fi
 if [ "X" == "X$HOME" ]; then echo "Need HOME environment variable"; exit 10; fi
 

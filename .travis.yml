@@ -48,9 +48,7 @@ after_success:
   - zip -r $PCKG_FILE dpkg/apt
 
   # Only deploy from the master branch (and if we don't have a tag specified, because they are auto-committed)
-  - test $TRAVIS_BRANCH = "master" &&
-    test $TRAVIS_TAG = "" &&
-    $TRAVIS_BUILD_DIR/release-to-github.sh
+  - $TRAVIS_BUILD_DIR/release-to-github.sh
 
 notifications:
   email: false
