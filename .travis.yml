@@ -4,8 +4,6 @@ language: node_js
 
 node_js:
   - "4"
-    # - "2.7"
-    # - "2.7_with_system_site_packages"
 
 env:
   global:
@@ -15,18 +13,6 @@ env:
   - PACKAGE=palette
 
 before_install:
-  # - ls ~/virtualenv/python2.7_with_system_site_packages/bin/
-  # - echo "VIRTUAL_ENV_DISABLE_PROMPT=" $VIRTUAL_ENV_DISABLE_PROMPT
-  # - sudo virtualenv --system-site-packages /usr/lib
-  # - export PATH="$_OLD_VIRTUAL_PATH"
-  # - which pip
-  # - export PYTHONHOME="$_OLD_VIRTUAL_PYTHONHOME"
-  # - which pip
-  # - hash -r 2>/dev/null
-  # - export PS1="$_OLD_VIRTUAL_PS1"
-  #- ~/virtualenv/python2.7_with_system_site_packages/bin/pip uninstall virtualenv
-  #- cat ~/virtualenv/python2.7_with_system_site_packages/bin/activate
-  # - sudo apt-get install language-pack-UTF-8
   - sudo apt-get install -y python
   - sudo apt-get install -y debhelper
   - sudo apt-get install -y pylint python-tz python-passlib 
@@ -34,7 +20,6 @@ before_install:
   - sudo apt-get install -y python-mako python-webob python-pastescript 
   - sudo apt-get install -y python-sqlalchemy python-paste python-pastedeploy
   - sudo apt-get install -y git
-  # - curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
   - sudo apt-get install -y nodejs
   - sudo apt-get install -y unzip wget
   - sudo apt-get install -y reprepro
@@ -42,7 +27,6 @@ before_install:
   - sudo dpkg --install akiri.framework_0.5.6_all.deb
   - npm install grunt -g
   - sudo pip install --upgrade pip
-  # - sudo pip install python-dateutil
   - echo "PYTHONPATH=$PYTHONPATH"
   - export PYTHONPATH=$PYTHONPATH:/usr/lib/python2.7/dist-packages:/usr/lib/python2.7/dist-packages/python-dateutil
   - echo "PYTHONPATH=$PYTHONPATH"
@@ -53,15 +37,13 @@ install:
   - popd
 
 after_success:
-  # # Prepare the zip file for Github release
-  # - zip -r palette-${TRAVIS_TAG}.zip ~/dpkg/apt
-
-  # Create the zip package fo GoCD
+  # Create the zip package for GitHub release
   - export PCKG_FILE=palette-${PALETTE_VERSION}.zip
   - zip -r $PCKG_FILE dpkg/apt
 
-  # Only deploy to GoCD server from the origin/cen-13/ci-alternative!!! branch (temporarily)
-  - test $TRAVIS_BRANCH = "origin/cen-13/ci-alternative" &&
+  # Only deploy from the master branch (and if we don't have a tag specified, because they are auto-committed)
+  - test $TRAVIS_BRANCH = "master" &&
+    test $TRAVIS_TAG = "" &&
     $TRAVIS_BUILD_DIR/release-to-github.sh
 
 script:
@@ -69,15 +51,6 @@ script:
   - make controller
     # - make clean all
   - GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
-
-# deploy:
-#   provider: releases
-#   api_key:
-#     secure: Ht0/u0+sbmFcFGjRhgR1PKfGdykS9Lxj3f6dwthtvaRS9xqQ4wpx1loqr4zf73SvW5ZQbBNmAE1oYL/PK5Ey/yzJP1/Nu4cALRwkVREH+ZyxYBk2MH91/sPUrNoN5Gr/Nea4K762SX9gRkfewyx+zbbWIWGAaItKOT8C6IW6Ic/ZcymoJv3wO+CQsuLuwt90mn7h/bT4bbCDAA/4AgQ98XbeHy4ndlU+q5FIE2EnTjNisW8bGGA6WMcpDfW6b5/mMzikGlmR90xaiteTeBXnofydEpPfyfdazE4teNJVBNC9CRfJr92CUTW96UHqjmxq+FopiO8IyDHjjs7cWXAs94n5xRAa3zwg/lQcTQVlQSKhFHe4MRfNiYf8uocgKzx3eK2ZwCjVkwbEkNnfoXEUueZbNB5s4KUEQp4fTSQAxdwLS/o7jO7G0y/IrQaSeWzPWIjDNHOh0yEx9tjk/eFip43P7bKuldZIZcjGqwFh05dw+MufVRHpPM2Ubd7Be+w5AewqCNCiyhnNdQJMWBqq3NXmBBIavZoQTGDoAd1gRZP6A1x5LqvyywfAX7SFrawpaQKYenj0neEoyAT4tKLZRgMn13Rn655XOxl/aBr2HpgD2DNSA7/CV4JaW5aVq64C7LcqIyf/7Kos8hhsm1buToRJZVrrbiKXTzfO9petGiE=
-#   file: palette-${TRAVIS_TAG}.zip
-#   on:
-#     repo: palette-software/palette
-#     tags: true
 
 notifications:
   email: false
