@@ -165,12 +165,15 @@ class DiskCheck(object):
                                                     entry.archive_limit:
             raise DiskException(
                 ("Minimum space needed greater than archive limit." + \
-                "volid: %d.  Need: %s.  With vol would have: %s.  " + \
-                "Allowed/archive limit: %s") % \
+                "volid: %d. Need: %s. Size: %s. With vol would have: %s. " + \
+                "Allowed/archive limit: %s. Volume name: %s. " + \
+                "Volume label: %s. Volume available: %s") % \
                 (entry.volid, sizestr(self.min_disk_needed),
-                sizestr(entry.size - entry.available_space + \
-                            self.min_disk_needed),
-                            sizestr(entry.archive_limit)))
+                sizestr(entry.size), sizestr(entry.size - \
+                    entry.available_space + self.min_disk_needed),
+                sizestr(entry.archive_limit), entry.name,
+                entry.label, sizestr(entry.available_space)))
+
 
         self.target_agent = target_agent
         # fixme: agent.path...
