@@ -36,6 +36,12 @@ install:
   - make setup
   - popd
 
+script:
+  - make palette
+  - make controller
+    # - make clean all
+  - GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
+
 after_success:
   # Create the zip package for GitHub release
   - export PCKG_FILE=palette-${PALETTE_VERSION}.zip
@@ -45,12 +51,6 @@ after_success:
   - test $TRAVIS_BRANCH = "master" &&
     test $TRAVIS_TAG = "" &&
     $TRAVIS_BUILD_DIR/release-to-github.sh
-
-script:
-  - make palette
-  - make controller
-    # - make clean all
-  - GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
 
 notifications:
   email: false
