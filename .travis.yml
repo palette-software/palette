@@ -47,8 +47,20 @@ after_success:
   - export PCKG_FILE=palette-${PALETTE_VERSION}.zip
   - zip -r $PCKG_FILE dpkg/apt
 
+  # # Make sure jsawk is installed, it is a dependency for release-to-github.sh
+  # - curl -L http://github.com/micha/jsawk/raw/master/jsawk > jsawk
+  # - chmod 755 jsawk
+  # - sudo ln -s jsawk /usr/bin/jsawk
+
+deploy:
+  skip_cleanup: true
+  provider: script
   # Only deploy from the master branch (and if we don't have a tag specified, because they are auto-committed)
-  - $TRAVIS_BUILD_DIR/release-to-github.sh
+  script: $TRAVIS_BUILD_DIR/release-to-github.sh
+  on:
+    # It should be master!!!
+    branch: origin/cen-13/ci-alternative
+    tags: false
 
 notifications:
   email: false
