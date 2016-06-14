@@ -12,7 +12,7 @@ if [ "X" == "X$HOME" ]; then echo "Need HOME environment variable"; exit 10; fi
 # if [ $? -ne 0 ]; then echo "uploading new version failed"; exit 10; fi
 
 echo "Creating Github realase..."
-RELEASE_ID=`curl -H "Authorization: token $GITHUB_TOKEN" -d "{\"tag_name\": \"$PALETTE_VERSION\", \"name\": \"Palette Center\"}" "https://api.github.com/repos/$OWNER/$PACKAGE/releases"| jsawk "return this.id"`
+RELEASE_ID=`curl -H "Authorization: token $GITHUB_TOKEN" -d "{\"tag_name\": \"$PALETTE_VERSION\", \"name\": \"Palette Center\"}" "https://api.github.com/repos/$OWNER/$PACKAGE/releases"| ./jsawk "return this.id"`
 if [ $? -ne 0 ]; then echo "creating new release failed"; exit 10; fi
 echo $RELEASE_ID
 

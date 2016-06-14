@@ -47,6 +47,7 @@ after_success:
   - export PCKG_FILE=palette-${PALETTE_VERSION}.zip
   - zip -r $PCKG_FILE dpkg/apt
 
+before_deploy:
   # Make sure jsawk is installed, it is a dependency for release-to-github.sh
   - curl -L http://github.com/micha/jsawk/raw/master/jsawk > jsawk
   - chmod 755 jsawk
