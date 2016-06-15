@@ -55,7 +55,11 @@ before_deploy:
   - sudo add-apt-repository ppa:launchpad/ppa -y
   - sudo apt-get update
   - sudo apt-get install libmozjs-24-bin
+  - ls -lah /usr/bin/js24
+  - which js24
+  - which js
   - sudo update-alternatives --install /usr/bin/js js /usr/bin/js24 10
+  - which js
   - echo "PATH:"
   - echo $PATH
   # Make sure jsawk is installed, it is a dependency for release-to-github.sh
