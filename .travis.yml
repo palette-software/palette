@@ -49,6 +49,8 @@ after_success:
 
 before_deploy:
   # Install SpiderMonkey as it is a dependency for jsawk
+  - sudo add-apt-repository ppa:launchpad/ppa
+  - sudo apt-get update
   - sudo apt-get install libmozjs-dev
   # Make sure jsawk is installed, it is a dependency for release-to-github.sh
   - curl -L http://github.com/micha/jsawk/raw/master/jsawk > jsawk
