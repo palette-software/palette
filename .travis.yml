@@ -62,6 +62,8 @@ before_deploy:
   - curl -L http://github.com/micha/jsawk/raw/master/jsawk > jsawk
   - chmod 755 jsawk
   - sudo ln -s jsawk /usr/bin/jsawk
+  - ls -lah /usr/bin/jsawk
+  - sudo chown travis:travis /usr/bin/jsawk
 
 deploy:
   skip_cleanup: true
