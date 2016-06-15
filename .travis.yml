@@ -61,9 +61,10 @@ before_deploy:
   # Make sure jsawk is installed, it is a dependency for release-to-github.sh
   - curl -L http://github.com/micha/jsawk/raw/master/jsawk > jsawk
   - chmod 755 jsawk
-  - sudo ln -s jsawk /usr/bin/jsawk
-  - ls -lah /usr/bin/jsawk
-  - sudo chown $USER:$USER /usr/bin/jsawk
+  - sudo mv jsawk /usr/local/bin
+  - which jsawk
+  # - sudo ln -s jsawk /usr/bin/jsawk
+  # - sudo chown $USER:$USER /usr/bin/jsawk
 
 deploy:
   skip_cleanup: true
