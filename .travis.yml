@@ -1,0 +1,55 @@
+dist: trusty
+
+language: node_js
+node_js:
+  - "4"
+
+# python:
+# - "2.7_with_system_site_packages"
+
+env:
+  - PALETTE_VERSION=2.0.$TRAVIS_BUILD_NUMBER CONTROLLER_VERSION=2.0.$TRAVIS_BUILD_NUMBER
+
+before_install:
+  # - sudo apt-get install language-pack-UTF-8
+  #   - sudo add-apt-repository -y ppa:fkrull/deadsnakes
+  - sudo apt-get update
+  # - sudo apt-get install -y python2.6
+  # - sudo mv /usr/bin/python /usr/bin/python_orig
+  # - sudo ln -s /usr/bin/python2.6 /usr/bin/python
+  - python --version
+  - sudo apt-get install -y debhelper
+  - sudo apt-get install -y pylint python-tz python-passlib 
+  - sudo apt-get install -y python-dateutil python-boto python-crypto
+  - sudo apt-get install -y python-mako python-webob python-pastescript 
+  - sudo apt-get install -y python-sqlalchemy python-paste python-pastedeploy
+  - sudo apt-get install -y git
+    # - curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
+    # - sudo apt-get install -y nodejs
+  - sudo apt-get install -y unzip wget
+  - sudo apt-get install -y reprepro
+  - wget https://s3.amazonaws.com/versions-palette-software/akiri.framework_0.5.6_all.deb
+  - sudo dpkg --install akiri.framework_0.5.6_all.deb
+  - npm install grunt -g
+  - wget https://bootstrap.pypa.io/get-pip.py
+  # - sudo python get-pip.py
+  - sudo pip install --upgrade pip
+  - sudo pip install python-dateutil
+
+install:
+  - pushd app
+  - make setup
+  - popd
+
+script:
+  - make palette
+  - make controller
+    # - make clean all
+  - GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
+  - chmod 600 dpkg/client/id_rsa
+  - cd dpkg/apt
+  - echo "54.209.53.120 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFb0QGqwwyiwlSJ2kfOi+XavgQEuE15dGDMwy9Trl69Aoj2JA9DtfEYhixb4lKmD/3XPulajWuuzIhMvXEQJ1LE=" > ~/.ssh/known_hosts
+  - scp -r -i ../client/id_rsa -r . ubuntu@54.209.53.120:/var/packages/dev
+
+notifications:
+  email: false
