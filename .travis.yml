@@ -63,7 +63,7 @@ before_deploy:
   - chmod 755 jsawk
   - sudo ln -s jsawk /usr/bin/jsawk
   - ls -lah /usr/bin/jsawk
-  - sudo chown travis:travis /usr/bin/jsawk
+  - sudo chown $USER:$USER /usr/bin/jsawk
 
 deploy:
   skip_cleanup: true
