@@ -39,7 +39,7 @@ install:
 
 script:
   - make palette
-  - make controller
+  #- make controller # REVERT THIS AFTER TRAVIS TESTS!!!!
     # - make clean all
   - GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
 
@@ -67,7 +67,9 @@ before_deploy:
   - chmod 755 jsawk
   - sudo mv jsawk /usr/local/bin
   - which jsawk
-  - jsawk
+  - jsawk -h
+  - >
+    jsawk -s "{\"id\": \"asd\"}" -a "return this.id"
   # - sudo ln -s jsawk /usr/bin/jsawk
   # - sudo chown $USER:$USER /usr/bin/jsawk
 
