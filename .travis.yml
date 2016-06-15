@@ -48,6 +48,8 @@ after_success:
   - zip -r $PCKG_FILE dpkg/apt
 
 before_deploy:
+  # Install SpiderMonkey as it is a dependency for jsawk
+  - sudo apt-get install libmozjs-dev
   # Make sure jsawk is installed, it is a dependency for release-to-github.sh
   - curl -L http://github.com/micha/jsawk/raw/master/jsawk > jsawk
   - chmod 755 jsawk
