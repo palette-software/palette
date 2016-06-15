@@ -12,7 +12,10 @@ if [ "X" == "X$HOME" ]; then echo "HOME environment variable is not set!"; exit 
 # if [ $? -ne 0 ]; then echo "uploading new version failed"; exit 10; fi
 
 echo "Creating Github realase..."
-RELEASE_ID=`curl -H "Authorization: token $GITHUB_TOKEN" -d "{\"tag_name\": \"$PALETTE_VERSION\", \"name\": \"Palette Center\"}" "https://api.github.com/repos/$OWNER/$PACKAGE/releases"| jsawk "return this.id"`
+GITHUB_RESPONSE=`curl -H "Authorization: token $GITHUB_TOKEN" -d "{\"tag_name\": \"$PALETTE_VERSION\", \"name\": \"Palette Center\"}" "https://api.github.com/repos/$OWNER/$PACKAGE/releases"`
+# Parse the release ID from the the GitHub response.
+# NOTE: This is an ugly workaround, because we didn't manage to get jsawk working on Travis machines.
+RELEASE_ID= echo $GITHUB_RESPONSE | grep '^\s\s"id":\s\d*,$' | cut -d' ' -f 4 | cut -d',' -f 1
 if [ $? -ne 0 ]; then echo "Creating new release failed"; exit 10; fi
 echo $RELEASE_ID
 if [ "X" == "X$RELEASE_ID" ]; then echo "Release ID was not found in GitHub response"; exit 10; fi
