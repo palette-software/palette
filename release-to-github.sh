@@ -17,7 +17,7 @@ GITHUB_RESPONSE=`curl -H "Authorization: token $GITHUB_TOKEN" -d "{\"tag_name\":
 # NOTE: This is an ugly workaround, because we didn't manage to get jsawk working on Travis machines.
 echo "GitHub response: $GITHUB_RESPONSE"
 echo `grep --version` 
-ID_LINE=`echo "${GITHUB_RESPONSE}" | grep '^\s\s"id":\s\d*,$'` 
+ID_LINE=`echo "${GITHUB_RESPONSE}" | grep '^\s\s"id":\s\d*'` 
 echo "ID_LINE=$ID_LINE"
 ID_STRING=`echo "${ID_LINE}" | cut -d' ' -f 4`
 echo "ID_STRING=$ID_STRING"
