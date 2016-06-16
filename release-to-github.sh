@@ -16,7 +16,12 @@ GITHUB_RESPONSE=`curl -H "Authorization: token $GITHUB_TOKEN" -d "{\"tag_name\":
 # Parse the release ID from the the GitHub response.
 # NOTE: This is an ugly workaround, because we didn't manage to get jsawk working on Travis machines.
 echo "GitHub response: $GITHUB_RESPONSE"
-RELEASE_ID=`echo $GITHUB_RESPONSE | grep '^\s\s"id":\s\d*,$' | cut -d' ' -f 4 | cut -d',' -f 1`
+ID_LINE=`echo $GITHUB_RESPONSE | grep '^\s\s"id":\s\d*,$'` 
+echo "ID_LINE=$ID_LINE"
+ID_STRING=`echo $ID_LINE | cut -d' ' -f 4`
+echo "ID_STRING=$ID_STRING"
+RELEASE_ID=`echo $ID_STRING | cut -d',' -f 1`
+echo "RELEASE_ID=$RELEASE_ID"
 if [ $? -ne 0 ]; then echo "Creating new release failed"; exit 10; fi
 echo $RELEASE_ID
 if [ "X" == "X$RELEASE_ID" ]; then echo "Release ID was not found in GitHub response"; exit 10; fi
