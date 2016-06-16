@@ -39,7 +39,7 @@ install:
 
 script:
   - make palette
-  #- make controller # REVERT THIS AFTER TRAVIS TESTS!!!!
+  - make controller 
     # - make clean all
   - GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
 
