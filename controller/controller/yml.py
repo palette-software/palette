@@ -72,11 +72,11 @@ class YmlEntry(meta.Base, BaseMixin, BaseDictMixin):
         session = meta.Session()
 
         # Parse the document as YAML
-        parsedYaml = yaml.load(yml)
+        parsed_yaml = yaml.load(yml)
 
         d = {}
         # For each k/v pair try to replace it if we need to
-        for key, value in parsedYaml.iteritems():
+        for key, value in parsed_yaml.iteritems():
             # Check if we need can replace the entry with a YmlEntry
             # from our 'cache'
             entry = cls.entry(envid, key, default=None)
@@ -86,15 +86,15 @@ class YmlEntry(meta.Base, BaseMixin, BaseDictMixin):
 
             # Set its value. We need to have values
             # that can be JSON serialized later
-            jsonSafeValue = value
-            if isinstance(jsonSafeValue, date):
-                jsonSafeValue = value.__str__()
+            json_safe_value = value
+            if isinstance(json_safe_value, date):
+                json_safe_value = value.__str__()
 
-            entry.value = jsonSafeValue
+            entry.value = json_safe_value
             # Add to the session
             session.add(entry)
             # And store it in the output dict
-            d[key] = jsonSafeValue
+            d[key] = json_safe_value
 
         session.query(cls).\
             filter(not_(cls.key.in_(d.keys()))).\

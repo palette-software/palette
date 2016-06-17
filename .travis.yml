@@ -1,0 +1,87 @@
+dist: trusty
+sudo: required
+
+language: node_js
+
+node_js:
+  - "4"
+
+env:
+  global:
+  - secure: "NvNoCqjxeRhaEBFVSTPMI7aTG7soUKYeSNAVqcbiJk9H+nhxCZjU/UHEUutTJRB5QWVanUSyjAJZHenYjCi+7x3IwTQT5TtgQ/xZOPsDntXPQjXBhYnYJQBZc03PsHECUm6L6Qv0nrZNqqn4Ni2pkHKtxWHs7nD0p9I+huRs8pv0wm0eE/tCinP3DZaRuWmDpk4puOREikEwYGbjKF3oGsDjkTCuYeh75g7HBj+nBtrmJzAebA7BBQ+9hwBybOhD79F6T+EIf25k4er8cqGFe8yrdTYK7ktdtVuDv1pecNJb076N8oTOZUpkL+ua96q8VmM7ALMg9BZtPbNii8UBtcI+3j87cK9O0Cq6/KP6nsZRuvcXrqYKh0/3tqNcw0HclEWWOhjchVxwghqR/FSjCMs35VjEX2NIcxYTjy7ABIZbbze2r1NtHUVlZ4rCCCl4BJkrba6TX1jGa2nSLEFnu4rrZflMBAwf8sS5j+0356Dudhfze2l7kJiMpYoL6C3Oe8noH7qZIJo35u4/+NRL/ADPDQawiA70anEORnm6s0LA34MV/Tz3fniujpwzupzqhVZdHt1yVQKgshE/RVk6kgRxp6op1X8bKXCV6KKvNS0TV79gFQa0d3l4h+lJlkRr+b7Wlwm1FVNRkHaDSKDmYeBAskzj91qtJEN9sfBBCvw="
+  - PALETTE_VERSION=2.0.$TRAVIS_BUILD_NUMBER CONTROLLER_VERSION=2.0.$TRAVIS_BUILD_NUMBER
+  - OWNER=palette-software
+  - PACKAGE=palette
+
+before_install:
+  - sudo apt-get install -y python
+  - sudo apt-get install -y debhelper
+  - sudo apt-get install -y pylint python-tz python-passlib 
+  - sudo apt-get install -y python-dateutil python-boto python-crypto
+  - sudo apt-get install -y python-mako python-webob python-pastescript 
+  - sudo apt-get install -y python-sqlalchemy python-paste python-pastedeploy
+  - sudo apt-get install -y git
+  - sudo apt-get install -y nodejs
+  - sudo apt-get install -y unzip wget
+  - sudo apt-get install -y reprepro
+  - wget https://s3.amazonaws.com/versions-palette-software/akiri.framework_0.5.6_all.deb
+  - sudo dpkg --install akiri.framework_0.5.6_all.deb
+  - npm install grunt -g
+  - sudo pip install --upgrade pip
+  - echo "PYTHONPATH=$PYTHONPATH"
+  - export PYTHONPATH=$PYTHONPATH:/usr/lib/python2.7/dist-packages:/usr/lib/python2.7/dist-packages/python-dateutil
+  - echo "PYTHONPATH=$PYTHONPATH"
+
+install:
+  - pushd app
+  - make setup
+  - popd
+
+script:
+  - make palette
+  - make controller 
+    # - make clean all
+  - GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
+
+after_success:
+  # Create the zip package for GitHub release
+  - export PCKG_FILE=palette-${PALETTE_VERSION}.zip
+  - zip -r $PCKG_FILE dpkg/apt
+
+# before_deploy:
+#   # This line fixes PATH warnings for some reason
+#   - rvm use ruby-2.2.3
+#   # Install SpiderMonkey (renamed to libmozjs) as it is a dependency for jsawk
+#   - sudo add-apt-repository ppa:launchpad/ppa -y
+#   - sudo apt-get update
+#   - sudo apt-get install libmozjs-24-bin
+#   - ls -lah /usr/bin/js24
+#   - which js24
+#   - which js
+#   - sudo update-alternatives --install /usr/bin/js js /usr/bin/js24 10
+#   - which js
+#   - echo "PATH:"
+#   - echo $PATH
+#   # Make sure jsawk is installed, it is a dependency for release-to-github.sh
+#   - curl -L http://github.com/micha/jsawk/raw/master/jsawk > jsawk
+#   - chmod 755 jsawk
+#   - sudo mv jsawk /usr/local/bin
+#   - which jsawk
+#   - jsawk -h
+#   - >
+#     jsawk -s "{\"id\": \"asd\"}" -a "return this.id"
+#   # - sudo ln -s jsawk /usr/bin/jsawk
+#   # - sudo chown $USER:$USER /usr/bin/jsawk
+
+deploy:
+  skip_cleanup: true
+  provider: script
+  # Only deploy from the master branch (and if we don't have a tag specified, because they are auto-committed)
+  script: $TRAVIS_BUILD_DIR/release-to-github.sh
+  on:
+    # It should be master!!!
+    branch: master
+    tags: false
+
+notifications:
+  email: false

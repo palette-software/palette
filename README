@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/palette-software/palette.svg?token=qWG5FJDvsjLrsJpXgxSJ&branch=master)](https://travis-ci.com/palette-software/palette)
+
 Packaging:
     To build the Debian packages:
 

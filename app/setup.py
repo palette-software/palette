@@ -1,6 +1,9 @@
+import os
 from setuptools import setup, find_packages
 
-version = '2.0.0'
+# version = '2.0.0'
+version=os.environ['PALETTE_VERSION']
+
 
 setup(name='palette',
     version=version,

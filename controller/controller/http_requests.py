@@ -79,6 +79,17 @@ class HttpRequestEntry(meta.Base, BaseMixin, BaseDictMixin):
 
 class HttpRequestManager(TableauCacheManager):
 
+    def get_maxid_statement(self, maxid):
+        stmt = ''
+        if maxid is None:
+            # our table is empty, just pull in one placeholder record.
+            stmt = 'SELECT * FROM http_requests '+\
+                   'WHERE id = (SELECT MAX(id) FROM http_requests)'
+        else:
+            stmt = 'SELECT * FROM http_requests WHERE id > ' + str(maxid)
+        return stmt
+
+
     @synchronized('http_requests')
     def load(self, agent):
 
@@ -89,14 +100,7 @@ class HttpRequestManager(TableauCacheManager):
         userdata = self.load_users(agent)
 
         maxid = HttpRequestEntry.maxid(envid)
-        if maxid is None:
-            # our table is empty, just pull in one placeholder record.
-            stmt = 'SELECT * FROM http_requests '+\
-                   'WHERE id = (SELECT MAX(id) FROM http_requests)'
-        else:
-            stmt = 'SELECT * FROM http_requests WHERE id > ' + str(maxid)
-
-        datadict = agent.odbc.execute(stmt)
+        datadict = agent.odbc.execute(self.get_maxid_statement(maxid))
         if 'error' in datadict:
             return datadict
         if '' not in datadict:
@@ -106,7 +110,7 @@ class HttpRequestManager(TableauCacheManager):
         rows = []
         schema = ODBC.schema(datadict)
         counter = 0
-	session = None
+        session = None
         for row in datadict['']:
             if counter % 1000 == 0:
                 if session != None:
@@ -117,11 +121,12 @@ class HttpRequestManager(TableauCacheManager):
                         for entry in rows:
 #                           print "entry: id", entry.id, "action", entry.action,
 #                           print "vizal_session", entry.vizql_session
-                            self._test_for_alerts(rows, entry, agent, controldata)
+                            self._test_for_alerts(rows,
+                                entry, agent, controldata)
                 session = meta.Session()
-		rows = []
+                rows = []
             counter += 1
-            odbcdata = ODBCData(schema, row) 
+            odbcdata = ODBCData(schema, row)
             entry = HttpRequestEntry()
             entry.envid = envid
             odbcdata.copyto(entry)

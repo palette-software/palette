@@ -168,7 +168,8 @@ class DataSourceManager(TableauCacheManager, ArchiveUpdateMixin):
             ' t1.size, t1.lock_version, t1.state, t1.db_class,' +\
             ' t1.db_name, t1.table_name, t1.site_id, t1.revision,' +\
             ' t1.repository_data_id, t1.repository_extract_data_id,' +\
-            ' t1.embedded, t1.incrementable_extracts, t1.refreshable_extracts,' +\
+            ' t1.embedded, t1.incrementable_extracts,' +\
+            ' t1.refreshable_extracts,' +\
             ' t1.first_published_at, t1.connectable, t1.is_hierarchical,' +\
             ' t1.extracts_incremented_at, t1.luid, t1.asset_key_id ' +\
             'FROM datasources t1 ' +\

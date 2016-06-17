@@ -1,5 +1,6 @@
 PACKAGE := palette
-VERSION := $(shell awk 'match($$0, /[0-9]+\.[0-9]+\.[0-9]+/) { print substr($$0, RSTART, RLENGTH) }' ../setup.py)
+VERSION := $(PALETTE_VERSION)
+# VERSION := $(shell awk 'match($$0, /[0-9]+\.[0-9]+\.[0-9]+/) { print substr($$0, RSTART, RLENGTH) }' ../setup.py)
 
 all:
 	rm -rf $(PACKAGE)-*; mkdir -p $(PACKAGE)-$(VERSION)
@@ -14,9 +15,14 @@ all:
 	mkdir -p opt
 	cp -a ../application.wsgi opt
 	cd $(PACKAGE)-$(VERSION) && python setup.py sdist --dist-dir=../
+	echo "xxxxxxxxxxxxxxxxxxxx"
+	tar -tzvf $(PACKAGE)-$(VERSION).tar.gz
+	echo "xxxxxxxxxxxxxxxxxxx"
 	mv $(PACKAGE)-$(VERSION).tar.gz $(PACKAGE)_$(VERSION).orig.tar.gz
-	../../scripts/genchangelog.sh $(PACKAGE) $(VERSION) >\
-		$(PACKAGE)-$(VERSION)/debian/changelog
+	../../scripts/genchangelog.sh $(PACKAGE) $(VERSION)
+	../../scripts/genchangelog.sh $(PACKAGE) $(VERSION) > $(PACKAGE)-$(VERSION)/debian/changelog
+	ls -ltr $(PACKAGE)-$(VERSION)/debian/
+	cat $(PACKAGE)-$(VERSION)/debian/changelog
 	cd $(PACKAGE)-$(VERSION) && dpkg-buildpackage -i -I -rfakeroot -uc -us
 .PHONY: all
 

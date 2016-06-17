@@ -7,9 +7,9 @@ BS_VERSION=3.3.5
 BS_TARBALL=v$BS_VERSION.tar.gz
 BS_URL=https://github.com/twbs/bootstrap/archive/$BS_TARBALL
 
-FA_VERSION=4.4.0
+FA_VERSION=4.6.3
 FA_ZIP=font-awesome-$FA_VERSION.zip
-FA_URL=http://fortawesome.github.io/Font-Awesome/assets/$FA_ZIP
+FA_URL=http://fontawesome.io/assets/$FA_ZIP
 
 
 if [ ! -d downloads ]; then
