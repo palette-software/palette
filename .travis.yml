@@ -80,7 +80,7 @@ deploy:
   script: $TRAVIS_BUILD_DIR/release-to-github.sh
   on:
     # It should be master!!!
-    branch: origin/cen-13/ci-alternative
+    branch: master
     tags: false
 
 notifications:
