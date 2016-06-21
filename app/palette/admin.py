@@ -14,7 +14,7 @@ class LoginApplication(BaseLoginApplication):
     """Handler for the login page.
     The page is submitted here and then redirected as necessary."""
 
-    DEFAULT_HASH = '31f869d3cc55e3c2f2f365a831e2a1cfff6cecda'
+    DEFAULT_HASH = '7f54267d8c8114375c3624ccffc0bfec69cc3765'
 
     def __init__(self, secret, **kwargs):
         super(LoginApplication, self).__init__(secret, **kwargs)
