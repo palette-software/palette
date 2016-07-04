@@ -24,8 +24,7 @@ before_install:
   - sudo apt-get install -y nodejs
   - sudo apt-get install -y unzip wget
   - sudo apt-get install -y reprepro
-  - wget https://s3.amazonaws.com/versions-palette-software/akiri.framework_0.5.6_all.deb
-  - sudo dpkg --install akiri.framework_0.5.6_all.deb
+  - sudo dpkg --install dependencies/akiri.framework_0.5.6_all.deb
   - npm install grunt -g
   - sudo pip install --upgrade pip
   - echo "PYTHONPATH=$PYTHONPATH"
@@ -41,7 +40,7 @@ script:
   - make palette
   - make controller 
     # - make clean all
-  - cp akiri.framework_0.5.6_all.deb dpkg/pool/
+  - cp dependencies/*.deb dpkg/pool/
   - GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
 
 after_success:
