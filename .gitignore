@@ -1,5 +1,4 @@
 *.pyc
-*.deb
 *.pyo
 *.egg-info
 *.swp
