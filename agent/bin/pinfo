@@ -25,4 +25,7 @@ for line in lines[1:]:
     volumes.append(d)
 
 data['volumes'] = volumes
+# data['tableau_install_dir'] = 'C:\Program Files (x86)\Tableau Software'
+# data['path'] = 'C:\Program Files (x86)\Palette'
+data['exit-status'] = 0
 print json.dumps(data)
