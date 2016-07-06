@@ -123,8 +123,8 @@ function ($, topic, common)
      * show action for the restore popup - sets up the dialog text.
      */
     function showRestore(modal) {
-        var timestamp = $('span.timestamp', modal).text();
-        var filename = $('span.filename', modal).text();
+        var timestamp = $('span.timestamp', this.$element[0]).text();
+        var filename = $('span.filename', this.$element[0]).text();
         $('#restore-timestamp').html(timestamp);
         $('#restore-filename').val(filename);
         return true;
