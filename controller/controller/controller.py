@@ -150,7 +150,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         cmd = 'tabadmin backup \\\"%s\\\"' % backup_full_path
 
         backup_start_time = time.time()
-        body = self.cli_cmd(cmd, agent, timeout=60*60*2)
+        body = self.cli_cmd(cmd, agent, timeout=60*60*4)
         backup_elapsed_time = time.time() - backup_start_time
 
         if body.has_key('error'):
@@ -556,7 +556,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         try:
             logger.debug("restore sending command: %s", cmd)
-            restore_body = self.cli_cmd(cmd, agent, env=env, timeout=60*60*2)
+            restore_body = self.cli_cmd(cmd, agent, env=env, timeout=60*60*4)
         except httplib.HTTPException, ex:
             restore_body = {"error": "HTTP Exception: " + str(ex)}
         return restore_body
