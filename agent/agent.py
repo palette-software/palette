@@ -142,6 +142,7 @@ class AgentHandler(SimpleHTTPRequestHandler):
     # The "auth" immediate command reply.
     # Immediate commands methods begin with 'icommand_'
     def handle_auth(self, req):
+	log.info("Handle auth.")
         d = { "license-key": self.server.license_key,
               "version": self.server.version,
               "os-version": platform.platform(),
@@ -171,6 +172,7 @@ class AgentHandler(SimpleHTTPRequestHandler):
 
     def handle_file_PUT(self, req):
         path = self.get_path_from_query(req)
+	self.server.log.info("handle_file_POST: %s", path)
         # FIXME: catch IOError, OSError
         with open(path, 'w') as f:
             if req.content_length:
@@ -222,6 +224,8 @@ class AgentHandler(SimpleHTTPRequestHandler):
 
     def handle_listdir(self, req):
         path = self.get_required_json_parameter(req, 'path')
+	self.server.log.info("Path: %s", path)
+	path = '/home/ubuntu/client'
         d = {}
         if not os.path.isdir(path):
             d['status'] = "FAILED";
@@ -260,6 +264,7 @@ class AgentHandler(SimpleHTTPRequestHandler):
 
     def handle_file_POST(self, req):
         action = self.get_required_json_parameter(req, 'action').upper()
+	self.server.log.info("handle_file_POST: %s", action)
         if action == 'SHA256':
             return self.handle_sha256(req)
         if action == 'MOVE':
@@ -329,8 +334,13 @@ class AgentHandler(SimpleHTTPRequestHandler):
     def do_POST(self):
         return self.handle_method('POST')
 
+    def do_DELETE(self):
+        return {'status': "OK"}
+	# return self.handle_method('DELETE')
+
     def do_PUT(self):
-        return self.handle_method('PUT')
+        return {'status': "OK"}
+        # return self.handle_method('PUT')
 
 class Agent(TCPServer):
 
@@ -387,7 +397,9 @@ class Agent(TCPServer):
 
     def connect(self):
         # Connect to the Controller.
+	log.info("Agent::Connect: %s:%d", self.host, self.port)
         self.socket.connect((self.host, self.port))
+	log.info("Connected...")
 
         if self.ssl:
             self.socket = ssl.wrap_socket(self.socket)
