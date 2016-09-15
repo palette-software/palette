@@ -772,7 +772,8 @@ class TableauStatusMonitor(threading.Thread):
                 return True
 
         except ValueError:
-            logger.error("Failed to parse major version number from Tableau version: '%s'", tableau_version)
+            logger.error("Failed to parse major version number "
+                         "from Tableau version: '%s'", tableau_version)
 
         return False
 
