@@ -689,7 +689,10 @@ class TableauStatusMonitor(threading.Thread):
         tableau_version = YmlEntry.get(self.envid,
                                        'version.external',
                                        default='8')
-        if systeminfo_url and tableau_version[0:1] == '9' and \
+
+        systeminfo_api_capable = self.is_systeminfo_api_capable(tableau_version)
+
+        if systeminfo_url and systeminfo_api_capable and \
                 self.system[SystemKeys.STATUS_SYSTEMINFO] and \
                 tableau_systeminfo_enabled:
             try:
@@ -759,6 +762,19 @@ class TableauStatusMonitor(threading.Thread):
         # Get tableau status via 'tabadmin status -v' instead.
         self._get_status_tabadmin(agent)
         return
+
+    def is_systeminfo_api_capable(self, tableau_version):
+        """Check whether /admin/systeminfo.xml API is available for checking
+        the status of Tableau processes"""
+        try:
+            tableau_major_ver = int(tableau_version.split(".")[0])
+            if tableau_major_ver >= 9:
+                return True
+
+        except ValueError:
+            logger.error("Failed to parse major version number from Tableau version: '%s'", tableau_version)
+
+        return False
 
     def _set_status_unknown(self, agent, body):
         """Remove all status and set tableau status to UNKNOWN."""
