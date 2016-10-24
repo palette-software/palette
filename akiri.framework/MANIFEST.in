@@ -1,0 +1,2 @@
+recursive-include akiri *
+exclude setup.cfg
