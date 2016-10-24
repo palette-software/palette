@@ -50,11 +50,13 @@ Prefix: /
 BuildRequires: python >= 2.6 python-setuptools 
 
 Requires: python
-Requires: python-docutils, python-sphinx, python-sqlalchemy, python-psycopg2, python-dateutil, pytz
+Requires: python-docutils, python-sphinx, python-webob
+Requires: python-sqlalchemy, python-psycopg2, python-dateutil, pytz
 Requires: postgresql
 Requires: telnet
-Requires: controller >= 2.0.0
 Requires: httpd, mod_wsgi
+Requires: controller >= 2.0.0
+Requires: akiri.framework
 
 %description
 This package contains the Palette Web Application.
@@ -62,12 +64,6 @@ This package contains the Palette Web Application.
 # Variables
 %define package palette
  
-%pre
-# noop
-
-%postun
-# noop
-
 %prep
 # noop
 
@@ -75,23 +71,58 @@ This package contains the Palette Web Application.
 # noop
 
 %install
+mkdir -p var/log/palette
+mkdir -p opt/palette/plugins
 cd %{package}-%{version} && python setup.py install --root=../
-
-%post
-# noop
 
 %clean
 rm -rf %{package}-%{version}
 
+%post
+PYTHON_PACKAGE_DIR=$(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")
+
+# /usr/sbin/a2enmod ssl rewrite proxy_connect
+
+# port 80/http site is used only to redirect to 443/https
+# /usr/sbin/a2dissite 000-default
+
+# pyshared can't be used here, it doesn't exist on 14.04
+cd /opt/palette/plugins
+for x in `ls -d ${PYTHON_PACKAGE_DIR}/palette*`; do
+    ln -s -f $x
+done
+
+chkconfig --add framework-postfix
+service framework-postfix start
+
+chkconfig --add framework-ssl
+service framework-ssl start
+
+chkconfig --add framework-timezone
+service framework-timezone start
+
+service httpd stop
+service httpd start 
+
 %files
+
 #%defattr(-,insight,insight,-)
-# Reject config files already listed or parent directories, then prefix files
-# with "/", then make sure paths with spaces are quoted.
-#%dir /%{install_dir}
-#/%{install_dir}/%packaged_msi_name
-/etc
-/opt
+
+%config /etc/httpd/conf.d/palette.conf
+%config /etc/httpd/conf.d/palette-software-ssl.conf
+%config /etc/httpd/conf.d/palette-software.conf
+%config /etc/init.d/framework-postfix
+%config /etc/init.d/framework-ssl
+%config /etc/init.d/framework-timezone
+%config /etc/ssl/certs/server.crt
+%attr(640, -, -) %config /etc/ssl/private/server.key
+
+%attr(640, apache, apache) /opt/palette/application.wsgi
+%attr(640, apache, apache) %dir /opt/palette/plugins
+
 /usr
+
+%attr(-, apache, apache) %dir /var/log/palette 
 /var
 
 %changelog
