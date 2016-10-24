@@ -17,8 +17,8 @@ prepare:
 	cp -a ../fonts var/www
 	cp -a ../images var/www
 	cp -a ../js var/www
-	mkdir -p opt
-	cp -a ../application.wsgi opt
+	mkdir -p opt/palette
+	cp -a ../application.wsgi opt/palette
 
 clean:
 	rm -f *.tar.gz *.dsc *.deb *.changes
