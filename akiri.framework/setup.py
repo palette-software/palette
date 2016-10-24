@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name = "akiri.framework",
-    version = "0.5.6",
+    version = "0.5.7",
     author = "Akiri Solutions, Inc",
     author_email = "development@akirisolutions.com",
     maintainer = "Palette Developers",

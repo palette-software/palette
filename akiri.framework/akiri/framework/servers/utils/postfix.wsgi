@@ -28,7 +28,7 @@ class Application(GenericWSGIApplication):
             self.remove("/etc/postfix/sasl_passwd.db")
 
         # Our caller expects dashes.
-        data = {key.replace('_', '-'): value for key, value in data.items()}
+        data = dict((key.replace('_', '-'), value) for (key, value) in data.items())
         return data
 
     def remove(self, name):
@@ -110,7 +110,7 @@ class Application(GenericWSGIApplication):
            a dictionary with the values in the required format."""
 
         # We need the keys to be underscore, for variable substitution.
-        data = {key.replace('-', '_'): value for key, value in req.POST.items()}
+        data = dict((key.replace('_', '-'), value) for (key, value) in data.items())
 
         if not 'mail_server_type' in data:
             raise PostfixException("missing mail-server-type")
