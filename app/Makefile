@@ -4,8 +4,11 @@ dpkg_dir := ../dpkg
 all: grunt pylint debian
 .PHONY: all
 
+redhat:
+	make -C REDHAT all
+.PHONY: redhat
+
 debian:
-	python setup.py bdist
 	make -C DEBIAN all
 	mkdir -p $(dpkg_dir)/pool
 	cp -r DEBIAN/*.deb $(dpkg_dir)/pool
