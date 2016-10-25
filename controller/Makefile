@@ -4,6 +4,10 @@ dpkg_dir := ../dpkg
 all: pylint debian
 .PHONY: all
 
+redhat:
+	make -C REDHAT all
+.PHONY: redhat
+
 debian:
 	make -C DEBIAN all
 	mkdir -p $(dpkg_dir)/pool

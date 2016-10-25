@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Upgrade the agents
+
+UPGRADE_AGENT=/usr/bin/upgrade-agent
+AGENT_DIR=/var/palette/agent
+
+# For testing:
+#UPGRADE_AGENT=~/palette/controller/DEBIAN/usr/bin/upgrade-agent
+#AGENT_DIR=~/palette-agent/debian/var/palette/agent
+#export PYTHONPATH=~/palette/controller
+
+$UPGRADE_AGENT --dry-run --type all $AGENT_DIR
+if [ $? -ne 0 ]; then
+    echo $0: No files to upgrade now.
+    exit 0
+fi
+
+$UPGRADE_AGENT --type all $AGENT_DIR
