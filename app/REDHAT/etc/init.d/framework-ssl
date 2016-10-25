@@ -17,17 +17,16 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-NAME=framework-ssl
-prog="Palette ${NAME}"
+prog="framework-ssl"
 PYTHON_PACKAGE_DIR=$(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")
 exec=${PYTHON_PACKAGE_DIR}/akiri/framework/servers/utils/ssl.wsgi
-pidfile=/var/run/${NAME}.pid
+pidfile=/var/run/${prog}.pid
 RETVAL=0
 STOP_TIMEOUT=${STOP_TIMEOUT-10}
 
 start() {
     echo -n $"Starting $prog: "
-    daemon --pidfile=${pidfile} $exec $OPTIONS
+    daemon --pidfile=${pidfile} "$exec $OPTIONS >&/dev/null &"
     RETVAL=$?
     echo
     return $RETVAL
