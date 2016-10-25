@@ -54,8 +54,8 @@ Requires: python-docutils, python-sphinx, python-webob
 Requires: python-sqlalchemy, python-psycopg2, python-dateutil, pytz
 Requires: postgresql
 Requires: telnet
-Requires: httpd, mod_wsgi
 Requires: controller >= 2.0.0
+Requires: httpd, mod_wsgi, mod_ssl
 Requires: akiri.framework
 
 %description
