@@ -54,8 +54,8 @@ Requires: python-docutils, python-sphinx, python-webob
 Requires: python-sqlalchemy, python-psycopg2, python-dateutil, pytz
 Requires: postgresql
 Requires: telnet
-Requires: controller >= 2.0.0
 Requires: httpd, mod_wsgi, mod_ssl
+Requires: palette-center-controller >= 2.0.0
 Requires: akiri.framework
 
 %description
