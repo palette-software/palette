@@ -75,7 +75,8 @@ This package contains the Palette Controller and Web Application
 %install
 # mkdir -p var/log/palette
 # mkdir -p opt/palette/plugins
-cd %{package}-%{version} && python setup.py install --root=../
+cd %{package}-%{version} && python setup.py install --single-version-externally-managed --no-compile --root=../ --record=INSTALLED_FILES
+sed -i -e 's#^#%{prefix}#' INSTALLED_FILES
 
 %clean
 # rm -rf %{package}-%{version}
@@ -142,9 +143,7 @@ then
     service httpd start
 fi
 
-%files
-/usr/lib
-
+%files -f %{buildroot}/%{package}-%{version}/INSTALLED_FILES
 /etc/controller.ini
 /etc/ssl/certs/palette_cert.pem
 /etc/init.d/controller

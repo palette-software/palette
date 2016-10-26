@@ -73,7 +73,8 @@ This package contains the Palette Web Application.
 %install
 mkdir -p var/log/palette
 mkdir -p opt/palette/plugins
-cd %{package}-%{version} && python setup.py install --root=../
+cd %{package}-%{version} && python setup.py install --single-version-externally-managed --no-compile --root=../ --record=INSTALLED_FILES
+sed -i -e 's#^#%{prefix}#' INSTALLED_FILES
 
 %clean
 rm -rf %{package}-%{version}
@@ -104,10 +105,7 @@ service framework-timezone start
 service httpd stop
 service httpd start 
 
-%files
-
-#%defattr(-,insight,insight,-)
-
+%files -f %{buildroot}/%{package}-%{version}/INSTALLED_FILES
 %config /etc/httpd/conf.d/palette.conf
 %config /etc/httpd/conf.d/palette-software-ssl.conf
 %config /etc/httpd/conf.d/palette-software.conf
@@ -119,8 +117,6 @@ service httpd start
 
 %attr(640, apache, apache) /opt/palette/application.wsgi
 %attr(640, apache, apache) %dir /opt/palette/plugins
-
-/usr
 
 %attr(-, apache, apache) %dir /var/log/palette 
 /var
