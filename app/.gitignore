@@ -13,3 +13,10 @@ font-awesome-*
 fontawesome-*
 FontAwesome.otf
 webapp.log
+
+
+# REDHAT
+REDHAT/usr
+REDHAT/var
+REDHAT/opt
+REDHAT/rpm-build/
