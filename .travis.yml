@@ -17,7 +17,7 @@ before_install:
   - sudo apt-get install -y python
   - sudo apt-get install -y debhelper
   - sudo apt-get install -y pylint python-tz python-passlib 
-  - sudo apt-get install -y python-dateutil python-boto python-crypto
+  - sudo apt-get install -y python-dateutil python-boto
   - sudo apt-get install -y python-mako python-webob python-pastescript 
   - sudo apt-get install -y python-sqlalchemy python-paste python-pastedeploy
   - sudo apt-get install -y git
@@ -27,6 +27,7 @@ before_install:
   - sudo dpkg --install dependencies/akiri.framework_0.5.6_all.deb
   - npm install grunt -g
   - sudo pip install --upgrade pip
+  - sudo pip install crypto
   - echo "PYTHONPATH=$PYTHONPATH"
   - export PYTHONPATH=$PYTHONPATH:/usr/lib/python2.7/dist-packages:/usr/lib/python2.7/dist-packages/python-dateutil
   - echo "PYTHONPATH=$PYTHONPATH"
