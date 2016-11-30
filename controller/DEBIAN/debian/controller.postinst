@@ -220,6 +220,7 @@ if [ "$outputifoldislower" = "X$orderedversions" ]; then
     psql paldb << XYZZY
     alter table agent_volumes add column priority BIGINT DEFAULT 50
 XYZZY
+fi
 
 update-rc.d controller defaults
 service controller start
