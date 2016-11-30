@@ -211,6 +211,16 @@ elif [ "$oldversion" = "" ]; then
     chmod 600 /etc/cron.d/palette-update
 fi
 
+# When upgrading from 2.0.266 and before we need to add a new column to agent_volumes
+newversion="2.0.266"
+versions="${oldversion}\n$newversion"
+orderedversions=$(echo -e $versions | gsort -V)
+outputifoldislower=`echo -e "X$oldversion\n$newversion"`
+if [ "$outputifoldislower" = "X$orderedversions" ]; then
+    psql paldb << XYZZY
+    alter table agent_volumes add column priority BIGINT DEFAULT 50
+XYZZY
+
 update-rc.d controller defaults
 service controller start
 

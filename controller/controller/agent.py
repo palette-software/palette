@@ -286,6 +286,8 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
 
     active = Column(Boolean)
 
+    priority = Column(BigInteger)
+
     agent = relationship('Agent',
                          backref=backref('volumes',
                                          order_by='AgentVolumesEntry.name')
@@ -374,6 +376,7 @@ class AgentVolumesEntry(meta.Base, BaseDictMixin):
                 filter(AgentVolumesEntry.size - \
                             AgentVolumesEntry.available_space +
                             min_needed < AgentVolumesEntry.archive_limit).\
+                order_by(AgentVolumesEntry.priority.desc()).\
                 first()   # for now, choosen any one - no particular order.
 
     @classmethod
