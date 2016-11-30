@@ -220,11 +220,14 @@ orderedversions=$(echo -e $versions | sort -V)
 outputifoldislower=`echo -e "X$oldversion\n$newversion"`
 echo "Checking if current version is before 2.0.266"
 echo $orderedversions
-echo $outputifolderislower
+echo $outputifoldislower
 if [ "$outputifoldislower" = "X$orderedversions" ]; then
+    echo "Yes we are in, we should do the upgrade."
     psql paldb << XYZZY
     alter table agent_volumes add column priority BIGINT DEFAULT 50
 XYZZY
+else
+    echo "No we don't need to upgrade the DB. $oldversion $newversion"
 fi
 
 update-rc.d controller defaults
