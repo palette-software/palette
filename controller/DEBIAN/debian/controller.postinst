@@ -3,6 +3,8 @@
 action="$1"
 oldversion="$2"
 
+echo "Old version is $oldversion"
+
 if [ "$action" != configure ]
 then
       echo postinst called with unknown argument: $action
@@ -216,6 +218,9 @@ newversion="2.0.266"
 versions="${oldversion}\n$newversion"
 orderedversions=$(echo -e $versions | sort -V)
 outputifoldislower=`echo -e "X$oldversion\n$newversion"`
+echo "Checking if current version is before 2.0.266"
+echo $orderedversions
+echo $outputifolderislower
 if [ "$outputifoldislower" = "X$orderedversions" ]; then
     psql paldb << XYZZY
     alter table agent_volumes add column priority BIGINT DEFAULT 50
