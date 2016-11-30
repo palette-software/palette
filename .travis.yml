@@ -26,6 +26,8 @@ before_install:
   - sudo apt-get install -y reprepro
   - sudo dpkg --install dependencies/akiri.framework_0.5.6_all.deb
   - npm install grunt -g
+  - pip install --upgrade pip
+  - pip install pycrypto
   - sudo pip install --upgrade pip
   - sudo pip install pycrypto
   - echo "PYTHONPATH=$PYTHONPATH"
