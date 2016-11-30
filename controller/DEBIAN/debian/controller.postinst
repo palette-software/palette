@@ -216,8 +216,8 @@ fi
 # When upgrading from 2.0.266 and before we need to add a new column to agent_volumes
 newversion="2.0.266"
 versions="${oldversion}\n$newversion"
-orderedversions=$(echo -e $versions | sort -V)
-outputifoldislower=`echo -e "X$oldversion\n$newversion"`
+orderedversions=$(echo $versions | sort -V)
+outputifoldislower=`echo "X$oldversion\n$newversion"`
 echo "Checking if current version is before 2.0.266"
 echo $orderedversions
 echo $outputifoldislower
