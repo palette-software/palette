@@ -31,6 +31,7 @@ before_install:
   - sudo apt-get remove -y python-crypto
   - pip install pycrypto
   - sudo pip install pycrypto
+  - sudo apt-get remove -y python-setuptools
   - pip install --upgrade setuptools
   - sudo pip install --upgrade setuptools
   - echo "PYTHONPATH=$PYTHONPATH"
