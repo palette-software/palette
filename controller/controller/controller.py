@@ -557,7 +557,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         try:
             logger.debug("restore sending command: %s", cmd)
-            restore_body = self.cli_cmd(cmd, agent, env=env, timeout=self.TIMEOUT_BACKUP)
+            restore_body = self.cli_cmd(cmd, agent, env=env,
+                                        timeout=self.TIMEOUT_BACKUP)
         except httplib.HTTPException, ex:
             restore_body = {"error": "HTTP Exception: " + str(ex)}
         return restore_body
