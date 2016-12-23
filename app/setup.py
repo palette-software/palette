@@ -35,5 +35,5 @@ setup(name='palette',
     entry_points="""
     [akiri.framework]
     akiri.plugin = palette
-    """
+    """,
 )
