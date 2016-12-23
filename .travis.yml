@@ -16,9 +16,9 @@ env:
 before_install:
   - sudo apt-get install -y python
   - sudo apt-get install -y debhelper
-  - sudo apt-get install -y pylint python-tz python-passlib 
+  - sudo apt-get install -y pylint python-tz python-passlib
   - sudo apt-get install -y python-dateutil python-boto
-  - sudo apt-get install -y python-mako python-webob python-pastescript 
+  - sudo apt-get install -y python-mako python-webob python-pastescript
   - sudo apt-get install -y python-sqlalchemy python-paste python-pastedeploy
   - sudo apt-get install -y git
   - sudo apt-get install -y nodejs
@@ -31,6 +31,9 @@ before_install:
   - sudo apt-get remove -y python-crypto
   - pip install pycrypto
   - sudo pip install pycrypto
+  - sudo dpkg --remove --force-depends python-setuptools # keep dependents
+  - pip install --upgrade setuptools
+  - sudo pip install --upgrade setuptools
   - echo "PYTHONPATH=$PYTHONPATH"
   - export PYTHONPATH=$PYTHONPATH:/usr/lib/python2.7/dist-packages:/usr/lib/python2.7/dist-packages/python-dateutil
   - echo "PYTHONPATH=$PYTHONPATH"
@@ -42,7 +45,7 @@ install:
 
 script:
   - make palette
-  - make controller 
+  - make controller
     # - make clean all
   - cp dependencies/*.deb dpkg/pool/
   - GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
