@@ -71,7 +71,7 @@ class EmailLimitManager(Manager):
                 False if email-limit hasn't been reached (keep sending emails).
         """
 
-        logger.debug("email_limit_reached checking: event %s, eventid %d\n",
+        logger.debug("email_limit_reached checking: event %s, eventid %s\n",
                        event_entry.key, eventid)
 
         # We limit only ERROR events.
