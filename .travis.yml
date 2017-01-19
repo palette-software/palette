@@ -14,26 +14,14 @@ env:
   - PACKAGE=palette
 
 before_install:
-  - sudo apt-get install -y python
   - sudo apt-get install -y debhelper
-  - sudo apt-get install -y pylint python-tz python-passlib 
-  - sudo apt-get install -y python-dateutil python-boto
-  - sudo apt-get install -y python-mako python-webob python-pastescript 
-  - sudo apt-get install -y python-sqlalchemy python-paste python-pastedeploy
-  - sudo apt-get install -y git
-  - sudo apt-get install -y nodejs
-  - sudo apt-get install -y unzip wget
-  - sudo apt-get install -y reprepro
-  - sudo dpkg --install dependencies/akiri.framework_0.5.6_all.deb
+  - sudo apt-get install -y pylint
+  - sudo apt-get install -y python-dateutil # make controller
+  - sudo apt-get install -y python-mako python-passlib # make palette
+  - sudo dpkg --install --force-depends dependencies/akiri.framework_0.5.6_all.deb # ignore dependencies
+  - sudo apt-get install -f # fixing akiri framework dependencies
+  - sudo apt-get install -y reprepro # deb sign
   - npm install grunt -g
-  - pip install --upgrade pip
-  - sudo pip install --upgrade pip
-  - sudo apt-get remove -y python-crypto
-  - pip install pycrypto
-  - sudo pip install pycrypto
-  - echo "PYTHONPATH=$PYTHONPATH"
-  - export PYTHONPATH=$PYTHONPATH:/usr/lib/python2.7/dist-packages:/usr/lib/python2.7/dist-packages/python-dateutil
-  - echo "PYTHONPATH=$PYTHONPATH"
 
 install:
   - pushd app
@@ -42,7 +30,7 @@ install:
 
 script:
   - make palette
-  - make controller 
+  - make controller
     # - make clean all
   - cp dependencies/*.deb dpkg/pool/
   - GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
