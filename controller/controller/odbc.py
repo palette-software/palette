@@ -79,6 +79,8 @@ class ODBC(CredentialMixin):
         s += 'Database=' + self.DATABASE + '; '
         s += 'Uid=' + uid + '; '
         s += 'Pwd=' + passwd + ';'
+        s += 'sslmode=preferred;'
+        
         return s
 
     def execute(self, stmt):
