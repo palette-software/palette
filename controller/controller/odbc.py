@@ -80,7 +80,7 @@ class ODBC(CredentialMixin):
         s += 'Uid=' + uid + '; '
         s += 'Pwd=' + passwd + ';'
         s += 'sslmode=preferred;'
-        
+
         return s
 
     def execute(self, stmt):
