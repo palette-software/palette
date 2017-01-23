@@ -55,7 +55,29 @@ def licensing_urlopen(path_info, system, data=None):
 
     return urlopen(LICENSING_URL + path_info, params)
 
+
 def licensing_send(path_info, data, system):
+    """ Decides whether licensing server is really contacted"""
+
+    # Licensing is disabled
+    # return real_licensing_send(path_info, data, system)
+
+    return fake_licensing_send()
+
+
+def fake_licensing_send():
+    """ Always returns valid license """
+
+    data = { # 'id': entry.id,
+            'trial': False,
+             # 'stage': Stage.get_by_id(entry.stageid).name,
+             # 'name': entry.name,
+            'expiration-time': datetime.datetime.now() + datetime.timedelta(days=365) }
+
+    return data
+
+
+def real_licensing_send(path_info, data, system):
     """ Send a POST request to licensing """
     try:
         conn = licensing_urlopen(path_info, system, data=data)
