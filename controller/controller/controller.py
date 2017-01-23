@@ -80,6 +80,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
     # pylint: disable=too-many-public-methods
     # pylint: disable=too-many-instance-attributes
 
+    TIMEOUT_BACKUP = 60 * 60 * 8 #  = 28800 seconds = 8 hours
     CLI_URI = "/cli"
     allow_reuse_address = True
 
@@ -150,7 +151,7 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         cmd = 'tabadmin backup \\\"%s\\\"' % backup_full_path
 
         backup_start_time = time.time()
-        body = self.cli_cmd(cmd, agent, timeout=60*60*4)
+        body = self.cli_cmd(cmd, agent, timeout=self.TIMEOUT_BACKUP)
         backup_elapsed_time = time.time() - backup_start_time
 
         if body.has_key('error'):
@@ -556,7 +557,8 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         try:
             logger.debug("restore sending command: %s", cmd)
-            restore_body = self.cli_cmd(cmd, agent, env=env, timeout=60*60*4)
+            restore_body = self.cli_cmd(cmd, agent, env=env,
+                                        timeout=self.TIMEOUT_BACKUP)
         except httplib.HTTPException, ex:
             restore_body = {"error": "HTTP Exception: " + str(ex)}
         return restore_body
