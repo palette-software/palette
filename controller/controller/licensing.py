@@ -58,6 +58,7 @@ def licensing_urlopen(path_info, system, data=None):
 
 def licensing_send(path_info, data, system):
     """ Decides whether licensing server is really contacted"""
+    # pylint: disable=unused-argument
 
     # Licensing is disabled
     # return real_licensing_send(path_info, data, system)
@@ -68,11 +69,14 @@ def licensing_send(path_info, data, system):
 def fake_licensing_send():
     """ Always returns valid license """
 
-    data = { # 'id': entry.id,
-            'trial': False,
-             # 'stage': Stage.get_by_id(entry.stageid).name,
-             # 'name': entry.name,
-            'expiration-time': datetime.datetime.now() + datetime.timedelta(days=365) }
+    one_year_from_now = datetime.datetime.now() + datetime.timedelta(days=365)
+
+    data = {  # 'id': entry.id,
+        'trial': False,
+        # 'stage': Stage.get_by_id(entry.stageid).name,
+        # 'name': entry.name,
+        'expiration-time': one_year_from_now
+    }
 
     return data
 
