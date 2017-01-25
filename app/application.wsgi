@@ -53,7 +53,6 @@ loginapp = LoginApplication(secret=SHARED,
                             max_age=LOGIN_MAX_AGE,
                             httponly=True)
 loginpage = LoginPage()
-loginpage = ExpireMiddleware(loginpage)
 loginpage = InitialMiddleware(loginpage)
 loginpage = SupportedBrowserMiddleware(loginpage,
                                        redirect=UNSUPPORTED_BROWSER_URL)
@@ -93,7 +92,6 @@ pages.add_route(r'/data/datasource-archive/(?P<name>[^\s]+)\Z',
 pages.add_route(r'/', HomePage())
 pages = RemoteUserMiddleware(pages)
 pages = AuthRedirectMiddleware(pages, redirect=LOGIN_URL)
-pages = ExpireMiddleware(pages)
 pages = InitialMiddleware(pages)
 pages = AuthTKTMiddleware(pages, secret=SHARED)
 pages = SupportedBrowserMiddleware(pages, redirect=UNSUPPORTED_BROWSER_URL)
