@@ -18,7 +18,6 @@ from palette import HomePage, set_aes_key_file
 from palette.admin import LoginApplication, LoginPage
 from palette.about import AboutPage
 from palette.backup import BackupApplication
-from palette.expire import ExpireMiddleware
 from palette.initial import InitialSetupPage, InitialSetupApplication
 from palette.initial import InitialMiddleware
 from palette.manage import ManagePage, ManageApplication
