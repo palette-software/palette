@@ -75,7 +75,7 @@ def fake_licensing_send():
         'trial': False,
         # 'stage': Stage.get_by_id(entry.stageid).name,
         # 'name': entry.name,
-        'expiration-time': one_year_from_now
+        'expiration-time': unicode(one_year_from_now)
     }
 
     return data
