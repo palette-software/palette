@@ -1,8 +1,8 @@
+# Palette Center
+
 [![Build Status](https://travis-ci.com/palette-software/palette.svg?token=qWG5FJDvsjLrsJpXgxSJ&branch=master)](https://travis-ci.com/palette-software/palette)
 
-# Palette Center
 This repository is hosting the serverside codebase of the Palette Center product.
-
 
 Packaging:
     To build the Debian packages:
@@ -52,7 +52,7 @@ To install the packages:
 
 To remove the packages:
     apt-get remove controller
-    apt-get rmeove palette
+    apt-get remove palette
 
 To stop or start the controller:
     # stop controller
@@ -71,15 +71,13 @@ To see if the controller or palette webapp is running:
         # initctl list | grep palette
         palette start/running, process 4460
 
-
-To run the controller without installing the "controller" package:
-==================================================================
+## To run the controller without installing the "controller" package
 
     sudo mkdir /var/log/palette
     sudo chown-to-whoever-will-berunning-controller /var/log/palette
     cd palette/controller/controller
 
-To run the webapp without installing the "palette" package:
-===========================================================
+## To run the webapp without installing the "palette" package
+
     cd palette/app
     httpserver etc/palette.ini
