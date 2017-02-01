@@ -1,5 +1,5 @@
 etc/controller.ini		/etc
-etc/ssl/certs/palette_cert.pem	/etc/ssl/certs
+# etc/ssl/certs/palette_cert.pem	/etc/ssl/certs
 etc/init.d/controller	/etc/init.d
 usr/bin/controller			/usr/bin
 usr/bin/upgrade-agent        /usr/bin
