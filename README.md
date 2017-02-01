@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/palette-software/palette.svg?token=qWG5FJDvsjLrsJpXgxSJ&branch=master)](https://travis-ci.com/palette-software/palette)
 
-This repository is hosting the serverside codebase of the Palette Center product.
+This repository is hosting the server side codebase of the Palette Center product.
 
 Packaging:
     To build the Debian packages:
