@@ -4,6 +4,8 @@
 
 This repository is hosting the server side codebase of the Palette Center product.
 
+**NOTE** A valid server certificate is needed for the controller.
+
 Packaging:
     To build the Debian packages:
 
