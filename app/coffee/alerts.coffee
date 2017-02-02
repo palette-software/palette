@@ -1,6 +1,8 @@
 require [
   'jquery'
   'underscore'
+  'react'
+  'react-dom'
   'configure'
   'common'
   'Dropdown'

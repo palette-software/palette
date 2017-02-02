@@ -21,7 +21,9 @@
       'jquery': '/js/vendor/jquery.min',
       'underscore': '/js/vendor/underscore',
       'topic': '/js/vendor/pubsub.min',
-      'template' : '/js/vendor/mustache.min',
+      'template': '/js/vendor/mustache.min',
+      'react': '/js/vendor/react.min',
+      'react-dom': '/js/vendor/react-dom.min',
 
       'bootstrap': '/js/vendor/bootstrap.min',
       'lightbox': '//www.helpdocsonline.com/v2/lightbox'
