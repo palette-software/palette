@@ -2,6 +2,13 @@
 
 [![Build Status](https://travis-ci.com/palette-software/palette.svg?token=qWG5FJDvsjLrsJpXgxSJ&branch=master)](https://travis-ci.com/palette-software/palette)
 
+
+# Local dev environment
+
+1. Create a docker image and a docker container. Follow the setps in docker/README.md
+2. Get third party dependencies:
+
+
 This repository is hosting the server side codebase of the Palette Center product.
 
 **NOTE** A valid server certificate is needed for the controller.

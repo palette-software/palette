@@ -23,7 +23,7 @@
       'topic': '/js/vendor/pubsub',
       'template' : '/js/vendor/mustache',
 
-      'bootstrap': '/js/vendor/bootstrap',
+      'bootstrap': '/js/vendor/bootstrap.min',
       'lightbox': '//www.helpdocsonline.com/v2/lightbox'
     },
     shim: {

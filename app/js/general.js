@@ -2,11 +2,6 @@ require(['jquery', 'underscore', 'configure', 'common',
          'Dropdown', 'OnOff', 'bootstrap'],
 function ($, _, configure, common, Dropdown, OnOff)
 {
-    var MONITOR_DROPDOWN_IDS = ['disk-watermark-low', 'disk-watermark-high',
-                                'cpu-load-warn', 'cpu-period-warn',
-                                'cpu-load-error', 'cpu-period-error',
-                                'http-load-warn', 'http-load-error'];
-
     var storageLocation = null;
     var localData = null;
     var s3Data = null;
@@ -14,7 +9,6 @@ function ($, _, configure, common, Dropdown, OnOff)
     var emailAlertData = null;
     var backupData = null;
     var ziplogData = null;
-    var monitorData = null;
 
     var sectionData = {};
 
@@ -655,79 +649,6 @@ function ($, _, configure, common, Dropdown, OnOff)
 
 
     /*
-     * getMonitorData()
-     */
-    function getMonitorData()
-    {
-        var data = {};
-        for (var i = 0; i < MONITOR_DROPDOWN_IDS.length; i++) {
-            var id = MONITOR_DROPDOWN_IDS[i];
-            data[id] = Dropdown.getValueById(id);
-        }
-        return data;
-    }
-
-    /*
-     * setMonitorData()
-     */
-    function setMonitorData(data)
-    {
-        for (var i = 0; i < MONITOR_DROPDOWN_IDS.length; i++) {
-             var id = MONITOR_DROPDOWN_IDS[i];
-             Dropdown.setValueById(id, data[id]);
-        }
-    }
-
-    /*
-     * maySaveCancelMonitor()
-     * Return true if the 'Monitors' section has changed.
-     */
-    function maySaveCancelMonitor(data)
-    {
-        return !_.isEqual(data, monitorData);
-    }
-
-    /*
-     * saveMonitors()
-     * Callback for the 'Save' button in the 'Monitors' section.
-     */
-    function saveMonitors() {
-        $('#save-monitors, #cancel-monitors').addClass('disabled');
-        var data = getMonitorData();
-        data['action'] = 'save';
-
-        $.ajax({
-            type: 'POST',
-            url: '/rest/general/monitor',
-            data: data,
-            dataType: 'json',
-            async: false,
-
-            success: function() {
-                delete data['action'];
-                monitorData = data;
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                alert(this.url + ": " +
-                      jqXHR.status + " (" + errorThrown + ")");
-            }
-        });
-
-        validate();
-    }
-
-    /*
-     * cancelMonitors()
-     * Callback for the 'Cancel' button in the 'Monitors' section.
-     */
-    function cancelMonitors()
-    {
-        setMonitorData(monitorData);
-        $('#save-monitors, #cancel-monitors').addClass('disabled');
-        validate();
-    }
-
-    /*
      * getSectionData()
      */
     function getSectionData(section)
@@ -965,8 +886,6 @@ function ($, _, configure, common, Dropdown, OnOff)
                                   maySaveCancelBackup, maySaveCancelBackup);
         configure.validateSection('ziplogs', getZiplogData,
                                   maySaveCancelZiplog, maySaveCancelZiplog);
-        configure.validateSection('monitors', getMonitorData,
-                                  maySaveCancelMonitor, maySaveCancelMonitor);
     }
 
     /*
@@ -1021,12 +940,6 @@ function ($, _, configure, common, Dropdown, OnOff)
         $('#save-ziplogs').bind('click', saveZiplogs);
         $('#cancel-ziplogs').bind('click', cancelZiplogs);
         ziplogData = getZiplogData();
-
-        /* Monitoring */
-        setMonitorData(data);
-        $('#save-monitors').bind('click', saveMonitors);
-        $('#cancel-monitors').bind('click', cancelMonitors);
-        monitorData = getMonitorData();
 
         /* validation */
         Dropdown.setCallback(validate);

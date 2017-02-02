@@ -19,3 +19,10 @@ build
 dpkg/keys/random_seed
 dpkg/apt/db
 dpkg/apt/dists
+
+app/css/*.min.css
+app/bower_components
+
+
+# These files are compiled from CoffeeScript
+app/js/alerts.*

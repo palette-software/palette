@@ -31,6 +31,7 @@ from palette.request import (BaseMiddleware,
 from palette.routing import RestRouter, ConfigureRouter
 from palette.state import StateApp
 from palette.support import SupportCasePage
+from palette.alerts import AlertsPage
 from palette.system import SystemApplication
 from palette.workbook import WorkbookArchive, WorkbookData
 from palette.datasource import DatasourceArchive, DatasourceData
@@ -83,6 +84,7 @@ pages.add_route(r'/workbook/archive\Z', WorkbookArchive())
 pages.add_route(r'/datasource/archive\Z', DatasourceArchive())
 pages.add_route(r'/manage\Z', ManagePage())
 pages.add_route(r'/support-case\Z', SupportCasePage())
+pages.add_route(r'/alerts\Z', AlertsPage())
 pages.add_route(r'/profile\Z', ProfilePage())
 pages.add_route(r'/configure/', ConfigureRouter())
 pages.add_route(r'/data/workbook-archive/(?P<name>[^\s]+)\Z', WorkbookData())
