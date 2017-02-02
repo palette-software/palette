@@ -16,7 +16,6 @@
       <hr />
       <section class="form-group" id="monitoring">
         <a id="229216" data-toggle="help" href="#"><i class="help"></i></a>
-        <h2>Monitoring</h2>
 
         <div>
           <h3>Storage</h3>

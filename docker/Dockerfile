@@ -1,6 +1,5 @@
 FROM ubuntu:14.04
 RUN apt-get update
-RUN apt-get install -y apt-transport-https
 
 # Add needed files
 ADD palette.list /etc/apt/sources.list.d/palette.list
@@ -24,10 +23,10 @@ ADD postgresql.conf /etc/postgresql/9.3/main/postgresql.conf
 ADD pg_hba.conf /etc/postgresql/9.3/main/pg_hba.conf
 
 # Set locale
-RUN locale-gen en_US.UTF-8  
-ENV LANG en_US.UTF-8  
-ENV LANGUAGE en_US:en  
-ENV LC_ALL en_US.UTF-8  
+RUN locale-gen en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
 
 # USER postgres
 ADD domain.sql /home/ubuntu/domain.sql
