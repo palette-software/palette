@@ -3,28 +3,28 @@ coffee = require 'gulp-coffee'
 sourcemaps = require 'gulp-sourcemaps'
 bower = require 'gulp-bower'
 mainBowerFiles = require 'main-bower-files'
+exists = require('path-exists').sync;
 
 gulp.task 'bower-install', ->
     bower()
 
+minBowerFiles = mainBowerFiles().map (path, index, arr) ->
+    newPath = path.replace(/.([^.]+)$/g, '.min.$1')
+    if exists newPath
+        return newPath
+    else
+        return path
+
 gulp.task 'collect-libs', ['bower-install'], ->
-    # gulp.src mainBowerFiles()
-    #     .pipe gulp.dest 'static/libs'
-
-    bootstrap_css_files = [
-        "bower_components/bootstrap/dist/css/bootstrap.min.css"
-    ]
-
-    bootstrap_js_files = [
-        "bower_components/bootstrap/dist/js/bootstrap.min.js"
-    ]
-
-    gulp.src bootstrap_js_files
+    gulp.src minBowerFiles
         .pipe gulp.dest 'js/vendor'
 
+    # bootstrap_css_files = [
+    # "bower_components/bootstrap/dist/css/bootstrap.min.css"
+    # ]
 
-    gulp.src bootstrap_css_files
-        .pipe gulp.dest 'css'
+    # gulp.src bootstrap_css_files
+    # .pipe gulp.dest 'css'
 
 buildCoffee = (pattern, destination) ->
     gulp.src pattern

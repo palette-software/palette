@@ -26,3 +26,4 @@ app/bower_components
 
 # These files are compiled from CoffeeScript
 app/js/alerts.*
+app/js/vendor/
