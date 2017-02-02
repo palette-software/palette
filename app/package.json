@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "coffee-script": "^1.12.3",
     "grunt": "^0.4.5",
     "gulp": "^3.9.1",
     "gulp-bower": "0.0.13",
