@@ -1,12 +1,12 @@
 require [
   'jquery'
   'underscore'
-  'react'
-  'react-dom'
   'configure'
   'common'
   'Dropdown'
   'OnOff'
+  'react'
+  'react-dom'
   'bootstrap'
 ], ($, _, configure, common, Dropdown, OnOff) ->
   MONITOR_DROPDOWN_IDS = [
