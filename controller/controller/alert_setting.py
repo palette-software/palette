@@ -1,11 +1,10 @@
 from sqlalchemy import Column, String, Integer, Boolean
 
 import akiri.framework.sqlalchemy as meta
-from mixin import BaseMixin
+from mixin import BaseDictMixin
 
 
-class AlertSetting(meta.Base, BaseMixin):
-
+class AlertSetting(meta.Base, BaseDictMixin):
     __tablename__ = 'alert_settings'
 
     process_name = Column(String, unique=True, nullable=False, primary_key=True)
@@ -14,7 +13,6 @@ class AlertSetting(meta.Base, BaseMixin):
     period_warning = Column(Integer)
     period_error = Column(Integer)
 
-    def __getitem__(self, key):
-        query = meta.Session.query(AlertSetting)
-        return query.all()
-        # return self.get_all_by_keys([])
+    @classmethod
+    def getall(cls):
+        return meta.Session.query(cls).all()
