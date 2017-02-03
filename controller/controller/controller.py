@@ -25,6 +25,7 @@ import akiri.framework.sqlalchemy as meta
 from agentmanager import AgentManager
 from agent import Agent, AgentVolumesEntry
 from alert_email import AlertEmail
+from alert_setting import AlertSetting
 from auth import AuthManager
 from cli_cmd import CliCmd
 from cloud import CloudEntry
@@ -1541,6 +1542,8 @@ def main():
     server.domain = Domain.get_by_name(server.domainname)
     Environment.populate()
     server.environment = Environment.get()
+
+    AlertSetting.populate()
 
     # Must be the first 'manager'
     server.system = SystemManager(server)
