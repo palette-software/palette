@@ -1,7 +1,7 @@
 import logging
 import time, datetime
 
-from sqlalchemy import Column, BigInteger, Float, DateTime, func
+from sqlalchemy import Column, BigInteger, Float, String, DateTime, func
 
 from sqlalchemy.schema import ForeignKey
 
