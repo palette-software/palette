@@ -1577,7 +1577,8 @@ class AgentManager(threading.Thread):
                 for counter in body['counters']:
                     if 'counter-name' in counter and \
                             counter['counter-name'] == '% Processor Time' and \
-                                                'value' in counter:
+                                                'value' in counter and \
+                                                'instance-name' in counter:
 
                         try:
                             cpu = float(counter['value'])
@@ -1586,7 +1587,8 @@ class AgentManager(threading.Thread):
                                 "ping: Error obtaining cpu metric: %s: %s",
                                 str(ex), str(body))
                             break
-                        self.metrics.add(agent, cpu)
+                        process_name = counter['instance-name']
+                        self.metrics.add(agent, process_name, cpu)
                         break
             return True
 
