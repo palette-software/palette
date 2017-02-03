@@ -1,3 +1,8 @@
+ALERTING_DISABLED_VALUE = 101
+
+isThresholdEnabled = (value) ->
+    value < ALERTING_DISABLED_VALUE
+
 define 'ComboButton', [
     'react'
 ], (React) ->
@@ -15,7 +20,7 @@ define 'ComboButton', [
             button = React.createElement "button", {type: "button", className: "btn btn-default dropdown-toggle", "data-toggle": "dropdown"}, [value, caret]
             optionItems = @state.options.map (value) =>
                 metric = @state.metric
-                if value is 101
+                unless isThresholdEnabled value
                     value = "Do Not Monitor"
                     metric = ""
                 a  = React.createElement "a", {"data-id": "#{value}"}, value + metric
@@ -30,7 +35,7 @@ define 'PercentageCombo', [
         constructor: (props) ->
             super props
             @state.metric = "%"
-            @state.options = [101, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+            @state.options = [ALERTING_DISABLED_VALUE, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
 
 define 'PeriodCombo', [
     'ComboButton'
@@ -42,7 +47,7 @@ define 'PeriodCombo', [
                 @state.metric = " minute"
             else
                 @state.metric = " minutes"
-            @state.options = [101, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30]
+            @state.options = [ALERTING_DISABLED_VALUE, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30]
 
 define 'ProcessNameCombo', [
     'ComboButton'
@@ -121,9 +126,11 @@ require [
         dataType: 'json'
         async: false
         success: (data) ->
-            console.log data
+            filteredList = data.config.filter (item) ->
+                isThresholdEnabled(item.threshold_warning) or isThresholdEnabled(item.threshold_error)
+
             ReactDOM.render(
-                React.createElement(ItemList, { items: data.config }, "Hello, world!"),
+                React.createElement(ItemList, { items: filteredList }, "Hello, world!"),
                 document.getElementById 'root'
             )
         error: (jqXHR, textStatus, errorThrown) ->
