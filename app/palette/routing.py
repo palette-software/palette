@@ -13,7 +13,7 @@ from .setup import SetupApplication
 from .server import ServerApplication
 from .s3 import S3Application
 from .support import SupportCaseApplication
-from .alerts import AlertsApplication
+from .alerts import AlertsApplication, AlertsProcessesApplication
 from .user import UserApplication
 from .yml import YmlApplication
 from .workbook import WorkbookApplication
@@ -28,6 +28,7 @@ class RestRouter(Router):
         self.add_route(r'/gcs\Z', GCSApplication())
         self.add_route(r'/general\Z|/general/', GeneralApplication())
         self.add_route(r'/alerts\Z', AlertsApplication())
+        self.add_route(r'/alerts/processes\Z', AlertsProcessesApplication())
         self.add_route(r'/manage\Z', ManageApplication())
         self.add_route(r'/monitor\Z', MonitorApplication())
         self.add_route(r'/profile\Z', ProfileApplication())

@@ -4,6 +4,7 @@ import akiri.framework.sqlalchemy as meta
 
 from controller.profile import Role
 from controller.system import SystemKeys
+from controller.alert_setting import AlertSetting
 
 from .option import TimeOption, PercentOption
 from .page import PalettePage
@@ -103,3 +104,20 @@ class AlertsApplication(PaletteRESTApplication):
         meta.commit()
         return {}
 
+# Maybe break this into Storage, CPU, Workbook?
+class AlertsProcessesApplication(PaletteRESTApplication):
+    """Handler from 'PROCESS CPU' section."""
+
+    @required_role(Role.READONLY_ADMIN)
+    def service_GET(self, req):
+        config = []
+
+        config = [alert.todict() for alert in AlertSetting.getall()]
+
+        return {'config': config}
+
+    @required_role(Role.MANAGER_ADMIN)
+    def service_POST(self, req):
+
+        meta.commit()
+        return {}
