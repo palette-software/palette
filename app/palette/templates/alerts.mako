@@ -49,6 +49,11 @@
             Save
           </button>
         </div>
+        <div>
+          <h3>Process CPU</h3>
+            <div id="root">
+            </div>
+        </div>
       </section> <!-- section monitoring -->
     </div> <!-- bottom-zone -->
   </div>

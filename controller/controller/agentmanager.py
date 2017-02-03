@@ -1589,7 +1589,7 @@ class AgentManager(threading.Thread):
                             break
                         process_name = counter['instance-name']
                         self.metrics.add(agent, process_name, cpu)
-                        break
+                        # break
             return True
 
 class ReverseHTTPConnection(httplib.HTTPConnection):
