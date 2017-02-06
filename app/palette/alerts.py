@@ -1,5 +1,5 @@
 """ Alert configuration """
-#pylint: enable=relative-import,missing-docstring
+# pylint: enable=relative-import,missing-docstring
 import akiri.framework.sqlalchemy as meta
 
 from controller.profile import Role
@@ -104,6 +104,7 @@ class AlertsApplication(PaletteRESTApplication):
         meta.commit()
         return {}
 
+
 # Maybe break this into Storage, CPU, Workbook?
 class AlertsProcessesApplication(PaletteRESTApplication):
     """Handler from 'PROCESS CPU' section."""
@@ -118,6 +119,5 @@ class AlertsProcessesApplication(PaletteRESTApplication):
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
-
         meta.commit()
         return {}
