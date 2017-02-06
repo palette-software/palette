@@ -1,8 +1,3 @@
-ALERTING_DISABLED_VALUE = 101
-
-isThresholdEnabled = (value) ->
-    value < ALERTING_DISABLED_VALUE
-
 define 'ProcessSettings', [
     'ComboWithCaption'
     'AlertSetting'
@@ -101,11 +96,17 @@ require [
             dataType: 'json'
             async: true
             success: (data) ->
+                ALERTING_DISABLED_VALUE = 101
+
+                isThresholdEnabled = (value) ->
+                    value < ALERTING_DISABLED_VALUE
+
                 filteredList = data.config.filter (item) ->
                     isThresholdEnabled(item.threshold_warning) or isThresholdEnabled(item.threshold_error)
 
                 availableProcesses = data.config.map (item) ->
                     item.process_name
+                .sort()
 
                 myNode = document.getElementById("root");
                 while (myNode.firstChild) 
@@ -157,8 +158,18 @@ require [
             @refs.saveCancel.enable()
 
         save: =>
+            data = @props.options.map (process_name) =>
+                item = @state.settings.find (setting) ->
+                    process_name is setting.process_name
+                item ?=
+                    process_name: process_name
+                    threshold_error: 101
+                    threshold_warning: 101
+                    period_error: 0
+                    period_warning: 0
+
             data = JSON.stringify
-                config: @state.settings
+                config: data
             $.ajax
                 type: 'POST'
                 url: '/rest/alerts/processes'
