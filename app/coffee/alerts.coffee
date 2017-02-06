@@ -105,7 +105,7 @@ define 'ProcessSettings', [
             errorCaption = React.createElement "span", null, " Error Alert at "
             errorPercentage = React.createElement PercentageCombo, {value: @props.details.threshold_error, onChange: @onChange, property: 'threshold_error'}
             errorPeriod = React.createElement PeriodCombo, {value: "#{@props.details.period_error}", onChange: @onChange, property: 'period_error'}
-            deleteButton = React.createElement "span", {className: "btn-group"}, React.createElement "a", {className: "fa fa-2x fa-minus-circle", style: {color:"red"}}
+            deleteButton = React.createElement "span", {className: "btn-group"}, React.createElement "a", {className: "fa fa-2x fa-minus-circle", style: {color:"red"}, onClick: @props.remove}
             
             d = React.createElement "span", {key: @props.details.process_name}, [
                 process_name
@@ -130,10 +130,14 @@ define 'ProcessSettingsList', [
         constructor: (props) ->
             super props
 
+        remove: (index) =>
+            =>
+                @props.remove index
+
         render: =>
             processSettingsList = @props?.items?.map (item, index) =>
-                item = React.createElement ProcessSettings, {key: "#{item.process_name}", index: index, details: item, processes: @props.processes, onChange: @props.onChange}
-            processSettingsList.push React.createElement "a", {className: "fa fa-2x fa-plus-circle", style: {color:"green"}}
+                item = React.createElement ProcessSettings, {key: "#{item.process_name}#{index}", index: index, details: item, processes: @props.processes, onChange: @props.onChange, remove: @remove(index)}
+            processSettingsList.push React.createElement "a", {className: "fa fa-2x fa-plus-circle", style: {color:"green"}, onClick: @props.add}
 
             React.createElement "div", {}, processSettingsList
 
@@ -174,16 +178,35 @@ require [
             @originalsJSON = JSON.parse(JSON.stringify(props.settings))
             @state =
                 settings: @props.settings
-                options: @props.options
 
         onChange: (index, property, value) =>
             current = @state.settings
             current[index][property] = value
             @setState
                 settings: current
-                options: @props.options
                 
             @refs.saveCancel.enable()
+
+        add: =>
+            current = @state.settings
+            current.push
+                process_name: @props.options[0]
+                threshold_warning: 101
+                threshold_error: 101
+                period_warning: 0
+                period_error: 0
+
+            @setState
+                settings: current
+
+        remove: (deleteIndex) =>
+            current = @state.settings.filter (item, index) ->
+                index isnt deleteIndex
+
+            console.log current
+
+            @setState
+                settings: current
 
         cancel: =>
             @setState
@@ -191,7 +214,7 @@ require [
                 options: @props.options
 
         render: =>
-            processList = React.createElement ProcessSettingsList, { ref: "processList", items: @state.settings, processes: @state.options, onChange: @onChange}
+            processList = React.createElement ProcessSettingsList, { ref: "processList", items: @state.settings, processes: @props.options, onChange: @onChange, add: @add, remove: @remove}
             saveCancel = React.createElement SaveCancel, { ref: "saveCancel" , notifyCancel: @cancel }
             React.createElement 'div', null, [processList, saveCancel]
     $.ajax
