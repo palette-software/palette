@@ -33,6 +33,7 @@ ADD domain.sql /home/ubuntu/domain.sql
 ADD environment.sql /home/ubuntu/environment.sql
 ADD roles.sql /home/ubuntu/roles.sql
 ADD users.sql /home/ubuntu/users.sql
+ADD metrics.sql /home/ubuntu/metrics.sql
 ADD install.sh /home/ubuntu/install.sh
 ADD start.sh /home/ubuntu/start.sh
 
