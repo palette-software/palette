@@ -22,6 +22,7 @@ psql paldb -f /home/ubuntu/domain.sql
 psql paldb -f /home/ubuntu/environment.sql
 psql paldb -f /home/ubuntu/roles.sql
 psql paldb -f /home/ubuntu/users.sql
+psql paldb -f /home/ubuntu/metrics.sql
 
 exit
 
