@@ -86,3 +86,10 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
             (cls.is_threshold_enabled(cls.threshold_warning) | cls.is_threshold_enabled(cls.threshold_error))
         )
         return [record.process_name for record in result]
+
+    @classmethod
+    def update_all(cls, values):
+        session = meta.Session()
+        for d in values:
+            session.query(cls).filter_by(process_name=d['process_name']).update(d)
+        session.commit()
