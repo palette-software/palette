@@ -157,11 +157,14 @@ require [
             @refs.saveCancel.enable()
 
         save: =>
+            data = JSON.stringify
+                config: @state.settings
             $.ajax
-                type: 'POSt'
+                type: 'POST'
                 url: '/rest/alerts/processes'
                 dataType: 'json'
-                data: @state.settings
+                contentType:"application/json; charset=utf-8"
+                data: data
                 async: true
                 success: (data) ->
                     loadSettings()
