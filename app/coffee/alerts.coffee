@@ -9,21 +9,29 @@ define 'ComboButton', [
     class ComboButton extends React.Component
         constructor: (props) ->
             super props
-            @state =
-                metric: ""
-                value: props.value
-                options: []
+
+        optionEnabled: (value) ->
+            false
+
+        metric: ->
+            return ''
+
+        clicked: (value) =>
+            # @setState
+            #  value: value
+            console.log "clicked", @props.property, value
+            @props.onChange @props.property, value
 
         render: =>
-            value = React.createElement "div", {"data-id": "#{@state?.value}"}, @state.value + @state.metric
+            value = React.createElement "div", {key: @props.value, "data-id": "#{@props?.value}", ref: "dropdownValue" }, @props.value + @metric()
             caret = React.createElement "span", {className: "caret"}
-            button = React.createElement "button", {type: "button", className: "btn btn-default dropdown-toggle", "data-toggle": "dropdown"}, [value, caret]
-            optionItems = @state.options.map (value) =>
-                metric = @state.metric
-                unless isThresholdEnabled value
+            button = React.createElement "button", {type: "button", ref: "dropdown", className: "btn btn-default dropdown-toggle", "data-toggle": "dropdown"}, [value, caret]
+            optionItems = @options?.map (value) =>
+                metric = @metric()
+                unless @optionEnabled value
                     value = "Do Not Monitor"
                     metric = ""
-                a  = React.createElement "a", {"data-id": "#{value}"}, value + metric
+                a  = React.createElement "a", {"data-id": "#{value}", onClick: () => @clicked(value)}, value + metric
                 options = React.createElement "li", {key: "#{value}"}, a
             dropdownMenu = React.createElement "ul", {className: "dropdown-menu", role: "menu"}, optionItems
             React.createElement "span", {className: "btn-group percentage"}, [button, dropdownMenu]
@@ -34,8 +42,13 @@ define 'PercentageCombo', [
     class PercentageCombo extends ComboButton
         constructor: (props) ->
             super props
-            @state.metric = "%"
-            @state.options = [ALERTING_DISABLED_VALUE, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+            @options = [ALERTING_DISABLED_VALUE, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+
+        metric: ->
+            "%"
+
+        optionEnabled: (value) ->
+            value isnt  ALERTING_DISABLED_VALUE
 
 define 'PeriodCombo', [
     'ComboButton'
@@ -43,11 +56,16 @@ define 'PeriodCombo', [
     class PeriodCombo extends ComboButton
         constructor: (props) ->
             super props
-            if @state.value is "1"
-                @state.metric = " minute"
+            @options = [ALERTING_DISABLED_VALUE, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30]
+
+        metric: ->
+            if @props.value is "1"
+                @props.metric = " minute"
             else
-                @state.metric = " minutes"
-            @state.options = [ALERTING_DISABLED_VALUE, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30]
+                @props.metric = " minutes"
+
+        optionEnabled: (value) ->
+            value isnt ALERTING_DISABLED_VALUE
 
 define 'ProcessNameCombo', [
     'ComboButton'
@@ -55,7 +73,14 @@ define 'ProcessNameCombo', [
     class ProcessNameCombo extends ComboButton
         constructor: (props) ->
             super props
-            @state.options = ["tabprotosrv", "vizqlserver"]
+            @options = props.options
+            @props.metric = ''
+
+        optionEnabled: (value) ->
+            true
+
+        render: =>
+            super()
 
 
 define 'ProcessSettings', [
@@ -67,22 +92,22 @@ define 'ProcessSettings', [
     class ProcessSettings extends React.Component
         constructor: (props) ->
             super props
-            console.log @props
-            @state = 
-                details: @props.details
+
+        onChange: (property, value) =>
+            @props.onChange @props.index, property, value
 
         render: =>
-            process_name = React.createElement ProcessNameCombo, {value: @state.details.process_name}
+            process_name = React.createElement ProcessNameCombo, {value: @props.details.process_name, options: @props.processes, onChange: @onChange, property: 'process_name'}
             warningCaption = React.createElement "span", null, " Warning Alert at "
-            warningPercentage = React.createElement PercentageCombo, {value: @state.details.threshold_warning}
+            warningPercentage = React.createElement PercentageCombo, {value: @props.details.threshold_warning, onChange: @onChange, property: 'threshold_warning'}
             forCaption = React.createElement "span", null, " for "
-            warningPeriod = React.createElement PeriodCombo, {value: "#{@state.details.period_warning}"}
+            warningPeriod = React.createElement PeriodCombo, {value: "#{@props.details.period_warning}", onChange: @onChange, property: 'period_warning'}
             errorCaption = React.createElement "span", null, " Error Alert at "
-            errorPercentage = React.createElement PercentageCombo, {value: @state.details.threshold_error}
-            errorPeriod = React.createElement PeriodCombo, {value: "#{@state.details.period_error}"}
+            errorPercentage = React.createElement PercentageCombo, {value: @props.details.threshold_error, onChange: @onChange, property: 'threshold_error'}
+            errorPeriod = React.createElement PeriodCombo, {value: "#{@props.details.period_error}", onChange: @onChange, property: 'period_error'}
             deleteButton = React.createElement "span", {className: "btn-group"}, React.createElement "a", {className: "fa fa-2x fa-minus-circle", style: {color:"red"}}
             
-            d = React.createElement "span", {key: @state.details.process_name}, [
+            d = React.createElement "span", {key: @props.details.process_name}, [
                 process_name
                 warningCaption
                 warningPercentage
@@ -94,32 +119,81 @@ define 'ProcessSettings', [
                 errorPeriod
                 deleteButton
             ]
-            React.createElement "p", {key: "row #{@state.details.process_name}"}, d
+            React.createElement "p", {key: "row #{@props.details.process_name}"}, d
 
 
-define 'ItemList', [
+define 'ProcessSettingsList', [
     'ProcessSettings',
     'react'
 ], (ProcessSettings, React) ->
-    class ItemList extends React.Component
+    class ProcessSettingsList extends React.Component
         constructor: (props) ->
             super props
-            @state =
-                items: props.items
 
         render: =>
-            itemlist = @state?.items?.map (item) ->
-                item = React.createElement ProcessSettings, {key: "#{item.process_name}", details: item, processName: "#{item.process_name}"}
-            itemlist.push React.createElement "a", {className: "fa fa-2x fa-plus-circle", style: {color:"green"}}
+            processSettingsList = @props?.items?.map (item, index) =>
+                item = React.createElement ProcessSettings, {key: "#{item.process_name}", index: index, details: item, processes: @props.processes, onChange: @props.onChange}
+            processSettingsList.push React.createElement "a", {className: "fa fa-2x fa-plus-circle", style: {color:"green"}}
 
-            React.createElement "div", {}, itemlist
+            React.createElement "div", {}, processSettingsList
+
+define 'SaveCancel', [
+    'react'
+], (React) ->
+    class SaveCancel extends React.Component
+        enable: =>
+            @refs.cancel.className = "cancel"
+            @refs.save.className = "save"
+
+        disable: =>
+            @refs.cancel.className = "cancel disabled"
+            @refs.save.className = "save disabled"
+
+        cancel: =>
+            @props.notifyCancel()
+            @disable()
+
+        save: =>
+            @disable()
+
+        render: =>
+            cancel = React.createElement 'button', {ref: "cancel", type: 'button', id: 'cancel-processlist', className: 'cancel disabled', onClick: @cancel}, 'Cancel'
+            save = React.createElement 'button', {ref: "save", type: 'button', id: 'save-processlist', className: 'save disabled', onClick: @save}, 'Save'
+            React.createElement 'div', {className: 'save-cancel'}, [cancel, save]
 
 require [
     'jquery'
-    'ItemList'
+    'ProcessSettingsList'
+    'SaveCancel'
     'react'
     'react-dom'
-], ($, ItemList, React, ReactDOM) ->
+], ($, ProcessSettingsList, SaveCancel, React, ReactDOM) ->
+    class ProcessSection extends React.Component
+        constructor: (props) ->
+            super props
+            @originalsJSON = JSON.parse(JSON.stringify(props.settings))
+            @state =
+                settings: @props.settings
+                options: @props.options
+
+        onChange: (index, property, value) =>
+            current = @state.settings
+            current[index][property] = value
+            @setState
+                settings: current
+                options: @props.options
+                
+            @refs.saveCancel.enable()
+
+        cancel: =>
+            @setState
+                settings: JSON.parse(JSON.stringify(@originalsJSON))
+                options: @props.options
+
+        render: =>
+            processList = React.createElement ProcessSettingsList, { ref: "processList", items: @state.settings, processes: @state.options, onChange: @onChange}
+            saveCancel = React.createElement SaveCancel, { ref: "saveCancel" , notifyCancel: @cancel }
+            React.createElement 'div', null, [processList, saveCancel]
     $.ajax
         type: 'GET'
         url: '/rest/alerts/processes'
@@ -129,10 +203,12 @@ require [
             filteredList = data.config.filter (item) ->
                 isThresholdEnabled(item.threshold_warning) or isThresholdEnabled(item.threshold_error)
 
-            ReactDOM.render(
-                React.createElement(ItemList, { items: filteredList }, "Hello, world!"),
-                document.getElementById 'root'
-            )
+            availableProcesses = data.config.map (item) ->
+                item.process_name
+
+            processSection = React.createElement ProcessSection, { settings: filteredList, options: availableProcesses }
+
+            ReactDOM.render processSection, document.getElementById('root')
         error: (jqXHR, textStatus, errorThrown) ->
             alert @url + ': ' + jqXHR.status + ' (' + errorThrown + ')'
             return
