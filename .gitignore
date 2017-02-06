@@ -24,6 +24,15 @@ app/css/*.min.css
 app/bower_components
 
 
+app/js/vendor/
+
 # These files are compiled from CoffeeScript
 app/js/alerts.*
-app/js/vendor/
+app/js/AlertSetting.*
+app/js/ComboButton.*
+app/js/ComboWithCaption.*
+app/js/PeriodCombo.*
+app/js/PercentageCombo.*
+app/js/ProcessNameCombo.*
+
+
