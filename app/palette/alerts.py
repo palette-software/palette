@@ -109,13 +109,17 @@ class AlertsApplication(PaletteRESTApplication):
 class AlertsProcessesApplication(PaletteRESTApplication):
     """Handler from 'PROCESS CPU' section."""
 
+    CONFIG_KEY='config'
+
     @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
         config = AlertSetting.get_all()
 
-        return {'config': config}
+        return {self.CONFIG_KEY: config}
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
-        meta.commit()
+        import json
+        body_as_json = json.loads(req.body)
+        AlertSetting.update_all(body_as_json[self.CONFIG_KEY])
         return {}
