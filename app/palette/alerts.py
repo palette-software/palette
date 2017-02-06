@@ -111,9 +111,7 @@ class AlertsProcessesApplication(PaletteRESTApplication):
 
     @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
-        config = []
-
-        config = [alert.todict() for alert in AlertSetting.getall()]
+        config = AlertSetting.get_all()
 
         return {'config': config}
 

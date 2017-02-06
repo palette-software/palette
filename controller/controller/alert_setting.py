@@ -69,5 +69,7 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
     ]
 
     @classmethod
-    def getall(cls):
-        return meta.Session.query(cls).all()
+    def get_all(cls):
+        result = meta.Session.query(cls).all()
+
+        return [record.todict() for record in result]
