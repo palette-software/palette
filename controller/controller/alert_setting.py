@@ -7,6 +7,8 @@ from mixin import BaseMixin, BaseDictMixin
 class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'alert_settings'
 
+    ALERTING_DISABLED_VALUE = 101
+
     process_name = Column(String, unique=True, nullable=False, primary_key=True)
     threshold_warning = Column(Integer)
     threshold_error = Column(Integer)
@@ -69,7 +71,18 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
     ]
 
     @classmethod
+    def is_threshold_enabled(cls, value):
+        return value < cls.ALERTING_DISABLED_VALUE
+
+    @classmethod
     def get_all(cls):
         result = meta.Session.query(cls).all()
 
         return [record.todict() for record in result]
+
+    @classmethod
+    def get_monitored(cls):
+        result = meta.Session.query(cls.process_name).filter(
+            (cls.is_threshold_enabled(cls.threshold_warning) | cls.is_threshold_enabled(cls.threshold_error))
+        )
+        return [record.process_name for record in result]
