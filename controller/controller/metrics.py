@@ -125,6 +125,7 @@ class MetricManager(Manager):
         return {'status': 'OK', 'info': results}
 
     def process_level_check(self, agent, connection):
+        # pylint: disable = too-many-locals
         stmt = """
             select
                     process_name,
@@ -221,8 +222,10 @@ class MetricManager(Manager):
                     average_cpu = cpu_error
                     color = 'red'
                     description = "%d > %d" % (cpu_error, threshold_error)
-                elif (
-                                cpu_error is None or cpu_error < threshold_error) and cpu_warning is not None and cpu_warning >= threshold_warning and current_color != 'yellow':
+                elif (cpu_error is None or cpu_error < threshold_error)\
+                        and cpu_warning is not None\
+                        and cpu_warning >= threshold_warning\
+                        and current_color != 'yellow':
                     average_cpu = cpu_warning
                     color = 'yellow'
                     description = "%d > %d" % (cpu_warning, threshold_warning)
