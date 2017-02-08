@@ -369,4 +369,5 @@ class MetricManager(Manager):
         data["period_error"] = period_error
         data["period_warning"] = period_warning
         data["cpu"] = int(value)
+        data["info"] = "%s: %d" % (which, value)
         self.server.event_control.gen(event, data)
