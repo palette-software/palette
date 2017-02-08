@@ -235,7 +235,7 @@ class MetricManager(Manager):
                 else:
                     continue
 
-                self._report('cpu', connection, agent, color, average_cpu, description, process_name, 
+                self._report('cpu', connection, agent, color, average_cpu, description, process_name,
                         threshold_error, threshold_warning, period_error, period_warning)
 
 
@@ -338,7 +338,7 @@ class MetricManager(Manager):
         else:
             return {"above": 'yes', "value": report_value}
 
-    def _gen_event(self, which, agent, color, value, process, 
+    def _gen_event(self, which, agent, color, value, process,
             threshold_error, threshold_warning, period_error, period_warning):
         data = agent.todict()
 
@@ -368,4 +368,5 @@ class MetricManager(Manager):
         data["threshold_warning"] = threshold_warning
         data["period_error"] = period_error
         data["period_warning"] = period_warning
+        data["cpu"] = int(value)
         self.server.event_control.gen(event, data)
