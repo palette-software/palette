@@ -52,7 +52,7 @@ define 'ProcessSettingsList', [
 
         render: =>
             processSettingsList = @props?.items?.map (item, index) =>
-                item = React.createElement ProcessSettings, {key: "#{item.process_name}#{index}", index: index, details: item, processes: @props.processes, onChange: @props.onChange, remove: @remove(index)}
+                item = React.createElement ProcessSettings, {key: "#{item.process_name}", index: index, details: item, processes: @props.processes, onChange: @props.onChange, remove: @remove(index)}
             processSettingsList.push React.createElement "a", {className: "fa fa-2x fa-plus-circle", style: {color:"green"}, onClick: @props.add}
 
             React.createElement "div", {}, processSettingsList
@@ -103,6 +103,8 @@ require [
 
                 filteredList = data.config.filter (item) ->
                     isThresholdEnabled(item.threshold_warning) or isThresholdEnabled(item.threshold_error)
+                .sort (a, b) ->
+                    a.process_name > b.process_name
 
                 availableProcesses = data.config.map (item) ->
                     item.process_name
