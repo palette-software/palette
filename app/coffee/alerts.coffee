@@ -28,7 +28,7 @@ define 'ProcessSettings', [
                 onChange: @onChange
 
             deleteButton = React.createElement "span", {className: "btn-group"}, React.createElement "a", {className: "fa fa-2x fa-minus-circle", style: {color:"red"}, onClick: @props.remove}
-            
+
             d = React.createElement "span", {key: @props.details.process_name}, [
                 process_name
                 warning
@@ -109,7 +109,7 @@ require [
                 .sort()
 
                 myNode = document.getElementById("root");
-                while (myNode.firstChild) 
+                while (myNode.firstChild)
                     myNode.removeChild(myNode.firstChild)
 
                 processSection = React.createElement ProcessSection, { settings: filteredList, options: availableProcesses }
@@ -131,22 +131,30 @@ require [
             current[index][property] = value
             @setState
                 settings: current
-                
+
             @refs.saveCancel.enable()
 
         add: =>
             current = @state.settings
-            current.push
-                process_name: @props.options[0]
-                threshold_warning: 101
-                threshold_error: 101
-                period_warning: 0
-                period_error: 0
+            possibleProcesses = @props.options.filter (process_name) =>
+                inSettings = @state.settings.find (setting) ->
+                    process_name is setting.process_name
+                not inSettings?
 
-            @setState
-                settings: current
+            # Add a new element with the next process
+            # that is not already added
+            if possibleProcesses.length > 0
+                current.push
+                    process_name: possibleProcesses[0]
+                    threshold_warning: 101
+                    threshold_error: 101
+                    period_warning: 0
+                    period_error: 0
 
-            @refs.saveCancel.enable()
+                @setState
+                    settings: current
+
+                @refs.saveCancel.enable()
 
         remove: (deleteIndex) =>
             current = @state.settings.filter (item, index) ->
