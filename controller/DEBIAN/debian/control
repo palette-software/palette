@@ -12,7 +12,7 @@ Depends:
  python (>= 2.7), ${misc:Depends},
  python-docutils, python-sphinx, python-crypto,
  python-sqlalchemy, python-psycopg2, python-boto,
- python-dateutil, python-mako, python-yaml,
+ python-dateutil, python-mako, python-yaml, python-apt,
  postgresql, telnet, daemon, postfix, ntp,
  akiri.framework (>= 0.5.6),
  palette-agent (>= 1.6.0),
