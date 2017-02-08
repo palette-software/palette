@@ -34,6 +34,11 @@ class AlertsApplication(PaletteRESTApplication):
 
     @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
+        """
+        Serves the GET requests
+        :param req:
+        :return: the settings for the TOTAL load thresholds
+        """
         config = []
 
         # watermark low
@@ -88,6 +93,11 @@ class AlertsApplication(PaletteRESTApplication):
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
+        """
+        Saves the settings for the TOTAL load thresholds
+        :param req:
+        :return: success
+        """
         # pylint: disable=unused-argument
         req.system[SystemKeys.WATERMARK_LOW] = req.POST['disk-watermark-low']
         req.system[SystemKeys.WATERMARK_HIGH] = req.POST['disk-watermark-high']
@@ -109,16 +119,28 @@ class AlertsApplication(PaletteRESTApplication):
 class AlertsProcessesApplication(PaletteRESTApplication):
     """Handler from 'PROCESS CPU' section."""
 
-    CONFIG_KEY='config'
+    CONFIG_KEY = 'config'
 
     @required_role(Role.READONLY_ADMIN)
     def service_GET(self, req):
+        """
+        Serves the GET requests
+        :param req:
+        :return: the settings for the process based CPU thresholds
+        """
+        # pylint: disable=unused-argument
+
         config = AlertSetting.get_all()
 
         return {self.CONFIG_KEY: config}
 
     @required_role(Role.MANAGER_ADMIN)
     def service_POST(self, req):
+        """
+        Saves the settings for the process based CPU thresholds
+        :param req:
+        :return:
+        """
         import json
         body_as_json = json.loads(req.body)
         AlertSetting.update_all(body_as_json[self.CONFIG_KEY])
