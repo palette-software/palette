@@ -1,10 +1,13 @@
-from sqlalchemy import Column, String, Integer, Boolean
-
 import akiri.framework.sqlalchemy as meta
+from sqlalchemy import Column, String, Integer
+
 from mixin import BaseMixin, BaseDictMixin
+
+# pylint: disable=line-too-long
 
 
 class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
+
     __tablename__ = 'alert_settings'
 
     ALERTING_DISABLED_VALUE = 101

@@ -17,7 +17,7 @@ from controller.credential import CredentialEntry
 from controller.email_limit import EmailLimitEntry
 from controller.system import SystemKeys
 
-from .option import DictOption, TimeOption 
+from .option import DictOption, TimeOption
 from .page import PalettePage
 from .rest import required_parameters, required_role, PaletteRESTApplication
 from .s3 import S3Application

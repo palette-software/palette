@@ -34,7 +34,8 @@ class MetricManager(Manager):
     def add(self, agent, process_name, cpu):
         session = meta.Session()
 
-        entry = MetricEntry(agentid=agent.agentid, process_name=process_name, cpu=cpu)
+        entry = MetricEntry(agentid=agent.agentid,
+                            process_name=process_name, cpu=cpu)
         session.add(entry)
         session.commit()
 
