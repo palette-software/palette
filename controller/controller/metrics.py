@@ -1,24 +1,23 @@
+import datetime
 import logging
-import time, datetime
-
-from sqlalchemy import Column, BigInteger, Float, String, DateTime, func
-
-from sqlalchemy.schema import ForeignKey
+import time
 
 import akiri.framework.sqlalchemy as meta
-
 from event_control import EventControl
 from manager import Manager
+from sqlalchemy import Column, BigInteger, Float, String, DateTime, func
+from sqlalchemy.schema import ForeignKey
 from system import SystemKeys
 
 logger = logging.getLogger()
+
 
 class MetricEntry(meta.Base):
     # pylint: disable=no-init
     __tablename__ = "metrics"
 
     metricid = Column(BigInteger, unique=True, nullable=False,
-                             autoincrement=True, primary_key=True)
+                      autoincrement=True, primary_key=True)
 
     agentid = Column(BigInteger,
                      ForeignKey("agent.agentid", ondelete='CASCADE'),
@@ -28,9 +27,8 @@ class MetricEntry(meta.Base):
     process_name = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
 
+
 class MetricManager(Manager):
-
-
     def add(self, agent, process_name, cpu):
         session = meta.Session()
 
@@ -47,7 +45,7 @@ class MetricManager(Manager):
 
         stmt = ("DELETE FROM metrics " + \
                 "WHERE creation_time < NOW() - INTERVAL '%d DAYS'") % \
-                (metric_save_days,)
+               (metric_save_days,)
 
         connection = meta.get_connection()
         result = connection.execute(stmt)
@@ -77,25 +75,25 @@ class MetricManager(Manager):
             self.process_level_check(agent, connection)
 
             error_report = self._cpu_above_threshold(connection,
-                                    agent, cpu_load_error,
-                                    cpu_period_error)
+                                                     agent, cpu_load_error,
+                                                     cpu_period_error)
             logger.debug("metrics: error_report '%s': %s",
                          agent.displayname, str(error_report))
 
             if error_report['above'] != 'yes':
                 warn_report = self._cpu_above_threshold(connection,
-                                    agent, cpu_load_warn,
-                                    cpu_period_warn)
+                                                        agent, cpu_load_warn,
+                                                        cpu_period_warn)
 
                 logger.debug("metrics: warn_report '%s': %s",
                              agent.displayname, str(warn_report))
                 if error_report['above'] == 'unknown' and \
-                                    warn_report['above'] == 'unknown':
+                                warn_report['above'] == 'unknown':
                     results.append({"displayname": agent.displayname,
                                     "status": "unknown",
                                     "info": ("No data yet: " + \
-                                    "error/warning %d/%d seconds") % \
-                                    (cpu_period_error, cpu_period_warn)})
+                                             "error/warning %d/%d seconds") % \
+                                            (cpu_period_error, cpu_period_warn)})
                     continue
 
             if error_report['above'] == 'yes':
@@ -218,14 +216,13 @@ class MetricManager(Manager):
 
                 current_color = row[7]
 
-                color = ''
                 description = ''
-                averga_cpu = 0
                 if cpu_error is not None and cpu_error >= threshold_error and current_color != 'red':
                     average_cpu = cpu_error
                     color = 'red'
                     description = "%d > %d" % (cpu_error, threshold_error)
-                elif (cpu_error is None or cpu_error < threshold_error) and cpu_warning is not None and cpu_warning >= threshold_warning and current_color != 'yellow':
+                elif (
+                                cpu_error is None or cpu_error < threshold_error) and cpu_warning is not None and cpu_warning >= threshold_warning and current_color != 'yellow':
                     average_cpu = cpu_warning
                     color = 'yellow'
                     description = "%d > %d" % (cpu_warning, threshold_warning)
@@ -236,8 +233,7 @@ class MetricManager(Manager):
                     continue
 
                 self._report('cpu', connection, agent, color, average_cpu, description, process_name,
-                        threshold_error, threshold_warning, period_error, period_warning)
-
+                             threshold_error, threshold_warning, period_error, period_warning)
 
     def _report(self, name, connection, agent, color, report_value,
                 description, process, threshold_error, threshold_warning,
@@ -260,15 +256,15 @@ class MetricManager(Manager):
 
         if color != notification.notified_color:
             if color != 'green' or \
-                        (color == 'green' and notification.notified_color):
+                    (color == 'green' and notification.notified_color):
                 self._gen_event("CPU Load", agent, color, report_value, process,
-                        threshold_error, threshold_warning, period_error, period_warning)
+                                threshold_error, threshold_warning, period_error, period_warning)
 
                 stmt = ("UPDATE notifications " + \
                         "SET color='%s', notified_color='%s', " +
                         "description='%s'" + \
                         "WHERE notificationid=%d") % \
-                        (color, color, description, notification.notificationid)
+                       (color, color, description, notification.notificationid)
 
                 connection.execute(stmt)
 
@@ -301,8 +297,8 @@ class MetricManager(Manager):
 
         # Seconds since the epoch
         last_connection_time = (agent.last_connection_time -
-                                datetime.datetime.utcfromtimestamp(0)).\
-                                total_seconds()
+                                datetime.datetime.utcfromtimestamp(0)). \
+            total_seconds()
 
         if time.time() - last_connection_time < period:
             # The agent hasn't been connected at least "period" amount
@@ -313,9 +309,9 @@ class MetricManager(Manager):
             return {"above": "unknown"}
 
         stmt = ("SELECT AVG(cpu) FROM metrics WHERE " + \
-               "agentid = %d AND " + \
-               "process_name = '_Total' AND " + \
-               "creation_time >= NOW() - INTERVAL '%d seconds'") % \
+                "agentid = %d AND " + \
+                "process_name = '_Total' AND " + \
+                "creation_time >= NOW() - INTERVAL '%d seconds'") % \
                (agent.agentid, period)
 
         report_value = -1
@@ -339,7 +335,8 @@ class MetricManager(Manager):
             return {"above": 'yes', "value": report_value}
 
     def _gen_event(self, which, agent, color, value, process,
-            threshold_error, threshold_warning, period_error, period_warning):
+                   threshold_error, threshold_warning, period_error, period_warning):
+        # pylint: disable=too-many-arguments
         data = agent.todict()
 
         if not process:
