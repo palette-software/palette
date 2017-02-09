@@ -1544,6 +1544,7 @@ def main():
     Environment.populate()
     server.environment = Environment.get()
 
+    AlertSetting.prepare()
     AlertSetting.populate()
 
     # Must be the first 'manager'

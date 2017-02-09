@@ -10,68 +10,35 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
 
     __tablename__ = 'alert_settings'
 
-    ALERTING_DISABLED_VALUE = 101
+    ALERTING_DISABLED_VALUE = None
 
-    process_name = Column(String, unique=True, nullable=False, primary_key=True)
-    threshold_warning = Column(Integer)
-    threshold_error = Column(Integer)
-    period_warning = Column(Integer)
-    period_error = Column(Integer)
+    process_name = Column(String, nullable=False, primary_key=True)
+    alert_type = Column(String, nullable=False, primary_key=True)
+    threshold_warning = Column(Integer, default=ALERTING_DISABLED_VALUE)
+    threshold_error = Column(Integer, default=ALERTING_DISABLED_VALUE)
+    period_warning = Column(Integer, default=60)
+    period_error = Column(Integer, default=60)
 
-    defaults = [
-        {'process_name': '7z', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'backgrounder', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'clustercontroller', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'dataserver', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'filestore', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'httpd', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'postgres', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'redis-server', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'searchserver', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'tabadmin', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'tabadminservice', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'tabadmsvc', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'tabadmwrk', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'tabcmd', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'tableau', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'tabprotosrv', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'tabrepo', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'tabspawn', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'tabsvc', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'tabsystray', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'tdeserver', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'tdeserver64', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'vizportal', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'vizqlserver', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'wgserver', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60},
-        {'process_name': 'zookeeper', 'threshold_warning': 101, 'threshold_error': 101, 'period_warning': 60,
-         'period_error': 60}
-    ]
+    valid_process_names = [ '7z', 'backgrounder', 'clustercontroller', 'dataserver', 'filestore', 'httpd', 'postgres'
+                           , 'redis-server', 'searchserver', 'tabadmin', 'tabadminservice', 'tabadmsvc', 'tabadmwrk'
+                           , 'tabcmd', 'tableau', 'tabprotosrv', 'tabrepo', 'tabspawn', 'tabsvc', 'tabsystray'
+                           , 'tdeserver', 'tdeserver64', 'vizportal', 'vizqlserver', 'wgserver', 'zookeeper' ]
+
+    defaults = []
+
+    @classmethod
+    def prepare(cls):
+        # Make sure that defaults are clear
+        cls.defaults = []
+        # Prepare the defaults
+        cls.fill_defaults('cpu')
+        cls.fill_defaults('memory')
+
+    @classmethod
+    def fill_defaults(cls, alert_type):
+        for process in cls.valid_process_names:
+            row = {'process_name': process, 'alert_type': alert_type}
+            cls.defaults.append(row)
 
     @classmethod
     def is_threshold_enabled(cls, value):
