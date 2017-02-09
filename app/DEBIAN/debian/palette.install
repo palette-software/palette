@@ -1,8 +1,8 @@
 ../etc/apache2/conf-available/palette.conf	/etc/apache2/conf-available
 ../etc/apache2/sites-available/palette-software-ssl.conf	/etc/apache2/sites-available
 ../etc/apache2/sites-available/palette-software.conf	/etc/apache2/sites-available
-# ../etc/ssl/certs/server.crt	/etc/ssl/certs
-# ../etc/ssl/private/server.key	/etc/ssl/private
+../etc/ssl/certs/palette_server.crt	/etc/ssl/certs
+../etc/ssl/private/palette_server.key	/etc/ssl/private
 ../opt/application.wsgi		/opt/palette
 ../etc/init.d/framework-postfix	/etc/init.d
 ../etc/init.d/framework-ssl	/etc/init.d

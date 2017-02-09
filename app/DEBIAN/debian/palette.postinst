@@ -12,7 +12,7 @@ then
 fi
 
 set +x
-chmod 640 /etc/ssl/private/server.key
+chmod 640 /etc/ssl/private/palette_server.key
 
 /usr/sbin/a2enmod ssl rewrite proxy_connect
 
