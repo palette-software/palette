@@ -178,7 +178,8 @@ class MetricManager(Manager):
                                                              'warning'         AS level
                                                      FROM alert_settings
                                                      WHERE 1 = 1
-                                                               AND threshold_warning < 101
+                                                               AND threshold_warning IS NOT NULL
+                                                               AND period_warning > 0
                                                      UNION ALL
                                                      SELECT
                                                              process_name,
@@ -186,7 +187,9 @@ class MetricManager(Manager):
                                                              period_error    AS period,
                                                              'error'         AS level
                                                      FROM alert_settings
-                                                     WHERE threshold_error < 101
+                                                     WHERE 1 = 1
+                                                              AND threshold_error IS NOT NULL
+                                                              AND period_error > 0
                                                     ) config
                                                     LEFT JOIN metrics m
                                                             ON m.process_name = config.process_name
@@ -206,10 +209,14 @@ class MetricManager(Manager):
         for row in result:
             if row[0] != None:
                 process_name = row[0]
-                threshold_warning = int(round(row[1], 0))
-                threshold_error = int(round(row[2], 0))
-                period_warning = int(round(row[3], 0))
-                period_error = int(round(row[4], 0))
+
+                def get_as_int_or_none(value):
+                    return value is not None and int(round(value, 0)) or None
+
+                threshold_warning = get_as_int_or_none(row[1])
+                threshold_error = get_as_int_or_none(row[2])
+                period_warning = get_as_int_or_none(row[3])
+                period_error = get_as_int_or_none(row[4])
 
                 # These two can be null
                 cpu_warning = row[5]
@@ -217,22 +224,31 @@ class MetricManager(Manager):
 
                 current_color = row[7]
 
+                def is_over_threshold(period, threshold, current_value):
+                    return (period is not None and threshold is not None) \
+                           and current_value is not None and current_value >= threshold
+
                 description = ''
-                if cpu_error is not None and cpu_error >= threshold_error and current_color != 'red':
+                if is_over_threshold(period_error, threshold_error, cpu_error) \
+                        and current_color != 'red':
                     average_cpu = cpu_error
                     color = 'red'
                     description = "%d > %d" % (cpu_error, threshold_error)
-                elif (cpu_error is None or cpu_error < threshold_error)\
-                        and cpu_warning is not None\
-                        and cpu_warning >= threshold_warning\
+                elif is_over_threshold(period_warning, threshold_warning, cpu_warning) \
+                        and not is_over_threshold(period_error, threshold_error, cpu_error) \
                         and current_color != 'yellow':
                     average_cpu = cpu_warning
                     color = 'yellow'
                     description = "%d > %d" % (cpu_warning, threshold_warning)
-                elif (cpu_warning is None or cpu_warning < threshold_warning) and current_color != 'green':
-                    average_cpu = cpu_warning
+                elif not is_over_threshold(period_warning, threshold_warning, cpu_warning) \
+                        and not is_over_threshold(period_error, threshold_error, cpu_error) \
+                        and current_color != 'green':
+                    average_cpu = cpu_warning is not None and cpu_warning or cpu_error
                     color = 'green'
                 else:
+                    continue
+
+                if average_cpu is None:
                     continue
 
                 self._report('cpu', connection, agent, color, average_cpu, description, process_name,
