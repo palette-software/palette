@@ -10,7 +10,7 @@ define 'ComboButton', [
 
         valueWithMetric: (value) =>
            if @optionEnabled value
-               value + @metric()
+               value + @metric value
            else
                "Do Not Monitor"
 

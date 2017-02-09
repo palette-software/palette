@@ -1,9 +1,6 @@
 define 'ComboWithCaption', [
-    'PercentageCombo'
-    'PeriodCombo'
-    'ProcessNameCombo'
     'react'
-], (PercentageCombo, PeriodCombo, ProcessNameCombo, React) ->
+], (React) ->
     class ComboWithCaption extends React.Component
         render: =>
             combo = React.createElement @props.comboClass, @props.comboParams

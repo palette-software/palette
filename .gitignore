@@ -34,5 +34,6 @@ app/js/ComboWithCaption.*
 app/js/PeriodCombo.*
 app/js/PercentageCombo.*
 app/js/ProcessNameCombo.*
-
+app/js/MemoryCombo*
+app/js/ProcessSetting*
 

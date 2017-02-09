@@ -1,62 +1,3 @@
-define 'ProcessSettings', [
-    'ComboWithCaption'
-    'AlertSetting'
-    'ProcessNameCombo'
-    'react'
-], (ComboWithCaption, AlertSetting, ProcessNameCombo, React) ->
-    class ProcessSettings extends React.Component
-        onChange: (property, value) =>
-            @props.onChange @props.index, property, value
-
-        render: =>
-            process_name = React.createElement ComboWithCaption,
-                comboClass: ProcessNameCombo
-                comboParams:
-                    value: @props.details.process_name
-                    options: @props.processes
-                    onChange: @onChange
-                    property: 'process_name'
-
-            warning = React.createElement AlertSetting,
-                level: 'warning'
-                details: @props.details
-                onChange: @onChange
-
-            error = React.createElement AlertSetting,
-                level: 'error'
-                details: @props.details
-                onChange: @onChange
-
-            deleteButton = React.createElement "span", {className: "btn-group"}, React.createElement "a", {className: "fa fa-2x fa-minus-circle", style: {color:"red"}, onClick: @props.remove}
-
-            d = React.createElement "span", {key: @props.details.process_name}, [
-                process_name
-                warning
-                error
-                deleteButton
-            ]
-            React.createElement "p", {key: "row #{@props.details.process_name}"}, d
-
-
-define 'ProcessSettingsList', [
-    'ProcessSettings',
-    'react'
-], (ProcessSettings, React) ->
-    class ProcessSettingsList extends React.Component
-        constructor: (props) ->
-            super props
-
-        remove: (index) =>
-            =>
-                @props.remove index
-
-        render: =>
-            processSettingsList = @props?.items?.map (item, index) =>
-                item = React.createElement ProcessSettings, {key: "#{item.process_name}", index: index, details: item, processes: @props.processes, onChange: @props.onChange, remove: @remove(index)}
-            processSettingsList.push React.createElement "a", {className: "fa fa-2x fa-plus-circle", style: {color:"green"}, onClick: @props.add}
-
-            React.createElement "div", {}, processSettingsList
-
 define 'SaveCancel', [
     'react'
 ], (React) ->
@@ -89,6 +30,15 @@ require [
     'react'
     'react-dom'
 ], ($, ProcessSettingsList, SaveCancel, React, ReactDOM) ->
+    renderProcessSettingList = (parentId, type, settings, options) ->
+        myNode = document.getElementById(parentId);
+        while (myNode.firstChild)
+            myNode.removeChild(myNode.firstChild)
+
+        processSection = React.createElement ProcessSection, { settings: settings, options: options, type: type }
+
+        ReactDOM.render processSection, document.getElementById(parentId)
+
     loadSettings = ->
         $.ajax
             type: 'GET'
@@ -101,22 +51,23 @@ require [
                 isThresholdEnabled = (value) ->
                     value < ALERTING_DISABLED_VALUE
 
-                filteredList = data.config.filter (item) ->
-                    isThresholdEnabled(item.threshold_warning) or isThresholdEnabled(item.threshold_error)
-                .sort (a, b) ->
-                    a.process_name > b.process_name
-
                 availableProcesses = data.config.map (item) ->
                     item.process_name
                 .sort()
 
-                myNode = document.getElementById("root");
-                while (myNode.firstChild)
-                    myNode.removeChild(myNode.firstChild)
+                sortedData = data.config.sort (a, b) ->
+                    a.process_name > b.process_name
 
-                processSection = React.createElement ProcessSection, { settings: filteredList, options: availableProcesses }
+                # Render cpu settings list
+                cpuList = sortedData.filter (item) ->
+                    isThresholdEnabled(item.threshold_warning) or isThresholdEnabled(item.threshold_error)
+                renderProcessSettingList 'cpu_list', 'cpu', cpuList, availableProcesses
 
-                ReactDOM.render processSection, document.getElementById('root')
+                # Render memory settings list
+                memoryList = sortedData.filter (item) ->
+                    false
+                renderProcessSettingList 'memory_list', 'memory', memoryList, availableProcesses
+
             error: (jqXHR, textStatus, errorThrown) ->
                 alert @url + ': ' + jqXHR.status + ' (' + errorThrown + ')'
                 return
@@ -199,7 +150,14 @@ require [
                 options: @props.options
 
         render: =>
-            processList = React.createElement ProcessSettingsList, { ref: "processList", items: @state.settings, processes: @props.options, onChange: @onChange, add: @add, remove: @remove}
+            processList = React.createElement ProcessSettingsList,
+                ref: "processList"
+                items: @state.settings
+                processes: @props.options
+                type: @props.type
+                onChange: @onChange
+                add: @add
+                remove: @removeClass
             saveCancel = React.createElement SaveCancel, { ref: "saveCancel" , notifyCancel: @cancel, notifySave: @save }
             React.createElement 'div', null, [processList, saveCancel]
 

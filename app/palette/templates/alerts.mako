@@ -51,7 +51,12 @@
         </div>
         <div>
           <h3>Process CPU</h3>
-            <div id="root">
+            <div id="cpu_list">
+            </div>
+        </div>
+        <div>
+          <h3>Process Memory</h3>
+            <div id="memory_list">
             </div>
         </div>
       </section> <!-- section monitoring -->
