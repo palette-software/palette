@@ -5,7 +5,8 @@ from mixin import BaseMixin, BaseDictMixin
 
 
 # pylint: disable=line-too-long
-
+def _valueWithKey(obj, key):
+    return obj[key] if key in obj else None
 
 class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'alert_settings'
@@ -54,7 +55,7 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
         return [record.todict() for record in result]
 
     @classmethod
-    def get_monitored_processes(cls, alert_type):
+    def get_monitored(cls, alert_type):
         result = meta.Session.query(cls.process_name).filter(
             (cls.is_threshold_enabled(cls.threshold_warning) or cls.is_threshold_enabled(cls.threshold_error) or
              cls.alert_type == alert_type))
@@ -64,8 +65,12 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
     def update_all(cls, values, alert_type):
         session = meta.Session()
         for d in values:
-            session.query(cls) \
-                .filter(cls.alert_type == alert_type) \
-                .filter(cls.process_name == d['process_name']) \
-                .update(d)
+            entry = session.query(cls) \
+                    .filter(cls.alert_type == alert_type) \
+                    .filter(cls.process_name == d['process_name']) \
+                    .one()
+            entry.threshold_warning = _valueWithKey(d, 'threshold_warning')
+            entry.threshold_error = _valueWithKey(d, 'threshold_error')
+            entry.period_warning = _valueWithKey(d, 'period_warning')
+            entry.period_error = _valueWithKey(d, 'period_error')
         session.commit()
