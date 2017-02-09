@@ -3,6 +3,16 @@
 action="$1"
 oldversion="$2"
 
+# Comparing version numbers
+# http://stackoverflow.com/questions/4023830/how-compare-two-strings-in-dot-separated-version-format-in-bash
+verlte() {
+    [  "$1" = "$(echo "$1\n$2" | sort -V | head -n1)" ]
+}
+
+verlt() {
+    [ "$1" = "$2" ] && return 1 || verlte "$1" "$2"
+}
+
 echo "Old version is $oldversion"
 
 if [ "$action" != configure ]
@@ -188,19 +198,17 @@ XYZZY
 elif [ "$oldversion" != "" ]; then
     echo Upgrading $oldversion
     # We are upgrading from a previous version (vs. a new install).
-    # Currently: nothing special to do.
+
     # When upgrading from 2.0.266 and before we need to add a new column to agent_volumes
-    newversion="2.0.266"
-    versions="${oldversion}\n$newversion"
-    orderedversions=$(echo $versions | sort -V)
-    outputifoldislower=`echo "X$oldversion\n$newversion"`
-    echo "Checking if current version is before 2.0.266"
-    echo $orderedversions
-    echo $outputifoldislower
-    if [ "$outputifoldislower" = "X$orderedversions" ]; then
-        echo "Yes we are in, we should do the upgrade."
-psql paldb << XYZZY
-alter table agent_volumes add column priority BIGINT DEFAULT 50
+    if verlte "${oldversion}" "2.0.266" ; then
+        psql paldb << XYZZY
+        alter table agent_volumes add column priority BIGINT DEFAULT 50
+XYZZY
+    # Prepare database for process based alerting
+    elif verlte "${oldversion}" "2.0.341" ; then
+        psql paldb << XYZZY
+        drop table event_control;
+        alter table metrics add column process_name varchar;
 XYZZY
     else
         echo "No we don't need to upgrade the DB. $oldversion $newversion"
