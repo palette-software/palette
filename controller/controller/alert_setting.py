@@ -45,8 +45,18 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
         return value < cls.ALERTING_DISABLED_VALUE
 
     @classmethod
-    def get_all(cls):
-        result = meta.Session.query(cls).all()
+    def get_all_cpu(cls):
+        result = meta.Session.query(cls) \
+            .filter(cls.alert_type == 'cpu') \
+            .all()
+
+        return [record.todict() for record in result]
+
+    @classmethod
+    def get_all_memory(cls):
+        result = meta.Session.query(cls) \
+            .filter(cls.alert_type == 'memory') \
+            .all()
 
         return [record.todict() for record in result]
 
@@ -58,8 +68,21 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
         return [record.process_name for record in result]
 
     @classmethod
-    def update_all(cls, values):
+    def update_all_cpu(cls, values):
         session = meta.Session()
         for d in values:
-            session.query(cls).filter_by(process_name=d['process_name']).update(d)
+            session.query(cls) \
+                .filter(cls.alert_type == 'cpu') \
+                .filter(cls.process_name == d['process_name']) \
+                .update(d)
+        session.commit()
+
+    @classmethod
+    def update_all_memory(cls, values):
+        session = meta.Session()
+        for d in values:
+            session.query(cls) \
+                .filter(cls.alert_type == 'memory') \
+                .filter(cls.process_name == d['process_name']) \
+                .update(d)
         session.commit()

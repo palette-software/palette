@@ -39,18 +39,13 @@ require [
 
         ReactDOM.render processSection, document.getElementById(parentId)
 
-    loadSettings = ->
+    loadSettings = (metric) ->
         $.ajax
             type: 'GET'
-            url: '/rest/alerts/processes'
+            url: '/rest/alerts/processes/' + metric
             dataType: 'json'
             async: true
             success: (data) ->
-                ALERTING_DISABLED_VALUE = 101
-
-                isThresholdEnabled = (value) ->
-                    value < ALERTING_DISABLED_VALUE
-
                 availableProcesses = data.config.map (item) ->
                     item.process_name
                 .sort()
@@ -58,16 +53,10 @@ require [
                 sortedData = data.config.sort (a, b) ->
                     a.process_name > b.process_name
 
-                # Render cpu settings list
-                cpuList = sortedData.filter (item) ->
-                    isThresholdEnabled(item.threshold_warning) or isThresholdEnabled(item.threshold_error)
-                renderProcessSettingList 'cpu_list', 'cpu', cpuList, availableProcesses
-
-                # Render memory settings list
-                memoryList = sortedData.filter (item) ->
-                    false
-                renderProcessSettingList 'memory_list', 'memory', memoryList, availableProcesses
-
+                # Render settings list
+                settingList = sortedData.filter (item) ->
+                    item.threshold_warning? or item.threshold_error?
+                renderProcessSettingList metric + '_list', metric, settingList, availableProcesses
             error: (jqXHR, textStatus, errorThrown) ->
                 alert @url + ': ' + jqXHR.status + ' (' + errorThrown + ')'
                 return
@@ -99,8 +88,6 @@ require [
             if possibleProcesses.length > 0
                 current.push
                     process_name: possibleProcesses[0]
-                    threshold_warning: 101
-                    threshold_error: 101
                     period_warning: 0
                     period_error: 0
 
@@ -124,8 +111,6 @@ require [
                     process_name is setting.process_name
                 item ?=
                     process_name: process_name
-                    threshold_error: 101
-                    threshold_warning: 101
                     period_error: 0
                     period_warning: 0
 
@@ -133,13 +118,13 @@ require [
                 config: data
             $.ajax
                 type: 'POST'
-                url: '/rest/alerts/processes'
+                url: '/rest/alerts/processes/' + @props.type
                 dataType: 'json'
                 contentType:"application/json; charset=utf-8"
                 data: data
                 async: true
-                success: (data) ->
-                    loadSettings()
+                success: (data) =>
+                    loadSettings @props.type
                 error: (jqXHR, textStatus, errorThrown) ->
                     alert @url + ': ' + jqXHR.status + ' (' + errorThrown + ')'
                     return
@@ -157,11 +142,12 @@ require [
                 type: @props.type
                 onChange: @onChange
                 add: @add
-                remove: @removeClass
+                remove: @remove
             saveCancel = React.createElement SaveCancel, { ref: "saveCancel" , notifyCancel: @cancel, notifySave: @save }
             React.createElement 'div', null, [processList, saveCancel]
 
-    loadSettings()
+    loadSettings('cpu')
+    loadSettings('memory')
 
 
 

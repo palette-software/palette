@@ -116,7 +116,7 @@ class AlertsApplication(PaletteRESTApplication):
 
 
 # Maybe break this into Storage, CPU, Workbook?
-class AlertsProcessesApplication(PaletteRESTApplication):
+class CPUAlertsProcessesApplication(PaletteRESTApplication):
     """Handler from 'PROCESS CPU' section."""
 
     CONFIG_KEY = 'config'
@@ -130,7 +130,7 @@ class AlertsProcessesApplication(PaletteRESTApplication):
         """
         # pylint: disable=unused-argument
 
-        config = AlertSetting.get_all()
+        config = AlertSetting.get_all_cpu()
 
         return {self.CONFIG_KEY: config}
 
@@ -143,5 +143,37 @@ class AlertsProcessesApplication(PaletteRESTApplication):
         """
         import json
         body_as_json = json.loads(req.body)
-        AlertSetting.update_all(body_as_json[self.CONFIG_KEY])
+        AlertSetting.update_all_cpu(body_as_json[self.CONFIG_KEY])
+        return {}
+
+
+# Maybe break this into Storage, CPU, Workbook?
+class MemoryAlertsProcessesApplication(PaletteRESTApplication):
+    """Handler from 'PROCESS MEMORY' section."""
+
+    CONFIG_KEY = 'config'
+
+    @required_role(Role.READONLY_ADMIN)
+    def service_GET(self, req):
+        """
+        Serves the GET requests
+        :param req:
+        :return: the settings for the process based memory thresholds
+        """
+        # pylint: disable=unused-argument
+
+        config = AlertSetting.get_all_memory()
+
+        return {self.CONFIG_KEY: config}
+
+    @required_role(Role.MANAGER_ADMIN)
+    def service_POST(self, req):
+        """
+        Saves the settings for the process based memory thresholds
+        :param req:
+        :return:
+        """
+        import json
+        body_as_json = json.loads(req.body)
+        AlertSetting.update_all_memory(body_as_json[self.CONFIG_KEY])
         return {}
