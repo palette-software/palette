@@ -3,11 +3,11 @@ from sqlalchemy import Column, String, Integer
 
 from mixin import BaseMixin, BaseDictMixin
 
+
 # pylint: disable=line-too-long
 
 
 class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
-
     __tablename__ = 'alert_settings'
 
     ALERTING_DISABLED_VALUE = None
@@ -19,10 +19,10 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
     period_warning = Column(Integer, default=60)
     period_error = Column(Integer, default=60)
 
-    valid_process_names = [ '7z', 'backgrounder', 'clustercontroller', 'dataserver', 'filestore', 'httpd', 'postgres'
-                           , 'redis-server', 'searchserver', 'tabadmin', 'tabadminservice', 'tabadmsvc', 'tabadmwrk'
-                           , 'tabcmd', 'tableau', 'tabprotosrv', 'tabrepo', 'tabspawn', 'tabsvc', 'tabsystray'
-                           , 'tdeserver', 'tdeserver64', 'vizportal', 'vizqlserver', 'wgserver', 'zookeeper' ]
+    valid_process_names = ['7z', 'backgrounder', 'clustercontroller', 'dataserver', 'filestore', 'httpd', 'postgres'
+        , 'redis-server', 'searchserver', 'tabadmin', 'tabadminservice', 'tabadmsvc', 'tabadmwrk'
+        , 'tabcmd', 'tableau', 'tabprotosrv', 'tabrepo', 'tabspawn', 'tabsvc', 'tabsystray'
+        , 'tdeserver', 'tdeserver64', 'vizportal', 'vizqlserver', 'wgserver', 'zookeeper']
 
     defaults = []
 
