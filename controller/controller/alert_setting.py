@@ -11,6 +11,8 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
     __tablename__ = 'alert_settings'
 
     ALERTING_DISABLED_VALUE = None
+    CPU = 'cpu'
+    MEMORY = 'memory'
 
     process_name = Column(String, nullable=False, primary_key=True)
     alert_type = Column(String, nullable=False, primary_key=True)
@@ -31,8 +33,8 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
         # Make sure that defaults are clear
         cls.defaults = []
         # Prepare the defaults
-        cls.fill_defaults('cpu')
-        cls.fill_defaults('memory')
+        cls.fill_defaults(cls.CPU)
+        cls.fill_defaults(cls.MEMORY)
 
     @classmethod
     def fill_defaults(cls, alert_type):
@@ -45,44 +47,25 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
         return value != cls.ALERTING_DISABLED_VALUE
 
     @classmethod
-    def get_all_cpu(cls):
+    def get_all(cls, alert_type):
         result = meta.Session.query(cls) \
-            .filter(cls.alert_type == 'cpu') \
+            .filter(cls.alert_type == alert_type) \
             .all()
-
         return [record.todict() for record in result]
 
     @classmethod
-    def get_all_memory(cls):
-        result = meta.Session.query(cls) \
-            .filter(cls.alert_type == 'memory') \
-            .all()
-
-        return [record.todict() for record in result]
-
-    @classmethod
-    def get_monitored(cls):
+    def get_monitored_processes(cls, alert_type):
         result = meta.Session.query(cls.process_name).filter(
-            (cls.is_threshold_enabled(cls.threshold_warning) | cls.is_threshold_enabled(cls.threshold_error))
-        )
+            (cls.is_threshold_enabled(cls.threshold_warning) or cls.is_threshold_enabled(cls.threshold_error) or
+             cls.alert_type == alert_type))
         return [record.process_name for record in result]
 
     @classmethod
-    def update_all_cpu(cls, values):
+    def update_all(cls, values, alert_type):
         session = meta.Session()
         for d in values:
             session.query(cls) \
-                .filter(cls.alert_type == 'cpu') \
-                .filter(cls.process_name == d['process_name']) \
-                .update(d)
-        session.commit()
-
-    @classmethod
-    def update_all_memory(cls, values):
-        session = meta.Session()
-        for d in values:
-            session.query(cls) \
-                .filter(cls.alert_type == 'memory') \
+                .filter(cls.alert_type == alert_type) \
                 .filter(cls.process_name == d['process_name']) \
                 .update(d)
         session.commit()

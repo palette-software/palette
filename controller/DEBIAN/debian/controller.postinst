@@ -208,6 +208,7 @@ XYZZY
     elif verlte "${oldversion}" "2.0.341" ; then
         psql paldb << XYZZY
         drop table event_control;
+        alter table metrics add column memory float;
         alter table metrics add column process_name varchar;
 XYZZY
     else

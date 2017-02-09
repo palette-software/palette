@@ -24,16 +24,17 @@ class MetricEntry(meta.Base):
                      nullable=False)
 
     cpu = Column(Float)
+    memory = Column(Float)
     process_name = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
 
 
 class MetricManager(Manager):
-    def add(self, agent, process_name, cpu):
+    def add(self, agent, process_name, cpu, memory):
         session = meta.Session()
 
-        entry = MetricEntry(agentid=agent.agentid,
-                            process_name=process_name, cpu=cpu)
+        entry = MetricEntry(agentid=agent.agentid, process_name=process_name,
+                            cpu=cpu, memory=memory)
         session.add(entry)
         session.commit()
 

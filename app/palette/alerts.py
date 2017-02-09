@@ -130,7 +130,7 @@ class CPUAlertsProcessesApplication(PaletteRESTApplication):
         """
         # pylint: disable=unused-argument
 
-        config = AlertSetting.get_all_cpu()
+        config = AlertSetting.get_all(AlertSetting.CPU)
 
         return {self.CONFIG_KEY: config}
 
@@ -143,7 +143,7 @@ class CPUAlertsProcessesApplication(PaletteRESTApplication):
         """
         import json
         body_as_json = json.loads(req.body)
-        AlertSetting.update_all_cpu(body_as_json[self.CONFIG_KEY])
+        AlertSetting.update_all(body_as_json[self.CONFIG_KEY], AlertSetting.CPU)
         return {}
 
 
@@ -162,7 +162,7 @@ class MemoryAlertsProcessesApplication(PaletteRESTApplication):
         """
         # pylint: disable=unused-argument
 
-        config = AlertSetting.get_all_memory()
+        config = AlertSetting.get_all(AlertSetting.MEMORY)
 
         return {self.CONFIG_KEY: config}
 
@@ -175,5 +175,5 @@ class MemoryAlertsProcessesApplication(PaletteRESTApplication):
         """
         import json
         body_as_json = json.loads(req.body)
-        AlertSetting.update_all_memory(body_as_json[self.CONFIG_KEY])
+        AlertSetting.update_all(body_as_json[self.CONFIG_KEY], AlertSetting.MEMORY)
         return {}

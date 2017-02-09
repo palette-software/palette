@@ -1082,10 +1082,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return body_combined
 
     def ping(self, agent):
-        monitored_processes = AlertSetting.get_monitored()
         return self.send_immediate(agent, "POST", "/ping",
-                                   {'cpu-monitored-processes': monitored_processes,
-                                    'memory-monitored-processes': monitored_processes})
+                           {'cpu-monitored-processes': AlertSetting.get_monitored_processes(AlertSetting.CPU),
+                            'memory-monitored-processes': AlertSetting.get_monitored_processes(AlertSetting.MEMORY)})
 
     def send_immediate(self, agent, method, uri, send_body=""):
         """Sends the request specified by:

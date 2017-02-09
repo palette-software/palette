@@ -1575,22 +1575,36 @@ class AgentManager(threading.Thread):
                     agent.conn_id, str(body))
             if 'counters' in body:
                 for counter in body['counters']:
-                    if 'counter-name' in counter and \
-                            counter['counter-name'] == '% Processor Time' and \
-                                                'value' in counter and \
-                                                'instance-name' in counter:
+                    if 'counter-name' not in counter or 'value' not in counter or 'instance-name' not in counter:
+                        logger.debug("Missing counter information, skip it")
+                        continue
 
-                        try:
-                            cpu = float(counter['value'])
-                        except ValueError as ex:
-                            logger.error(
-                                "ping: Error obtaining cpu metric: %s: %s",
-                                str(ex), str(body))
-                            break
-                        process_name = counter['instance-name']
-                        self.metrics.add(agent, process_name, cpu)
-                        # break
+                    counter_name = counter['counter-name']
+                    expected_counters = {'cpu': '% Processor Time', 'memory': 'Working Set - private'}
+
+                    if counter_name not in expected_counters.values():
+                        logger.warning("Unexpected counter name: '%s'", counter_name)
+                        continue
+
+                    try:
+                        # The values reported by the agents are float numbers
+                        value = float(counter['value'])
+                    except ValueError as ex:
+                        logger.error(
+                            "ping: Error obtaining cpu metric: %s: %s",
+                            str(ex), str(body))
+                        continue
+                    process_name = counter['instance-name']
+
+                    # The counter name adds meaning to the value
+                    if counter_name == expected_counters['cpu']:
+                        self.metrics.add(agent, process_name, value, None)
+                    elif counter_name == expected_counters['memory']:
+                        self.metrics.add(agent, process_name, None, value)
+                    else:
+                        logger.error("Unexpected counter name: '%s' while adding to metrics table!", counter_name)
             return True
+
 
 class ReverseHTTPConnection(httplib.HTTPConnection):
 
