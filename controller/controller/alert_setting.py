@@ -42,7 +42,7 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
 
     @classmethod
     def is_threshold_enabled(cls, value):
-        return value < cls.ALERTING_DISABLED_VALUE
+        return value != cls.ALERTING_DISABLED_VALUE
 
     @classmethod
     def get_all_cpu(cls):
