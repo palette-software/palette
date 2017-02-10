@@ -1,5 +1,5 @@
 import akiri.framework.sqlalchemy as meta
-from sqlalchemy import Column, String, Integer
+from sqlalchemy import Column, String, Integer, BigInteger
 
 from mixin import BaseMixin, BaseDictMixin
 
@@ -17,8 +17,8 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
 
     process_name = Column(String, nullable=False, primary_key=True)
     alert_type = Column(String, nullable=False, primary_key=True)
-    threshold_warning = Column(Integer, default=ALERTING_DISABLED_VALUE)
-    threshold_error = Column(Integer, default=ALERTING_DISABLED_VALUE)
+    threshold_warning = Column(BigInteger, default=ALERTING_DISABLED_VALUE)
+    threshold_error = Column(BigInteger, default=ALERTING_DISABLED_VALUE)
     period_warning = Column(Integer, default=60)
     period_error = Column(Integer, default=60)
 
