@@ -22,7 +22,7 @@ define 'ProcessSettingsList', [
                     onChange: @props.onChange
                     remove: @remove(index)
                     type: @props.type
-            processSettingsList.push React.createElement "a", {className: "fa fa-2x fa-plus-circle", style: {color:"green"}, onClick: @props.add}
+            processSettingsList.push React.createElement "a", {className: "fa fa-plus-circle fa-lg-center", style: {color:"green"}, onClick: @props.add}
 
             React.createElement "div", {}, processSettingsList
 

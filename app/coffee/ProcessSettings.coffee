@@ -33,7 +33,7 @@ define 'ProcessSettings', [
                 details: @props.details
                 onChange: @onChange
 
-            deleteButton = React.createElement "span", {className: ""}, React.createElement "a", {className: "fa fa-2x fa-minus-circle", style: {color:"red"}, onClick: @props.remove}
+            deleteButton = React.createElement "span", {className: ""}, React.createElement "a", {className: "fa fa-minus-circle fa-lg-center", style: {color: "red"}, onClick: @props.remove}
 
             d = React.createElement "span", {key: @props.details.process_name}, [
                 process_name

@@ -9,5 +9,6 @@ docker run -it --rm \
     -v $PWD/app/palette:/usr/lib/python2.7/dist-packages/palette \
     -v $PWD/controller/controller:/usr/lib/python2.7/dist-packages/controller \
     -v $PWD/app/js:/var/www/js \
+    -v $PWD/app/css:/var/www/css \
     palette-center \
     /bin/bash
