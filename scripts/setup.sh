@@ -19,6 +19,7 @@ fi
 unzip -o downloads/$FA_ZIP
 
 npm install
+npm install -g bower
 bower install
 gulp
 
