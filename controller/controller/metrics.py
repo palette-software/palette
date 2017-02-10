@@ -361,6 +361,7 @@ class MetricManager(Manager):
     def _gen_event(self, which, agent, color, value, process,
                    threshold_error, threshold_warning, period_error, period_warning):
         # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-branches
         data = agent.todict()
 
         if not process:
