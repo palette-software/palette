@@ -1,0 +1,26 @@
+{
+  "name": "app",
+  "version": "2.0.345",
+  "homepage": "https://github.com/palette-software/palette",
+  "authors": [
+    "developers@palette-software.com"
+  ],
+  "license": "GNU GPL v3",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "~3.3.7",
+    "react": "~15.4.2",
+    "mustache": "~2.3.0",
+    "pubsub": "~1.0.0",
+    "requirejs": "~2.3.2",
+    "underscore": "~1.8.3",
+    "font-awesome": "~4.7.0"
+  }
+}

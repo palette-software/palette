@@ -101,6 +101,7 @@ build-setup:
 	sudo apt-get install -y npm nodejs-legacy
 	sudo npm install -g less
 	sudo npm install -g grunt-cli
+	sudo npm install -g bower
 	cd app; sudo ../scripts/setup.sh
 
 .PHONY: build-setup

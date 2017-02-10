@@ -25,6 +25,7 @@ import akiri.framework.sqlalchemy as meta
 from agentmanager import AgentManager
 from agent import Agent, AgentVolumesEntry
 from alert_email import AlertEmail
+from alert_setting import AlertSetting
 from auth import AuthManager
 from cli_cmd import CliCmd
 from cloud import CloudEntry
@@ -1081,8 +1082,9 @@ class Controller(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return body_combined
 
     def ping(self, agent):
-
-        return self.send_immediate(agent, "POST", "/ping")
+        return self.send_immediate(agent, "POST", "/ping",
+                                   {'cpu-monitored-processes': AlertSetting.get_monitored(AlertSetting.CPU),
+                            'memory-monitored-processes': AlertSetting.get_monitored(AlertSetting.MEMORY)})
 
     def send_immediate(self, agent, method, uri, send_body=""):
         """Sends the request specified by:
@@ -1541,6 +1543,9 @@ def main():
     server.domain = Domain.get_by_name(server.domainname)
     Environment.populate()
     server.environment = Environment.get()
+
+    AlertSetting.prepare()
+    AlertSetting.populate()
 
     # Must be the first 'manager'
     server.system = SystemManager(server)

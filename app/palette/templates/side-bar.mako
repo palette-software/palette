@@ -39,6 +39,11 @@
         <i class="fa fa-fw fa-support"></i><span>Tableau Support</span>
       </a>
     </li>
+    <li class="${obj.active=='alerts' and 'active' or ''}">
+      <a href="/alerts">
+        <i class="fa fa-fw fa-cogs"></i><span>Alerting</span>
+      </a>
+    </li>
 %endif
   </ul>
 </div> <!-- main-side-bar -->

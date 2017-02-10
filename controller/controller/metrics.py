@@ -1,39 +1,40 @@
+import datetime
 import logging
-import time, datetime
-
-from sqlalchemy import Column, BigInteger, Float, DateTime, func
-
-from sqlalchemy.schema import ForeignKey
+import time
 
 import akiri.framework.sqlalchemy as meta
-
 from event_control import EventControl
 from manager import Manager
+from sqlalchemy import Column, BigInteger, Float, String, DateTime, func
+from sqlalchemy.schema import ForeignKey
 from system import SystemKeys
 
 logger = logging.getLogger()
+
 
 class MetricEntry(meta.Base):
     # pylint: disable=no-init
     __tablename__ = "metrics"
 
     metricid = Column(BigInteger, unique=True, nullable=False,
-                             autoincrement=True, primary_key=True)
+                      autoincrement=True, primary_key=True)
 
     agentid = Column(BigInteger,
                      ForeignKey("agent.agentid", ondelete='CASCADE'),
                      nullable=False)
 
     cpu = Column(Float)
+    memory = Column(Float)
+    process_name = Column(String)
     creation_time = Column(DateTime, server_default=func.now())
 
+
 class MetricManager(Manager):
-
-
-    def add(self, agent, cpu):
+    def add(self, agent, process_name, cpu, memory):
         session = meta.Session()
 
-        entry = MetricEntry(agentid=agent.agentid, cpu=cpu)
+        entry = MetricEntry(agentid=agent.agentid, process_name=process_name,
+                            cpu=cpu, memory=memory)
         session.add(entry)
         session.commit()
 
@@ -45,7 +46,7 @@ class MetricManager(Manager):
 
         stmt = ("DELETE FROM metrics " + \
                 "WHERE creation_time < NOW() - INTERVAL '%d DAYS'") % \
-                (metric_save_days,)
+               (metric_save_days,)
 
         connection = meta.get_connection()
         result = connection.execute(stmt)
@@ -72,26 +73,29 @@ class MetricManager(Manager):
         for key in agents.keys():
             agent = agents[key]
 
+            self.process_level_check(agent, connection, 'cpu')
+            self.process_level_check(agent, connection, 'memory')
+
             error_report = self._cpu_above_threshold(connection,
-                                    agent, cpu_load_error,
-                                    cpu_period_error)
+                                                     agent, cpu_load_error,
+                                                     cpu_period_error)
             logger.debug("metrics: error_report '%s': %s",
                          agent.displayname, str(error_report))
 
             if error_report['above'] != 'yes':
                 warn_report = self._cpu_above_threshold(connection,
-                                    agent, cpu_load_warn,
-                                    cpu_period_warn)
+                                                        agent, cpu_load_warn,
+                                                        cpu_period_warn)
 
                 logger.debug("metrics: warn_report '%s': %s",
                              agent.displayname, str(warn_report))
                 if error_report['above'] == 'unknown' and \
-                                    warn_report['above'] == 'unknown':
+                                warn_report['above'] == 'unknown':
                     results.append({"displayname": agent.displayname,
                                     "status": "unknown",
                                     "info": ("No data yet: " + \
-                                    "error/warning %d/%d seconds") % \
-                                    (cpu_period_error, cpu_period_warn)})
+                                             "error/warning %d/%d seconds") % \
+                                            (cpu_period_error, cpu_period_warn)})
                     continue
 
             if error_report['above'] == 'yes':
@@ -111,7 +115,9 @@ class MetricManager(Manager):
                 description = "%d" % report_value
 
             result = self._report('cpu', connection, agent, color,
-                                  report_value, description)
+                                  report_value, description, None,
+                                  cpu_load_error, cpu_load_warn,
+                                  cpu_period_error / 60, cpu_period_warn / 60)
             results.append(result)
 
         connection.close()
@@ -120,8 +126,141 @@ class MetricManager(Manager):
             return {'status': 'OK', 'info': 'No agents connected.'}
         return {'status': 'OK', 'info': results}
 
-    def _report(self, name, connection, agent, color, report_value,
-                description):
+    def process_level_check(self, agent, connection, metric_type):
+        # pylint: disable = too-many-locals
+        stmt = """
+            select
+                    process_name,
+                    min(threshold_warning) as threshold_warning,
+                    min(threshold_error) as threshold_error,
+                    min(period_warning) as period_warning,
+                    min(period_error) as period_error,
+                    min(value_warning) as value_warning,
+                    min(value_error) as value_error,
+                    min(color) as color
+            FROM
+                    (
+                            SELECT
+                                    process_name,
+                                    CASE WHEN level = 'warning'
+                                            THEN threshold END   AS threshold_warning,
+                                    CASE WHEN level = 'error'
+                                            THEN threshold END   AS threshold_error,
+                                    CASE WHEN level = 'warning'
+                                            THEN period END      AS period_warning,
+                                    CASE WHEN level = 'error'
+                                            THEN period END      AS period_error,
+                                    CASE WHEN level = 'warning'
+                                            THEN average_value END AS value_warning,
+                                    CASE WHEN level = 'error'
+                                            THEN average_value END AS value_error,
+                                    color
+                            FROM (
+                                    SELECT
+                                            name,
+                                            process_name,
+                                            threshold,
+                                            period,
+                                            level,
+                                            avg(value) as average_value
+                                    FROM (
+                                            SELECT
+                                                    '%(metric_type)s_' || config.process_name AS name,
+                                                    config.process_name,
+                                                    config.threshold,
+                                                    config.period,
+                                                    config.level,
+                                                    creation_time,
+                                                    %(metric_type)s as value
+                                            FROM
+                                                    (SELECT
+                                                             process_name,
+                                                             threshold_warning AS threshold,
+                                                             period_warning    AS period,
+                                                             'warning'         AS level
+                                                     FROM alert_settings
+                                                     WHERE 1 = 1
+                                                             AND threshold_warning IS NOT NULL
+                                                             AND period_warning > 0
+                                                             AND alert_type = '%(metric_type)s'
+                                                     UNION ALL
+                                                     SELECT
+                                                             process_name,
+                                                             threshold_error AS threshold,
+                                                             period_error    AS period,
+                                                             'error'         AS level
+                                                     FROM alert_settings
+                                                     WHERE 1 = 1
+                                                             AND threshold_error IS NOT NULL
+                                                             AND period_error > 0
+                                                             AND alert_type = '%(metric_type)s'
+                                                    ) config
+                                                    LEFT JOIN metrics m
+                                                            ON m.process_name = config.process_name
+                                                            AND m.creation_time >= NOW() - (config.period * '1 minutes' :: INTERVAL)
+                                                            AND m.agentid = %(agentid)d
+                                    ) details
+                                             GROUP BY
+                                                     name, process_name, threshold, period, level
+                                     ) current
+                                    LEFT JOIN notifications n
+                                            ON n.name = current.name
+                    ) process_level_details
+            group by process_name
+        """ % {'metric_type': metric_type, 'agentid': agent.agentid}
+
+        result = connection.execute(stmt)
+        for row in result:
+            if row[0] != None:
+                process_name = row[0]
+
+                def get_as_int_or_none(value):
+                    return value is not None and int(round(value, 0)) or None
+
+                threshold_warning = get_as_int_or_none(row[1])
+                threshold_error = get_as_int_or_none(row[2])
+                period_warning = get_as_int_or_none(row[3])
+                period_error = get_as_int_or_none(row[4])
+
+                # These two can be null
+                value_warning = row[5]
+                value_error = row[6]
+
+                current_color = row[7]
+
+                def is_over_threshold(period, threshold, current_value):
+                    return (period is not None and threshold is not None) \
+                           and current_value is not None and current_value >= threshold
+
+                description = ''
+                if is_over_threshold(period_error, threshold_error, value_error) \
+                        and current_color != 'red':
+                    average_value = value_error
+                    color = 'red'
+                    description = "%d > %d" % (value_error, threshold_error)
+                elif is_over_threshold(period_warning, threshold_warning, value_warning) \
+                        and not is_over_threshold(period_error, threshold_error, value_error) \
+                        and current_color != 'yellow':
+                    average_value = value_warning
+                    color = 'yellow'
+                    description = "%d > %d" % (value_warning, threshold_warning)
+                elif not is_over_threshold(period_warning, threshold_warning, value_warning) \
+                        and not is_over_threshold(period_error, threshold_error, value_error) \
+                        and current_color != 'green':
+                    average_value = value_warning is not None and value_warning or value_error
+                    color = 'green'
+                else:
+                    continue
+
+                if average_value is None:
+                    continue
+
+                self._report(metric_type, connection, agent, color, average_value, description, process_name,
+                             threshold_error, threshold_warning, period_error, period_warning)
+
+    def _report(self, metric, connection, agent, color, report_value,
+                description, process, threshold_error, threshold_warning,
+                period_error, period_warning):
         # pylint: disable=too-many-arguments
         """
             Generates an event, if appropriate and updates the
@@ -133,22 +272,23 @@ class MetricManager(Manager):
 
             Returns a dictionary for the report.
         """
+        name = metric
+        if process:
+            name = name + '_' + process
+
         notification = self.server.notifications.get(name, agent.agentid)
-        logger.debug("metric: %s.  agent '%s', color '%s', " + \
-                     "notified_color '%s', report_value %d",
-                     name, agent.displayname, color,
-                     str(notification.notified_color), report_value)
 
         if color != notification.notified_color:
             if color != 'green' or \
-                        (color == 'green' and notification.notified_color):
-                self._gen_event("CPU Load", agent, color, report_value)
+                    (color == 'green' and notification.notified_color):
+                self._gen_event(metric, agent, color, report_value, process,
+                                threshold_error, threshold_warning, period_error, period_warning)
 
                 stmt = ("UPDATE notifications " + \
                         "SET color='%s', notified_color='%s', " +
                         "description='%s'" + \
                         "WHERE notificationid=%d") % \
-                        (color, color, description, notification.notificationid)
+                       (color, color, description, notification.notificationid)
 
                 connection.execute(stmt)
 
@@ -181,8 +321,8 @@ class MetricManager(Manager):
 
         # Seconds since the epoch
         last_connection_time = (agent.last_connection_time -
-                                datetime.datetime.utcfromtimestamp(0)).\
-                                total_seconds()
+                                datetime.datetime.utcfromtimestamp(0)). \
+            total_seconds()
 
         if time.time() - last_connection_time < period:
             # The agent hasn't been connected at least "period" amount
@@ -193,8 +333,9 @@ class MetricManager(Manager):
             return {"above": "unknown"}
 
         stmt = ("SELECT AVG(cpu) FROM metrics WHERE " + \
-               "agentid = %d AND " + \
-               "creation_time >= NOW() - INTERVAL '%d seconds'") % \
+                "agentid = %d AND " + \
+                "process_name = '_Total' AND " + \
+                "creation_time >= NOW() - INTERVAL '%d seconds'") % \
                (agent.agentid, period)
 
         report_value = -1
@@ -217,17 +358,55 @@ class MetricManager(Manager):
         else:
             return {"above": 'yes', "value": report_value}
 
-    def _gen_event(self, which, agent, color, value):
-        if color == 'green':
-            event = EventControl.CPU_LOAD_OKAY
-        elif color == 'yellow':
-            event = EventControl.CPU_LOAD_ABOVE_LOW_WATERMARK
-        elif color == 'red':
-            event = EventControl.CPU_LOAD_ABOVE_HIGH_WATERMARK
-        else:
-            logger.error("_gen_event: Invalid color: %s", color)
-            return
-
+    def _gen_event(self, which, agent, color, value, process,
+                   threshold_error, threshold_warning, period_error, period_warning):
+        # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-branches
         data = agent.todict()
-        data['info'] = "%s: %d" % (which, value)
+
+        if not process:
+            if color == 'green':
+                event = EventControl.CPU_LOAD_OKAY
+            elif color == 'yellow':
+                event = EventControl.CPU_LOAD_ABOVE_LOW_WATERMARK
+            elif color == 'red':
+                event = EventControl.CPU_LOAD_ABOVE_HIGH_WATERMARK
+            else:
+                logger.error("_gen_event: Invalid color: %s", color)
+                return
+        else:
+            if which == 'cpu':
+                data['process_name'] = process
+                if color == 'green':
+                    event = EventControl.CPU_LOAD_PROCESS_OKAY
+                elif color == 'yellow':
+                    event = EventControl.CPU_LOAD_PROCESS_ABOVE_LOW_WATERMARK
+                elif color == 'red':
+                    event = EventControl.CPU_LOAD_PROCESS_ABOVE_HIGH_WATERMARK
+                else:
+                    logger.error("_gen_event: Invalid color: %s", color)
+                    return
+            elif which == 'memory':
+                value = value / (1024 * 1024)
+                data['process_name'] = process
+                if color == 'green':
+                    event = EventControl.MEMORY_PROCESS_OKAY
+                elif color == 'yellow':
+                    event = EventControl.MEMORY_PROCESS_ABOVE_LOW_WATERMARK
+                elif color == 'red':
+                    event = EventControl.MEMORY_PROCESS_ABOVE_HIGH_WATERMARK
+                else:
+                    logger.error("_gen_event: Invalid color: %s", color)
+                    return
+            else:
+                logger.error("_gen_event: Invalid event type: %s", which)
+                return
+
+
+        data["threshold_error"] = threshold_error
+        data["threshold_warning"] = threshold_warning
+        data["period_error"] = period_error
+        data["period_warning"] = period_warning
+        data["cpu"] = int(value)
+        data["info"] = "%s: %d" % (which.title(), value)
         self.server.event_control.gen(event, data)
