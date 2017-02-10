@@ -56,9 +56,10 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
 
     @classmethod
     def get_monitored(cls, alert_type):
-        result = meta.Session.query(cls.process_name).filter(
-            (cls.is_threshold_enabled(cls.threshold_warning) or cls.is_threshold_enabled(cls.threshold_error) or
-             cls.alert_type == alert_type))
+        result = meta.Session.query(cls.process_name) \
+            .filter(cls.is_threshold_enabled(cls.threshold_warning) | \
+                cls.is_threshold_enabled(cls.threshold_error)) \
+            .filter(cls.alert_type == alert_type)
         return [record.process_name for record in result]
 
     @classmethod

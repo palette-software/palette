@@ -199,6 +199,10 @@ class EventControl(meta.Base, BaseMixin, BaseDictMixin):
     CPU_LOAD_OKAY = "CPU-LOAD-OKAY"
     CPU_LOAD_PROCESS_OKAY = "CPU-LOAD-PROCESS-OKAY"
 
+    MEMORY_PROCESS_ABOVE_HIGH_WATERMARK = "MEMORY-PROCESS-ABOVE-HIGH-WATERMARK"
+    MEMORY_PROCESS_ABOVE_LOW_WATERMARK = "MEMORY-PROCESS-ABOVE-LOW-WATERMARK"
+    MEMORY_PROCESS_OKAY = "MEMORY-PROCESS-OKAY"
+
     EMAIL_TEST = "EMAIL-TEST"
 
     EMAIL_SPIKE = "EMAIL-SPIKE"
@@ -262,6 +266,7 @@ class EventControl(meta.Base, BaseMixin, BaseDictMixin):
         'server' : 'Palette Server',
         'storage' : 'Storage',
         'cpu' : 'CPU Load',
+        'memory': 'Memory',
         'tableau' : 'Tableau App',
         'workbook' : 'Workbooks'
     }
