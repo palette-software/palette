@@ -5,7 +5,7 @@ from mixin import BaseMixin, BaseDictMixin
 
 
 # pylint: disable=line-too-long
-def _valueWithKey(obj, key):
+def _value_with_key(obj, key):
     return obj[key] if key in obj else None
 
 class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
@@ -70,8 +70,8 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
                     .filter(cls.alert_type == alert_type) \
                     .filter(cls.process_name == d['process_name']) \
                     .one()
-            entry.threshold_warning = _valueWithKey(d, 'threshold_warning')
-            entry.threshold_error = _valueWithKey(d, 'threshold_error')
-            entry.period_warning = _valueWithKey(d, 'period_warning')
-            entry.period_error = _valueWithKey(d, 'period_error')
+            entry.threshold_warning = _value_with_key(d, 'threshold_warning')
+            entry.threshold_error = _value_with_key(d, 'threshold_error')
+            entry.period_warning = _value_with_key(d, 'period_warning')
+            entry.period_error = _value_with_key(d, 'period_error')
         session.commit()
