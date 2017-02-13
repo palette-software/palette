@@ -210,6 +210,7 @@ XYZZY
         drop table event_control;
         alter table metrics add column memory float;
         alter table metrics add column process_name varchar;
+        update system set value = 30 where key = 'ping-request-interval';
 XYZZY
     else
         echo "No we don't need to upgrade the DB. $oldversion $newversion"
