@@ -113,7 +113,7 @@ DEFAULTS = SystemDefaults({
     SystemKeys.DATASOURCE_RETAIN_COUNT: 0,
     SystemKeys.DATASOURCE_SAVE_TDSX: True,
 
-    SystemKeys.PING_REQUEST_INTERVAL: 10,
+    SystemKeys.PING_REQUEST_INTERVAL: 30,
     SystemKeys.SOCKET_TIMEOUT: 60,
     SystemKeys.SSL_HANDSHAKE_TIMEOUT: 5,
 

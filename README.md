@@ -6,7 +6,7 @@
 # Local dev environment
 
 1. Create a docker image and a docker container. Follow the setps in docker/README.md
-2. Get third party dependencies:
+2. Get third party dependencies
 
 
 This repository is hosting the server side codebase of the Palette Center product.
