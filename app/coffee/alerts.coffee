@@ -51,7 +51,12 @@ require [
                 .sort()
 
                 sortedData = data.config.sort (a, b) ->
-                    a.process_name > b.process_name
+                    if a.process_name.toLowerCase() > b.process_name.toLowerCase()
+                        1
+                    else if a.process_name.toLowerCase() < b.process_name.toLowerCase()
+                        -1
+                    else
+                        0
 
                 # Render settings list
                 settingList = sortedData.filter (item) ->
