@@ -32,7 +32,7 @@ You may install the `controller` and `palette` packages in a Docker container
 1. Copy file `palette-x.x.x.zip` to a Docker container
 1. Unzip it
 1. Set folder as local apt repository. Eg. if you unzipped it to `/root` add the following line to the apt source.list:
-    ```text
+    ```
     deb file:///root/dpkg/apt stable non-free
     ```
 1. Install packages
