@@ -34,7 +34,6 @@ realclean: clean
 .PHONY: realclean
 
 setup:
-	../scripts/setup.sh
 	npm install
 	bower install
 	gulp

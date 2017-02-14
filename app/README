@@ -7,8 +7,8 @@ sudo apt-get install -y npm nodejs-legacy
 see: http://nodejs.org/
 
 # from the directory containing this README file
-../scripts/setup.sh
 sudo npm install -g bower gulp
+make -C app setup
 
 # start the app to listen on the local interface:
     ./runserver

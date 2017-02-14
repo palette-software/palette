@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-pushd app
-make setup
-popd
+# make build-setup
+make -C app setup
 
 export PALETTE_VERSION=2.3.4
 export CONTROLLER_VERSION=2.3.4
