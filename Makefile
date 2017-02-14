@@ -102,7 +102,7 @@ build-setup:
 	sudo dpkg --install --force-depends dependencies/akiri.framework_0.5.6_all.deb # ignore dependencies
 	sudo apt-get install -f # fixing akiri framework dependencies
 	sudo apt-get install -y reprepro # deb sign
-	sudo npm install -g bower gulp
+	npm install -g bower gulp
 	# sudo apt-get install -y debhelper reprepro python-setuptools pylint python-passlib
 	# sudo apt-get install -y python-tz python-crypto python-boto
 	# sudo apt-get install -y python-netifaces
