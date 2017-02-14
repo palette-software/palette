@@ -95,13 +95,17 @@ clean:
 .PHONY: clean
 
 build-setup:
-	sudo apt-get install -y debhelper reprepro python-setuptools pylint python-passlib python-tz
-	sudo apt-get install -y python-dateutil python-crypto python-boto
-	sudo apt-get install -y python-netifaces
-	sudo apt-get install -y npm nodejs-legacy
-	sudo npm install -g less
-	sudo npm install -g grunt-cli
-	sudo npm install -g bower
-	cd app; sudo ../scripts/setup.sh
+	sudo apt-get install -y debhelper
+	sudo apt-get install -y pylint
+	sudo apt-get install -y python-dateutil # make controller
+	sudo apt-get install -y python-mako python-passlib # make palette
+	sudo dpkg --install --force-depends dependencies/akiri.framework_0.5.6_all.deb # ignore dependencies
+	sudo apt-get install -f # fixing akiri framework dependencies
+	sudo apt-get install -y reprepro # deb sign
+	sudo npm install -g bower gulp
+	# sudo apt-get install -y debhelper reprepro python-setuptools pylint python-passlib
+	# sudo apt-get install -y python-tz python-crypto python-boto
+	# sudo apt-get install -y python-netifaces
+	# sudo apt-get install -y npm nodejs-legacy
 
 .PHONY: build-setup
