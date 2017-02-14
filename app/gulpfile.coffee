@@ -10,7 +10,11 @@ gulp.task 'bower-install', ->
     bower()
 
 minBowerFiles = mainBowerFiles().map (path, index, arr) ->
-    newPath = path.replace(/.([^.]+)$/g, '.min.$1')
+    if path.match(/\.min\.[^.]+$/) isnt null
+        return path
+
+    newPath = path.replace(/\.([^.]+)$/g, '.min.$1')
+
     if exists newPath
         return newPath
     else
