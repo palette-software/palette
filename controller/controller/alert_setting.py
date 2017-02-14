@@ -1,6 +1,7 @@
 import akiri.framework.sqlalchemy as meta
 from sqlalchemy import Column, String, Integer, BigInteger
 
+from alert_audit import AlertAudit
 from mixin import BaseMixin, BaseDictMixin
 
 
@@ -63,15 +64,17 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
         return [record.process_name for record in result]
 
     @classmethod
-    def update_all(cls, values, alert_type):
+    def update_all(cls, values, alert_type, userid):
         session = meta.Session()
         for d in values:
             entry = session.query(cls) \
                     .filter(cls.alert_type == alert_type) \
                     .filter(cls.process_name == d['process_name']) \
                     .one()
+            AlertAudit.log(session, entry, userid, alert_type, d)
             entry.threshold_warning = _value_with_key(d, 'threshold_warning')
             entry.threshold_error = _value_with_key(d, 'threshold_error')
             entry.period_warning = _value_with_key(d, 'period_warning')
             entry.period_error = _value_with_key(d, 'period_error')
+
         session.commit()
