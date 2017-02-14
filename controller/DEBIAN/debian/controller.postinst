@@ -204,16 +204,15 @@ elif [ "$oldversion" != "" ]; then
         psql paldb << XYZZY
         alter table agent_volumes add column priority BIGINT DEFAULT 50
 XYZZY
+    fi
     # Prepare database for process based alerting
-    elif verlte "${oldversion}" "2.0.341" ; then
+    if verlte "${oldversion}" "2.0.341" ; then
         psql paldb << XYZZY
         drop table event_control;
         alter table metrics add column memory float;
         alter table metrics add column process_name varchar;
         update system set value = 30 where key = 'ping-request-interval';
 XYZZY
-    else
-        echo "No we don't need to upgrade the DB. $oldversion $newversion"
     fi
 elif [ "$oldversion" = "" ]; then
     echo First install

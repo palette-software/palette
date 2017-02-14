@@ -9,3 +9,4 @@ SET client_min_messages = warning;
 SET search_path = public, pg_catalog;
 
 alter table metrics add column process_name varchar;
+alter table metrics add column memory float;
