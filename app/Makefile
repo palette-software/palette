@@ -1,7 +1,7 @@
 include ../pylint.mk
 dpkg_dir := ../dpkg
 
-all: grunt pylint debian
+all: pylint debian
 .PHONY: all
 
 debian:
@@ -12,10 +12,6 @@ debian:
 dpkg_dir := ../dpkg
 
 .PHONY: debian
-
-grunt:
-	grunt less
-.PHONY: grunt
 
 pylint:
 	$(PYLINT) application.wsgi
@@ -39,4 +35,8 @@ realclean: clean
 
 setup:
 	../scripts/setup.sh
+	npm install
+	bower install
+	gulp
+
 .PHONY: setup

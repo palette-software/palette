@@ -2,6 +2,7 @@ gulp = require 'gulp'
 coffee = require 'gulp-coffee'
 sourcemaps = require 'gulp-sourcemaps'
 bower = require 'gulp-bower'
+less = require 'gulp-less'
 mainBowerFiles = require 'main-bower-files'
 exists = require('path-exists').sync;
 
@@ -38,5 +39,11 @@ gulp.task 'client-coffee', ->
     buildCoffee ['coffee/*.coffee'], './js'
 
 
+gulp.task 'less', ->
+    gulp.src 'less/style.less'
+        .pipe sourcemaps.init()
+        .pipe less()
+        .pipe sourcemaps.write '.'
+        .pipe gulp.dest 'css'
 
-gulp.task 'default', ['collect-libs', 'client-coffee']
+gulp.task 'default', ['collect-libs', 'client-coffee', 'less']

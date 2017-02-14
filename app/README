@@ -7,9 +7,8 @@ sudo apt-get install -y npm nodejs-legacy
 see: http://nodejs.org/
 
 # from the directory containing this README file
-sudo npm install -g less
-sudo npm install -g grunt-cli
 ../scripts/setup.sh
+sudo npm install -g bower gulp
 
 # start the app to listen on the local interface:
     ./runserver

@@ -3,7 +3,7 @@
 rc=3
 
 while ((rc == 3)); do
-    make grunt
+    gulp less
     if (($? != 0)); then
 	exit $?
     fi
