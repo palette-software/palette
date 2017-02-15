@@ -15,7 +15,8 @@ class AlertAudit(meta.Base):
     threshold_error = Column(BigInteger)
     period_warning = Column(Integer)
     period_error = Column(Integer)
-    modification_time = Column(DateTime, server_default=func.now())
+    valid_from = Column(DateTime, server_default=func.now())
+    valid_to = Column(DateTime)
 
     @staticmethod
     def has_changes(setting, entry):
@@ -29,4 +30,16 @@ class AlertAudit(meta.Base):
         setting["alert_type"] = alert_type
         if cls.has_changes(setting, entry):
             audit_log = cls(userid=userid, **setting)
+
+            # Update the corresponding 'valid to' column as well
+            prev_setting = session.query(cls).filter(cls.alert_type == alert_type) \
+                                             .filter(cls.process_name == setting['process_name']) \
+                                             .filter(cls.id != audit_log.id) \
+                                             .order_by(cls.valid_from.desc()) \
+                                             .first()
             session.add(audit_log)
+            if prev_setting is None:
+                # There is no previous modification on this setting
+                return
+
+            prev_setting.valid_to = audit_log.valid_from
