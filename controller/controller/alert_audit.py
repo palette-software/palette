@@ -26,13 +26,15 @@ class AlertAudit(meta.Base):
             .order_by(cls.valid_from.desc()) \
             .first()
         if prev_setting is not None:
-            prev_setting.valid_to = func.now()  # Need to be in same transaction as session.add
+            # Need to be in same transaction as session.add, otherwise it is not
+            # guaranteed that func.now() will return the very same timestamp
+            prev_setting.valid_to = func.now()
 
     @classmethod
     def log_setting_change(cls, session, userid, alert_type, setting):
         """
-        Create a new record in the audit table when there is a change in the settings.
-        The audit record contains the new values and the timestamp of the change.
+        Create a new record in the audit table. The audit record contains the new values
+        and the timestamp of the change.
 
         :param session: The same session in which the new settings are commited to the DB
         :param userid: The user who is currently logged in
