@@ -27,12 +27,13 @@ class AlertAudit(meta.Base):
 
     @classmethod
     def invalidate_previous(cls, session, alert_type, process_name):
-        prev_setting = session.query(cls).filter(cls.alert_type == alert_type) \
+        prev_setting = session.query(cls) \
+            .filter(cls.alert_type == alert_type) \
             .filter(cls.process_name == process_name) \
             .order_by(cls.valid_from.desc()) \
             .first()
         if prev_setting is not None:
-            prev_setting.valid_to = func.now()
+            prev_setting.valid_to = func.now()  # Need to be in same transaction as session.add
 
     @classmethod
     def log(cls, session, entry, userid, alert_type, setting):
@@ -41,7 +42,7 @@ class AlertAudit(meta.Base):
         setting["alert_type"] = alert_type
 
         if cls.has_changes(setting, entry):
-            audit_log = cls(userid=userid, **setting)
-            session.add(audit_log)
-
             cls.invalidate_previous(session, alert_type, setting['process_name'])
+
+            audit_log = cls(userid=userid, **setting)
+            session.add(audit_log)  # Need to be in same transaction as prev_setting.valid_to
