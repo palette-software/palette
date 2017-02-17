@@ -35,7 +35,12 @@ You may install the `controller` and `palette` packages in a Docker container
     ```
     deb file:///root/dpkg/apt stable non-free
     ```
+1. Update package list
+    ```bash
+    apt-get update
+    ```
+
 1. Install packages
     ```bash
-    apt get install -y palette controller
+    apt-get install -y --force-yes palette controller
     ```

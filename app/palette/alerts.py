@@ -143,7 +143,7 @@ class CPUAlertsProcessesApplication(PaletteRESTApplication):
         """
         import json
         body_as_json = json.loads(req.body)
-        AlertSetting.update_all(body_as_json[self.CONFIG_KEY], AlertSetting.CPU)
+        AlertSetting.update_all(body_as_json[self.CONFIG_KEY], AlertSetting.CPU, req.remote_user.userid)
         return {}
 
 
@@ -175,5 +175,5 @@ class MemoryAlertsProcessesApplication(PaletteRESTApplication):
         """
         import json
         body_as_json = json.loads(req.body)
-        AlertSetting.update_all(body_as_json[self.CONFIG_KEY], AlertSetting.MEMORY)
+        AlertSetting.update_all(body_as_json[self.CONFIG_KEY], AlertSetting.MEMORY, req.remote_user.userid)
         return {}
