@@ -37,8 +37,20 @@ class AlertAudit(meta.Base):
 
     @classmethod
     def log(cls, session, entry, userid, alert_type, setting):
+        """
+        Create a new record in the audit table when there is a change in the settings.
+        The audit record contains the new values and the timestamp of the change.
 
-        # setting might not contain alert_type, it
+        :param session: The same session in which the new settings are commited to the DB
+        :param entry: The previous values of the setting
+        :param userid: The user who is currently logged in
+        :param alert_type: Either cpu or memory
+        :param setting: The new setting values
+        :return: None
+        """
+        # pylint: disable=too-many-arguments
+
+        # setting might not contain alert_type
         setting["alert_type"] = alert_type
 
         if cls.has_changes(setting, entry):
