@@ -63,18 +63,28 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
             .filter(cls.alert_type == alert_type)
         return [record.process_name for record in result]
 
+    @staticmethod
+    def has_changes(setting, entry):
+        for key in setting:
+            if setting[key] != getattr(entry, key):
+                return True
+        return False
+
     @classmethod
     def update_all(cls, values, alert_type, userid):
         session = meta.Session()
-        for d in values:
+        for setting in values:
             entry = session.query(cls) \
                     .filter(cls.alert_type == alert_type) \
-                    .filter(cls.process_name == d['process_name']) \
+                    .filter(cls.process_name == setting['process_name']) \
                     .one()
-            AlertAudit.log(session, entry, userid, alert_type, d)
-            entry.threshold_warning = _value_with_key(d, 'threshold_warning')
-            entry.threshold_error = _value_with_key(d, 'threshold_error')
-            entry.period_warning = _value_with_key(d, 'period_warning')
-            entry.period_error = _value_with_key(d, 'period_error')
+
+            if cls.has_changes(setting, entry):
+                AlertAudit.log_setting_change(session, userid, alert_type, setting)
+
+            entry.threshold_warning = _value_with_key(setting, 'threshold_warning')
+            entry.threshold_error = _value_with_key(setting, 'threshold_error')
+            entry.period_warning = _value_with_key(setting, 'period_warning')
+            entry.period_error = _value_with_key(setting, 'period_error')
 
         session.commit()
