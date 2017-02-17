@@ -20,8 +20,8 @@ class AlertSetting(meta.Base, BaseMixin, BaseDictMixin):
     alert_type = Column(String, nullable=False, primary_key=True)
     threshold_warning = Column(BigInteger, default=ALERTING_DISABLED_VALUE)
     threshold_error = Column(BigInteger, default=ALERTING_DISABLED_VALUE)
-    period_warning = Column(Integer, default=60)
-    period_error = Column(Integer, default=60)
+    period_warning = Column(Integer, default=0)
+    period_error = Column(Integer, default=0)
 
     valid_process_names = ['7z', 'backgrounder', 'clustercontroller', 'dataserver', 'filestore', 'httpd', 'postgres'
         , 'redis-server', 'searchserver', 'tabadmin', 'tabadminservice', 'tabadmsvc', 'tabadmwrk'
