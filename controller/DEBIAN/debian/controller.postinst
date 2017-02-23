@@ -41,6 +41,17 @@ then
     sed --in-place 's/^max_connections = 100/max_connections = 300/' $POSTGRES_CONFIG_FILE
 fi
 
+# Decorate pg_hba.conf for enabling remote and local access
+FILE=/etc/postgresql/9.3/main/pg_hba.conf
+LINE="local all all trust"
+sudo grep -q "$LINE" "$FILE" || echo "$LINE" | sudo tee --append "$FILE"
+LINE="host all all 0.0.0.0/0 md5"
+sudo grep -q "$LINE" "$FILE" || echo "$LINE" | sudo tee --append "$FILE"
+LINE="hostssl all all 0.0.0.0/0 md5"
+sudo grep -q "$LINE" "$FILE" || echo "$LINE" | sudo tee --append "$FILE"
+LINE="host all all ::1/128 trust"
+sudo grep -q "$LINE" "$FILE" || echo "$LINE" | sudo tee --append "$FILE"
+
 service postgresql restart
 
 if [ "$oldversion" = "1.0.0" ]; then
