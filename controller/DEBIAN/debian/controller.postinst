@@ -40,6 +40,10 @@ if grep -q '^max_connections = 100' $POSTGRES_CONFIG_FILE
 then
     sed --in-place 's/^max_connections = 100/max_connections = 300/' $POSTGRES_CONFIG_FILE
 fi
+if grep -q "^#listen_addresses = 'localhost'" $POSTGRES_CONFIG_FILE
+then
+    sed --in-place "s/^#listen_addresses = 'localhost'/listen_addresses = '*'/" $POSTGRES_CONFIG_FILE
+fi
 
 # Decorate pg_hba.conf for enabling remote and local access
 FILE=/etc/postgresql/9.3/main/pg_hba.conf
