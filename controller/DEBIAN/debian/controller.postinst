@@ -212,13 +212,13 @@ elif [ "$oldversion" != "" ]; then
 
     # When upgrading from 2.0.266 and before we need to add a new column to agent_volumes
     if verlte "${oldversion}" "2.0.266" ; then
-        psql paldb << XYZZY
+        sudo -u postgres psql paldb << XYZZY
         alter table agent_volumes add column priority BIGINT DEFAULT 50
 XYZZY
     fi
     # Prepare database for process based alerting
     if verlte "${oldversion}" "2.0.341" ; then
-        psql paldb << XYZZY
+        sudo -u postgres psql paldb << XYZZY
         drop table event_control;
         alter table metrics add column memory float;
         alter table metrics add column process_name varchar;
