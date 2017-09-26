@@ -104,6 +104,20 @@ def real_licensing_send(path_info, data, system):
     return json.loads(reply_json)
 
 def licensing_hello(system):
+    """Decides whether licensing server is really contacted"""
+    # pylint: disable=unused-argument
+
+    # Licensing is disabled
+    # return real_licensing_hello(system)
+
+    return fake_licensing_hello()
+
+def fake_licensing_hello():
+    """This call is used to fake connectivity e.g. from the initial setup page."""
+
+    return 200
+
+def real_licensing_hello(system):
     """Call /hello on licensing.
     This call is used to check connectivity e.g. from the initial setup page.
 
