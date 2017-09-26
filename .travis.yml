@@ -15,9 +15,10 @@ env:
   - PACKAGE=palette
 
 before_install:
+  - sudo apt-get install -y fakeroot # dpkg-buildpackage
   - sudo apt-get install -y debhelper
   - sudo apt-get install -y pylint
-  - sudo apt-get install -y python-dateutil # make controller
+  - sudo apt-get install -y python-dateutil python-crypto # make controller
   - sudo apt-get install -y python-mako python-passlib # make palette
   - sudo dpkg --install --force-depends dependencies/akiri.framework_0.5.6_all.deb # ignore dependencies
   - sudo apt-get install -f # fixing akiri framework dependencies
