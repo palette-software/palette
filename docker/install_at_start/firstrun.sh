@@ -4,7 +4,7 @@ HOST_VOLUME_PATH_ROOT="/var/lib/palette-center-docker"
 DOCKER_IMAGE="palette-center-image"
 
 docker run --detach --tty \
-    --restart on-failure \
+    --restart always \
     --publish "443:443" \
     --publish "888:888" \
     --publish "5432:5432" \

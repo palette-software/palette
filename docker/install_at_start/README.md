@@ -31,4 +31,8 @@ and put in the same directory as the `Dockerfile`
     docker stop palette-center
     docker start palette-center
     ```
-- The container is started on daemon startup and if the container exits with a non-zero exit status
+- The container is started on daemon startup and if the container exits
+- You may get a shell access with the command:
+    ```bash
+    docker exec -it palette-center bash
+    ```
