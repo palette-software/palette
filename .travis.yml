@@ -1,6 +1,11 @@
 dist: trusty
 sudo: required
 
+# do not build tag
+branches:
+  except:
+    - /^\d+\.\d+(\.\d+)?(-\S*)?$/
+
 language: node_js
 
 node_js:
