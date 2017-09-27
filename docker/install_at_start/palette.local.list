@@ -1,1 +1,1 @@
-deb file:///root/dpkg/apt stable non-free
+deb file:///usr/local/dpkg/apt stable non-free
