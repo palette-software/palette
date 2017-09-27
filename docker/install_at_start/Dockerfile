@@ -8,6 +8,8 @@ RUN apt-get install unzip
 ADD palette-*.zip .
 RUN unzip palette-*.zip
 ADD palette.local.list /etc/apt/sources.list.d/
+ADD key.asc /root
+RUN apt-key add /root/key.asc
 
 # Install Center
 RUN apt-get update
