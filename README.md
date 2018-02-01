@@ -2,6 +2,34 @@
 
 [![Build Status](https://travis-ci.org/palette-software/palette.svg?branch=master)](https://travis-ci.org/palette-software/palette)
 
+# Installation
+
+### Open ports
+Make sure that the following ports are allowed both for inbound and outbound connections by your firewall:
+* 22 (SSH)
+* 80, 443 (HTTP, HTTPS)
+* 888 (Agent)
+* 5432 (PostgreSql)
+
+### Make sure Palette APT repository is enabled
+
+```
+ubuntu@ip-10-47-14-86:~$ sudo vi /etc/apt/sources.list.d/palette.center.list
+deb http://rpm.palette-software.net/ubuntu/ stable non-free
+```
+
+### Install
+
+To install all Palette Center server side components just execute the following:
+
+`sudo apt-get install -y palette controller`
+
+Make sure that there is no error in the output of the `apt-get` command above.
+
+# Log file locations
+Here are the log file locations on the Palette Center Server:
+* controller: `/var/log/palette/controller.log`
+* palette: `/var/log/apache2/*.log`
 
 # Local dev environment
 
