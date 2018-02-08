@@ -14,15 +14,19 @@ Make sure that the following ports are allowed both for inbound and outbound con
 ### Make sure Palette APT repository is enabled
 
 ```
-ubuntu@ip-10-47-14-86:~$ sudo vi /etc/apt/sources.list.d/palette.center.list
-deb http://rpm.palette-software.net/ubuntu/ stable non-free
+$ sudo vi /etc/apt/sources.list.d/palette.center.list
+deb http://palette-rpm.brilliant-data.net/ubuntu/ stable non-free
+```
+or
+```
+$ echo "deb http://palette-rpm.brilliant-data.net/ubuntu/ stable non-free" | sudo tee /etc/apt/sources.list.d/palette.center.list
 ```
 
 ### Install
 
 To install all Palette Center server side components just execute the following:
 
-`sudo apt-get install -y palette controller`
+`sudo apt-get install -y --force-yes palette controller`
 
 Make sure that there is no error in the output of the `apt-get` command above.
 
