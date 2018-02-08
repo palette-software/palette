@@ -5,8 +5,7 @@ set -e
 
 FA_VERSION=4.7.0
 FA_ZIP=font-awesome-$FA_VERSION.zip
-FA_URL=http://fontawesome.io/assets/$FA_ZIP
-
+FA_URL=https://fontawesome.com/v${FA_VERSION}/assets/$FA_ZIP
 
 if [ ! -d downloads ]; then
     mkdir -p downloads
@@ -24,4 +23,3 @@ bower install
 gulp
 
 cp -f font-awesome-$FA_VERSION/fonts/* fonts/
-
