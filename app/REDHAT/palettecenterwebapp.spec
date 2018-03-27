@@ -112,8 +112,8 @@ service httpd start
 %config /etc/init.d/framework-postfix
 %config /etc/init.d/framework-ssl
 %config /etc/init.d/framework-timezone
-%config /etc/ssl/certs/server.crt
-%attr(640, -, -) %config /etc/ssl/private/server.key
+%config /etc/ssl/certs/palette_server.crt
+%attr(640, -, -) %config /etc/ssl/private/palette_server.key
 
 %attr(640, apache, apache) /opt/palette/application.wsgi
 %attr(640, apache, apache) %dir /opt/palette/plugins

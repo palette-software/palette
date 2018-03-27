@@ -89,13 +89,13 @@ rm -f /etc/ssl/certs/star_palette-software_com.crt
 
 # Get the database in a state where we can ALTER it, if needed.
 set +o errexit
-service httpd status
+systemctl status postgresql
 APACHE_STATUS=$?
 set -o errexit
 
 if [ $APACHE_STATUS -eq 0 ];
 then
-    service httpd stop
+    systemctl restart httpd
 fi
 
 # POSTGRES_CONFIG_FILE=/etc/postgresql/9.3/main/postgresql.conf
@@ -104,7 +104,7 @@ fi
 #     sed --in-place 's/^max_connections = 100/max_connections = 300/' $POSTGRES_CONFIG_FILE
 # fi
 
-service postgresql restart
+systemctl restart postgresql
 
 if [ "$install_type" -gt "1" ]; then
     echo Upgrading $install_type
@@ -127,11 +127,6 @@ elif [ "$install_type" -eq "1" ]; then
         chown www-data /var/palette/.aes
         chmod 0400 /var/palette/.aes
     fi
-
-    # apt-key add /usr/share/palette/conf/key.asc
-
-    # echo '15 6 * * *   root    test -x /usr/sbin/palette-update && /usr/sbin/palette-update > /dev/null 2>&1' > /etc/cron.d/palette-update
-    # chmod 600 /etc/cron.d/palette-update
 fi
 
 chkconfig --add controller
@@ -140,13 +135,13 @@ service controller start
 # Restart apache if it had been running before
 if [ $APACHE_STATUS -eq 0 ];
 then
-    service httpd start
+    systemctl restart httpd
 fi
 
 %files -f %{buildroot}/%{package}-%{version}/INSTALLED_FILES
 /etc/controller.ini
 /etc/ssl/certs/palette_cert.pem
-/etc/init.d/controller
+/etc/systemd/system/multi-user.target.wants/controller.service
 /usr/bin/controller
 /usr/bin/upgrade-agent
 /usr/bin/palette-version
