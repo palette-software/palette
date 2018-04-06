@@ -47,7 +47,7 @@ Prefix: /
 # fpm passes '--define buildroot ...' on the commandline, so just reuse that.
 # BuildRoot: %buildroot
 
-BuildRequires: python >= 2.6 python-setuptools 
+BuildRequires: python >= 2.6 python-setuptools
 
 Requires: python
 Requires: python-docutils, python-sphinx, python-webob
@@ -63,7 +63,7 @@ This package contains the Palette Web Application.
 
 # Variables
 %define package palette
- 
+
 %prep
 # noop
 
@@ -94,16 +94,16 @@ for x in `ls -d ${PYTHON_PACKAGE_DIR}/palette*`; do
 done
 
 chkconfig --add framework-postfix
-service framework-postfix start
+systemctl start framework-postfix
 
 chkconfig --add framework-ssl
-service framework-ssl start
+systemctl start framework-ssl
 
 chkconfig --add framework-timezone
-service framework-timezone start
+systemctl start framework-timezone
 
-service httpd stop
-service httpd start 
+systemctl stop httpd
+systemctl start httpd
 
 %files -f %{buildroot}/%{package}-%{version}/INSTALLED_FILES
 %config /etc/httpd/conf.d/palette.conf
@@ -118,7 +118,7 @@ service httpd start
 %attr(640, apache, apache) /opt/palette/application.wsgi
 %attr(640, apache, apache) %dir /opt/palette/plugins
 
-%attr(-, apache, apache) %dir /var/log/palette 
+%attr(-, apache, apache) %dir /var/log/palette
 /var
 
 %changelog

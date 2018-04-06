@@ -130,7 +130,7 @@ elif [ "$install_type" -eq "1" ]; then
 fi
 
 chkconfig --add controller
-service controller start
+systemctl start controller
 
 # Restart apache if it had been running before
 if [ $APACHE_STATUS -eq 0 ];
