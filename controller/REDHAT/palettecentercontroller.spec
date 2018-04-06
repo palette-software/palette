@@ -47,7 +47,7 @@ Prefix: /
 # fpm passes '--define buildroot ...' on the commandline, so just reuse that.
 # BuildRoot: %buildroot
 
-BuildRequires: python >= 2.6 python-setuptools 
+BuildRequires: python >= 2.6 python-setuptools
 
 Requires: python
 Requires: python-docutils, python-sphinx
@@ -65,7 +65,7 @@ This package contains the Palette Controller and Web Application
 
 # Variables
 %define package controller
- 
+
 %prep
 # noop
 
@@ -89,13 +89,13 @@ rm -f /etc/ssl/certs/star_palette-software_com.crt
 
 # Get the database in a state where we can ALTER it, if needed.
 set +o errexit
-systemctl status postgresql
+systemctl status httpd
 APACHE_STATUS=$?
 set -o errexit
 
 if [ $APACHE_STATUS -eq 0 ];
 then
-    systemctl restart httpd
+    systemctl stop httpd
 fi
 
 # POSTGRES_CONFIG_FILE=/etc/postgresql/9.3/main/postgresql.conf
@@ -135,7 +135,7 @@ systemctl start controller
 # Restart apache if it had been running before
 if [ $APACHE_STATUS -eq 0 ];
 then
-    systemctl restart httpd
+    systemctl start httpd
 fi
 
 %files -f %{buildroot}/%{package}-%{version}/INSTALLED_FILES
