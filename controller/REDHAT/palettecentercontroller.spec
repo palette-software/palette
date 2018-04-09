@@ -98,13 +98,31 @@ then
     systemctl stop httpd
 fi
 
-# POSTGRES_CONFIG_FILE=/etc/postgresql/9.3/main/postgresql.conf
-# if grep -q '^max_connections = 100' $POSTGRES_CONFIG_FILE
-# then
-#     sed --in-place 's/^max_connections = 100/max_connections = 300/' $POSTGRES_CONFIG_FILE
-# fi
+# Update postgress config
 
-systemctl restart postgresql
+systemctl stop postgresql
+
+# Initializing database. Create "/var/lib/pgsql/data"
+postgresql-setup initdb
+
+POSTGRES_DIR="/var/lib/pgsql/data"
+POSTGRES_CONFIG_FILE="${POSTGRES_DIR}/postgresql.conf"
+if grep -q '^max_connections = 100' $POSTGRES_CONFIG_FILE
+then
+    sed --in-place 's/^max_connections = 100/max_connections = 300/' $POSTGRES_CONFIG_FILE
+fi
+if grep -q "^#listen_addresses = 'localhost'" $POSTGRES_CONFIG_FILE
+then
+    sed --in-place "s/^#listen_addresses = 'localhost'/listen_addresses = '*'/" $POSTGRES_CONFIG_FILE
+fi
+
+# Decorate pg_hba.conf for enabling remote and local access
+sed --in-place '/^local *all *all/ s/peer$/trust/' "${POSTGRES_DIR}/pg_hba.conf"
+sed --in-place '/^host *all *all/ s/ident$/md5/' "${POSTGRES_DIR}/pg_hba.conf"
+sed --in-place '/^host *all *all/ s/127.0.0.1\/32/0.0.0.0\/0   /' "${POSTGRES_DIR}/pg_hba.conf"
+
+systemctl enable postgresql
+systemctl start postgresql
 
 if [ "$install_type" -gt "1" ]; then
     echo Upgrading $install_type
