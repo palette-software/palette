@@ -129,7 +129,8 @@ elif [ "$install_type" -eq "1" ]; then
     fi
 fi
 
-chkconfig --add controller
+# Start controller
+systemctl enable controller
 systemctl start controller
 
 # Restart apache if it had been running before
@@ -141,7 +142,7 @@ fi
 %files -f %{buildroot}/%{package}-%{version}/INSTALLED_FILES
 /etc/controller.ini
 /etc/ssl/certs/palette_cert.pem
-/etc/systemd/system/multi-user.target.wants/controller.service
+/usr/lib/systemd/system/controller.service
 /usr/bin/controller
 /usr/bin/upgrade-agent
 /usr/bin/palette-version
