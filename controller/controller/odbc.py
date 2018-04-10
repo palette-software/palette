@@ -70,15 +70,10 @@ class ODBC(CredentialMixin):
             # Note: This text is compared in AuthManager
             raise RuntimeError(self.READONLY_ERROR_TEXT)
 
-        uid = self.server.yml.get('pgsql.readonly_username', default='')
-        passwd = self.server.yml.get('pgsql.readonly_password', default='')
-
         s = 'DRIVER=' + self.DRIVER +'; '
         s += 'Server=' + host + '; '
         s += 'Port=' + port + '; '
         s += 'Database=' + self.DATABASE + '; '
-        s += 'Uid=' + uid + '; '
-        s += 'Pwd=' + passwd + ';'
         s += 'sslmode=preferred;'
 
         return s
