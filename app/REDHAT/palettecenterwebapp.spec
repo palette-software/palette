@@ -71,6 +71,7 @@ This package contains the Palette Web Application.
 # noop
 
 %install
+mkdir -p var/palette
 mkdir -p var/log/palette
 mkdir -p opt/palette/plugins
 cd %{package}-%{version} && python setup.py install --single-version-externally-managed --no-compile --root=../ --record=INSTALLED_FILES
@@ -119,6 +120,7 @@ systemctl start httpd
 %attr(640, apache, apache) %dir /opt/palette/plugins
 
 %attr(-, apache, apache) %dir /var/log/palette
+%attr(-, apache, apache) %dir /var/palette
 /var
 
 %changelog

@@ -142,7 +142,7 @@ elif [ "$install_type" -eq "1" ]; then
     mkdir -p /var/log/palette /var/palette/data/workbook-archive
     if [ ! -f /var/palette/.aes ]; then
         dd if=/dev/urandom of=/var/palette/.aes bs=32 count=1
-        chown apache /var/palette/.aes
+        chown apache:apache /var/palette/.aes
         chmod 0400 /var/palette/.aes
     fi
 fi
