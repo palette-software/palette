@@ -104,6 +104,7 @@ chkconfig --add framework-timezone
 systemctl start framework-timezone
 
 systemctl stop httpd
+systemctl enable httpd
 systemctl start httpd
 
 %files -f %{buildroot}/%{package}-%{version}/INSTALLED_FILES
