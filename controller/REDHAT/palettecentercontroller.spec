@@ -103,7 +103,7 @@ fi
 systemctl stop postgresql
 
 # Initializing database. Create "/var/lib/pgsql/data"
-postgresql-setup initdb
+PGSETUP_INITDB_OPTIONS="--encoding=UTF8" postgresql-setup initdb
 
 POSTGRES_DIR="/var/lib/pgsql/data"
 POSTGRES_CONFIG_FILE="${POSTGRES_DIR}/postgresql.conf"
