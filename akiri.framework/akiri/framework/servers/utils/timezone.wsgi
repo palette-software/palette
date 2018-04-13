@@ -36,11 +36,7 @@ class Application(GenericWSGIApplication):
         if timezone not in timezones:
             raise TZException("Invalid timezone: " + str(timezone))
 
-        fd = open('/etc/timezone', 'w')
-        fd.write(timezone)
-        fd.close()
-
-        self.run('/usr/sbin/dpkg-reconfigure --frontend noninteractive tzdata')
+        self.run('/bin/timedatectl set-timezone ' + str(timezone))
 
         return data
 
