@@ -113,8 +113,10 @@ class Application(GenericWSGIApplication):
         """Check incoming request for validity and if valid, return
            a dictionary with the values in the required format."""
 
+        data = req.POST.mixed()
         # We need the keys to be underscore, for variable substitution.
-        data = dict((key.replace('_', '-'), value) for (key, value) in data.items())
+        data = dict((key.replace('-', '_'), value)
+                    for (key, value) in data.items())
 
         if 'mail_server_type' not in data:
             raise PostfixException("missing mail-server-type")
