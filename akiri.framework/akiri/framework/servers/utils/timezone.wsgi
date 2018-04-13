@@ -1,18 +1,12 @@
 #!/usr/bin/env python
 import os
-import tempfile
-import shutil
 import subprocess
-import ConfigParser
-import pkg_resources
 from pytz import common_timezones as timezones
-
-from webob import exc
-
 from akiri.framework import GenericWSGIApplication
 
 class TZException(Exception):
     pass
+
 
 class Application(GenericWSGIApplication):
 
@@ -35,7 +29,7 @@ class Application(GenericWSGIApplication):
         print "req", req.POST
         data = req.POST.mixed()
 
-        if not 'timezone' in data or not data['timezone']:
+        if 'timezone' not in data or not data['timezone']:
             raise TZException("Missing timezone")
 
         timezone = data['timezone']
@@ -59,6 +53,7 @@ class Application(GenericWSGIApplication):
         print "output = ", output
         if process.returncode:
             raise TZException("Command '%s' failed: %s" % (cmd, output))
+
 
 application = Application()
 
