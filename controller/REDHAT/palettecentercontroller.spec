@@ -47,7 +47,8 @@ Prefix: /
 # fpm passes '--define buildroot ...' on the commandline, so just reuse that.
 # BuildRoot: %buildroot
 
-BuildRequires: python >= 2.6 python-setuptools
+# Fails when building under Ubuntu (travis)
+# BuildRequires: python >= 2.6 python-setuptools
 
 Requires: python
 Requires: python-docutils, python-sphinx
