@@ -1,0 +1,9 @@
+[Unit]
+Description = Palette Controller Service
+After = network.target postgresql.service
+
+[Service]
+ExecStart = /usr/bin/controller /etc/controller.ini
+
+[Install]
+WantedBy = multi-user.target

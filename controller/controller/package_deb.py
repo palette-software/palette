@@ -1,3 +1,4 @@
+
 import apt
 
 class PackageException(StandardError):

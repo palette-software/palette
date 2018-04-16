@@ -1,8 +1,12 @@
 include ../pylint.mk
 dpkg_dir := ../dpkg
 
-all: pylint debian
+all: pylint redhat
 .PHONY: all
+
+redhat:
+	make -C REDHAT all
+.PHONY: redhat
 
 debian:
 	make -C DEBIAN all
@@ -11,6 +15,7 @@ debian:
 .PHONY: debian
 
 pylint:
+	pylint --version
 	$(PYLINT) DEBIAN/usr/bin/upgrade-agent
 	$(PYLINT) controller
 .PHONY: pylint

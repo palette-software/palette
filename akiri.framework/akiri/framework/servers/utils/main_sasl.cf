@@ -1,0 +1,4 @@
+smtp_sasl_auth_enable = yes
+# tell Postfix where the credentials are stored
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_sasl_security_options = noanonymous

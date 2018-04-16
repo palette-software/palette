@@ -3,7 +3,7 @@
 ../etc/apache2/sites-available/palette-software.conf	/etc/apache2/sites-available
 ../etc/ssl/certs/palette_server.crt	/etc/ssl/certs
 ../etc/ssl/private/palette_server.key	/etc/ssl/private
-../opt/application.wsgi		/opt/palette
+../opt/palette/application.wsgi		/opt/palette
 ../etc/init.d/framework-postfix	/etc/init.d
 ../etc/init.d/framework-ssl	/etc/init.d
 ../etc/init.d/framework-timezone	/etc/init.d

@@ -1,1 +1,6 @@
 /*.ini
+
+# REDHAT
+REDHAT/controller-*
+REDHAT/usr/lib/python*
+REDHAT/rpm-build/

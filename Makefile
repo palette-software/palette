@@ -84,6 +84,7 @@ debian:
 	make -C app debian
 
 pylint:
+	pylint --version
 	make -C controller pylint
 	make -C app pylint
 .PHONY: pylint

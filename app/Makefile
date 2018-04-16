@@ -1,11 +1,14 @@
 include ../pylint.mk
 dpkg_dir := ../dpkg
 
-all: grunt pylint debian
+all: grunt pylint redhat
 .PHONY: all
 
+redhat:
+	make -C REDHAT all
+.PHONY: redhat
+
 debian:
-	python setup.py bdist
 	make -C DEBIAN all
 	mkdir -p $(dpkg_dir)/pool
 	cp -r DEBIAN/*.deb $(dpkg_dir)/pool
@@ -18,6 +21,7 @@ grunt:
 .PHONY: grunt
 
 pylint:
+	pylint --version
 	$(PYLINT) application.wsgi
 	$(PYLINT) palette
 .PHONY: pylint
