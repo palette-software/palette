@@ -25,7 +25,7 @@ from event_control import EventControl
 from files import FileManager
 from get_file import GetFile
 from cloud import CloudManager, CloudEntry
-#from package import PackageException
+from package_rpm import PackageException
 from system import SystemKeys
 from state import StateManager
 from state_control import StateControl
