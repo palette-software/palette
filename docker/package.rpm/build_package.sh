@@ -4,11 +4,11 @@ make setup
 popd
 
 pushd akiri.framework
-python setup.py bdist_rpm
+make
 popd
 
-export PALETTE_VERSION=2.3.4
-export CONTROLLER_VERSION=2.3.4
+export PALETTE_VERSION=3.4.5
+export CONTROLLER_VERSION=3.4.5
 
 make palette
 make controller
