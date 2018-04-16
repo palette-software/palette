@@ -50,10 +50,11 @@ script:
 
 after_success:
   # Create the zip package for GitHub release
-  - export PACKAGE=palette-${PALETTE_VERSION}
-  - mkdir ${PACKAGE}
-  - find . -name \*.rpm -print0 | xargs -0 cp -t ${PACKAGE}
-  - zip -r ${PACKAGE}.zip ${PACKAGE}
+  - export PCKG_DIR=palette-${PALETTE_VERSION}
+  - export PCKG_FILE=palette-${PALETTE_VERSION}.zip
+  - mkdir ${PCKG_DIR}
+  - find . -name \*.rpm -print0 | xargs -0 cp -t ${PCKG_DIR}
+  - zip -r ${PCKG_FILE} ${PCKG_DIR}
 
 # before_deploy:
 #   # This line fixes PATH warnings for some reason
