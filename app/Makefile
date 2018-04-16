@@ -21,6 +21,7 @@ grunt:
 .PHONY: grunt
 
 pylint:
+	pylint --version
 	$(PYLINT) application.wsgi
 	$(PYLINT) palette
 .PHONY: pylint
