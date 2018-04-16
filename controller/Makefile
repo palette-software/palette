@@ -1,7 +1,7 @@
 include ../pylint.mk
 dpkg_dir := ../dpkg
 
-all: pylint debian
+all: pylint redhat
 .PHONY: all
 
 redhat:

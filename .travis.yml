@@ -1,4 +1,3 @@
-dist: trusty
 sudo: required
 
 # do not build tag
@@ -19,6 +18,12 @@ env:
   - OWNER=palette-software
   - PACKAGE=palette
 
+# install the RPM package
+addons:
+  apt:
+    packages:
+      - rpm
+
 before_install:
   - sudo apt-get install -y fakeroot # dpkg-buildpackage
   - sudo apt-get install -y debhelper
@@ -36,16 +41,19 @@ install:
   - popd
 
 script:
+  # Build akiri framework
+  - pushd akiri.framework
+  - make
+  - popd
   - make palette
   - make controller
-    # - make clean all
-  - cp dependencies/*.deb dpkg/pool/
-  - GNUPGHOME=dpkg/keys reprepro -b dpkg/apt includedeb stable dpkg/pool/*.deb
 
 after_success:
   # Create the zip package for GitHub release
-  - export PCKG_FILE=palette-${PALETTE_VERSION}.zip
-  - zip -r $PCKG_FILE dpkg/apt
+  - export PACKAGE=palette-${PALETTE_VERSION}
+  - mkdir ${PACKAGE}
+  - find . -name \*.rpm -print0 | xargs -0 cp -t ${PACKAGE}
+  - zip -r ${PACKAGE}.zip ${PACKAGE}
 
 # before_deploy:
 #   # This line fixes PATH warnings for some reason
