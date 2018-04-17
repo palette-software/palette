@@ -58,7 +58,7 @@ Visiting the Palette Center server in a browser for the first time loads the set
 ## Tableau Server URL
 
 Please make sure you enter the Tableau Server URL in the format http://tableau.server.address
-Please NOTE the *http* protocol, use it even if you access your Tableau on https.
+Please NOTE the `http` protocol, use it even if you access your Tableau on `https.`
 
 ## Palette License Key
 
@@ -73,7 +73,7 @@ Please visit the separate [Troubleshooting guide](TROUBLESHOOTING.md) for additi
 ## Log file locations
 Here are the log file locations on the Palette Center Server:
 * controller: `/var/log/palette/controller.log`
-* palette: `/var/log/apache2/*.log`
+* palette: `/var/log/httpd/*.log`
 
 # Local dev environment
 
