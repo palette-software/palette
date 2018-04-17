@@ -65,8 +65,12 @@ Please NOTE the *http* protocol, use it even if you access your Tableau on https
 This *must* be the same one which was used at the setup of the [agent](https://github.com/palette-software/agent).
 The license key can be any valid generated [GUID](https://en.wikipedia.org/wiki/Universally_unique_identifier).
 
+# Troubleshooting
 
-# Log file locations
+## Guide
+Please visit the separate [Troubleshooting guide](TROUBLESHOOTING.md) for additional information.
+
+## Log file locations
 Here are the log file locations on the Palette Center Server:
 * controller: `/var/log/palette/controller.log`
 * palette: `/var/log/apache2/*.log`
