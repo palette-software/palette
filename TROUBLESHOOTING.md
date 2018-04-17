@@ -157,7 +157,7 @@ The webpage of the Palette Center is not displayed. It might be the firewall whi
 
 Enable `http` and `https` on the firewall.
 
-NOTE: you might be using a different solution but for firewalld execute the following commands:
+NOTE: you might be using a different solution but for `firewalld` execute the following commands:
 
 ```
 firewall-cmd --zone=public --permanent --add-service=http
