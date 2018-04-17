@@ -2,14 +2,35 @@
 
 [![Build Status](https://travis-ci.org/palette-software/palette.svg?branch=master)](https://travis-ci.org/palette-software/palette)
 
-# Installation
-
-### Open ports
+# Open ports on firewall
 Make sure that the following ports are allowed both for inbound and outbound connections by your firewall:
 * 22 (SSH)
 * 80, 443 (HTTP, HTTPS)
 * 888 (Agent)
 * 5432 (PostgreSql)
+# Red Hat / CentOS 7
+
+## SELinux
+
+In order to enable the webapp to communicate with the other components (controller, database) the SELinux settings should be changed:
+
+```
+$ setsebool -P httpd_can_network_connect on
+```
+
+## Download the packages
+
+The latest version can be downloaded from the [GitHub Releases](https://github.com/palette-software/palette/releases) page or can be built locally.
+
+## Install
+
+```
+$ sudo yum install -y akiri.framework-*.rpm palette-center-*.rpm
+```
+
+# Ubuntu 14.04
+
+Please NOTE: Starting from version 3.0.x installing Palette Center on Ubuntu 14.04 is not supported.
 
 ### Make sure Palette APT repository is enabled
 
