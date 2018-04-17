@@ -2,14 +2,35 @@
 
 [![Build Status](https://travis-ci.org/palette-software/palette.svg?branch=master)](https://travis-ci.org/palette-software/palette)
 
-# Installation
-
-### Open ports
+# Open ports on firewall
 Make sure that the following ports are allowed both for inbound and outbound connections by your firewall:
 * 22 (SSH)
 * 80, 443 (HTTP, HTTPS)
 * 888 (Agent)
 * 5432 (PostgreSql)
+# Red Hat / CentOS 7
+
+## SELinux
+
+In order to enable the webapp to communicate with the other components (controller, database) the SELinux settings should be changed:
+
+```
+$ setsebool -P httpd_can_network_connect on
+```
+
+## Download the packages
+
+The latest version can be downloaded from the [GitHub Releases](https://github.com/palette-software/palette/releases) page or can be built locally.
+
+## Install
+
+```
+$ sudo yum install -y akiri.framework-*.rpm palette-center-*.rpm
+```
+
+# Ubuntu 14.04
+
+Please NOTE: Starting from version 3.0.x installing Palette Center on Ubuntu 14.04 is not supported.
 
 ### Make sure Palette APT repository is enabled
 
@@ -30,10 +51,29 @@ To install all Palette Center server side components just execute the following:
 
 Make sure that there is no error in the output of the `apt-get` command above.
 
-# Log file locations
+# Configuration
+
+Visiting the Palette Center server in a browser for the first time loads the setup page.
+
+## Tableau Server URL
+
+Please make sure you enter the Tableau Server URL in the format http://tableau.server.address
+Please NOTE the `http` protocol, use it even if you access your Tableau on `https.`
+
+## Palette License Key
+
+This *must* be the same one which was used at the setup of the [agent](https://github.com/palette-software/agent).
+The license key can be any valid generated [GUID](https://en.wikipedia.org/wiki/Universally_unique_identifier).
+
+# Troubleshooting
+
+## Guide
+Please visit the separate [Troubleshooting guide](TROUBLESHOOTING.md) for additional information.
+
+## Log file locations
 Here are the log file locations on the Palette Center Server:
 * controller: `/var/log/palette/controller.log`
-* palette: `/var/log/apache2/*.log`
+* palette: `/var/log/httpd/*.log`
 
 # Local dev environment
 
