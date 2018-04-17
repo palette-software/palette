@@ -60,7 +60,7 @@ The Palette Center service does not send email alerts.
 
 ### Resolution 1
 
-Check whether the email alerting is enabled at:
+Visit the Palette Center in a browser to access its UI and check whether the email alerting is enabled at:
 
 Gear icon > General Configuration > Email Alerts
 
