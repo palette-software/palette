@@ -51,6 +51,21 @@ To install all Palette Center server side components just execute the following:
 
 Make sure that there is no error in the output of the `apt-get` command above.
 
+# Configuration
+
+Visiting the Palette Center server in a browser for the first time loads the setup page.
+
+## Tableau Server URL
+
+Please make sure you enter the Tableau Server URL in the format http://tableau.server.address
+Please NOTE the *http* protocol, use it even if you access your Tableau on https.
+
+## Palette License Key
+
+This *must* be the same one which was used at the setup of the [agent](https://github.com/palette-software/agent).
+The license key can be any valid generated [GUID](https://en.wikipedia.org/wiki/Universally_unique_identifier).
+
+
 # Log file locations
 Here are the log file locations on the Palette Center Server:
 * controller: `/var/log/palette/controller.log`
