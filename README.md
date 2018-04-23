@@ -70,10 +70,16 @@ The license key can be any valid generated [GUID](https://en.wikipedia.org/wiki/
 ## Guide
 Please visit the separate [Troubleshooting guide](TROUBLESHOOTING.md) for additional information.
 
+## Configuration
+
+The configuration files are located at:
+* controller: `/etc/controller.ini`
+* palette-webapp: `/etc/httpd/conf.d/palette*`
+
 ## Log file locations
 Here are the log file locations on the Palette Center Server:
-* controller: `/var/log/palette/controller.log`
-* palette: `/var/log/httpd/*.log`
+* controller: `/var/log/palette/controller.log*`
+* palette-webapp: `/var/log/httpd/*.log`
 
 # Local dev environment
 
