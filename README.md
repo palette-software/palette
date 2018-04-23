@@ -65,6 +65,20 @@ Please NOTE the `http` protocol, use it even if you access your Tableau on `http
 This *must* be the same one which was used at the setup of the [agent](https://github.com/palette-software/agent).
 The license key can be any valid generated [GUID](https://en.wikipedia.org/wiki/Universally_unique_identifier).
 
+## Alerting
+
+### Thresholds
+
+The Alerting Configuration is available under the `Alerting` menu item of the Palette Center Webapp UI (https://<SERVER_ADDRESS>/alerts).
+
+There are two threshold levels for alerting (`Warning` and `Error`) in five categories (`Storage`, `CPU`, `Workbook`, `Process CPU` and `Process Memory`).
+
+### Emails
+
+Sending of the alerting emails can be enabled under the `General Configuration` section (Gear icon > General Configuration).
+
+Please consult the [Troubleshooting Guide](https://github.com/palette-software/palette/blob/master/TROUBLESHOOTING.md#alerting-email-is-not-sent-not-even-to-spam) if the emails are not sent.
+
 # Troubleshooting
 
 ## Guide
