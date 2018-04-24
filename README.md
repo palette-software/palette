@@ -71,11 +71,29 @@ The license key can be any valid generated [GUID](https://en.wikipedia.org/wiki/
 
 The Alerting Configuration is available under the `Alerting` menu item of the Palette Center Webapp UI (https://<SERVER_ADDRESS>/alerts).
 
-There are two threshold levels for alerting (`Warning` and `Error`) in five categories (`Storage`, `CPU`, `Workbook`, `Process CPU` and `Process Memory`).
+#### Levels
+
+There are two threshold levels for alerting. One (preferably a lower value) can be set as `Warning` and a second one as `Error`. The alert is sent when the threshold limit is reached.
+
+#### Categories
+
+Alerting can be set in five categories: `Storage`, `CPU`, `Workbook`, `Process CPU` and `Process Memory`.
+
+`Storage` monitoring sends an alert when the usage of the attached volumes of the machine exceed the thresholds.
+
+`CPU` monitoring sends an alert when the average CPU usage of the machine(s) exceeds the thresholds for the set duration.
+
+`Workbook` monitoring sends an alert when the web view Page Load Times of the workbooks exceed the thresholds.
+
+`Process CPU` monitoring sends an alert when the average CPU usage of the choosen process exceeds the thresholds for the set duration.
+
+`Process Memory` monitoring sends an alert when the average memory usage of the choosen process exceeds the thresholds for the set duration.
 
 ### Emails
 
 Sending of the alerting emails can be enabled under the `General Configuration` section (Gear icon > General Configuration).
+
+Emails can be sent to Palette Admins or Tableau Publishers. The admin users of Palette Center can be set under the `Users` section (Gear icon > Users).
 
 Please consult the [Troubleshooting Guide](https://github.com/palette-software/palette/blob/master/TROUBLESHOOTING.md#alerting-email-is-not-sent-not-even-to-spam) if the emails are not sent.
 
