@@ -416,7 +416,7 @@ class CliHandler(socketserver.StreamRequestHandler):
 
         self.ack()
         time.tzset()
-        cmd = ['/sbin/restart', 'cron']
+        cmd = ['systemctl', 'restart', 'crond.service']
         body = self._runcmd(cmd)
         self.report_status(body)
 
