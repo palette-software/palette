@@ -36,7 +36,11 @@ class Application(GenericWSGIApplication):
         if timezone not in timezones:
             raise TZException("Invalid timezone: " + str(timezone))
 
-        self.run('/bin/timedatectl set-timezone ' + str(timezone))
+        # Updating the timezone with timedatectl requires permissive SELinux policy
+        # allow systemd_timedated_t initrc_t:dbus send_msg;
+        self.run('mv /etc/localtime /etc/localtime.bak')
+        self.run('ln -s /usr/share/zoneinfo/{} /etc/localtime'.format(timezone))
+        self.run('/bin/systemctl restart ntpd')
 
         return data
 
