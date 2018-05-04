@@ -56,31 +56,6 @@ after_success:
   - find . -name \*.rpm -print0 | xargs -0 cp -t ${PCKG_DIR}
   - zip -r ${PCKG_FILE} ${PCKG_DIR}
 
-# before_deploy:
-#   # This line fixes PATH warnings for some reason
-#   - rvm use ruby-2.2.3
-#   # Install SpiderMonkey (renamed to libmozjs) as it is a dependency for jsawk
-#   - sudo add-apt-repository ppa:launchpad/ppa -y
-#   - sudo apt-get update
-#   - sudo apt-get install libmozjs-24-bin
-#   - ls -lah /usr/bin/js24
-#   - which js24
-#   - which js
-#   - sudo update-alternatives --install /usr/bin/js js /usr/bin/js24 10
-#   - which js
-#   - echo "PATH:"
-#   - echo $PATH
-#   # Make sure jsawk is installed, it is a dependency for release-to-github.sh
-#   - curl -L http://github.com/micha/jsawk/raw/master/jsawk > jsawk
-#   - chmod 755 jsawk
-#   - sudo mv jsawk /usr/local/bin
-#   - which jsawk
-#   - jsawk -h
-#   - >
-#     jsawk -s "{\"id\": \"asd\"}" -a "return this.id"
-#   # - sudo ln -s jsawk /usr/bin/jsawk
-#   # - sudo chown $USER:$USER /usr/bin/jsawk
-
 deploy:
   skip_cleanup: true
   provider: script
