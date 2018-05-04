@@ -17,6 +17,11 @@ env:
   - PALETTE_VERSION=3.0.$TRAVIS_BUILD_NUMBER CONTROLLER_VERSION=3.0.$TRAVIS_BUILD_NUMBER
   - OWNER=palette-software
   - PACKAGE=palette
+  - DEPLOY_HOST=palette-rpm.brilliant-data.net
+  - DEPLOY_PATH=/var/palette-rpm-repo
+  - DEPLOY_USER=palette-rpm
+  # DEPLOY_PASS
+  - secure: i+eeiUMC7fC8IC+Qz3gADeWWEL1LexL5oUK4b+HcXSyIY5hO+HLyJ/ejnUdpIIX4OL9y5bDDA48lXopZV13gn3MXYd4OW2RDAsf3yADtP77Uq7vE70F7JtrqvgBb6EIcix0Nzdf7bZz08Kgmf2/vJ/zdbcq4QyThbiX1ITDwOP7PAwX3HjXjqG/BRBGdkXD/kby0b/qj1hhQ5U90jAsStDcilW18DvhL9tI5MPvnX32yTtR6llYhSAQfsOZLpv8Ui+RvFNFLxEG4ktktcrkNrS+UfmYNUamb+/k0cWr6FDroJmqoZrfQ2Dp7/mVvXDNU8yIqgUgkXmTGXD4NH1qcFG2S5MMQUKpG70uog8oZFkho0O3EAtXyterJtUd25k6eHoYlTNV6RnwoRXSF5zrJbfQpRrnDFnU9U2Kih7gjt+f/6XQg80E6v8U4u9LmVHGdHLLdMsI9nwGGQ2NN5WR9xy3Rqr77zoNiMnjgMQqqyQCpctQ5v1GqBQwFm8kYMyVoBJ2CkIkeeIrMwqhr+b5LO00Z2t06Fk6iYpT9jnMInZ4BNU67KMnFaH7iI4THCk93uoiHkMf4celFF+oqS2oA2oLX+DGt4YIbLQzZT4OsVhMZX2in3inTBY6NdA/G9M1x2UTQ2NhWZsCYCxixP7jtOIw6lXHwm6+E6Um+PaiHKKw=
 
 # install the RPM package
 addons:
@@ -56,11 +61,14 @@ after_success:
   - find . -name \*.rpm -print0 | xargs -0 cp -t ${PCKG_DIR}
   - zip -r ${PCKG_FILE} ${PCKG_DIR}
 
+before_deploy:
+  - export DEPLOY_FILE="${TRAVIS_BUILD_DIR}/${PCKG_DIR}/*.rpm"
+
 deploy:
   skip_cleanup: true
   provider: script
   # Only deploy from the master branch (and if we don't have a tag specified, because they are auto-committed)
-  script: $TRAVIS_BUILD_DIR/release-to-github.sh
+  script: "./deploy.sh"
   on:
     branch: master
     tags: false
