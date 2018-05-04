@@ -28,6 +28,8 @@ addons:
   apt:
     packages:
       - rpm
+      # To deploy the rpms, we need to ssh into places, and we dont want to store keys for now
+      - sshpass
 
 before_install:
   - sudo apt-get install -y fakeroot # dpkg-buildpackage
