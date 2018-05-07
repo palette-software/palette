@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Stop on first error
+set -e
+
 # Move to project root
 DIRNAME=$(dirname $0)
 pushd ${DIRNAME}/../..

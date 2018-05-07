@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+
+# Stop on first error
+set -e
+
 if [[ -z $PALETTE_VERSION ]]; then echo "PALETTE_VERSION environment variable is not set!"; exit 1; fi
 if [[ -z $CONTROLLER_VERSION ]]; then echo "CONTROLLER_VERSION environment variable is not set!"; exit 1; fi
 
