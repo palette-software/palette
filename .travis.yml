@@ -72,7 +72,7 @@ deploy:
   # Only deploy from the master branch (and if we don't have a tag specified, because they are auto-committed)
   script: "./deploy.sh"
   on:
-    branch: auto_deploy_repo
+    branch: master
     tags: false
 
 notifications:
