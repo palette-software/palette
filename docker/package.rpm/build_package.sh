@@ -17,3 +17,4 @@ PACKAGE=palette-${PALETTE_VERSION}
 mkdir ${PACKAGE}
 find . -name \*.rpm -print0 | xargs -0 cp -t ${PACKAGE}
 zip -r ${PACKAGE}.zip ${PACKAGE}
+cp -r ${PACKAGE} /project_root
