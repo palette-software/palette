@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Echo commands
+set -x
 # Stop on first error
 set -e
 
