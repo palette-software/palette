@@ -10,5 +10,5 @@ docker run \
     --env CONTROLLER_VERSION \
     --rm \
     --volume $(pwd):/project_root \
-    center_package_builder
+    center_package_builder docker/package.rpm/build_package.sh
 popd
