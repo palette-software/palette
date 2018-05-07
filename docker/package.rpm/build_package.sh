@@ -2,25 +2,24 @@
 
 # Echo commands
 set -x
-# Stop on first error
-set -e
 
 if [[ -z $PALETTE_VERSION ]]; then echo "PALETTE_VERSION environment variable is not set!"; exit 1; fi
 if [[ -z $CONTROLLER_VERSION ]]; then echo "CONTROLLER_VERSION environment variable is not set!"; exit 1; fi
 
 pushd app
-make setup
+make setup || exit 1
 popd
 
 pushd akiri.framework
-make
+make || exit 1
 popd
 
-make palette
-make controller
+make palette || exit 1
+make controller || exit 1
 
 PACKAGE=palette-${PALETTE_VERSION}
-mkdir ${PACKAGE}
+rm -rf ${PACKAGE} || exit 1
+mkdir ${PACKAGE} || exit 1
 find . -name \*.rpm -print0 | xargs -0 cp -t ${PACKAGE}
-zip -r ${PACKAGE}.zip ${PACKAGE}
-cp -r ${PACKAGE} /project_root
+zip -r ${PACKAGE}.zip ${PACKAGE} || exit 1
+cp -r ${PACKAGE} /project_root || exit 1
