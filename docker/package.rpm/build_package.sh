@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+if [[ -z $PALETTE_VERSION ]]; then echo "PALETTE_VERSION environment variable is not set!"; exit 1; fi
+if [[ -z $CONTROLLER_VERSION ]]; then echo "CONTROLLER_VERSION environment variable is not set!"; exit 1; fi
+
 pushd app
 make setup
 popd
@@ -6,9 +9,6 @@ popd
 pushd akiri.framework
 make
 popd
-
-export PALETTE_VERSION=3.4.5
-export CONTROLLER_VERSION=3.4.5
 
 make palette
 make controller
