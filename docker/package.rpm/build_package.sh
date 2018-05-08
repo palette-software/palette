@@ -17,9 +17,10 @@ popd
 make palette || exit 1
 make controller || exit 1
 
-PACKAGE=palette-${PALETTE_VERSION}
+PACKAGE=palette-"${PALETTE_VERSION}"
+PACKAGE_REPO_DIR="${PACKAGE}/noarch"
 rm -rf ${PACKAGE} || exit 1
-mkdir ${PACKAGE} || exit 1
-find . -name \*.rpm -print0 | xargs -0 cp -t ${PACKAGE}
+mkdir -p ${PACKAGE_REPO_DIR} || exit 1
+find . -name \*.rpm -print0 | xargs -0 cp -t ${PACKAGE_REPO_DIR}
 zip -r ${PACKAGE}.zip ${PACKAGE} || exit 1
 cp -r ${PACKAGE} /project_root || exit 1
