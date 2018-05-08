@@ -40,7 +40,8 @@ after_success:
   - zip -r ${PCKG_FILE} ${PCKG_DIR}
 
 before_deploy:
-  - export DEPLOY_FILE="${TRAVIS_BUILD_DIR}/${PCKG_DIR}/*.rpm"
+  # Deploy RPMs with noarch dir
+  - export DEPLOY_FILE="${TRAVIS_BUILD_DIR}/${PCKG_DIR}/*"
 
 deploy:
   skip_cleanup: true
