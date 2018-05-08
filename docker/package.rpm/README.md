@@ -1,43 +1,27 @@
 # Build package in Docker container
 
-There are two shell scripts to automate the deb package creation locally using a Docker container.
+There is a shell script to automate the RPM package creation using a Docker container.
 
-The required steps are:
+The required steps are on the host machine
+1. Preferably set to current directory to the project root
+1. Set the `PALETTE_VERSION` and `CONTROLLER_VERSION` environment variables in `x.x.x` format.
+1. Run
+    ```bash
+    docker/package/build_and_start_container.sh
+    ```
 
-- In host machine
-    1. Preferably set to current directory to the project root
-    1. Set the `PALETTE_VERSION` and `CONTROLLER_VERSION` variables in `docker/package/build_package.sh`
-    1. Run
-        ```bash
-        docker/package/build_and_start_container.sh
-        ```
-- In Docker container
-    1. Run
-        ```bash
-        docker/package/build_package.sh
-        ```
-    1. Copy the created zip file `palette-x.x.x.zip` to `/project_root`. Eg.:
-        ```bash
-        cp palette-2.3.4.zip /project_root
-        ```
+This will build and copy the RPM packages under the `palette-x.x.x` folder in the project root folder.
 
 # Test the new package
 
-You may install the `controller` and `palette` packages in a Docker container
+You may install the `controller` and `webapp` packages in a Docker container
 
-1. Start Docker container exposing ports `443` and `888`. Eg.:
+1. Start Docker container exposing port `443`. Eg.:
     ```bash
-    docker run -h center -it -p 443:443 -p 888:888 -v $(pwd):/project_root centos:7
+    docker run -h center -it -p 443:443 -v $(pwd):/project_root centos:7
     ```
-1. Copy file `palette-x.x.x.zip` to a Docker container
-1. Unzip it
-1. .
-    ```
-    ```
-1. Update package list
-    ```bash
-    ```
-
+1. Copy the RPM packages to the Docker container
 1. Install packages
     ```bash
+    sudo yum install -y akiri.framework-*.rpm palette-center-*.rpm
     ```

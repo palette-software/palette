@@ -19,7 +19,7 @@ unzip -o downloads/$FA_ZIP
 
 npm install
 npm install -g bower
-bower install
+bower install --allow-root
 gulp
 
 cp -f font-awesome-$FA_VERSION/fonts/* fonts/
