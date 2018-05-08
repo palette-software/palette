@@ -1,6 +1,6 @@
 # Build package in Docker container
 
-There is a shell scripts to automate the RPM package creation using a Docker container.
+There is a shell script to automate the RPM package creation using a Docker container.
 
 The required steps are on the host machine
 1. Preferably set to current directory to the project root
