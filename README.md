@@ -18,14 +18,37 @@ In order to enable the webapp to communicate with the other components (controll
 $ setsebool -P httpd_can_network_connect on
 ```
 
-## Download the packages
+## Install
+
+The EPEL repository is needed. Make sure you install the propriate package from here:
+https://ius.io/GettingStarted/
+
+### From GitHub
 
 The latest version can be downloaded from the [GitHub Releases](https://github.com/palette-software/palette/releases) page or can be built locally.
 
-## Install
-
 ```
 $ sudo yum install -y akiri.framework-*.rpm palette-center-*.rpm
+```
+
+### From repository
+
+Enable the Palette RPM repository
+
+```
+$ sudo tee /etc/yum.repos.d/palette.repo << EOF
+[palette-rpm]
+name=Palette RPM
+baseurl=https://palette-rpm.brilliant-data.net/redhat
+enabled=1
+gpgcheck=0
+EOF
+```
+
+and install the packages
+
+```
+$ sudo yum install -y palette-center-controller palette-center-webapp
 ```
 
 # Ubuntu 14.04
