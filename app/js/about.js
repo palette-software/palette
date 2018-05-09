@@ -87,7 +87,7 @@ function ($, topic, common, OnOff)
         error: common.ajaxError,
     });
 
-    topic.subscribe('state', function(message, data) {
+    topic.subscribe('state', function(data, topic) {
         if (data['connected']) {
             $('#restart-webserver').removeClass('disabled');
             $('#restart-controller').removeClass('disabled');

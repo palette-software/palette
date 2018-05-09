@@ -214,7 +214,7 @@ function ($, topic, common)
     }
 
     /* setup */
-    topic.subscribe('state', function(message, data) {
+    topic.subscribe('state', function(data, topic) {
         allowed = data['allowable-actions'];
         connected = data['connected'];
         updateState();
