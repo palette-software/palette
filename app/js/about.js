@@ -11,7 +11,7 @@ function ($, topic, common, OnOff)
             data: {'action': 'restart-webserver'},
             dataType: 'json',
             async: false,
-            
+
             success: function(data) {
                 $('#restart-webserver').addClass('disabled');
             },
@@ -29,7 +29,7 @@ function ($, topic, common, OnOff)
             data: {'action': 'restart-controller'},
             dataType: 'json',
             async: false,
-            
+
             success: function(data) {
                 $('#restart-controller').addClass('disabled');
 
@@ -55,7 +55,7 @@ function ($, topic, common, OnOff)
             data: {'action': 'manual-update'},
             dataType: 'json',
             async: false,
-            
+
             success: function(data) {
                 update(data);
                 $('#manual-update').removeClass('disabled');
@@ -77,7 +77,7 @@ function ($, topic, common, OnOff)
     $.ajax({
         url: '/rest/about',
         dataType: 'json',
-        
+
         success: function(data) {
             $().ready(function() {
                 update(data);
@@ -87,7 +87,7 @@ function ($, topic, common, OnOff)
         error: common.ajaxError,
     });
 
-    topic.subscribe('state', function(message, data) {
+    topic.subscribe('state', function(data, topic) {
         if (data['connected']) {
             $('#restart-webserver').removeClass('disabled');
             $('#restart-controller').removeClass('disabled');

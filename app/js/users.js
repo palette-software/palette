@@ -24,7 +24,7 @@ function ($, topic, common, Dropdown, OnOff)
     }
 
     function setup_letters(total) {
-        
+
         var html = '';
         if (total <= 100) {
             html = '<a>All</a>';
@@ -114,7 +114,7 @@ function ($, topic, common, Dropdown, OnOff)
         });
     }
 
-    topic.subscribe('state', function(message, data) {
+    topic.subscribe('state', function(data, topic) {
         $().ready(function() {
             var allowed = data['allowable-actions'];
             if ($.inArray('user-refresh', allowed) >= 0) {
