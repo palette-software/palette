@@ -27,7 +27,7 @@ function ($, topic, common)
             url: '/rest/manage',
             data: {'action': 'start'},
             dataType: 'json',
-            
+
             success: function(data) {},
             error: common.ajaxError,
         });
@@ -97,7 +97,7 @@ function ($, topic, common)
             url: '/rest/backup',
             data: {'action': 'backup'},
             dataType: 'json',
-            
+
             success: function(data) {},
             error: common.ajaxError,
         });
@@ -110,7 +110,7 @@ function ($, topic, common)
             url: '/rest/manage',
             data: {'action': 'repair-license'},
             dataType: 'json',
-            
+
             success: function(data) {
                 updateActions();
             },
@@ -156,7 +156,7 @@ function ($, topic, common)
             url: '/rest/backup',
             data: data,
             dataType: 'json',
-            
+
             success: function(data) {
                 $('#restore-dialog input[type=checkbox]').prop('checked', true);
             },
