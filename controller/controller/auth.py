@@ -6,7 +6,7 @@ import akiri.framework.sqlalchemy as meta
 
 from manager import Manager, synchronized
 from event_control import EventControl
-from profile import UserProfile, Publisher, License, Role
+from profile import UserProfile, License, Role
 from system import SystemKeys
 from util import odbc2dt, DATEFMT, success, failed
 
@@ -83,7 +83,7 @@ class AuthManager(Manager):
             if notification.color == 'red':
                 adata = agent.todict()
                 self.server.event_control.gen(
-                                EventControl.READONLY_DBPASSWORD_OKAY, adata)
+                    EventControl.READONLY_DBPASSWORD_OKAY, adata)
                 notification.modification_time = func.now()
                 notification.color = 'green'
                 notification.description = None
@@ -92,14 +92,14 @@ class AuthManager(Manager):
             # Failed
             if notification.color != 'red':
                 if data['error'].find(
-                    "A password is required for this connection.") != -1 or \
-                    data['error'].find(agent.odbc.READONLY_ERROR_TEXT) \
-                                                                    != -1 or \
-                    data['error'].find("password authentication failed") != -1:
+                        "A password is required for this connection.") != -1 or \
+                        data['error'].find(agent.odbc.READONLY_ERROR_TEXT) \
+                                                                        != -1 or \
+                        data['error'].find("password authentication failed") != -1:
 
                     adata = agent.todict()
                     self.server.event_control.gen(
-                                EventControl.READONLY_DBPASSWORD_FAILED, adata)
+                        EventControl.READONLY_DBPASSWORD_FAILED, adata)
                     notification.modification_time = func.now()
                     notification.color = 'red'
                     notification.description = None
