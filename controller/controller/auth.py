@@ -18,11 +18,15 @@ class AuthManager(Manager):
     # build a cache of the Tableau 'users' table.
     def load_users(self, agent):
         stmt = \
-            'SELECT system_user_id, login_at, ' +\
-            'system_users.admin_level, ' +\
-            'seat_licensing_role_id as licensing_role_id ' +\
-            'FROM system_users,users ' +\
-            'WHERE (users.system_user_id = system_users.id)'
+            """
+            SELECT
+                system_user_id,
+                login_at,
+                system_users.admin_level,
+                seat_licensing_role_id as licensing_role_id
+            FROM system_users
+                INNER JOIN users on system_users.id = users.system_user_id
+            """
 
         data = agent.odbc.execute(stmt)
         if 'error' in data or not '' in data:
