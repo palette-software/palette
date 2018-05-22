@@ -6,7 +6,7 @@ import akiri.framework.sqlalchemy as meta
 
 from manager import Manager, synchronized
 from event_control import EventControl
-from profile import UserProfile, Publisher, License, Role
+from profile import UserProfile, License, Role
 from system import SystemKeys
 from util import odbc2dt, DATEFMT, success, failed
 
@@ -18,9 +18,15 @@ class AuthManager(Manager):
     # build a cache of the Tableau 'users' table.
     def load_users(self, agent):
         stmt = \
-            'SELECT system_user_id, login_at, admin_level,' +\
-            ' licensing_role_id, publisher_tristate ' +\
-            'FROM users'
+            """
+            SELECT
+                system_user_id,
+                login_at,
+                system_users.admin_level,
+                seat_licensing_role_id as licensing_role_id
+            FROM system_users
+                INNER JOIN users on system_users.id = users.system_user_id
+            """
 
         data = agent.odbc.execute(stmt)
         if 'error' in data or not '' in data:
@@ -37,12 +43,10 @@ class AuthManager(Manager):
             licensing_role_id = License.UNLICENSED
             if not row[3] is None:
                 licensing_role_id = int(row[3])
-            if row[4] is None:
-                publisher = False
-            elif row[4] != Publisher.DENY:
-                publisher = True
-            else:
-                publisher = False
+
+            # publisher_tristate is deprecated in Tableau 10.5
+            publisher = False
+
             if sysid in cache:
                 obj = cache[sysid]
                 obj.update_login_at(login_at)
@@ -79,7 +83,7 @@ class AuthManager(Manager):
             if notification.color == 'red':
                 adata = agent.todict()
                 self.server.event_control.gen(
-                                EventControl.READONLY_DBPASSWORD_OKAY, adata)
+                    EventControl.READONLY_DBPASSWORD_OKAY, adata)
                 notification.modification_time = func.now()
                 notification.color = 'green'
                 notification.description = None
@@ -88,14 +92,14 @@ class AuthManager(Manager):
             # Failed
             if notification.color != 'red':
                 if data['error'].find(
-                    "A password is required for this connection.") != -1 or \
-                    data['error'].find(agent.odbc.READONLY_ERROR_TEXT) \
-                                                                    != -1 or \
-                    data['error'].find("password authentication failed") != -1:
+                        "A password is required for this connection.") != -1 or \
+                        data['error'].find(agent.odbc.READONLY_ERROR_TEXT) \
+                                                                        != -1 or \
+                        data['error'].find("password authentication failed") != -1:
 
                     adata = agent.todict()
                     self.server.event_control.gen(
-                                EventControl.READONLY_DBPASSWORD_FAILED, adata)
+                        EventControl.READONLY_DBPASSWORD_FAILED, adata)
                     notification.modification_time = func.now()
                     notification.color = 'red'
                     notification.description = None
