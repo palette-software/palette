@@ -2,6 +2,15 @@
 
 [![Build Status](https://travis-ci.org/palette-software/palette.svg?branch=master)](https://travis-ci.org/palette-software/palette)
 
+Palette Center is a handy administrative, monitoring and alerting tool for Tableau Server clusters.
+
+# Requirements
+####  Hardware
+* Minimum: 2 vCPU, 4GB RAM, 30 GB disk
+* Recommended: 4 vCPU, 8GB RAM, 50 GB disk
+#### Software
+* OS: Red Hat Enterprise Linux or CentOS version 6 or 7.3+
+
 # Open ports on firewall
 Make sure that the following ports are allowed both for inbound and outbound connections by your firewall:
 * 22 (SSH)
