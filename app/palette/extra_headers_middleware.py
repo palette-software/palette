@@ -22,7 +22,9 @@ class ExtraHeadersMiddleware():
         self._headers = headers
         self._logger = logger
         self._statuses = map(lambda s: str(s), statuses)
-        logger.info("statuses: %s", self._statuses)
+        self._log(logging.INFO,
+                "statuses: %s",
+                self._statuses)
 
     def __call__(self, env, start_response):
 
