@@ -10,7 +10,7 @@ class ExtraHeadersMiddleware():
     logger:
         a python.logging compatible logger
 
-    stauses:
+    statuses:
         A list of status codes that will trigger the addition of the extra
         headers.  If set to None, all requests will have the headers added.
     """
