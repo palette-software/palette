@@ -36,6 +36,20 @@ from palette.system import SystemApplication
 from palette.workbook import WorkbookArchive, WorkbookData
 from palette.datasource import DatasourceArchive, DatasourceData
 
+from palette.extra_headers_middleware import ExtraHeadersMiddleware
+
+
+def protective_headers(app):
+    return ExtraHeadersMiddleware(app,
+                                  headers=[
+                                      # disable caching for security
+                                      ('Cache-control', 'no-store'),
+                                      ('Pragma', 'no-cache'),
+                                      # Frame embeding security
+                                      ('Content-Security-Policy', "frame-ancestors 'self'"),
+                                      ('X-Frame-Options', 'SAMEORIGIN')
+                                  ])
+
 # settings
 AES_KEY_FILE = '/var/palette/.aes'
 SHARED = 'tableau2014'
@@ -114,6 +128,7 @@ router.add_route(r'/', pages)
 application = BaseMiddleware(router)
 application = SessionMiddleware(app=application)
 application = Application(application)
+application = protective_headers(application)
 
 if __name__ == '__main__':
     import argparse
