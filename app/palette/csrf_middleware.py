@@ -62,13 +62,15 @@ class CsrfMiddleware():
 
     def __call__(self, env, start_response):
 
+
+        # Get the current time so we can save the token with an expiration
+        currentTime = datetime.datetime.now()
+
+        # Fetch the current time
+        existing_cookie = self._getCookie(env)
+
+
         if self._shouldCheckForCookie(env):
-
-            # Get the current time so we can save the token with an expiration
-            currentTime = datetime.datetime.now()
-
-            # Fetch the current time
-            existing_cookie = self._getCookie(env)
 
             # Fail if cookie is not present
             if existing_cookie is None:
@@ -88,7 +90,7 @@ class CsrfMiddleware():
             currentTime = datetime.datetime.now()
 
             # Generate a new token
-            token = self._createTokenFn(currentTime)
+            token = self._createTokenFn(existing_cookie, currentTime)
 
             # Cookie-fy the token and set it
             session_cookie = Cookie.SimpleCookie()
