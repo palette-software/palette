@@ -1,6 +1,8 @@
 import logging
 import uuid
 import threading
+import numbers
+import datetime
 
 
 def generate_token():
@@ -52,6 +54,24 @@ class InMemoryCsrfStorage(LoggingComponent):
 
 
 
+def format_sql(str, *args):
+    """ Format an SQL string and escape things """
+    def escape(val):
+        if isinstance(val, basestring):
+            return "%s" % val
+        elif isinstance(val, numbers.Number):
+            return str(val)
+        elif isinstance(val, datetime.datetime):
+            return val.isoformat()
+
+        raise TypeError("Cannot SQL escape value: %s" % (val))
+
+    # escape all arguments
+    escaped_args = map(escape, args)
+    return str.format(*escaped_args)
+
+
+
 class SqlCsrfStorage(LoggingComponent):
     """ Generic store for CSRF tokens implemented on top of SqlAlchemy / PostgreSQL """
 
@@ -63,6 +83,8 @@ class SqlCsrfStorage(LoggingComponent):
         self.table_name = table_name
         self._connectionFn = connectionFn
 
+        self._create_table()
+
 
     def create_token(self, old_token, current_time):
         """ Implementation for createToken """
@@ -70,7 +92,8 @@ class SqlCsrfStorage(LoggingComponent):
         def generate_new_token():
             token = generate_token()
 
-            sql = """INSERT INTO %s (token_str, expires_at) VALUES ('%s', '%s')""" % (self.table_name, token, current_time)
+            sql = format_sql("INSERT INTO {0} (token_str, expires_at) VALUES ('{1}', '{2}')",
+                             self.table_name, token, current_time)
 
             self._run_sql(sql)
             return token
@@ -79,7 +102,8 @@ class SqlCsrfStorage(LoggingComponent):
             if old_token is None:
                 return
 
-            sql = """DELETE FROM %s WHERE token_str='%s'""" % (self.table_name, old_token)
+            sql = format_sql("DELETE FROM {0} WHERE token_str='{1}'",
+                             self.table_name, old_token)
             self._run_sql(sql)
 
 
@@ -88,7 +112,29 @@ class SqlCsrfStorage(LoggingComponent):
 
 
     def validate_token(self, token, current_time):
-        return True
+        """ Validate a token by checking it in the DB """
+        sql = format_sql("SELECT COUNT(1) FROM {0} WHERE token_str = '{1}'",
+                         self.table_name, token)
+
+        count = 0
+        for row in self._run_sql(sql):
+            count = row[0]
+
+        return count > 0
+
+
+    def _create_table(self):
+        """ Attempts to create the table if it does not exist in PostgreSQL """
+        # Create the table creation statement
+        sql = """
+        CREATE TABLE IF NOT EXISTS %s (
+            token_str VARCHAR(64) NOT NULL PRIMARY KEY,
+            expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+        )
+        """ % (self.table_name)
+
+        # Run the statement
+        self._run_sql(sql)
 
     def _run_sql(self, sql):
         """ Attempts to run the SQL statement if a connection is available """
