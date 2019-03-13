@@ -4,10 +4,23 @@ import Cookie
 
 
 class EmptyCsrfStorage():
+    """ Interface to implement for CSRF backing storage """
     def create_token(self, old_token, current_time):
+        """ A function with a signature `(current_time:DateTime) => token:String`
+
+            that generates a new token that can be validated later using
+            `validateTokenFn(token, current_time)`
+        """
         raise NotImplementedError("createToken() not implemented")
 
     def validate_token(self, token, current_time):
+        """
+            A function with the signature `(token:String, current_time: DateTime) => Bool`
+
+            that return True if `token` is valid at `current_time`.
+            The no-replay guarantee requires this function to remove the token
+            from the list of valid ones after a single use
+        """
         raise NotImplementedError("validateToken() not implemented")
 
 
@@ -31,16 +44,8 @@ class CsrfMiddleware():
         app:
             The WSGI app to overlay this middleware over
 
-        createTokenFn:
-            A function with a signature `(current_time:DateTime) => token:String`
-            that generates a new token that can be validated later using
-            `validateTokenFn(token, current_time)`
-
-        validateTokenFn:
-            A function with the signature `(token:String, current_time: DateTime) => Bool`
-            that return True if `token` is valid at `current_time`.
-            The no-replay guarantee requires this function to remove the token
-            from the list of valid ones after a single use
+        storage:
+            The underlying storage to use (see EmptyCsrfStorage for details)
 
         token_cookie_name:
             The name of the Cookie that will be used to store the CSRF token
