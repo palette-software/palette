@@ -11,7 +11,7 @@ from akiri.framework.admin import LogoutApplication
 from akiri.framework.middleware.auth import AuthForbiddenMiddleware
 from akiri.framework.middleware.auth import AuthRedirectMiddleware
 from akiri.framework.route import Router
-from akiri.framework.sqlalchemy import create_engine, sqa
+from akiri.framework.sqlalchemy import create_engine, sqa, get_connection
 from akiri.framework.middleware.sqlalchemy import SessionMiddleware
 
 from palette import HomePage, set_aes_key_file
@@ -38,8 +38,17 @@ from palette.datasource import DatasourceArchive, DatasourceData
 
 from palette.extra_headers_middleware import ExtraHeadersMiddleware
 
+# CSRF middleware
+from palette.csrf_middleware import CsrfMiddleware
+from palette.csrf_storage import SqlCsrfStorage
+
+
+def csrf_middlware(app):
+    """ Create a new CSRF middleware that uses the palette DB as a backing store """
+    return SqlCsrfStorage(get_connection)
 
 def protective_headers(app):
+    """ Add headers to the app """
     return ExtraHeadersMiddleware(app,
                                   headers=[
                                       # disable caching for security
@@ -129,6 +138,10 @@ application = BaseMiddleware(router)
 application = SessionMiddleware(app=application)
 application = Application(application)
 application = protective_headers(application)
+
+# Add CSRF protection middleware
+# TODO: figure out if we can be narrower with this
+application = csrf_middleware(application)
 
 if __name__ == '__main__':
     import argparse
