@@ -3,6 +3,13 @@ import datetime
 import Cookie
 
 
+class EmptyCsrfStorage():
+    def create_token(self, old_token, current_time):
+        raise NotImplementedError("createToken() not implemented")
+
+    def validate_token(self, token, current_time):
+        raise NotImplementedError("validateToken() not implemented")
+
 
 
 ## MIDDLEWARE
@@ -16,9 +23,8 @@ class CsrfMiddleware():
 
 
     def __init__(self, app,
-                 createTokenFn,
-                 validateTokenFn,
-                 tokenCookieName="PaletteCsrfToken",
+                 storage=EmptyCsrfStorage(),
+                 token_cookie_name="PaletteCsrfToken",
                  logger=logging):
         """ Creates a new CSRF middleware.
 
@@ -26,58 +32,49 @@ class CsrfMiddleware():
             The WSGI app to overlay this middleware over
 
         createTokenFn:
-            A function with a signature `(currentTime:DateTime) => token:String`
+            A function with a signature `(current_time:DateTime) => token:String`
             that generates a new token that can be validated later using
-            `validateTokenFn(token, currentTime)`
+            `validateTokenFn(token, current_time)`
 
         validateTokenFn:
-            A function with the signature `(token:String, currentTime: DateTime) => Bool`
-            that return True if `token` is valid at `currentTime`.
+            A function with the signature `(token:String, current_time: DateTime) => Bool`
+            that return True if `token` is valid at `current_time`.
             The no-replay guarantee requires this function to remove the token
             from the list of valid ones after a single use
 
-        tokenCookieName:
+        token_cookie_name:
             The name of the Cookie that will be used to store the CSRF token
 
         logger:
             A python logging compatible logger that will be used for all log messages.
         """
-        # Check the args
-        if createTokenFn is None:
-            raise ArgumentError("createTokenFn must be a function")
-
-        if validateTokenFn is None:
-            raise ArgumentError("validateTokenFn must be a function")
-
-
         self._app = app
         self._logger = logger
-        self._tokenCookieName = tokenCookieName
+        self._token_cookie_name = token_cookie_name
         # Save the Fns
-        self._createTokenFn = createTokenFn
-        self._validateTokenFn = validateTokenFn
+        self._storage = storage
         # boot
-        self._log(logging.INFO, "Initializing CSRF middleware")
+        self.log(logging.INFO, "Initializing CSRF middleware")
 
 
     def __call__(self, env, start_response):
 
 
         # Get the current time so we can save the token with an expiration
-        currentTime = datetime.datetime.now()
+        current_time = datetime.datetime.now()
 
         # Fetch the current time
-        existing_cookie = self._getCookie(env)
+        existing_token = self._get_cookie(env)
 
 
-        if self._shouldCheckForCookie(env):
+        if self._should_check_for_cookie(env):
 
             # Fail if cookie is not present
-            if existing_cookie is None:
+            if existing_token is None:
                 return self._send_csrf_failiure_response(start_response)
 
             # Fail if token check fails
-            if not self._validateTokenFn(existing_cookie, currentTime):
+            if not self._storage.validate_token(existing_token, current_time):
                 return self._send_csrf_failiure_response(start_response)
 
 
@@ -87,14 +84,16 @@ class CsrfMiddleware():
             """ Adds a Set-Cookie header with a new CSRF token to the response """
 
             # Get the current time so we can save the token with an expiration
-            currentTime = datetime.datetime.now()
+            current_time = datetime.datetime.now()
+
+            self.log(logging.INFO, "existing CSRF token = '%s'", existing_token)
 
             # Generate a new token
-            token = self._createTokenFn(existing_cookie, currentTime)
+            token = self._storage.create_token(existing_token, current_time)
 
             # Cookie-fy the token and set it
             session_cookie = Cookie.SimpleCookie()
-            session_cookie[self._tokenCookieName] = token
+            session_cookie[self._token_cookie_name] = token
 
             # Generate cookie headers
             headers.extend(("Set-Cookie", morsel.OutputString())
@@ -116,14 +115,13 @@ class CsrfMiddleware():
         return [response_text]
 
 
-    def _shouldCheckForCookie(self, env):
+    def _should_check_for_cookie(self, env):
         """ Returns True if the CSRF cookie should be checked for this request """
         return env['REQUEST_METHOD'] in ['POST', 'PUT']
 
 
-    def _getCookie(self, env):
+    def _get_cookie(self, env):
         """ Attempts to return the CSRF token cookie or None if CSRF cookie is not set """
-        self._log(logging.INFO, "Checking for CSRF cookie '%s'", self._tokenCookieName)
         # If no cookies present, then the token is None
         if 'HTTP_COOKIE' not in env:
             return None
@@ -133,14 +131,14 @@ class CsrfMiddleware():
         c.load(env["HTTP_COOKIE"])
 
         # If no cookie then no cookie
-        if not self._tokenCookieName in c:
+        if not self._token_cookie_name in c:
             return None
 
         # extract the cookie value
-        return c[self._tokenCookieName].value
+        return c[self._token_cookie_name].value
 
 
-    def _log(self, lvl, msg, *args, **kwargs):
+    def log(self, lvl, msg, *args, **kwargs):
         """ Attempts to call the logger (if provided) by forwarding all args """
         if self._logger:
             self._logger.log(lvl, msg, *args, **kwargs)
