@@ -54,11 +54,12 @@ class InMemoryCsrfStorage(LoggingComponent):
 
 
 
-def format_sql(str, *args):
+def format_sql(format_string, *args):
     """ Format an SQL string and escape things """
     def escape(val):
         if isinstance(val, basestring):
-            return "%s" % val
+            # TODO: escape to prevent SQL injection attack with a funky token string
+            return val
         elif isinstance(val, numbers.Number):
             return str(val)
         elif isinstance(val, datetime.datetime):
@@ -68,7 +69,7 @@ def format_sql(str, *args):
 
     # escape all arguments
     escaped_args = map(escape, args)
-    return str.format(*escaped_args)
+    return format_string.format(*escaped_args)
 
 
 
@@ -126,12 +127,12 @@ class SqlCsrfStorage(LoggingComponent):
     def _create_table(self):
         """ Attempts to create the table if it does not exist in PostgreSQL """
         # Create the table creation statement
-        sql = """
-        CREATE TABLE IF NOT EXISTS %s (
+        sql = format_sql("""
+        CREATE TABLE IF NOT EXISTS {0} (
             token_str VARCHAR(64) NOT NULL PRIMARY KEY,
             expires_at TIMESTAMP WITH TIME ZONE NOT NULL
         )
-        """ % (self.table_name)
+        """, self.table_name)
 
         # Run the statement
         self._run_sql(sql)
