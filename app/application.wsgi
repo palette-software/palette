@@ -43,9 +43,10 @@ from palette.csrf_middleware import CsrfMiddleware
 from palette.csrf_storage import SqlCsrfStorage
 
 
-def csrf_middlware(app):
+def csrf_middleware(app):
     """ Create a new CSRF middleware that uses the palette DB as a backing store """
-    return SqlCsrfStorage(get_connection)
+    storage = SqlCsrfStorage(get_connection)
+    return CsrfMiddleware(app, storage=storage)
 
 def protective_headers(app):
     """ Add headers to the app """
