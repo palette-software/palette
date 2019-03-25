@@ -29,7 +29,7 @@ class ExtraHeadersMiddleware():
     def __call__(self, env, start_response):
 
         # Our fake start_response function
-        def fake_start_response(status, headers):
+        def fake_start_response(status, headers, wut=None):
 
             # add our extra headers
             if self._should_add_headers(status):
@@ -39,7 +39,7 @@ class ExtraHeadersMiddleware():
                           self._headers)
                 headers += self._headers
 
-            return start_response(status, headers)
+            return start_response(status, headers, wut)
 
         return self._app(env, fake_start_response)
 
