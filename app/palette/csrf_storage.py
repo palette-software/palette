@@ -73,73 +73,42 @@ def format_sql(format_string, *args):
 
 
 
-class SqlCsrfStorage(LoggingComponent):
-    """ Generic store for CSRF tokens implemented on top of SqlAlchemy / PostgreSQL """
+
+
+class SqlBackedComponent(LoggingComponent):
+    """ Base class for components using an underlying PostgresSQL connection """
 
     def __init__(self,
                  connectionFn=None,
                  table_name="palette_csrf_tokens",
-                 logger=logging.getLogger('sql-csrf-storage')):
+                 logger=logging.getLogger('sql-data-source')):
         LoggingComponent.__init__(self, logger)
         self.table_name = table_name
         self._connectionFn = connectionFn
 
         self._create_table()
 
-
-    def create_token(self, old_token, current_time):
-        """ Implementation for createToken """
-
-        def generate_new_token():
-            token = generate_token()
-
-            sql = format_sql("INSERT INTO {0} (token_str, expires_at) VALUES ('{1}', '{2}')",
-                             self.table_name, token, current_time)
-
-            self._run_sql(sql)
-            return token
-
-        def delete_old_token():
-            if old_token is None:
-                return
-
-            sql = format_sql("DELETE FROM {0} WHERE token_str='{1}'",
-                             self.table_name, old_token)
-            self._run_sql(sql)
-
-
-        delete_old_token()
-        return generate_new_token()
-
-
-    def validate_token(self, token, current_time):
-        """ Validate a token by checking it in the DB """
-        sql = format_sql("SELECT COUNT(1) FROM {0} WHERE token_str = '{1}'",
-                         self.table_name, token)
-
-        count = 0
-        for row in self._run_sql(sql):
-            count = row[0]
-
-        return count > 0
-
-
     def _create_table(self):
-        """ Attempts to create the table if it does not exist in PostgreSQL """
+        """ Attempts to create the table if it does not exist in PostgreSQL.
+
+        This method will call self._table_sql() to get the table columns of the SQL statement.
+        """
         # Create the table creation statement
-        sql = format_sql("""
-        CREATE TABLE IF NOT EXISTS {0} (
-            token_str VARCHAR(64) NOT NULL PRIMARY KEY,
-            expires_at TIMESTAMP WITH TIME ZONE NOT NULL
-        )
-        """, self.table_name)
+        table_inner = self._table_sql()
+        # No escaping, lets hope the developer is not crazy...
+        sql = "CREATE TABLE IF NOT EXISTS {0} ({1})".format(
+            self.table_name, table_inner)
 
         # Run the statement
-        self._run_sql(sql)
+        self.run_sql(sql)
 
-    def _run_sql(self, sql):
+
+
+    def run_sql(self, sql_string, *args):
         """ Attempts to run the SQL statement if a connection is available """
-        self.log(logging.DEBUG, "_run_sql(): %s", sql)
+        sql = format_sql(sql_string, *args)
+
+        self.log(logging.DEBUG, "run_sql(): %s", sql)
 
         if self._connectionFn is None:
             self.log(logging.INFO, "No SqlAlchemy connection function - cannot use backing store")
@@ -154,3 +123,231 @@ class SqlCsrfStorage(LoggingComponent):
         return connection.execute(sql)
 
 
+    def run_single_value(self, defaultValue, sql_string, *args):
+        """ Attempts to run an SQL statement that results in a single value and return that value.
+
+        defaultValue:
+            The default value to return if the statement yields no results
+        """
+        value = defaultValue
+        for row in self.run_sql(sql_string, *args):
+            value = row[0]
+
+        self.log(logging.DEBUG, "RETURN VALUE = %s", value)
+        return value
+
+
+    def _table_sql(self):
+        """ The table columns for the table defition to be created """
+        raise NotImplementedError("SqlCsrfStorage::_table_sql() not implemented")
+
+
+
+
+class SqlCsrfStorage(SqlBackedComponent):
+    """ Generic store for CSRF tokens implemented on top of SqlAlchemy / PostgreSQL """
+
+    def __init__(self,
+                 connectionFn=None,
+                 table_name="palette_csrf_tokens",
+                 logger=logging.getLogger('sql-csrf-storage')):
+        SqlBackedComponent.__init__(self, connectionFn, table_name=table_name, logger=logger)
+
+
+    def create_token(self, old_token, current_time):
+        """ Implementation for createToken """
+
+        def generate_new_token():
+            token = generate_token()
+
+            self.run_sql("INSERT INTO {0} (token_str, expires_at) VALUES ('{1}', '{2}')",
+                         self.table_name, token, current_time)
+            return token
+
+        def delete_old_token():
+            if old_token is None:
+                return
+
+            self.run_sql("DELETE FROM {0} WHERE token_str='{1}'",
+                         self.table_name, old_token)
+
+
+        delete_old_token()
+        return generate_new_token()
+
+
+    def validate_token(self, token, current_time):
+        """ Validate a token by checking it in the DB """
+
+        token_count =  self.run_single_value(0, "SELECT COUNT(1) FROM {0} WHERE token_str = '{1}'",
+                                             self.table_name, token)
+
+        return token_count > 0
+
+
+    def _table_sql(self):
+        """ The table columns for the table defition to be created """
+        return """
+            token_str VARCHAR(64) NOT NULL PRIMARY KEY,
+            expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+        """
+
+
+
+
+
+class UserLockoutStorage(SqlBackedComponent):
+    """ Generic store for User login attempts implemented on top of SqlAlchemy / PostgreSQL """
+
+    def __init__(self,
+                 connectionFn=None,
+                 table_name="palette_user_lockout",
+                 logger=logging.getLogger('sql-csrf-storage'),
+                 max_attempts=5):
+        SqlBackedComponent.__init__(self, connectionFn, table_name=table_name, logger=logger)
+        self.max_attempts = max_attempts
+
+
+    def successful_attempt(self, user_name):
+        """ Clears the record of the users failed login attempts after a successful login """
+        self.run_sql("DELETE FROM {0} WHERE user_name = '{1}'", self.table_name, user_name)
+
+    def failed_attempt(self, user_name):
+        """ Increments the failed attempt counter for the user """
+
+        # Check if we have the user
+
+        attempt_count =  self._get_attempt_count(user_name)
+
+        if attempt_count > 0:
+            self.run_sql("UPDATE {0} SET attempt_count={1} WHERE user_name='{2}'",
+                         self.table_name, attempt_count + 1, user_name)
+        else:
+            # Create a new record
+            self.run_sql("INSERT INTO {0} (user_name, attempt_count) VALUES ('{1}', 1)",
+                         self.table_name, user_name)
+
+
+
+    def is_user_locked_out(self, user_name):
+        """ Returns True if the user is locked out because of too many login attempts """
+
+        return self._get_attempt_count(user_name) > self.max_attempts
+
+        # # as the user_name is the primary key, we should only have zero or one rows...
+        # attempt_count = 0
+        # for row in self.run_sql("SELECT attempt_count FROM {0} WHERE user_name = '{1}'",
+        #                         self.table_name, user_name):
+        #     attempt_count = row[0]
+
+        # return attempt_count > self.max_attempts
+
+
+    def _get_attempt_count(self, user_name):
+        """ Returns the number of attempts the user has tried to login unsuccesfully (since they were last cleared) """
+        return self.run_single_value(0, "SELECT attempt_count FROM {0} WHERE user_name = '{1}'",
+                                     self.table_name, user_name)
+
+
+    def _table_sql(self):
+        """ The table columns for the table defition to be created """
+        return """
+            user_name VARCHAR(64) NOT NULL PRIMARY KEY,
+            attempt_count INT NOT NULL
+        """
+
+
+class EmptyUserLockoutStorage():
+    """ Interface to implement for User Lockout backing storage """
+
+    def successful_attempt(self, user_name):
+        """ Clears the record of the users failed login attempts after a successful login """
+        raise NotImplementedError("successful_attempt() not implemented")
+
+    def failed_attempt(self, user_name):
+        """ Increments the failed attempt counter for the user """
+        raise NotImplementedError("failed_attempt() not implemented")
+
+    def is_user_locked_out(self, user_name):
+        """ Returns True if the user is locked out because of too many login attempts """
+        raise NotImplementedError("is_user_locked_out() not implemented")
+
+
+# TODO: move this import
+from cgi import parse_qs
+
+class UserLockoutMiddleware(LoggingComponent):
+    def __init__(self, app,
+                 storage=EmptyUserLockoutStorage(),
+                 logger=logging):
+        """ Creates a new CSRF middleware.
+
+        app:
+            The WSGI app to overlay this middleware over
+
+        storage:
+            The underlying storage to use (see EmptyCsrfStorage for details)
+
+        token_cookie_name:
+            The name of the Cookie that will be used to store the CSRF token
+
+        logger:
+            A python logging compatible logger that will be used for all log messages.
+        """
+        self._app = app
+        self._logger = logger
+        self._storage = storage
+        # boot
+        self.log(logging.INFO, "Initializing User Lockout middleware")
+
+    def __call__(self, env, start_response):
+
+        # TODO: figure out how Center sends username
+        params = parse_qs(env['QUERY_STRING'])
+
+        user_names = params['user_name']
+
+        # Make sure we have a user name
+        if len(user_names) == 0:
+            return self._send_no_user_name_found(start_response)
+
+        user_name = user_names[0]
+
+        # If locked out reply with the lockout message
+        if self._storage.is_user_locked_out(user_name):
+            return self._send_lockout_response(start_response)
+
+
+        def fake_start_response(status, headers, wut=None):
+
+            # TODO: figure out how Center sends success / failiure
+            should_accept = 'accept' in params
+
+            # Update the storage based on the success / failiure of the login attempt
+            if should_accept:
+                self._storage.successful_attempt(user_name)
+            else:
+                self._storage.failed_attempt(user_name)
+
+            # keep on truckin'
+            return start_response(status, headers, wut)
+
+        return self._app(env, fake_start_response)
+
+
+    def _send_no_user_name_found(self, start_response):
+        return self._send_text(start_response, "400 No user name", "<h1>Cannot find user name</h1>")
+
+    def _send_lockout_response(self, start_response):
+        """ Starts an HTTP response signaling user lockout """
+        return self._send_text(start_response, "400 User locked out", "<h1>User locked out</h1>")
+        # start_response("400 User locked out", [('Content-type', 'text/html'),
+        #                                        ('Content-Length', str(len(response_text)))])
+        # return [response_text]
+
+
+    def _send_text(self, start_response, status, response_text):
+        """ Starts an HTTP response signaling user lockout """
+        start_response(status, [('Content-type', 'text/html'),
+                                               ('Content-Length', str(len(response_text)))])
+        return [response_text]
