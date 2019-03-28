@@ -231,16 +231,7 @@ class UserLockoutStorage(SqlBackedComponent):
 
     def is_user_locked_out(self, user_name):
         """ Returns True if the user is locked out because of too many login attempts """
-
         return self._get_attempt_count(user_name) > self.max_attempts
-
-        # # as the user_name is the primary key, we should only have zero or one rows...
-        # attempt_count = 0
-        # for row in self.run_sql("SELECT attempt_count FROM {0} WHERE user_name = '{1}'",
-        #                         self.table_name, user_name):
-        #     attempt_count = row[0]
-
-        # return attempt_count > self.max_attempts
 
 
     def _get_attempt_count(self, user_name):
@@ -276,10 +267,28 @@ class EmptyUserLockoutStorage():
 # TODO: move this import
 from cgi import parse_qs
 
+def parse_request_body(env):
+    try:
+        # CONTENT_LENGTH may be empty or missing
+        request_body_size = int(env.get('CONTENT_LENGTH', 0))
+
+        print "Content-length={}".format(request_body_size)
+        # Read the request body
+        request_body = env['wsgi.input'].read(request_body_size)
+        print "Body={}".format(request_body)
+        # Attempt to parse the request body as query string
+        return parse_qs(request_body)
+    except ValueError:
+        # No body is present, or not in query-string format
+        # so we return an empty
+        return {}
+
+
 class UserLockoutMiddleware(LoggingComponent):
     def __init__(self, app,
                  storage=EmptyUserLockoutStorage(),
-                 logger=logging):
+                 logger=logging,
+                 user_name_param='username'):
         """ Creates a new CSRF middleware.
 
         app:
@@ -297,40 +306,46 @@ class UserLockoutMiddleware(LoggingComponent):
         self._app = app
         self._logger = logger
         self._storage = storage
+        self._user_name_param = user_name_param
         # boot
         self.log(logging.INFO, "Initializing User Lockout middleware")
 
+
     def __call__(self, env, start_response):
 
-        # TODO: figure out how Center sends username
-        params = parse_qs(env['QUERY_STRING'])
+        # Short-circuit if we aren't intersted
+        if not self._should_check_request(env):
+            return self._app(env, start_response)
 
-        user_names = params['user_name']
 
-        # Make sure we have a user name
-        if len(user_names) == 0:
+        # Attempt to parse the POST params
+        post_params = parse_request_body(env)
+
+
+        # Fail if no username provided
+        if self._user_name_param not in post_params:
             return self._send_no_user_name_found(start_response)
 
-        user_name = user_names[0]
+        # Extract the username (parse_qs returns an array for each
+        # key, so we take the first element, and hope that parse_qs
+        # is not buggy and will never give us zero-length arrays)
+        user_name = post_params[self._user_name_param][0]
 
         # If locked out reply with the lockout message
         if self._storage.is_user_locked_out(user_name):
             return self._send_lockout_response(start_response)
 
 
-        def fake_start_response(status, headers, wut=None):
-
-            # TODO: figure out how Center sends success / failiure
-            should_accept = 'accept' in params
+        def fake_start_response(status, headers, exc_info=None):
 
             # Update the storage based on the success / failiure of the login attempt
-            if should_accept:
+            if self._is_successful_login(status):
                 self._storage.successful_attempt(user_name)
             else:
                 self._storage.failed_attempt(user_name)
 
             # keep on truckin'
-            return start_response(status, headers, wut)
+            return start_response(status, headers, exc_info)
 
         return self._app(env, fake_start_response)
 
@@ -341,9 +356,6 @@ class UserLockoutMiddleware(LoggingComponent):
     def _send_lockout_response(self, start_response):
         """ Starts an HTTP response signaling user lockout """
         return self._send_text(start_response, "400 User locked out", "<h1>User locked out</h1>")
-        # start_response("400 User locked out", [('Content-type', 'text/html'),
-        #                                        ('Content-Length', str(len(response_text)))])
-        # return [response_text]
 
 
     def _send_text(self, start_response, status, response_text):
@@ -351,3 +363,16 @@ class UserLockoutMiddleware(LoggingComponent):
         start_response(status, [('Content-type', 'text/html'),
                                                ('Content-Length', str(len(response_text)))])
         return [response_text]
+
+
+    def _should_check_request(self, env):
+        """ Returns True if the user needs to be checked for this request """
+        # We are only checking POST requests
+        return env['REQUEST_METHOD'] in ['POST']
+
+    def _is_successful_login(self, status):
+        """ Returns True if the login request was successful """
+        # Palette Center returns NOT 200 on login failiure (should be FORBIDDEN,
+        # but checking against 200 / 204 should be safer)
+        return status[0:3] in ['200', '204']
+
