@@ -370,6 +370,7 @@ class UserLockoutMiddleware(LoggingComponent):
         # We are only checking POST requests
         return env['REQUEST_METHOD'] in ['POST']
 
+
     def _is_successful_login(self, status):
         """ Returns True if the login request was successful """
         # Palette Center returns NOT 200 on login failiure (should be FORBIDDEN,
