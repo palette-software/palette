@@ -271,11 +271,8 @@ def parse_request_body(env):
     try:
         # CONTENT_LENGTH may be empty or missing
         request_body_size = int(env.get('CONTENT_LENGTH', 0))
-
-        print "Content-length={}".format(request_body_size)
         # Read the request body
         request_body = env['wsgi.input'].read(request_body_size)
-        print "Body={}".format(request_body)
         # Attempt to parse the request body as query string
         return parse_qs(request_body)
     except ValueError:
