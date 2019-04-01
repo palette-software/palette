@@ -116,7 +116,7 @@ class SqlBackedComponent(LoggingComponent):
 
         connection = self._connectionFn()
 
-        if self._connectionFn is None:
+        if connection is None:
             self.log(logging.ERROR, "SqlAlchemy connection function returned None - cannot use backing store")
             return None
 
@@ -139,7 +139,7 @@ class SqlBackedComponent(LoggingComponent):
 
     def _table_sql(self):
         """ The table columns for the table defition to be created """
-        raise NotImplementedError("SqlCsrfStorage::_table_sql() not implemented")
+        raise NotImplementedError("SqlBackedComponent::_table_sql() is not implemented")
 
 
 
@@ -202,7 +202,7 @@ class UserLockoutStorage(SqlBackedComponent):
     def __init__(self,
                  connectionFn=None,
                  table_name="palette_user_lockout",
-                 logger=logging.getLogger('sql-csrf-storage'),
+                 logger=logging.getLogger('sql-lockout-storage'),
                  max_attempts=5):
         SqlBackedComponent.__init__(self, connectionFn, table_name=table_name, logger=logger)
         self.max_attempts = max_attempts
