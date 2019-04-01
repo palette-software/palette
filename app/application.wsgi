@@ -41,6 +41,7 @@ from palette.extra_headers_middleware import ExtraHeadersMiddleware
 # CSRF middleware
 from palette.csrf_middleware import CsrfMiddleware
 from palette.csrf_storage import SqlCsrfStorage
+from palette.csrf_storage import UserLockoutStorage, UserLockoutMiddleware
 
 
 def csrf_middleware(app):
@@ -60,6 +61,11 @@ def protective_headers(app):
                                       ('X-Frame-Options', 'SAMEORIGIN')
                                   ])
 
+def user_lockout_middleware(app):
+    """ Add the user lockout middleware to the app """
+    storage = UserLockoutStorage(get_connection, max_attempts=4)
+    return UserLockoutMiddleware(app, storage=storage)
+
 # settings
 AES_KEY_FILE = '/var/palette/.aes'
 SHARED = 'tableau2014'
@@ -76,6 +82,10 @@ if not sqa.engine:
 loginapp = LoginApplication(secret=SHARED,
                             max_age=LOGIN_MAX_AGE,
                             httponly=True)
+# Add user lockout middleware to login app
+loginapp = user_lockout_middleware(loginapp)
+
+
 loginpage = LoginPage()
 loginpage = InitialMiddleware(loginpage)
 loginpage = SupportedBrowserMiddleware(loginpage,

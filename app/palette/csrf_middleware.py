@@ -85,7 +85,7 @@ class CsrfMiddleware():
 
 
         # Our fake start_response function
-        def fake_start_response(status, headers, wut=None):
+        def fake_start_response(status, headers, exc_info=None):
             """ Adds a Set-Cookie header with a new CSRF token to the response """
 
             # Get the current time so we can save the token with an expiration
@@ -105,7 +105,7 @@ class CsrfMiddleware():
                             for morsel
                             in session_cookie.values())
 
-            return start_response(status, headers, wut)
+            return start_response(status, headers, exc_info)
 
         return self._app(env, fake_start_response)
 
