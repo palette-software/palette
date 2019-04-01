@@ -264,17 +264,23 @@ class EmptyUserLockoutStorage():
         raise NotImplementedError("is_user_locked_out() not implemented")
 
 
-# TODO: move this import
+# TODO: move these imports
 from cgi import parse_qs
+from cStringIO import StringIO
+
+
 
 def parse_request_body(env):
     try:
         # CONTENT_LENGTH may be empty or missing
         request_body_size = int(env.get('CONTENT_LENGTH', 0))
         # Read the request body
-        request_body = env['wsgi.input'].read(request_body_size)
+        request_body = StringIO(env['wsgi.input'].read(request_body_size))
+        # Re-assign a copy of the stream so handler further down the line can
+        # re-read the body
+        env['wsgi.input'] = request_body
         # Attempt to parse the request body as query string
-        return parse_qs(request_body)
+        return parse_qs(request_body.getvalue())
     except ValueError:
         # No body is present, or not in query-string format
         # so we return an empty
