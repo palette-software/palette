@@ -282,20 +282,22 @@ def parse_request_body(env):
 
 
 class UserLockoutMiddleware(LoggingComponent):
+    """ Middleware responsible for locking out the user after a number of unsuccessful login attempts.
+    """
     def __init__(self, app,
                  storage=EmptyUserLockoutStorage(),
                  logger=logging,
                  user_name_param='username'):
-        """ Creates a new CSRF middleware.
+        """ Creates a new User Lockout Middleware
 
         app:
             The WSGI app to overlay this middleware over
 
         storage:
-            The underlying storage to use (see EmptyCsrfStorage for details)
+            The underlying storage to use (see EmptyUserLockoutStorage for details)
 
-        token_cookie_name:
-            The name of the Cookie that will be used to store the CSRF token
+        user_name_param:
+            The POST parameter we'll use to get the username from the request.
 
         logger:
             A python logging compatible logger that will be used for all log messages.
