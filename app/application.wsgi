@@ -63,7 +63,7 @@ def protective_headers(app):
 
 def user_lockout_middleware(app):
     """ Add the user lockout middleware to the app """
-    storage = UserLockoutStorage(get_connection, max_attempts=5)
+    storage = UserLockoutStorage(get_connection, max_attempts=4)
     return UserLockoutMiddleware(app, storage=storage)
 
 # settings

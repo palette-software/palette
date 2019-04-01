@@ -378,7 +378,7 @@ class UserLockoutMiddleware(LoggingComponent):
 
     def _is_successful_login(self, status):
         """ Returns True if the login request was successful """
-        # Palette Center returns NOT 200 on login failiure (should be FORBIDDEN,
-        # but checking against 200 / 204 should be safer)
-        return status[0:3] in ['200', '204']
+        # Palette Center returns NOT 2xx/3xx on login failiure (should be FORBIDDEN,
+        # but checking against 200 / 204 / 302 should be safer)
+        return status[0:3] in ['200', '204', '302']
 
