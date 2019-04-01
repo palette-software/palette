@@ -202,7 +202,7 @@ class UserLockoutStorage(SqlBackedComponent):
     def __init__(self,
                  connectionFn=None,
                  table_name="palette_user_lockout",
-                 logger=logging.getLogger('sql-csrf-storage'),
+                 logger=logging.getLogger('sql-lockout-storage'),
                  max_attempts=5):
         SqlBackedComponent.__init__(self, connectionFn, table_name=table_name, logger=logger)
         self.max_attempts = max_attempts
