@@ -139,7 +139,7 @@ class SqlBackedComponent(LoggingComponent):
 
     def _table_sql(self):
         """ The table columns for the table defition to be created """
-        raise NotImplementedError("SqlCsrfStorage::_table_sql() not implemented")
+        raise NotImplementedError("SqlBackedComponent::_table_sql() is not implemented")
 
 
 
