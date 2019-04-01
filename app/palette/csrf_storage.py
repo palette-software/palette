@@ -116,7 +116,7 @@ class SqlBackedComponent(LoggingComponent):
 
         connection = self._connectionFn()
 
-        if self._connectionFn is None:
+        if connection is None:
             self.log(logging.ERROR, "SqlAlchemy connection function returned None - cannot use backing store")
             return None
 
